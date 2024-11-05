@@ -74,6 +74,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PrincipalArray;
@@ -1833,14 +1834,14 @@ public class SecurityController extends SpringActionController
                 // Issue 33254: only allow Site Admins to see the verification token
                 message.setMaskToken(true);
 
-                if (SecurityManager.isVerified(email))
+                if (LoginManager.isVerified(email))
                 {
                     out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(email) + " has already chosen a password.");
                 }
                 else
                 {
-                    String verification = SecurityManager.getVerification(email);
-                    ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email, verification, null);
+                    String verification = LoginManager.getVerification(email);
+                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), email, verification, null);
                     SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
                 }
             }
@@ -1919,7 +1920,7 @@ public class SecurityController extends SpringActionController
 
             try
             {
-                loginExists = SecurityManager.loginExists(new ValidEmail(emailForm.getEmail()));
+                loginExists = LoginManager.loginExists(new ValidEmail(emailForm.getEmail()));
             }
             catch (InvalidEmailException e)
             {
@@ -1990,7 +1991,7 @@ public class SecurityController extends SpringActionController
             try
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
-                _loginExists = SecurityManager.loginExists(email);
+                _loginExists = LoginManager.loginExists(email);
                 SecurityManager.adminRotatePassword(email, errors, getContainer(), getUser(), getMailHelpText(form.getEmail()));
             }
             catch (InvalidEmailException e)
@@ -2137,7 +2138,8 @@ public class SecurityController extends SpringActionController
             try
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
-                SecurityManager.adminDeletePassword(email, getUser());
+                User userToChange = UserManager.getUser(email);
+                LoginManager.deleteLoginsRow(userToChange, getUser());
             }
             catch (InvalidEmailException e)
             {

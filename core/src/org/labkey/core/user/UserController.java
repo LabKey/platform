@@ -78,6 +78,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitActiveUsersService;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresAllOf;
@@ -1586,7 +1587,7 @@ public class UserController extends SpringActionController
             // don't let a non-site admin manage certain parts of a site-admin's account
             boolean canManageDetailsUser = currentUser.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
             String detailsEmail = detailsUser.getEmail();
-            boolean loginExists = SecurityManager.loginExists(detailsEmail); // Note: Not using ValidEmail variant since existing address could be invalid
+            boolean loginExists = LoginManager.loginExists(detailsEmail); // Note: Not using ValidEmail variant since existing address could be invalid
 
             UserSchema schema = form.getSchema();
             if (schema == null)
@@ -1898,9 +1899,8 @@ public class UserController extends SpringActionController
                 else
                 {
                     String oldEmail = userToChange.getEmail();
-                    UserManager.VerifyEmail verifyEmail = UserManager.getVerifyEmail(oldEmail);
-                    assert oldEmail.equals(verifyEmail.getEmail());
-                    String requestedEmail = verifyEmail.getRequestedEmail();
+                    LoginManager.VerifyEmail verifyEmail = LoginManager.getVerifyEmail(userToChange);
+                    String requestedEmail = verifyEmail.requestedEmail();
                     String verificationToken = form.getVerificationToken();
                     boolean isVerified = verifyEmail.isVerified(verificationToken);
                     LoginController.checkVerificationErrors(isVerified, loggedInUser, oldEmail, verificationToken, errors);
@@ -1908,7 +1908,7 @@ public class UserController extends SpringActionController
                     if (errors.getErrorCount() == 0)  // verified and active
                     {
                         // Note: Verification timeout only applies to self-service change email workflow currently
-                        Instant verificationTimeoutInstant = verifyEmail.getVerificationTimeout().toInstant();
+                        Instant verificationTimeoutInstant = verifyEmail.verificationTimeout().toInstant();
                         if (Instant.now().isAfter(verificationTimeoutInstant))
                         {
                             if (!canUpdateUser)  // don't bother auditing admin password link clicks
@@ -1920,19 +1920,19 @@ public class UserController extends SpringActionController
                     }
                     else
                     {
-                        if (verificationToken == null || verificationToken.length() != SecurityManager.tempPasswordLength)
+                        if (verificationToken == null || verificationToken.length() != LoginManager.TEMP_PASSWORD_LENGTH)
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
                             }
                             errors.reject(ERROR_MSG, "Verification was incorrect. Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                         }
-                        else if (!verificationToken.equals(verifyEmail.getVerification()))
+                        else if (!verificationToken.equals(verifyEmail.verification()))
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
                             }
                         }
                     }
@@ -2028,8 +2028,8 @@ public class UserController extends SpringActionController
                     boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors);
                     if (isAuthenticated)
                     {
-                        String verificationToken = SecurityManager.createTempPassword();
-                        UserManager.requestEmailChange(userToChange, validRequestedEmail, verificationToken, getUser());
+                        String verificationToken = LoginManager.createTempPassword();
+                        LoginManager.requestEmailChange(userToChange, validRequestedEmail, verificationToken, getUser());
                         // verification email
                         Container c = getContainer();
 

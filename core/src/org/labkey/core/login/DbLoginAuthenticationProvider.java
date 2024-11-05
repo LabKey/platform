@@ -27,10 +27,10 @@ import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -132,24 +132,24 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             try
             {
                 ValidEmail email = new ValidEmail(id);
-                hash = SecurityManager.getPasswordHash(email);
                 user = UserManager.getUser(email);
-                if (null == hash || null == user)
+                hash = LoginManager.getPasswordHash(user);
+                if (null == hash)
                     return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
             }
             catch (InvalidEmailException e)
             {
                 // This invalid email address might be in the database. If so, attempt to authenticate; if not, throw.
-                hash = SecurityManager.getPasswordHash(id);
                 user = UserManager.getUsers(true).stream()
                     .filter(u -> u.getEmail().equals(id))
                     .findAny()
                     .orElse(null);
-                if (null == hash || null == user)
+                hash = LoginManager.getPasswordHash(user);
+                if (null == hash)
                     throw e;
             }
 
-            if (!SecurityManager.matchPassword(password, hash))
+            if (!LoginManager.matchPassword(password, hash))
                 return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
 
             if (user.isActive())
@@ -167,7 +167,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     PasswordExpiration expiration = configuration.getExpiration();
                     User user2 = user;
 
-                    if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user2)))
+                    if (expiration.hasExpired(() -> LoginManager.getLastChanged(user2)))
                     {
                         return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
                     }

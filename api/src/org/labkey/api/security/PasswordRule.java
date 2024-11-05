@@ -89,7 +89,7 @@ public enum PasswordRule
             return false;
         }
 
-        if (_validator.isPreviousPasswordForbidden() && SecurityManager.matchesPreviousPassword(password1, user))
+        if (_validator.isPreviousPasswordForbidden() && LoginManager.matchesPreviousPassword(password1, user))
         {
             messages.add("Your password must not match a recently used password.");
             return false;

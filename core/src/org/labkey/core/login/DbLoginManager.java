@@ -31,6 +31,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
@@ -101,7 +102,7 @@ public class DbLoginManager implements DbLoginService
 
         try
         {
-            SecurityManager.setPassword(email, password);
+            LoginManager.setPassword(user, password);
             // Invalidate all sessions belonging to this user that were authenticated via database authentication
             UserManager.handleSessionsForUser(user, new SessionHandler()
             {
@@ -136,7 +137,7 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                SecurityManager.setVerification(email, null);
+                LoginManager.setVerification(user, null);
             UserManager.addToUserHistory(user, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)

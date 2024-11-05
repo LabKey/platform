@@ -68,6 +68,7 @@ import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
@@ -750,7 +751,9 @@ public class LoginController extends SpringActionController
             ValidEmail email = form.getValidEmail(getViewContext(), errors);
             if (!errors.hasErrors())
             {
-                validateChangePassword(email, errors);
+                // TODO: Change to UserId
+                User user = UserManager.getUser(email);
+                validateChangePassword(user, errors);
                 _email = email;
             }
         }
@@ -853,7 +856,7 @@ public class LoginController extends SpringActionController
             return resetPasswordResponse(user, null, null);
         }
 
-        if (!SecurityManager.loginExists(email))
+        if (!LoginManager.loginExists(user))
         {
             _log.error("Password reset attempted for an account that doesn't have a password: " + email);
             return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via LDAP or single sign-on. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
@@ -867,14 +870,14 @@ public class LoginController extends SpringActionController
         try
         {
             // Create a verification key to email the user
-            String verification = SecurityManager.createTempPassword();
-            SecurityManager.setVerification(email, verification);
+            String verification = LoginManager.createTempPassword();
+            LoginManager.setVerification(user, verification);
             try
             {
                 Container c = getContainer();
                 LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
                 final SecurityMessage message = SecurityManager.getResetMessage(false, user, providerName);
-                ActionURL verificationURL = SecurityManager.createModuleVerificationURL(c, email, verification, null, providerName, false);
+                ActionURL verificationURL = LoginManager.createModuleVerificationURL(c, email, verification, null, providerName, false);
 
                 final User system = new User(laf.getSystemEmailAddress(), 0);
                 system.setFirstName(laf.getCompanyName());
@@ -1772,7 +1775,7 @@ public class LoginController extends SpringActionController
     private static boolean attemptVerification(SetPasswordForm form, ValidEmail email, Errors errors)
     {
         String verification = form.getVerification();
-        boolean isVerified = SecurityManager.verify(email, verification);
+        boolean isVerified = LoginManager.verify(email, verification);
 
         User user = UserManager.getUser(email);
         LoginController.checkVerificationErrors(isVerified, user, email.getEmailAddress(), verification, errors);
@@ -1796,16 +1799,16 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            if (!SecurityManager.loginExists(email))
+            if (!LoginManager.loginExists(email))
             {
                 if (AuthenticationManager.isLdapOrSsoEmail(email))
                     errors.reject("setPassword", "You can authenticate your account using LDAP/SSO and you do not need to set a separate password.");
                 else
                     errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
             }
-            else if (SecurityManager.isVerified(email))
+            else if (LoginManager.isVerified(email))
                 errors.reject("setPassword", "This email address has already been verified.");
-            else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
+            else if (null == verification || verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
                 errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
             else
                 // Incorrect verification string
@@ -1980,7 +1983,8 @@ public class LoginController extends SpringActionController
         @Override
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
-            _unrecoverableError = validateChangePassword(email, errors);
+            User user = UserManager.getUser(email);
+            _unrecoverableError = validateChangePassword(user, errors);
 
             if (!_unrecoverableError)
                 _email = email;
@@ -2037,8 +2041,9 @@ public class LoginController extends SpringActionController
 
     private boolean isOldPasswordMatch(String oldPassword, SetPasswordForm form, BindException errors) throws InvalidEmailException
     {
-        String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
-        if (!SecurityManager.matchPassword(oldPassword, hash))
+        User user = UserManager.getUser(new ValidEmail(form.getEmail()));
+        String hash = LoginManager.getPasswordHash(user);
+        if (!LoginManager.matchPassword(oldPassword, hash))
         {
             errors.reject("password", "Incorrect old password.");
             return false;
@@ -2047,9 +2052,9 @@ public class LoginController extends SpringActionController
         return true;
     }
 
-    private boolean validateChangePassword(ValidEmail email, Errors errors)
+    private boolean validateChangePassword(User user, Errors errors)
     {
-        if (!SecurityManager.loginExists(email))
+        if (!LoginManager.loginExists(user))
         {
             errors.reject("setPassword", "This email address is not associated with an account.");
             return true;
