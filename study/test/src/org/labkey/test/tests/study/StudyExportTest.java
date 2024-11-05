@@ -34,6 +34,7 @@ import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
+import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -111,7 +112,7 @@ public class StudyExportTest extends StudyManualTest
         _fileBrowserHelper.selectFileBrowserItem("export/");
         _fileBrowserHelper.sortFileBrowserColumn("Last Modified", SortDirection.DESC);
         // select the first exported zip archive file by row
-        Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My%20Study_");
+        Locator.XPathLocator gridRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", FileBrowserHelper.encodeFileNodeIdPart("My Study_"));
         waitForElement(gridRow);
         click(gridRow);
         _fileBrowserHelper.selectImportDataAction("Import Folder");
