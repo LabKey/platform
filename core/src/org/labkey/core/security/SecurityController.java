@@ -289,10 +289,10 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix)
+        public ActionURL getShowRegistrationEmailURL(Container container, User user, String mailPrefix)
         {
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
-            url.addParameter("email", email.getEmailAddress());
+            url.addParameter("userId", user.getUserId());
             url.addParameter("mailPrefix", mailPrefix);
 
             return url;

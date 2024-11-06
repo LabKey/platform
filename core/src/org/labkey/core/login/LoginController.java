@@ -201,7 +201,7 @@ public class LoginController extends SpringActionController
         public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message)
         {
             ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("email", user.getEmail());     // TODO: seems peculiar... why not user id?
+            url.addParameter("userId", user.getUserId());
 
             if (null != message)
                 url.addParameter("message", message);

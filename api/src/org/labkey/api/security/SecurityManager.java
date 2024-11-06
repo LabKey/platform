@@ -2291,7 +2291,7 @@ public class SecurityManager
             if (newUserStatus.getHasLogin() && sendMail)
             {
                 Container c = context.getContainer();
-                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email, mailPrefix);
+                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, newUserStatus.getUser(), mailPrefix);
 
                 sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, provider, isAddUser);
             }
