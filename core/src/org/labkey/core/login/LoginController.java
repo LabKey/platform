@@ -1906,7 +1906,7 @@ public class LoginController extends SpringActionController
             }
             catch (InvalidEmailException e)
             {
-                errors.rejectValue("email", ERROR_MSG, "'" + form.getEmail() + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
+                errors.rejectValue("email", ERROR_MSG, "'" + StringUtils.trimToEmpty(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
             }
 
             return success;
