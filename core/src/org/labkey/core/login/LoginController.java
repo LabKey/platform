@@ -1858,7 +1858,7 @@ public class LoginController extends SpringActionController
             boolean success = false;
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-           // All initial user creation steps need to be transacted
+            // All initial user creation steps need to be transacted
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 ValidEmail email = new ValidEmail(form.getEmail());
@@ -1902,11 +1902,11 @@ public class LoginController extends SpringActionController
             }
             catch (UserManagementException e)
             {
-                errors.reject(ERROR_MSG, "Unable to create user '" + PageFlowUtil.filter(e.getEmail()) + "': " + e.getMessage());
+                errors.reject(ERROR_MSG, "Unable to create user '" + e.getEmail() + "': " + e.getMessage());
             }
             catch (InvalidEmailException e)
             {
-                errors.rejectValue("email", ERROR_MSG, "The string '" + PageFlowUtil.filter(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
+                errors.rejectValue("email", ERROR_MSG, "'" + form.getEmail() + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
             }
 
             return success;
