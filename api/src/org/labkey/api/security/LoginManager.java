@@ -7,8 +7,11 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -180,10 +183,17 @@ public class LoginManager
         return (null == getVerification(user));
     }
 
-    public static boolean verify(User user, String verification)
+    // Look up a user based on the verification string
+    public static @Nullable User verify(String verification)
     {
-        String dbVerification = getVerification(user);
-        return (dbVerification != null && dbVerification.equals(verification));
+        Integer userId = null;
+        if (StringUtils.length(verification) == TEMP_PASSWORD_LENGTH)
+        {
+            TableInfo logins = CORE.getTableInfoLogins();
+            userId = new TableSelector(CORE.getTableInfoLogins(), Collections.singleton("UserId"), new SimpleFilter(logins.getColumn("Verification").getFieldKey(), verification), null)
+                .getObject(Integer.class);
+        }
+        return userId != null ? UserManager.getUser(userId) : null;
     }
 
     public static void setVerification(User user, @Nullable String verification) throws SecurityManager.UserManagementException

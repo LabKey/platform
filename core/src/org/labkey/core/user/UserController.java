@@ -1902,9 +1902,9 @@ public class UserController extends SpringActionController
                     String requestedEmail = verifyEmail.requestedEmail();
                     String verificationToken = form.getVerificationToken();
                     boolean isVerified = verifyEmail.isVerified(verificationToken);
-                    LoginController.checkVerificationErrors(isVerified, loggedInUser, verificationToken, errors);
+                    LoginController.checkVerificationErrors(isVerified, loggedInUser, errors);
 
-                    if (errors.getErrorCount() == 0)  // verified and active
+                    if (!errors.hasErrors())  // verified and active
                     {
                         // Note: Verification timeout only applies to self-service change email workflow currently
                         Instant verificationTimeoutInstant = verifyEmail.verificationTimeout().toInstant();

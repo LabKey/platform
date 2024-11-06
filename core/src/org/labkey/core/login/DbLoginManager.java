@@ -85,15 +85,14 @@ public class DbLoginManager implements DbLoginService
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
     @Override
-    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
+    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
     {
         String password = StringUtils.trimToEmpty(rawPassword);
         String password2 = StringUtils.trimToEmpty(rawPassword2);
 
         Collection<String> messages = new LinkedList<>();
-        User user = UserManager.getUser(email);
 
-        if (!getPasswordRule().isValidToStore(password, password2, user, changeOperation, messages))
+        if (!getPasswordRule().isValidToStore(password, password2, affectedUser, changeOperation, messages))
         {
             for (String message : messages)
                 errors.reject("setPassword", message);
@@ -102,9 +101,9 @@ public class DbLoginManager implements DbLoginService
 
         try
         {
-            LoginManager.setPassword(user, password);
+            LoginManager.setPassword(affectedUser, password);
             // Invalidate all sessions belonging to this user that were authenticated via database authentication
-            UserManager.handleSessionsForUser(user, new SessionHandler()
+            UserManager.handleSessionsForUser(affectedUser, new SessionHandler()
             {
                 @Override
                 public boolean handleSession(HttpSession session)
@@ -123,8 +122,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    //noinspection DataFlowIssue
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
                 }
             });
         }
@@ -137,8 +135,8 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                LoginManager.setVerification(user, null);
-            UserManager.addToUserHistory(user, auditMessage);
+                LoginManager.setVerification(affectedUser, null);
+            UserManager.addToUserHistory(affectedUser, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -151,7 +149,7 @@ public class DbLoginManager implements DbLoginService
         // affected. This check should be equivalent to currentUser.equals(user).
         if (SecurityManager.getSessionUser(request.getSession()) == null)
         {
-            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
+            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, affectedUser.getEmail(), password, returnUrlHelper, true);
 
             if (result.getStatus() == Success)
             {

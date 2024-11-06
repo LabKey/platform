@@ -114,7 +114,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
@@ -743,18 +742,16 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class ChangePasswordApiAction extends MutatingApiAction<SetPasswordForm>
     {
-        protected ValidEmail _email = null;
+        protected User _user = null;
 
         @Override
         public void validateForm(SetPasswordForm form, Errors errors)
         {
-            ValidEmail email = form.getValidEmail(getViewContext(), errors);
+            User user = form.getUser(errors);
             if (!errors.hasErrors())
             {
-                // TODO: Change to UserId
-                User user = UserManager.getUser(email);
-                validateChangePassword(user, errors);
-                _email = email;
+                if (!validateChangePassword(user, errors))
+                    _user = user;
             }
         }
 
@@ -767,7 +764,7 @@ public class LoginController extends SpringActionController
 
             if (isOldPasswordMatch(oldPassword, form, errors))
             {
-                AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Changed password.", false, errors);
+                AuthenticationResult result = attemptSetPassword(_user, form.getReturnURLHelper(), "Changed password.", false, errors);
                 if (result != null)
                     response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
             }
@@ -789,13 +786,13 @@ public class LoginController extends SpringActionController
         public Object execute(SetPasswordForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ValidEmail email = form.getValidEmail(getViewContext(), errors);
 
             if (!errors.hasErrors())
             {
-                if (attemptVerification(form, email, errors))
+                User user = attemptVerification(form, errors);
+                if (user != null)
                 {
-                    AuthenticationResult result = attemptSetPassword(email, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
+                    AuthenticationResult result = attemptSetPassword(user, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
                     if (result != null)
                         response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
                 }
@@ -1574,19 +1571,23 @@ public class LoginController extends SpringActionController
 
     public abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
-        protected ValidEmail _email = null;
+        protected User _user = null;
         protected boolean _unrecoverableError = false;
         protected URLHelper _successUrl = null;
 
         @Override
         public void validateCommand(SetPasswordForm form, Errors errors)
         {
-            ValidEmail email = form.getValidEmail(getViewContext(), errors);
+            _user = form.getUser(errors);
 
             if (errors.hasErrors())
+            {
                 _unrecoverableError = true;
+            }
             else
-                verify(form, email, errors);
+            {
+                verify(form, errors);
+            }
         }
 
         protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors) throws RedirectException
@@ -1605,7 +1606,7 @@ public class LoginController extends SpringActionController
 
         protected String getEmailForForm(SetPasswordForm form)
         {
-            return null != _email ? _email.getEmailAddress() : form.getEmail();
+            return null != _user ? _user.getEmail() : null;
         }
 
         @Override
@@ -1650,7 +1651,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
-            AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
+            AuthenticationResult result = attemptSetPassword(_user, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
 
             if (errors.hasErrors())
                 return false;
@@ -1685,7 +1686,7 @@ public class LoginController extends SpringActionController
             return "Set Password";
         }
 
-        protected abstract void verify(SetPasswordForm form, ValidEmail email, Errors errors);
+        protected abstract void verify(SetPasswordForm form, Errors errors);
         protected abstract String getMessage(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
         protected boolean clearVerification()
@@ -1696,7 +1697,7 @@ public class LoginController extends SpringActionController
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
-    private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
+    private AuthenticationResult attemptSetPassword(User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
         // TODO: This is unreliable... e.g., the "change password via email validation" scenario isn't considered a
@@ -1704,7 +1705,7 @@ public class LoginController extends SpringActionController
         // operation vs. an initial password. Need a flag or perhaps separate actions.
         boolean changeOperation = StringUtils.startsWithIgnoreCase(auditMessage, "change");
 
-        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
+        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, affectedUser, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
     }
 
     @RequiresNoPermission
@@ -1712,22 +1713,17 @@ public class LoginController extends SpringActionController
     public class SetPasswordAction extends AbstractSetPasswordAction
     {
         @Override
-        protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
+        protected void verify(SetPasswordForm form, Errors errors)
         {
-            if (!attemptVerification(form, email, errors))
-            {
+            _user = attemptVerification(form, errors);
+            if (null == _user)
                 _unrecoverableError = true;
-            }
-            else
-            {
-                _email = email;
-            }
         }
 
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "Your email address (" + form.getEmail() + ") has been verified! Create an account password below.";
+            return "Your email address (" + _user.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -1772,26 +1768,23 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private static boolean attemptVerification(SetPasswordForm form, ValidEmail email, Errors errors)
+    //
+    private static @Nullable User attemptVerification(SetPasswordForm form, Errors errors)
     {
-        User user = UserManager.getUser(email); // TODO
         String verification = form.getVerification();
-        boolean isVerified = LoginManager.verify(user, verification);
+        User user = LoginManager.verify(verification);
+        boolean isVerified = user != null;
 
-        LoginController.checkVerificationErrors(isVerified, user, verification, errors);
+        LoginController.checkVerificationErrors(isVerified, user, errors);
 
-        return isVerified && !errors.hasErrors();
+        return isVerified && !errors.hasErrors() ? user : null;
     }
 
-    public static void checkVerificationErrors(boolean isVerified, User user, String verification, Errors errors)
+    public static void checkVerificationErrors(boolean isVerified, User user, Errors errors)
     {
         if (isVerified)
         {
-            if (user == null)
-            {
-                errors.reject("setPassword", "This user doesn't exist. Make sure you've copied the entire link into your browser's address bar.");
-            }
-            else if (!user.isActive())
+            if (!user.isActive())
             {
                 errors.reject("setPassword", "This user account has been deactivated. Please contact a system "
                         + "administrator if you need to reactivate this account.");
@@ -1799,20 +1792,10 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            if (!LoginManager.loginExists(user))
-            {
-                if (AuthenticationManager.isLdapOrSsoEmail(user.getEmail()))
-                    errors.reject("setPassword", "You can authenticate your account using LDAP/SSO and you do not need to set a separate password.");
-                else
-                    errors.reject("setPassword", "This email address is not associated with an account. Make sure you've copied the entire link into your browser's address bar.");
-            }
-            else if (LoginManager.isVerified(user))
-                errors.reject("setPassword", "This email address has already been verified.");
-            else if (null == verification || verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
-                errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
-            else
-                // Incorrect verification string
-                errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
+            // Verification string wasn't found. User might have already verified, they don't have a login (should be
+            // using LDAP or SSO), or the link got mangled. Don't provide any more information since that could reveal
+            // information about existing users.
+            errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
     }
 
@@ -1822,19 +1805,18 @@ public class LoginController extends SpringActionController
     public class InitialUserAction extends AbstractSetPasswordAction
     {
         @Override
-        protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
+        protected void verify(SetPasswordForm form, Errors errors)
         {
             if (!UserManager.hasNoRealUsers())
                 throw new RedirectException(AdminController.getModuleStatusURL(null));
 
-            _email = email;
             _unrecoverableError = false;
         }
 
         @Override
         protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors) throws RedirectException
         {
-            verify(form, null, errors);
+            verify(form, errors);
         }
 
         @Override
@@ -1981,13 +1963,9 @@ public class LoginController extends SpringActionController
     public class ChangePasswordAction extends AbstractSetPasswordAction
     {
         @Override
-        protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
+        protected void verify(SetPasswordForm form, Errors errors)
         {
-            User user = UserManager.getUser(email);
-            _unrecoverableError = validateChangePassword(user, errors);
-
-            if (!_unrecoverableError)
-                _email = email;
+            _unrecoverableError = validateChangePassword(_user, errors);
         }
 
         @Override
@@ -2056,7 +2034,7 @@ public class LoginController extends SpringActionController
     {
         if (!LoginManager.loginExists(user))
         {
-            errors.reject("setPassword", "This email address is not associated with an account.");
+            errors.reject("setPassword", "User does not have a password.");
             return true;
         }
 
@@ -2104,14 +2082,20 @@ public class LoginController extends SpringActionController
 
     public static class SetPasswordForm extends AbstractLoginForm
     {
-        private String _verification;
+        private Integer _userId;
         private String _email;
+        private String _verification;
         private String _message;
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setEmail(String email)
+        public Integer getUserId()
         {
-            _email = email;
+            return _userId;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setUserId(Integer userId)
+        {
+            _userId = userId;
         }
 
         public String getEmail()
@@ -2119,38 +2103,21 @@ public class LoginController extends SpringActionController
             return _email;
         }
 
-        // Actions should use this method for consistency
-        public ValidEmail getValidEmail(ViewContext context, Errors errors)
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setEmail(String email)
         {
-            String rawEmail = getEmail();
+            _email = email;
+        }
 
-            // Some plain text email clients get confused by the encoding... explicitly look for encoded name
-            if (null == rawEmail)
-                rawEmail = context.getActionURL().getParameter("amp;email");
-
-            ValidEmail email = null;
-
-            try
-            {
-                email = new ValidEmail(rawEmail);
-            }
-            catch (InvalidEmailException e)
-            {
-                errors.reject("setPassword", "Invalid email address" + (null == rawEmail ? "" : ": " + rawEmail));
-            }
-
-            return email;
+        public String getVerification()
+        {
+            return _verification;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
         public void setVerification(String verification)
         {
             _verification = verification;
-        }
-
-        public String getVerification()
-        {
-            return _verification;
         }
 
         public String getMessage()
@@ -2163,13 +2130,24 @@ public class LoginController extends SpringActionController
         {
             _message = message;
         }
+
+        @Nullable User getUser(Errors errors)
+        {
+            // If no userId is specified, look up user from verification parameter
+            User user = (null == _userId ? LoginManager.verify(_verification) : UserManager.getUser(_userId));
+
+            if (null == user)
+                errors.reject("setPassword", "User not found.");
+
+            return user;
+        }
     }
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public class ResetPasswordAction extends FormViewAction<LoginForm>
     {
-        private HttpView _finishView = null;
+        private JspView<?> _finishView = null;
 
         @Override
         public void validateCommand(LoginForm form, Errors errors)
@@ -2191,7 +2169,7 @@ public class LoginController extends SpringActionController
             if (null != _finishView)
                 return _finishView;
 
-            JspView view = new JspView<>("/org/labkey/core/login/resetPassword.jsp", form, errors);
+            JspView<LoginForm> view = new JspView<>("/org/labkey/core/login/resetPassword.jsp", form, errors);
 
             if (null == form.getEmail())
             {

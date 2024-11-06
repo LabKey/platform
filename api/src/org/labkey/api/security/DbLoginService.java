@@ -21,7 +21,7 @@ public interface DbLoginService
         return ServiceRegistry.get().getService(DbLoginService.class);
     }
 
-    AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException;
+    AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException;
 
     PasswordRule getPasswordRule();
 }

@@ -3297,10 +3297,12 @@ public class SecurityManager
             {
                 NewUserStatus status = addUser(email, null);
                 user = status.getUser();
+                assertNotNull(user);
                 assertTrue("addUser", user.getUserId() != 0);
 
-                boolean success = LoginManager.verify(user, status.getVerification());
-                assertTrue("verify", success);
+                User verifiedUser = LoginManager.verify(status.getVerification());
+                assertNotNull(verifiedUser);
+                assertEquals(user, verifiedUser);
 
                 LoginManager.setVerification(user, null);
 
