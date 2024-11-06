@@ -52,7 +52,7 @@ import static org.labkey.api.util.FileUtil.FILE_SCHEME;
  */
 public interface FileSystemLike
 {
-    // NOTE: a full webdav path consist of case-sensitive and case-sensitive parts
+    // NOTE: a full webdav path consist of case-sensitive and case-insensitive parts
     // However, the relative part of the path into a file system will be consistently sensitive or not
     // These helpers can be used to make the correct Path for this VFS
 

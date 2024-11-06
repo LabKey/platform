@@ -284,8 +284,7 @@ public class FileSystemResource extends AbstractWebdavResource
         boolean created = false;
         if (!file.exists())
         {
-            var parent = file.getParent();
-            FileUtil.mkdirs(parent, AppProps.getInstance().isInvalidFilenameUploadBlocked());
+            FileUtil.mkdirs(file.getParent(), AppProps.getInstance().isInvalidFilenameUploadBlocked());
             try
             {
                 FileUtil.createNewFile(file, AppProps.getInstance().isInvalidFilenameUploadBlocked());
@@ -303,7 +302,7 @@ public class FileSystemResource extends AbstractWebdavResource
             File ioFile = getFile();
             if (null != ioFile)
             {
-                is.transferTo(getFile());
+                is.transferTo(ioFile);
                 if (is.getLastModified() != null)
                     ioFile.setLastModified(is.getLastModified().getTime());
             }

@@ -10,7 +10,7 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     final URI uri;
     final String scheme;
     final boolean caseSensitive;
-    final String strUri; // no trailing '/'
+    final String strUri;
     final boolean canDeleteRoot;
     final boolean canList = true;
     final boolean canRead;
