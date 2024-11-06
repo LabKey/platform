@@ -24,6 +24,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.FileBrowserHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.StudyHelper;
 
@@ -124,7 +125,7 @@ public class StudyPHIExportTest extends StudyExportTest
         clickButton("Import Study");
         clickButton("Use Pipeline");
         _fileBrowserHelper.selectFileBrowserItem("export/");
-        Locator.XPathLocator fileRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", "My Study_");
+        Locator.XPathLocator fileRow = Locator.tag("tr").withClass("x4-grid-data-row").withAttributeContaining("data-recordid", FileBrowserHelper.encodeFileNodeIdPart("My Study_"));
         waitForElement(fileRow);
         int exportCount = getElementCount(fileRow);
         fileRow = fileRow.index(exportCount - 1); // get most recent export
