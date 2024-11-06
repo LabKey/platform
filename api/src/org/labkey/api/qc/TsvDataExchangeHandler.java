@@ -31,6 +31,7 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.dataiterator.DataIterator;
@@ -49,6 +50,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.PropertyValidationError;
@@ -1112,7 +1114,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (transformedRunProps != null && transformedRunProps.exists())
                 {
-                    transformedProps = new HashMap<>();
+                    transformedProps = new CaseInsensitiveHashMap<>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
                     {
                         String name = row.get("name") == null ? null : String.valueOf(row.get("name"));
@@ -1128,13 +1130,18 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     Map<DomainProperty, String> runProperties = !result.getRunProperties().isEmpty() ? result.getRunProperties() : getRunProperties(context);
                     for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
                     {
-                        String propName = entry.getKey().getName();
-                        if (transformedProps.containsKey(propName))
+                        Set<String> propAliases = PropertyService.get().getDomainPropertyImportAliases(entry.getKey());
+                        boolean transformedPropFound = false;
+                        for (String propAlias : propAliases)
                         {
-                            runProps.put(entry.getKey(), transformedProps.get(propName));
-                            runPropTransformed = true;
+                            if (transformedProps.containsKey(propAlias))
+                            {
+                                runProps.put(entry.getKey(), transformedProps.get(propAlias));
+                                runPropTransformed = true;
+                                transformedPropFound = true;
+                            }
                         }
-                        else
+                        if (!transformedPropFound)
                             runProps.put(entry.getKey(), entry.getValue());
                     }
 
@@ -1165,8 +1172,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (!runDataUploadedFiles.isEmpty())
                     result.setUploadedFiles(FileSystemLike.wrapFiles(runDataUploadedFiles));
 
-            // Don't offer up input or other files as "outputs" of the script
-            tempOutputFiles.removeAll(_filesToIgnore);
+                // Don't offer up input or other files as "outputs" of the script
+                tempOutputFiles.removeAll(_filesToIgnore);
 
                 processWarningsOutput(result, transformedProps, info, transErrorFile, transformedFile, tempOutputFiles);
             }
