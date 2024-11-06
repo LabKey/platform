@@ -871,7 +871,7 @@ public class ExperimentModule extends SpringModule
         List<? extends ExpDataClass> dataClasses = ExperimentService.get().getDataClasses(c, user, false);
         int dataClassCount = dataClasses.size();
         if (dataClassCount > 0)
-            summaries.add(new Summary(dataClassCount, "Data Class", "Data Classes"));
+            summaries.add(new Summary(dataClassCount, "Data Class"));
 
         ExpSchema expSchema = new ExpSchema(user, c);
 
@@ -925,7 +925,7 @@ public class ExperimentModule extends SpringModule
                 {
                     String name = entry.getKey();
                     Summary s = name.equals("MixtureBatches")
-                            ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
+                            ? new Summary(count, "Batch")
                             : new Summary(count, name);
                     summaries.add(s);
                 }
