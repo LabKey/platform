@@ -747,12 +747,9 @@ public class LoginController extends SpringActionController
         @Override
         public void validateForm(SetPasswordForm form, Errors errors)
         {
-            User user = form.getUser(errors);
-            if (!errors.hasErrors())
-            {
-                if (!validateChangePassword(user, errors))
-                    _user = user;
-            }
+            User user = form.getUser();
+            if (!validateChangePassword(user, errors))
+                _user = user;
         }
 
         @Override
@@ -1578,16 +1575,8 @@ public class LoginController extends SpringActionController
         @Override
         public void validateCommand(SetPasswordForm form, Errors errors)
         {
-            _user = form.getUser(errors);
-
-            if (errors.hasErrors())
-            {
-                _unrecoverableError = true;
-            }
-            else
-            {
-                verify(form, errors);
-            }
+            _user = form.getUser();
+            verify(form, errors);
         }
 
         protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors) throws RedirectException
@@ -1622,7 +1611,7 @@ public class LoginController extends SpringActionController
                     nonPasswordInputs, passwordInputs, getClass(), isCancellable(form),
                     buttonText, getTitle()
             );
-            HttpView view = new JspView<>("/org/labkey/core/login/setPassword.jsp", bean, errors);
+            JspView<SetPasswordBean> view = new JspView<>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
@@ -1793,7 +1782,7 @@ public class LoginController extends SpringActionController
         else
         {
             // Verification string wasn't found. User might have already verified, they don't have a login (should be
-            // using LDAP or SSO), or the link got mangled. Don't provide any more information since that could reveal
+            // using LDAP or SSO), or the link got mangled. Don't provide any guidance since that could reveal
             // information about existing users.
             errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
@@ -1878,6 +1867,7 @@ public class LoginController extends SpringActionController
                 {
                     // Add the initial user
                     SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email, null);
+                    _user = newUserBean.getUser();
                     // Set the password
                     success = super.handlePost(form, errors);
 
@@ -2131,15 +2121,10 @@ public class LoginController extends SpringActionController
             _message = message;
         }
 
-        @Nullable User getUser(Errors errors)
+        @Nullable User getUser()
         {
             // If no userId is specified, look up user from verification parameter
-            User user = (null == _userId ? LoginManager.verify(_verification) : UserManager.getUser(_userId));
-
-            if (null == user)
-                errors.reject("setPassword", "User not found.");
-
-            return user;
+            return null == _userId ? LoginManager.verify(_verification) : UserManager.getUser(_userId);
         }
     }
 
