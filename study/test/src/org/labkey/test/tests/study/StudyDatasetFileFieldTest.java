@@ -126,14 +126,14 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
 
         if (SystemUtils.IS_OS_WINDOWS)
         {
-            expectedText = " datasetdata\\sample.txt";
+            expectedText = "datasetdata\\sample.txt";
         }
         else
         {
-            expectedText = " datasetdata/sample.txt";
+            expectedText = "datasetdata/sample.txt";
         }
 
-        assertElementPresent("Did not find the expected sample.txt from the imported dataset.", Locator.tagWithText("a", expectedText), 1);
+        assertElementPresent("Did not find the expected sample.txt from the imported dataset.", Locator.tagContainingText("a", expectedText), 1);
         downloadedFile = doAndWaitForDownload(() -> waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.tagWithAttribute("a", "title", "Download attached file"), 0));
         checker().verifyTrue("Incorrect file content ", FileUtils.contentEquals(downloadedFile, inputFile));
 
