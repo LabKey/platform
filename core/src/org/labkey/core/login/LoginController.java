@@ -758,7 +758,7 @@ public class LoginController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
             String oldPassword = request.getParameter("oldPassword");
 
-            if (isOldPasswordMatch(oldPassword, form, errors))
+            if (isOldPasswordMatch(_user, oldPassword, errors))
             {
                 AuthenticationResult result = attemptSetPassword(_user, form.getReturnURLHelper(), "Changed password.", false, errors);
                 if (result != null)
@@ -1999,16 +1999,15 @@ public class LoginController extends SpringActionController
             // Verify the old password on post
             HttpServletRequest request = getViewContext().getRequest();
             String oldPassword = request.getParameter("oldPassword");
-            if (isOldPasswordMatch(oldPassword, form, errors))
+            if (isOldPasswordMatch(form.getUser(), oldPassword, errors))
                 return super.handlePost(form, errors);
             else
                 return false;
         }
     }
 
-    private boolean isOldPasswordMatch(String oldPassword, SetPasswordForm form, BindException errors) throws InvalidEmailException
+    private boolean isOldPasswordMatch(User user, String oldPassword, BindException errors)
     {
-        User user = UserManager.getUser(new ValidEmail(form.getEmail()));
         String hash = LoginManager.getPasswordHash(user);
         if (!LoginManager.matchPassword(oldPassword, hash))
         {
