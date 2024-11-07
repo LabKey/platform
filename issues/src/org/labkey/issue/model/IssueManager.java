@@ -953,9 +953,16 @@ public class IssueManager
 
         for (Integer id : ids)
         {
-            IssueObject issue = IssueManager.getIssue(container, user, id);
-            if (issue != null)
-                queueIssue(task, id, issue.getProperties(), issue.getCommentObjects());
+            try
+            {
+                IssueObject issue = IssueManager.getIssue(container, user, id);
+                if (issue != null)
+                    queueIssue(task, id, issue.getProperties(), issue.getCommentObjects());
+            }
+            catch (UnauthorizedException e)
+            {
+                // Issue 51607 ignore restricted issue failures
+            }
         }
     }
 
