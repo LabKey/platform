@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -31,7 +32,6 @@ public class LoginManager
     public static final int TEMP_PASSWORD_LENGTH = 32;
     private static final int MAX_HISTORY = 10;
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     // Create record for database login, saving UserId and hashed password. Return verification token.
     public static String createLogin(int userId, String email /* Just for logging errors */) throws SecurityManager.UserManagementException
@@ -44,11 +44,9 @@ public class LoginManager
 
         try
         {
-            // TODO: Stop inserting Email after removing that column
-            // Don't need to set LastChanged -- it defaults to current date/time.
             int rowCount = new SqlExecutor(CORE.getSchema()).execute("INSERT INTO " + CORE.getTableInfoLogins() +
-                    " (UserId, Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
-                    userId, email, crypt, new Date(), verification, crypt);
+                " (UserId, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
+                userId, crypt, new Date(), verification, crypt);
             if (1 != rowCount)
                 throw new SecurityManager.UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
         }
@@ -144,12 +142,7 @@ public class LoginManager
 
     public static String createTempPassword()
     {
-        StringBuilder tempPassword = new StringBuilder(TEMP_PASSWORD_LENGTH);
-
-        for (int i = 0; i < TEMP_PASSWORD_LENGTH; i++)
-            tempPassword.append(PASSWORD_CHARS.charAt((int) Math.floor((Math.random() * PASSWORD_CHARS.length()))));
-
-        return tempPassword.toString();
+        return RandomStringUtils.secureStrong().nextAlphanumeric(TEMP_PASSWORD_LENGTH);
     }
 
     public static ActionURL createVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters)
@@ -169,7 +162,6 @@ public class LoginManager
 
         ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c, isAddUser);
         verificationUrl.addParameter("verification", verification);
-        verificationUrl.addParameter("userId", user.getUserId());
 
         if (null != extraParameters)
             verificationUrl.addParameters(extraParameters);
@@ -177,7 +169,7 @@ public class LoginManager
         return verificationUrl;
     }
 
-    // Test if user has been verified for database authentication. Use only when email address could be invalid ().
+    // Test if user has been verified for database authentication
     public static boolean isVerified(User user)
     {
         return (null == getVerification(user));

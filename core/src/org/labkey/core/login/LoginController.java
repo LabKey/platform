@@ -189,7 +189,6 @@ public class LoginController extends SpringActionController
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings
             ActionURL url = new ActionURL(SetPasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("verification", verification);
-            url.addParameter("userId", user.getUserId());
 
             if (null != extraParameters)
                 url.addParameters(extraParameters);
@@ -1757,7 +1756,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    //
+    // Return the user associated with the verification token if there's a match, otherwise return null
     private static @Nullable User attemptVerification(SetPasswordForm form, Errors errors)
     {
         String verification = form.getVerification();

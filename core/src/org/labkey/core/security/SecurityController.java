@@ -293,7 +293,8 @@ public class SecurityController extends SpringActionController
         {
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
             url.addParameter("userId", user.getUserId());
-            url.addParameter("mailPrefix", mailPrefix);
+            if (mailPrefix != null)
+                url.addParameter("mailPrefix", mailPrefix);
 
             return url;
         }
