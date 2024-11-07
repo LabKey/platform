@@ -1,5 +1,5 @@
 -- Shift the core.Logins PK from Email to UserId. Add UserId column as NULLABLE, populate it from core.Principals,
--- delete rows that didn't join (RowId IS NULL), make RowId NOT NULL, drop the old PK, and add the new PK.
+-- delete rows that didn't join (UserId IS NULL), make UserId NOT NULL, drop the old PK, and add the new PK.
 
 ALTER TABLE core.Logins ADD UserId USERID;
 GO
