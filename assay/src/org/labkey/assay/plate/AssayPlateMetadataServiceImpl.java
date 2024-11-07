@@ -696,6 +696,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     {
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
         ExcelPlateReader plateReader = new ExcelPlateReader();
+        plateReader.setEmptyWellValue(Double.NaN); // Issue 51553
         MultiValuedMap<PlateType, PlateGridInfo> plateTypeGrids = new HashSetValuedHashMap<>();
 
         boolean hasPlateIdentifiers = false;
@@ -772,7 +773,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             // get wells guarantees a consistent row/column oriented order
                             for (Well well : dataForPlate.getWells())
                             {
-                                measureDataRows.computeIfAbsent(well, f -> getDataRowFromWell(currentPlate.getPlateId(), well, measureName)).put(measureName, well.getValue());
+                                measureDataRows.computeIfAbsent(well, f -> getDataRowFromWell(currentPlate.getPlateId(), well, measureName)).put(measureName, getWellValue(well));
                             }
                         }
 
@@ -829,8 +830,16 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
         row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateId);
         row.put(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, well.getDescription());
-        row.put(measure, well.getValue());
+        row.put(measure, getWellValue(well));
         return row;
+    }
+
+    // Issue 51553: account for empty wells in the plate graphical parsing by using Double.NaN
+    private Double getWellValue(Well well)
+    {
+        if (Double.isNaN(well.getValue()))
+            return null;
+        return well.getValue();
     }
 
     @Override
