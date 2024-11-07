@@ -22,19 +22,13 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 
 import java.util.List;
 
-/**
- * User: adam
- * Date: May 15, 2008
- * Time: 9:40:56 AM
- */
 public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
-    ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters);
+    ActionURL getVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters);
     ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
     ActionURL getInitialUserURL();
     ActionURL getLoginURL();

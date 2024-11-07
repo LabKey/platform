@@ -31,13 +31,13 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserManager.SessionHandler;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.StartupProperty;
@@ -84,15 +84,14 @@ public class DbLoginManager implements DbLoginService
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
     @Override
-    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
+    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
     {
         String password = StringUtils.trimToEmpty(rawPassword);
         String password2 = StringUtils.trimToEmpty(rawPassword2);
 
         Collection<String> messages = new LinkedList<>();
-        User user = UserManager.getUser(email);
 
-        if (!getPasswordRule().isValidToStore(password, password2, user, changeOperation, messages))
+        if (!getPasswordRule().isValidToStore(password, password2, affectedUser, changeOperation, messages))
         {
             for (String message : messages)
                 errors.reject("setPassword", message);
@@ -101,9 +100,9 @@ public class DbLoginManager implements DbLoginService
 
         try
         {
-            SecurityManager.setPassword(email, password);
+            LoginManager.setPassword(affectedUser, password);
             // Invalidate all sessions belonging to this user that were authenticated via database authentication
-            UserManager.handleSessionsForUser(user, new SessionHandler()
+            UserManager.handleSessionsForUser(affectedUser, new SessionHandler()
             {
                 @Override
                 public boolean handleSession(HttpSession session)
@@ -122,8 +121,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    //noinspection DataFlowIssue
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
                 }
             });
         }
@@ -136,8 +134,8 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                SecurityManager.setVerification(email, null);
-            UserManager.addToUserHistory(user, auditMessage);
+                LoginManager.setVerification(affectedUser, null);
+            UserManager.addToUserHistory(affectedUser, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -150,7 +148,7 @@ public class DbLoginManager implements DbLoginService
         // affected. This check should be equivalent to currentUser.equals(user).
         if (SecurityManager.getSessionUser(request.getSession()) == null)
         {
-            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
+            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, affectedUser.getEmail(), password, returnUrlHelper, true);
 
             if (result.getStatus() == Success)
             {

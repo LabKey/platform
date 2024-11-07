@@ -74,6 +74,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.InvalidGroupMembershipException;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.MemberType;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PrincipalArray;
@@ -133,7 +134,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -289,11 +289,12 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix)
+        public ActionURL getShowRegistrationEmailURL(Container container, User user, String mailPrefix)
         {
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
-            url.addParameter("email", email.getEmailAddress());
-            url.addParameter("mailPrefix", mailPrefix);
+            url.addParameter("userId", user.getUserId());
+            if (mailPrefix != null)
+                url.addParameter("mailPrefix", mailPrefix);
 
             return url;
         }
@@ -1786,20 +1787,20 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class EmailForm extends ReturnUrlForm
+    public static class UserForm extends ReturnUrlForm
     {
-        private String _email;
+        private User _user;
         private String _mailPrefix;
 
-        public String getEmail()
+        public Integer getUserId()
         {
-            return _email;
+            return _user != null ? _user.getUserId() : null;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setEmail(String email)
+        public void setUserId(Integer user)
         {
-            _email = email;
+            _user = user != null ? UserManager.getUser(user) : null;
         }
 
         public String getMailPrefix()
@@ -1812,41 +1813,51 @@ public class SecurityController extends SpringActionController
         {
             _mailPrefix = mailPrefix;
         }
+
+        public @Nullable User getUser()
+        {
+            return _user;
+        }
+
+        public @NotNull User getUser(boolean throwIfNull)
+        {
+            if (throwIfNull && null == _user)
+                throw new IllegalStateException("User not found");
+
+            return _user;
+        }
     }
 
-    private abstract class AbstractEmailAction extends SimpleViewAction<EmailForm>
+    private abstract static class AbstractEmailAction extends SimpleViewAction<UserForm>
     {
-        protected abstract SecurityMessage createMessage(EmailForm form);
+        protected abstract SecurityMessage createMessage(UserForm form);
 
         @Override
-        public ModelAndView getView(EmailForm form, BindException errors) throws Exception
+        public ModelAndView getView(UserForm form, BindException errors) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
-            String rawEmail = form.getEmail();
-
-            try
+            User affectedUser = form.getUser();
+            if (null == affectedUser)
             {
-                ValidEmail email = new ValidEmail(rawEmail);
-
+                out.write("User not found");
+            }
+            else
+            {
                 SecurityMessage message = createMessage(form);
 
                 // Issue 33254: only allow Site Admins to see the verification token
                 message.setMaskToken(true);
 
-                if (SecurityManager.isVerified(email))
+                if (LoginManager.isVerified(affectedUser))
                 {
-                    out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(email) + " has already chosen a password.");
+                    out.write("Can't display " + message.getType().toLowerCase() + "; " + PageFlowUtil.filter(affectedUser.getEmail()) + " has already chosen a password.");
                 }
                 else
                 {
-                    String verification = SecurityManager.getVerification(email);
-                    ActionURL verificationURL = SecurityManager.createVerificationURL(getContainer(), email, verification, null);
-                    SecurityManager.renderEmail(getContainer(), getUser(), message, email.getEmailAddress(), verificationURL, out);
+                    String verification = LoginManager.getVerification(affectedUser);
+                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, verification, null);
+                    SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, out);
                 }
-            }
-            catch (InvalidEmailException e)
-            {
-                out.write("Invalid email address: " + PageFlowUtil.filter(rawEmail));
             }
 
             return null;
@@ -1859,30 +1870,18 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowRegistrationEmailAction extends AbstractEmailAction
+    public static class ShowRegistrationEmailAction extends AbstractEmailAction
     {
         @Override
-        protected SecurityMessage createMessage(EmailForm form)
+        protected SecurityMessage createMessage(UserForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
             if (!getUser().hasRootPermission(AddUserPermission.class))
             {
-                try
+                User affectedUser = form.getUser(true);
+                if (affectedUser.getCreatedBy() == null || getUser().getUserId() != affectedUser.getCreatedBy().intValue())
                 {
-                    ValidEmail email = new ValidEmail(form.getEmail());
-                    User user = UserManager.getUser(email);
-                    if (user == null)
-                    {
-                        throw new NotFoundException();
-                    }
-                    if (user.getCreatedBy() == null || getUser().getUserId() != user.getCreatedBy().intValue())
-                    {
-                        throw new UnauthorizedException();
-                    }
-                }
-                catch (InvalidEmailException e)
-                {
-                    throw new NotFoundException("Invalid email address: " + form.getEmail());
+                    throw new UnauthorizedException();
                 }
             }
             return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
@@ -1891,10 +1890,10 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermission(UpdateUserPermission.class)
-    public class ShowResetEmailAction extends AbstractEmailAction
+    public static class ShowResetEmailAction extends AbstractEmailAction
     {
         @Override
-        protected SecurityMessage createMessage(EmailForm form)
+        protected SecurityMessage createMessage(UserForm form)
         {
             return SecurityManager.getResetMessage(false);
         }
@@ -1904,55 +1903,37 @@ public class SecurityController extends SpringActionController
     /**
      * Base class for admin password actions
      */
-    private abstract static class AdminPasswordAction extends ConfirmAction<EmailForm>
+    private abstract static class AdminPasswordAction extends ConfirmAction<UserForm>
     {
         abstract String getTitle();
         abstract String getVerb();
         abstract HtmlString getConfirmationMessage(boolean loginExists, String emailAddress);
 
         @Override
-        public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
+        public ModelAndView getConfirmView(UserForm form, BindException errors)
         {
+            User affectedUser = form.getUser(true);
+            boolean loginExists = LoginManager.loginExists(affectedUser);
             setTitle(getTitle());
 
-            boolean loginExists = false;
-
-            try
-            {
-                loginExists = SecurityManager.loginExists(new ValidEmail(emailForm.getEmail()));
-            }
-            catch (InvalidEmailException e)
-            {
-                // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
-            }
-
-            return new HtmlView(getConfirmationMessage(loginExists, emailForm.getEmail()));
+            return new HtmlView(getConfirmationMessage(loginExists, affectedUser.getEmail()));
         }
 
         @Override
-        public void validateCommand(EmailForm form, Errors errors)
+        public void validateCommand(UserForm form, Errors errors)
         {
-            String rawEmail = form.getEmail();
-
-            try
-            {
-                ValidEmail email = new ValidEmail(rawEmail);
-
-                // don't let non-site admin delete/reset password of site admin
-                User formUser = UserManager.getUser(email);
-                if (formUser != null && !getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
-                    errors.reject(ERROR_MSG, "Permission denied: not authorized to " + getVerb() + " password for a Site Admin user.");
-            }
-            catch (InvalidEmailException e)
-            {
-                errors.reject(ERROR_MSG, getVerb() + " failed: invalid email address.");
-            }
+            // don't let non-site admin delete/reset password of site admin
+            User formUser = form.getUser();
+            if (null == formUser)
+                errors.reject(ERROR_MSG, getVerb() + " failed: user not found.");
+            else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
+                errors.reject(ERROR_MSG, "Permission denied: not authorized to " + getVerb() + " password for a Site Admin user.");
         }
 
         @Override
-        public @NotNull URLHelper getSuccessURL(EmailForm emailForm)
+        public @NotNull URLHelper getSuccessURL(UserForm form)
         {
-            return emailForm.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+            return form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
         }
     }
 
@@ -1960,7 +1941,7 @@ public class SecurityController extends SpringActionController
      * Invalidate existing password and send new password link
      */
     @RequiresPermission(UpdateUserPermission.class)
-    public class AdminResetPasswordAction extends AdminPasswordAction
+    public static class AdminResetPasswordAction extends AdminPasswordAction
     {
         @Override
         String getTitle()
@@ -1985,31 +1966,24 @@ public class SecurityController extends SpringActionController
         private boolean _loginExists;
 
         @Override
-        public boolean handlePost(EmailForm form, BindException errors) throws Exception
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            try
-            {
-                ValidEmail email = new ValidEmail(form.getEmail());
-                _loginExists = SecurityManager.loginExists(email);
-                SecurityManager.adminRotatePassword(email, errors, getContainer(), getUser(), getMailHelpText(form.getEmail()));
-            }
-            catch (InvalidEmailException e)
-            {
-                //Should be caught in validation
-                errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
-            }
+            User affectedUser = form.getUser(true);
+            _loginExists = LoginManager.loginExists(affectedUser);
+            SecurityManager.adminRotatePassword(affectedUser, errors, getContainer(), getUser(), getMailHelpText(affectedUser));
 
             return !errors.hasErrors();
         }
 
         @Override
-        public ModelAndView getSuccessView(EmailForm form)
+        public ModelAndView getSuccessView(UserForm form)
         {
-            ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", form.getEmail());
+            User affectedUser = form.getUser(true);
+            ActionURL actionURL = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("userId", affectedUser.getUserId());
 
             String page = String.format(
                 "<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
-                PageFlowUtil.filter(form.getEmail()),
+                PageFlowUtil.filter(affectedUser.getEmail()),
                 _loginExists ? "reset" : "created",
                 PageFlowUtil.filter(actionURL.getLocalURIString()),
                 PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
@@ -2022,11 +1996,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getFailView(EmailForm form, BindException errors)
+        public ModelAndView getFailView(UserForm form, BindException errors)
         {
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .unsafeAppend("<p>")
-                .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
+                .append(form.getUser(true).getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
                 .unsafeAppend("</p><p>")
                 .append(getErrorMessage(errors))
                 .unsafeAppend("</p>")
@@ -2052,9 +2026,9 @@ public class SecurityController extends SpringActionController
             return builder.getHtmlString();
         }
 
-        private HtmlString getMailHelpText(String emailAddress)
+        private HtmlString getMailHelpText(User user)
         {
-            ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", emailAddress);
+            ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("userId", user.getUserId());
 
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .unsafeAppend("<p>")
@@ -2078,7 +2052,7 @@ public class SecurityController extends SpringActionController
      * Delete existing password
      */
     @RequiresPermission(UpdateUserPermission.class)
-    public class AdminDeletePasswordAction extends AdminPasswordAction
+    public static class AdminDeletePasswordAction extends AdminPasswordAction
     {
         @Override
         String getTitle()
@@ -2132,18 +2106,10 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(EmailForm form, BindException errors) throws Exception
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
-            try
-            {
-                ValidEmail email = new ValidEmail(form.getEmail());
-                SecurityManager.adminDeletePassword(email, getUser());
-            }
-            catch (InvalidEmailException e)
-            {
-                //Should be caught in validation
-                errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
-            }
+            User userToChange = form.getUser(true);
+            LoginManager.deleteLoginsRow(userToChange, getUser());
 
             return !errors.hasErrors();
         }
@@ -2152,9 +2118,9 @@ public class SecurityController extends SpringActionController
     public static class GroupDiagramViewFactory implements SecurityManager.ViewFactory
     {
         @Override
-        public HttpView createView(ViewContext context)
+        public JspView<Void> createView(ViewContext context)
         {
-            JspView view = new JspView("/org/labkey/core/security/groupDiagram.jsp");
+            JspView<Void> view = new JspView<>("/org/labkey/core/security/groupDiagram.jsp");
             view.setTitle("Group Diagram");
 
             return view;
@@ -2163,7 +2129,7 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GroupDiagramAction extends ReadOnlyApiAction<GroupDiagramForm>
+    public static class GroupDiagramAction extends ReadOnlyApiAction<GroupDiagramForm>
     {
         @Override
         public ApiResponse execute(GroupDiagramForm form, BindException errors) throws Exception
@@ -2491,16 +2457,16 @@ public class SecurityController extends SpringActionController
                 controller.new GroupExportAction(),
                 controller.new GroupPermissionAction(),
                 controller.new UpdatePermissionsAction(),
-                controller.new ShowRegistrationEmailAction(),
-                controller.new GroupDiagramAction(),
+                    new ShowRegistrationEmailAction(),
+                    new GroupDiagramAction(),
                 controller.new FolderAccessAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
-                controller.new ShowResetEmailAction(),
-                controller.new AdminResetPasswordAction()
+                    new ShowResetEmailAction(),
+                    new AdminResetPasswordAction()
             );
         }
 
