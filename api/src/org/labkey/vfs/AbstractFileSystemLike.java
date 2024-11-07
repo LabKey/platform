@@ -1,5 +1,7 @@
 package org.labkey.vfs;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.net.URI;
 import java.nio.file.Path;
 
@@ -7,17 +9,18 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
 {
     final URI uri;
     final String scheme;
-    final String strUri;    // no trailing '/'
+    final boolean caseSensitive;
+    final String strUri;
     final boolean canDeleteRoot;
     final boolean canList = true;
     final boolean canRead;
     final boolean canWrite;
 
-    AbstractFileSystemLike(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
+    protected AbstractFileSystemLike(URI uri, boolean caseSensitive, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        // Is there value in re-encoding the URI so that it is consistently encoded?
+        this.caseSensitive = caseSensitive;
         this.uri = uri;
-        this.strUri = uri.toString();
+        this.strUri = StringUtils.appendIfMissing(uri.toString(),"/");
         this.scheme = uri.getScheme();
         this.canRead = canRead;
         this.canWrite = canWrite;
@@ -34,6 +37,12 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     public URI getURI()
     {
         return uri;
+    }
+
+    @Override
+    public URI getURI(FileLike fo)
+    {
+        return URI.create(strUri + fo.getPath().encode("",null));
     }
 
     @Override
@@ -70,5 +79,27 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     public boolean canWriteFiles()
     {
         return canWrite;
+    }
+
+    @Override
+    public org.labkey.api.util.Path parsePath(String str)
+    {
+        var ret = caseSensitive ?
+                org.labkey.api.util.Path.parseCaseSensitive(str) :
+                org.labkey.api.util.Path.parse(str);
+        assert caseSensitive == ret.isCaseSensitive();
+        return ret;
+    }
+
+    @Override
+    public org.labkey.api.util.Path pathOf(org.labkey.api.util.Path path)
+    {
+        if (path.isCaseSensitive() == caseSensitive)    // don't really need this, but it makes it easier to set a breakpoint when !=
+            return path;
+        var ret = caseSensitive ?
+                path.caseSensitive() :
+                path.caseInsensitive();
+        assert ret.isCaseSensitive() == caseSensitive;
+        return ret;
     }
 }

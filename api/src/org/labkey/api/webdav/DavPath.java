@@ -5,17 +5,15 @@ import org.labkey.api.util.Path;
 
 public class DavPath extends Path
 {
+    private static final boolean isCaseSensitive = !FileUtil.isCaseInsensitiveFileSystem();
+
     public DavPath(Path path)
     {
-        super(path);
+        super(path, isCaseSensitive);
     }
 
-    @Override
-    protected int compareName(String a, String b)
+    public DavPath(Path path, boolean caseSensitive)
     {
-        if (FileUtil.isCaseInsensitiveFileSystem())
-            return a.compareToIgnoreCase(b);
-
-        return a.compareTo(b);
+        super(path, caseSensitive);
     }
 }

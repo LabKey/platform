@@ -52,6 +52,13 @@ import static org.labkey.api.util.FileUtil.FILE_SCHEME;
  */
 public interface FileSystemLike
 {
+    // NOTE: a full webdav path consist of case-sensitive and case-insensitive parts
+    // However, the relative part of the path into a file system will be consistently sensitive or not
+    // These helpers can be used to make the correct Path for this VFS
+
+    org.labkey.api.util.Path parsePath(String str);
+    org.labkey.api.util.Path pathOf(org.labkey.api.util.Path path);
+
     /*
      * Create a file system that return FileLike objects that cache basic file meta-data such as type (file/directory)
      * and direct children.  refresh() can be used to force reload of metadata.
@@ -91,8 +98,8 @@ public interface FileSystemLike
     }
 
     /** BasicFileAttributes uses more memory than we really need, so this is the basics */
-    record MinimalFileAttributes(boolean exists, boolean file, boolean directory, long size, long lastModified) {}
-    MinimalFileAttributes NULL_ATTRIBUTES = new MinimalFileAttributes(false, false, false, 0, 0);
+    record MinimalFileAttributes(boolean exists, boolean file, boolean directory, long size, long lastModified, long created) {}
+    MinimalFileAttributes NULL_ATTRIBUTES = new MinimalFileAttributes(false, false, false, 0, 0, 0);
 
 
     class Builder
@@ -191,6 +198,8 @@ public interface FileSystemLike
 
     static FileLike wrapFile(java.nio.file.Path p)
     {
+        if (null == p)
+            return null;
         return wrapFile(p.toFile());
     }
 
@@ -207,6 +216,8 @@ public interface FileSystemLike
     /** Helper for partially converted code. May throw if the FileLike does not wrap a local file system. */
     static File toFile(FileLike f)
     {
+        if (null == f)
+            return null;
         java.nio.file.Path p = f.getFileSystem().getNioPath(f);
         return p.toFile();
     }
@@ -219,6 +230,20 @@ public interface FileSystemLike
         List<FileLike> ret = new ArrayList<>(files.size());
         for (File file : files)
         {
+            File parent = file.getParentFile();
+            FileSystemLike fs = map.computeIfAbsent(parent, key -> new FileSystemLike.Builder(parent).readwrite().build());
+            ret.add(fs.resolveFile(new Path(file.getName())));
+        }
+        return ret;
+    }
+
+    static List<FileLike> wrapPaths(List<java.nio.file.Path> paths)
+    {
+        Map<File, FileSystemLike> map = new HashMap<>();
+        List<FileLike> ret = new ArrayList<>(paths.size());
+        for (var path : paths)
+        {
+            var file = path.toFile();
             File parent = file.getParentFile();
             FileSystemLike fs = map.computeIfAbsent(parent, key -> new FileSystemLike.Builder(parent).readwrite().build());
             ret.add(fs.resolveFile(new Path(file.getName())));

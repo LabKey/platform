@@ -67,6 +67,11 @@ public interface FileLike extends Comparable<FileLike>
     /* We use util.Path here to avoid ambiguity of String (encoded vs not encoded, path vs name, etc). */
     FileLike resolveFile(org.labkey.api.util.Path path);
 
+    default FileLike resolveChild(Path.Part name)
+    {
+        return resolveChild(name.toString());
+    }
+
     default FileLike resolveChild(String name)
     {
         if (".".equals(name) || "..".equals(name))
@@ -105,6 +110,8 @@ public interface FileLike extends Comparable<FileLike>
     boolean isFile();
 
     long getSize();
+
+    long getCreated();
 
     long getLastModified();
 
