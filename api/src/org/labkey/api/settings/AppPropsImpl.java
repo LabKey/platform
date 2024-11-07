@@ -40,6 +40,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 
 import java.io.File;
 import java.io.IOException;
@@ -563,13 +564,32 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupStringValue(XFrameOption, "SAMEORIGIN");
     }
 
+    private String staticFilesPrefix = "";
+
     @Override
     public String getStaticFilesPrefix()
     {
         // CURRENTLY SET using -Dstatic.files.prefix=//static.web.site.com
         // NOT IN UI, because one mistake will probably render the site unusable
-        String s = System.getProperty("static.files.prefix");
-        return trimToNull(s);
+        if (staticFilesPrefix.isEmpty())
+        {
+            String s = trimToNull(System.getProperty("static.files.prefix"));
+            if (null != s)
+            {
+                try
+                {
+                    var url = new URLHelper(s).setPath("");
+                    if (StringUtils.isNotEmpty(url.getHost()))
+                        ContentSecurityPolicyFilter.registerAllowedConnectionSource("static.files.prefix", url.toString());
+                    staticFilesPrefix = s;
+                }
+                catch (URISyntaxException e)
+                {
+                    staticFilesPrefix = null;
+                }
+            }
+        }
+        return staticFilesPrefix;
     }
 
     public static class SiteSettingsPropertyHandler extends StandardStartupPropertyHandler<SiteSettingsProperties>
