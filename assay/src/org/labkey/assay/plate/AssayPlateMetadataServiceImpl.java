@@ -835,11 +835,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     // Issue 51553: account for empty wells in the plate graphical parsing by using Double.NaN
-    private Double getWellValue(Well well)
+    private @Nullable Double getWellValue(Well well)
     {
-        if (Double.isNaN(well.getValue()))
-            return null;
-        return well.getValue();
+        double value = well.getValue();
+        return Double.isNaN(value) ? null : value;
     }
 
     @Override
