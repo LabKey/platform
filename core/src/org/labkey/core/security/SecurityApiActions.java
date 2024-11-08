@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.FormApiAction;
-import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -82,6 +81,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.core.security.SecurityController.UserForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -97,12 +97,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-
-/*
-* User: Dave
-* Date: May 12, 2009
-* Time: 1:18:27 PM
-*/
 
 /**
  * Set of API actions registered with the SecurityController
@@ -1748,7 +1742,6 @@ public class SecurityApiActions
             return resp;
         }
 
-
         public void writeToAuditLog(Group group, String oldName)
         {
             GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "The security group named '" + oldName + "' was renamed to '" + group.getName() + "'.");
@@ -1985,43 +1978,24 @@ public class SecurityApiActions
      * Invalidate existing password and send new password link
      */
     @RequiresPermission(UpdateUserPermission.class)
-    public static class AdminRotatePasswordAction extends MutatingApiAction<SecurityController.EmailForm>
+    public static class AdminRotatePasswordAction extends MutatingApiAction<UserForm>
     {
         @Override
-        public void validateForm(SecurityController.EmailForm form, Errors errors)
+        public void validateForm(UserForm form, Errors errors)
         {
-            ValidEmail email;
-
-            try
-            {
-                email = new ValidEmail(form.getEmail());
-
-                // don't let non-site admin reset password of site admin
-                User formUser = UserManager.getUser(email);
-                if (null == formUser)
-                    errors.rejectValue("email", ERROR_MSG, "User not found");
-                else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
-                    errors.rejectValue("Email", "Can not reset password for a Site Admin user");
-            }
-            catch (InvalidEmailException e)
-            {
-                errors.rejectValue("Email", "Invalid user email");
-            }
+            // don't let non-site admin reset password of site admin
+            User formUser = form.getUser();
+            if (null == formUser)
+                errors.rejectValue("User", ERROR_MSG, "User not found");
+            else if (!getUser().hasSiteAdminPermission() && formUser.hasSiteAdminPermission())
+                errors.rejectValue("User", "Can not reset password for a Site Admin user");
         }
 
         @Override
-        public ApiSimpleResponse execute(SecurityController.EmailForm form, BindException errors)
+        public ApiSimpleResponse execute(UserForm form, BindException errors)
         {
-            try
-            {
-                ValidEmail email = new ValidEmail(form.getEmail());
-                SecurityManager.adminRotatePassword(email, errors, getContainer(), getUser());
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                //Should be caught in api validation
-                errors.addError(new LabKeyError(new Exception("Invalid email address." + e.getMessage(), e)));
-            }
+            User affectedUser = form.getUser(true);
+            SecurityManager.adminRotatePassword(affectedUser, errors, getContainer(), getUser());
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", !errors.hasErrors());

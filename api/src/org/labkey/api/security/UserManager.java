@@ -80,8 +80,6 @@ import org.labkey.api.view.ViewContext;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -846,26 +844,6 @@ public class UserManager
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
 
-    public static void requestEmailChange(User userToChange, ValidEmail requestedEmail, String verificationToken, User currentUser) throws UserManagementException
-    {
-        if (SecurityManager.loginExists(userToChange.getEmail()))
-        {
-            DbScope scope = CORE.getSchema().getScope();
-            try (Transaction transaction = scope.ensureTransaction())
-            {
-                Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
-                SqlExecutor executor = new SqlExecutor(CORE.getSchema());
-                int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail = ?, Verification = ?, VerificationTimeout = ? WHERE Email = ?",
-                        requestedEmail.getEmailAddress(), verificationToken, Date.from(timeoutDate), userToChange.getEmail());
-                if (1 != rows)
-                    throw new UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
-                addToUserHistory(userToChange, currentUser + " requested email address change from " + userToChange.getEmail() + " to " + requestedEmail +
-                        " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
-                transaction.commit();
-            }
-        }
-    }
-
     public static void changeEmail(User currentUser, User userToChange, boolean isAdmin, String newEmail, String verificationToken)
             throws UserManagementException, ValidEmail.InvalidEmailException
     {
@@ -879,7 +857,7 @@ public class UserManager
         {
             if (!isAdmin)
             {
-                if (!getVerifyEmail(oldEmail).isVerified(verificationToken))  // shouldn't happen! should be testing this earlier too
+                if (!LoginManager.getVerifyEmail(userToChange).isVerified(verificationToken))  // shouldn't happen! should be testing this earlier too
                 {
                     throw new UserManagementException(oldEmail, "Verification token '" + verificationToken + "' is incorrect for email change for user " + oldEmail);
                 }
@@ -890,7 +868,6 @@ public class UserManager
             if (1 != rows)
                 throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new name: " + rows);
 
-            executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET Email = ? WHERE Email = ?", newEmail, oldEmail);  // won't update if non-LabKey-managed, because there is no data here
             if (isAdmin)
             {
                 addToUserHistory(userToChange, "Admin " + currentUser + " changed an email address from " + oldEmail + " to " + newEmail + ".");
@@ -907,10 +884,9 @@ public class UserManager
                     throw new UserManagementException(oldEmail, "Unexpected number of rows returned when setting new display name: " + rows);
             }
 
-            ValidEmail validNewEmail = new ValidEmail(newEmail);
-            if (SecurityManager.loginExists(validNewEmail))
+            if (LoginManager.loginExists(userToChange))
             {
-                SecurityManager.setVerification(validNewEmail, null);  // so we don't let user use this link again
+                LoginManager.setVerification(userToChange, null);  // so we don't let user use this link again
             }
 
             transaction.commit();
@@ -931,79 +907,15 @@ public class UserManager
                 " with token '" + verificationToken + "', but the verification token for that email address was not correct.");
     }
 
-    public static VerifyEmail getVerifyEmail(String email)
-    {
-        SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
-                + " WHERE Email = ?", email);
-        return sqlSelector.getObject(VerifyEmail.class);
-    }
-
-    public static class VerifyEmail
-    {
-        private String _email;
-        private String _requestedEmail;
-        private String _verification;
-        private Date _verificationTimeout;
-
-        public String getEmail()
-        {
-            return _email;
-        }
-
-        @SuppressWarnings("unused")
-        public void setEmail(String email)
-        {
-            _email = email;
-        }
-
-        public String getRequestedEmail()
-        {
-            return _requestedEmail;
-        }
-
-        @SuppressWarnings("unused")
-        public void setRequestedEmail(String requestedEmail)
-        {
-            _requestedEmail = requestedEmail;
-        }
-
-        public String getVerification()
-        {
-            return _verification;
-        }
-
-        @SuppressWarnings("unused")
-        public void setVerification(String verification)
-        {
-            _verification = verification;
-        }
-
-        public Date getVerificationTimeout()
-        {
-            return _verificationTimeout;
-        }
-
-        @SuppressWarnings("unused")
-        public void setVerificationTimeout(Date verificationTimeout)
-        {
-            _verificationTimeout = verificationTimeout;
-        }
-
-        public boolean isVerified(String userProvidedToken)
-        {
-            return userProvidedToken != null && userProvidedToken.equals(_verification);
-        }
-    }
-
     public static void deleteUser(int userId) throws UserManagementException
     {
-        User user = getUser(userId);
-        if (null == user)
+        User deletUser = getUser(userId);
+        if (null == deletUser)
             return;
 
-        removeRecentUser(user);
+        removeRecentUser(deletUser);
 
-        List<Throwable> errors = fireDeleteUser(user);
+        List<Throwable> errors = fireDeleteUser(deletUser);
 
         if (!errors.isEmpty())
         {
@@ -1016,19 +928,19 @@ public class UserManager
 
         try (Transaction transaction = CORE.getScope().ensureTransaction())
         {
-            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(user);
+            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(deletUser);
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
-            addToUserHistory(user, user.getEmail() + " was deleted from the system");
+            addToUserHistory(deletUser, deletUser.getEmail() + " was deleted from the system");
 
             executor.execute("DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
-            executor.execute("DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
+            LoginManager.deleteLoginsRow(deletUser, null);
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableAPIKeys() + " WHERE CreatedBy=?", userId);
 
-            OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
+            OntologyManager.deleteOntologyObject(deletUser.getEntityId(), ContainerManager.getSharedContainer(), true);
 
             // Clear user list immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
@@ -1041,7 +953,7 @@ public class UserManager
         catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
-            throw new UserManagementException(user.getEmail(), e);
+            throw new UserManagementException(deletUser.getEmail(), e);
         }
 
         //TODO: Delete User files
