@@ -2141,7 +2141,6 @@ public class DbScope
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         closeAllConnectionsForCurrentThread();
         QueryService.get().clearEnvironment();
-        ConnectionWrapper.releaseBan(Thread.currentThread());
     }
 
     /**
