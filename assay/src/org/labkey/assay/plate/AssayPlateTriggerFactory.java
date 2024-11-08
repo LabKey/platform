@@ -2,14 +2,13 @@ package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
@@ -22,6 +21,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +46,8 @@ public class AssayPlateTriggerFactory implements TriggerFactory
     }
 
     /**
-     * Trigger to handle updates, inserts are handled during assay run creation
+     * Recompute the stats for the changed replicate rows.
+     * Trigger to handle updates, inserts are handled during assay run creation.
      */
     private class ReplicateStatsTrigger implements Trigger
     {
@@ -87,30 +88,22 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (_replicateLsid.isEmpty() || errors.hasErrors())
                 return;
 
-            // recompute the stats for the changed replicate rows
-            AssayProvider provider = AssayService.get().getProvider(_protocol);
-            if (provider == null)
-                throw new IllegalStateException(String.format("Unable to find the provider for protocol : %s", _protocol.getName()));
+            var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet(), CompareType.IN);
 
-            AssayProtocolSchema schema = provider.createProtocolSchema(user, c, _protocol, null);
-            TableInfo dataTable = schema.createDataTable(null, false);
-            if (dataTable == null)
-                return;
-
-            try
+            try (TableResultSet rs = new TableSelector(table, filter, null).getResultSet())
             {
-                SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet());
-                Map<Lsid, List<Map<String, Object>>> replicates = new HashMap<>();
+                var replicates = new HashMap<Lsid, List<Map<String, Object>>>();
 
-                new TableSelector(dataTable, filter, null).getResults().forEach(row -> {
-                    var lsid = row.get(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
-                    replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(row);
-                    _replicateLsid.remove(lsid.toString());
-                });
+                while (rs.next())
+                {
+                    var lsid = rs.getString(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(rs.getRowMap());
+                    _replicateLsid.remove(lsid);
+                }
 
-                // if results are being deleted, check if all rows for the well group have been deleted
-                List<Map<String, Object>> deletedRows = new ArrayList<>();
-                for (Map.Entry<String, Boolean> entry : _replicateLsid.entrySet())
+                // If results are being deleted, check if all rows for the well group have been deleted
+                var deletedRows = new ArrayList<Map<String, Object>>();
+                for (var entry : _replicateLsid.entrySet())
                 {
                     if (!entry.getValue())
                         deletedRows.add(Map.of(PlateReplicateStatsDomainKind.Column.Lsid.name(), entry.getKey()));
@@ -121,7 +114,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
 
                 AssayPlateMetadataService.get().updateReplicateStats(c, user, _protocol, replicates);
             }
-            catch (ExperimentException e)
+            catch (ExperimentException | SQLException e)
             {
                 throw UnexpectedException.wrap(e);
             }
