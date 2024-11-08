@@ -122,7 +122,14 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                 else if (Object[].class.isAssignableFrom(o.getClass()))
                     pw.append(StringUtils.join((Object[]) o, ","));
                 else
-                    pw.append(String.valueOf(o));
+                {
+                    String val = String.valueOf(o);
+                    // double quote the value if it contains backslashes to avoid tab loader mangling
+                    // on import
+                    if (val.contains("\\"))
+                        val = "\"" + val + "\"";
+                    pw.append(val);
+                }
             }
             sep = "\t";
         }
