@@ -85,7 +85,7 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         String mdFormat = switch (_dateFormat)
         {
             case "mdy" -> "MM-dd";
-            case "dmy" -> "dd-MM";
+            case "dmy" -> "MM-dd";
             default -> throw new IllegalStateException("Unsupported date format: " + _dateFormat);
         };
 
@@ -171,62 +171,62 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         }
 
         @Override
-        public void setTimestamp(String parameterName, Timestamp x) throws SQLException
+        public void setTimestamp(String parameterName, Timestamp ts) throws SQLException
         {
-            if (x != null)
+            if (ts != null)
             {
-                setObject(parameterName, convert(x));
+                setObject(parameterName, convert(ts), Types.TIMESTAMP);
             }
             else
             {
-                super.setTimestamp(parameterName, x);
+                super.setTimestamp(parameterName, ts);
             }
         }
 
         @Override
-        public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException
+        public void setTimestamp(String parameterName, Timestamp ts, Calendar cal) throws SQLException
         {
-            if (x != null)
+            if (ts != null)
             {
-                setObject(parameterName, convert(x));
+                setTimestamp(parameterName, ts);
             }
             else
             {
-                super.setTimestamp(parameterName, x, cal);
+                super.setTimestamp(parameterName, ts, cal);
             }
         }
 
         @Override
-        public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException
+        public void setTimestamp(int parameterIndex, Timestamp ts) throws SQLException
         {
-            if (x != null)
+            if (ts != null)
             {
-                setObject(parameterIndex, convert(x));
+                setObject(parameterIndex, convert(ts), Types.TIMESTAMP);
             }
             else
             {
-                super.setTimestamp(parameterIndex, x);
+                super.setTimestamp(parameterIndex, ts);
             }
         }
 
         @Override
-        public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException
+        public void setTimestamp(int parameterIndex, Timestamp ts, Calendar cal) throws SQLException
         {
-            if (x != null)
+            if (ts != null)
             {
-                setObject(parameterIndex, convert(x));
+                setTimestamp(parameterIndex, ts);
             }
             else
             {
-                super.setTimestamp(parameterIndex, x, cal);
+                super.setTimestamp(parameterIndex, ts, cal);
             }
         }
 
         @Override
         public void setObject(int parameterIndex, Object x, int targetSqlType, int scale) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
-                setObject(parameterIndex, x);
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp ts)
+                setTimestamp(parameterIndex, ts);
             else
                 super.setObject(parameterIndex, x, targetSqlType, scale);
         }
@@ -234,8 +234,8 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
-                setObject(parameterIndex, x);
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp ts)
+                setTimestamp(parameterIndex, ts);
             else
                 super.setObject(parameterIndex, x, targetSqlType);
         }
@@ -243,14 +243,17 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(int parameterIndex, Object x) throws SQLException
         {
-            super.setObject(parameterIndex, convert(x));
+            if (x instanceof Timestamp ts)
+                setTimestamp(parameterIndex, ts);
+            else
+                super.setObject(parameterIndex, x);
         }
 
         @Override
         public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
-                setObject(parameterName, x);
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp ts)
+                setTimestamp(parameterName, ts);
             else
                 super.setObject(parameterName, x, targetSqlType, scale);
         }
@@ -258,8 +261,8 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException
         {
-            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp)
-                setObject(parameterName, x);
+            if (targetSqlType == Types.TIMESTAMP && x instanceof Timestamp ts)
+                setTimestamp(parameterName, ts);
             else
                 super.setObject(parameterName, x, targetSqlType);
         }
@@ -267,12 +270,10 @@ public class MicrosoftSqlServer2016Dialect extends MicrosoftSqlServer2014Dialect
         @Override
         public void setObject(String parameterName, Object x) throws SQLException
         {
-            super.setObject(parameterName, convert(x));
-        }
-
-        private Object convert(Object x)
-        {
-            return x instanceof Timestamp ts ? convert(ts) : x;
+            if (x instanceof Timestamp ts)
+                setTimestamp(parameterName, ts);
+            else
+                super.setObject(parameterName, x);
         }
 
         private String convert(Timestamp ts)
