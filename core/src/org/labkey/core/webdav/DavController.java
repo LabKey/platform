@@ -5036,6 +5036,7 @@ public class DavController extends SpringActionController
                     getResponse().setPublicStatic(alwaysCache ? 365 : 35);
                 }
             }
+            getResponse().setHeader("Access-Control-Allow-Origin", "*");
         }
         else
         {
