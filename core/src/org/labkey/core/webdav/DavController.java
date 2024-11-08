@@ -5372,7 +5372,7 @@ public class DavController extends SpringActionController
                 methodsAllowed.append(", GET, HEAD, COPY");
             if (delete)
                 methodsAllowed.append(", DELETE");
-            if (delete && read)
+            if (delete && read && resource.canRename(user,false))
                 methodsAllowed.append(", MOVE");
             if (_locking)
                 methodsAllowed.append(", LOCK, UNLOCK");
