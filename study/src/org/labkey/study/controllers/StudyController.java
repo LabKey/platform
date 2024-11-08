@@ -84,10 +84,12 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.Table;
@@ -124,6 +126,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
@@ -131,6 +134,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -243,6 +247,7 @@ import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.ParticipantGroupCache;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -261,6 +266,7 @@ import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
+import org.labkey.study.query.ParticipantVisitTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
@@ -280,7 +286,9 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1465,6 +1473,102 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("manageStudy");
             _addManageStudy(root);
+        }
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
+    {
+        @Override
+        public Object execute(DeleteParticipantForm deleteParticipantForm, BindException errors) throws Exception
+        {
+            String participantIdColumnName = deleteParticipantForm.getParticipantIdColumnName();
+            String participantId = deleteParticipantForm.getParticipantId();
+            DbSchema schema = StudySchema.getInstance().getSchema();
+
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
+                Study study = StudyManager.getInstance().getStudy(getContainer());
+                if (study == null)
+                {
+                    errors.reject(ERROR_MSG, "Study not found in this folder.");
+                    return false;
+                }
+
+                List<? extends Dataset> datasets = study.getDatasets();
+
+                //delete participant rows from datasets
+                for (Dataset dataset : datasets)
+                {
+                    if (dataset.isDemographicData())
+                        deleteParticipant(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
+                    else
+                        deleteParticipantFromDatasets(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
+                }
+
+                //delete from study.participantGroupMap
+                TableInfo participantGroupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+                if (null != participantGroupMapTable)
+                {
+                    TableSelector ts = new TableSelector(participantGroupMapTable, new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+                    if (ts.getRowCount() > 0)
+                        deleteFromParticipantGroupTable(participantGroupMapTable, participantIdColumnName, participantId, "ParticipantGroupMap", errors);
+                }
+                transaction.commit();
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+
+        private void deleteParticipant(TableInfo ti, String participantIdColumnName, String participantId, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        {
+            List<Map<String, Object>> keys = new ArrayList<>();
+            ColumnInfo idCol = ti.getColumn(FieldKey.fromParts(participantIdColumnName));
+            keys.add(Collections.singletonMap(idCol.getName(), participantId));
+            ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+        }
+
+        private void deleteParticipantFromDatasets(TableInfo ti, String participantIdColumnName, String participantId, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        {
+            TableSelector ts = new TableSelector(ti, Collections.singleton("lsid"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+            List<String> lsids = Arrays.asList(ts.getArray(String.class));
+
+            List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
+            for (String lsid : lsids)
+                keys.add(Collections.singletonMap("lsid", lsid));
+            ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+        }
+
+        private void deleteFromParticipantGroupTable(TableInfo ti, String participantIdColumnName, String participantId, String tableName, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        {
+            SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE " + participantIdColumnName+ " = ?", participantId);
+            new SqlExecutor(ti.getSchema()).execute(sql);
+            ParticipantGroupCache.uncache(getContainer());
+        }
+    }
+
+    public static class DeleteParticipantForm
+    {
+        private String _participantIdColumnName;
+        private String _participantId;
+
+        public String getParticipantIdColumnName()
+        {
+            return _participantIdColumnName;
+        }
+
+        public void setParticipantIdColumnName(String participantIdColumnName)
+        {
+            this._participantIdColumnName = participantIdColumnName;
+        }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            this._participantId = participantId;
         }
     }
 

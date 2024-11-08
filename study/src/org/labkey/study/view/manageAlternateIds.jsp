@@ -69,6 +69,13 @@
 </div>
 <div id="datasetMappingPanel"></div>
 
+<div style="max-width: 1000px">
+    <h2>Delete <%= h(subjectNounSingular)%> </h2>
+    <p>Select <%= h(subjectNounSingular.toLowerCase())%> you want to delete from this study.
+    </p>
+</div>
+<div id="deleteParticipantPanel"></div>
+
 <div id="donePanel"></div>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -422,9 +429,111 @@
                     style : 'background: none',
                     dock : 'bottom',
                     ui : 'footer',
+                    height: 30,
                     items: [saveButton, clearButton, importButton, manageButton]
                  }
 
+            });
+
+            Ext4.define('participantModel',{
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name : <%=q(subjectNounColName)%>, type : 'string' },
+                ]
+            });
+
+            this.participantStore = Ext4.create('Ext.data.Store', {
+                model : 'participantModel',
+                sorters : {property : <%=q(subjectNounColName)%>, direction : 'ASC'}
+            });
+
+            LABKEY.Query.selectRows({
+                schemaName : 'study',
+                queryName : <%=q(subjectNounSingular)%>,
+                success : function(details){
+                    this.participantStore.loadData(details.rows);
+                },
+                scope : this
+            });
+
+            var participantCombo = Ext4.create('Ext.form.field.ComboBox',{
+                name : 'participantCombo',
+                queryMode : 'local',
+                store: this.participantStore,
+                valueField : <%=q(subjectNounColName)%>,
+                displayField : <%=q(subjectNounColName)%>,
+                labelWidth : 200,
+                labelSeparator: '',
+                fieldLabel : (<%=q(subjectNounSingular)%> + " ID"),
+                editable: false
+            });
+
+            var deleteButton = Ext4.create('Ext.button.Button', {
+                text : 'Delete',
+                handler :  function(){deleteParticipant(participantCombo.getValue());}
+            });
+
+            var deleteParticipant = function(participantIdToDelete) {
+                console.log("Deleting " + participantIdToDelete);
+                var dialog = Ext4.create('Ext.window.Window', {
+                   title: 'Confirmation',
+                   modal: true,
+                   width: 300,
+                   height: this,
+                   layout: 'fit',
+                   items: [{
+                       xtype: 'panel',
+                       bodyPadding: 10,
+                       html: "Are you sure you want to delete " + <%=q(subjectNounSingular.toLowerCase())%> + " '" + participantIdToDelete + "'?"
+
+                   }],
+                   buttons: [
+                       {
+                           text: 'Yes',
+                           handler: function() {
+                               Ext4.Ajax.request({
+                                   url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
+                                   method : 'POST',
+                                   jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete },
+                                   headers : {'Content-Type' : 'application/json'},
+                                   scope: this,
+                                   success: function(details) {
+                                       displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(subjectNounSingular)%> + " " + participantIdToDelete + '.');
+                                   },
+                                   failure: function(response, options){
+                                       LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:' + response.responseText);
+                                   },
+                               });
+                               dialog.close();
+                           }
+                       },
+                       {
+                           text: 'Cancel',
+                           handler: function() {
+                               dialog.close();
+                           }
+                       }]
+                });
+                dialog.show();
+            }
+
+            var deleteParticipantPanel = Ext4.create('Ext.form.FormPanel', {
+                renderTo : 'deleteParticipantPanel',
+                bodyPadding: 10,
+                bodyStyle: 'background: none',
+                frame: false,
+                border: false,
+                width: 600,
+                buttonAlign : 'left',
+                items: [participantCombo],
+                dockedItems : {
+                    xtype : 'toolbar',
+                    style : 'background: none',
+                    dock : 'bottom',
+                    ui : 'footer',
+                    height: 30,
+                    items: [deleteButton]
+                }
             });
         };
 
