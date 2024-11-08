@@ -564,14 +564,17 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupStringValue(XFrameOption, "SAMEORIGIN");
     }
 
-    private String staticFilesPrefix = "";
+
+    private static final String not_init = "";
+    private String staticFilesPrefix = not_init;
 
     @Override
     public String getStaticFilesPrefix()
     {
         // CURRENTLY SET using -Dstatic.files.prefix=//static.web.site.com
         // NOT IN UI, because one mistake will probably render the site unusable
-        if (staticFilesPrefix.isEmpty())
+        //noinspection StringEquality
+        if (not_init == staticFilesPrefix)
         {
             String s = trimToNull(System.getProperty("static.files.prefix"));
             if (null != s)
