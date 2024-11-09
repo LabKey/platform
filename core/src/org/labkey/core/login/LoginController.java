@@ -1781,7 +1781,7 @@ public class LoginController extends SpringActionController
         else
         {
             // Verification string wasn't found. User might have already verified, they don't have a login (should be
-            // using LDAP or SSO), or the link got mangled. Don't provide any guidance since that could reveal
+            // using LDAP or SSO), or the link got mangled. Don't provide detailed guidance since that could reveal
             // information about existing users.
             errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
         }
