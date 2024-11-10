@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +26,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.DbScope.TransactionKind;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
@@ -42,23 +44,29 @@ import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class ApiKeyManager
 {
-    private final static ApiKeyManager INSTANCE = new ApiKeyManager();
-    private final static TransactionKind TRANSACTION_KIND = () -> "APIKEY";
+    private static final Logger LOG = LogHelper.getLogger(ApiKeyManager.class, "API key bookkeeping");
+    private static final ApiKeyManager INSTANCE = new ApiKeyManager();
+    private static final TransactionKind TRANSACTION_KIND = () -> "APIKEY";
+
+    public static final String API_KEY_ROW_ID = "apiKeyRowID";
 
     public static ApiKeyManager get()
     {
@@ -118,15 +126,50 @@ public class ApiKeyManager
         return apiKey;
     }
 
-    public void deleteKey(String apikey)
+    // Delete a single API key and clear any active sessions that were established using it
+    public void deleteKey(String apiKey)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apikey));
+        deleteKeys(new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apiKey)));
+    }
 
+    // Delete all API keys that match the filter and clear all active sessions that were established using them
+    public void deleteKeys(Filter filter)
+    {
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            Table.delete(CoreSchema.getInstance().getTableAPIKeys(), filter);
+            new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), filter, null)
+                .forEach(ApiKeyAuthentication.class, auth -> deleteKey(auth.getUser(), auth.rowId()));
             t.commit();
         }
+    }
+
+    // Delete a single API key and clear all active sessions that were established using it
+    public void deleteKey(User user, int rowId)
+    {
+        Table.delete(CoreSchema.getInstance().getTableAPIKeys(), rowId);
+        UserManager.handleSessionsForUser(user, new UserManager.SessionHandler()
+        {
+            @Override
+            public boolean handleSession(HttpSession session)
+            {
+                Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
+                Integer apiKeyRowId = (Integer)map.get(API_KEY_ROW_ID);
+
+                if (Objects.equals(rowId, apiKeyRowId))
+                {
+                    session.invalidate();
+                    return true;
+                }
+
+                return false;
+            }
+
+            @Override
+            public void complete(int count)
+            {
+                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "API key session"), user.getEmail());
+            }
+        });
     }
 
     public void updateLastUsed(String apikey)
@@ -141,25 +184,34 @@ public class ApiKeyManager
         }
     }
 
+    public record ApiKeyAuthentication(int createdBy, int rowId)
+    {
+        public User getUser()
+        {
+            return UserManager.getUser(createdBy());
+        }
+    }
+
     /**
-     * Returns the User associated with the supplied API key, if API key is valid. User could be inactive.
+     * Returns a record containing the User associated with the supplied API key and the API key's rowID, if API key is
+     * valid. User could be inactive.
      * @param apiKey The API key to validate
-     * @return The User associated with the API key or null if API key is invalid
+     * @return An ApiKeyAuthentication associated with the API key or null if API key is invalid
      */
-    public @Nullable User authenticateFromApiKey(@NotNull String apiKey)
+    public @Nullable ApiKeyAuthentication authenticateFromApiKey(@NotNull String apiKey)
     {
         SimpleFilter filter = new SimpleFilter(getStillValidClause());
         filter.addCondition(FieldKey.fromParts("Crypt"), crypt(apiKey));
 
-        Integer userId;
+        ApiKeyAuthentication ret;
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            userId = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Collections.singleton("CreatedBy"), filter, null).getObject(Integer.class);
+            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId"), filter, null).getObject(ApiKeyAuthentication.class);
             t.commit();
         }
 
-        return null != userId ? UserManager.getUser(userId) : null;
+        return ret;
     }
 
     private static final String API_KEY_SCOPE = "ApiKey";
@@ -217,7 +269,6 @@ public class ApiKeyManager
         return new SQLClause(new SQLFragment("Expiration IS NULL OR Expiration > ?", new Date()), FieldKey.fromParts("Expiration"));
     }
 
-
     public static class TestCase extends Assert
     {
         @Test
@@ -227,11 +278,15 @@ public class ApiKeyManager
             String oneSecondKey = ApiKeyManager.get().createKey(user, 1, "Created by ApiKeyManager.TestCase");
             String noExpireKey = ApiKeyManager.get().createKey(user, -1, "Created by ApiKeyManager.TestCase");
 
-            assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(oneSecondKey));
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(oneSecondKey);
+            assertNotNull(auth);
+            assertEquals(user, auth.getUser());
             Thread.sleep(1100);
             assertNull("API key should have expired after one second", ApiKeyManager.get().authenticateFromApiKey(oneSecondKey));
 
-            assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
+            auth = ApiKeyManager.get().authenticateFromApiKey(noExpireKey);
+            assertNotNull(auth);
+            assertEquals(user, auth.getUser());
 
             ApiKeyManager.get().deleteKey(oneSecondKey);
             ApiKeyManager.get().deleteKey(noExpireKey);
@@ -255,10 +310,14 @@ public class ApiKeyManager
             try (Transaction ignored = DbScope.getLabKeyScope().beginTransaction())
             {
                 apikey = ApiKeyManager.get().createKey(user, 10, "Created by ApiKeyManager.TestCase");
-                assertEquals(user, ApiKeyManager.get().authenticateFromApiKey(apikey));
+                ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(apikey);
+                assertNotNull(auth);
+                assertEquals(user, auth.getUser());
             }
 
-            assertEquals("API key should be valid even after rollback", user, ApiKeyManager.get().authenticateFromApiKey(apikey));
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(apikey);
+            assertNotNull(auth);
+            assertEquals("API key should be valid even after rollback", user, auth.getUser());
 
             ApiKeyManager.get().deleteKey(apikey);
             assertNull(ApiKeyManager.get().authenticateFromApiKey(apikey));
