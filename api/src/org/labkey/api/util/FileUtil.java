@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.io.input.LabKeyByteBufferCleaner;
@@ -97,6 +98,7 @@ public class FileUtil
 
     private static final ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(HashSet::new);
 
+    private static Pattern extensionChecker;
 
     public static void startRequest()
     {
@@ -316,9 +318,33 @@ public class FileUtil
             return "Filename may not begin with any of these characters: -$";
         if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)",s))
             return "Filename may not contain space followed by dash.";
+
+        String badExtension = checkExtension(s);
+        if (badExtension != null)
+            return "This file type [" + badExtension + "] has been blocked by admins";
         return null;
     }
 
+    private static String checkExtension(String filename)
+    {
+        // If the allow list is empty, allow any extension
+        if (AppProps.getInstance().getAllowedExtensions().isEmpty())
+            return null;
+
+        if (extensionChecker == null)
+            setExtensionChecker();
+
+        String extension = FilenameUtils.getExtension(filename);
+        return extensionChecker.matcher(filename).matches() ? null : extension;
+    }
+
+    public static void setExtensionChecker()
+    {
+        // Regex encode the allowed extensions (escape periods and add '|' optional matcher)
+        String allowedExtensions = String.join("|", AppProps.getInstance().getAllowedExtensions()).replace(".", "\\.");
+        // Allow any extension in the list unless it is preceeded by a '.' which we use as a proxy for double/multi extensions
+        extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
+    }
 
     public static void checkAllowedFileName(String s) throws IOException
     {

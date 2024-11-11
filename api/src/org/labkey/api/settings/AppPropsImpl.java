@@ -661,6 +661,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return getExternalHosts(externalSourceHostURLs);
     }
 
+    @Override
+    @NotNull
+    public List<String> getAllowedExtensions()
+    {
+        return getExternalHosts(allowedFileExtensions);
+    }
+
     private List<String> getExternalHosts(RandomStartupProperties propName)
     {
         String urls = lookupStringValue(propName, "");

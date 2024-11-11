@@ -449,6 +449,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
+        if (ModuleLoader.getInstance().hasModule("Premium"))
+            AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -10757,10 +10759,10 @@ public class AdminController extends SpringActionController
             form.setExistingHostsList(form.getTypeEnum().getHosts());
 
             JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
-            newView.setTitle(String.format("Register New External %1$s Host", form.getTypeEnum().name()));
+            newView.setTitle("Register New " + form.getTypeEnum().getTitle());
             newView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
-            existingView.setTitle(String.format("Existing External %1$s Hosts", form.getTypeEnum().name()));
+            existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
             return new VBox(newView, existingView);
@@ -10817,30 +10819,12 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(_type.getHelpTopic());
-            addAdminNavTrail(root, String.format("External %1$s Host Admin", _type.name()), getClass());
+            addAdminNavTrail(root, String.format("%1$s Admin", _type.getTitle()), getClass());
         }
     }
 
-    private static class AuthorityValidator extends UrlValidator
-    {
-        public AuthorityValidator(long options)
-        {
-            super(options);
-        }
-
-        @Override
-        public boolean isValidAuthority(String authority)
-        {
-            String base = authority.startsWith("*.") ? authority.substring(2) : authority;
-            return super.isValidAuthority(base);
-        }
-    };
-
     public static class ExternalHostsForm
     {
-        @JsonIgnore
-        private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
-
         private String _newExternalHost;
         private String _existingExternalHost;
         private boolean _delete;
@@ -10947,7 +10931,7 @@ public class AdminController extends SpringActionController
         public Set<String> validateNewExternalHost(BindException errors)
         {
             String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
-            validateHostFormat(newExternalHost, errors);
+            getTypeEnum().validateHostFormat(newExternalHost, errors);
             if (errors.hasErrors())
                 return null;
 
@@ -10966,7 +10950,7 @@ public class AdminController extends SpringActionController
             {
                 for (String host : hosts)
                 {
-                    validateHostFormat(host, errors);
+                    getTypeEnum().validateHostFormat(host, errors);
                     if (errors.hasErrors())
                         continue;
 
@@ -10975,19 +10959,6 @@ public class AdminController extends SpringActionController
             }
 
             return hostSet;
-        }
-
-        @JsonIgnore
-        private void validateHostFormat(String externalHost, BindException errors)
-        {
-            if (StringUtils.isEmpty(externalHost))
-            {
-                errors.addError(new LabKeyError("External host name must not be blank."));
-            }
-            else if (!AUTHORITY_VALIDATOR.isValidAuthority(externalHost))
-            {
-                errors.addError(new LabKeyError(String.format("External host name %1$s is not formatted correctly", externalHost)));
-            }
         }
 
         /**
