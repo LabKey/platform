@@ -5,10 +5,10 @@ import org.labkey.api.data.statistics.DoublePoint;
 
 import static org.labkey.api.data.statistics.StatsService.CurveFitType.THREE_PARAMETER;
 
-public class ThreeParameterCurveFit extends ParameterCurveFit
+public class ThreeParameterAlternateCurveFit extends ParameterCurveFit
 {
 
-    public ThreeParameterCurveFit(DoublePoint[] data, @Nullable Double asymptoteMax)
+    public ThreeParameterAlternateCurveFit(DoublePoint[] data, @Nullable Double asymptoteMax)
     {
         super(data, THREE_PARAMETER, 0.0, asymptoteMax);
     }

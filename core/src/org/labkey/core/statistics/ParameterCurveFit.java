@@ -223,7 +223,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
 
     private boolean is3Parameter()
     {
-        return _fitType == StatsService.CurveFitType.THREE_PARAMETER;
+        return _fitType == StatsService.CurveFitType.THREE_PARAMETER || _fitType == StatsService.CurveFitType.THREE_PARAMETER_ALT;
     }
 
     private boolean is4Parameter()
@@ -235,7 +235,8 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
     {
         SigmoidalParameters bestFit = null;
         SigmoidalParameters parameters = new SigmoidalParameters();
-        double step = getAsymptoteMax() != null ? Math.min(getAsymptoteMax() / 100, 10) : 10;
+        Double asymptoteDiff = getAsymptoteMax() != null && getAsymptoteMin() != null ? Math.abs(getAsymptoteMax() - getAsymptoteMin()) : null;
+        double step = asymptoteDiff != null ? Math.min(asymptoteDiff / 100, 10) : 10;
         if (is3Parameter() || is4Parameter())
             parameters.asymmetry = 1;
 
@@ -268,6 +269,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
                                 }
                                 break;
                             case THREE_PARAMETER:
+                            case THREE_PARAMETER_ALT:
                             case FOUR_PARAMETER:
                                 parameters.asymmetry = 1;
                                 parameters.fitError = calculateFitError(parameters);
