@@ -124,9 +124,9 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                 else
                 {
                     String val = String.valueOf(o);
-                    // double quote the value if it contains backslashes to avoid tab loader mangling
+                    // Issue 51629 double quote the value if it contains backslashes to avoid tab loader mangling
                     // on import
-                    if (val.contains("\\"))
+                    if (!val.startsWith("\"") && !val.endsWith("\"") && val.contains("\\"))
                         val = "\"" + val + "\"";
                     pw.append(val);
                 }
