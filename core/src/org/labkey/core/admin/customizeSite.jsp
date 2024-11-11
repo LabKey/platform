@@ -63,7 +63,7 @@ var enableExceptionTest = function() {
 };
 
 var enableTestButton = function(el, level) {
-    if ("NONE" == level)
+    if ("NONE" === level)
     {
         LABKEY.Utils.addClass(el, 'labkey-disabled-button');
     }
@@ -122,11 +122,12 @@ Click the Save button at any time to accept the current settings and continue.</
     <th style="width: 35em;"></th>
     <th></th>
 </tr>
-<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<tr>\n" +
-        "        <td colspan=2>&nbsp;</td>\n" +
-        "    </tr>\n" +
-        "    <tr>\n" +
-        "        <td colspan=2>"), HtmlString.unsafe("</td>\n" +
+<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("""
+        <tr>
+                <td colspan=2>&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan=2>"""), HtmlString.unsafe("</td>\n" +
         "    </tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
@@ -137,7 +138,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label" valign="top">Primary site administrator</td>
+    <td class="labkey-form-label" style="vertical-align: top"><label for="<%=administratorContactEmail%>">Primary site administrator</label></td>
     <td>
         <select name="<%=administratorContactEmail%>" id="<%=administratorContactEmail%>">
             <%
@@ -159,11 +160,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
+    <td class="labkey-form-label"><label for="<%=baseServerURL%>">Base server URL (used to create links in emails sent by the system)</label></td>
     <td><input type="text" name="<%=baseServerURL%>" id="<%=baseServerURL%>" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Use "path first" urls (/home/project-begin.view)</td>
+    <td class="labkey-form-label"><label for="<%=useContainerRelativeURL%>">Use "path first" urls (/home/project-begin.view)</label></td>
     <td><labkey:checkbox id="<%=useContainerRelativeURL.name()%>" name="<%=useContainerRelativeURL.name()%>" checked="<%= appProps.getUseContainerRelativeURL() %>" value="true" /></td>
 </tr>
 <tr>
@@ -172,13 +173,12 @@ Click the Save button at any time to accept the current settings and continue.</
 
 
 <tr>
-    <td colspan=2>Automatically check for updates to LabKey Server and
-        report usage statistics to LabKey. (<%=bean.getSiteSettingsHelpLink("usage")%>)</td>
+    <td colspan=2>Automatically check for updates to report usage statistics. (<%=bean.getSiteSettingsHelpLink("usage")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label" style="vertical-align: top">Check for updates and report usage statistics to the LabKey team.<br>
-        LabKey uses this data to prioritize LabKey Server enhancements. Turn this on to ensure the
+        LabKey uses this data to prioritize enhancements. Turn this on to ensure the
         features you use are maintained and improved over time.<br>All data is transmitted securely over HTTPS.
     </td>
     <td>
@@ -189,7 +189,6 @@ Click the Save button at any time to accept the current settings and continue.</
 %>
             <tr>
                 <td><span>Update checks and usage reporting are automatically <strong>on</strong> for servers running a LabKey Server Community Edition.</span></td>
-
             </tr>
 <%
         }
@@ -198,19 +197,28 @@ Click the Save button at any time to accept the current settings and continue.</
 %>
             <tr>
                 <td style="vertical-align: top">
-                    <label>
+                    <label for="<%=h(usageReportingLevel + "1")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>' onChange="enableUsageTest();"
                                value="<%=UsageReportingLevel.NONE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>" />
-                        <strong>OFF</strong> - Do not check for updates or report any usage data.
+                        <strong>Off</strong>: Do not check for updates or report any usage data.
                     </label>
                 </td>
             </tr>
             <tr>
                 <td style="vertical-align: top">
-                    <label>
+                    <label for="<%=h(usageReportingLevel + "2")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "2")%>' onChange="enableUsageTest();"
                                value="<%=UsageReportingLevel.ON%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>" />
-                        <strong>ON</strong> - Check for updates and report system information, usage data, and organization details.
+                        <strong>On</strong>: Report system information, usage data, and organization details, and show messages when important upgrades are available.
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top">
+                    <label for="<%=h(usageReportingLevel + "3")%>">
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "3")%>' onChange="enableUsageTest();"
+                                      value="<%=UsageReportingLevel.ON_WITHOUT_UPGRADE_MESSAGE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.ON_WITHOUT_UPGRADE_MESSAGE)%>" />
+                        <strong>Report only</strong>: Report system information, usage data, and organization details, but do not show upgrade messages.
                     </label>
                 </td>
             </tr>
@@ -238,34 +246,34 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <table>
             <tr>
-                <td valign="top">
-                    <label>
+                <td style="vertical-align: top">
+                    <label for="<%=h(exceptionReportingLevel + "1")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "1")%>' value="<%=NONE%>" checked="<%=(appProps.getExceptionReportingLevel() == NONE)%>" />
-                        <strong>OFF</strong> - Do not report exceptions.
+                        <strong>Off</strong>: Do not report exceptions.
                     </label>
                 </td>
             </tr>
             <tr>
-                <td valign="top">
-                    <label>
+                <td style="vertical-align: top">
+                    <label for="<%=h(exceptionReportingLevel + "2")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "2")%>' value="<%=LOW%>" checked="<%=(appProps.getExceptionReportingLevel() == LOW)%>" />
-                        <strong>ON, low</strong> - Include anonymous system and exception information.
+                        <strong>Low</strong>: Include anonymous system and exception information.
                     </label>
                 </td>
             </tr>
             <tr>
-                <td valign="top">
-                    <label>
+                <td style="vertical-align: top">
+                    <label for="<%=h(exceptionReportingLevel + "3")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "3")%>' value="<%=MEDIUM%>" checked="<%=(appProps.getExceptionReportingLevel() == MEDIUM)%>" />
-                        <strong>ON, medium</strong> - Include anonymous system and exception information, as well as the URL that triggered the exception.
+                        <strong>Medium</strong>: Include anonymous system and exception information, as well as the URL that triggered the exception.
                     </label>
                 </td>
             </tr>
             <tr>
-                <td valign="top">
-                    <label>
+                <td style="vertical-align: top">
+                    <label for="<%=h(exceptionReportingLevel + "4")%>">
                         <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "4")%>' value="<%=HIGH%>" checked="<%=(appProps.getExceptionReportingLevel() == HIGH)%>" />
-                        <strong>ON, high</strong> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary.
+                        <strong>High</strong>: Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary.
                     </label>
                 </td>
             </tr>
@@ -281,7 +289,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <%-- Only show this option if the mothership module has enabled it --%>
 <% if (bean._showSelfReportExceptions) { %>
 <tr>
-    <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
+    <td class="labkey-form-label" style="vertical-align: top">Report exceptions to the local server</td>
     <td>
         <label for="<%=selfReportExceptions%>">
             <input type="checkbox" name="<%=selfReportExceptions%>" id="<%=selfReportExceptions%>"<%=checked(appProps.isSelfReportExceptions())%>/> Self-reporting is always at the "high" level described above
@@ -298,19 +306,19 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</td>
+    <td class="labkey-form-label"><label for="<%=memoryUsageDumpInterval%>">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</label></td>
     <td><input type="text" name="<%=memoryUsageDumpInterval%>" id="<%=memoryUsageDumpInterval%>" size="4" value="<%=appProps.getMemoryUsageDumpInterval()%>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Maximum file size, in bytes, to allow in database BLOBs</td>
+    <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>
     <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Require ExtJS v3.4.1 be loaded on each page</td>
+    <td class="labkey-form-label"><label for="<%=ext3Required%>">Require ExtJS v3.4.1 be loaded on each page</label></td>
     <td><input type="checkbox" name="<%=ext3Required%>" id="<%=ext3Required%>"<%=checked(appProps.isExt3Required())%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Require ExtJS v3.x based Client API be loaded on each page</td>
+    <td class="labkey-form-label"><label for="<%=ext3APIRequired%>">Require ExtJS v3.x based Client API be loaded on each page</label></td>
     <td><input type="checkbox" name="<%=ext3APIRequired%>" id="<%=ext3APIRequired%>"<%=checked(appProps.isExt3APIRequired())%>></td>
 </tr>
 <tr>
@@ -322,11 +330,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
+    <td class="labkey-form-label"><label for="<%=sslRequired%>">Require HTTPS connections (users must connect via SSL/TLS)</label></td>
     <td><input type="checkbox" name="<%=sslRequired%>" id="<%=sslRequired%>"<%=checked(appProps.isSSLRequired())%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">SSL port number (specified in server config file)</td>
+    <td class="labkey-form-label"><label for="<%=sslPort%>">HTTPS port number (specified in <%= h(AppProps.getInstance().getWebappConfigurationFilename()) %>)</label></td>
     <td><input type="text" name="<%=sslPort%>" id="<%=sslPort%>" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
 
@@ -338,7 +346,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Let users create API keys</td>
+    <td class="labkey-form-label"><label for="<%=allowApiKeys%>">Let users create API keys</label></td>
     <td><labkey:checkbox id="<%=allowApiKeys.name()%>" name="<%=allowApiKeys.name()%>" checked="<%=AppProps.getInstance().isAllowApiKeys()%>" value="true"/></td>
 </tr>
 <tr>
@@ -370,7 +378,7 @@ Click the Save button at any time to accept the current settings and continue.</
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Let users create session keys</td>
+    <td class="labkey-form-label"><label for="<%=allowSessionKeys%>">Let users create session keys</label></td>
     <td><labkey:checkbox id="<%=allowSessionKeys.name()%>" name="<%=allowSessionKeys.name()%>" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
 
@@ -382,7 +390,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Pipeline tools<%= helpPopup("Pipeline Tools", "A '" + File.pathSeparator + "' separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)") %></td>
+    <td class="labkey-form-label"><label for="<%=pipelineToolsDirectory%>">Pipeline tools</label><%= helpPopup("Pipeline Tools", "A '" + File.pathSeparator + "' separated list of directories on the web server containing executables that are run for pipeline jobs (e.g. TPP or XTandem)") %></td>
     <td><input type="text" name="<%=pipelineToolsDirectory%>" id="<%=pipelineToolsDirectory%>" size="50" value="<%= h(appProps.getPipelineToolsDirectory()) %>"></td>
 </tr>
 <tr>
@@ -394,11 +402,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Display message</td>
+    <td class="labkey-form-label"><label for="<%=showRibbonMessage%>">Display message</label></td>
     <td><input type="checkbox" name="<%=showRibbonMessage%>" id="<%=showRibbonMessage%>"<%=checked(appProps.isShowRibbonMessage())%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Message HTML</td>
+    <td class="labkey-form-label"><label for="<%=ribbonMessage%>">Message HTML</label></td>
     <td><textarea name="<%=ribbonMessage%>" id="<%=ribbonMessage%>" cols="60" rows="3"><%=h(appProps.getRibbonMessage())%></textarea></td>
 </tr>
 
@@ -410,12 +418,12 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
+    <td class="labkey-form-label"><label for="<%=adminOnlyMode%>">Admin only mode (only site admins may log in)</label></td>
     <td><input type="checkbox" name="<%=adminOnlyMode%>" id="<%=adminOnlyMode%>"<%=checked(appProps.isUserRequestedAdminOnlyMode())%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>
-    <td><textarea id="adminOnlyMessage" name="<%=adminOnlyMessage%>" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
+    <td class="labkey-form-label" style="vertical-align: top"><label for="<%=adminOnlyMessage%>">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</label></td>
+    <td><textarea id="<%=adminOnlyMessage%>" name="<%=adminOnlyMessage%>" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
 </tr>
 
 <tr>
@@ -426,7 +434,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">X-Frame-Options</td>
+    <td class="labkey-form-label"><label for="<%=XFrameOption%>">X-Frame-Options</label></td>
     <td><select name="<%=XFrameOption%>" id="<%=XFrameOption%>">
         <% String option = appProps.getXFrameOption(); %>
         <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
@@ -435,7 +443,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label">Include a <code>Server</code> HTTP header in responses</td>
+    <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
     <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
 </tr>
 <tr>
@@ -447,7 +455,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">
-        Always include inaccessible parent folders in project menu when child folder is accessible<%=helpPopup("Project menu access",
+        <label for="<%=navAccessOpen%>">Always include inaccessible parent folders in project menu when child folder is accessible</label><%=helpPopup("Project menu access",
             "Unchecking this will only allow users to see folders in the project menu where they have permissions to see the root project and all parent folders.")%>
     </td>
     <td><input type="checkbox" name="<%=navAccessOpen%>" id="<%=navAccessOpen%>"<%=checked(appProps.isNavigationAccessOpen())%>></td>
