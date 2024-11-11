@@ -109,7 +109,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public boolean handleSession(HttpSession session)
                 {
-                    LOG.debug("Checking if session {} used database authentication", session.getId());
+                    LOG.info("Checking if session {} used database authentication", session.getId());
                     PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
 
                     if (configuration instanceof DbLoginConfiguration)
@@ -120,7 +120,7 @@ public class DbLoginManager implements DbLoginService
                         // Don't invalidate API key authentications
                         if (apiKeyRowId == null)
                         {
-                            LOG.debug("Attempting to invalidate session {}", session.getId());
+                            LOG.info("Attempting to invalidate session {}", session.getId());
                             session.invalidate();
                             return true;
                         }
@@ -132,7 +132,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
+                    LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
                 }
             });
         }

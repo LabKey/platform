@@ -144,7 +144,7 @@ public class ApiKeyManager
     }
 
     // Delete a single API key and clear all active sessions that were established using it
-    public void deleteKey(User user, int rowId)
+    private void deleteKey(User user, int rowId)
     {
         Table.delete(CoreSchema.getInstance().getTableAPIKeys(), rowId);
         UserManager.handleSessionsForUser(user, new UserManager.SessionHandler()
@@ -152,11 +152,13 @@ public class ApiKeyManager
             @Override
             public boolean handleSession(HttpSession session)
             {
+                LOG.info("Checking if session {} used API key {}", session.getId(), rowId);
                 Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
                 Integer apiKeyRowId = (Integer)map.get(API_KEY_ROW_ID);
 
                 if (Objects.equals(rowId, apiKeyRowId))
                 {
+                    LOG.info("Attempting to invalidate session {} which used API key {}", session.getId(), rowId);
                     session.invalidate();
                     return true;
                 }
@@ -167,7 +169,7 @@ public class ApiKeyManager
             @Override
             public void complete(int count)
             {
-                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "API key session"), user.getEmail());
+                LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "API key session"), user.getEmail());
             }
         });
     }
@@ -341,12 +343,8 @@ public class ApiKeyManager
         @Override
         public void run(Logger log)
         {
-            try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
-            {
-                // Delete all rows that are no longer valid (expired)
-                Table.delete(CoreSchema.getInstance().getTableAPIKeys(), new SimpleFilter(new NotClause(getStillValidClause())));
-                t.commit();
-            }
+            // Delete all rows that are no longer valid (expired)
+            ApiKeyManager.get().deleteKeys(new SimpleFilter(new NotClause(getStillValidClause())));
         }
 
         @Override

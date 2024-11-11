@@ -532,7 +532,7 @@ public class UserManager
         {
             User sessionOwner = user.isImpersonated() ? user.getImpersonatingUser() : user;
             if (_activeSessions.put(sessionOwner.getUserId(), s))
-                LOG.debug("Tracking a new session {} for user {}. {} active.", s.getId(), sessionOwner.getEmail(), StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                LOG.info("Tracking a new session {} for user {}. {} active.", s.getId(), sessionOwner.getEmail(), StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
         }
     }
 
@@ -557,7 +557,7 @@ public class UserManager
                 _totalSessionDuration.addAndGet(duration);
 
                 if (_activeSessions.removeMapping(user.getUserId(), session))
-                    LOG.debug("Removed session {} for user {}. Adding session duration of {} minutes to tally. {} active.", session.getId(), user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                    LOG.info("Removed session {} for user {}. Adding session duration of {} minutes to tally. {} active.", session.getId(), user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
             }
         }
     }
@@ -577,7 +577,7 @@ public class UserManager
             public void complete(int count)
             {
                 //noinspection DataFlowIssue
-                LOG.debug("Invalidated {} for user {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                LOG.info("Invalidated {} for user {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
             }
         });
     }
@@ -600,7 +600,7 @@ public class UserManager
             // The SessionHandler may directly or indirectly mutate this user's session set, so enumerate a copy to avoid
             // concurrent modification exceptions.
             Set<HttpSession> sessions = new HashSet<>(_activeSessions.get(user.getUserId()));
-            LOG.debug("Handling the following sessions for user {}: {}", user.getEmail(), sessions.stream()
+            LOG.info("Handling the following sessions for user {}: {}", user.getEmail(), sessions.stream()
                 .map(HttpSession::getId)
                 .collect(Collectors.joining()));
             sessions.forEach(session -> {
