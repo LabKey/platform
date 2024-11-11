@@ -221,12 +221,22 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
+    private boolean is3Parameter()
+    {
+        return _fitType == StatsService.CurveFitType.THREE_PARAMETER;
+    }
+
+    private boolean is4Parameter()
+    {
+        return _fitType == StatsService.CurveFitType.FOUR_PARAMETER;
+    }
+
     protected SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
     {
         SigmoidalParameters bestFit = null;
         SigmoidalParameters parameters = new SigmoidalParameters();
-        double step = 10;
-        if (_fitType == StatsService.CurveFitType.FOUR_PARAMETER)
+        double step = getAsymptoteMax() != null ? Math.min(getAsymptoteMax() / 100, 10) : 10;
+        if (is3Parameter() || is4Parameter())
             parameters.asymmetry = 1;
 
         // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
@@ -257,6 +267,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
                                         bestFit = parameters.copy();
                                 }
                                 break;
+                            case THREE_PARAMETER:
                             case FOUR_PARAMETER:
                                 parameters.asymmetry = 1;
                                 parameters.fitError = calculateFitError(parameters);
