@@ -120,4 +120,5 @@ public interface StatsService
      * @param data an array of {@code DoublePoint} instances to initialize the curve fit with.
      */
     CurveFit getCurveFit(CurveFitType type, DoublePoint[] data);
+    CurveFit getCurveFit(CurveFitType type, DoublePoint[] data, @Nullable Double asymptoteMin, @Nullable Double asymptoteMax);
 }

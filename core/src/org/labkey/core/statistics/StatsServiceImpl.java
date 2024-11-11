@@ -17,6 +17,7 @@ package org.labkey.core.statistics;
 
 import org.apache.commons.math3.random.RandomDataImpl;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.statistics.CurveFit;
@@ -57,13 +58,19 @@ public class StatsServiceImpl implements StatsService
     @Override
     public CurveFit getCurveFit(CurveFitType type, DoublePoint[] data)
     {
+        return getCurveFit(type, data, null, null);
+    }
+
+    @Override
+    public CurveFit getCurveFit(CurveFitType type, DoublePoint[] data, @Nullable Double asymptoteMin, @Nullable Double asymptoteMax)
+    {
         switch (type)
         {
             case FOUR_PARAMETER_SIMPLEX:
                 return new FourParameterSimplex(data);
             case FOUR_PARAMETER:
             case FIVE_PARAMETER:
-                return new ParameterCurveFit(data, type);
+                return new ParameterCurveFit(data, type, asymptoteMin, asymptoteMax);
             case POLYNOMIAL:
                 return new PolynomialCurveFit(data);
             case LINEAR:

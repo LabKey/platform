@@ -37,7 +37,7 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
 
     public FourParameterSimplex(DoublePoint[] data)
     {
-        super(data, StatsService.CurveFitType.FOUR_PARAMETER_SIMPLEX);
+        super(data, StatsService.CurveFitType.FOUR_PARAMETER_SIMPLEX, null, null);
     }
 
     @Override
