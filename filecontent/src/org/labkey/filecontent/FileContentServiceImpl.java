@@ -1399,15 +1399,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
             if (relPath != null)
             {
-                if (!isCloudRoot(container))
-                {
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
-                }
-                else
-                {
-                    // Do not encode path from S3 folder.  It is already encoded.
-                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
-                }
+                relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
 
                 return switch (type)
                 {
