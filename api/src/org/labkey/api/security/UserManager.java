@@ -550,6 +550,7 @@ public class UserManager
             // Issue 44761 - track session duration for authenticated users
             HttpSession session = event.getSession();
             User user = SecurityManager.getSessionOwner(session);
+            LOG.info("Session {} for user {} has been destroyed", session.getId(), user);
             if (user != null)
             {
                 long duration = TimeUnit.MILLISECONDS.toMinutes(session.getLastAccessedTime() - session.getCreationTime());
@@ -602,7 +603,7 @@ public class UserManager
             Set<HttpSession> sessions = new HashSet<>(_activeSessions.get(user.getUserId()));
             LOG.info("Handling the following sessions for user {}: {}", user.getEmail(), sessions.stream()
                 .map(HttpSession::getId)
-                .collect(Collectors.joining()));
+                .collect(Collectors.joining(", ")));
             sessions.forEach(session -> {
                 if (handler.handleSession(session))
                     count.increment();
