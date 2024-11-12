@@ -52,75 +52,103 @@ import java.util.TreeMap;
 public enum UsageReportingLevel implements SafeToRenderEnum
 {
     NONE
-    {
-        @Override
-        protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
-        {
-            // no op
-        }
+            {
+                @Override
+                protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
+                {
+                    // no op
+                }
 
-        @Override
-        protected boolean doGeneration()
-        {
-            return false;
-        }
-    },
+                @Override
+                public boolean showUpgradeBanner()
+                {
+                    return false;
+                }
+
+                @Override
+                protected boolean doGeneration()
+                {
+                    return false;
+                }
+            },
 
     /**
      * Captures basic User info, container count information and Site Settings info to help identify the organization
      * running the installation, and more detailed stats about how many items exist or actions have been invoked.
-     *
+     * <p>
      * May capture site-wide usage information, including counts for certain data types, such as assay designs,
      * reports of a specific type, or lists. May also capture the number of times a certain feature was used in a
      * given time window, such as since the server was last restarted.
-     *
+     * <p>
      * Per policy, this should not capture the names of specific objects like container names, dataset names, etc.
-     *
+     * <p>
      * Also per policy, this should not capture metrics at a container or other similar granularity. For example,
      * metrics should not break down the number of lists defined in each folder (even if that folder was de-identified).
      */
     ON
-    {
-        @Override
-        protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
-        {
-            report.addParam("userCount", UserManager.getActiveUserCount());
+            {
+                @Override
+                protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
+                {
+                    report.addParam("userCount", UserManager.getActiveUserCount());
 
-            report.addParam("containerCount", ContainerManager.getContainerCount());
-            report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
-            metrics.put("droppedExceptionCount", MothershipReport.getDroppedExceptionCount());
+                    report.addParam("containerCount", ContainerManager.getContainerCount());
+                    report.addParam("projectCount", ContainerManager.getRoot().getChildren().size());
+                    metrics.put("droppedExceptionCount", MothershipReport.getDroppedExceptionCount());
 
-            // Users within the last 30 days
-            Calendar cal = new GregorianCalendar();
-            cal.add(Calendar.DATE, -30);
-            Date startDate = cal.getTime();
-            report.addParam("recentUserCount", UserManager.getRecentUserCount(startDate));
-            // Other counts within the last 30 days
-            metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
-            metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
-            metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
-            metrics.put("recentAvgSessionDuration", UserManager.getAverageSessionDuration());
-            metrics.put("mostRecentLogin", DateUtil.formatIsoDate(UserManager.getMostRecentLogin()));
+                    // Users within the last 30 days
+                    Calendar cal = new GregorianCalendar();
+                    cal.add(Calendar.DATE, -30);
+                    Date startDate = cal.getTime();
+                    report.addParam("recentUserCount", UserManager.getRecentUserCount(startDate));
+                    // Other counts within the last 30 days
+                    metrics.put("recentLoginCount", UserManager.getRecentLoginCount(startDate));
+                    metrics.put("recentLogoutCount", UserManager.getRecentLogOutCount(startDate));
+                    metrics.put("activeDayCount", UserManager.getActiveDaysCount(startDate));
+                    metrics.put("recentAvgSessionDuration", UserManager.getAverageSessionDuration());
+                    metrics.put("mostRecentLogin", DateUtil.formatIsoDate(UserManager.getMostRecentLogin()));
 
-            LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
-            report.addParam("logoLink", laf.getLogoHref());
-            report.addParam("organizationName", laf.getCompanyName());
-            report.addParam("systemDescription", laf.getDescription());
-            report.addParam("systemShortName", laf.getShortName());
-            report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
+                    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
+                    report.addParam("logoLink", laf.getLogoHref());
+                    report.addParam("organizationName", laf.getCompanyName());
+                    report.addParam("systemDescription", laf.getDescription());
+                    report.addParam("systemShortName", laf.getShortName());
+                    report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
 
-            @SuppressWarnings("unchecked")
-            Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+                    @SuppressWarnings("unchecked")
+                    Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>) metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
 
-            putModulesMetrics(modulesMap);
-            putModulesBuildInfo(modulesMap);
+                    putModulesMetrics(modulesMap);
+                    putModulesBuildInfo(modulesMap);
 
-            metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
-            metrics.put("auditCommentsRequiredContainerCount", ContainerManager.getAuditCommentRequiredCount());
+                    metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
+                    metrics.put("auditCommentsRequiredContainerCount", ContainerManager.getAuditCommentRequiredCount());
 
-            report.addHostName();
-        }
-    };
+                    report.addHostName();
+                }
+
+                @Override
+                public boolean showUpgradeBanner()
+                {
+                    return true;
+                }
+            },
+    ON_WITHOUT_UPGRADE_MESSAGE
+            {
+                @Override
+                protected void addExtraParams(MothershipReport report, Map<String, Object> metrics)
+                {
+                    ON.addExtraParams(report, metrics);
+                }
+
+                @Override
+                public boolean showUpgradeBanner()
+                {
+                    return false;
+                }
+            };
+
+    public abstract boolean showUpgradeBanner();
 
     protected abstract void addExtraParams(MothershipReport report, Map<String, Object> metrics);
 
