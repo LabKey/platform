@@ -153,13 +153,13 @@ public class ApiKeyManager
             @Override
             public boolean handleSession(HttpSession session)
             {
-                LOG.info("Checking if session {} used API key {}", session.getId(), rowId);
+                LOG.debug("Checking if session {} used API key {}", session.getId(), rowId);
                 Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
                 Integer apiKeyRowId = (Integer)map.get(API_KEY_ROW_ID);
 
                 if (Objects.equals(rowId, apiKeyRowId))
                 {
-                    LOG.info("Attempting to invalidate session {} which used API key {}", session.getId(), rowId);
+                    LOG.debug("Attempting to invalidate session {} which used API key {}", session.getId(), rowId);
                     session.invalidate();
                     return true;
                 }
@@ -170,7 +170,7 @@ public class ApiKeyManager
             @Override
             public void complete(int count)
             {
-                LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "API key session"), user.getEmail());
+                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "API key session"), user.getEmail());
             }
         });
     }

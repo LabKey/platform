@@ -532,7 +532,7 @@ public class UserManager
         {
             User sessionOwner = user.isImpersonated() ? user.getImpersonatingUser() : user;
             if (_activeSessions.put(s.getId(), new SessionInformation(s, sessionOwner)) == null)
-                LOG.info("Tracking a new session {} for user {}. {} active.", s.getId(), sessionOwner.getEmail(), StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                LOG.debug("Tracking a new session {} for user {}. {} active.", s.getId(), sessionOwner.getEmail(), StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
         }
     }
 
@@ -550,13 +550,13 @@ public class UserManager
             // Issue 44761 - track session duration for authenticated users
             HttpSession session = event.getSession();
             SessionInformation info = _activeSessions.remove(session.getId());
-            LOG.info("Session {} for user {} has been destroyed", session.getId(), null != info ? info.user() : null);
+            LOG.debug("Session {} for user {} has been destroyed", session.getId(), null != info ? info.user() : null);
             if (info != null)
             {
                 long duration = TimeUnit.MILLISECONDS.toMinutes(session.getLastAccessedTime() - session.getCreationTime());
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet(duration);
-                LOG.info("Removed session {} for user {} from active sessions. Adding session duration of {} minutes to tally. {} active.", session.getId(), info.user, duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                LOG.debug("Removed session {} for user {} from active sessions. Adding session duration of {} minutes to tally. {} active.", session.getId(), info.user, duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
             }
         }
     }
@@ -575,7 +575,7 @@ public class UserManager
             @Override
             public void complete(int count)
             {
-                LOG.info("Invalidated {} for user {}.", StringUtilsLabKey.pluralize(count, "session"), user);
+                LOG.debug("Invalidated {} for user {}.", StringUtilsLabKey.pluralize(count, "session"), user);
             }
         });
     }
@@ -596,7 +596,7 @@ public class UserManager
         Set<SessionInformation> infos = _activeSessions.values().stream()
             .filter(info -> info.user().equals(user))
             .collect(Collectors.toSet());
-        LOG.info("Handling the following sessions for user {}: {}", user, infos.stream()
+        LOG.debug("Handling the following sessions for user {}: [{}]", user, infos.stream()
             .map(info -> info.session().getId())
             .collect(Collectors.joining(", ")));
         infos.forEach(info -> {
