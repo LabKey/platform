@@ -37,6 +37,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
@@ -147,7 +148,7 @@ public class ApiKeyManager
     private void deleteKey(User user, int rowId)
     {
         Table.delete(CoreSchema.getInstance().getTableAPIKeys(), rowId);
-        UserManager.handleSessionsForUser(user, new UserManager.SessionHandler()
+        UserManager.handleSessionsForUser(user, new SessionHandler()
         {
             @Override
             public boolean handleSession(HttpSession session)

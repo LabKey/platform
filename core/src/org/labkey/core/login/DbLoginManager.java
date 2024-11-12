@@ -118,6 +118,7 @@ public class DbLoginManager implements DbLoginService
                         Integer apiKeyRowId = (Integer)map.get(ApiKeyManager.API_KEY_ROW_ID);
 
                         // Don't invalidate API key authentications
+                        LOG.info("Checking if session {} wasn't authenticated via an API key", session.getId());
                         if (apiKeyRowId == null)
                         {
                             LOG.info("Attempting to invalidate session {}", session.getId());
@@ -132,7 +133,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
+                    LOG.info("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser);
                 }
             });
         }
