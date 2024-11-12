@@ -449,8 +449,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
-        if (ModuleLoader.getInstance().hasModule("Premium"))
-            AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));

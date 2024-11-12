@@ -3076,7 +3076,7 @@ public class DavController extends SpringActionController
             };
             if (FileUtil.isAllowedFileName(name) != null)
             {
-                throw new IOException("File extension not allowed.");
+                throw new IOException("The file extension is not allowed.");
             }
             AntiVirusService avs = AntiVirusService.get();
 

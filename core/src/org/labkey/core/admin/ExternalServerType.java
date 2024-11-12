@@ -59,6 +59,12 @@ public enum ExternalServerType
         {
             return HtmlString.of(String.format("External %1$s Host", name()));
         }
+
+        @Override
+        public HtmlString getLabel()
+        {
+            return HtmlString.of("Host");
+        }
     },
     Redirect {
         @Override
@@ -99,6 +105,12 @@ public enum ExternalServerType
         public HtmlString getTitle()
         {
             return HtmlString.of(String.format("External %1$s Host", name()));
+        }
+
+        @Override
+        public HtmlString getLabel()
+        {
+            return HtmlString.of("Host");
         }
     },
     FileExtension {
@@ -145,6 +157,12 @@ public enum ExternalServerType
         {
             return HtmlString.of("Allowed File Extension");
         }
+
+        @Override
+        public HtmlString getLabel()
+        {
+            return HtmlString.of("Extension");
+        }
     };
 
     private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
@@ -158,6 +176,7 @@ public enum ExternalServerType
     public abstract List<String> getHosts();
     public abstract void setHosts(Collection<String> redirectHosts);
     public abstract HtmlString getTitle();
+    public abstract HtmlString getLabel();
 
 
     public String getHelpTopic()
