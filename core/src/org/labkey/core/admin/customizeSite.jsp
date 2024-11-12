@@ -134,7 +134,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set site administrators (<%=bean.getSiteSettingsHelpLink("siteadmins")%>)</td>
+    <td colspan=2>Set site administrator (<%=bean.getSiteSettingsHelpLink("siteadmins")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -173,7 +173,7 @@ Click the Save button at any time to accept the current settings and continue.</
 
 
 <tr>
-    <td colspan=2>Automatically check for updates to report usage statistics. (<%=bean.getSiteSettingsHelpLink("usage")%>)</td>
+    <td colspan=2>Automatically check for updates and report usage statistics. (<%=bean.getSiteSettingsHelpLink("usage")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
