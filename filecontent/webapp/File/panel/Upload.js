@@ -123,7 +123,6 @@ Ext4.define('File.panel.Upload', {
                 var root = this.uploadPanel.fileSystem.rootPath;
                 if (root && file.isDirectory)
                 {
-                    root = this.uploadPanel.fileSystem.getURLWithCharsReplaced(root);
                     root = this.uploadPanel.fileSystem.concatPaths(root, this.uploadPanel.getWorkingDirectory('path'));
                     var uri = this.uploadPanel.fileSystem.concatPaths(root, file.fullPath ? file.fullPath : file.name);
 
@@ -133,7 +132,7 @@ Ext4.define('File.panel.Upload', {
 
                     var suppressDirConflictError = this.uploadPanel.isCloudPath;
                     this.uploadPanel.fileSystem.createDirectory({
-                        path : this.uploadPanel.fileSystem.encodeForURL(parentFolderUri + file.name),
+                        path : parentFolderUri + this.uploadPanel.fileSystem.encodeForURL(file.name),
                         suppressDirConflictError: suppressDirConflictError,
                         createIntermediates: this.options.params.createIntermediates
                     });
@@ -181,7 +180,7 @@ Ext4.define('File.panel.Upload', {
                         file.uri = this.uploadPanel.fileSystem.getURI(uri);
 
                         // Folder the file will be POSTed into
-                        var folderUri = this.uploadPanel.fileSystem.encodeForURL(this.uploadPanel.fileSystem.getParentPath(file.uri));
+                        var folderUri = this.uploadPanel.fileSystem.getParentPath(file.uri);
                         this.options.url = folderUri + '?overwrite=' + (overwrite ? 'T' : 'F');
                     }
                 });
@@ -701,7 +700,7 @@ Ext4.define('File.panel.Upload', {
                 var options = {
                     method:'POST',
                     form : form,
-                    url : this.fileSystem.getURI(cwd, true) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
+                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
                     name : name,
                     success : function(f, action, message) {
                         this.hideSingleUploadWindow();

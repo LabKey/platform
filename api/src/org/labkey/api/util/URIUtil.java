@@ -231,6 +231,22 @@ public class URIUtil
         return StringUtils.containsAny(propertyURI, ':', '/', '#', '%', '?') && propertyURI.startsWith("urn:");
     }
 
+    /**
+     * Converts a properly URI-encoded String to a URI object
+     * @throws UnexpectedException if there is a URISyntaxException
+     */
+    public static URI toURI(String encodedUri)
+    {
+        try
+        {
+            return encodedUri == null ? null : new URI(encodedUri);
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     public static class TestCase extends Assert
     {
         @Test

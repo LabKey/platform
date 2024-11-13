@@ -1216,11 +1216,11 @@ public class SimpleFilter implements Filter
             {
                 ret.append(and);
                 and = "&";
-                ret.append(PageFlowUtil.encode(entry.getKey()));
+                ret.append(PageFlowUtil.encodeURIComponent(entry.getKey()));
                 if (entry.getValue() != null)
                 {
                     ret.append("=");
-                    ret.append(PageFlowUtil.encode(entry.getValue()));
+                    ret.append(PageFlowUtil.encodeURIComponent(entry.getValue()));
                 }
             }
         }
@@ -1605,23 +1605,23 @@ public class SimpleFilter implements Filter
 
             FilterClause containsClause = new CompareType.ContainsClause(FieldKey.fromParts("Field4"), "o_O");
             // Issue 37524: QueryWebPart with CONTAINS filter and value that includes an underscore will generate incorrect filter on the "select all" url
-            // LikeClause escapes SQL wildcards in the the parameter value, but it shouldn't ent up on the URL
+            // LikeClause escapes SQL wildcards in the parameter value, but it shouldn't ent up on the URL
             assertArrayEquals(new Object[] { "o!_O" }, containsClause.getParamVals());
             assertEquals("o_O", containsClause.toURLParam("query").getValue());
             filter.addClause(containsClause);
 
-            assertEquals("query.Field1%7Eeq=1" +
-                    "&query.Field2%7Econtainsoneof=x%3Bu_u" +
-                    "&query.Field3%7Econtainsoneof=" + PageFlowUtil.encode(containsOneOfJsonValue) +
-                    "&query.Field4%7Econtains=o_O",
+            assertEquals("query.Field1~eq=1" +
+                    "&query.Field2~containsoneof=x%3Bu_u" +
+                    "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
+                    "&query.Field4~contains=o_O",
                     filter.toQueryString("query"));
             URLHelper url = new URLHelper("http://labkey.com");
 
             filter.applyToURL(url, "query");
-            assertEquals("query.Field1%7Eeq=1" +
-                    "&query.Field2%7Econtainsoneof=x%3Bu_u" +
-                    "&query.Field3%7Econtainsoneof=" + PageFlowUtil.encode(containsOneOfJsonValue) +
-                    "&query.Field4%7Econtains=o_O",
+            assertEquals("query.Field1~eq=1" +
+                    "&query.Field2~containsoneof=x%3Bu_u" +
+                    "&query.Field3~containsoneof=" + PageFlowUtil.encodeURIComponent(containsOneOfJsonValue) +
+                    "&query.Field4~contains=o_O",
                     url.getQueryString());
         }
     }

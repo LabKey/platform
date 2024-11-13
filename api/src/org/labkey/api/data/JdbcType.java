@@ -56,7 +56,7 @@ public enum JdbcType
         protected Object _fromString(String s)
         {
             // Be tolerant of trailing decimal zeros like "39.0", which Long.parseLong() is not
-            return new BigDecimal(s).longValueExact();
+            return new BigDecimal(s.trim()).longValueExact();
         }
     },
 
@@ -104,7 +104,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return new BigDecimal(s);
+            return new BigDecimal(s.trim());
         }
     },
 
@@ -141,7 +141,7 @@ public enum JdbcType
         protected Object _fromString(String s)
         {
             // Be tolerant of trailing decimal zeros like "39.0", which Integer.parseInt() is not
-            return new BigDecimal(s).intValueExact();
+            return new BigDecimal(s.trim()).intValueExact();
         }
     },
 
@@ -181,7 +181,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Float.valueOf(s);
+            return Float.valueOf(s.trim());
         }
     },
 
@@ -196,7 +196,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Short.valueOf(s);
+            return Short.valueOf(s.trim());
         }
     },
 
@@ -257,7 +257,7 @@ public enum JdbcType
         @Override
         protected Object _fromString(String s)
         {
-            return Short.valueOf(s);
+            return Short.valueOf(s.trim());
         }
     },
 
