@@ -62,6 +62,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
@@ -84,7 +85,6 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -227,6 +227,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.controllers.publish.SampleTypePublishConfirmAction;
 import org.labkey.study.controllers.publish.SampleTypePublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
@@ -266,7 +267,6 @@ import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
-import org.labkey.study.query.ParticipantVisitTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
@@ -1508,10 +1508,15 @@ public class StudyController extends BaseStudyController
                 }
 
                 //delete from study.participantGroupMap
-                TableInfo participantGroupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+                TableInfo participantGroupMapTable = QueryService.get().getUserSchema(getUser(), getContainer(), "study").getTable(deleteParticipantForm.getTableNamePrefix() + "GroupMap");
                 if (null != participantGroupMapTable)
                 {
-                    deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantGroupMapTable.getName(), errors);
+                    TableSelector ts = new TableSelector(participantGroupMapTable, Set.of(participantIdColumnName, "GroupId"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+                    ParticipantGroupManager.ParticipantGroupMap[] pgm = ts.getArray(ParticipantGroupManager.ParticipantGroupMap.class);
+                    if (pgm.length == 1)
+                    {
+                        deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantGroupMapTable.getName(), pgm[0].getGroupId(), errors);
+                    }
                 }
                 transaction.commit();
                 _log.info("Successfully deleted participant: " + participantId);
@@ -1558,19 +1563,22 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String tableName, BindException errors)
+        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String tableName, Integer groupId, BindException errors)
         {
             try
             {
                 SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE participantid = ?", participantId);
                 new SqlExecutor(ti.getSchema()).execute(sql);
-                ParticipantGroupCache.uncache(getContainer());
             }
             catch (Exception e)
             {
                 _log.error("Failed to delete participant from ParticipantGroupMap for ID: " + participantId, e);
                 errors.reject(ERROR_MSG, "Failed to delete participant from " + ti.getSchema().getName() + "." + tableName + ": " + e.getMessage());
             }
+
+            ParticipantGroupCache.uncache(getContainer());
+            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), groupId);
+            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 
@@ -1578,6 +1586,7 @@ public class StudyController extends BaseStudyController
     {
         private String _participantIdColumnName;
         private String _participantId;
+        private String _tableNamePrefix;
 
         public String getParticipantIdColumnName()
         {
@@ -1597,6 +1606,16 @@ public class StudyController extends BaseStudyController
         public void setParticipantId(String participantId)
         {
             this._participantId = participantId;
+        }
+
+        public String getTableNamePrefix()
+        {
+            return _tableNamePrefix;
+        }
+
+        public void setTableNamePrefix(String tableNamePrefix)
+        {
+            _tableNamePrefix = tableNamePrefix;
         }
     }
 

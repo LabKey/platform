@@ -272,6 +272,15 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
             return event;
         }
 
+        public static ParticipantGroupAuditEvent participantDeleted(
+                String participantId,
+                Container c,
+                Integer groupId)
+        {
+            return new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c,
+                    "The participant '" + participantId + "' was deleted", groupId);
+        }
+
         private static String createEncodedRecordMap(Container c, Map<String, Object> bean)
         {
             if (bean.containsKey("ownerId"))

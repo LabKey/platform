@@ -518,7 +518,7 @@
                                Ext4.Ajax.request({
                                    url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
                                    method : 'POST',
-                                   jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete },
+                                   jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete, tableNamePrefix: <%=q(subjectNounSingular)%> },
                                    headers : {'Content-Type' : 'application/json'},
                                    scope: this,
                                    success: function() {
