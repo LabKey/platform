@@ -1486,22 +1486,23 @@ public class StudyController extends BaseStudyController
             String participantId = deleteParticipantForm.getParticipantId();
             DbSchema schema = StudySchema.getInstance().getSchema();
 
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (study == null)
+            {
+                errors.reject(ERROR_MSG, "Study not found in this folder.");
+                return new ApiSimpleResponse("success", false);
+            }
+
             try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
             {
-                Study study = StudyManager.getInstance().getStudy(getContainer());
-                if (study == null)
-                {
-                    errors.reject(ERROR_MSG, "Study not found in this folder.");
-                    return false;
-                }
-
+                _log.info("Starting participant deletion for ID: " + participantId);
                 List<? extends Dataset> datasets = study.getDatasets();
 
                 //delete participant rows from datasets
                 for (Dataset dataset : datasets)
                 {
                     if (dataset.isDemographicData())
-                        deleteParticipant(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
+                        deleteParticipantFromDemographics(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
                     else
                         deleteParticipantFromDatasets(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
                 }
@@ -1510,22 +1511,29 @@ public class StudyController extends BaseStudyController
                 TableInfo participantGroupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
                 if (null != participantGroupMapTable)
                 {
-                    deleteFromParticipantGroupTable(participantGroupMapTable, participantId, "ParticipantGroupMap", errors);
+                    deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantGroupMapTable.getName(), errors);
                 }
                 transaction.commit();
+                _log.info("Successfully deleted participant: " + participantId);
+                return new ApiSimpleResponse("success", true);
             }
-            return new ApiSimpleResponse("success", true);
+            catch (Exception e)
+            {
+                _log.error("Error deleting participant: {}", participantId, e);
+                errors.reject(ERROR_MSG, "Failed to delete participant: " + e.getMessage());
+                return new ApiSimpleResponse("success", false);
+            }
         }
 
-        private void deleteParticipant(TableInfo ti, String participantIdColumnName, String participantId, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        private void deleteParticipantFromDemographics(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
         {
             List<Map<String, Object>> keys = new ArrayList<>();
             ColumnInfo idCol = ti.getColumn(FieldKey.fromParts(participantIdColumnName));
             keys.add(Collections.singletonMap(idCol.getName(), participantId));
-            ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+            deleteParticipantRows(ti, keys, errors);
         }
 
-        private void deleteParticipantFromDatasets(TableInfo ti, String participantIdColumnName, String participantId, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        private void deleteParticipantFromDatasets(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
         {
             TableSelector ts = new TableSelector(ti, Collections.singleton("lsid"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
             List<String> lsids = Arrays.asList(ts.getArray(String.class));
@@ -1533,14 +1541,36 @@ public class StudyController extends BaseStudyController
             List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
             for (String lsid : lsids)
                 keys.add(Collections.singletonMap("lsid", lsid));
-            ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+
+            deleteParticipantRows(ti, keys, errors);
         }
 
-        private void deleteFromParticipantGroupTable(TableInfo ti, String participantId, String tableName, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        private void deleteParticipantRows(TableInfo ti, List<Map<String, Object>> keys, BindException errors)
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE participantid = ?", participantId);
-            new SqlExecutor(ti.getSchema()).execute(sql);
-            ParticipantGroupCache.uncache(getContainer());
+            try
+            {
+                ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+            }
+            catch (InvalidKeyException | BatchValidationException | QueryUpdateServiceException | SQLException e)
+            {
+                _log.error("Failed to delete from dataset {}", ti.getName(), e);
+                errors.reject(ERROR_MSG, "Error deleting from dataset " + ti.getName() + ": " + e.getMessage());
+            }
+        }
+
+        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String tableName, BindException errors)
+        {
+            try
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE participantid = ?", participantId);
+                new SqlExecutor(ti.getSchema()).execute(sql);
+                ParticipantGroupCache.uncache(getContainer());
+            }
+            catch (Exception e)
+            {
+                _log.error("Failed to delete participant from ParticipantGroupMap for ID: " + participantId, e);
+                errors.reject(ERROR_MSG, "Failed to delete participant from " + ti.getSchema().getName() + "." + tableName + ": " + e.getMessage());
+            }
         }
     }
 
