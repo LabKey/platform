@@ -2,6 +2,7 @@ package org.labkey.vfs;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,13 +21,12 @@ abstract public class AbstractFileLike implements FileLike
             throw new IllegalArgumentException("Path must be normalized");
         if (!path.isAbsolute())
             throw new IllegalArgumentException("Path must be absolute");
-        this.path = path;
+        this.path = getFileSystem().pathOf(path);
     }
 
     @Override
     final public Path getPath()
     {
-
         return path;
     }
 
@@ -63,6 +63,8 @@ abstract public class AbstractFileLike implements FileLike
     @Override
     public void mkdir() throws IOException
     {
+        if (!getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
         refresh();
         if (exists())
             return;
@@ -77,6 +79,8 @@ abstract public class AbstractFileLike implements FileLike
     @Override
     public void mkdirs() throws IOException
     {
+        if (!getFileSystem().canWriteFiles())
+            throw new UnauthorizedException();
         refresh();
         if (exists())
             return;

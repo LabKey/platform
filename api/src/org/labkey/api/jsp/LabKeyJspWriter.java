@@ -32,15 +32,25 @@ public class LabKeyJspWriter extends JspWriterWrapper
     }
 
     @Override
-    public void print(char[] s)
+    public void print(char[] c)
     {
-        throwException("A JSP is attempting to render a character array!");
+        String s = new String(c);
+        throwException("A JSP is attempting to render a character array! " + truncateAndQuote(s));
+    }
+
+    private String truncateAndQuote(String s)
+    {
+        if (s == null)
+        {
+            return null;
+        }
+        return "'" + (s.length() < 50 ? s : (s.substring(0, 50) + "...")) + "'";
     }
 
     @Override
     public void print(String s) throws IOException
     {
-        throwException("A JSP is attempting to render a string!");
+        throwException("A JSP is attempting to render a string! " + truncateAndQuote(s));
     }
 
     @Override

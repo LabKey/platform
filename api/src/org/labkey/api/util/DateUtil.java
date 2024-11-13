@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -1368,6 +1369,8 @@ validNum:       {
         return FolderSettingsCache.getDefaultTimeFormat(c);
     }
 
+    public static final Set<String> META_FORMATS = CaseInsensitiveHashSet.of("Date", "DateTime", "Time");
+
     /**
      * Test a date format string to determine if it matches one of LabKey's special named date formats (Date, DateTime, Time)
      * @param dateFormat Format string to test
@@ -1375,7 +1378,7 @@ validNum:       {
      */
     public static boolean isSpecialNamedFormat(String dateFormat)
     {
-        return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
+        return META_FORMATS.contains(dateFormat);
     }
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());

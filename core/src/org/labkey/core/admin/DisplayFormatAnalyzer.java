@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 
 import static org.labkey.api.settings.AbstractSettingsGroup.SITE_CONFIG_USER;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.LOOK_AND_FEEL_SET_NAME;
+import static org.labkey.api.util.DateUtil.META_FORMATS;
 
 public class DisplayFormatAnalyzer
 {
@@ -97,8 +98,6 @@ public class DisplayFormatAnalyzer
             .filter(candidate -> isNonStandardFormat(candidate.type(), candidate.format()))
             .forEach(candidate -> _propertyCandidateMap.put(candidate.container(), candidate));
     }
-
-    private static final Set<String> META_FORMATS = CaseInsensitiveHashSet.of("Date", "DateTime", "Time");
 
     // Allows standard formats and standard meta formats
     private boolean isNonStandardFormat(DateDisplayFormatType type, String format)

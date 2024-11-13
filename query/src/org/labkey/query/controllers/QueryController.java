@@ -4467,7 +4467,7 @@ public class QueryController extends SpringActionController
             try
             {
                 rows = json.getJSONArray(PROP_ROWS);
-                if (rows.length() < 1)
+                if (rows.isEmpty())
                     throw new ValidationException("No '" + PROP_ROWS + "' array supplied.");
             }
             catch (JSONException x)
@@ -4482,7 +4482,7 @@ public class QueryController extends SpringActionController
             if (!table.hasPermission(user, commandType.getPermission()))
                 throw new UnauthorizedException();
 
-            if (commandType != CommandType.insert && table.getPkColumns().size() == 0)
+            if (commandType != CommandType.insert && table.getPkColumns().isEmpty())
                 throw new IllegalArgumentException("The table '" + table.getPublicSchemaName() + "." +
                         table.getPublicName() + "' cannot be updated because it has no primary key defined!");
 

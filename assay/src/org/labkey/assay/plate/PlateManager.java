@@ -1098,6 +1098,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         position.setPlateId(plateId);
                         Map<String, Object> wellRow = factory.toMap(position, new CaseInsensitiveHashMap<>());
 
+                        // Issue 51658: Do not serialize the position "description" to the row as this can collide
+                        // with user furnished plate metadata.
+                        wellRow.remove("Description");
+
                         if (wellDataMap.containsKey(position.getDescription()))
                         {
                             wellDataMap.get(position.getDescription()).forEach(

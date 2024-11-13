@@ -67,6 +67,8 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                     Container c = ContainerManager.getForId(record.entityId());
                     if (c != null)
                     {
+                        if (service.isCloudRoot(c))
+                            return;
                         File root = service.getFileRoot(c);
                         Long size = null != root && root.isDirectory() ? FileUtils.sizeOfDirectory(root) : null;
                         long current = HeartBeat.currentTimeMillis();
