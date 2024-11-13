@@ -248,6 +248,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         return getFileName(ctx, value, false);
     }
 
+    @Override
     protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
     {
         String result = value == null ? null : StringUtils.trimToNull(value.toString());
