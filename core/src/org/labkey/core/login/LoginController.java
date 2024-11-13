@@ -1751,6 +1751,9 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getSuccessView(SetPasswordForm form)
         {
+            if (null == _successUrl)
+                _successUrl = AppProps.getInstance().getHomePageActionURL();
+
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
             return HttpView.redirect(_successUrl, true);
         }

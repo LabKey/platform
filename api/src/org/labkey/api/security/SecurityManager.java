@@ -180,7 +180,8 @@ public class SecurityManager
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
     public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
-    public static final String AUTHENTICATION_ATTRIBUTES_KEY = User.class.getName() + "$AuthenticationAttributes";
+    public static final String USER_ATTRIBUTES_KEY = User.class.getName() + "$UserAttributes";
+    public static final String AUTHENTICATION_PROPERTIES = AuthenticationManager.class.getName() + "$AuthenticationProperties";
     public static final String SCOPE_USER_ROLES = "UserRoles";
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
@@ -510,6 +511,16 @@ public class SecurityManager
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
 
+    // Most callers should use getSessionUser() instead, which returns the impersonated user if impersonation is active.
+    // This method returns the user who originally established the session which could be an impersonating admin. This
+    // is useful for code paths that track user sessions.
+    public static @Nullable User getSessionOwner(@Nullable HttpSession session)
+    {
+        User sessionUser = getSessionUser(session);
+        return sessionUser != null ? (sessionUser.isImpersonated() ? sessionUser.getImpersonatingUser() : sessionUser) : null;
+    }
+
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static User getSessionUser(HttpServletRequest request)
     {
         User sessionUser = getSessionUser(request.getSession(false));
@@ -521,6 +532,7 @@ public class SecurityManager
         return sessionUser;
     }
 
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static User getSessionUser(HandshakeRequest request)
     {
         HttpSession session = (HttpSession) request.getHttpSession();
@@ -533,6 +545,7 @@ public class SecurityManager
         return sessionUser;
     }
 
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static @Nullable User getSessionUser(@Nullable HttpSession session)
     {
         User sessionUser = null;
@@ -540,7 +553,23 @@ public class SecurityManager
         Integer userId = null == session ? null : (Integer) session.getAttribute(USER_ID_KEY);
 
         if (null != userId)
+        {
             sessionUser = UserManager.getUser(userId);
+
+            if (null != sessionUser)
+            {
+                // NOTE: getUser() above returns a cloned object so _groups should be null. This is important to ensure
+                // group memberships are calculated on every request (but just once)
+                assert sessionUser._groups == null;
+
+                ImpersonationContextFactory factory = (ImpersonationContextFactory) session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
+
+                if (null != factory)
+                {
+                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                }
+            }
+        }
 
         return sessionUser;
     }
@@ -588,28 +617,18 @@ public class SecurityManager
 
         try
         {
-            HttpSession session = request.getSession(false);
             User sessionUser = getSessionUser(request);
 
             if (null != sessionUser)
             {
                 AUTH_LOG.debug("   Session user present: " + sessionUser);
 
-                // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
-                // group memberships are calculated on every request (but just once)
-                assert sessionUser._groups == null;
-
-                ImpersonationContextFactory factory = (ImpersonationContextFactory) session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-
-                if (null != factory)
-                {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
-                }
-                else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
+                if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
                     sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
                 }
 
+                HttpSession session = request.getSession(false);
                 List<AuthenticationValidator> validators = getValidators(session);
 
                 // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
@@ -628,7 +647,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            stopImpersonating(request, factory);
+                            stopImpersonating(request, sessionUser.getImpersonationContext().getFactory());
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -827,7 +846,8 @@ public class SecurityManager
         {
             PrimaryAuthenticationConfiguration<?> configuration = response.getConfiguration();
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
-            newSession.setAttribute(AUTHENTICATION_ATTRIBUTES_KEY, response.getAttributeMap());
+            newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
+            newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
         }
 
         return newSession;
