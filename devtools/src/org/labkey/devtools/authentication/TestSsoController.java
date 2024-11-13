@@ -39,9 +39,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Map;
 
-/**
- * Created by adam on 6/5/2016.
- */
 public class TestSsoController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestSsoController.class);
@@ -96,7 +93,7 @@ public class TestSsoController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Invalid TestSso configuration");
 
-            return AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(form.getEmail()));
+            return AuthenticationResponse.success(configuration, new ValidEmail(form.getEmail()));
         }
     }
 
