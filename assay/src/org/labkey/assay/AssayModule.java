@@ -31,6 +31,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
@@ -50,6 +51,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -95,7 +97,6 @@ import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -146,6 +147,8 @@ public class AssayModule extends SpringModule
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
         AssayPlateMetadataService.setInstance(new AssayPlateMetadataServiceImpl());
+        DataStateManager.getInstance().registerDataStateHandler(PlateDataStateManager.get());
+
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
         PlateSchema.register(this);
