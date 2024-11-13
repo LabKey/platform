@@ -67,9 +67,7 @@ public class StatsServiceImpl implements StatsService
         switch (type)
         {
             case THREE_PARAMETER:
-                return new ParameterCurveFit(data, type, 0.0, asymptoteMax);
-            case THREE_PARAMETER_ALT:
-                return new ThreeParameterAlternateCurveFit(data, asymptoteMax);
+                return new ThreeParameterCurveFit(data, asymptoteMax);
             case FOUR_PARAMETER_SIMPLEX:
                 return new FourParameterSimplex(data);
             case FOUR_PARAMETER:
@@ -129,7 +127,6 @@ public class StatsServiceImpl implements StatsService
             CurveValidation v1 = new CurveValidation(new double[]{12.54, 12.04, 9.11, 7.48, .576, -.512, 1.99, -6.60});
             v1.setResults(CurveFitType.POLYNOMIAL, new CurveResults(2, .044, .052));
             v1.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(3.09, .065, .065));
-            v1.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(3.09, .065, .065));
             v1.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(2.5, .031, .045));
             v1.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(2.2, .046, .054));
             v1.setResults(CurveFitType.LINEAR, new CurveResults(6.8, .070, .070));
@@ -138,7 +135,6 @@ public class StatsServiceImpl implements StatsService
             CurveValidation v2 = new CurveValidation(new double[]{93.28, 88.65, 74.12, 46.16, 28.34, 17.41, 6.17, -1.79});
             v2.setResults(CurveFitType.POLYNOMIAL, new CurveResults(5.4, .414, .424));
             v2.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(3.45, .414, .414));
-            v2.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(3.45, .414, .414));
             v2.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(3.4, .403, .403));
             v2.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(3.1, .420, .420));
             v2.setResults(CurveFitType.LINEAR, new CurveResults(36.8, .553, .553));
@@ -147,7 +143,6 @@ public class StatsServiceImpl implements StatsService
             CurveValidation v3 = new CurveValidation(new double[]{10.79, 3.21, .599, 9.96, 9.5, 8.39, 1.56, -5.81});
             v3.setResults(CurveFitType.POLYNOMIAL, new CurveResults(4.1, .055, .056));
             v3.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(5.0, .078, .078));
-            v3.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(5.0, .078, .078));
             v3.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(4.7, .048, .049));
             v3.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(4.6, .080, .082));
             v3.setResults(CurveFitType.LINEAR, new CurveResults(5.9, .070, .070));
@@ -156,7 +151,6 @@ public class StatsServiceImpl implements StatsService
             CurveValidation v4 = new CurveValidation(new double[]{75.94, 58.52, 39.42, 28.84, 19.37, 9.91, 6.04, -7.35});
             v4.setResults(CurveFitType.POLYNOMIAL, new CurveResults(2.4, .259, .273));
             v4.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(4.34, .280, .280));
-            v4.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(4.34, .280, .280));
             v4.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(4.5, .226, .247));
             v4.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(3.7, .245, .262));
             v4.setResults(CurveFitType.LINEAR, new CurveResults(27.5, .374, .374));
@@ -165,7 +159,6 @@ public class StatsServiceImpl implements StatsService
             CurveValidation v5 = new CurveValidation(new double[]{89.34, 74.24, 45.69, 18.34, .365, -1.65, -.77, -16.59});
             v5.setResults(CurveFitType.POLYNOMIAL, new CurveResults(5.9, .207, .263));
             v5.setResults(CurveFitType.THREE_PARAMETER, new CurveResults(7.86, .281, .281));
-            v5.setResults(CurveFitType.THREE_PARAMETER_ALT, new CurveResults(7.86, .281, .281));
             v5.setResults(CurveFitType.FOUR_PARAMETER, new CurveResults(5, .201, .263));
             v5.setResults(CurveFitType.FIVE_PARAMETER, new CurveResults(5.1, .221, .277));
             v5.setResults(CurveFitType.LINEAR, new CurveResults(38.0, .363, .363));

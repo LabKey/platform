@@ -39,8 +39,7 @@ public interface StatsService
 
     enum CurveFitType
     {
-        THREE_PARAMETER("Three Parameter", "3pl"),
-        THREE_PARAMETER_ALT("Three Parameter (Alternate)", "3param"), // TODO name TBD
+        THREE_PARAMETER("Three Parameter", "3PL"),
         FOUR_PARAMETER("Four Parameter", "4pl"),
         FIVE_PARAMETER("Five Parameter", "5pl"),
         FOUR_PARAMETER_SIMPLEX("4 Parameter", "4param"),

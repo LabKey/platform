@@ -5,12 +5,18 @@ import org.labkey.api.data.statistics.DoublePoint;
 
 import static org.labkey.api.data.statistics.StatsService.CurveFitType.THREE_PARAMETER;
 
-public class ThreeParameterAlternateCurveFit extends ParameterCurveFit
+/* Based on the equation from SigmaPlot */
+public class ThreeParameterCurveFit extends ParameterCurveFit
 {
-
-    public ThreeParameterAlternateCurveFit(DoublePoint[] data, @Nullable Double asymptoteMax)
+    public ThreeParameterCurveFit(DoublePoint[] data, @Nullable Double asymptoteMax)
     {
         super(data, THREE_PARAMETER, 0.0, asymptoteMax);
+    }
+
+    @Override
+    public double solveForX(double y)
+    {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
@@ -18,8 +24,6 @@ public class ThreeParameterAlternateCurveFit extends ParameterCurveFit
     {
         if (params != null)
         {
-            // TODO hasXLogScale()?
-
             if (x <= 0)
             {
                 if (params.getSlope() < 0)
