@@ -443,29 +443,49 @@
             });
 
             this.participantStore = Ext4.create('Ext.data.Store', {
-                model : 'participantModel',
-                sorters : {property : <%=q(subjectNounColName)%>, direction : 'ASC'}
+                model: 'participantModel',
+                sorters: { property: <%=q(subjectNounColName)%>, direction: 'ASC' },
+                pageSize: 50, // Fetch 50 items at a time
+                autoLoad: false, // Avoid pre-loading since we want to load on typing
+                proxy: {
+                    type: 'ajax',
+                    url : LABKEY.ActionURL.buildURL("query", "selectRows", LABKEY.container.path),
+                    reader: {
+                        type: 'json',
+                        rootProperty: 'rows',
+                        totalProperty: 'total'  // Assuming the total count is in the 'total' property for paging
+                    },
+                    extraParams: {
+                        schemaName: 'study',
+                        queryName: <%=q(subjectNounSingular)%>
+                    }
+                },
             });
 
-            LABKEY.Query.selectRows({
-                schemaName : 'study',
-                queryName : <%=q(subjectNounSingular)%>,
-                success : function(details){
-                    this.participantStore.loadData(details.rows);
-                },
-                scope : this
+            var viewParticipantDataLink = Ext4.create('Ext.Component', {
+                html: '<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': ''}) + '" target="_blank">View Participant Data</a>',
+                padding: '3 0 0 20'
             });
 
             var participantCombo = Ext4.create('Ext.form.field.ComboBox',{
                 name : 'participantCombo',
-                queryMode : 'local',
                 store: this.participantStore,
                 valueField : <%=q(subjectNounColName)%>,
                 displayField : <%=q(subjectNounColName)%>,
-                labelWidth : 200,
+                labelWidth : 120,
                 labelSeparator: '',
                 fieldLabel : (<%=q(subjectNounSingular)%> + " ID"),
-                editable: false
+                editable: true,
+                queryMode: 'remote',
+                minChars: 2,
+                typeAhead: true,
+                queryParam: 'query.ParticipantId~contains',
+                listeners: {
+                    select: function(combo) {
+                        // Update link when a selection is made
+                        viewParticipantDataLink.update('<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': combo.getValue() }) + '" target="_blank">View Participant Data</a>');
+                    }
+                }
             });
 
             var deleteButton = Ext4.create('Ext.button.Button', {
@@ -490,18 +510,29 @@
                    buttons: [
                        {
                            text: 'Yes',
-                           handler: function() {
+                           handler: function(button) {
+
+                               button.setDisabled(true);
+                               Ext4.getBody().mask("Deleting...");
+
                                Ext4.Ajax.request({
                                    url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
                                    method : 'POST',
                                    jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete },
                                    headers : {'Content-Type' : 'application/json'},
                                    scope: this,
-                                   success: function(details) {
+                                   success: function() {
+                                       Ext4.getBody().unmask();
                                        displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(subjectNounSingular)%> + " " + participantIdToDelete + '.');
+                                       dialog.close();
+                                       // Refresh the ComboBox store after deletion
+                                       participantCombo.setValue(null);
+                                       participantCombo.getStore().load();
                                    },
                                    failure: function(response, options){
+                                       Ext4.getBody().unmask();
                                        LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:' + response.responseText);
+                                       button.setDisabled(false);
                                    },
                                });
                                dialog.close();
@@ -532,7 +563,7 @@
                     dock : 'bottom',
                     ui : 'footer',
                     height: 30,
-                    items: [deleteButton]
+                    items: [deleteButton, viewParticipantDataLink]
                 }
             });
         };

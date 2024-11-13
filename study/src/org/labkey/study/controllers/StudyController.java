@@ -1510,9 +1510,7 @@ public class StudyController extends BaseStudyController
                 TableInfo participantGroupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
                 if (null != participantGroupMapTable)
                 {
-                    TableSelector ts = new TableSelector(participantGroupMapTable, new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
-                    if (ts.getRowCount() > 0)
-                        deleteFromParticipantGroupTable(participantGroupMapTable, participantIdColumnName, participantId, "ParticipantGroupMap", errors);
+                    deleteFromParticipantGroupTable(participantGroupMapTable, participantId, "ParticipantGroupMap", errors);
                 }
                 transaction.commit();
             }
@@ -1538,9 +1536,9 @@ public class StudyController extends BaseStudyController
             ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
         }
 
-        private void deleteFromParticipantGroupTable(TableInfo ti, String participantIdColumnName, String participantId, String tableName, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+        private void deleteFromParticipantGroupTable(TableInfo ti, String participantId, String tableName, BindException errors) throws SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE " + participantIdColumnName+ " = ?", participantId);
+            SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE participantid = ?", participantId);
             new SqlExecutor(ti.getSchema()).execute(sql);
             ParticipantGroupCache.uncache(getContainer());
         }
