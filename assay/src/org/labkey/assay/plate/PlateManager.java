@@ -682,9 +682,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public ContainerFilter getPlateContainerFilter(@Nullable ExpProtocol protocol, Container container, User user)
     {
-        ContainerFilter lookupCf = QueryService.get().getContainerFilterForLookups(container, user);
-        ContainerFilter currentCf = ContainerFilter.Type.Current.create(protocol != null ? protocol.getContainer() : container, user);
-        return lookupCf != null ? lookupCf : currentCf;
+        return getPlateLookupContainerFilter(protocol != null ? protocol.getContainer() : container, user);
     }
 
     @Override
@@ -1531,14 +1529,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return getPlateTable(container, user, null);
     }
 
-    public @NotNull TableInfo getPlateTable(Container container, User user, @Nullable ContainerFilter cf)
+    private @NotNull TableInfo getPlateTable(Container container, User user, @Nullable ContainerFilter cf)
     {
         return getPlateUserSchema(container, user).getTableOrThrow(PlateTable.NAME, cf);
     }
 
     private @NotNull TableInfo getWellTable(Container container, User user)
     {
-        return getPlateUserSchema(container, user).getTableOrThrow(WellTable.NAME);
+        return getWellTable(container, user, null);
+    }
+
+    private @NotNull TableInfo getWellTable(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        return getPlateUserSchema(container, user).getTableOrThrow(WellTable.NAME, cf);
     }
 
     private @NotNull QueryUpdateService requiredUpdateService(@NotNull TableInfo table)
@@ -3497,7 +3500,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (includeSamples)
             columns.add(WellTable.Column.SampleID.name());
 
-        var wellTable = getWellTable(container, user);
+        var wellTable = getWellTable(container, user, getPlateLookupContainerFilter(container, user));
         var filter = new SimpleFilter(FieldKey.fromParts(WellTable.Column.PlateId.name()), plateRowId);
         var wellDatas = new TableSelector(wellTable, columns, filter, new Sort(WellTable.Column.RowId.name())).getArrayList(WellData.class);
 
