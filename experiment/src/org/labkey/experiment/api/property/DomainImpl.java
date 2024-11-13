@@ -447,7 +447,7 @@ public class DomainImpl implements Domain
             if (!StringUtils.isEmpty(dp.getFormat()))
             {
                 String ptype = dp.getRangeURI();
-                if (ptype.equalsIgnoreCase(PropertyType.DATE_TIME.getTypeUri()))
+                if (ptype.equalsIgnoreCase(PropertyType.DATE_TIME.getTypeUri())) // TODO: Check Date and Time also?
                 {
                     type = " for type " + PropertyType.DATE_TIME.getXarName();
                     // Allow special named formats (these would otherwise fail validation)

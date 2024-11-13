@@ -163,11 +163,13 @@ public class TempTableTracker extends WeakReference<Object>
 
         synchronized(createdTableNames)
         {
-            createdTableNames.remove(qualifiedName);
+            var ttt = createdTableNames.remove(qualifiedName);
             appendToLog("-" + schemaName + "\t" + tableName + "\n");
 
             if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + CacheManager.DAY)
                 synchronizeLog(false);
+
+            ttt.clear();
         }
     }
 

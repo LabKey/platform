@@ -81,4 +81,10 @@ public interface PlateReader
      * @throws ValidationException - if the value cannot be converted, will halt parsing of the plate
      */
     double convertWellValue(String token) throws ValidationException;
+
+    // Issue 51553: Empty well value should be 0.0d by default but can be overridden via the PlateReader implementation
+    default double getEmptyWellValue()
+    {
+        return 0.0d;
+    }
 }

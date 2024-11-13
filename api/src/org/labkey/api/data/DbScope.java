@@ -1157,6 +1157,9 @@ public class DbScope
         {
             log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
 
+            if (_conn == null)
+                throw new ConnectionAlreadyReleaseException("Connection has already been nulled out, but was passed: " + conn);
+
             if (_conn != conn)
                 throw new IllegalStateException("Incorrect Connection: " + conn + " vs. " + _conn);
 
@@ -1171,6 +1174,19 @@ public class DbScope
             }
 
             return 0 == _refCount;
+        }
+    }
+
+    /**
+     * Special case for when the connection being closed doesn't match the expected
+     * connection for this thread, to help scenarios that are prone to race conditions
+     * (like killing pipeline jobs) ignore it.
+     */
+    public static class ConnectionAlreadyReleaseException extends IllegalStateException
+    {
+        public ConnectionAlreadyReleaseException(String s)
+        {
+            super(s);
         }
     }
 
@@ -2080,7 +2096,6 @@ public class DbScope
      */
     public static void closeAllConnectionsForCurrentThread()
     {
-        Thread thread = getEffectiveThread();
         for (DbScope scope : getInitializedDbScopes())
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
@@ -2097,7 +2112,11 @@ public class DbScope
                 {
                     LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
-                    t.close(thread);
+                    t.close();
+                }
+                catch (ConnectionAlreadyReleaseException ignored)
+                {
+                    // The code in another thread has already released the connection
                 }
                 catch (Exception x)
                 {
@@ -2566,11 +2585,6 @@ public class DbScope
 
         @Override
         public void close()
-        {
-            close(getEffectiveThread());
-        }
-
-        public void close(Thread thread)
         {
             if (_closesToIgnore == 0)
             {

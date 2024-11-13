@@ -263,10 +263,7 @@ public class AuthFilter implements Filter
             // across Tomcat restarts. Ensure that all authenticated users have their sessions tracked, so we can
             // accurately assess if anyone is logged in
             HttpSession s = req.getSession(false);
-            if (s != null && !user.isGuest())
-            {
-                UserManager.ensureSessionTracked(s);
-            }
+            UserManager.ensureSessionTracked(user, s);
 
             SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();

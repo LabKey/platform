@@ -340,7 +340,7 @@ public class PlateUtils
             // If the value is not null or a number, stop parsing.
             Object value = rowMap.get(startCol + j);
             if (value == null)
-                cells[j] = 0.0d;
+                cells[j] = reader != null ? reader.getEmptyWellValue() : 0.0d;
             else if (value instanceof String)
             {
                 try
