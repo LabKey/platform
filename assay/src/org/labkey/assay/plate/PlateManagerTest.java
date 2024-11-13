@@ -84,6 +84,7 @@ public final class PlateManagerTest
     private enum PlateMetadataFields
     {
         barcode,
+        description,
         negativeControl,
         opacity,
     }
@@ -114,6 +115,7 @@ public final class PlateManagerTest
         {
             List<GWTPropertyDescriptor> customFields = List.of(
                 new GWTPropertyDescriptor(PlateMetadataFields.barcode.name(), "http://www.w3.org/2001/XMLSchema#string"),
+                new GWTPropertyDescriptor(PlateMetadataFields.description.name(), "http://www.w3.org/2001/XMLSchema#string"),
                 new GWTPropertyDescriptor(PlateMetadataFields.opacity.name(), "http://www.w3.org/2001/XMLSchema#double"),
                 new GWTPropertyDescriptor(PlateMetadataFields.negativeControl.name(), "http://www.w3.org/2001/XMLSchema#double")
             );
@@ -404,23 +406,32 @@ public final class PlateManagerTest
         assertTrue("Expected saved plateId to be returned", plateId != 0);
 
         List<PlateCustomField> fields = PlateManager.get().getPlateMetadataFields(container, user);
+        List<String> metadataFields = List.of(
+            "Amount",
+            "AmountUnits",
+            PlateMetadataFields.barcode.name(),
+            "Concentration",
+            "ConcentrationUnits",
+            PlateMetadataFields.description.name(),
+            PlateMetadataFields.negativeControl.name(),
+            PlateMetadataFields.opacity.name()
+        );
 
         // Verify returned sorted by name should include built in as well as custom created fields
-        assertEquals("Expected plate custom fields", 7, fields.size());
+        assertEquals("Expected plate custom fields", metadataFields.size(), fields.size());
 
-        List<String> metadataFields = List.of("Amount", "AmountUnits", PlateMetadataFields.barcode.name(), "Concentration", "ConcentrationUnits", PlateMetadataFields.negativeControl.name(), PlateMetadataFields.opacity.name());
-        for (int i=0; i < metadataFields.size(); i++)
+        for (int i = 0; i < metadataFields.size(); i++)
         {
             String fieldName = metadataFields.get(i);
             assertEquals(String.format("Expected %s custom field", fieldName), fieldName, fields.get(i).getName());
         }
 
         // assign custom fields to the plate
-        assertEquals("Expected custom fields to be added to the plate", 9, PlateManager.get().addFields(container, user, plateId, fields).size());
+        assertEquals("Expected custom fields to be added to the plate", 10, PlateManager.get().addFields(container, user, plateId, fields).size());
 
         // remove amount and amountUnits metadata fields
         fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0), fields.get(1)));
-        assertEquals("Unexpected number of custom fields", 7, fields.size());
+        assertEquals("Unexpected number of custom fields", 8, fields.size());
         assertEquals("Expected Concentration custom field", "Concentration", fields.get(2).getName());
         assertEquals("Expected ConcentrationUnits custom field", "ConcentrationUnits", fields.get(3).getName());
 

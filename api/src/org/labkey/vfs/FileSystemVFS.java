@@ -12,6 +12,7 @@ import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
@@ -35,11 +36,16 @@ public class FileSystemVFS extends AbstractFileSystemLike
 
     FileSystemVFS(URI uri, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        super(uri, canRead, canWrite, canDeleteRoot);
+        this(uri, !FileUtil.isCaseInsensitiveFileSystem(), canRead, canWrite, canDeleteRoot);
+    }
+
+    FileSystemVFS(URI uri, boolean caseSensitive, boolean canRead, boolean canWrite, boolean canDeleteRoot)
+    {
+        super(uri, caseSensitive, canRead, canWrite, canDeleteRoot);
         try
         {
             vfsRoot = VFS.getManager().resolveFile(uri);
-            root = new _FileLike(Path.rootPath, vfsRoot);
+            root = new _FileLike(parsePath("/"), vfsRoot);
         }
         catch (FileSystemException e)
         {
@@ -47,9 +53,9 @@ public class FileSystemVFS extends AbstractFileSystemLike
         }
     }
 
-    private FileSystemVFS(URI uri, @Nullable CacheStrategy cacheStrategy, boolean canRead, boolean canWrite, boolean canDeleteRoot)
+    private FileSystemVFS(URI uri, @Nullable CacheStrategy cacheStrategy, boolean caseSensitive, boolean canRead, boolean canWrite, boolean canDeleteRoot)
     {
-        super(uri, canRead, canWrite, canDeleteRoot);
+        super(uri, caseSensitive, canRead, canWrite, canDeleteRoot);
         try
         {
             var manager = VFS.getManager();
@@ -75,7 +81,7 @@ public class FileSystemVFS extends AbstractFileSystemLike
         var cacheStrategy = vfsRoot.getFileSystem().getFileSystemManager().getCacheStrategy();
         if (cacheStrategy != CacheStrategy.ON_CALL)
             return this;
-        return new FileSystemVFS(getURI(), CacheStrategy.ON_RESOLVE, canReadFiles(), canWriteFiles(), canDeleteRoot());
+        return new FileSystemVFS(getURI(), CacheStrategy.ON_RESOLVE, caseSensitive, canReadFiles(), canWriteFiles(), canDeleteRoot());
     }
 
     @Override
@@ -235,6 +241,12 @@ public class FileSystemVFS extends AbstractFileSystemLike
         }
 
         @Override
+        public long getCreated()
+        {
+            return getLastModified();
+        }
+
+        @Override
         public long getLastModified()
         {
             try
@@ -243,7 +255,7 @@ public class FileSystemVFS extends AbstractFileSystemLike
             }
             catch (FileSystemException e)
             {
-                return 0;
+                return Long.MIN_VALUE;
             }
         }
 

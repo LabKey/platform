@@ -15,13 +15,6 @@
  */
 package org.labkey.api.websocket;
 
-import org.apache.logging.log4j.Logger;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.logging.LogHelper;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.websocket.ClientEndpoint;
@@ -38,6 +31,13 @@ import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
 import jakarta.websocket.server.HandshakeRequest;
 import jakarta.websocket.server.ServerEndpointConfig;
+import org.apache.logging.log4j.Logger;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -81,7 +81,7 @@ public abstract class BrowserEndpoint extends Endpoint
                 config.getUserProperties().put("httpSession", httpSession);
 
             config.getUserProperties().put("userId", null == user ? 0 : user.getUserId());
-            config.getUserProperties().put("attributes", AuthenticationManager.getAuthenticationAttributes(httpSession));
+            config.getUserProperties().put("attributes", AuthenticationManager.getUserAttributes(httpSession));
         }
     }
 

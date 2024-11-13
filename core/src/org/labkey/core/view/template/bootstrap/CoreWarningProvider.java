@@ -148,7 +148,8 @@ public class CoreWarningProvider implements WarningProvider
         }
 
         // Issue 50015 - only show upgrade message to full site admins
-        if (context == null || context.getUser().hasRootPermission(SiteAdminPermission.class))
+        // Issue 51573 - mechanism to suppress the banner completely
+        if (context == null || context.getUser().hasRootPermission(SiteAdminPermission.class) && AppProps.getInstance().getUsageReportingLevel().showUpgradeBanner())
         {
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
 

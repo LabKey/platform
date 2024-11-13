@@ -3,14 +3,17 @@ package org.labkey.core.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -32,13 +35,13 @@ public class UserApiKeysUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation)
     {
         throw new UnsupportedOperationException("Updates are not allowed for table core.UserApiKeys.");
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
     {
         if (oldRowMap == null)
             return null;
@@ -49,7 +52,9 @@ public class UserApiKeysUpdateService extends DefaultQueryUpdateService
         // so we skip the container permission check from the base class.
         aliasColumns(_columnMapping, oldRowMap);
 
-        _delete(container, oldRowMap);
+        Integer rowId = (Integer)oldRowMap.get("rowId");
+        ApiKeyManager.get().deleteKeys(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+
         return oldRowMap;
     }
 
