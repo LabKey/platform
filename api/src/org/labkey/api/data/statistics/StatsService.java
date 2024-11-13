@@ -39,9 +39,10 @@ public interface StatsService
 
     enum CurveFitType
     {
+        THREE_PARAMETER("Three Parameter", "3pl"),
         FOUR_PARAMETER("Four Parameter", "4pl"),
         FIVE_PARAMETER("Five Parameter", "5pl"),
-        THREE_PARAMETER("3 Parameter", "3param"),
+        THREE_PARAMETER_ALT("3 Parameter", "3param"),
         FOUR_PARAMETER_SIMPLEX("4 Parameter", "4param"),
         POLYNOMIAL("Polynomial", "poly"),
         LINEAR("Linear", "linear"),
