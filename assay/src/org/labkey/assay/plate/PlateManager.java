@@ -682,7 +682,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public ContainerFilter getPlateContainerFilter(@Nullable ExpProtocol protocol, Container container, User user)
     {
-        return getPlateLookupContainerFilter(protocol != null ? protocol.getContainer() : container, user);
+        ContainerFilter containerFilter = QueryService.get().getContainerFilterForLookups(container, user);
+        if (containerFilter == null)
+            containerFilter = ContainerFilter.Type.Current.create(protocol != null ? protocol.getContainer() : container, user);
+        return containerFilter;
     }
 
     @Override
