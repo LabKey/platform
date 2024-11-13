@@ -146,4 +146,54 @@ public interface CurveFit<P extends CurveFit.Parameters>
      * @return The integrated area under the curve.
      */
     double calculateAUC(StatsService.AUCType type, double startX, double endX) throws FitFailedException;
+
+    default double residualSumSquares(P parameters)
+    {
+        double sumSq = 0;
+        for (DoublePoint point : getData())
+        {
+            double expectedValue = point.getY();
+            double foundValue = fitCurve(point.getX(), parameters);
+
+            sumSq += Math.pow(foundValue - expectedValue, 2);
+        }
+        return sumSq;
+    }
+
+    default double rootMeanSquareError(P parameters)
+    {
+        return Math.sqrt(residualSumSquares(parameters) / getData().length);
+    }
+
+    default double totalSumSquares()
+    {
+        double sumSq = 0;
+        double mean = 0;
+        for (DoublePoint point : getData())
+            mean += point.getY();
+        mean /= getData().length;
+
+        for (DoublePoint point : getData())
+        {
+            double expectedValue = point.getY();
+            sumSq += Math.pow(expectedValue - mean, 2);
+        }
+        return sumSq;
+    }
+
+    default double rSquared(P parameters)
+    {
+        return 1 - residualSumSquares(parameters) / totalSumSquares();
+    }
+
+    default double adjustedRSquared(P parameters)
+    {
+        return Double.NaN;
+    }
+
+    default double adjustedRSquared(P parameters, int p)
+    {
+        int n = getData().length;
+        return 1 - (1 - rSquared(parameters)) * (n - 1) / (n - p - 1);
+    }
 }

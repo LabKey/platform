@@ -106,26 +106,13 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
 
     protected double calculateFitError(SigmoidalParameters parameters)
     {
-        double deviationValue = 0;
-        double varianceValue = 0;
-        double total = 0;
+        return rSquared(parameters);
+    }
 
-        // find the mean
-        for (DoublePoint point : getData())
-        {
-            total += point.getY();
-        }
-        double mean = total / getData().length;
-
-        for (DoublePoint point : getData())
-        {
-            double expectedValue = point.getY();
-            double foundValue = fitCurve(point.getX(), parameters);
-            deviationValue += Math.pow(foundValue - expectedValue, 2);
-            varianceValue += Math.pow(expectedValue - mean, 2);
-        }
-
-        return 1 - deviationValue / varianceValue;
+    @Override
+    public double adjustedRSquared(SigmoidalParameters parameters)
+    {
+        return adjustedRSquared(parameters, 4);
     }
 
     @Override
@@ -139,15 +126,7 @@ public class FourParameterSimplex extends ParameterCurveFit implements Multivari
     private double sumSquares(double[] params)
     {
         SigmoidalParameters parameters = createParams(params);
-        double sumSq = 0;
-        for (DoublePoint point : getData())
-        {
-            double expectedValue = point.getY();
-            double foundValue = fitCurve(point.getX(), parameters);
-
-            sumSq += Math.pow(foundValue - expectedValue, 2);
-        }
-        return sumSq;
+        return residualSumSquares(parameters);
     }
 
     private SigmoidalParameters createParams(double[] params)

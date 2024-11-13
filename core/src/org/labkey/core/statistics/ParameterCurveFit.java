@@ -221,6 +221,18 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
+    @Override
+    public double adjustedRSquared(SigmoidalParameters parameters)
+    {
+        return switch (_fitType)
+        {
+            case THREE_PARAMETER, THREE_PARAMETER_ALT -> adjustedRSquared(parameters, 3);
+            case FOUR_PARAMETER -> adjustedRSquared(parameters, 4);
+            case FIVE_PARAMETER -> adjustedRSquared(parameters, 5);
+            default -> throw new IllegalStateException("Unsupported curve fit type: " + _fitType.name());
+        };
+    }
+
     private boolean is3Parameter()
     {
         return _fitType == StatsService.CurveFitType.THREE_PARAMETER || _fitType == StatsService.CurveFitType.THREE_PARAMETER_ALT;
