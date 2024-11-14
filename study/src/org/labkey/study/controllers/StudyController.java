@@ -1482,8 +1482,12 @@ public class StudyController extends BaseStudyController
         @Override
         public Object execute(DeleteParticipantForm deleteParticipantForm, BindException errors) throws Exception
         {
+            //Note: In the EHR system, 'Participant' tables are prefixed with "Animal". For example, the equivalent of the
+            //Participant table is named Animal, and ParticipantGroupMap is AnimalGroupMap, etc.
+            //Additionally, the participantId column is labeled as "Id" in the Animal table and other "Animal" tables.
             String participantIdColumnName = deleteParticipantForm.getParticipantIdColumnName();
             String participantId = deleteParticipantForm.getParticipantId();
+            String participantTableNamePrefix = deleteParticipantForm.getTableNamePrefix();
             DbSchema schema = StudySchema.getInstance().getSchema();
 
             Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -1508,7 +1512,7 @@ public class StudyController extends BaseStudyController
                 }
 
                 //delete from study.participantGroupMap
-                TableInfo participantGroupMapTable = QueryService.get().getUserSchema(getUser(), getContainer(), "study").getTable(deleteParticipantForm.getTableNamePrefix() + "GroupMap");
+                TableInfo participantGroupMapTable = QueryService.get().getUserSchema(getUser(), getContainer(), "study").getTable(participantTableNamePrefix + "GroupMap");
                 if (null != participantGroupMapTable)
                 {
                     TableSelector ts = new TableSelector(participantGroupMapTable, Set.of(participantIdColumnName, "GroupId"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
@@ -1576,7 +1580,6 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Failed to delete participant from " + ti.getSchema().getName() + "." + tableName + ": " + e.getMessage());
             }
 
-            ParticipantGroupCache.uncache(getContainer());
             ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), groupId);
             AuditLogService.get().addEvent(getUser(), event);
         }
