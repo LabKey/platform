@@ -1535,7 +1535,7 @@ quickScan:
 
         String result = new String(ret);
 
-        assert isAllowedFileName(result) == null :
+        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
                 "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result);
 
         return new String(ret);
