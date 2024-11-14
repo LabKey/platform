@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
+import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.MathStat;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.view.Stats;
@@ -255,6 +256,137 @@ public class StatsServiceImpl implements StatsService
             {
                 return _positiveAuc;
             }
+        }
+
+        @Test
+        public void TestCurveFitParameters() throws Exception
+        {
+            StatsService service = StatsService.get();
+            double delta = 0.005;
+
+            DoublePoint[] data1 = new DoublePoint[]{
+                    new DoublePoint(0.025, 0.67),
+                    new DoublePoint(0.05, 1),
+                    new DoublePoint(0.1, 2),
+                    new DoublePoint(0.2, 3.17),
+            };
+
+            CurveFit fit = service.getCurveFit(CurveFitType.LINEAR, data1);
+            fit.setLogXScale(false);
+            assertEquals(14.442, (Double) fit.getParameters().toMap().get("slope"), delta);
+            assertEquals(0.356, (Double) fit.getParameters().toMap().get("intercept"), delta);
+            assertEquals(0.986, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.POLYNOMIAL, data1);
+            fit.setLogXScale(false);
+            assertEquals(0.088, ((PolynomialCurveFit.PolynomialParameters)fit.getParameters()).getCoefficients()[0], delta);
+            assertEquals(21.8001, ((PolynomialCurveFit.PolynomialParameters)fit.getParameters()).getCoefficients()[1], delta);
+            assertEquals(-31.785, ((PolynomialCurveFit.PolynomialParameters)fit.getParameters()).getCoefficients()[2], delta);
+            assertEquals(0.996, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.0, 3.17, 2.246, 0.096, 1.0);
+            assertEquals(-1.667, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER, data1, 0.0, 4.0);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.0, 4.0, 1.376, 0.095, 1.0);
+            assertEquals(0.974, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER_ALT, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.0, 3.17, -1.732, 0.096, 1.0);
+            assertEquals(0.786, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER_ALT, data1, 0.0, 4.0);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.0, 4.0, -1.376, 0.095, 1.0);
+            assertEquals(0.974, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.67, 3.17, null, 0.096, 1.0);
+            assertEquals(-1.138, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER, data1, null, 4.0);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.67, 4.0, 2.246, 0.095, 1.0);
+            assertEquals(0.892, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER_SIMPLEX, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.581, 3.787, 2.402, 0.110, 0.0);
+            assertEquals(1.0, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER_SIMPLEX, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.581, 3.787, 2.402, 0.110, 0.0);
+            assertEquals(1.0, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER, data1);
+            fit.setLogXScale(false);
+            verifySigmoidalParameters(fit, 0.67, 3.17, 1.111, 0.096, 2.932);
+            assertEquals(-1.624, fit.rSquared(fit.getParameters()), delta);
+            fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER, data1, null, 4.0);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.67, 4.0, 2.246, 0.095, 1.466);
+            assertEquals(0.997, fit.rSquared(fit.getParameters()), delta);
+        }
+
+        @Test
+        public void TestCurveFitParametersNAbCase() throws Exception
+        {
+            StatsService service = StatsService.get();
+            double delta = 0.005;
+
+            DoublePoint[] data1 = new DoublePoint[]{
+                    new DoublePoint(0.01, 93),
+                    new DoublePoint(0.1, 89),
+                    new DoublePoint(1, 74),
+                    new DoublePoint(10, 46),
+                    new DoublePoint(100, 28),
+                    new DoublePoint(1000, 17),
+                    new DoublePoint(10000, 6),
+                    new DoublePoint(100000, -2),
+            };
+
+            CurveFit fit = service.getCurveFit(CurveFitType.FIVE_PARAMETER, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, -2.0, 93.0, -0.445, 10.661, 0.838);
+            assertEquals(3.493, fit.getFitError(), delta);
+            assertEquals(0.990, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, -2.0, 103.0, -0.325, 6.907, 1.0);
+            assertEquals(4.126, fit.getFitError(), delta);
+            assertEquals(0.986, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.FOUR_PARAMETER_SIMPLEX, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, -2.540, 102.643, -0.374, 9.985, 0.0);
+            assertEquals(0.994, fit.getFitError(), delta);
+            assertEquals(0.994, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.0, 103.0, -0.445, 6.907, 1.0);
+            assertEquals(3.631, fit.getFitError(), delta);
+            assertEquals(0.989, fit.rSquared(fit.getParameters()), delta);
+
+            fit = service.getCurveFit(CurveFitType.THREE_PARAMETER_ALT, data1);
+            fit.setLogXScale(true);
+            verifySigmoidalParameters(fit, 0.0, 103.0, 0.445, 6.907, 1.0);
+            assertEquals(3.631, fit.getFitError(), delta);
+            assertEquals(0.989, fit.rSquared(fit.getParameters()), delta);
+        }
+
+        private void verifySigmoidalParameters(CurveFit fit, Double min, Double max, Double slope, Double inflection, Double asymmetry) throws FitFailedException
+        {
+            double delta = 0.005;
+            Map<String, Object> params = fit.getParameters().toMap();
+            assertEquals(min, (Double) params.get("min"), delta);
+            assertEquals(max, (Double) params.get("max"), delta);
+            if (slope != null) assertEquals(slope, (Double) params.get("slope"), delta);
+            assertEquals(inflection, (Double) params.get("inflection"), delta);
+            assertEquals(asymmetry, (Double) params.get("asymmetry"), delta);
         }
     }
 }
