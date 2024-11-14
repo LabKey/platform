@@ -107,7 +107,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (copy)
                     assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
                 else
-                    assayInfo = new Pair<>(protocol, provider.getDomains(protocol));
+                    assayInfo = new Pair<>(protocol, provider.getDomainsAndDefaultValues(protocol));
                 return getAssayTemplate(provider, assayInfo, copy);
             }
         }
@@ -151,7 +151,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             gwtDomain.setProvisioned(domain.isProvisioned());
             gwtDomains.add(gwtDomain);
 
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
@@ -212,14 +212,14 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
         }
         result.setProtocolParameters(gwtProtocolParams);
-        if (provider instanceof PlateBasedAssayProvider)
+        if (provider instanceof PlateBasedAssayProvider plateProvider)
         {
-            Plate plateTemplate = ((PlateBasedAssayProvider)provider).getPlate(getContainer(), protocol);
+            Plate plateTemplate = plateProvider.getPlate(getContainer(), protocol);
             if (plateTemplate != null)
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
 
-            SampleMetadataInputFormat[] formats = ((PlateBasedAssayProvider) provider).getSupportedMetadataInputFormats();
+            SampleMetadataInputFormat[] formats = plateProvider.getSupportedMetadataInputFormats();
             if (formats.length > 1)
             {
                 Map<String, String> metadataFormats = new LinkedHashMap<>();
@@ -237,11 +237,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 result.setAvailableMetadataInputFormats(metadataFormats);
                 result.setMetadataInputFormatHelp(sbHelp.toString());
             }
-            result.setSelectedMetadataInputFormat(((PlateBasedAssayProvider)provider).getMetadataInputFormat(protocol).name());
+            result.setSelectedMetadataInputFormat(plateProvider.getMetadataInputFormat(protocol).name());
         }
-        if (provider instanceof DetectionMethodAssayProvider)
+        if (provider instanceof DetectionMethodAssayProvider dmProvider)
         {
-            DetectionMethodAssayProvider dmProvider = (DetectionMethodAssayProvider)provider;
             String method = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
             if (method != null)
                 result.setSelectedDetectionMethod(method);
@@ -301,9 +300,9 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         result.setAllowPlateMetadata(provider.supportsPlateMetadata(protocol));
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
-        for (GWTDomain d : result.getDomains())
-            if (d.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + "."))
-                d.setAllowFlagProperties(supportsFlag);
+        for (GWTDomain<?> gwtDomain : result.getDomains())
+            if (gwtDomain.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + "."))
+                gwtDomain.setAllowFlagProperties(supportsFlag);
 
         return result;
     }
@@ -400,11 +399,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     assay.setProtocolId(protocol.getRowId());
 
                     Set<String> domainURIs = new HashSet<>();
-                    for (GWTDomain domain : assay.getDomains())
+                    for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
                         domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
                         domain.setName(assay.getName() + " " + domain.getName());
-                        GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer());
+                        GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer(), true);
                         if (gwtDomain == null)
                         {
                             Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
@@ -412,11 +411,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         }
                         else
                         {
-                            ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, false);
-                            if (domainErrors.hasErrors())
-                            {
-                                throw domainErrors;
-                            }
+                            updateDomainDescriptor(domain, protocol, assayProvider, false);
                             domainURIs.add(domain.getDomainURI());
                         }
 
@@ -571,15 +566,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
-                    GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    GWTDomain<GWTPropertyDescriptor> previous = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
                     boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
-
-                    ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
-
-                    // Need to bail out inside of the loop because some errors may have left the DB connection in
-                    // an unusable state.
-                    if (domainErrors.hasErrors())
-                        throw domainErrors;
 
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
                     QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
@@ -605,7 +593,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange)
+    private GWTDomain<GWTPropertyDescriptor> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange) throws ValidationException
     {
         GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -623,7 +611,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             auditComment = "The name of the assay domain '" + previous.getName() + "' was changed to '" + domain.getName() + "'.";
         }
 
-        return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);
+        ValidationException domainErrors = DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);
+        if (domainErrors.hasErrors())
+            throw domainErrors;
+
+        return previous;
     }
 
     private boolean canUpdateProtocols()

@@ -390,10 +390,10 @@ public class AssayController extends SpringActionController
         }
 
         Map<String, List<Map<String, Object>>> domains = new HashMap<>();
-        for (Pair<Domain, Map<DomainProperty, Object>> domain : provider.getDomains(protocol))
+        for (Domain domain : provider.getDomains(protocol))
         {
-            TableInfo table = tableInfoMap.get(domain.getKey().getTypeURI());
-            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
+            TableInfo table = tableInfoMap.get(domain.getTypeURI());
+            domains.put(domain.getName(), serializeDomain(domain, table, user));
         }
 
         Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new EnumMap<>(ExpProtocol.AssayDomainTypes.class);
