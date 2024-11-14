@@ -453,7 +453,7 @@
                     reader: {
                         type: 'json',
                         rootProperty: 'rows',
-                        totalProperty: 'total'  // Assuming the total count is in the 'total' property for paging
+                        totalProperty: 'rowCount'
                     },
                     extraParams: {
                         schemaName: 'study',

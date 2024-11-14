@@ -248,7 +248,6 @@ import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantCategoryImpl;
-import org.labkey.study.model.ParticipantGroupCache;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
@@ -1517,9 +1516,9 @@ public class StudyController extends BaseStudyController
                 {
                     TableSelector ts = new TableSelector(participantGroupMapTable, Set.of(participantIdColumnName, "GroupId"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
                     ParticipantGroupManager.ParticipantGroupMap[] pgm = ts.getArray(ParticipantGroupManager.ParticipantGroupMap.class);
-                    if (pgm.length == 1)
+                    if (pgm.length == 1) //a participant is associated with only one group, so there should be only one row
                     {
-                        deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantGroupMapTable.getName(), pgm[0].getGroupId(), errors);
+                        deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantIdColumnName, pgm[0].getGroupId(), errors);
                     }
                 }
                 transaction.commit();
@@ -1562,22 +1561,24 @@ public class StudyController extends BaseStudyController
             }
             catch (InvalidKeyException | BatchValidationException | QueryUpdateServiceException | SQLException e)
             {
-                _log.error("Failed to delete from dataset {}", ti.getName(), e);
-                errors.reject(ERROR_MSG, "Error deleting from dataset " + ti.getName() + ": " + e.getMessage());
+                String msg = "Failed to delete participant rows from " + ti.getName();
+                _log.error(msg, e);
+                errors.reject(ERROR_MSG, msg + ": " + e.getMessage());
             }
         }
 
-        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String tableName, Integer groupId, BindException errors)
+        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String participantColName, Integer groupId, BindException errors)
         {
             try
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM " + ti.getSchema().getName() + "." + tableName + " WHERE participantid = ?", participantId);
+                SQLFragment sql = new SQLFragment("DELETE FROM study.participantgroupmap WHERE participantid = ?", participantId);
                 new SqlExecutor(ti.getSchema()).execute(sql);
             }
             catch (Exception e)
             {
-                _log.error("Failed to delete participant from ParticipantGroupMap for ID: " + participantId, e);
-                errors.reject(ERROR_MSG, "Failed to delete participant from " + ti.getSchema().getName() + "." + tableName + ": " + e.getMessage());
+                String msg = "Failed to delete row from " + ti.getSchema().getName() + "." + ti.getName() + " for " + participantColName + " '" + participantId + "'";
+                _log.error(msg, e);
+                errors.reject(ERROR_MSG, msg + " :" + e.getMessage());
             }
 
             ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), groupId);
