@@ -3074,9 +3074,11 @@ public class DavController extends SpringActionController
                     return lastModified;
                 }
             };
-            if (FileUtil.isAllowedFileName(name) != null)
+
+            String notAllowedMsg = FileUtil.isAllowedFileName(name);
+            if (StringUtils.isNotBlank(notAllowedMsg))
             {
-                throw new IOException("The file extension is not allowed.");
+                throw new IOException(notAllowedMsg);
             }
             AntiVirusService avs = AntiVirusService.get();
 
@@ -6745,15 +6747,11 @@ public class DavController extends SpringActionController
 
     void checkAllowedFileName(String s) throws DavException
     {
-        if (!AppProps.getInstance().isInvalidFilenameUploadBlocked())
-            return;
-
         String msg = FileUtil.isAllowedFileName(s);
         if (null == msg)
             return;
         throw new DavException(WebdavStatus.SC_BAD_REQUEST, msg);
     }
-
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert

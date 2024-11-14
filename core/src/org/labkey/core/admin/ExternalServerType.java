@@ -120,7 +120,7 @@ public enum ExternalServerType
             return HtmlString.unsafe("""
                 <div style="width: 700px">
                     <div>
-                        This list is the set of file extensions that LabKey will accept for uploads. Any extension that is not in this list will be rejected, this includes multiple extensions. For example, .gz is not sufficient to all .tar.gz; you must specify .tar.gz. If the list is empty, then this check is ignored.
+                        This list is the set of file extensions that LabKey will accept for uploads. Any extension that is not in this list will be rejected, this includes multiple extensions. For example, .gz is not sufficient to allow .tar.gz; you must specify .tar.gz. If the list is empty, then this check is ignored.
                     </div>
                     <div>
                     e.g., .tsv, .csv, .tar.gz, .sky.zip, etc.

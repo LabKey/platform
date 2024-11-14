@@ -312,22 +312,25 @@ public class FileUtil
 
     public static String isAllowedFileName(String s)
     {
-        if (StringUtils.isBlank(s))
-            return "Filename must not be blank";
-        if (!ViewServlet.validChars(s))
-            return "Filename must contain only valid unicode characters.";
-        if (StringUtils.containsAny(s, restrictedPrintable))
-            return "Filename may not contain any of these characters: " + restrictedPrintable;
-        if (StringUtils.containsAny(s, "\t\n\r"))
-            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-        if (StringUtils.contains("-$", s.charAt(0)))
-            return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)",s))
-            return "Filename may not contain space followed by dash.";
+        if (AppProps.getInstance().isInvalidFilenameBlocked())
+        {
+            if (StringUtils.isBlank(s))
+                return "Filename must not be blank";
+            if (!ViewServlet.validChars(s))
+                return "Filename must contain only valid unicode characters.";
+            if (StringUtils.containsAny(s, restrictedPrintable))
+                return "Filename may not contain any of these characters: " + restrictedPrintable;
+            if (StringUtils.containsAny(s, "\t\n\r"))
+                return "Filename may not contain 'tab', 'new line', or 'return' characters.";
+            if (StringUtils.contains("-$", s.charAt(0)))
+                return "Filename may not begin with any of these characters: -$";
+            if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
+                return "Filename may not contain space followed by dash.";
+        }
 
         String badExtension = checkExtension(s, AppProps.getInstance());
         if (badExtension != null)
-            return "This file type [" + badExtension + "] has been blocked by admins";
+            return "This file type [" + badExtension + "] is not allowed.";
         return null;
     }
 
@@ -1532,7 +1535,7 @@ quickScan:
 
         String result = new String(ret);
 
-        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
+        assert isAllowedFileName(result) == null :
                 "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result);
 
         return new String(ret);
