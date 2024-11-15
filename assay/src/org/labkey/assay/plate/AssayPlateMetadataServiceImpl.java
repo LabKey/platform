@@ -1069,7 +1069,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     if (entry.getValue() instanceof Integer stateRowId)
                     {
-                        return DataStateManager.getInstance().getStateForRowId(container, stateRowId);
+                        return PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                     }
                 }
             }

@@ -87,13 +87,14 @@ public class PlateDataStateManager implements DataStateHandler
 
     public void ensureDefaultStates(Container container, User user)
     {
-        Set<String> typeNames = getStates(container).stream().map(DataState::getStateType).collect(Collectors.toSet());
+        Container c = getDataStateContainer(container);
+        Set<String> typeNames = getStates(c).stream().map(DataState::getStateType).collect(Collectors.toSet());
         for (StateType type : StateType.values())
         {
             if (!typeNames.contains(type.name()))
             {
                 DataState state = new DataState();
-                state.setContainer(container);
+                state.setContainer(c);
                 state.setStateType(type.name());
                 state.setLabel(type.name());
                 state.setDescription(type._description);
@@ -101,6 +102,20 @@ public class PlateDataStateManager implements DataStateHandler
                 DataStateManager.getInstance().insertState(user, state);
             }
         }
+    }
+
+    @Nullable
+    public DataState getStateForRowId(Container container, Integer rowId)
+    {
+        return DataStateManager.getInstance().getStateForRowId(getDataStateContainer(container), rowId);
+    }
+
+    private Container getDataStateContainer(Container container)
+    {
+        // scope the data state container to the project
+        if (container.isRoot())
+            return container;
+        return container.isProject() ? container : container.getProject();
     }
 
     @Override
