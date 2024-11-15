@@ -411,7 +411,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         }
                         else
                         {
-                            updateDomainDescriptor(domain, protocol, assayProvider, false);
+                            GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                            updateDomainDescriptor(domain, protocol, previous, assayProvider, false);
                             domainURIs.add(domain.getDomainURI());
                         }
 
@@ -566,7 +567,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
-                    GWTDomain<GWTPropertyDescriptor> previous = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
+                    GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
+                    updateDomainDescriptor(domain, protocol, previous, provider, hasNameChange);
                     boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
 
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
@@ -593,9 +595,14 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         }
     }
 
-    private GWTDomain<GWTPropertyDescriptor> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange) throws ValidationException
+    private void updateDomainDescriptor(
+        GWTDomain<GWTPropertyDescriptor> domain,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> previous,
+        AssayProvider provider,
+        boolean hasNameChange
+    ) throws ValidationException
     {
-        GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)
@@ -614,8 +621,6 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         ValidationException domainErrors = DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);
         if (domainErrors.hasErrors())
             throw domainErrors;
-
-        return previous;
     }
 
     private boolean canUpdateProtocols()
