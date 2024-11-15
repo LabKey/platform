@@ -1260,8 +1260,7 @@ public class FileContentController extends SpringActionController
                 Map<FieldKey, Object> data = result.getFieldKeyRowMap();
                 Map<String, Object> row = new HashMap<>();
 
-                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) data.get(dataFileURLFieldKey));
-                row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
+                row.put("dataFileUrl", data.get(dataFileURLFieldKey));
                 row.put("rowId", data.get(rowIdFieldKey));
                 row.put("name", data.get(nameFieldKey));
 
