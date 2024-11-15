@@ -24,7 +24,7 @@ public class DefaultAVMultipartResolver extends StandardServletMultipartResolver
                 // Filter to just file uploads
                 if (part.getSubmittedFileName() != null)
                 {
-                    FileUtil.checkAllowedFileName(part.getSubmittedFileName());
+                    FileUtil.checkAllowedFileName(part.getSubmittedFileName(), true);
                     validate(part);
                 }
             }

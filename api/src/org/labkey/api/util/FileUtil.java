@@ -309,8 +309,7 @@ public class FileUtil
         }
     }
 
-
-    public static String isAllowedFileName(String s)
+    public static String isAllowedFileName(String s, boolean checkFileExtension)
     {
         if (AppProps.getInstance().isInvalidFilenameBlocked())
         {
@@ -328,9 +327,12 @@ public class FileUtil
                 return "Filename may not contain space followed by dash.";
         }
 
-        String badExtension = checkExtension(s, AppProps.getInstance());
-        if (badExtension != null)
-            return "This file type [" + badExtension + "] is not allowed.";
+        if (checkFileExtension)
+        {
+            String badExtension = checkExtension(s, AppProps.getInstance());
+            if (badExtension != null)
+                return "This file type [" + badExtension + "] is not allowed.";
+        }
         return null;
     }
 
@@ -355,9 +357,9 @@ public class FileUtil
         extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
     }
 
-    public static void checkAllowedFileName(String s) throws IOException
+    public static void checkAllowedFileName(String s, boolean checkFileExtension) throws IOException
     {
-        String msg = isAllowedFileName(s);
+        String msg = isAllowedFileName(s, checkFileExtension);
         if (null == msg)
             return;
         throw new IOException(s + ": " + msg);
@@ -390,7 +392,7 @@ public class FileUtil
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), false);
         //noinspection SSBasedInspection
         return file.mkdir();
     }
@@ -416,7 +418,7 @@ public class FileUtil
         while (!Files.exists(parent.toPath()))
         {
             if (checkFileName)
-                checkAllowedFileName(parent.getName());
+                checkAllowedFileName(parent.getName(), false);
             parent = parent.getParentFile();
         }
         //noinspection SSBasedInspection
@@ -431,7 +433,7 @@ public class FileUtil
         {
             ret = true;
             if (checkFileName)
-                checkAllowedFileName(parent.getName());
+                checkAllowedFileName(parent.getName(), false);
             parent = parent.getParent();
         }
         //noinspection SSBasedInspection
@@ -449,7 +451,7 @@ public class FileUtil
     public static Path createDirectory(Path path, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(getFileName(path));
+            checkAllowedFileName(getFileName(path), false);
         if (!Files.exists(path))
             //noinspection SSBasedInspection
             return Files.createDirectory(path);
@@ -478,7 +480,7 @@ public class FileUtil
         while (!Files.exists(parent))
         {
             if (checkFileName)
-                checkAllowedFileName(getFileName(parent));
+                checkAllowedFileName(getFileName(parent), false);
             parent = parent.getParent();
         }
         //noinspection SSBasedInspection
@@ -502,7 +504,7 @@ public class FileUtil
     public static boolean createNewFile(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), true);
         //noinspection SSBasedInspection
         return file.createNewFile();
     }
@@ -511,7 +513,7 @@ public class FileUtil
     public static boolean createNewFile(FileLike file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), true);
         var ret = !file.exists();
         file.createFile();
         return ret;
@@ -527,7 +529,7 @@ public class FileUtil
     public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(getFileName(path));
+            checkAllowedFileName(getFileName(path), true);
         return Files.createFile(path, attrs);
     }
 
@@ -1535,8 +1537,8 @@ quickScan:
 
         String result = new String(ret);
 
-        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
-                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result);
+        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result, true) == null :
+                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result, true);
 
         return new String(ret);
     }
@@ -2219,42 +2221,42 @@ quickScan:
         @Test
         public void testAllowedFileName()
         {
-            assertNull(isAllowedFileName("a"));
-            assertNull(isAllowedFileName("a-b"));
-            assertNull(isAllowedFileName("a - b"));
-            assertNull(isAllowedFileName("a- b"));
-            assertNull(isAllowedFileName("a--b"));
-            assertNull(isAllowedFileName("a -- b"));
-            assertNull(isAllowedFileName("a-- b"));
-            assertNull(isAllowedFileName("a b"));
-            assertNull(isAllowedFileName("a%b"));
-            assertNull(isAllowedFileName("a$b"));
-            assertNull(isAllowedFileName("%ab"));
+            assertNull(isAllowedFileName("a", false));
+            assertNull(isAllowedFileName("a-b", false));
+            assertNull(isAllowedFileName("a - b", false));
+            assertNull(isAllowedFileName("a- b", false));
+            assertNull(isAllowedFileName("a--b", false));
+            assertNull(isAllowedFileName("a -- b", false));
+            assertNull(isAllowedFileName("a-- b", false));
+            assertNull(isAllowedFileName("a b", false));
+            assertNull(isAllowedFileName("a%b", false));
+            assertNull(isAllowedFileName("a$b", false));
+            assertNull(isAllowedFileName("%ab", false));
 
-            assertNotNull(isAllowedFileName(null));
-            assertNotNull(isAllowedFileName(""));
-            assertNotNull(isAllowedFileName(" "));
-            assertNotNull(isAllowedFileName("a\tb"));
-            assertNotNull(isAllowedFileName("-a"));
-            assertNotNull(isAllowedFileName(" -a"));
-            assertNotNull(isAllowedFileName("a -b"));
-            assertNotNull(isAllowedFileName("--a"));
-            assertNotNull(isAllowedFileName(" --a"));
-            assertNotNull(isAllowedFileName("a --b"));
-            assertNotNull(isAllowedFileName("a ---b"));
-            assertNotNull(isAllowedFileName("a/b"));
-            assertNotNull(isAllowedFileName("a\b"));
-            assertNotNull(isAllowedFileName("a:b"));
-            assertNotNull(isAllowedFileName("a*b"));
-            assertNotNull(isAllowedFileName("a?b"));
-            assertNotNull(isAllowedFileName("a<b"));
-            assertNotNull(isAllowedFileName("a>b"));
-            assertNotNull(isAllowedFileName("a\"b"));
-            assertNotNull(isAllowedFileName("a|b"));
-            assertNotNull(isAllowedFileName("a`b"));
-            assertNotNull(isAllowedFileName("$ab"));
-            assertNotNull(isAllowedFileName("-ab"));
-            assertNotNull(isAllowedFileName("a`b"));
+            assertNotNull(isAllowedFileName(null, false));
+            assertNotNull(isAllowedFileName("", false));
+            assertNotNull(isAllowedFileName(" ", false));
+            assertNotNull(isAllowedFileName("a\tb", false));
+            assertNotNull(isAllowedFileName("-a", false));
+            assertNotNull(isAllowedFileName(" -a", false));
+            assertNotNull(isAllowedFileName("a -b", false));
+            assertNotNull(isAllowedFileName("--a", false));
+            assertNotNull(isAllowedFileName(" --a", false));
+            assertNotNull(isAllowedFileName("a --b", false));
+            assertNotNull(isAllowedFileName("a ---b", false));
+            assertNotNull(isAllowedFileName("a/b", false));
+            assertNotNull(isAllowedFileName("a\b", false));
+            assertNotNull(isAllowedFileName("a:b", false));
+            assertNotNull(isAllowedFileName("a*b", false));
+            assertNotNull(isAllowedFileName("a?b", false));
+            assertNotNull(isAllowedFileName("a<b", false));
+            assertNotNull(isAllowedFileName("a>b", false));
+            assertNotNull(isAllowedFileName("a\"b", false));
+            assertNotNull(isAllowedFileName("a|b", false));
+            assertNotNull(isAllowedFileName("a`b", false));
+            assertNotNull(isAllowedFileName("$ab", false));
+            assertNotNull(isAllowedFileName("-ab", false));
+            assertNotNull(isAllowedFileName("a`b", false));
         }
 
         @Test
