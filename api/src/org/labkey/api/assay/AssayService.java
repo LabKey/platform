@@ -232,11 +232,6 @@ public interface AssayService
      */
     <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
 
-    /**
-     * Returns the TableInfo for the given assay domain based on the assay domain ID.
-     */
-    TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf);
-
     void onBeforeAssayResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow);
 
     /**

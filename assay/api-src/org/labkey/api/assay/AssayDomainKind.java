@@ -33,7 +33,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -50,14 +49,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: June 25, 2007
- * Time: 1:01:43 PM
- */
 public abstract class AssayDomainKind extends BaseAbstractDomainKind
 {
     private final String _namespacePrefix;
@@ -142,7 +135,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         return new SQLFragment("NULL");
     }
 
-    protected ExpProtocol findProtocol(Domain domain)
+    protected @Nullable ExpProtocol findProtocol(Domain domain)
     {
         Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
         if (pair == null)
@@ -160,41 +153,39 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
-                for (Pair<Domain, Map<DomainProperty, Object>> protocolDomain : provider.getDomains(protocol))
+                for (Domain protocolDomain : provider.getDomains(protocol))
                 {
-                    if (protocolDomain.getKey().getTypeURI().equals(domain.getTypeURI()))
+                    if (protocolDomain.getTypeURI().equals(domain.getTypeURI()))
                     {
                         return Pair.of(provider, protocol);
                     }
                 }
             }
         }
+
         return null;
     }
 
-
     @Override
+    @Nullable
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpProtocol protocol = findProtocol(domain);
-        if (protocol != null)
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(containerUser.getContainer(), protocol);
-        }
-        return null;
-    }
+        if (protocol == null)
+            return null;
 
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(containerUser.getContainer(), protocol);
+    }
 
     @Override
     @Nullable
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         ExpProtocol protocol = findProtocol(domain);
-        if (protocol != null)
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(containerUser.getContainer(), protocol, false, null);
-        }
-        return null;
+        if (protocol == null)
+            return null;
+
+        return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(containerUser.getContainer(), protocol, false, null);
     }
 
     @Override
@@ -243,7 +234,33 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     @Override
     public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
     {
-        return AssayService.get().getTableInfoForDomainId(user, container, domain.getTypeId(), cf);
+        if (domain == null)
+            return null;
+
+        Pair<AssayProvider, ExpProtocol> providerAndProtocol = findProviderAndProtocol(domain);
+        if (providerAndProtocol == null)
+            return null;
+
+        AssayProvider provider = providerAndProtocol.first;
+        ExpProtocol protocol = providerAndProtocol.second;
+
+        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+        for (var tableName : schema.getTableNames())
+        {
+            // First, fetch a table that is more likely to be cached
+            var table = schema.getTable(tableName);
+            if (table != null)
+            {
+                var tableDomain = table.getDomain();
+                if (tableDomain != null && tableDomain.getTypeURI().equals(domain.getTypeURI()))
+                {
+                    // Now that we have a matching table fetch the more expensive table with extra metadata
+                    return schema.getTable(tableName, cf, true, true);
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -252,10 +269,11 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         if (perm == ReadPermission.class)
         {
             Set<Role> roles = null;
-            if (userSchema instanceof UserSchema.HasContextualRoles)
-                roles = ((UserSchema.HasContextualRoles) userSchema).getContextualRoles();
+            if (userSchema instanceof UserSchema.HasContextualRoles schemaWithRoles)
+                roles = schemaWithRoles.getContextualRoles();
             return userSchema.getContainer().hasPermission(user, AssayReadPermission.class, roles);
         }
+
         return super.hasPermission(user, perm, userSchema);
     }
 }
