@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,7 +33,7 @@ import java.util.TreeSet;
 
 public class ActionsHelper
 {
-    public static Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> getActionStatistics() throws InstantiationException, IllegalAccessException
+    public static Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> getActionStatistics() throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
     {
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> moduleMap = new LinkedHashMap<>();
 
@@ -43,15 +44,15 @@ public class ActionsHelper
             Map<String, Map<String, SpringActionController.ActionStats>> controllerMap = new LinkedHashMap<>();
             moduleMap.put(module.getName(), controllerMap);
             Map<String, Class<? extends Controller>> pageFlows = module.getControllerNameToClass();
-            Set<Class> controllerClasses = new HashSet<>(pageFlows.values());
+            Set<Class<? extends Controller>> controllerClasses = new HashSet<>(pageFlows.values());
 
-            for (Class controllerClass : controllerClasses)
+            for (Class<? extends Controller> controllerClass : controllerClasses)
             {
                 if (SpringActionController.class.isAssignableFrom(controllerClass))
                 {
                     Map<String, SpringActionController.ActionStats> actionMap = new LinkedHashMap<>();
                     controllerMap.put(controllerClass.getSimpleName(), actionMap);
-                    SpringActionController controller = (SpringActionController) ViewServlet.getController(module, controllerClass);
+                    SpringActionController controller = (SpringActionController) ViewServlet.getController(module, controllerClass.asSubclass(SpringActionController.class));
                     SpringActionController.ActionResolver ar = controller.getActionResolver();
                     Set<SpringActionController.ActionDescriptor> set = new TreeSet<>(comp);
                     set.addAll(ar.getActionDescriptors());
@@ -68,5 +69,5 @@ public class ActionsHelper
     }
 
 
-    private static Comparator<SpringActionController.ActionDescriptor> comp = Comparator.comparing(SpringActionController.ActionDescriptor::getPrimaryName);
+    private static final Comparator<SpringActionController.ActionDescriptor> comp = Comparator.comparing(SpringActionController.ActionDescriptor::getPrimaryName);
 }

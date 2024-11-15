@@ -39,7 +39,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<PublishBean> me = (JspView<PublishBean>) HttpView.currentView();
+    JspView<PublishBean> me = HttpView.currentView();
     PublishBean bean = me.getModelBean();
     boolean exceedsMaxRows = bean.getIds().size() > AbstractPublishStartAction.MAX_ROWS_TO_LINK;
     boolean unambiguous = !bean.isInsufficientPermissions() && !bean.isNullStudies() && bean.getStudies().size() == 1;

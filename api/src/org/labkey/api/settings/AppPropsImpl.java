@@ -314,6 +314,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getReadOnlyHttpRequestTimeout()
+    {
+        // TODO - change to 0 prior to merging. Setting to 15 seconds to test feature on TeamCity
+        return lookupIntValue(readOnlyHttpRequestTimeout, 15);
+    }
+
+    @Override
     public int getMaxBLOBSize()
     {
         return lookupIntValue(maxBLOBSize, 50_000_000);

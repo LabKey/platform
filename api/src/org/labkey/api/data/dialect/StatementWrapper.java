@@ -2844,11 +2844,11 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             // those to the query profiler, but this would require one or more non-standard methods on StatementWrapper. See #24314.
             for (Object o : _parameters)
             {
-                if (o instanceof Array)
+                if (o instanceof Array a)
                 {
                     try
                     {
-                        o = ((Array) o).getArray();
+                        o = a.getArray();
                     }
                     catch (Exception e)
                     {

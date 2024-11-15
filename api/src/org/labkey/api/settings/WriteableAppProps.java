@@ -79,6 +79,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(memoryUsageDumpInterval, interval);
     }
 
+    public void setReadOnlyHttpRequestTimeout(int timeout)
+    {
+        storeIntValue(readOnlyHttpRequestTimeout, timeout);
+    }
+
     public void setMaxBLOBSize(int maxSize)
     {
         storeIntValue(maxBLOBSize, maxSize);

@@ -1161,7 +1161,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             finally
             {
-                DbScope.closeAllConnectionsForCurrentThread();
+                DbScope.closeAllConnectionsForCurrentThread(false);
             }
         }
     }

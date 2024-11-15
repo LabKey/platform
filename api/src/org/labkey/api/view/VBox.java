@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Stacks other {@link ModelAndView} instances vertically.
  */
-public class VBox extends WebPartView
+public class VBox extends WebPartView<Object>
 {
     protected final List<ModelAndView> _views;
 

@@ -19,8 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Filter;
-import org.labkey.api.view.ViewServlet;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
@@ -67,7 +67,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
         catch (IllegalStateException ise)
         {
-            ViewServlet.checkShuttingDown();
+            ContextListener.checkShuttingDown();
             throw ise;
         }
     }
@@ -86,7 +86,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
         catch (IllegalStateException ise)
         {
-            ViewServlet.checkShuttingDown();
+            ContextListener.checkShuttingDown();
             throw ise;
         }
     }
@@ -120,7 +120,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
         catch (IllegalStateException ise)
         {
-            ViewServlet.checkShuttingDown();
+            ContextListener.checkShuttingDown();
             throw ise;
         }
     }
@@ -136,7 +136,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
         catch (IllegalStateException ise)
         {
-            if (ViewServlet.isShuttingDown())
+            if (ContextListener.isShuttingDown())
                 return; // ignore
             throw ise;
         }

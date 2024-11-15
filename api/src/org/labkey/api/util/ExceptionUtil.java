@@ -235,7 +235,7 @@ public class ExceptionUtil
     /** @param request may be null if this is coming from a background thread or init  */
     public static String logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex, boolean writeToLog4J)
     {
-        if (ViewServlet.isShuttingDown())
+        if (ContextListener.isShuttingDown())
             return null;
 
         ex = unwrapException(ex);
@@ -668,6 +668,11 @@ public class ExceptionUtil
                 return true;
             }
 
+            if (ex instanceof AbortedRequestException)
+            {
+                return true;
+            }
+
             // Recurse to see if the root exception is a client abort exception
             if (ex.getCause() != ex)
             {
@@ -693,7 +698,7 @@ public class ExceptionUtil
     {
         try
         {
-            DbScope.closeAllConnectionsForCurrentThread();
+            DbScope.closeAllConnectionsForCurrentThread(false);
         }
         catch (Throwable t)
         {
@@ -759,7 +764,7 @@ public class ExceptionUtil
         boolean isGET = "GET".equals(request.getMethod());
         Map<String, String> headers = new TreeMap<>();
 
-        if (ViewServlet.isShuttingDown())
+        if (ContextListener.isShuttingDown())
         {
             try
             {

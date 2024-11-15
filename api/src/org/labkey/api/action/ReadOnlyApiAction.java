@@ -15,6 +15,10 @@
  */
 package org.labkey.api.action;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.TransactionFilter;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -28,6 +32,14 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class ReadOnlyApiAction<FORM> extends BaseApiAction<FORM>
 {
+
+    @Override
+    public ModelAndView handleRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception
+    {
+        request.setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
+        return super.handleRequest(request, response);
+    }
+
     @Override
     protected ModelAndView handleGet() throws Exception
     {

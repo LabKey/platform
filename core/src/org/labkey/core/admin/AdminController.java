@@ -122,6 +122,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -956,7 +957,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             JSONObject result = new JSONObject();
-            result.put("pendingRequestCount", ViewServlet.getPendingRequestCount() - 1 /* Exclude this request */);
+            result.put("pendingRequestCount", TransactionFilter.getPendingRequestCount() - 1 /* Exclude this request */);
 
             return new ApiSimpleResponse(result);
         }
@@ -1308,6 +1309,11 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            if (form.getReadOnlyHttpRequestTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Read only HTTP request timeout must be non-negative");
+            }
+
             WriteableAppProps props = AppProps.getWriteableInstance();
 
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
@@ -1315,6 +1321,7 @@ public class AdminController extends SpringActionController
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
+            props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setExt3Required(form.isExt3Required());
             props.setExt3APIRequired(form.isExt3APIRequired());
@@ -2226,6 +2233,7 @@ public class AdminController extends SpringActionController
         private String _ribbonMessage;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
+        private int _readOnlyHttpRequestTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2380,6 +2388,16 @@ public class AdminController extends SpringActionController
         public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
         {
             _memoryUsageDumpInterval = memoryUsageDumpInterval;
+        }
+
+        public int getReadOnlyHttpRequestTimeout()
+        {
+            return _readOnlyHttpRequestTimeout;
+        }
+
+        public void setReadOnlyHttpRequestTimeout(int timeout)
+        {
+            _readOnlyHttpRequestTimeout = timeout;
         }
 
         public int getMaxBLOBSize()
@@ -3599,7 +3617,7 @@ public class AdminController extends SpringActionController
                     if (labkeyThread)
                     {
                         String threadInfo = thread.getName();
-                        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+                        TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
                         if (null != uri)
                             threadInfo += "; processing URL " + uri;
                         activeThreads.add(threadInfo);

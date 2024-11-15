@@ -42,6 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
@@ -141,6 +142,9 @@ public class DbScope
         ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
     private static volatile DbScope _labkeyScope = null;
+
+    /** Threads that we are attempting to cancel and shouldn't be allowed to get another DB connection */
+    private static final Set<Thread> BANNED_THREADS = Collections.synchronizedSet(new HashSet<>());
 
     private final DbScopeLoader _dbScopeLoader;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS data sources
@@ -1372,6 +1376,12 @@ public class DbScope
 
     public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
+        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed
+        if (BANNED_THREADS.remove(getEffectiveThread()))
+        {
+            throw new AbortedRequestException("Cannot get another DB connection for this thread");
+        }
+
         Connection conn;
 
         try
@@ -2093,9 +2103,12 @@ public class DbScope
     /**
      * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
      * associated/effective thread. Also releases locks acquired as part of opening the transaction.
+     * @param preventNextAttempt true if the thread should be prevented from getting another DB connection when it
+     *                           wasn't in the midst of using a connection. Use finishedWithThread() to clear the ban.
      */
-    public static void closeAllConnectionsForCurrentThread()
+    public static void closeAllConnectionsForCurrentThread(boolean preventNextAttempt)
     {
+        boolean foundActiveConnection = false;
         for (DbScope scope : getInitializedDbScopes())
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
@@ -2112,6 +2125,7 @@ public class DbScope
                 {
                     LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
+                    foundActiveConnection = true;
                     t.close();
                 }
                 catch (ConnectionAlreadyReleaseException ignored)
@@ -2130,7 +2144,13 @@ public class DbScope
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        ConnectionWrapper.closeConnections();
+        foundActiveConnection |= ConnectionWrapper.closeConnections();
+
+        if (!foundActiveConnection && preventNextAttempt)
+        {
+            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
+            BANNED_THREADS.add(getEffectiveThread());
+        }
     }
 
     /**
@@ -2139,8 +2159,9 @@ public class DbScope
     public static void finishedWithThread()
     {
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-        closeAllConnectionsForCurrentThread();
+        closeAllConnectionsForCurrentThread(false);
         QueryService.get().clearEnvironment();
+        BANNED_THREADS.remove(Thread.currentThread());
     }
 
     /**
@@ -3088,7 +3109,7 @@ public class DbScope
             Transaction ignored = getLabKeyScope().ensureTransaction();
             // Intentionally don't call t.close(), make sure it unwinds correctly
             assertTrue(getLabKeyScope().isTransactionActive());
-            closeAllConnectionsForCurrentThread();
+            closeAllConnectionsForCurrentThread(false);
             assertFalse(getLabKeyScope().isTransactionActive());
         }
 
@@ -3104,7 +3125,7 @@ public class DbScope
                 assertTrue("Bad message: " + e.getMessage(), e.getMessage().contains("simulated"));
             }
             assertFalse(getLabKeyScope().isTransactionActive());
-            closeAllConnectionsForCurrentThread();
+            closeAllConnectionsForCurrentThread(false);
         }
 
         @Test

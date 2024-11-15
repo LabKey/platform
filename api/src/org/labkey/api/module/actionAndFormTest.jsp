@@ -17,6 +17,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="static org.junit.Assert.*" %>
+<%@ page import="java.lang.reflect.InvocationTargetException" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
@@ -25,7 +26,7 @@
 
     // Enumerate all registered actions, verifying that the actions and their associated forms can be instantiated
     @Test
-    public void testActions() throws IllegalAccessException, InstantiationException
+    public void testActions() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
         List<String> errorMessages = new LinkedList<>();
         Set<Class<?>> formClasses = new TreeSet<>(Comparator.comparing(Class::getName));
