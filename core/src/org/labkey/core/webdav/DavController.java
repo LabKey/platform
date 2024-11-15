@@ -3078,7 +3078,7 @@ public class DavController extends SpringActionController
             String notAllowedMsg = FileUtil.isAllowedFileName(name);
             if (StringUtils.isNotBlank(notAllowedMsg))
             {
-                throw new IOException(notAllowedMsg);
+                throw new DavException(WebdavStatus.SC_NOT_ACCEPTABLE, notAllowedMsg);
             }
             AntiVirusService avs = AntiVirusService.get();
 
