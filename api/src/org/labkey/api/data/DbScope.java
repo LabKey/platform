@@ -368,6 +368,21 @@ public class DbScope
             _dialect = SqlDialectManager.getFromDriverClassname(_dsName, _driverClassName);
             MemTracker.get().remove(_dialect);
             _driverClass = initializeDriver();
+
+            if (_dialect.isPostgreSQL())
+            {
+                // Starting with PostgreSQL 17.x, we can't connect with a database name longer than 63 chars, so we have
+                // to truncate and replace the URL in the DataSource. Yuck. Issue #51676.
+                String url = _dsPropertyReader.getUrl();
+                String name = _dialect.getDatabaseName(url);
+                if (name.length() > _dialect.getIdentifierMaxLength())
+                {
+                    String truncated = StringUtils.truncate(name, _dialect.getIdentifierMaxLength());
+                    String newUrl = url.replace(name, truncated);
+                    _dsPropertyReader.setUrl(newUrl);
+                }
+            }
+
             _url = _dsPropertyReader.getUrl();
 
             // Validate that data source is using a supported connection pool

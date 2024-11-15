@@ -958,11 +958,13 @@ public abstract class SqlDialect
             throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
+    /**
+     * @return The absolute maximum length for this database. Callers are responsible for truncating generated names,
+     * handing suffixes, etc.
+     */
     public int getIdentifierMaxLength()
     {
-        // 63 probably works, but save 2 chars for appending chars to
-        // create aliases for extra tables used in the lookup (e.g. junctionAlias = getTableAlias() + "_j")
-        return 61;
+        return 63;
     }
 
     protected SQLFragment getIdentifierTestSql(String candidate)
@@ -1342,6 +1344,20 @@ public abstract class SqlDialect
             {
                 LOG.error("Could not extract connection properties from data source \"" + _dsName + "\"");
                 return null;
+            }
+        }
+
+        public void setUrl(String url) throws ServletException
+        {
+            String methodName = "setUrl";
+            try
+            {
+                Method method = _ds.getClass().getMethod(methodName, String.class);
+                method.invoke(_ds, url);
+            }
+            catch (Exception e)
+            {
+                throw new ServletException("Unable to set DataSource property via " + methodName, e);
             }
         }
     }

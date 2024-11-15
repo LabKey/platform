@@ -637,8 +637,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         // This will handle both mixed case and special characters on PostgreSQL
         String legal = getSelectNameFromMetaDataName(dbName);
-        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8';\n" +
-                "ALTER DATABASE " + legal + " SET default_with_oids TO OFF";
+        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8'";
     }
 
     @Override
