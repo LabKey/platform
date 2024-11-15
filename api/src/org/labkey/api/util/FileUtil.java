@@ -311,20 +311,16 @@ public class FileUtil
 
     public static String isAllowedFileName(String s, boolean checkFileExtension)
     {
-        if (AppProps.getInstance().isInvalidFilenameBlocked())
+        return isAllowedFileName(s, checkFileExtension, AppProps.getInstance());
+    }
+
+    static String isAllowedFileName(String s, boolean checkFileExtension, AppProps appProps)
+    {
+        if (appProps.isInvalidFilenameBlocked())
         {
-            if (StringUtils.isBlank(s))
-                return "Filename must not be blank";
-            if (!ViewServlet.validChars(s))
-                return "Filename must contain only valid unicode characters.";
-            if (StringUtils.containsAny(s, restrictedPrintable))
-                return "Filename may not contain any of these characters: " + restrictedPrintable;
-            if (StringUtils.containsAny(s, "\t\n\r"))
-                return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-            if (StringUtils.contains("-$", s.charAt(0)))
-                return "Filename may not begin with any of these characters: -$";
-            if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
-                return "Filename may not contain space followed by dash.";
+            String msg = validateFileName(s);
+            if (msg != null)
+                return msg;
         }
 
         if (checkFileExtension)
@@ -333,6 +329,24 @@ public class FileUtil
             if (badExtension != null)
                 return "This file type [" + badExtension + "] is not allowed.";
         }
+        return null;
+    }
+
+    private static @Nullable String validateFileName(String s)
+    {
+        if (StringUtils.isBlank(s))
+            return "Filename must not be blank";
+        if (!ViewServlet.validChars(s))
+            return "Filename must contain only valid unicode characters.";
+        if (StringUtils.containsAny(s, restrictedPrintable))
+            return "Filename may not contain any of these characters: " + restrictedPrintable;
+        if (StringUtils.containsAny(s, "\t\n\r"))
+            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
+        if (StringUtils.contains("-$", s.charAt(0)))
+            return "Filename may not begin with any of these characters: -$";
+        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
+            return "Filename may not contain space followed by dash.";
+
         return null;
     }
 
@@ -2221,42 +2235,51 @@ quickScan:
         @Test
         public void testAllowedFileName()
         {
-            assertNull(isAllowedFileName("a", false));
-            assertNull(isAllowedFileName("a-b", false));
-            assertNull(isAllowedFileName("a - b", false));
-            assertNull(isAllowedFileName("a- b", false));
-            assertNull(isAllowedFileName("a--b", false));
-            assertNull(isAllowedFileName("a -- b", false));
-            assertNull(isAllowedFileName("a-- b", false));
-            assertNull(isAllowedFileName("a b", false));
-            assertNull(isAllowedFileName("a%b", false));
-            assertNull(isAllowedFileName("a$b", false));
-            assertNull(isAllowedFileName("%ab", false));
+            //Test Setup
+            Mockery _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            AppProps mockProps = _context.mock(AppProps.class);
+            _context.checking(new Expectations(){{
+                allowing(mockProps).isInvalidFilenameBlocked();
+                will(returnValue(true));
+            }});
 
-            assertNotNull(isAllowedFileName(null, false));
-            assertNotNull(isAllowedFileName("", false));
-            assertNotNull(isAllowedFileName(" ", false));
-            assertNotNull(isAllowedFileName("a\tb", false));
-            assertNotNull(isAllowedFileName("-a", false));
-            assertNotNull(isAllowedFileName(" -a", false));
-            assertNotNull(isAllowedFileName("a -b", false));
-            assertNotNull(isAllowedFileName("--a", false));
-            assertNotNull(isAllowedFileName(" --a", false));
-            assertNotNull(isAllowedFileName("a --b", false));
-            assertNotNull(isAllowedFileName("a ---b", false));
-            assertNotNull(isAllowedFileName("a/b", false));
-            assertNotNull(isAllowedFileName("a\b", false));
-            assertNotNull(isAllowedFileName("a:b", false));
-            assertNotNull(isAllowedFileName("a*b", false));
-            assertNotNull(isAllowedFileName("a?b", false));
-            assertNotNull(isAllowedFileName("a<b", false));
-            assertNotNull(isAllowedFileName("a>b", false));
-            assertNotNull(isAllowedFileName("a\"b", false));
-            assertNotNull(isAllowedFileName("a|b", false));
-            assertNotNull(isAllowedFileName("a`b", false));
-            assertNotNull(isAllowedFileName("$ab", false));
-            assertNotNull(isAllowedFileName("-ab", false));
-            assertNotNull(isAllowedFileName("a`b", false));
+            assertNull(isAllowedFileName("a", false, mockProps));
+            assertNull(isAllowedFileName("a-b", false, mockProps));
+            assertNull(isAllowedFileName("a - b", false, mockProps));
+            assertNull(isAllowedFileName("a- b", false, mockProps));
+            assertNull(isAllowedFileName("a--b", false, mockProps));
+            assertNull(isAllowedFileName("a -- b", false, mockProps));
+            assertNull(isAllowedFileName("a-- b", false, mockProps));
+            assertNull(isAllowedFileName("a b", false, mockProps));
+            assertNull(isAllowedFileName("a%b", false, mockProps));
+            assertNull(isAllowedFileName("a$b", false, mockProps));
+            assertNull(isAllowedFileName("%ab", false, mockProps));
+
+            assertNotNull(isAllowedFileName(null, false, mockProps));
+            assertNotNull(isAllowedFileName("", false, mockProps));
+            assertNotNull(isAllowedFileName(" ", false, mockProps));
+            assertNotNull(isAllowedFileName("a\tb", false, mockProps));
+            assertNotNull(isAllowedFileName("-a", false, mockProps));
+            assertNotNull(isAllowedFileName(" -a", false, mockProps));
+            assertNotNull(isAllowedFileName("a -b", false, mockProps));
+            assertNotNull(isAllowedFileName("--a", false, mockProps));
+            assertNotNull(isAllowedFileName(" --a", false, mockProps));
+            assertNotNull(isAllowedFileName("a --b", false, mockProps));
+            assertNotNull(isAllowedFileName("a ---b", false, mockProps));
+            assertNotNull(isAllowedFileName("a/b", false, mockProps));
+            assertNotNull(isAllowedFileName("a\b", false, mockProps));
+            assertNotNull(isAllowedFileName("a:b", false, mockProps));
+            assertNotNull(isAllowedFileName("a*b", false, mockProps));
+            assertNotNull(isAllowedFileName("a?b", false, mockProps));
+            assertNotNull(isAllowedFileName("a<b", false, mockProps));
+            assertNotNull(isAllowedFileName("a>b", false, mockProps));
+            assertNotNull(isAllowedFileName("a\"b", false, mockProps));
+            assertNotNull(isAllowedFileName("a|b", false, mockProps));
+            assertNotNull(isAllowedFileName("a`b", false, mockProps));
+            assertNotNull(isAllowedFileName("$ab", false, mockProps));
+            assertNotNull(isAllowedFileName("-ab", false, mockProps));
+            assertNotNull(isAllowedFileName("a`b", false, mockProps));
         }
 
         @Test
@@ -2272,8 +2295,7 @@ quickScan:
                     ".l-()[]{}1☃");
 
             //Test Setup
-            Mockery _context;
-            _context = new Mockery();
+            Mockery _context = new Mockery();
             _context.setImposteriser(ClassImposteriser.INSTANCE);
             AppProps mockProps = _context.mock(AppProps.class);
             _context.checking(new Expectations(){{
