@@ -307,9 +307,9 @@ public class AssayController extends SpringActionController
         {
             if (_id != null && protocol.getRowId() != _id.intValue())
                 return false;
-            if (_name != null && !_name.equals(protocol.getName()))
+            if (_name != null && !_name.equalsIgnoreCase(protocol.getName()))
                 return false;
-            if (_type != null && !_type.equals(provider.getName()))
+            if (_type != null && !_type.equalsIgnoreCase(provider.getName()))
                 return false;
             if (_status != null && !_status.equalsIgnoreCase(protocol.getStatus().name()))
                 return false;
