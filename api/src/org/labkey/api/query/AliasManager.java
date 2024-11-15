@@ -208,7 +208,8 @@ public class AliasManager
 
     private static int getMaxLength(@Nullable SqlDialect dialect, boolean useLegacyMaxLength)
     {
-        // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
+        // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
+
         // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
         return useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
     }
