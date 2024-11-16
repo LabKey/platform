@@ -881,20 +881,35 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol)
+    public @NotNull List<Domain> getDomains(ExpProtocol protocol)
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> domains = new ArrayList<>();
+        List<Domain> domains = new ArrayList<>();
         for (String uri : getPropertyDomains(protocol))
         {
             Domain domain = PropertyService.get().getDomain(protocol.getContainer(), uri);
             if (domain != null)
-            {
-                Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
-                domains.add(new Pair<>(domain, values));
-            }
+                domains.add(domain);
         }
-        sortDomainList(domains);
+
+        // Rely on the assay provider to return a list of default domains in the right order (Collections.sort() is
+        // stable so that domains that haven't been inserted and have id 0 stay in the same order), and rely on the fact
+        // that they get inserted in the same order, so they will have ascending ids.
+        domains.sort(Comparator.comparing(Domain::getTypeId));
+
         return domains;
+    }
+
+    @Override
+    public @NotNull List<Pair<Domain, Map<DomainProperty, Object>>> getDomainsAndDefaultValues(ExpProtocol protocol)
+    {
+        List<Pair<Domain, Map<DomainProperty, Object>>> domainAndDefaultValues = new ArrayList<>();
+        for (Domain domain : getDomains(protocol))
+        {
+            Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(domain.getContainer(), domain);
+            domainAndDefaultValues.add(Pair.of(domain, values));
+        }
+
+        return domainAndDefaultValues;
     }
 
     @Override
@@ -903,14 +918,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, ExpProtocol.ApplicationType.ExperimentRun, "Unknown");
         copy.setName(null);
         return new Pair<>(copy, createDefaultDomains(targetContainer, user));
-    }
-
-    protected void sortDomainList(List<Pair<Domain, Map<DomainProperty, Object>>> domains)
-    {
-        // Rely on the assay provider to return a list of default domains in the right order (Collections.sort() is
-        // stable so that domains that haven't been inserted and have id 0 stay in the same order), and rely on the fact
-        // that they get inserted in the same order, so they will have ascending ids.
-        domains.sort(Comparator.comparingInt(pair -> pair.getKey().getTypeId()));
     }
 
     @Override
@@ -925,7 +932,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         copy.setObjectProperties(copiedProps);
 
-        List<Pair<Domain, Map<DomainProperty, Object>>> originalDomains = getDomains(toCopy);
+        List<Pair<Domain, Map<DomainProperty, Object>>> originalDomains = getDomainsAndDefaultValues(toCopy);
         List<Pair<Domain, Map<DomainProperty, Object>>> copiedDomains = new ArrayList<>(originalDomains.size());
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : originalDomains)
         {
@@ -1113,18 +1120,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void deleteProtocol(ExpProtocol protocol, User user, @Nullable final String auditUserComment) throws ExperimentException
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos =  getDomains(protocol);
-        List<Domain> domains = new ArrayList<>();
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
-            domains.add(domainInfo.getKey());
+        List<Domain> domains = getDomains(protocol);
 
         Set<Container> defaultValueContainers = new HashSet<>();
         defaultValueContainers.add(protocol.getContainer());
         defaultValueContainers.addAll(protocol.getExpRunContainers());
         clearDefaultValues(defaultValueContainers, domains);
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
+
+        for (Domain domain : domains)
         {
-            Domain domain = domainInfo.getKey();
             for (DomainProperty prop : domain.getProperties())
             {
                 prop.delete();
@@ -1537,12 +1541,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Container protocolContainer = protocol.getContainer();
         Container contextContainer = context.getContainer();
-
         NavTree manageMenu = new NavTree(MANAGE_ASSAY_DESIGN_LINK);
+
+        final AssayUrls assayUrls = Objects.requireNonNull(PageFlowUtil.urlProvider(AssayUrls.class));
+        final ExperimentUrls experimentUrls = Objects.requireNonNull(PageFlowUtil.urlProvider(ExperimentUrls.class));
 
         if (allowUpdate(context, protocol))
         {
-            ActionURL editURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(protocolContainer, protocol, false, context.getActionURL());
+            ActionURL editURL = assayUrls.getDesignerURL(protocolContainer, protocol, false, context.getActionURL());
             if (editURL != null)
             {
                 var child = manageMenu.addChild("Edit assay design","");
@@ -1552,32 +1558,30 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     child.setScript("if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = " + jsString(editURL.toString()) + "; } return false;");
             }
 
-            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(protocol, protocolContainer);
+            ActionURL copyURL = assayUrls.getChooseCopyDestinationURL(protocol, protocolContainer);
             if (copyURL != null)
                 manageMenu.addChild("Copy assay design", copyURL.toString());
         }
 
         if (allowDelete(context, protocol))
         {
-            manageMenu.addChild("Delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
+            manageMenu.addChild("Delete assay design", experimentUrls.getDeleteProtocolURL(protocol, assayUrls.getAssayListURL(contextContainer)));
         }
 
-        ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(protocolContainer, protocol);
+        ActionURL exportURL = experimentUrls.getExportProtocolURL(protocolContainer, protocol);
         manageMenu.addChild("Export assay design", exportURL.toString());
 
         if (contextContainer.hasPermission(context.getUser(), AdminPermission.class))
         {
-            List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = getDomains(protocol);
-            if (!domainInfos.isEmpty())
+            List<Domain> domains = getDomains(protocol);
+            if (!domains.isEmpty())
             {
                 NavTree setDefaultsTree = new NavTree(SET_DEFAULT_VALUES_LINK);
-                AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
-                for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
+                for (Domain domain : domains)
                 {
-                    Domain domain = domainInfo.getKey();
                     if (allowDefaultValues(domain) && !domain.getProperties().isEmpty())
                     {
-                        ActionURL url = urls.getSetDefaultValuesAssayURL(contextContainer, getName(), domain, context.getActionURL());
+                        ActionURL url = assayUrls.getSetDefaultValuesAssayURL(contextContainer, getName(), domain, context.getActionURL());
                         setDefaultsTree.addChild(domain.getName(), url);
                     }
                 }
