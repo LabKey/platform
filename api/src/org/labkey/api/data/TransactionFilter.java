@@ -109,7 +109,7 @@ public class TransactionFilter implements Filter
                                 {
                                     try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(entry.getKey(), Thread.currentThread()))
                                     {
-                                        _log.info("Timing out request for {}", entry.getValue());
+                                        _log.info("Timing out request for {} on thread {}", entry.getValue(), entry.getKey());
                                         DbScope.closeAllConnectionsForCurrentThread(true);
                                         PipelineJobService.get().killProcessesForThread(entry.getKey());
                                     }

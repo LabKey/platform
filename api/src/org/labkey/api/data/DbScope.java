@@ -52,6 +52,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -1186,7 +1187,7 @@ public class DbScope
      * connection for this thread, to help scenarios that are prone to race conditions
      * (like killing pipeline jobs) ignore it.
      */
-    public static class ConnectionAlreadyReleaseException extends IllegalStateException
+    public static class ConnectionAlreadyReleaseException extends IllegalStateException implements SkipMothershipLogging
     {
         public ConnectionAlreadyReleaseException(String s)
         {
