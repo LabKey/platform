@@ -368,22 +368,19 @@ public class DbScope
             _dialect = SqlDialectManager.getFromDriverClassname(_dsName, _driverClassName);
             MemTracker.get().remove(_dialect);
             _driverClass = initializeDriver();
+            _url = _dsPropertyReader.getUrl();
 
             if (_dialect.isPostgreSQL())
             {
-                // Starting with PostgreSQL 17.x, we can't connect with a database name longer than 63 chars, so we have
-                // to truncate and replace the URL in the DataSource. Yuck. Issue #51676.
-                String url = _dsPropertyReader.getUrl();
-                String name = _dialect.getDatabaseName(url);
-                if (name.length() > _dialect.getIdentifierMaxLength())
-                {
-                    String truncated = StringUtils.truncate(name, _dialect.getIdentifierMaxLength());
-                    String newUrl = url.replace(name, truncated);
-                    _dsPropertyReader.setUrl(newUrl);
-                }
-            }
+                // Starting with 17.x, PostgreSQL won't connect to a database name longer than 63 chars, but it fails
+                // with a misleading message, so we proactively look for this and throw. Issue #51676.
+                String name = _dialect.getDatabaseName(_url);
 
-            _url = _dsPropertyReader.getUrl();
+                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect we
+                // don't know what database version is there.
+                if (name.length() > _dialect.getIdentifierMaxLength())
+                    throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
+            }
 
             // Validate that data source is using a supported connection pool
             validateConnectionPool();
@@ -1760,20 +1757,6 @@ public class DbScope
         // Attempt a connection three times before giving up
         for (int i = 0; i < 3; i++)
         {
-            if (i > 0)
-            {
-                LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
-
-                try
-                {
-                    Thread.sleep(10000);  // Wait 10 seconds before trying again
-                }
-                catch (InterruptedException e)
-                {
-                    LOG.warn("ensureDataBase", e);
-                }
-            }
-
             // Create non-pooled connection... don't want to pool a failed connection
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
@@ -1798,6 +1781,20 @@ public class DbScope
                     LOG.warn("Connection to \"{}\" at {} failed with the following error:", ds.getDsName(), ds.getUrl());
                     LOG.warn("Message: {} SQLState: {} ErrorCode: {}", e.getMessage(), e.getSQLState(), e.getErrorCode(), e);
                     lastException = e;
+
+                    if (i < 2)
+                    {
+                        LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
+
+                        try
+                        {
+                            Thread.sleep(10000);  // Wait 10 seconds before trying again
+                        }
+                        catch (InterruptedException ie)
+                        {
+                            LOG.warn("ensureDataBase", ie);
+                        }
+                    }
                 }
             }
             catch (Exception e)

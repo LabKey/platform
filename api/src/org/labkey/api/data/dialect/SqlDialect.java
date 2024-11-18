@@ -1346,20 +1346,6 @@ public abstract class SqlDialect
                 return null;
             }
         }
-
-        public void setUrl(String url) throws ServletException
-        {
-            String methodName = "setUrl";
-            try
-            {
-                Method method = _ds.getClass().getMethod(methodName, String.class);
-                method.invoke(_ds, url);
-            }
-            catch (Exception e)
-            {
-                throw new ServletException("Unable to set DataSource property via " + methodName, e);
-            }
-        }
     }
 
     // All statement creation passes through these two methods. We return our standard statement wrappers in most
