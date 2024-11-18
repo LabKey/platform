@@ -126,10 +126,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 12.x
-        PostgreSql_12_Dialect conforming = getOldestSupportedDialect();
+        // PostgreSQL dialects are nearly identical, so just test the oldest supported one
+        PostgreSql_13_Dialect conforming = getOldestSupportedDialect();
         conforming.setStandardConformingStrings(true);
-        PostgreSql_12_Dialect nonconforming = getOldestSupportedDialect();
+        PostgreSql_13_Dialect nonconforming = getOldestSupportedDialect();
         nonconforming.setStandardConformingStrings(false);
 
         return PageFlowUtil.set(
@@ -138,9 +138,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         );
     }
 
-    public static PostgreSql_12_Dialect getOldestSupportedDialect()
+    public static PostgreSql_13_Dialect getOldestSupportedDialect()
     {
-        return new PostgreSql_12_Dialect();
+        return new PostgreSql_13_Dialect();
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -150,11 +150,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 12.0 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 12.0, null, connectionUrl);
+            // < 13.0 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 13.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
             good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
             good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
             good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
