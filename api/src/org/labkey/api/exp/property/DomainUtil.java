@@ -101,11 +101,6 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 import static org.labkey.api.gwt.client.ui.PropertyType.CALCULATED_CONCEPT_URI;
 import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTERN;
 
-/**
- * User: jgarms
- * Date: Aug 12, 2008
- * Time: 3:44:30 PM
- */
 public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
@@ -228,7 +223,11 @@ public class DomainUtil
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, domainContainer);
         if (null == dd)
             return null;
+
         Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+        if (domain == null)
+            return null;
+
         return getDomainDescriptor(domainContainer, user, domain, skipPKCol);
     }
 
@@ -253,49 +252,40 @@ public class DomainUtil
     @NotNull
     public static GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(Container container, User user, @NotNull Domain domain, boolean skipPKCols)
     {
-        GWTDomain<GWTPropertyDescriptor> d = getDomain(domain);
-
-        ArrayList<GWTPropertyDescriptor> list = new ArrayList<>();
-
-        List<? extends DomainProperty> properties = domain.getProperties();
-
-        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(container, domain);
-
-        DomainKind domainKind = domain.getDomainKind();
+        DomainKind<?> domainKind = domain.getDomainKind();
         if (domainKind == null)
-        {
             throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
-        }
 
-        Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
-
-        Map<String, Object> pkColMap = new HashMap<>();
         TableInfo tableInfo = null;
-        List<GWTPropertyDescriptor> calculatedFields = new ArrayList<>();
+        Set<String> pkColumnNames = Collections.emptySet();
+        List<GWTPropertyDescriptor> calculatedFields = Collections.emptyList();
+
+        // FIXME: This is not a good pattern and the flag is poorly named given the side-effects. It is rather adhoc
+        // what is included with this flag and can have a significant processing performance impact (which seems to be
+        // why it was introduced) depending on its value.
         if (!skipPKCols)
         {
             tableInfo = domainKind.getTableInfo(user, container, domain, null);
             if (null != tableInfo)
             {
-                // get PK columns
-                if (null != tableInfo.getPkColumns())
-                    pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
-
+                pkColumnNames = new CaseInsensitiveHashSet(tableInfo.getPkColumns().stream().map(ColumnInfo::getColumnName).collect(Collectors.toSet()));
                 calculatedFields = getCalculatedFieldsForTableInfo(tableInfo);
             }
         }
 
-        // Reuse defaultSchemas
+        ArrayList<GWTPropertyDescriptor> fields = new ArrayList<>();
         Map<Container, DefaultSchema> lookupDefaultSchemaMap = null;
+        Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(container, domain);
+        CaseInsensitiveHashSet mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
-        for (DomainProperty prop : properties)
+        for (DomainProperty prop : domain.getProperties())
         {
-            GWTPropertyDescriptor p = getPropertyDescriptor(prop);
+            GWTPropertyDescriptor field = getPropertyDescriptor(prop);
 
             Object defaultValue = defaultValues.get(prop);
             String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
-            p.setDefaultDisplayValue(formattedDefaultValue);
-            p.setDefaultValue(ConvertUtils.convert(defaultValue));
+            field.setDefaultDisplayValue(formattedDefaultValue);
+            field.setDefaultValue(ConvertUtils.convert(defaultValue));
 
             // Set valid lookup flag for display in UI
             if (prop.getLookup() != null)
@@ -303,80 +293,84 @@ public class DomainUtil
                 if (null == lookupDefaultSchemaMap)
                     lookupDefaultSchemaMap = new HashMap<>();
 
-                p.setLookupIsValid(isValidPdLookup(user, container, p, lookupDefaultSchemaMap));
+                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap));
             }
 
             //set property as PK
-            if (pkColMap.containsKey(p.getName()))
+            if (pkColumnNames.contains(field.getName()))
             {
-                p.setIsPrimaryKey(true);
+                field.setIsPrimaryKey(true);
             }
 
             //partially lock mandatory properties (ex. for issues, specimen domains)
-            if (mandatoryProperties.contains(p.getName()))
+            if (mandatoryProperties.contains(field.getName()))
             {
-                p.setLockType(LockedPropertyType.PartiallyLocked.name());
+                field.setLockType(LockedPropertyType.PartiallyLocked.name());
             }
 
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
-            if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            if (!field.getContainer().equalsIgnoreCase(container.getId()))
             {
-                p.setLockType(LockedPropertyType.FullyLocked.name());
+                field.setLockType(LockedPropertyType.FullyLocked.name());
             }
 
-            list.add(p);
+            fields.add(field);
         }
 
         // add calculated columns to the list of properties
-        list.addAll(calculatedFields);
+        fields.addAll(calculatedFields);
 
-        d.setFields(list);
+        GWTDomain<GWTPropertyDescriptor> gwtDomain = getDomain(domain);
+        gwtDomain.setFields(fields);
 
         // Handle reserved property names
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain, user);
-        d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
-        d.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes());
-        d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
-        d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
-        d.setProvisioned(domain.isProvisioned());
-        d.setDefaultValueOptions(domainKind.getDefaultValueOptions(domain), domainKind.getDefaultDefaultType(domain));
+        gwtDomain.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
+        gwtDomain.setReservedFieldNamePrefixes(domainKind.getReservedPropertyNamePrefixes());
+        gwtDomain.setMandatoryFieldNames(mandatoryProperties);
+        gwtDomain.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
+        gwtDomain.setProvisioned(domain.isProvisioned());
+        gwtDomain.setDefaultValueOptions(domainKind.getDefaultValueOptions(domain), domainKind.getDefaultDefaultType(domain));
 
-        d.setSchemaName(domainKind.getMetaDataSchemaName());
-        d.setQueryName(domainKind.getMetaDataTableName());
-        d.setDomainKindName(domainKind.getKindName());
+        gwtDomain.setSchemaName(domainKind.getMetaDataSchemaName());
+        gwtDomain.setQueryName(domainKind.getMetaDataTableName());
+        gwtDomain.setDomainKindName(domainKind.getKindName());
         if (null != domain.getTemplateInfo())
         {
             TemplateInfo t = domain.getTemplateInfo();
-            d.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
+            gwtDomain.setTemplateDescription(t.getModuleName() + ": " + t.getTemplateGroupName() + "#" + t.getTableName());
         }
 
         // if not set via domain kind, provide the public schemaName and queryName for the domain
-        if (d.getSchemaName() == null && d.getQueryName() == null && tableInfo != null)
+        if (gwtDomain.getSchemaName() == null && gwtDomain.getQueryName() == null && tableInfo != null)
         {
-            d.setSchemaName(tableInfo.getPublicSchemaName());
-            d.setQueryName(tableInfo.getPublicName());
+            gwtDomain.setSchemaName(tableInfo.getPublicSchemaName());
+            gwtDomain.setQueryName(tableInfo.getPublicName());
         }
 
-        d.setDisabledSystemFields(domain.getDisabledSystemFields());
+        gwtDomain.setDisabledSystemFields(domain.getDisabledSystemFields());
 
         if (domainKind.allowUniqueConstraintProperties())
         {
             SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
-            if (allIndices.size() > 0)
+            if (!allIndices.isEmpty())
             {
-                List<Pair<TableInfo.IndexType, List<ColumnInfo>>> indices = allIndices.values().stream().filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary)).toList();
-                d.setIndices(indices.stream().map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique())).toList());
+                List<GWTIndex> indices = allIndices.values().stream()
+                        .filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary))
+                        .map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique()))
+                        .toList();
+
+                gwtDomain.setIndices(indices);
             }
         }
 
-        return d;
+        return gwtDomain;
     }
 
     // get calculated fields (i.e. those with value expressions) for a tableInfo from the related XML metadata
-    private static List<GWTPropertyDescriptor> getCalculatedFieldsForTableInfo(@NotNull TableInfo tableInfo)
+    private static @NotNull List<GWTPropertyDescriptor> getCalculatedFieldsForTableInfo(@NotNull TableInfo tableInfo)
     {
-
         ArrayList<QueryException> errors = new ArrayList<>();
         Collection<TableType> metadata = QueryService.get().findMetadataOverride(tableInfo.getUserSchema(), tableInfo.getName(), false, false, errors, null);
         if (metadata == null)
@@ -454,7 +448,7 @@ public class DomainUtil
         return gwtDomain;
     }
 
-    public static GWTDomain<GWTPropertyDescriptor> getTemplateDomainForDomainKind(DomainKind kind)
+    public static GWTDomain<GWTPropertyDescriptor> getTemplateDomainForDomainKind(DomainKind<?> kind)
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
         gwtDomain.setDomainKindName(kind.getKindName());

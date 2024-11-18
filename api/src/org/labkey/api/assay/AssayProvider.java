@@ -163,7 +163,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     List<ParticipantVisitResolverType> getParticipantVisitResolverTypes();
 
-    List<Pair<Domain, Map<DomainProperty, Object>>> getDomains(ExpProtocol protocol);
+    @NotNull List<Domain> getDomains(ExpProtocol protocol);
+
+    @NotNull List<Pair<Domain, Map<DomainProperty, Object>>> getDomainsAndDefaultValues(ExpProtocol protocol);
 
     Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> getAssayTemplate(User user, Container targetContainer);
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.core.statistics;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
@@ -32,7 +33,9 @@ import java.util.Map;
  */
 public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.SigmoidalParameters> implements CurveFit<ParameterCurveFit.SigmoidalParameters>
 {
-    private final StatsService.CurveFitType _fitType;
+    protected final StatsService.CurveFitType _fitType;
+    private Double _asymptoteMin;
+    private Double _asymptoteMax;
 
     public static class SigmoidalParameters implements CurveFit.Parameters, Cloneable
     {
@@ -112,16 +115,38 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
-    public ParameterCurveFit(DoublePoint[] data, StatsService.CurveFitType fitType)
+    public ParameterCurveFit(DoublePoint[] data, StatsService.CurveFitType fitType, @Nullable Double asymptoteMin, @Nullable Double asymptoteMax)
     {
         super(data);
         _fitType = fitType;
+        setAsymptoteMin(asymptoteMin);
+        setAsymptoteMax(asymptoteMax);
     }
 
     @Override
     public StatsService.CurveFitType getType()
     {
         return _fitType;
+    }
+
+    public Double getAsymptoteMin()
+    {
+        return _asymptoteMin;
+    }
+
+    public void setAsymptoteMin(Double asymptoteMin)
+    {
+        _asymptoteMin = asymptoteMin;
+    }
+
+    public Double getAsymptoteMax()
+    {
+        return _asymptoteMax;
+    }
+
+    public void setAsymptoteMax(Double asymptoteMax)
+    {
+        _asymptoteMax = asymptoteMax;
     }
 
     @Override
@@ -196,12 +221,35 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         }
     }
 
+    @Override
+    public double adjustedRSquared(SigmoidalParameters parameters)
+    {
+        return switch (_fitType)
+        {
+            case THREE_PARAMETER, THREE_PARAMETER_ALT -> adjustedRSquared(parameters, 3);
+            case FOUR_PARAMETER -> adjustedRSquared(parameters, 4);
+            case FIVE_PARAMETER -> adjustedRSquared(parameters, 5);
+            default -> throw new IllegalStateException("Unsupported curve fit type: " + _fitType.name());
+        };
+    }
+
+    private boolean is3Parameter()
+    {
+        return _fitType == StatsService.CurveFitType.THREE_PARAMETER || _fitType == StatsService.CurveFitType.THREE_PARAMETER_ALT;
+    }
+
+    private boolean is4Parameter()
+    {
+        return _fitType == StatsService.CurveFitType.FOUR_PARAMETER;
+    }
+
     protected SigmoidalParameters calculateFitParameters(double minValue, double maxValue)
     {
         SigmoidalParameters bestFit = null;
         SigmoidalParameters parameters = new SigmoidalParameters();
-        double step = 10;
-        if (_fitType == StatsService.CurveFitType.FOUR_PARAMETER)
+        Double asymptoteDiff = getAsymptoteMax() != null && getAsymptoteMin() != null ? Math.abs(getAsymptoteMax() - getAsymptoteMin()) : null;
+        double step = asymptoteDiff != null ? Math.min(asymptoteDiff / 100, 10) : 10;
+        if (is3Parameter() || is4Parameter())
             parameters.asymmetry = 1;
 
         // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
@@ -209,14 +257,14 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         // reaches 200 or min reaches -100, since these values don't seem biologically reasonable.
         for (double min = minValue; (bestFit == null || min > 0 - step) && min > (minValue - 100); min -= step )
         {
-            parameters.min = min;
+            parameters.min = getAsymptoteMin() != null ? getAsymptoteMin() : min;
             for (double max = maxValue; (bestFit == null || max <= 100 + step) && max < (maxValue + 100); max += step )
             {
                 double absoluteCutoff = min + (0.5 * (max - min));
                 double relativeEC50 = getInterpolatedCutoffXValue(absoluteCutoff);
                 if (!Double.isInfinite(relativeEC50) && !Double.isNaN(relativeEC50))
                 {
-                    parameters.max = max;
+                    parameters.max = getAsymptoteMax() != null ? getAsymptoteMax() : max;
                     parameters.inflection = relativeEC50;
                     for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
                     {
@@ -232,6 +280,8 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
                                         bestFit = parameters.copy();
                                 }
                                 break;
+                            case THREE_PARAMETER:
+                            case THREE_PARAMETER_ALT:
                             case FOUR_PARAMETER:
                                 parameters.asymmetry = 1;
                                 parameters.fitError = calculateFitError(parameters);

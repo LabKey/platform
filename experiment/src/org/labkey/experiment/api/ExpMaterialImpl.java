@@ -34,7 +34,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -100,28 +99,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     // For serialization
     protected ExpMaterialImpl() {}
-    
+
     public ExpMaterialImpl(Material material)
     {
         super(material);
-    }
-
-    @Override
-    public void setName(String name)
-    {
-        super.setName(name);
-    }
-
-    @Override
-    public void setLSID(String lsid)
-    {
-        super.setLSID(lsid);
-    }
-
-    @Override
-    public void setLSID(Lsid lsid)
-    {
-        super.setLSID(lsid);
     }
 
     @Override
