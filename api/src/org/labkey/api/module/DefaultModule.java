@@ -528,9 +528,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ALL_DATABASES = Set.of(SupportedDatabase.mssql, SupportedDatabase.pgsql);
+    protected static final Set<SupportedDatabase> ONLY_POSTGRESQL = Set.of(SupportedDatabase.pgsql);
 
-    private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
+    private Set<SupportedDatabase> _supportedDatabases = ONLY_POSTGRESQL;
 
     @NotNull
     @Override
