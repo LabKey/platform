@@ -937,9 +937,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param scales
      * @param geom
      * @param data
+     * @param trendlineData
      * @returns {Array} array of plot config objects
      */
-    var generatePlotConfigs = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    var generatePlotConfigs = function(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData)
     {
         var plotConfigArr = [];
 
@@ -974,11 +975,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                     newScales.yRight = $.extend(true, {}, scales.yRight);
                 }
 
-                plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data));
+                plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data, trendlineData));
             }, this);
         }
         else {
-            plotConfigArr.push(generatePlotConfig(renderTo, chartConfig, labels, aes, scales, geom, data));
+            plotConfigArr.push(generatePlotConfig(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData));
         }
 
         return plotConfigArr;
@@ -1015,9 +1016,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param scales
      * @param geom
      * @param data
+     * @param trendlineData
      * @returns {Object}
      */
-    var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData)
     {
         var renderType = chartConfig.renderType,
             layers = [], clipRect,
@@ -1081,19 +1083,23 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
+                        var aVal = _getRowValue(a, xName);
+                        var bVal = _getRowValue(b, xName);
+
                         // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
                         // not currently included in this plot.
                         if (isDate){
-                            return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+                            return new Date(aVal) - new Date(bVal);
                         }
-                        return a.getValue(xName) - b.getValue(xName);
+                        return aVal - bVal;
                     }
                 };
 
                 pathAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
 
                 // use the series measure's values for the distinct colors and grouping
-                if (chartConfig.measures.series) {
+                var hasSeries = chartConfig.measures.series !== undefined;
+                if (hasSeries) {
                     pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
                 }
@@ -1103,17 +1109,40 @@ LABKEY.vis.GenericChartHelper = new function(){
                     pathAes.group = emptyTextFn;
                 }
 
-                layers.push(
-                    new LABKEY.vis.Layer({
-                        name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
-                        geom: new LABKEY.vis.Geom.Path({
-                            color: '#' + chartConfig.geomOptions.pointFillColor,
-                            size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
-                            opacity:chartConfig.geomOptions.opacity
-                        }),
-                        aes: pathAes
-                    })
-                );
+                if (trendlineData) {
+                    $.each(trendlineData, async function (idx, trendline) {
+                        if (trendline.data) {
+                            var layerAes = { x: 'x', y: 'y' };
+                            if (hasSeries) {
+                                layerAes.pathColor = function () { return trendline.name };
+                            }
+
+                            layers.push(
+                                new LABKEY.vis.Layer({
+                                    geom: new LABKEY.vis.Geom.Path({
+                                        color: '#' + chartConfig.geomOptions.pointFillColor,
+                                        size: chartConfig.geomOptions.lineWidth ? chartConfig.geomOptions.lineWidth : 3,
+                                        opacity:chartConfig.geomOptions.opacity,
+                                    }),
+                                    aes: layerAes,
+                                    data: trendline.data.generatedPoints,
+                                })
+                            );
+                        }
+                    });
+                } else {
+                    layers.push(
+                        new LABKEY.vis.Layer({
+                            name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
+                            geom: new LABKEY.vis.Geom.Path({
+                                color: '#' + chartConfig.geomOptions.pointFillColor,
+                                size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
+                                opacity:chartConfig.geomOptions.opacity
+                            }),
+                            aes: pathAes
+                        })
+                    );
+                }
             }, this);
         }
 
@@ -1177,6 +1206,70 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
 
         return plotConfig;
+    };
+
+    var getTrendlineConfig = function(chartConfig, data) {
+        var config = {
+            type: chartConfig.geomOptions.trendlineType,
+            logXScale: chartConfig.scales.x.trans === 'log',
+            asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
+            asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+            data: chartConfig.measures.series
+                    ? LABKEY.vis.groupCountData(data, generateGroupingAcc(chartConfig.measures.series.name))
+                    : [{name: 'All', rawData: data}],
+        };
+
+        // special case to only use logXScale for linear trendlines
+        if (config.type === 'Linear') {
+            config.logXScale = false;
+        }
+
+        return config;
+    }
+
+    var queryTrendlineData = async function(trendlineConfig, xName, yName) {
+        for (var series of trendlineConfig.data) {
+            try {
+                series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+
+    var _querySeriesTrendlineData = async function(trendlineConfig, seriesData, xName, yName) {
+        return new Promise(function(resolve, reject) {
+            var points = seriesData.rawData.map(function(row) {
+                return {
+                    x: _getRowValue(row, xName, 'value'),
+                    y: _getRowValue(row, yName, 'value'),
+                };
+            });
+            var xAcc = function(row) { return row.x };
+            var xMin = d3.min(points, xAcc);
+            var xMax = d3.max(points, xAcc);
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
+                method: 'POST',
+                jsonData: {
+                    curveFitType: trendlineConfig.type,
+                    points: points,
+                    logXScale: trendlineConfig.logXScale,
+                    asymptoteMin: trendlineConfig.asymptoteMin,
+                    asymptoteMax: trendlineConfig.asymptoteMax,
+                    xMin: xMin,
+                    xMax: xMax,
+                    numberOfPoints: 1000,
+                },
+                success : LABKEY.Utils.getCallbackWrapper(function(response) {
+                    resolve(response);
+                }),
+                failure : LABKEY.Utils.getCallbackWrapper(function(reason) {
+                    reject(reason);
+                }, this, true),
+            });
+        });
     };
 
     var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
@@ -1711,12 +1804,29 @@ LABKEY.vis.GenericChartHelper = new function(){
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
         }
 
+        // support for y-axis trendline data when a single y-axis measure is selected
+        var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
+        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
+            var xName = chartConfig.measures.x.name;
+            var trendlineConfig = getTrendlineConfig(chartConfig, data);
+            queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
+                _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineConfig.data);
+            }).catch(function(reason) {
+                // skip this series and render without trendline
+                _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineConfig.data);
+            });
+        } else {
+            _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore);
+        }
+    };
+
+    var _validateAndRenderChart = function(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineData) {
         var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
         _renderMessages(renderTo, validation.messages);
         if (!validation.success)
             return;
 
-        var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data);
+        var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData);
         $.each(plotConfigArr, function(idx, plotConfig) {
             if (chartType === 'pie_chart') {
                 new LABKEY.vis.PieChart(plotConfig);
@@ -1725,7 +1835,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 new LABKEY.vis.Plot(plotConfig).render();
             }
         }, this);
-    };
+    }
 
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
@@ -1817,6 +1927,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateYAxis: validateYAxis,
         renderChartSVG: renderChartSVG,
         queryChartData: queryChartData,
+        getTrendlineConfig: getTrendlineConfig,
+        queryTrendlineData: queryTrendlineData,
         generateChartSVG: generateChartSVG,
         getMeasureStoreRecords: getMeasureStoreRecords,
         /**
