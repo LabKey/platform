@@ -961,7 +961,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.measures = Ext4.apply({}, this.measures);
         config.scales = {};
         config.labels = {};
-        
+
         this.ensureChartLayoutOptions();
         if (this.options.general)
         {
@@ -1007,8 +1007,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.options.developer)
             config.measures.pointClickFn = this.options.developer.pointClickFn;
 
-        if (this.curveFit)
+        if (this.curveFit) {
             config.curveFit = this.curveFit;
+        } else if (this.trendline) {
+            config.geomOptions.trendlineType = this.trendline.trendlineType;
+            config.geomOptions.trendlineAsymptoteMin = this.trendline.trendlineAsymptoteMin;
+            config.geomOptions.trendlineAsymptoteMax = this.trendline.trendlineAsymptoteMax;
+        }
 
         if (this.getCustomChartOptions)
             config.customOptions = this.getCustomChartOptions();
@@ -1289,8 +1294,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (chartConfig.measures && chartConfig.measures.pointClickFn)
                 this.options.developer.pointClickFn = chartConfig.measures.pointClickFn;
 
-            if (chartConfig.curveFit)
+            if (chartConfig.curveFit) {
                 this.curveFit = chartConfig.curveFit;
+            } else if (chartConfig.geomOptions.trendlineType) {
+                this.trendline = {
+                    trendlineType: chartConfig.geomOptions.trendlineType,
+                    trendlineAsymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
+                    trendlineAsymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+                }
+            }
         }
     },
 
@@ -1371,7 +1383,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderGenericChart : function(chartType, chartConfig)
     {
-        var aes, scales, plotConfigArr, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
+        var aes, scales, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
 
         hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.getMeasureStore(), true);
         if (hasNoDataMsg != null)
@@ -1423,7 +1435,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         newChartDiv = this.getNewChartDisplayDiv();
         this.getViewPanel().add(newChartDiv);
 
-        plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType);
+        // support for y-axis trendline data when a single y-axis measure is selected
+        var yMeasures = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(chartConfig.measures.y);
+        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
+            var xName = chartConfig.measures.x.name;
+            var trendlineConfig = LABKEY.vis.GenericChartHelper.getTrendlineConfig(chartConfig, this.getMeasureStoreRecords());
+            var scope = this;
+            LABKEY.vis.GenericChartHelper.queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
+                scope.getPlotConfigsAndRender(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineConfig.data);
+            });
+        } else {
+            this.getPlotConfigsAndRender(newChartDiv, chartType, chartConfig, aes, scales, customRenderType);
+        }
+    },
+
+    getPlotConfigsAndRender : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData) {
+        var plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData);
 
         Ext4.each(plotConfigArr, function(plotConfig) {
             if (this.renderType === 'pie_chart') {
@@ -1564,7 +1591,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return true;
     },
 
-    getPlotConfigs : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType)
+    getPlotConfigs : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData)
     {
         var plotConfigArr = [], geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
@@ -1618,7 +1645,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             plotConfigArr.push(plotConfig);
         }
         else {
-            plotConfigArr = LABKEY.vis.GenericChartHelper.generatePlotConfigs(newChartDiv.id, chartConfig, labels, aes, scales, geom, data);
+            plotConfigArr = LABKEY.vis.GenericChartHelper.generatePlotConfigs(newChartDiv.id, chartConfig, labels, aes, scales, geom, data, trendlineData);
 
             if (this.renderType === 'pie_chart')
             {
