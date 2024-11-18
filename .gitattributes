@@ -1769,7 +1769,6 @@ core/module.properties -text
 core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
-core/resources/credits/tomcat_jars.txt -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/prop-create.sql -text
@@ -1791,7 +1790,6 @@ core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsExceptionsView.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
-core/src/org/labkey/core/admin/addNewExternalRedirectHost.jsp -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/AdminConsoleServiceImpl.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
@@ -1805,7 +1803,6 @@ core/src/org/labkey/core/admin/deleteFolder.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/enabledFolderTypes.jsp -text
-core/src/org/labkey/core/admin/existingExternalRedirectHosts.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
@@ -1915,7 +1912,6 @@ core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/GroupView.java -text
 core/src/org/labkey/core/security/SecurityApiActions.java -text
-core/src/org/labkey/core/security/validators/PermissionsValidator.java -text
 core/src/org/labkey/core/statistics/AnalyticsProviderRegistryImpl.java -text
 core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
 core/src/org/labkey/core/statistics/NoCurveFit.java -text
@@ -2046,7 +2042,6 @@ experiment/src/org/labkey/experiment/api/ExpSampleTypeImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpSampleTypeTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpTableImpl.java -text
 experiment/src/org/labkey/experiment/api/IdentifiableEntity.java -text
-experiment/src/org/labkey/experiment/api/LineagePerfTest.java -text
 experiment/src/org/labkey/experiment/api/LogDataType.java -text
 experiment/src/org/labkey/experiment/api/MaterialProtocolInput.java -text
 experiment/src/org/labkey/experiment/api/MaterialSource.java -text
@@ -2402,7 +2397,6 @@ pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerManager.java -text
 pipeline/src/org/labkey/pipeline/trigger/PipelineTriggerRegistryImpl.java -text
-pipeline/src/org/labkey/pipeline/validators/PipelineSetupValidator.java -text
 pipeline/webapp/pipeline/ImportAdvancedOptions.css -text
 pipeline/webapp/pipeline/ImportAdvancedOptions.js -text
 pipeline/webapp/pipeline/importAdvancedOptions.lib.xml -text
@@ -2747,7 +2741,6 @@ study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
-study/src/org/labkey/study/importer/StudyImporter.java -text
 study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
@@ -3188,10 +3181,7 @@ wiki/module.properties -text
 api/src/org/labkey/api/wiki/radeox_messages.properties -text
 core/src/org/radeox/license.txt -text
 core/src/META-INF/services/org.radeox.filter.Filter -text
-core/src/META-INF/services/org.radeox.code.macro.SourceCodeFormatter -text
-core/src/META-INF/services/org.radeox.list.macro.ListFormatter -text
 core/src/META-INF/services/org.radeox.macro.Macro -text
-core/src/META-INF/services/org.radeox.table.macro.Function -text
 core/src/org/radeox/api/engine/context/InitialRenderContext.java -text
 core/src/org/radeox/api/engine/context/InitialRenderContext.java -text
 core/src/org/radeox/api/engine/context/RenderContext.java -text
@@ -3237,11 +3227,6 @@ core/src/org/radeox/filter/StrikeThroughFilter.java -text
 core/src/org/radeox/filter/TypographyFilter.java -text
 core/src/org/radeox/filter/UrlFilter.java -text
 core/src/org/radeox/filter/WikiLinkFilter.java -text
-core/src/org/radeox/macro/api/ApiConverter.java -text
-core/src/org/radeox/macro/api/ApiDoc.java -text
-core/src/org/radeox/macro/api/BaseApiConverter.java -text
-core/src/org/radeox/macro/api/JavaApiConverter.java -text
-core/src/org/radeox/macro/api/RubyApiConverter.java -text
 core/src/org/radeox/macro/BaseLocaleMacro.java -text
 core/src/org/radeox/macro/BaseMacro.java -text
 core/src/org/radeox/macro/code/DefaultRegexCodeFormatter.java -text
@@ -3271,7 +3256,6 @@ core/src/org/radeox/macro/PluginLoader.java -text
 core/src/org/radeox/macro/PluginRepository.java -text
 core/src/org/radeox/macro/Preserved.java -text
 core/src/org/radeox/macro/QuoteMacro.java -text
-core/src/org/radeox/macro/RfcMacro.java -text
 core/src/org/radeox/macro/table/AvgFunction.java -text
 core/src/org/radeox/macro/table/Function.java -text
 core/src/org/radeox/macro/table/FunctionLoader.java -text
@@ -3282,8 +3266,6 @@ core/src/org/radeox/macro/table/SumFunction.java -text
 core/src/org/radeox/macro/table/Table.java -text
 core/src/org/radeox/macro/table/TableBuilder.java -text
 core/src/org/radeox/macro/TableMacro.java -text
-core/src/org/radeox/macro/xref/XrefMapper.java -text
-core/src/org/radeox/macro/XrefMacro.java -text
 core/src/org/radeox/regex/Compiler.java -text
 core/src/org/radeox/regex/JdkCompiler.java -text
 core/src/org/radeox/regex/JdkMatcher.java -text
@@ -3306,7 +3288,6 @@ core/src/org/radeox/test/filter/KeyFilterTest.java -text
 core/src/org/radeox/test/filter/LineFilterTest.java -text
 core/src/org/radeox/test/filter/LinkTestFilterTest.java -text
 core/src/org/radeox/test/filter/ListFilterTest.java -text
-core/src/org/radeox/test/filter/mock/MockInterWikiRenderEngine.java -text
 core/src/org/radeox/test/filter/mock/MockOldWikiRenderEngine.java -text
 core/src/org/radeox/test/filter/mock/MockReplacedFilter.java -text
 core/src/org/radeox/test/filter/mock/MockReplacesFilter.java -text
@@ -3327,7 +3308,6 @@ core/src/org/radeox/util/Linkable.java -text
 core/src/org/radeox/util/Nameable.java -text
 core/src/org/radeox/util/Service.java -text
 core/src/org/radeox/util/StringBufferWriter.java -text
-wiki/radeox/src/simplelog.properties -text
 wiki/resources/web/wiki/internal/wikiEdit.js -text
 wiki/schemas/wiki.xsd -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
