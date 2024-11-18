@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
@@ -173,7 +174,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         Map<String, FileLike> result = CollectionUtils.enforceValueClass(new LinkedHashMap<>(), FileLike.class);
         for (int i = 0; i < paths.length; i++)
         {
-            result.put(names[i], pipelineRoot.resolvePathToFileLike(paths[i]));
+            result.put(names[i], pipelineRoot.resolvePathToFileLike(StringUtils.replace(paths[i],"\\","/")));
         }
         return result;
     }

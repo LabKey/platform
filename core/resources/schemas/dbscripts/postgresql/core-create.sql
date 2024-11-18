@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 CREATE VIEW core.Users AS
-    SELECT p.Name AS Email, ud.*, p.Active, l.Email IS NOT NULL AS HasPassword
+    SELECT p.Name AS Email, ud.*, p.Active, l.UserId IS NOT NULL AS HasPassword
     FROM core.Principals p
         INNER JOIN core.UsersData ud ON p.UserId = ud.UserId
-        LEFT OUTER JOIN core.Logins l ON p.Name = l.Email
+        LEFT OUTER JOIN core.Logins l ON p.UserId = l.UserId
     WHERE Type = 'u';
 
 CREATE OR REPLACE RULE Users_Update AS

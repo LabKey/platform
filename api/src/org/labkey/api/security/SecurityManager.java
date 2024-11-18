@@ -180,7 +180,8 @@ public class SecurityManager
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
     public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
-    public static final String AUTHENTICATION_ATTRIBUTES_KEY = User.class.getName() + "$AuthenticationAttributes";
+    public static final String USER_ATTRIBUTES_KEY = User.class.getName() + "$UserAttributes";
+    public static final String AUTHENTICATION_PROPERTIES = AuthenticationManager.class.getName() + "$AuthenticationProperties";
     public static final String SCOPE_USER_ROLES = "UserRoles";
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
@@ -510,6 +511,16 @@ public class SecurityManager
         return "Basic".equals(request.getAttribute(AUTHENTICATION_METHOD));
     }
 
+    // Most callers should use getSessionUser() instead, which returns the impersonated user if impersonation is active.
+    // This method returns the user who originally established the session which could be an impersonating admin. This
+    // is useful for code paths that track user sessions.
+    public static @Nullable User getSessionOwner(@Nullable HttpSession session)
+    {
+        User sessionUser = getSessionUser(session);
+        return sessionUser != null ? (sessionUser.isImpersonated() ? sessionUser.getImpersonatingUser() : sessionUser) : null;
+    }
+
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static User getSessionUser(HttpServletRequest request)
     {
         User sessionUser = getSessionUser(request.getSession(false));
@@ -521,6 +532,7 @@ public class SecurityManager
         return sessionUser;
     }
 
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static User getSessionUser(HandshakeRequest request)
     {
         HttpSession session = (HttpSession) request.getHttpSession();
@@ -533,6 +545,7 @@ public class SecurityManager
         return sessionUser;
     }
 
+    // If currently impersonating, returns the impersonated user with impersonation context set
     public static @Nullable User getSessionUser(@Nullable HttpSession session)
     {
         User sessionUser = null;
@@ -540,7 +553,23 @@ public class SecurityManager
         Integer userId = null == session ? null : (Integer) session.getAttribute(USER_ID_KEY);
 
         if (null != userId)
+        {
             sessionUser = UserManager.getUser(userId);
+
+            if (null != sessionUser)
+            {
+                // NOTE: getUser() above returns a cloned object so _groups should be null. This is important to ensure
+                // group memberships are calculated on every request (but just once)
+                assert sessionUser._groups == null;
+
+                ImpersonationContextFactory factory = (ImpersonationContextFactory) session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
+
+                if (null != factory)
+                {
+                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                }
+            }
+        }
 
         return sessionUser;
     }
@@ -588,28 +617,18 @@ public class SecurityManager
 
         try
         {
-            HttpSession session = request.getSession(false);
             User sessionUser = getSessionUser(request);
 
             if (null != sessionUser)
             {
                 AUTH_LOG.debug("   Session user present: " + sessionUser);
 
-                // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
-                // group memberships are calculated on every request (but just once)
-                assert sessionUser._groups == null;
-
-                ImpersonationContextFactory factory = (ImpersonationContextFactory) session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-
-                if (null != factory)
-                {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
-                }
-                else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
+                if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
                     sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
                 }
 
+                HttpSession session = request.getSession(false);
                 List<AuthenticationValidator> validators = getValidators(session);
 
                 // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
@@ -628,7 +647,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            stopImpersonating(request, factory);
+                            stopImpersonating(request, sessionUser.getImpersonationContext().getFactory());
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -827,7 +846,8 @@ public class SecurityManager
         {
             PrimaryAuthenticationConfiguration<?> configuration = response.getConfiguration();
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
-            newSession.setAttribute(AUTHENTICATION_ATTRIBUTES_KEY, response.getAttributeMap());
+            newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
+            newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
         }
 
         return newSession;
@@ -899,79 +919,6 @@ public class SecurityManager
     public static @Nullable List<AuthenticationValidator> getValidators(HttpSession session)
     {
         return (List<AuthenticationValidator>)session.getAttribute(AUTHENTICATION_VALIDATORS_KEY);
-    }
-
-    private static final String passwordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    public static final int tempPasswordLength = 32;
-
-    public static String createTempPassword()
-    {
-        StringBuilder tempPassword = new StringBuilder(tempPasswordLength);
-
-        for (int i = 0; i < tempPasswordLength; i++)
-            tempPassword.append(passwordChars.charAt((int) Math.floor((Math.random() * passwordChars.length()))));
-
-        return tempPassword.toString();
-    }
-
-    public static ActionURL createVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getVerificationURL(c, email, verification, extraParameters);
-    }
-
-    public static ActionURL createModuleVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser)
-    {
-        ActionURL defaultUrl = createVerificationURL(c, email, verification, extraParameters);
-        if (provider == null)
-            return defaultUrl;
-
-        ResetPasswordProvider urlProvider = AuthenticationManager.getResetPasswordProvider(provider);
-        if (urlProvider == null)
-            return defaultUrl;
-
-        ActionURL verificationUrl = urlProvider.getAPIVerificationURL(c, isAddUser);
-        verificationUrl.addParameter("verification", verification);
-        verificationUrl.addParameter("email", email.getEmailAddress());
-
-        if (null != extraParameters)
-            verificationUrl.addParameters(extraParameters);
-
-        return verificationUrl;
-    }
-
-    // Test if user has been verified for database authentication
-    public static boolean isVerified(ValidEmail email)
-    {
-        return (null == getVerification(email));
-    }
-
-    // Test if user has been verified for database authentication. Use only when email address could be invalid ().
-    public static boolean isVerified(String email)
-    {
-        return (null == getVerification(email));
-    }
-
-    public static boolean verify(ValidEmail email, String verification)
-    {
-        String dbVerification = getVerification(email);
-        return (dbVerification != null && dbVerification.equals(verification));
-    }
-
-    public static void setVerification(ValidEmail email, @Nullable String verification) throws UserManagementException
-    {
-        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Verification=? WHERE LOWER(email)=LOWER(?)", verification, email.getEmailAddress());
-        if (1 != rows)
-            throw new UserManagementException(email, "Unexpected number of rows returned when setting verification: " + rows);
-    }
-
-    public static String getVerification(ValidEmail email)
-    {
-        return getVerification(email.getEmailAddress());
-    }
-
-    private static String getVerification(String email)
-    {
-        return new SqlSelector(core.getSchema(), "SELECT Verification FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email).getObject(String.class);
     }
 
     public static class NewUserStatus
@@ -1066,12 +1013,12 @@ public class SecurityManager
     {
         public UserAlreadyExistsException(ValidEmail email)
         {
-            this(email, "User already exists");
+            this(email.getEmailAddress());
         }
 
-        public UserAlreadyExistsException(ValidEmail email, String message)
+        public UserAlreadyExistsException(String email)
         {
-            super(email, message);
+            super(email, "User already exists");
         }
     }
 
@@ -1102,12 +1049,6 @@ public class SecurityManager
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            if (createLogin && !status.isLdapOrSsoEmail())
-            {
-                String verification = createLogin(email);
-                status.setVerification(verification);
-            }
-
             try
             {
                 Integer userId = null;
@@ -1126,7 +1067,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(e.getSQLState()))
                     {
-                        LOG.debug("createUser: Something failed user: " + email, e);
+                        LOG.debug("createUser: Something failed user: {}", email, e);
                         throw e;
                     }
                 }
@@ -1140,8 +1081,17 @@ public class SecurityManager
                 if (null == userId)
                 {
                     assert false : "User should either exist or not; synchronization problem?";
-                    LOG.debug("createUser: Something failed user: " + email);
+                    LOG.debug("createUser: Something failed user: {}", email);
                     return null;
+                }
+
+                //
+                // Add row to Logins table, if needed
+                //
+                if (createLogin && !status.isLdapOrSsoEmail())
+                {
+                    String verification = LoginManager.createLogin(userId, email.getEmailAddress());
+                    status.setVerification(verification);
                 }
 
                 //
@@ -1217,28 +1167,28 @@ public class SecurityManager
         return displayName;
     }
 
-    public static void sendEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
+    public static void sendEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws ConfigurationException, MessagingException
     {
-        MimeMessage m = createMessage(c, user, message, to, verificationURL);
-        MailHelper.send(m, user, c);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
+        MailHelper.send(m, fromUser, c);
     }
 
-    public static void renderEmail(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
+    public static void renderEmail(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL, Writer out) throws MessagingException
     {
-        MimeMessage m = createMessage(c, user, message, to, verificationURL);
+        MimeMessage m = createMessage(c, fromUser, message, to, verificationURL);
         MailHelper.renderHtml(m, message.getType(), out);
     }
 
-    private static MimeMessage createMessage(Container c, User user, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
+    private static MimeMessage createMessage(Container c, User fromUser, SecurityMessage message, String to, ActionURL verificationURL) throws MessagingException
     {
         try
         {
             // Issue 33254: only allow Site Admins to see the verification token
-            if (message.isMaskToken() && !user.hasSiteAdminPermission())
+            if (message.isMaskToken() && !fromUser.hasSiteAdminPermission())
                 verificationURL.replaceParameter("verification", "**********");
 
             message.setVerificationURL(verificationURL.getURIString());
-            message.setOriginatingUser(user);
+            message.setOriginatingUser(fromUser);
             if (message.getTo() == null)
                 message.setTo(to);
 
@@ -1255,126 +1205,6 @@ public class SecurityManager
         {
             throw new MessagingException("Failed to set template context.", e);
         }
-    }
-
-    // Create record for database login, saving email address and hashed password. Return verification token.
-    public static String createLogin(ValidEmail email) throws UserManagementException
-    {
-        // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
-        String tempPassword = createTempPassword();
-        String verification = createTempPassword();
-
-        String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
-
-        try
-        {
-            // Don't need to set LastChanged -- it defaults to current date/time.
-            int rowCount = new SqlExecutor(core.getSchema()).execute("INSERT INTO " + core.getTableInfoLogins() +
-                    " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                    email.getEmailAddress(), crypt, new Date(), verification, crypt);
-            if (1 != rowCount)
-                throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
-        }
-        catch (DataIntegrityViolationException e)
-        {
-            throw new UserAlreadyExistsException(email);
-        }
-
-        return verification;
-    }
-
-    public static void setPassword(ValidEmail email, String password) throws UserManagementException
-    {
-        String crypt = Crypt.BCrypt.digestWithPrefix(password);
-        List<String> history = new ArrayList<>(getCryptHistory(email.getEmailAddress()));
-        history.add(crypt);
-
-        // Remember only the last 10 password hashes
-        int itemsToDelete = Math.max(0, history.size() - MAX_HISTORY);
-        for (int i = 0; i < itemsToDelete; i++)
-            history.remove(i);
-        String cryptHistory = StringUtils.join(history, ",");
-
-        int rows = new SqlExecutor(core.getSchema()).execute("UPDATE " + core.getTableInfoLogins() + " SET Crypt=?, LastChanged=?, PreviousCrypts=? WHERE Email=?", crypt, new Date(), cryptHistory, email.getEmailAddress());
-        if (1 != rows)
-            throw new UserManagementException(email, "Password update statement affected " + rows + " rows.");
-    }
-
-    private static final int MAX_HISTORY = 10;
-
-    private static List<String> getCryptHistory(String email)
-    {
-        Selector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT PreviousCrypts FROM " + core.getTableInfoLogins() + " WHERE Email=?", email));
-        String cryptHistory = selector.getObject(String.class);
-
-        if (null == cryptHistory)
-        {
-            return Collections.emptyList();
-        }
-        else
-        {
-            List<String> cryptList = Arrays.asList(cryptHistory.split(","));
-            assert cryptList.size() <= MAX_HISTORY;
-
-            return cryptList;
-        }
-    }
-
-    public static boolean matchesPreviousPassword(String password, User user)
-    {
-        List<String> history = getCryptHistory(user.getEmail());
-
-        for (String hash : history)
-        {
-            if (matchPassword(password, hash))
-                return true;
-        }
-
-        return false;
-    }
-
-    public static Date getLastChanged(User user)
-    {
-        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT LastChanged FROM " + core.getTableInfoLogins() + " WHERE Email=?", user.getEmail()));
-        return selector.getObject(Date.class);
-    }
-
-    // Look up email in Logins table and return the corresponding password hash
-    public static String getPasswordHash(ValidEmail email)
-    {
-        return getPasswordHash(email.getEmailAddress());
-    }
-
-    // For internal use only, plus database login and change email workflows, where existing email address could be invalid (i.e., non-conforming per RFC 822)
-    public static String getPasswordHash(String email)
-    {
-        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
-        return selector.getObject(String.class);
-    }
-
-    public static boolean matchPassword(String password, String hash)
-    {
-        if (StringUtils.isEmpty(hash) || hash.startsWith("disabled:"))
-            return false;
-        else if (Crypt.BCrypt.acceptPrefix(hash))
-            return Crypt.BCrypt.matchesWithPrefix(password, hash);
-        else if (Crypt.SaltMD5.acceptPrefix(hash))
-            return Crypt.SaltMD5.matchesWithPrefix(password, hash);
-        else if (Crypt.MD5.acceptPrefix(hash))
-            return Crypt.MD5.matchesWithPrefix(password, hash);
-        else
-            return Crypt.MD5.matches(password, hash);
-    }
-
-    // Used in the case of set password or email change... current email address could be invalid (i.e., non-conforming per RFC 822)
-    public static boolean loginExists(String email)
-    {
-        return (null != getPasswordHash(email));
-    }
-
-    public static boolean loginExists(ValidEmail email)
-    {
-        return (null != getPasswordHash(email));
     }
 
     public static Group createGroup(Container c, String name)
@@ -2481,7 +2311,7 @@ public class SecurityManager
             if (newUserStatus.getHasLogin() && sendMail)
             {
                 Container c = context.getContainer();
-                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, email, mailPrefix);
+                messageContentsURL = PageFlowUtil.urlProvider(SecurityUrls.class).getShowRegistrationEmailURL(c, newUserStatus.getUser(), mailPrefix);
 
                 sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, provider, isAddUser);
             }
@@ -2507,7 +2337,7 @@ public class SecurityManager
                 {
                     message.append("  Click ");
                     message.unsafeAppend("<a href=\"");
-                    message.append(createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters).toString());
+                    message.append(LoginManager.createVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters).toString());
                     message.unsafeAppend("\" target=\"_blank\">here</a>");
                     message.append(" to change the password from the random one that was assigned.");
                 }
@@ -2561,11 +2391,12 @@ public class SecurityManager
     {
         Container c = context.getContainer();
         User currentUser = context.getUser();
+        User newUser = newUserStatus.getUser();
 
-        ActionURL verificationURL = createModuleVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
+        ActionURL verificationURL = LoginManager.createModuleVerificationURL(context.getContainer(), newUser, newUserStatus.getVerification(), extraParameters, provider, isAddUser);
 
         sendEmail(c, currentUser, getRegistrationMessage(mailPrefix, false), email.getEmailAddress(), verificationURL);
-        if (!currentUser.isGuest() && !currentUser.getEmail().equals(email.getEmailAddress()))
+        if (!currentUser.isGuest() && !currentUser.equals(newUser))
         {
             SecurityMessage msg = getRegistrationMessage(mailPrefix, true);
             msg.setTo(email.getEmailAddress());
@@ -2884,16 +2715,17 @@ public class SecurityManager
         return (null!=c && c.hasPermission(user, SeeFilePathsPermission.class)) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
+    public static void adminRotatePassword(User affectedUser, BindException errors, Container c, User user)
     {
-        adminRotatePassword(email, errors, c, user, HtmlString.EMPTY_STRING);
+        adminRotatePassword(affectedUser, errors, c, user, HtmlString.EMPTY_STRING);
     }
 
-    public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user, HtmlString mailErrorHtml)
+    public static void adminRotatePassword(User affectedUser, BindException errors, Container c, User currentUser, HtmlString mailErrorHtml)
     {
         // We let admins create passwords (i.e., entries in the logins table) if they don't already exist.
         // This addresses SSO and LDAP scenarios, see #10374.
-        boolean loginExists = loginExists(email);
+
+        boolean loginExists = LoginManager.loginExists(affectedUser);
         String pastVerb = loginExists ? "reset" : "created";
         String infinitiveVerb = loginExists ? "reset" : "create";
 
@@ -2905,47 +2737,40 @@ public class SecurityManager
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
-                verification = createTempPassword();
-                setPassword(email, createTempPassword());
-                setVerification(email, verification);
+                verification = LoginManager.createTempPassword();
+                LoginManager.setPassword(affectedUser, LoginManager.createTempPassword());
+                LoginManager.setVerification(affectedUser, verification);
             }
             else
             {
-                verification = createLogin(email);
+                verification = LoginManager.createLogin(affectedUser.getUserId(), affectedUser.getEmail());
             }
 
             try
             {
-                ActionURL verificationURL = createVerificationURL(c, email, verification, null);
-                sendEmail(c, user, getResetMessage(false), email.getEmailAddress(), verificationURL);
+                ActionURL verificationURL = LoginManager.createVerificationURL(c, affectedUser, verification, null);
+                sendEmail(c, currentUser, getResetMessage(false), affectedUser.getEmail(), verificationURL);
 
-                if (!user.getEmail().equals(email.getEmailAddress()))
+                if (!currentUser.equals(affectedUser))
                 {
                     SecurityMessage msg = getResetMessage(true);
-                    msg.setTo(email.getEmailAddress());
-                    sendEmail(c, user, msg, user.getEmail(), verificationURL);
+                    msg.setTo(affectedUser.getEmail());
+                    sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
+                UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password.");
             }
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
                 errors.addError(!mailErrorHtml.isEmpty() ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
-                UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
+                UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }
         catch (UserManagementException e)
         {
             errors.addError(new LabKeyError(new Exception("Failed to reset password due to: " + e.getMessage(), e)));
-            UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
+            UserManager.addToUserHistory(affectedUser, currentUser.getEmail() + " attempted to " + infinitiveVerb + " the password, but the " + infinitiveVerb + " failed: " + e.getMessage());
         }
-    }
-
-    // We let admins delete passwords (i.e., entries in the logins table), see #42691
-    public static void adminDeletePassword(ValidEmail email, User user)
-    {
-        new SqlExecutor(CoreSchema.getInstance().getScope()).execute("DELETE FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress());
-        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " deleted the password.");
     }
 
     private static final class UserGroupsStartupProperty implements StartupProperty
@@ -3483,7 +3308,7 @@ public class SecurityManager
                 rawEmail = "test_" + Math.round(Math.random() * 10000) + "@localhost.xyz";
                 email = new ValidEmail(rawEmail);
             }
-            while (loginExists(email));
+            while (UserManager.getUser(email) != null);
 
             User user = null;
 
@@ -3492,15 +3317,17 @@ public class SecurityManager
             {
                 NewUserStatus status = addUser(email, null);
                 user = status.getUser();
+                assertNotNull(user);
                 assertTrue("addUser", user.getUserId() != 0);
 
-                boolean success = verify(email, status.getVerification());
-                assertTrue("verify", success);
+                User verifiedUser = LoginManager.verify(status.getVerification());
+                assertNotNull(verifiedUser);
+                assertEquals(user, verifiedUser);
 
-                setVerification(email, null);
+                LoginManager.setVerification(user, null);
 
                 String password = generateStrongPassword(user);
-                setPassword(email, password);
+                LoginManager.setPassword(user, password);
 
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
                 assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
@@ -3521,7 +3348,7 @@ public class SecurityManager
             // rules disallow.
             do
             {
-                password = createTempPassword() + "Az9!";
+                password = LoginManager.createTempPassword() + "Az9!";
             }
             while (!PasswordRule.Good.isValidForLogin(password, user, null));
 

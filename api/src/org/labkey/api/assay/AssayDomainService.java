@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.query.ValidationException;
 

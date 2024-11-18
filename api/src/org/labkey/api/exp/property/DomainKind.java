@@ -53,7 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-abstract public class DomainKind<T>  implements Handler<String>
+abstract public class DomainKind<T> implements Handler<String>
 {
     abstract public String getKindName();
 
@@ -110,6 +110,7 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @return set of strings containing the names. This will be compared ignoring case
      */
     abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
+
     public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return getReservedPropertyNames(domain, user);
@@ -256,19 +257,18 @@ abstract public class DomainKind<T>  implements Handler<String>
 
     /**
      * Default for all domain kinds is to not delete data. Lists and Datasets override this.
-     * @return
      */
     public boolean isDeleteAllDataOnFieldImport()
     {
         return false;
     }
 
-    public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
+    public @Nullable TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         return null;
     }
 
-    public TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
+    public @Nullable TableInfo getTableInfo(User user, Container container, Domain domain, @Nullable ContainerFilter cf)
     {
         return getTableInfo(user, container, domain.getName(), cf);
     }
@@ -348,6 +348,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     {
         return DefaultValueType.FIXED_EDITABLE;
     }
+
     public String getObjectUriColumnName()
     {
         return null;
@@ -385,14 +386,11 @@ abstract public class DomainKind<T>  implements Handler<String>
     }
 
     /**
-     * @param schemaName
-     * @param queryName
-     * @param container
-     * @param user
-     * @return  Return preview name(s) based on the name expression configured for the designer. For DataClass, up to one preview names is returned.
-     * For samples, up to 2 names can be returned, with the 1st one being the sample preview name and the 2nd being the aliquot preview name.
+     * @return Return preview name(s) based on the name expression configured for the designer. For DataClass,
+     * up to one preview names is returned. For samples, up to 2 names can be returned, with the 1st one being
+     * the sample preview name and the 2nd being the aliquot preview name.
      */
-    public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
+    public @Nullable List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
     {
         return null;
     }

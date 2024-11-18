@@ -808,18 +808,28 @@ public class PublishResultsQueryView extends QueryView
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
                         // TODO: Use the same code as AutoCompleteTag.java
-                        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                        out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
                         out.write("""
-                                LABKEY.requiresScript("completion");
-                                function onCompletionFocus(cmp) {
-                                  cmp.removeAttribute('onfocus');
-                                  Ext4.create('LABKEY.element.AutoCompletionField', {
-                                     renderTo        : cmp.getAttribute('completionid'),
-                                     completionUrl   : cmp.getAttribute('completion'),
-                                     sharedStore     : true,
-                                     fieldId         : cmp.getAttribute('id')
-                                  });
-                                }
+                                +function() {
+                                    let isReady = false;
+                                    
+                                    window.onCompletionFocus = function(el) {
+                                        if (!isReady) return;
+                                        el.removeAttribute('onfocus');
+                                        Ext4.create('LABKEY.element.AutoCompletionField', {
+                                          renderTo        : el.getAttribute('completionid'),
+                                          completionUrl   : el.getAttribute('completion'),
+                                          sharedStore     : true,
+                                          fieldId         : el.getAttribute('id'),
+                                        });
+                                    };
+                                    
+                                    LABKEY.requiresScript('completion', function() {
+                                        Ext4.onReady(function() {
+                                            isReady = true;
+                                        });
+                                    });
+                                }();
                                 """);
                         out.write("</script>");
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
