@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin.notification;
 
+import jakarta.mail.MessagingException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -25,15 +26,11 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
 /**
  * Service for adding/getting/removing user notifications attached to specific objects.
- * User: cnathe
- * Date: 9/14/2015
  */
 public interface NotificationService
 {
