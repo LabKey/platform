@@ -19,7 +19,6 @@ import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.util.ResultSetUtil;
 
-import java.beans.Introspector;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Clob;
@@ -27,7 +26,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Serializable
 {
@@ -64,21 +62,8 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
     {
         super(md.getColumnCount() + 1);
 
-        int count = md.getColumnCount();
-        Map<String, Integer> findMap = getFindMap();
-        findMap.put("_row", 0);  // We're going to stuff the current row index at index 0
-
-        for (int i = 1; i <= count; i++)
-        {
-            String propName = md.getColumnLabel(i);
-
-            if (!propName.isEmpty() && Character.isUpperCase(propName.charAt(0)))
-                propName = Introspector.decapitalize(propName);
-
-            findMap.put(propName, i);
-        }
+        ResultSetUtil.populateFindMap(md, getFindMap());
     }
-
 
     public void setConvertBigDecimalToDouble(boolean b)
     {
