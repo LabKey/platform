@@ -760,6 +760,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * Called from assay-24.013-24.014.sql, in order to support row level exclusions for plate enabled assays.
      * The upgrade ensures the default assay plate data states as well as creates the result domain qc state field.
      */
+    @DeferredUpgrade
     public static void initializeWellExclusions(ModuleContext ctx) throws Exception
     {
         if (ctx.isNewInstall())
