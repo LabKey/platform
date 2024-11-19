@@ -89,6 +89,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ReentrantLockWithName;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -3103,8 +3104,13 @@ public class ContainerManager
             LockState lockState = null != lockStateString ? Enums.getIfPresent(LockState.class, lockStateString).or(LockState.Unlocked) : LockState.Unlocked;
 
             LocalDate expirationDate = rs.getObject("ExpirationDate", LocalDate.class);
-            Long fileRootSize = (Long)rs.getObject("FileRootSize");  // getObject() and cast because getLong() returns 0 for null
-            LocalDateTime fileRootLastCrawled = rs.getObject("FileRootLastCrawled", LocalDateTime.class);
+
+            // Could be running upgrade code before these recent columns have been added to the table. Use a find map
+            // to determine if they are present. Issue 51692. These checks could be removed after creation of these
+            // columns is incorporated into the bootstrap scripts.
+            Map<String, Integer> findMap = ResultSetUtil.getFindMap(rs.getMetaData());
+            Long fileRootSize = findMap.containsKey("FileRootSize") ? (Long)rs.getObject("FileRootSize") : null;  // getObject() and cast because getLong() returns 0 for null
+            LocalDateTime fileRootLastCrawled = findMap.containsKey("FileRootLastCrawled") ? rs.getObject("FileRootLastCrawled", LocalDateTime.class) : null;
 
             Container dirParent = null;
             if (null != parentId)
