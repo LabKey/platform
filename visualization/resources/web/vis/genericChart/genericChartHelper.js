@@ -1211,7 +1211,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var getTrendlineConfig = function(chartConfig, data) {
         var config = {
             type: chartConfig.geomOptions.trendlineType,
-            logXScale: chartConfig.scales.x.trans === 'log',
+            logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
             asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
             asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
             data: chartConfig.measures.series
