@@ -2,11 +2,9 @@ package org.labkey.assay;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
@@ -14,7 +12,7 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -26,7 +24,6 @@ import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.NameGenerator;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -53,10 +50,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
-import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
-import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.query.PlateTable;
@@ -66,6 +61,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -243,36 +239,45 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
-            SQLFragment sql = new SQLFragment("SELECT MAX(rowId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "");
-            Integer maxRowId = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+            TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
 
-            if (maxRowId != null)
+            // Set the DbSequence minimum
             {
-                // reset the DbSequence
-                TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
-                DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), plateSetTable.getDbSequenceName("RowId"));
-                sequence.ensureMinimum(maxRowId);
+                SQLFragment sql = new SQLFragment("SELECT MAX(rowId) FROM ").append(plateSetTable, "");
+                Integer maxRowId = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+
+                if (maxRowId != null)
+                {
+                    DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), plateSetTable.getDbSequenceName("RowId"));
+                    sequence.ensureMinimum(maxRowId);
+                }
             }
 
             _log.info("Start updating temporary plate set names with the configured name expression");
-            List<PlateSetImpl> plateSets = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getArrayList(PlateSetImpl.class);
+            List<Integer> plateSetRowIds = new TableSelector(plateSetTable, Collections.singleton("RowId")).getArrayList(Integer.class);
 
-            NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateSetNameExpression(), AssayDbSchema.getInstance().getTableInfoPlateSet(), false, null, null, null);
+            // This is a copy of PlateManager.PLATE_SET_NAME_EXPRESSION as set when this script was written.
+            // Copied here to allow this script to assume that only the Plate Set "RowId" value is needed for the
+            // generated name.
+            String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
+            NameGenerator nameGenerator = new NameGenerator(PLATE_SET_NAME_EXPRESSION, plateSetTable, false, null, null, null);
             NameGenerator.State state = nameGenerator.createState(false);
-            for (PlateSetImpl plateSet : plateSets)
+
+            for (Integer plateSetRowId : plateSetRowIds)
             {
-                Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
-                String name = nameGenerator.generateName(state, plateRow);
+                String name = nameGenerator.generateName(state, CaseInsensitiveHashMap.of("RowId", plateSetRowId));
                 state.cleanUp();
 
-                SQLFragment sql2 = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "")
                         .append(" SET Name = ?")
                         .add(name)
                         .append(" WHERE RowId = ?")
-                        .add(plateSet.getRowId());
-                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
+                        .add(plateSetRowId);
+
+                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
             }
-            _log.info("Successfully updated " + plateSets.size() + " plate set names");
+
+            _log.info("Successfully updated " + plateSetRowIds.size() + " plate set names");
             tx.commit();
         }
     }
