@@ -32,6 +32,8 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -150,6 +152,7 @@ import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -889,12 +892,21 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpDataClassTable.Column.Name.name());
             columns.add(ExpDataClassTable.Column.DataCount.name());
 
-            Map<String, Integer> results = new TableSelector(table, columns).getValueMap();
-            for (var entry : results.entrySet())
+            try (Results results = new TableSelector(table, columns).getResults())
             {
-                int count = entry.getValue();
-                if (count > 0)
-                    summaries.add(new Summary(count, entry.getKey()));
+                while (results.next())
+                {
+                    int count = results.getInt(ExpDataClassTable.Column.DataCount.fieldKey());
+                    if (count > 0)
+                    {
+                        String name = results.getString(ExpDataClassTable.Column.Name.fieldKey());
+                        summaries.add(new Summary(count, name));
+                    }
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
             }
         }
 
@@ -917,18 +929,24 @@ public class ExperimentModule extends SpringModule
             columns.add(ExpSampleTypeTable.Column.Name.name());
             columns.add(ExpSampleTypeTable.Column.SampleCount.name());
 
-            Map<String, Integer> results = new TableSelector(table, columns).getValueMap();
-            for (var entry : results.entrySet())
+            try (Results results = new TableSelector(table, columns).getResults())
             {
-                int count = entry.getValue();
-                if (count > 0)
+                while (results.next())
                 {
-                    String name = entry.getKey();
-                    Summary s = name.equals("MixtureBatches")
-                            ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
-                            : new Summary(count, name);
-                    summaries.add(s);
+                    int count = results.getInt(ExpSampleTypeTable.Column.SampleCount.fieldKey());
+                    if (count > 0)
+                    {
+                        String name = results.getString(ExpSampleTypeTable.Column.Name.fieldKey());
+                        Summary s = name.equals("MixtureBatches")
+                                ? new Summary(count, "Batch", "Batches") // Special handling for name replacement + pluralization
+                                : new Summary(count, name);
+                        summaries.add(s);
+                    }
                 }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
             }
         }
 
