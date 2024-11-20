@@ -1116,6 +1116,17 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 layerAes.pathColor = function () { return trendline.name };
                             }
 
+                            var hoverText = trendline.name + '\n';
+                            hoverText += '\n' + trendline.data.curveFit.type + ':\n';
+                            $.each(trendline.data.curveFit, function (key, value) {
+                                if (key !== 'type') hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+                            });
+                            hoverText += '\nStats:\n';
+                            $.each(trendline.data.stats, function (key, value) {
+                                hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+                            });
+                            layerAes.hoverText = function () { return hoverText };
+
                             layers.push(
                                 new LABKEY.vis.Layer({
                                     geom: new LABKEY.vis.Geom.Path({
