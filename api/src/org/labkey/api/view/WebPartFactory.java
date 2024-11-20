@@ -55,9 +55,9 @@ public interface WebPartFactory
     /** @return the locations ({@link #LOCATION_RIGHT}, {@link #LOCATION_MENUBAR}, {@link #LOCATION_BODY} in which the web part is allowed to be placed */
     Set<String> getAllowableLocations();
 
-    WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException;
+    WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException;
 
-    HttpView getEditView(Portal.WebPart webPart, ViewContext context);
+    HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context);
 
     Portal.WebPart createWebPart();
 

@@ -52,8 +52,6 @@ List runtime = [
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
-    // Avoid pulling in the Activation API because we don't want to conflict with one loaded from $CATALINA_HOME/lib
-    all*.exclude group: "jakarta.activation", module: "jakarta.activation-api"
 
     // this configuration and its artifact are declared because the default outgoing variant for the api
     // module (runtimeElements) does not include all the class files since the classes compiled from
@@ -98,11 +96,25 @@ dependencies {
     runtimeOnly runtime
 
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
-    // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
-    // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-    api "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
-    api "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
+    // needed for compilation but Tomcat provides the implementation
+    api "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
+
+    // Angus Mail is an implementation of the Jakarta Mail API, which it pulls in as a dependency
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.eclipse.angus:angus-mail:${angusMailVersion}",
+            "Angus Mail",
+            "Eclipse Foundation",
+            "https://eclipse-ee4j.github.io/angus-mail/",
+            "Eclipse Public License 2.0",
+            "https://projects.eclipse.org/license/epl-2.0",
+            "Implementation of the Jakarta Mail API",
+        )
+    )
+
+    // Angus Activation is an implementation of the Jakarta Activation API, which it pulls in as a dependency
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -281,7 +293,7 @@ dependencies {
             "https://commons.apache.org/proper/commons-text/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "String algorithms",
+            "String algorithms"
         )
     )
 
@@ -294,21 +306,21 @@ dependencies {
             "http://jakarta.apache.org/commons/validator/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Data validation and error messages",
+            "Data validation and error messages"
         )
     )
 
     BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "org.apache.commons:commons-vfs2:${commonsVfs2Version}",
-                    "Commons Virtual File System",
-                    "Apache",
-                    "https://commons.apache.org/proper/commons-vfs/",
-                    ExternalDependency.APACHE_2_LICENSE_NAME,
-                    ExternalDependency.APACHE_2_LICENSE_URL,
-                    "Consistent API for accessing files of different types",
-            )
+        project,
+        new ExternalDependency(
+            "org.apache.commons:commons-vfs2:${commonsVfs2Version}",
+            "Commons Virtual File System",
+            "Apache",
+            "https://commons.apache.org/proper/commons-vfs/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Consistent API for accessing files of different types"
+        )
     )
 
 
@@ -322,7 +334,7 @@ dependencies {
             "http://code.google.com/p/flying-saucer/",
             ExternalDependency.LGPL_LICENSE_NAME,
             ExternalDependency.LGPL_LICENSE_URL,
-            "XHTML/CSS rendering library",
+            "XHTML/CSS rendering library"
         )
     )
 
