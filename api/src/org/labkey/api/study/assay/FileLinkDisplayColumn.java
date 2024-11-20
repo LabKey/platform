@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -247,15 +248,26 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         return getFileName(ctx, value, false);
     }
 
+    @Override
     protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
     {
         String result = value == null ? null : StringUtils.trimToNull(value.toString());
         if (result != null)
         {
-            File f;
+            File f = null;
             if (result.startsWith("file:"))
-                f = new File(URI.create(result));
-            else
+            {
+                try
+                {
+                    f = new File(new URI(result));
+                }
+                catch (URISyntaxException x)
+                {
+                    // try to recover
+                    result = result.substring("file:".length());
+                }
+            }
+            if (null == f)
                 f = FileUtil.getAbsoluteCaseSensitiveFile(new File(result));
             NetworkDrive.ensureDrive(f.getPath());
             List<FileContentService.ContentType> fileRootTypes = List.of(FileContentService.ContentType.files, FileContentService.ContentType.pipeline, FileContentService.ContentType.assayfiles);
@@ -270,7 +282,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
                 result = f.getName();
             }
 
-            if (isDisplay && !f.exists())
+            if (isDisplay && !f.exists() && !result.endsWith("(unavailable)"))
                 result += " (unavailable)";
         }
         return result;
@@ -339,7 +351,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
             else
             {
                 // It's not on the file system anymore, so don't offer a link and tell the user it's unavailable
-                super.renderIconAndFilename(ctx, out, filename + " (unavailable)", Attachment.getFileIcon(filename), null, false, false);
+                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(filename), null, false, false);
             }
         }
         else
