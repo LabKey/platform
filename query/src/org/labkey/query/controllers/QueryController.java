@@ -1026,7 +1026,7 @@ public class QueryController extends SpringActionController
 
             try
             {
-                if (form.ff_baseTableName == null || "".equals(form.ff_baseTableName))
+                if (form.ff_baseTableName == null || form.ff_baseTableName.isEmpty())
                 {
                     errors.reject(ERROR_MSG, "You must select a base table or query name.");
                     return false;
@@ -1083,7 +1083,7 @@ public class QueryController extends SpringActionController
             catch (Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-                errors.reject(ERROR_MSG, StringUtils.defaultString(e.getMessage(),e.toString()));
+                errors.reject(ERROR_MSG, Objects.toString(e.getMessage(), e.toString()));
                 return false;
             }
         }
@@ -1152,7 +1152,7 @@ public class QueryController extends SpringActionController
 
                 for (QueryException qpe : _queryDef.getParseErrors(_schema))
                 {
-                    errors.reject(ERROR_MSG, StringUtils.defaultString(qpe.getMessage(),qpe.toString()));
+                    errors.reject(ERROR_MSG, Objects.toString(qpe.getMessage(), qpe.toString()));
                 }
             }
             catch (Exception e)
@@ -1166,13 +1166,12 @@ public class QueryController extends SpringActionController
                     //
                 }
                 errors.reject("ERROR_MSG", e.toString());
-                LogManager.getLogger(QueryController.class).error("Error", e);
+                LOG.error("Error", e);
             }
 
             Renderable moduleWarning = null;
-            if (_queryDef instanceof ModuleCustomQueryDefinition && _queryDef.canEdit(getUser()))
+            if (_queryDef instanceof ModuleCustomQueryDefinition mcqd && _queryDef.canEdit(getUser()))
             {
-                var mcqd = (ModuleCustomQueryDefinition)_queryDef;
                 moduleWarning = DIV(cl("labkey-warning-messages"),
                         "This SQL query is defined in the '" + mcqd.getModuleName() + "' module in directory '" + mcqd.getSqlFile().getParent() + "'.",
                                 BR(),
@@ -1181,7 +1180,7 @@ public class QueryController extends SpringActionController
             }
 
             var sourceQueryView = new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
-            WebPartView ret = sourceQueryView;
+            WebPartView<?> ret = sourceQueryView;
             if (null != moduleWarning)
                 ret = new VBox(new HtmlView(moduleWarning), sourceQueryView);
             return ret;
@@ -1326,7 +1325,7 @@ public class QueryController extends SpringActionController
                 try
                 {
                     // attempt to convert to something we can query against
-                    SimpleFilter.fromXml(filters.toArray(new FilterType[filters.size()]));
+                    SimpleFilter.fromXml(filters.toArray(new FilterType[0]));
                 }
                 catch (Exception e)
                 {
@@ -1644,8 +1643,8 @@ public class QueryController extends SpringActionController
                 _dbSchemaName = dbSchema.getName();
 
                 // Try to get the underlying schema table and use the meta data name, #12015
-                if (ti instanceof FilteredTable)
-                    ti = ((FilteredTable) ti).getRealTable();
+                if (ti instanceof FilteredTable<?> fti)
+                    ti = fti.getRealTable();
 
                 if (ti instanceof SchemaTableInfo)
                     _dbTableName = ti.getMetaDataName();
@@ -1740,7 +1739,7 @@ public class QueryController extends SpringActionController
             DbScope scope = schema.getScope();
             SqlDialect dialect = scope.getSqlDialect();
 
-            HttpView scopeInfo = new ScopeView("Scope Information", scope);
+            HttpView<?> scopeInfo = new ScopeView("Scope Information", scope);
 
             ModelAndView tablesView;
 
@@ -1777,7 +1776,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    public static class ScopeView extends WebPartView
+    public static class ScopeView extends WebPartView<Object>
     {
         private final DbScope _scope;
         private final String _schemaName;
@@ -2343,7 +2342,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
+    public static class ExcelWebQueryDefinitionAction extends SimpleViewAction<QueryForm>
     {
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
@@ -7776,7 +7775,7 @@ public class QueryController extends SpringActionController
                     if (DatabaseTableType.TABLE.equals(table.getTableType()))
                     {
                         String tableName = table.getName();
-                        try (var factory = new StashingResultsFactory(()->new TableSelector(table).getResults(false)))
+                        try (var factory = new StashingResultsFactory(()->new TableSelector(table).setJdbcCaching(false).getResults(false)))
                         {
                             Results results = factory.get();
                             if (results.isBeforeFirst()) // only export tables with data
@@ -7799,7 +7798,7 @@ public class QueryController extends SpringActionController
 
                 try (PrintWriter writer = PrintWriters.getPrintWriter(new File(form.getOutputDir(), form.getSourceSchema() + "_updateScript.sql")))
                 {
-                    writer.print(importScript.toString());
+                    writer.print(importScript);
                 }
             }
             catch (FileNotFoundException e)
@@ -7826,7 +7825,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public static class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction
+    public static class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -7905,7 +7904,7 @@ public class QueryController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetQueryEditorMetadataAction extends ReadOnlyApiAction<QueryForm>
+    public static class GetQueryEditorMetadataAction extends ReadOnlyApiAction<QueryForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -7939,7 +7938,7 @@ public class QueryController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
-    public class SaveQueryMetadataAction extends MutatingApiAction<QueryMetadataApiForm>
+    public static class SaveQueryMetadataAction extends MutatingApiAction<QueryMetadataApiForm>
     {
         @Override
         protected ObjectMapper createRequestObjectMapper()
@@ -7979,7 +7978,7 @@ public class QueryController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
-    public class ResetQueryMetadataAction extends MutatingApiAction<QueryForm>
+    public static class ResetQueryMetadataAction extends MutatingApiAction<QueryForm>
     {
         @Override
         public Object execute(QueryForm queryForm, BindException errors) throws Exception
@@ -8163,7 +8162,7 @@ public class QueryController extends SpringActionController
      */
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
-    public class ParseCalculatedColumnAction extends ReadOnlyApiAction<ParseForm>
+    public static class ParseCalculatedColumnAction extends ReadOnlyApiAction<ParseForm>
     {
         @Override
         public Object execute(ParseForm form, BindException errors) throws Exception
@@ -8176,7 +8175,7 @@ public class QueryController extends SpringActionController
             try
             {
                 var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
-                var table = new VirtualTable(schema.getDbSchema(), "EXPR", schema){};
+                var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
                 ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
                 Map<FieldKey,ColumnInfo> columns = new HashMap<>();
                 for (var entry : form.getColumnMap().entrySet())
@@ -8241,7 +8240,7 @@ public class QueryController extends SpringActionController
                 new ExportQueriesXLSXAction(),
                 new ExportExcelTemplateAction(),
                 new ExportRowsTsvAction(),
-                controller.new ExcelWebQueryDefinitionAction(),
+                    new ExcelWebQueryDefinitionAction(),
                 controller.new SaveQueryViewsAction(),
                 controller.new PropertiesQueryAction(),
                 controller.new SelectRowsAction(),
