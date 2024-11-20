@@ -31,6 +31,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -48,16 +49,16 @@ import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -114,30 +115,37 @@ public class MailHelper
                     entries.forEach(entry -> properties.put("mail.smtp." + entry.getName(), entry.getValue()));
                 }
             });
+
+            /* now check if specified in tomcat config instead */
+            if (properties.isEmpty())
+            {
+                ServletContext context = ModuleLoader.getServletContext();
+                Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
+                while (names.hasMoreElements())
+                {
+                    String name = names.nextElement();
+                    if (name.startsWith("mail.smtp."))
+                        properties.put(name, context.getInitParameter(name));
+                }
+            }
+
             if (!properties.isEmpty())
             {
                 session = Session.getInstance(properties);
-            }
-            else
-            {
-                /* check if specified in tomcat config */
-                InitialContext ctx = new InitialContext();
-                Context envCtx = (Context) ctx.lookup("java:comp/env");
-                session = (Session) envCtx.lookup("mail/Session");
-            }
 
-            if ("true".equalsIgnoreCase(session.getProperty("mail.smtp.ssl.enable")) ||
-                    "true".equalsIgnoreCase(session.getProperty("mail.smtp.starttls.enable")))
-            {
-                String username = session.getProperty("mail.smtp.user");
-                String password = session.getProperty("mail.smtp.password");
-                session = Session.getInstance(session.getProperties(), new Authenticator() {
-                    @Override
-                    protected PasswordAuthentication getPasswordAuthentication()
-                    {
-                        return new PasswordAuthentication(username, password);
-                    }
-                });
+                if ("true".equalsIgnoreCase(session.getProperty("mail.smtp.ssl.enable")) ||
+                        "true".equalsIgnoreCase(session.getProperty("mail.smtp.starttls.enable")))
+                {
+                    String username = session.getProperty("mail.smtp.user");
+                    String password = session.getProperty("mail.smtp.password");
+                    session = Session.getInstance(session.getProperties(), new Authenticator() {
+                        @Override
+                        protected PasswordAuthentication getPasswordAuthentication()
+                        {
+                            return new PasswordAuthentication(username, password);
+                        }
+                    });
+                }
             }
         }
         catch (Exception e)

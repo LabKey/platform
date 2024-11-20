@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
