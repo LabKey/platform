@@ -115,7 +115,7 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
             private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
             {
                 Lsid id = fromDocumentId(resourceIdentifier);
-                return PlateManager.get().getPlateSet(id.toString()); // todo flag, it's not an LSID
+                return PlateManager.get().getPlateSet(id.toString());
             }
 
             @Override
