@@ -2101,15 +2101,28 @@ public class DbScope
                 .forEach(DbScopeLoader::clearDbScope);
     }
 
+
+
+    /**
+     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
+     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
+     */
+    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    {
+        boolean closed = ConnectionWrapper.closeConnections();
+        if (!closed)
+        {
+            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
+            BANNED_THREADS.add(getEffectiveThread());
+        }
+    }
+
     /**
      * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
      * associated/effective thread. Also releases locks acquired as part of opening the transaction.
-     * @param preventNextAttempt true if the thread should be prevented from getting another DB connection when it
-     *                           wasn't in the midst of using a connection. Use finishedWithThread() to clear the ban.
      */
-    public static void closeAllConnectionsForCurrentThread(boolean preventNextAttempt)
+    public static void closeAllConnectionsForCurrentThread()
     {
-        boolean foundActiveConnection = false;
         for (DbScope scope : getInitializedDbScopes())
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
@@ -2126,7 +2139,6 @@ public class DbScope
                 {
                     LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
-                    foundActiveConnection = true;
                     t.close();
                 }
                 catch (ConnectionAlreadyReleaseException ignored)
@@ -2145,13 +2157,7 @@ public class DbScope
         }
 
         // Also close down connections that might not have been connected with a Transaction object
-        foundActiveConnection |= ConnectionWrapper.closeConnections();
-
-        if (!foundActiveConnection && preventNextAttempt)
-        {
-            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
-            BANNED_THREADS.add(getEffectiveThread());
-        }
+        ConnectionWrapper.closeConnections();
     }
 
     /**
@@ -2160,7 +2166,7 @@ public class DbScope
     public static void finishedWithThread()
     {
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-        closeAllConnectionsForCurrentThread(false);
+        closeAllConnectionsForCurrentThread();
         QueryService.get().clearEnvironment();
         BANNED_THREADS.remove(Thread.currentThread());
     }
@@ -3110,7 +3116,7 @@ public class DbScope
             Transaction ignored = getLabKeyScope().ensureTransaction();
             // Intentionally don't call t.close(), make sure it unwinds correctly
             assertTrue(getLabKeyScope().isTransactionActive());
-            closeAllConnectionsForCurrentThread(false);
+            closeAllConnectionsForCurrentThread();
             assertFalse(getLabKeyScope().isTransactionActive());
         }
 
@@ -3126,7 +3132,7 @@ public class DbScope
                 assertTrue("Bad message: " + e.getMessage(), e.getMessage().contains("simulated"));
             }
             assertFalse(getLabKeyScope().isTransactionActive());
-            closeAllConnectionsForCurrentThread(false);
+            closeAllConnectionsForCurrentThread();
         }
 
         @Test
