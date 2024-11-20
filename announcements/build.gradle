@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
 }
 
 // TODO move resources files into resources directory to avoid this overlap
