@@ -147,15 +147,6 @@ public class MailHelper
                     });
                 }
             }
-// I couldn't get this to work once I switched to Angus Mail; kept getting this exception:
-// java.util.ServiceConfigurationError: jakarta.mail.util.StreamProvider: org.eclipse.angus.mail.util.MailStreamProvider not a subtype
-//            else
-//            {
-//                /* check if specified in tomcat config */
-//                InitialContext ctx = new InitialContext();
-//                Context envCtx = (Context) ctx.lookup("java:comp/env");
-//                session = (Session) envCtx.lookup("mail/Session");
-//            }
         }
         catch (Exception e)
         {
