@@ -64,11 +64,11 @@
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
-            <th>External <%=h(bean.getTypeEnum().name())%> Host(s)</th>
+            <th><%=h(bean.getTypeEnum().getTitle() + "s")%></th>
             <th></th>
         </tr>
         <% if (bean.getExistingHostList().isEmpty()) { %>
-            <tr><td colspan="2">No External <%=h(bean.getTypeEnum().name())%> Hosts have been configured.</td></tr>
+            <tr><td colspan="2">No <%=h(bean.getTypeEnum().getTitle())%>s have been configured.</td></tr>
         <% } %>
 
         <%
