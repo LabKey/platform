@@ -1206,7 +1206,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.loadOptionsFromConfig(chartConfig);
 
         // if the renderType was not saved with the report info, get it based off of the x-axis measure type
-        this.renderType = chartConfig.renderType || this.getRenderType();
+        this.renderType = chartConfig.renderType || this.getRenderType(chartConfig);
 
         this.markDirty(false);
         this.reportLoaded = true;
@@ -1366,8 +1366,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.clearChartPanel(false);
 
-        var chartConfig = this.getChartConfig(),
-            renderType = this.getRenderType();
+        var chartConfig = this.getChartConfig();
+        var renderType = this.getRenderType(chartConfig);
 
         this.renderGenericChart(renderType, chartConfig);
 
@@ -1375,10 +1375,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.setRenderRequested(false);
     },
 
-    getRenderType : function()
+    getRenderType : function(chartConfig)
     {
-        var xAxisType = this.getXAxisType(this.measures.x);
-        return LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
+        return LABKEY.vis.GenericChartHelper.getChartType(chartConfig);
     },
 
     renderGenericChart : function(chartType, chartConfig)
@@ -1435,22 +1434,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         newChartDiv = this.getNewChartDisplayDiv();
         this.getViewPanel().add(newChartDiv);
 
-        // support for y-axis trendline data when a single y-axis measure is selected
-        var yMeasures = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(chartConfig.measures.y);
-        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
-            var xName = chartConfig.measures.x.name;
-            var trendlineConfig = LABKEY.vis.GenericChartHelper.getTrendlineConfig(chartConfig, this.getMeasureStoreRecords());
-            var scope = this;
-            LABKEY.vis.GenericChartHelper.queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
-                scope.getPlotConfigsAndRender(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineConfig.data);
-            });
-        } else {
-            this.getPlotConfigsAndRender(newChartDiv, chartType, chartConfig, aes, scales, customRenderType);
-        }
-    },
-
-    getPlotConfigsAndRender : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData) {
-        var plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData);
+        var plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, this.trendlineData);
 
         Ext4.each(plotConfigArr, function(plotConfig) {
             if (this.renderType === 'pie_chart') {
@@ -2069,10 +2053,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return Ext4.isDefined(this.getMeasureStore()) && Ext4.isArray(this.getMeasureStoreRecords());
     },
 
-    onSelectRowsSuccess : function(measureStore)
-    {
+    onSelectRowsSuccess : function(measureStore) {
         this.measureStore = measureStore;
+        this.queryTrendlineData();
+    },
 
+    queryTrendlineData : function() {
+        var chartConfig = this.getChartConfig();
+        var data = this.getMeasureStoreRecords();
+        var scope = this;
+        LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data, function(trendlineData) {
+            scope.trendlineData = trendlineData;
+            scope.onQueryDataComplete();
+        });
+    },
+
+    onQueryDataComplete : function() {
         // when not in edit mode, we'll use the column metadata from the data query
         if (!this.editMode)
             this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);

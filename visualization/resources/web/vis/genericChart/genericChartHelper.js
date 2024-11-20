@@ -90,14 +90,13 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Gets the chart type (i.e. box or scatter).
-     * @param {String} renderType The selected renderType, this can be SCATTER_PLOT, BOX_PLOT, or BAR_CHART. Determined
-     * at chart creation time in the Generic Chart Wizard.
-     * @param {String} xAxisType The datatype of the x-axis, i.e. String, Boolean, Number.
-     * @returns {String}
+     * Gets the chart type (i.e. box or scatter) based on the chartConfig object.
      */
-    var getChartType = function(renderType, xAxisType)
+    var getChartType = function(chartConfig)
     {
+        var renderType = chartConfig.renderType
+        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
+
         if (renderType === 'time_chart' || renderType === "bar_chart" || renderType === "pie_chart"
             || renderType === "box_plot" || renderType === "scatter_plot" || renderType === "line_plot")
         {
@@ -1208,6 +1207,24 @@ LABKEY.vis.GenericChartHelper = new function(){
         return plotConfig;
     };
 
+    // support for y-axis trendline data when a single y-axis measure is selected
+    var queryTrendlineData = function(chartConfig, data, callback) {
+        var chartType = getChartType(chartConfig);
+        var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
+        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
+            var xName = chartConfig.measures.x.name;
+            var trendlineConfig = getTrendlineConfig(chartConfig, data);
+            _queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
+                callback.call(this, trendlineConfig.data);
+            }).catch(function(reason) {
+                // skip this series and render without trendline
+                callback.call(this, trendlineConfig.data);
+            });
+        } else {
+            callback.call(this);
+        }
+    }
+
     var getTrendlineConfig = function(chartConfig, data) {
         var config = {
             type: chartConfig.geomOptions.trendlineType,
@@ -1227,7 +1244,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         return config;
     }
 
-    var queryTrendlineData = async function(trendlineConfig, xName, yName) {
+    var _queryTrendlineData = async function(trendlineConfig, xName, yName) {
         for (var series of trendlineConfig.data) {
             try {
                 series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
@@ -1725,12 +1742,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
-        queryChartData(renderTo, queryConfig, function(measureStore) {
-            generateChartSVG(renderTo, chartConfig, measureStore);
+        queryChartData(renderTo, queryConfig, chartConfig, function(measureStore, trendlineData) {
+            generateChartSVG(renderTo, chartConfig, measureStore, trendlineData);
         });
     };
 
-    var queryChartData = function(renderTo, queryConfig, callback) {
+    var queryChartData = function(renderTo, queryConfig, chartConfig, callback) {
         queryConfig.containerPath = LABKEY.container.path;
 
         if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
@@ -1751,21 +1768,22 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         queryConfig.success = function(measureStore) {
-            callback.call(this, measureStore);
+            queryTrendlineData(chartConfig, measureStore.records(), function(trendlineData) {
+                callback.call(this, measureStore, trendlineData);
+            });
         };
 
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
-    var generateChartSVG = function(renderTo, chartConfig, measureStore) {
+    var generateChartSVG = function(renderTo, chartConfig, measureStore, trendlineData) {
         var responseMetaData = measureStore.getResponseMetadata();
 
         // explicitly set the chart width/height if not set in the config
         if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 1000;
         if (!chartConfig.hasOwnProperty('height') || chartConfig.height == null) chartConfig.height = 600;
 
-        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
-        var chartType = getChartType(chartConfig.renderType, xAxisType);
+        var chartType = getChartType(chartConfig);
         var aes = generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);
         var valueConversionResponse = doValueConversion(chartConfig, aes, chartType, measureStore.records());
         if (!LABKEY.Utils.isEmptyObj(valueConversionResponse.processed)) {
@@ -1804,23 +1822,6 @@ LABKEY.vis.GenericChartHelper = new function(){
             data = LABKEY.vis.getAggregateData(data, dimName, subDimName, measureName, aggType, '[Blank]', false);
         }
 
-        // support for y-axis trendline data when a single y-axis measure is selected
-        var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
-        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
-            var xName = chartConfig.measures.x.name;
-            var trendlineConfig = getTrendlineConfig(chartConfig, data);
-            queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
-                _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineConfig.data);
-            }).catch(function(reason) {
-                // skip this series and render without trendline
-                _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineConfig.data);
-            });
-        } else {
-            _validateAndRenderChart(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore);
-        }
-    };
-
-    var _validateAndRenderChart = function(renderTo, chartType, chartConfig, aes, scales, labels, geom, data, measureStore, trendlineData) {
         var validation = _validateChartConfig(chartConfig, aes, scales, measureStore);
         _renderMessages(renderTo, validation.messages);
         if (!validation.success)
