@@ -80,6 +80,7 @@ import org.labkey.assay.plate.PlateManagerTest;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
+import org.labkey.assay.plate.PlateSetDocumentProvider;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSchemaTest;
@@ -95,7 +96,6 @@ import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -116,7 +116,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.013;
+        return 24.014;
     }
 
     @Override
@@ -219,6 +219,11 @@ public class AssayModule extends SpringModule
             ss.addSearchCategory(PlateManager.get().PLATE_CATEGORY);
             ss.addResourceResolver(PlateManager.get().PLATE_CATEGORY.getName(), PlateDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new PlateDocumentProvider());
+
+            // PLATE_SET_CATEGORY
+            ss.addSearchCategory(PlateManager.get().PLATE_SET_CATEGORY);
+            ss.addResourceResolver(PlateManager.get().PLATE_SET_CATEGORY.getName(), PlateSetDocumentProvider.getResourceResolver());
+            ss.addDocumentProvider(new PlateSetDocumentProvider());
         }
 
         // add a container listener so we'll know when our container is deleted:

@@ -203,6 +203,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     };
 
+    public SearchService.SearchCategory PLATE_SET_CATEGORY = new SearchService.SearchCategory("plateSet", "Assay Plate Sets", false) {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, ReadPermission.class);
+        }
+    };
+
     public static PlateManager get()
     {
         return (PlateManager) PlateService.get();
@@ -471,6 +479,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
     {
         return PlateSetCache.getPlateSet(cf, plateSetId);
+    }
+
+    @Override
+    public @Nullable PlateSet getPlateSet(String plateSetID)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateSetId"), plateSetID);
+        String container = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet(), Collections.singleton("Container"), filter, null).getObject(String.class);
+        if (container != null)
+        {
+            Container c = ContainerManager.getForId(container);
+            if (c != null)
+                return PlateSetCache.getPlateSet(c, plateSetID);
+        }
+        return null;
     }
 
     @Override
@@ -799,6 +821,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PlateCache.getPlates(c);
     }
 
+    public @NotNull List<PlateSet> getPlateSets(Container c)
+    {
+        return PlateSetCache.getPlateSets(c);
+    }
+
     public List<Plate> getPlatesForPlateSet(PlateSet plateSet)
     {
         return PlateCache.getPlatesForPlateSet(plateSet.getContainer(), plateSet.getRowId());
@@ -954,6 +981,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         String nameSpace;
         if (type == Plate.class)
             nameSpace = "Plate";
+        else if (type == PlateSet.class)
+            nameSpace = "PlateSet";
         else if (type == WellGroup.class)
             nameSpace = "WellGroup";
         else if (type == Well.class)
@@ -1153,6 +1182,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
                 indexPlate(container, plateRowId, false);
+                if (plate.getPlateSet() != null && SearchService.get() != null)
+                    indexPlateSet(SearchService.get().defaultTask(), plate.getPlateSet());
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
 
@@ -2093,6 +2124,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             if (modifiedSince == null || modifiedSince.before(((PlateImpl) plate).getModified()))
                 indexPlate(task, plate);
+        }
+    }
+
+    private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
+    {
+        WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
+        task.addResource(resource, SearchService.PRIORITY.item);
+    }
+
+    public void indexPlateSets(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    {
+        for (PlateSet plateset : getPlateSets(c))
+        {
+            if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateset).getModified()))
+                indexPlateSet(task, plateset);
         }
     }
 

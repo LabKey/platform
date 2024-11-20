@@ -55,17 +55,36 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private final boolean _allowInsert;
 
+    public enum Column
+    {
+        Name,
+        Folder,
+        Type,
+        Description,
+        PlateCount,
+        Created,
+        CreatedBy,
+        Modified,
+        ModifiedBy,
+        Lsid;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
+    }
+
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Folder"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
-        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
-        defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Name.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Folder.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Type.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Description.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.PlateCount.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Created.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.CreatedBy.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Modified.name()));
+        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.ModifiedBy.name()));
     }
 
     public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)
@@ -156,11 +175,27 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            SimpleTranslator nameExpressionTranslator = new SimpleTranslator(data.getDataIterator(context), context);
+            SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
+            lsidRemover.selectAll();
+            if (lsidRemover.getColumnNameMap().containsKey(PlateTable.Column.Lsid.name()))
+            {
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get(PlateTable.Column.Lsid.name()));
+            }
+
+            SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
+            lsidGenerator.setDebugName("lsidGenerator");
+            lsidGenerator.selectAll();
+
+            // generate a value for the lsid
+            final TableInfo plateSetTable = getQueryTable();
+            lsidGenerator.addColumn(plateSetTable.getColumn(PlateTable.Column.Lsid.name()),
+                    (Supplier) () -> PlateManager.get().getLsid(PlateSet.class, container));
+
+            SimpleTranslator nameExpressionTranslator = new SimpleTranslator(lsidGenerator, context);
             nameExpressionTranslator.setDebugName("nameExpressionTranslator");
             nameExpressionTranslator.selectAll();
             final Map<String, Integer> nameMap = nameExpressionTranslator.getColumnNameMap();
-            final TableInfo plateSetTable = getQueryTable();
+
             if (!nameMap.containsKey("name"))
             {
                 ColumnInfo nameCol = plateSetTable.getColumn("name");

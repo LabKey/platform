@@ -3,6 +3,7 @@ package org.labkey.assay.plate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
@@ -11,6 +12,8 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.view.ActionURL;
+import org.labkey.assay.PlateController;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collections;
@@ -29,6 +32,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     private Integer _rowId;
     private boolean _template;
     private PlateSetType _type;
+    private String _lsid;
 
     @Override
     public Integer getRowId()
@@ -81,6 +85,17 @@ public class PlateSetImpl extends Entity implements PlateSet
     public String getContainerName()
     {
         return _container == null ? null : _container.getName();
+    }
+
+    public void setLsid(String lsid)
+    {
+        _lsid = lsid;
+    }
+
+    @Override
+    public String getLSID()
+    {
+        return _lsid;
     }
 
     @Override
@@ -171,6 +186,15 @@ public class PlateSetImpl extends Entity implements PlateSet
     public String getDescription()
     {
         return _description;
+    }
+
+    @JsonIgnore
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        return new ActionURL(PlateController.DesignerAction.class, getContainer())
+                .addParameter("templateName", getName())
+                .addParameter("plateId", getRowId());
     }
 
     public void setDescription(String description)

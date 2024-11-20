@@ -12,11 +12,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -73,6 +76,24 @@ public class PlateSetCache
                 _containerPlateSet.computeIfAbsent(cacheKey._container, k -> new HashSet<>()).add(plateSet.getRowId());
             }
         }
+    }
+
+    private static @NotNull List<Integer> getPlateSetIDs(Container c)
+    {
+        SimpleFilter plateSetFilter = SimpleFilter.createContainerFilter(c);
+
+        return new TableSelector(
+                AssayDbSchema.getInstance().getTableInfoPlateSet(),
+                Collections.singleton(PlateTable.Column.RowId.name()),
+                plateSetFilter,
+                new Sort(PlateTable.Column.RowId.name())
+        ).getArrayList(Integer.class);
+    }
+
+    public static @NotNull List<PlateSet> getPlateSets(Container c)
+    {
+        List<Integer> ids = getPlateSetIDs(c);
+        return ids.stream().map(id -> PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, id))).toList();
     }
 
     public static @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)

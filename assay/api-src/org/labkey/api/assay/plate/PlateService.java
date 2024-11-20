@@ -167,6 +167,7 @@ public interface PlateService
 
     @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId);
 
+    @Nullable PlateSet getPlateSet(String plateSetID);
     /**
      * Returns the list of available plate types.
      */
