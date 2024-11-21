@@ -242,58 +242,6 @@ public class SecurityManager
         LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
-    public enum PermissionSet
-    {
-        ADMIN("Admin (all permissions)", ACL.PERM_ALLOWALL),
-        EDITOR("Editor", ACL.PERM_READ | ACL.PERM_DELETE | ACL.PERM_UPDATE | ACL.PERM_INSERT),
-        AUTHOR("Author", ACL.PERM_READ | ACL.PERM_DELETEOWN | ACL.PERM_UPDATEOWN | ACL.PERM_INSERT),
-        READER("Reader", ACL.PERM_READ),
-        RESTRICTED_READER("Restricted Reader", ACL.PERM_READOWN),
-        SUBMITTER("Submitter", ACL.PERM_INSERT),
-        NO_PERMISSIONS("No Permissions", 0);
-
-        private final int _permissions;
-        private final String _label;
-
-        PermissionSet(String label, int permissions)
-        {
-            // the following must be true for normalization to work:
-            assert ACL.PERM_READOWN == ACL.PERM_READ << 4;
-            assert ACL.PERM_UPDATEOWN == ACL.PERM_UPDATE << 4;
-            assert ACL.PERM_DELETEOWN == ACL.PERM_DELETE << 4;
-            _permissions = permissions;
-            _label = label;
-        }
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public int getPermissions()
-        {
-            return _permissions;
-        }
-
-        private static int normalizePermissions(int permissions)
-        {
-            permissions |= (permissions & (ACL.PERM_READ | ACL.PERM_UPDATE | ACL.PERM_DELETE)) << 4;
-            return permissions;
-        }
-
-        public static PermissionSet findPermissionSet(int permissions)
-        {
-            for (PermissionSet set : values())
-            {
-                // we try normalizing because a permissions value with just reader set is equivalent
-                // to a permissions value with reader and read_own set.
-                if (set.getPermissions() == permissions || normalizePermissions(set.getPermissions()) == permissions)
-                    return set;
-            }
-            return null;
-        }
-    }
-
     public enum PermissionTypes
     {
         READ(ReadPermission.class),

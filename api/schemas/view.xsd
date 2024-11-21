@@ -12,11 +12,6 @@
 
     <xsd:complexType name="viewType">
         <xsd:sequence>
-            <xsd:element name="permissions" type="vw:permissionsListType" minOccurs="0" maxOccurs="1">
-                <xsd:annotation>
-                    <xsd:documentation>Deprecated: Use &lt;requiresPermissions>, &lt;requiresNoPermission/>, and &lt;requiresLogin/> elements instead of &lt;permissions>. All support for &lt;permissions> will be removed in LabKey Server v24.12.</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
             <!-- <permissionClasses> and <requiresPermissions> are synonyms -->
             <xsd:element name="permissionClasses" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="requiresPermissions" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
@@ -37,50 +32,15 @@
         </xsd:sequence>
     </xsd:complexType>
 
-    <xsd:complexType name="permissionsListType">
-        <xsd:annotation>
-            <xsd:documentation>Deprecated: Use &lt;requiresPermissions> and &lt;permissionClass> elements instead of &lt;permissions> and &lt;permission>. All support for &lt;permissions> and &lt;permission> will be removed in LabKey Server v24.12.</xsd:documentation>
-        </xsd:annotation>
-        <xsd:sequence>
-            <xsd:element name="permission" type="vw:permissionType" minOccurs="0" maxOccurs="unbounded">
-                <xsd:annotation>
-                    <xsd:documentation>Deprecated: Use &lt;requiresPermissions> and &lt;permissionClass> elements instead of &lt;permissions> and &lt;permission>. All support for &lt;permissions> and &lt;permission> will be removed in LabKey Server v24.12.</xsd:documentation>
-                </xsd:annotation>
-            </xsd:element>
-        </xsd:sequence>
-    </xsd:complexType>
-
     <xsd:complexType name="permissionClassListType">
         <xsd:sequence>
             <xsd:element name="permissionClass" type="vw:permissionClassType" minOccurs="0" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
 
-    <xsd:complexType name="permissionType">
-        <xsd:annotation>
-            <xsd:documentation>Deprecated: Use &lt;requiresPermissions> and &lt;permissionClass> elements instead of &lt;permissions> and &lt;permission>. All support for &lt;permissions> and &lt;permission> will be removed in LabKey Server v24.12.</xsd:documentation>
-        </xsd:annotation>
-        <xsd:attribute name="name" type="vw:permissionEnum"/>
-    </xsd:complexType>
-
     <xsd:complexType name="permissionClassType">
         <xsd:attribute name="name" type="xsd:string"/>
     </xsd:complexType>
-
-    <xsd:simpleType name="permissionEnum">
-        <xsd:annotation>
-            <xsd:documentation>Deprecated: Use &lt;requiresPermissions> and &lt;permissionClass> elements instead of &lt;permissions> and &lt;permission>. All support for &lt;permissions> and &lt;permission> will be removed in LabKey Server v24.12.</xsd:documentation>
-        </xsd:annotation>
-        <xsd:restriction base="xsd:string">
-            <xsd:enumeration value="login"/>
-            <xsd:enumeration value="read"/>
-            <xsd:enumeration value="insert"/>
-            <xsd:enumeration value="update"/>
-            <xsd:enumeration value="delete"/>
-            <xsd:enumeration value="admin"/>
-            <xsd:enumeration value="none"/>
-        </xsd:restriction>
-    </xsd:simpleType>
 
     <xsd:simpleType name="frameType">
         <xsd:restriction base="xsd:string">
