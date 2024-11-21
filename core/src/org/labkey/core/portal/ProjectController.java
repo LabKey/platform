@@ -62,7 +62,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.RoleManager;
@@ -261,7 +260,7 @@ public class ProjectController extends SpringActionController
 
     @IgnoresTermsOfUse
     @RequiresNoPermission
-    public class StartAction extends SimpleViewAction
+    public static class StartAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -328,7 +327,7 @@ public class ProjectController extends SpringActionController
             FolderType folderType = c.getFolderType();
             ActionURL url = getViewContext().getActionURL();
             if (null == url || url.getExtraPath().equals("/"))
-                return HttpView.redirect(homeURL());
+                throw new RedirectException(homeURL());
 
             String pageId = form.getPageId();
             Portal.PortalPage portalPage = Portal.getPortalPage(c, pageId);
@@ -423,7 +422,7 @@ public class ProjectController extends SpringActionController
      * up any more...
      */
     @RequiresNoPermission
-    public class HomeAction extends SimpleViewAction
+    public class HomeAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -441,7 +440,7 @@ public class ProjectController extends SpringActionController
     static final Path files = new Path(FileContentService.FILES_LINK);
 
     @RequiresNoPermission
-    public class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction
+    public static class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction<Object>
     {
         @Override
         public URLHelper getRedirectURL(Object o)
@@ -478,7 +477,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    public class DownloadProjectIconAction extends ExportAction<Object>
+    public static class DownloadProjectIconAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -500,7 +499,7 @@ public class ProjectController extends SpringActionController
             Map<String,String> headers = new HashMap<>();
             headers.put("Cache-Control", "max-age=" + TimeUnit.DAYS.toSeconds(1));
             headers.put("ETag", iconPath);
-            PageFlowUtil.streamFile(response, headers, iconFile, false);
+            PageFlowUtil.streamFile(response, headers, iconFile.toPath(), false);
         }
     }
 
@@ -776,12 +775,7 @@ public class ProjectController extends SpringActionController
             location = org.labkey.api.module.SimpleWebPartFactory.getFriendlyLocationName(location);
             if (location == null)
                 continue;
-            List<Map<String, Object>> partList = properties.get(location);
-            if (partList == null)
-            {
-                partList = new ArrayList<>();
-                properties.put(location, partList);
-            }
+            List<Map<String, Object>> partList = properties.computeIfAbsent(location, k -> new ArrayList<>());
             Map<String, Object> webPartProperties = new HashMap<>();
             webPartProperties.put("name", part.getName());
             webPartProperties.put("index", part.getIndex());
@@ -795,8 +789,8 @@ public class ProjectController extends SpringActionController
     private boolean handleDeleteWebPart(Container c, String pageId, int index)
     {
         List<Portal.WebPart> parts = Portal.getParts(c, pageId);
-        //Changed on us..
-        if (null == parts || parts.isEmpty())
+        //Changed on us...
+        if (parts.isEmpty())
             return true;
 
         ArrayList<Portal.WebPart> newParts = new ArrayList<>();
@@ -811,8 +805,8 @@ public class ProjectController extends SpringActionController
     private boolean handleToggleWebPartFrame(Container c, String pageId, int index)
     {
         List<Portal.WebPart> parts = Portal.getParts(c, pageId);
-        //Changed on us..
-        if (null == parts || parts.isEmpty())
+        //Changed on us...
+        if (parts.isEmpty())
             return true;
 
         ArrayList<Portal.WebPart> newParts = new ArrayList<>();
@@ -1008,7 +1002,7 @@ public class ProjectController extends SpringActionController
 
     @RequiresPermission(AdminPermission.class)
     @ApiVersion(11.3)
-    public class CustomizeWebPartAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
+    public static class CustomizeWebPartAsyncAction extends MutatingApiAction<CustomizePortletApiForm>
     {
         @Override
         public ApiResponse execute(CustomizePortletApiForm form, BindException errors)
@@ -1063,7 +1057,7 @@ public class ProjectController extends SpringActionController
             if (null == desc)
                 return HttpView.redirect(returnUrl);
 
-            HttpView v = desc.getEditView(_webPart, getViewContext());
+            HttpView<?> v = desc.getEditView(_webPart, getViewContext());
             if (null == v)
                 return HttpView.redirect(returnUrl);
 
@@ -1300,7 +1294,7 @@ public class ProjectController extends SpringActionController
             part.setProperties(qs);
             part.setExtendedProperties(form.getJsonObject());
 
-            WebPartView view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
+            WebPartView<?> view = Portal.getWebPartViewSafe(factory, getViewContext(), part);
             if (null == view)
             {
                 errors.reject(ERROR_MSG, "Couldn't create the requested web part.");
@@ -1472,7 +1466,7 @@ public class ProjectController extends SpringActionController
      * THREE) list of containers as specified by container filter (not children)
      */
     @RequiresNoPermission
-    public class GetContainersAction extends ReadOnlyApiAction<GetContainersForm>
+    public static class GetContainersAction extends ReadOnlyApiAction<GetContainersForm>
     {
         int _requestedDepth;
 
@@ -1650,7 +1644,7 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class IconAction extends SimpleViewAction<Object>
+    public static class IconAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1679,7 +1673,7 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
+    public static class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
     {
         @Override
         public ApiResponse execute(WebPartPermissionsForm form, BindException errors)
@@ -1730,7 +1724,7 @@ public class ProjectController extends SpringActionController
      * Just get the paths the user has read permission for
      */
     @RequiresNoPermission
-    public class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
+    public static class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
     {
         @Override
         public ApiResponse execute(BasicGetContainersForm form, BindException errors) throws Exception
