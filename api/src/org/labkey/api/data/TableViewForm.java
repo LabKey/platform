@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -472,15 +473,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
                 // Attempt to resolve lookups by display value
                 ColumnInfo col = getColumnByFormFieldName(propName);
+                String defaultMessage = null;
                 if (col != null && col.getFk() != null && col.getFk().allowImportByAlternateKey())
                 {
                     ForeignKey fk = col.getFk();
                     Container container = fk.getLookupContainer() != null ? fk.getLookupContainer() : getContainer();
-                    Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
-                    if (remappedValue != null)
+                    try
                     {
-                        values.put(propName, remappedValue);
-                        skipError = true;
+                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), container, ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+                        if (remappedValue != null)
+                        {
+                            values.put(propName, remappedValue);
+                            skipError = true;
+                        }
+                    }
+                    catch (ConversionException e2)
+                    {
+                        defaultMessage = e2.getMessage();
                     }
                 }
 
@@ -489,7 +498,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     String error = SpringActionController.ERROR_CONVERSION;
                     if (null != propType)
                         error += "." + propType.getSimpleName();
-                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
+                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, Objects.toString(defaultMessage, "Could not convert value: " + str)));
                 }
             }
         }
