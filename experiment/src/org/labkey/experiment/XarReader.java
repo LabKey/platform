@@ -242,8 +242,10 @@ public class XarReader extends AbstractXarImporter
                 ExperimentRunType a = _experimentArchive.getExperimentRuns().getExperimentRunArray(0);
                 a.setCreateNewIfDuplicate(false);
                 a.setGenerateDataFromStepRecord(false);
-                for (int i = a.getExperimentLog().getExperimentLogEntryArray().length - 1; i >= 0; i--)
-                    a.getExperimentLog().removeExperimentLogEntry(i);
+                
+                if (a.isSetExperimentLog())
+                    for (int i = a.getExperimentLog().getExperimentLogEntryArray().length - 1; i >= 0; i--)
+                        a.getExperimentLog().removeExperimentLogEntry(i);
 
                 try (OutputStream fos = Files.newOutputStream(expDir.resolve("experiment.xar.xml")))
                 {

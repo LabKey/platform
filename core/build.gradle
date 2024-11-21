@@ -15,8 +15,8 @@ project.tasks.register("serverSideJS", ServerSideJS) {
 project.tasks.named('processModuleResources').configure { dependsOn(project.tasks.serverSideJS) }
 
 dependencies {
-    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
-    jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
+    jspImplementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
 
     BuildUtils.addExternalDependency(
         project,

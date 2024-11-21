@@ -62,6 +62,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /** @return the short name of the file (not including full path) */
     protected abstract String getFileName(RenderContext ctx, Object value);
 
+    protected String getFileName(RenderContext ctx, Object value, boolean isDisplay)
+    {
+        return getFileName(ctx, value);
+    }
+
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
@@ -103,7 +108,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 }
             }
 
-            String displayName = getFileName(ctx, filename);
+            String displayName = getFileName(ctx, filename, true);
             boolean isImage = isImage(filename);
 
             FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
