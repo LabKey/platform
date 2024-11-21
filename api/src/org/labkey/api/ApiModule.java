@@ -251,7 +251,7 @@ public class ApiModule extends CodeOnlyModule
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
-        // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
+        // Handle optional feature startup properties as late as possible; we want all optional features to be registered first
         ContextListener.addStartupListener(new OptionalFeatureStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
