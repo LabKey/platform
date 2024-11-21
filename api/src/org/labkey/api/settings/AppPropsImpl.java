@@ -577,6 +577,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         if (not_init == staticFilesPrefix)
         {
             String s = trimToNull(System.getProperty("static.files.prefix"));
+            String prefix = null;
             if (null != s)
             {
                 try
@@ -584,13 +585,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                     var url = new URLHelper(s).setPath("");
                     if (StringUtils.isNotEmpty(url.getHost()))
                         ContentSecurityPolicyFilter.registerAllowedConnectionSource("static.files.prefix", url.toString());
-                    staticFilesPrefix = s;
+                    prefix = s;
                 }
-                catch (URISyntaxException e)
+                catch (URISyntaxException ignore)
                 {
-                    staticFilesPrefix = null;
                 }
             }
+            staticFilesPrefix = prefix;
         }
         return staticFilesPrefix;
     }
