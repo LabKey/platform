@@ -463,7 +463,7 @@
             });
 
             var viewParticipantDataLink = Ext4.create('Ext.Component', {
-                html: '<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': ''}) + '" target="_blank">View Participant Data</a>',
+                html: '<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': ''}) + '" target="_blank">View ' + <%=q(subjectNounSingular)%> + ' Data</a>',
                 padding: '3 0 0 20'
             });
 
@@ -479,11 +479,11 @@
                 queryMode: 'remote',
                 minChars: 2,
                 typeAhead: true,
-                queryParam: 'query.ParticipantId~contains',
+                queryParam: "query." + <%=q(subjectNounColName)%> + "~contains",
                 listeners: {
                     select: function(combo) {
                         // Update link when a selection is made
-                        viewParticipantDataLink.update('<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': combo.getValue() }) + '" target="_blank">View Participant Data</a>');
+                        viewParticipantDataLink.update('<a class="labkey-text-link" href="' + LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': combo.getValue() }) + '" target="_blank">View ' + <%=q(subjectNounSingular)%> + ' Data</a>');
                     }
                 }
             });
@@ -494,7 +494,6 @@
             });
 
             var deleteParticipant = function(participantIdToDelete) {
-                console.log("Deleting " + participantIdToDelete);
                 var dialog = Ext4.create('Ext.window.Window', {
                    title: 'Confirmation',
                    modal: true,
@@ -504,8 +503,7 @@
                    items: [{
                        xtype: 'panel',
                        bodyPadding: 10,
-                       html: "Are you sure you want to delete " + <%=q(subjectNounSingular.toLowerCase())%> + " '" + participantIdToDelete + "'?"
-
+                       html: <%=qh("Are you sure you want to delete " + subjectNounSingular.toLowerCase() + " '" )%> + participantIdToDelete + <%=qh("'?")%>
                    }],
                    buttons: [
                        {
@@ -518,7 +516,7 @@
                                Ext4.Ajax.request({
                                    url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
                                    method : 'POST',
-                                   jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete, tableNamePrefix: <%=q(subjectNounSingular)%> },
+                                   jsonData : { participantId : participantIdToDelete },
                                    headers : {'Content-Type' : 'application/json'},
                                    scope: this,
                                    success: function() {

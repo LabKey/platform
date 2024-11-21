@@ -242,6 +242,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DatasetDomainKindProperties;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.DatasetReorderer;
@@ -1484,9 +1485,7 @@ public class StudyController extends BaseStudyController
             //Note: In the EHR system, 'Participant' tables are prefixed with "Animal". For example, the equivalent of the
             //Participant table is named Animal, and ParticipantGroupMap is AnimalGroupMap, etc.
             //Additionally, the participantId column is labeled as "Id" in the Animal table and other "Animal" tables.
-            String participantIdColumnName = deleteParticipantForm.getParticipantIdColumnName();
-            String participantId = deleteParticipantForm.getParticipantId();
-            String participantTableNamePrefix = deleteParticipantForm.getTableNamePrefix();
+
             DbSchema schema = StudySchema.getInstance().getSchema();
 
             Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -1495,6 +1494,9 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Study not found in this folder.");
                 return new ApiSimpleResponse("success", false);
             }
+            String participantId = deleteParticipantForm.getParticipantId();
+            String participantIdColumnName = study.getSubjectColumnName();
+            String participantTableNamePrefix = study.getSubjectNounSingular();
 
             try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
             {
@@ -1516,41 +1518,35 @@ public class StudyController extends BaseStudyController
                 {
                     TableSelector ts = new TableSelector(participantGroupMapTable, Set.of(participantIdColumnName, "GroupId"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
                     ParticipantGroupManager.ParticipantGroupMap[] pgm = ts.getArray(ParticipantGroupManager.ParticipantGroupMap.class);
-                    if (pgm.length == 1) //a participant is associated with only one group, so there should be only one row
-                    {
-                        deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantIdColumnName, pgm[0].getGroupId(), errors);
-                    }
+                    deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantIdColumnName, pgm, errors);
                 }
                 transaction.commit();
-                _log.info("Successfully deleted participant: " + participantId);
-                return new ApiSimpleResponse("success", true);
             }
-            catch (Exception e)
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", !errors.hasErrors());
+            if (errors.hasErrors())
             {
-                _log.error("Error deleting participant: {}", participantId, e);
-                errors.reject(ERROR_MSG, "Failed to delete participant: " + e.getMessage());
-                return new ApiSimpleResponse("success", false);
+                _log.error("Failed to delete participant: {}", participantId);
+                response.put("message", errors.getMessage());
             }
+            else
+            {
+                _log.info("Successfully deleted participant: {}", participantId);
+                response.put("message", "Successfully deleted participant " + participantId);
+            }
+            return response;
         }
 
         private void deleteParticipantFromDemographics(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
         {
-            List<Map<String, Object>> keys = new ArrayList<>();
             ColumnInfo idCol = ti.getColumn(FieldKey.fromParts(participantIdColumnName));
-            keys.add(Collections.singletonMap(idCol.getName(), participantId));
-            deleteParticipantRows(ti, keys, errors);
+            deleteParticipantRows(ti, Collections.singletonList(Collections.singletonMap(idCol.getName(), participantId)), errors);
         }
 
         private void deleteParticipantFromDatasets(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
         {
-            TableSelector ts = new TableSelector(ti, Collections.singleton("lsid"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
-            List<String> lsids = Arrays.asList(ts.getArray(String.class));
-
-            List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
-            for (String lsid : lsids)
-                keys.add(Collections.singletonMap("lsid", lsid));
-
-            deleteParticipantRows(ti, keys, errors);
+            TableSelector ts = new TableSelector(ti, Collections.singleton(DatasetDomainKind.LSID), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+            deleteParticipantRows(ti, ts.getMapCollection().stream().toList(), errors);
         }
 
         private void deleteParticipantRows(TableInfo ti, List<Map<String, Object>> keys, BindException errors)
@@ -1567,7 +1563,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String participantColName, Integer groupId, BindException errors)
+        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String participantColName, ParticipantGroupManager.ParticipantGroupMap[] groups, BindException errors)
         {
             try
             {
@@ -1581,8 +1577,11 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, msg + " :" + e.getMessage());
             }
 
-            ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), groupId);
-            AuditLogService.get().addEvent(getUser(), event);
+            for (ParticipantGroupManager.ParticipantGroupMap group : groups)
+            {
+                ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), group.getLabel(), group.getGroupId());
+                AuditLogService.get().addEvent(getUser(), event);
+            }
         }
     }
 

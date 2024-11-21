@@ -275,6 +275,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
         public static ParticipantGroupAuditEvent participantDeleted(
                 String participantId,
                 Container c,
+                String groupName,
                 Integer groupId)
         {
             return new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c,
