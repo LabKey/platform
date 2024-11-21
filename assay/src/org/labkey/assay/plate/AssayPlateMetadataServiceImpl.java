@@ -1069,7 +1069,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     {
                         DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                         if (state == null)
-                            throw new ExperimentException(String.format("No data states for the rowID : %d was found", stateRowId));
+                            throw new ExperimentException(String.format("No data states for the rowID %d was found.", stateRowId));
 
                         return state;
                     }
