@@ -1102,7 +1102,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             {
                 if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
                 {
-                    throw new ValidationException(String.format("The data state : %s is not valid for this assay", state.getStateType()));
+                    throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
                 }
             }
         }
