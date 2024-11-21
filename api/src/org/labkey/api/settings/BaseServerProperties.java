@@ -16,16 +16,13 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.logging.log4j.LogManager;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
 
-/**
- * Created by adam on 11/24/2015.
- */
 public class BaseServerProperties
 {
     private final String _scheme;
@@ -96,17 +93,12 @@ public class BaseServerProperties
         }
         else
         {
-            switch (scheme)
+            serverPort = switch (scheme)
             {
-                case "http":
-                    serverPort = 80;
-                    break;
-                case "https":
-                    serverPort = 443;
-                    break;
-                default:
-                    serverPort = -1;
-            }
+                case "http" -> 80;
+                case "https" -> 443;
+                default -> -1;
+            };
         }
 
         return new BaseServerProperties(scheme, serverName, serverPort);
@@ -138,5 +130,26 @@ public class BaseServerProperties
     public int getServerPort()
     {
         return _serverPort;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void validateLocalDomains()
+        {
+            UrlValidator validator = new UrlValidator(new String[]{"http", "https"}, UrlValidator.ALLOW_LOCAL_URLS);
+            validate(validator, "http://www.foo.local");
+            validate(validator, "https://www.foo.local");
+            validate(validator, "http://localhost");
+            validate(validator, "https://localhost");
+            validate(validator, "http://localhost:8080");
+            validate(validator, "https://localhost:8080");
+        }
+
+        private void validate(UrlValidator validator, String url)
+        {
+            assertTrue(url + " was not valid!", validator.isValid(url));
+        }
     }
 }
