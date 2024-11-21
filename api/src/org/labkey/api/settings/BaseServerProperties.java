@@ -29,22 +29,6 @@ public class BaseServerProperties
     private final String _serverName;
     private final int _serverPort;
 
-    static
-    {
-        try
-        {
-            // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041.
-
-            // We've received an exception report that indicates (but does not definitively prove) this call may fail
-            // on some servers. Shouldn't be fatal if it doesn't work.
-            DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, new String[]{"local"});
-        }
-        catch (Throwable e)
-        {
-            LogManager.getLogger(BaseServerProperties.class).error("Failed to enable .local domains in URL validation", e);
-        }
-    }
-
     // Validate and parse, returning properties
     public static BaseServerProperties parseAndValidate(String baseServerUrl) throws URISyntaxException
     {
@@ -58,7 +42,7 @@ public class BaseServerProperties
         // Divide up the parts and validate some more
         URLHelper url = new URLHelper(baseServerUrl);
 
-        if (url.getParsedPath().size() > 0)
+        if (!url.getParsedPath().isEmpty())
             throw new URISyntaxException(baseServerUrl, "Too many path parts");
 
         BaseServerProperties props = parse(baseServerUrl);
