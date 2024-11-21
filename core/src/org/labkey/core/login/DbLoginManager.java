@@ -25,19 +25,21 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
+import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserManager.SessionHandler;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.StartupProperty;
@@ -61,6 +63,8 @@ public class DbLoginManager implements DbLoginService
 
     private static final Logger LOG = LogHelper.getLogger(DbLoginManager.class, "Database login information");
 
+    static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
+
     public static DbLoginConfiguration getConfiguration()
     {
         Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
@@ -81,18 +85,15 @@ public class DbLoginManager implements DbLoginService
         return getConfiguration().getExpiration();
     }
 
-    static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
-
     @Override
-    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
+    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
     {
         String password = StringUtils.trimToEmpty(rawPassword);
         String password2 = StringUtils.trimToEmpty(rawPassword2);
 
         Collection<String> messages = new LinkedList<>();
-        User user = UserManager.getUser(email);
 
-        if (!getPasswordRule().isValidToStore(password, password2, user, changeOperation, messages))
+        if (!getPasswordRule().isValidToStore(password, password2, affectedUser, changeOperation, messages))
         {
             for (String message : messages)
                 errors.reject("setPassword", message);
@@ -101,19 +102,29 @@ public class DbLoginManager implements DbLoginService
 
         try
         {
-            SecurityManager.setPassword(email, password);
+            LoginManager.setPassword(affectedUser, password);
             // Invalidate all sessions belonging to this user that were authenticated via database authentication
-            UserManager.handleSessionsForUser(user, new SessionHandler()
+            UserManager.handleSessionsForUser(affectedUser, new SessionHandler()
             {
                 @Override
                 public boolean handleSession(HttpSession session)
                 {
+                    LOG.debug("Checking if session {} used database authentication", session.getId());
                     PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
 
                     if (configuration instanceof DbLoginConfiguration)
                     {
-                        session.invalidate();
-                        return true;
+                        Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
+                        Integer apiKeyRowId = (Integer)map.get(ApiKeyManager.API_KEY_ROW_ID);
+
+                        // Don't invalidate API key authentications
+                        LOG.debug("Checking if session {} was authenticated via username/password (not an API key)", session.getId());
+                        if (apiKeyRowId == null)
+                        {
+                            LOG.debug("Attempting to invalidate session {}", session.getId());
+                            session.invalidate();
+                            return true;
+                        }
                     }
 
                     return false;
@@ -122,8 +133,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    //noinspection DataFlowIssue
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser);
                 }
             });
         }
@@ -136,8 +146,8 @@ public class DbLoginManager implements DbLoginService
         try
         {
             if (clearVerification)
-                SecurityManager.setVerification(email, null);
-            UserManager.addToUserHistory(user, auditMessage);
+                LoginManager.setVerification(affectedUser, null);
+            UserManager.addToUserHistory(affectedUser, auditMessage);
         }
         catch (SecurityManager.UserManagementException e)
         {
@@ -146,20 +156,21 @@ public class DbLoginManager implements DbLoginService
         }
 
         // The affected user's sessions were all terminated above. If the request's session doesn't exist or is a guest
-        // session then log the user in using the just-entered credentials. An admin resetting a password won't be
-        // affected. This check should be equivalent to currentUser.equals(user).
-        if (SecurityManager.getSessionUser(request.getSession()) == null)
+        // session then log the user in using the just-entered credentials. An admin resetting a password or changing a
+        // password while impersonating won't be affected.
+        if (SecurityManager.getSessionOwner(request.getSession()) == null)
         {
-            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, affectedUser.getEmail(), password, returnUrlHelper, true);
 
             if (result.getStatus() == Success)
             {
                 // This user has passed primary authentication
                 AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+                return AuthenticationManager.handleAuthentication(request, c);
             }
         }
 
-        return AuthenticationManager.handleAuthentication(request, c);
+        return new AuthenticationResult(returnUrlHelper);
     }
 
     public enum Key implements StartupProperty

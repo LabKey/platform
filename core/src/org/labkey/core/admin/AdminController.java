@@ -6282,7 +6282,7 @@ public class AdminController extends SpringActionController
                 if (StringUtils.equalsIgnoreCase(absolutePath, form.getFolderRootPath()))
                 {
                     if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
-                        throw new UnauthorizedException("Only site admins change change file roots");
+                        throw new UnauthorizedException("Only site admins can change file roots");
                 }
             }
         }

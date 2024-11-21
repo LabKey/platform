@@ -117,6 +117,10 @@
             <labkey:input type="hidden" name="email" value="<%=bean.email%>"/>
         <% }
 
+        if (null != bean.form.getUserId()) { %>
+            <labkey:input type="hidden" name="userId" value="<%=bean.form.getUserId()%>"/>
+        <% }
+
         if (null != bean.form.getVerification()) { %>
             <labkey:input type="hidden" name="verification" value="<%=bean.form.getVerification()%>"/>
         <% }

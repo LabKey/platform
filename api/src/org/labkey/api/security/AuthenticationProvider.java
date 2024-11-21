@@ -271,7 +271,6 @@ public interface AuthenticationProvider
         long getUserDelay(String id) throws LoginDisabledException;
 
         /**
-         *
          * @param request
          * @param id
          * @param addCount
@@ -288,103 +287,61 @@ public interface AuthenticationProvider
 
     class AuthenticationResponse
     {
-        private final PrimaryAuthenticationConfiguration<?> _configuration;
+        private final PrimaryAuthenticationConfiguration<?> _configuration;               // The PrimaryAuthenticationConfiguration that was used in this authentication attempt
         // Success means either _user or _email is set, but not both. Check _user first.
         // Failure means both are null
-        private final @Nullable ValidEmail _email;
+        private final @Nullable ValidEmail _email;                                        // Valid email address of the authenticated user
         private final @Nullable User _user;
-        private final @Nullable AuthenticationValidator _validator;
         private final @Nullable FailureReason _failureReason;
-        private final @Nullable ActionURL _redirectURL;
-        private final @NotNull Map<String, String> _attributeMap;
-        private final @Nullable String _successDetails;
-        private final boolean _requireSecondary;
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
-        {
-            _configuration = configuration;
-            _user = null;
-            _email = email;
-            _validator = validator;
-            _attributeMap = attributeMap;
-            _failureReason = null;
-            _redirectURL = null;
-            _successDetails = null != successDetails ? successDetails : "the \"" + configuration.getDescription() + "\" configuration";
-            _requireSecondary = requireSecondary;
-        }
+        private @Nullable AuthenticationValidator _validator = null;
+        private @Nullable ActionURL _redirectURL = null;
+        private @NotNull Map<String, String> _userAttributeMap = Collections.emptyMap();  // A case-insensitive map of attribute names and values associated with the user
+        private @NotNull Map<String, Object> _authenticationProperties = Collections.emptyMap();
+        private boolean _requireSecondary = true;                                         // Require secondary authentication
+        private @Nullable String _successDetails = null;                                  // An optional string describing how successful authentication took place, which will
+                                                                                          // appear in the audit log. If null, the configuration's description will be used.
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull User user, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @Nullable ValidEmail email, @Nullable User user)
         {
             _configuration = configuration;
             _user = user;
-            _email = null;
-            _validator = validator;
-            _attributeMap = attributeMap;
+            _email = email;
+            _successDetails = "the \"" + configuration.getDescription() + "\" configuration";
             _failureReason = null;
-            _redirectURL = null;
-            _successDetails = null != successDetails ? successDetails : "the \"" + configuration.getDescription() + "\" configuration";
-            _requireSecondary = requireSecondary;
         }
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason)
         {
             _configuration = configuration;
             _user = null;
             _email = null;
-            _validator = null;
             _failureReason = failureReason;
-            _redirectURL = redirectURL;
-            _attributeMap = Collections.emptyMap();
-            _successDetails = null;
-            _requireSecondary = true;
         }
 
-        /**
-         * Creates a standard authentication provider response
-         * @param email Valid email address of the authenticated user
-         * @return A new successful authentication response containing the email address of the authenticated user
-         */
-        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email)
+        public static AuthenticationResponse success(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email)
         {
-            return createSuccessResponse(configuration, email, null, Collections.emptyMap(), null, true);
+            return new AuthenticationResponse(configuration, email, null);
         }
 
-        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, User user)
+        public static AuthenticationResponse success(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull User user)
         {
-            return new AuthenticationResponse(configuration, user, null, Collections.emptyMap(), null, true);
+            return new AuthenticationResponse(configuration, null, user);
         }
 
-        /**
-         * Creates an authentication provider response that can include a validator to be called on every request and a
-         * map of user attributes
-         *
-         * @param configuration     The PrimaryAuthenticationConfiguration that was used in this authentication attempt
-         * @param email             Valid email address of the authenticated user
-         * @param validator         An authentication validator
-         * @param attributeMap      A <b>case-insensitive</b> map of attribute names and values associated with this authentication
-         * @param successDetails    An optional string describing how successful authentication took place, which will appear in
-         *                          the audit log. If null, the configuration's description will be used.
-         * @param requireSecondary  Require secondary authentication
-         * @return A new successful authentication response containing the email address of the authenticated user and a validator
-         */
-        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
+        public static AuthenticationResponse failure(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason)
         {
-            return new AuthenticationResponse(configuration, email, validator, attributeMap, successDetails, requireSecondary);
-        }
-
-        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, FailureReason failureReason)
-        {
-            return new AuthenticationResponse(configuration, failureReason, null);
-        }
-
-        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, FailureReason failureReason, @Nullable ActionURL redirectURL)
-        {
-            return new AuthenticationResponse(configuration, failureReason, redirectURL);
+            return new AuthenticationResponse(configuration, failureReason);
         }
 
         public boolean isAuthenticated()
         {
             return null != _email || null != _user;
+        }
+
+        public PrimaryAuthenticationConfiguration<?> getConfiguration()
+        {
+            return _configuration;
         }
 
         public @NotNull FailureReason getFailureReason()
@@ -412,9 +369,10 @@ public interface AuthenticationProvider
             return _validator;
         }
 
-        public PrimaryAuthenticationConfiguration<?> getConfiguration()
+        public AuthenticationResponse setValidator(@Nullable AuthenticationValidator validator)
         {
-            return _configuration;
+            _validator = validator;
+            return this;
         }
 
         public @Nullable ActionURL getRedirectURL()
@@ -422,12 +380,42 @@ public interface AuthenticationProvider
             return _redirectURL;
         }
 
-        /**
-         * @return A case-insensitive map of attribute names and values. This will often be empty but will never be null.
-         */
-        public @NotNull Map<String, String> getAttributeMap()
+        public AuthenticationResponse setRedirectURL(@Nullable ActionURL redirectURL)
         {
-            return _attributeMap;
+            _redirectURL = redirectURL;
+            return this;
+        }
+
+        /**
+         * @return A case-insensitive map of attribute names and values associated with the authenticated user. This
+         * will often be empty but will never be null.
+         */
+        public @NotNull Map<String, String> getUserAttributeMap()
+        {
+            return _userAttributeMap;
+        }
+
+        public AuthenticationResponse setUserAttributeMap(@NotNull Map<String, String> userAttributeMap)
+        {
+            _userAttributeMap = userAttributeMap;
+            return this;
+        }
+
+        /**
+         * @return A case-insensitive map of properties about the authentication process
+         */
+        public @NotNull Map<String, Object> getAuthenticationProperties()
+        {
+            return _authenticationProperties;
+        }
+
+        /**
+         * Set a case-insensitive map of properties about the authentication process
+         */
+        public AuthenticationResponse setAuthenticationProperties(Map<String, Object> map)
+        {
+            _authenticationProperties = map;
+            return this;
         }
 
         public @Nullable String getSuccessDetails()
@@ -435,9 +423,21 @@ public interface AuthenticationProvider
             return _successDetails;
         }
 
+        public AuthenticationResponse setSuccessDetails(@Nullable String successDetails)
+        {
+            _successDetails = successDetails;
+            return this;
+        }
+
         public boolean requireSecondary()
         {
             return _requireSecondary;
+        }
+
+        public AuthenticationResponse setRequireSecondary(boolean requireSecondary)
+        {
+            _requireSecondary = requireSecondary;
+            return this;
         }
     }
 

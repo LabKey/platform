@@ -422,24 +422,6 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf)
-    {
-        for (ExpProtocol protocol : getAssayProtocols(container))
-        {
-            AssayProvider provider = getProvider(protocol);
-            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
-            for (String tableName : schema.getTableNames())
-            {
-                TableInfo table = schema.getTable(tableName, cf, true, true);
-                if (table != null && table.getDomain() != null && table.getDomain().getTypeId() == domainId)
-                    return table;
-            }
-        }
-
-        return null;
-    }
-
-    @Override
     public void onBeforeAssayResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow)
     {
         for (AssayListener listener : _listeners)

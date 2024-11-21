@@ -28,7 +28,6 @@ import org.labkey.api.reader.DataLoaderFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: Karl Lum
@@ -37,6 +36,8 @@ import java.util.Map;
 public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
 {
     public static final String TYPE = "xls";
+
+    double emptyWellValue = 0.0d;
     
     @Override
     public String getType()
@@ -101,5 +102,16 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
             }
         }
         return false;
+    }
+
+    @Override
+    public double getEmptyWellValue()
+    {
+        return emptyWellValue;
+    }
+
+    public void setEmptyWellValue(double emptyWellValue)
+    {
+        this.emptyWellValue = emptyWellValue;
     }
 }

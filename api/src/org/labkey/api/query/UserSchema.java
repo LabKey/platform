@@ -111,7 +111,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _description;
     }
 
-
     public void setRestricted(boolean restricted)
     {
         _restricted = restricted;
@@ -126,20 +125,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                getContainer().hasPermission(getName() + ".canReadSchema()", user, InsertPermission.class);
     }
 
-
     public void checkCanReadSchema() throws UnauthorizedException
     {
         if (!canReadSchema())
             throw new UnauthorizedException("User cannot read schema: " + getName());
     }
 
-
     /* does user have access to cubes associated with this schema */
     public void checkCanReadSchemaOlap() throws UnauthorizedException
     {
         checkCanReadSchema();
     }
-
 
     public void checkCanExecuteMDX() throws UnauthorizedException
     {
@@ -369,12 +365,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     public List<TableInfo> getSortedTables()
     {
         return TableSorter.sort(this);
-    }
-
-    @Override
-    public Container getContainer()
-    {
-        return _container;
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
@@ -826,7 +816,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         Container permissionContainer = rowContainer.getContainerFor(ContainerType.DataType.permissions);
 
-        // If a row supplies an alternate container, it is possible that permisions differ.  TableInfo can supply custom permissions.
+        // If a row supplies an alternate container, it is possible that permissions differ.  TableInfo can supply custom permissions.
         // If the effective permission container for the row-level container is actually the same as the original table (which is currently always true, such as Workbook->Parent,
         // then just defer to the original TableInfo.  If this is not the case, attempt to construct a new TableInfo and fail if we cannot do this.
         boolean hasPermission = false;
@@ -867,9 +857,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * those scenario.  It is up to the caller to ensure proper caching when ContainerFilter may differ.  The
      * suggested way to do that is to call ContainerFilter.getCacheKey().
      *
-     * Importantly, the key should reflect all the properties that affect how this table is created (e.g. additional filters, etc).
+     * Importantly, the key should reflect all the properties that affect how this table is created (e.g. additional filters, etc.).
      */
-    private Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<TableInfo>());
+    private final Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
 
     public TableInfo getCachedLookupTableInfo(String key, Callable<TableInfo> call)
     {

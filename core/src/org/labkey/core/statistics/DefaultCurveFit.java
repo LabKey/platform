@@ -318,14 +318,7 @@ public abstract class DefaultCurveFit<P extends CurveFit.Parameters> implements 
 
     protected double calculateFitError(P parameters)
     {
-        double deviationValue = 0;
-        for (DoublePoint point : getData())
-        {
-            double expectedValue = point.getY();
-            double foundValue = fitCurve(point.getX(), parameters);
-            deviationValue += Math.pow(foundValue - expectedValue, 2);
-        }
-        return Math.sqrt(deviationValue / getData().length);
+        return rootMeanSquareError(parameters);
     }
 
     @Override
