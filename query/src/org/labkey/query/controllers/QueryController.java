@@ -1026,7 +1026,7 @@ public class QueryController extends SpringActionController
 
             try
             {
-                if (form.ff_baseTableName == null || form.ff_baseTableName.isEmpty())
+                if (StringUtils.isEmpty(form.ff_baseTableName))
                 {
                     errors.reject(ERROR_MSG, "You must select a base table or query name.");
                     return false;
