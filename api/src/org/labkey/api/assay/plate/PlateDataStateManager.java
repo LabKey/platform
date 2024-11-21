@@ -43,7 +43,7 @@ public class PlateDataStateManager implements DataStateHandler
         }
 
         @Nullable
-        static StateType getType(String typeName)
+        public static StateType getType(String typeName)
         {
             for (StateType type : StateType.values())
             {
@@ -136,7 +136,7 @@ public class PlateDataStateManager implements DataStateHandler
     public boolean isStateInUse(Container container, DataState state)
     {
         // for now, we won't allow removal of the default plate data states
-        return true;
+        return StateType.getType(state.getStateType()) != null;
     }
 
     @Override

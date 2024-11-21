@@ -472,10 +472,10 @@ public class AssayUpgradeCode implements UpgradeCode
                 if (!plateSetsToHits.containsKey(plateSetRowId))
                 {
                     PlateSetLineage lineage = PlateManager.get().getPlateSetLineage(
-                        ContainerManager.getRoot(),
-                        User.getAdminServiceUser(),
-                        plateSetRowId,
-                        ContainerFilter.EVERYTHING
+                            ContainerManager.getRoot(),
+                            User.getAdminServiceUser(),
+                            plateSetRowId,
+                            ContainerFilter.EVERYTHING
                     );
                     String lineagePath = lineage.getSeedPath();
 
@@ -518,11 +518,11 @@ public class AssayUpgradeCode implements UpgradeCode
 
         // Determine all containers that have a Plate where Samples are specified in wells
         SQLFragment sql = new SQLFragment("""
-                SELECT DISTINCT P.Container
-                FROM assay.Well AS W
-                INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
-            """).add(TsvPlateLayoutHandler.TYPE);
+                    SELECT DISTINCT P.Container
+                    FROM assay.Well AS W
+                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                    WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
+                """).add(TsvPlateLayoutHandler.TYPE);
         List<String> containerIds = new SqlSelector(scope, sql).getArrayList(String.class);
 
         for (String containerId : containerIds)
@@ -546,13 +546,13 @@ public class AssayUpgradeCode implements UpgradeCode
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
                 SQLFragment wellSql = new SQLFragment("""
-                    SELECT W.RowId, W.PlateId
-                    FROM assay.Well AS W
-                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                    WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
-                        SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
-                    )
-                """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
+                            SELECT W.RowId, W.PlateId
+                            FROM assay.Well AS W
+                            INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                            WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
+                                SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
+                            )
+                        """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
 
                 Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
                 Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
@@ -644,6 +644,7 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     private static final String METADATA_RENAME_SUFFIX = "_PREV";
+
     private static String ensureNewName(DomainProperty dp, Domain domain)
     {
         String newName = dp.getName() + METADATA_RENAME_SUFFIX;
