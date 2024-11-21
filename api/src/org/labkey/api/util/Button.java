@@ -18,7 +18,6 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
 
@@ -53,7 +52,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     // Composable members
     private final String cssClass;
     private final String iconCls;
-    private final Renderable html; // required
+    private final String caption; // required
     private final String href;
     private final String onClick;
     private final String id;
@@ -75,7 +74,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
     {
         this.cssClass = builder.cssClass;
         this.dropdown = builder.dropdown;
-        this.html     = builder.html;
+        this.caption = builder.caption;
         this.href = builder.href;
         this.onClick = builder.onClick;
         this.iconCls = builder.iconCls;
@@ -235,7 +234,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         boolean iconOnly = getIconCls() != null;
         String submitId = page.makeId("submit_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
-        final Renderable tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
+        final String tip = (null != tooltip ? tooltip : (iconOnly ? caption : null));
         String clickHandler = generateOnClick();
 
         var attrs = at(attributes)
@@ -257,13 +256,13 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
-            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(html))
+            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(caption))
         );
     }
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
     {
-        private final Renderable html;
+        private final String caption;
 
         private String typeCls;
         private boolean disableOnClick;
@@ -271,14 +270,9 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         private boolean enabled = true;
         private boolean submit;
 
-        public ButtonBuilder(@NotNull String text)
+        public ButtonBuilder(@NotNull String caption)
         {
-            this.html = HtmlString.of(text);
-        }
-
-        public ButtonBuilder(@NotNull Renderable html)
-        {
-            this.html = html;
+            this.caption = caption;
         }
 
         @Override
