@@ -49,7 +49,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
                     {name: 'series', label: 'Series', nonNumericOnly: true},
-                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField'},
+                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField', requiredModule: 'premium'},
                 ],
                 layoutOptions: {opacity: true, axisBased: true, series: true, chartLayout: true}
             },
@@ -1220,6 +1220,10 @@ LABKEY.vis.GenericChartHelper = new function(){
         return plotConfig;
     };
 
+    var hasPremiumModule = function() {
+        return LABKEY.getModuleContext('api').moduleNames.indexOf('premium') > -1;
+    };
+
     // support for y-axis trendline data when a single y-axis measure is selected
     var queryTrendlineData = function(chartConfig, data, callback) {
         var chartType = getChartType(chartConfig);
@@ -1236,7 +1240,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         } else {
             callback.call(this);
         }
-    }
+    };
 
     var getTrendlineConfig = function(chartConfig, data) {
         var config = {
@@ -1255,7 +1259,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         return config;
-    }
+    };
 
     var _queryTrendlineData = async function(trendlineConfig, xName, yName) {
         for (var series of trendlineConfig.data) {
@@ -1268,10 +1272,15 @@ LABKEY.vis.GenericChartHelper = new function(){
                 console.error(e);
             }
         }
-    }
+    };
 
     var _querySeriesTrendlineData = async function(trendlineConfig, seriesData, xName, yName) {
         return new Promise(function(resolve, reject) {
+            if (!hasPremiumModule()) {
+                reject('Premium module required for curve fitting.');
+                return;
+            }
+
             var points = seriesData.rawData.map(function(row) {
                 return {
                     x: _getRowValue(row, xName, 'value'),
