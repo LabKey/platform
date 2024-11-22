@@ -53,11 +53,6 @@ import java.util.Set;
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
 import static org.labkey.api.exp.api.SampleTypeService.MATERIAL_INPUTS_PREFIX;
 
-/**
- * User: kevink
- * Date: Jun 4, 2010
- * Time: 3:29:46 PM
- */
 public abstract class AbstractDomainKind<T> extends DomainKind<T>
 {
     public static final String OBJECT_URI_COLUMN_NAME = "lsid";
@@ -181,10 +176,8 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
             return totalRows != nonBlankRows;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     protected boolean getTotalAndNonBlankSql(Domain domain, DomainProperty prop, SQLFragment allRowsSQL, SQLFragment nonBlankRowsSQL)
@@ -205,7 +198,8 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
 
             return true;
         }
-        else if (domain.getStorageTableName() != null)
+
+        if (domain.getStorageTableName() != null)
         {
             String table = domain.getStorageTableName();
             allRowsSQL.append("SELECT * FROM " + getStorageSchemaName() + "." + table);
@@ -224,12 +218,11 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
                 nonBlankRowsSQL.append(mvColumn.getName().toLowerCase());
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
+
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     @Override
@@ -251,7 +244,6 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     {
         return DomainTemplate.findTemplate(domain.getTemplateInfo(), getKindName());
     }
-
 
     @Override
     public Set<String> getNonProvisionedTableNames()
@@ -315,10 +307,17 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
+    @Nullable
     public List<String> getDomainNamePreviews(String schemaName, String queryName, Container container, User user)
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
-        GWTDomain gwtDomain = DomainUtil.getDomainDescriptor(user, domainURI, container, true);
+        if (domainURI == null)
+            return null;
+
+        GWTDomain<?> gwtDomain = DomainUtil.getDomainDescriptor(user, domainURI, container, true);
+        if (gwtDomain == null)
+            return null;
+
         Domain domain = PropertyService.get().getDomain(container, gwtDomain.getDomainURI());
         if (null != domain && null != domain.getDomainKind())
         {

@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
     BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "experiment"), depProjectConfig: "published", depExtension: "module")
     BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "search"), depProjectConfig: "published", depExtension: "module")
 }

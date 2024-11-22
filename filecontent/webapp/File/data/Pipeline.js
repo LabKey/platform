@@ -153,7 +153,7 @@ Ext4.define('File.data.PipelineAction', {
             for (var i=0; i < links.length; i++) {
 
                 link = links[i];
-                if (link && link.display == 'toolbar') {
+                if (link && link.display === 'toolbar') {
                     return link;
                 }
             }
@@ -169,7 +169,7 @@ Ext4.define('File.data.PipelineAction', {
             for (var i=0; i < links.length; i++) {
 
                 link = links[i];
-                if (link && link.id == linkId) {
+                if (link && link.id === linkId) {
                     return link;
                 }
             }

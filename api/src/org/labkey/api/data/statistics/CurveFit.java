@@ -146,4 +146,83 @@ public interface CurveFit<P extends CurveFit.Parameters>
      * @return The integrated area under the curve.
      */
     double calculateAUC(StatsService.AUCType type, double startX, double endX) throws FitFailedException;
+
+    /**
+     * Calculates the residual sum of squares (RSS) for the curve fit (https://en.wikipedia.org/wiki/Residual_sum_of_squares)
+     * @param parameters the parameters to use for the give calculated curve fit
+     * @return the calculated residual sum of squares
+     */
+    default double residualSumSquares(P parameters)
+    {
+        double sumSq = 0;
+        for (DoublePoint point : getData())
+        {
+            double expectedValue = point.getY();
+            double foundValue = fitCurve(point.getX(), parameters);
+
+            sumSq += Math.pow(foundValue - expectedValue, 2);
+        }
+        return sumSq;
+    }
+
+    /**
+     * Calculates the root mean square error (RMSE), or root mean square deviation (RMSD),
+     * for the curve fit (https://en.wikipedia.org/wiki/Root_mean_square_deviation)
+     * @param parameters the parameters to use for the give calculated curve fit
+     * @return the calculated root mean square error
+     */
+    default double rootMeanSquareError(P parameters)
+    {
+        return Math.sqrt(residualSumSquares(parameters) / getData().length);
+    }
+
+    /**
+     * Calculates the total sum of squares (TSS) for the data points (https://en.wikipedia.org/wiki/Total_sum_of_squares).
+     * This value is used in the R^2 calculation.
+     * @return the calculated total sum of squares
+     */
+    default double totalSumSquares()
+    {
+        double sumSq = 0;
+        double mean = 0;
+        for (DoublePoint point : getData())
+            mean += point.getY();
+        mean /= getData().length;
+
+        for (DoublePoint point : getData())
+        {
+            double expectedValue = point.getY();
+            sumSq += Math.pow(expectedValue - mean, 2);
+        }
+        return sumSq;
+    }
+
+    /**
+     * Calculates the R^2 value for the curve fit (https://en.wikipedia.org/wiki/Coefficient_of_determination)
+     * using the residualSumSquares() and totalSumSquares() methods.
+     * @param parameters the parameters to use for the give calculated curve fit
+     * @return the calculated R^2 value
+     */
+    default double rSquared(P parameters)
+    {
+        return 1 - residualSumSquares(parameters) / totalSumSquares();
+    }
+
+    // see description below, this version of the method is here so that each applicable curve fit can override it
+    // to set the correct p value for the degrees of freedom
+    default double adjustedRSquared(P parameters)
+    {
+        return Double.NaN;
+    }
+
+    /**
+     * Calculates the adjusted R^2 value for the curve fit (https://en.wikipedia.org/wiki/Coefficient_of_determination)
+     * @param parameters the parameters to use for the give calculated curve fit
+     * @return the calculated adjusted R^2 value (if possible)
+     */
+    default double adjustedRSquared(P parameters, int p)
+    {
+        int n = getData().length;
+        return 1 - (1 - rSquared(parameters)) * (n - 1) / (n - p - 1);
+    }
 }

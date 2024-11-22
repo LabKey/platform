@@ -34,7 +34,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -100,28 +99,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     // For serialization
     protected ExpMaterialImpl() {}
-    
+
     public ExpMaterialImpl(Material material)
     {
         super(material);
-    }
-
-    @Override
-    public void setName(String name)
-    {
-        super.setName(name);
-    }
-
-    @Override
-    public void setLSID(String lsid)
-    {
-        super.setLSID(lsid);
-    }
-
-    @Override
-    public void setLSID(Lsid lsid)
-    {
-        super.setLSID(lsid);
     }
 
     @Override
@@ -419,15 +400,25 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         // do the least possible amount of work here
         final SearchService.IndexTask indexTask = task;
         var document = createIndexDocument();
-        indexTask.addResource(document, SearchService.PRIORITY.item);
+        if (document != null)
+        {
+            indexTask.addResource(document, SearchService.PRIORITY.item);
+        }
     }
 
 
-    @NotNull
+    /** returns null if the parent container is no longer available */
+    @Nullable
     public WebdavResource createIndexDocument()
     {
+        Container container = getContainer();
+        if (container == null)
+        {
+            return null;
+        }
+
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
-        url.setExtraPath(getContainer().getId());
+        url.setExtraPath(container.getId());
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
@@ -481,7 +472,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+                container.getId(), "text/plain",
                 body.toString(), url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

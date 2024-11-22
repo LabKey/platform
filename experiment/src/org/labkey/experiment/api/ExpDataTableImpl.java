@@ -92,11 +92,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -782,7 +784,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             if (data == null)
                 return null;
 
-            return data.getWebDavURL(_relative ? FileContentService.PathType.folderRelative : FileContentService.PathType.serverRelative);
+            return Objects.toString(data.getWebDavURL(_relative ? FileContentService.PathType.folderRelative : FileContentService.PathType.serverRelative), null);
         }
 
         @Override
@@ -798,7 +800,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         public static final String PROJECT_NAME = "ExptDataTableImplIntegrationTest";
 
         @BeforeClass
-        public static void initialSetUp() throws Exception
+        public static void initialSetUp()
         {
             doInitialSetUp(PROJECT_NAME);
         }
@@ -833,7 +835,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
                 PipeRoot pr = PipelineService.get().getPipelineRootSetting(getProject());
 
-                return org.labkey.api.util.Path.parse(pr.getWebdavURL()).encode() + getUrlRelative();
+                URI uri = pr.getWebdavURL().resolve(getUrlRelative());
+                return uri == null ? null : uri.toString();
             }
 
             public String getUrlRelative()

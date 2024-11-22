@@ -470,7 +470,7 @@ public class MockModule implements Module
     @Override
     public Set<SupportedDatabase> getSupportedDatabasesSet()
     {
-        return DefaultModule.ALL_DATABASES;
+        return DefaultModule.ONLY_POSTGRESQL;
     }
 
     @Nullable

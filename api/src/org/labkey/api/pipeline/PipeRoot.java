@@ -29,6 +29,7 @@ import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -141,7 +142,7 @@ public interface PipeRoot extends SecurableResource
     /** @return whether this root's contents should be indexed by the crawler */
     boolean isSearchable();
 
-    String getWebdavURL();
+    URI getWebdavURL();
 
     /** @return a list of any problems found with this pipeline root */
     List<String> validate();

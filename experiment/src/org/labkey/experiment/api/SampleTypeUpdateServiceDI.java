@@ -1618,12 +1618,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
             aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
 
-            // check for project scoped counter in both name and aliquot name to decide if they need to be included
-            NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
-            if (sampleNameExpressionSummary != null)
+            if (nameGen != null)
             {
-                NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
-                nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
+                // check for project scoped counter in both name and aliquot name to decide if they need to be included
+                NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
+                if (sampleNameExpressionSummary != null)
+                {
+                    NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
+                    nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
+                }
             }
             nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();

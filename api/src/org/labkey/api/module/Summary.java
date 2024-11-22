@@ -10,10 +10,9 @@ import org.json.JSONObject;
 public class Summary
 {
     private final long count;
-    private final String nounSingular;
-    private final String nounPlural;
+    private final String noun;
 
-    private String replaceNounTitles(String nounSingular) {
+    private String replaceNounTitles(String noun) {
         String[] search = new String[] {
                 "ExpressionSystem",
                 "Ingredients",
@@ -34,30 +33,22 @@ public class Summary
                 "Protein sequence",
                 "Raw material"
         };
-        return StringUtils.replaceEach(nounSingular, search, replacements);
+        return StringUtils.replaceEach(noun, search, replacements);
     }
 
-    public Summary(final long count, final String nounSingular, final String nounPlural)
+    public Summary(final long count, final String noun)
     {
-        this.count = count;
-        this.nounSingular = nounSingular;
-        this.nounPlural = nounPlural;
-    }
-
-    public Summary(final long count, final String nounSingular)
-    {
-        String nounName = replaceNounTitles(nounSingular);
+        String nounName = replaceNounTitles(noun);
 
         this.count = count;
-        this.nounSingular = nounName;
-        this.nounPlural = nounName.endsWith("s") ? nounName : nounName + "s";
+        this.noun = nounName;
     }
 
     public JSONObject toJSON()
     {
         JSONObject json = new JSONObject();
         json.put("count", count);
-        json.put("noun", count > 1 ? nounPlural : nounSingular);
+        json.put("noun", noun);
         return json;
     }
 }
