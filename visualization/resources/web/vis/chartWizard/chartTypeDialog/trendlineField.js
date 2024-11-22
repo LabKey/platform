@@ -11,17 +11,18 @@ Ext4.define('LABKEY.vis.TrendlineField', {
     bodyStyle: 'background-color: transparent;',
     height: 34,
 
+    baseQueryKey: null,
     initData: null,
 
     options: [
-        ['', 'Point-to-Point', false, false],
-        ['Linear', 'Linear Regression', false, false],
-        ['Polynomial', 'Polynomial', false, false],
-        ['3 Parameter', 'Nonlinear 3PL', false, true],
-        ['4 Parameter', 'Nonlinear 4PL', false, false],
-        ['Three Parameter', 'Three Parameter', false, true],
-        ['Four Parameter', 'Four Parameter', true, true],
-        ['Five Parameter', 'Five Parameter', true, true],
+        ['', 'Point-to-Point', false, false, null],
+        ['Linear', 'Linear Regression', false, false, null],
+        ['Polynomial', 'Polynomial', false, false, null],
+        ['Three Parameter', 'Nonlinear 3PL', false, true, 'assay'],
+        ['3 Parameter', 'Nonlinear 3PL (Alternate)', false, true, 'assay'],
+        ['Four Parameter', 'Nonlinear 4PL', true, true, 'assay'],
+        ['4 Parameter', 'Nonlinear 4PL (Simplex)', false, false, 'assay'],
+        ['Five Parameter', 'Nonlinear 5PL', true, true, 'assay'],
     ],
 
     initComponent : function()
@@ -36,8 +37,27 @@ Ext4.define('LABKEY.vis.TrendlineField', {
         this.callParent();
     },
 
-    getTrendlineTypeCombo : function()
-    {
+    getTrendlineTypeStore : function() {
+        if (!this.trendlineTypeStore) {
+            this.trendlineTypeStore = Ext4.create('Ext.data.ArrayStore', {
+                fields: ['value','label','showMin','showMax', 'schemaPrefix'],
+                data: this.options
+            });
+
+            if (this.baseQueryKey) {
+                this.trendlineTypeStore.filter([{
+                    filterFn: function(item) {
+                        return item.get('schemaPrefix') == null || this.baseQueryKey.startsWith(item.get('schemaPrefix'));
+                    },
+                    scope: this
+                }]);
+            }
+        }
+
+        return this.trendlineTypeStore;
+    },
+
+    getTrendlineTypeCombo : function() {
         if (!this.trendlineTypeCombo)
         {
             this.trendlineTypeCombo = Ext4.create('Ext.form.field.ComboBox', {
@@ -46,10 +66,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
                 labelWidth: 75,
                 width: 300,
                 padding: '5px 0 0 0',
-                store: Ext4.create('Ext.data.ArrayStore', {
-                    fields: ['value','label','showMin','showMax'],
-                    data: this.options
-                }),
+                store: this.getTrendlineTypeStore(),
                 queryMode: 'local',
                 editable: false,
                 forceSelection: true,

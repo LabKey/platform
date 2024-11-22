@@ -899,6 +899,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
             }
 
             this.fieldSelectionAreas[field.name] = Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
+                baseQueryKey: this.baseQueryKey,
                 chartTypeName: this.chartType.get('name'),
                 field: field,
                 selection: fieldSelection
@@ -991,6 +992,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     selection: null,
     allowableTypes: null,
     chartTypeName: null,
+    baseQueryKey: null,
 
     initComponent : function()
     {
@@ -1060,7 +1062,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             {
                 this.field.altFieldCmp = Ext4.create(this.field.altFieldType, Ext4.apply({
                     cls: 'alternate-field-selection',
-                    initData: this.selection
+                    initData: this.selection,
+                    baseQueryKey: this.baseQueryKey
                 }, this.field.altFieldConfig || {}));
 
                 this.fieldAreaCmp = Ext4.create('Ext.panel.Panel', {

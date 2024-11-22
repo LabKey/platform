@@ -1260,7 +1260,10 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _queryTrendlineData = async function(trendlineConfig, xName, yName) {
         for (var series of trendlineConfig.data) {
             try {
-                series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                // we need at least 2 data points for curve fitting
+                if (series.rawData.length > 1) {
+                    series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                }
             } catch (e) {
                 console.error(e);
             }
