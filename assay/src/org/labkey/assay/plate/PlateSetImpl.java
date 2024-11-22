@@ -12,8 +12,11 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.view.ActionURL;
-import org.labkey.assay.PlateController;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collections;
@@ -192,9 +195,10 @@ public class PlateSetImpl extends Entity implements PlateSet
     @Override
     public @Nullable ActionURL detailsURL()
     {
-        return new ActionURL(PlateController.DesignerAction.class, getContainer())
-                .addParameter("templateName", getName())
-                .addParameter("plateId", getRowId());
+        // Plate sets do not currently have their own page in LKS. Link to the default query row details.
+        ActionURL url = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, PlateSchema.SCHEMA_NAME, PlateSetTable.NAME);
+        url.addParameter(PlateSetTable.Column.RowId.name(), getRowId());
+        return url;
     }
 
     public void setDescription(String description)

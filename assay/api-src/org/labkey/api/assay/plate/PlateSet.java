@@ -1,9 +1,6 @@
 package org.labkey.api.assay.plate;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
-import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 
@@ -15,21 +12,9 @@ public interface PlateSet extends Identifiable
 
     Integer getRowId();
 
-    @Override
-    Container getContainer();
-
     String getDescription();
 
-    @Override
-    @Nullable ActionURL detailsURL();
-
-    @Override
-    String getName();
-
     String getPlateSetId();
-
-    @Override
-    String getLSID();
 
     boolean isArchived();
 

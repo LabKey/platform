@@ -470,29 +470,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
+    public @Nullable PlateSet getPlateSet(Container container, int rowId)
     {
-        return PlateSetCache.getPlateSet(container, plateSetId);
+        return PlateSetCache.getPlateSet(container, rowId);
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
+    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)
     {
-        return PlateSetCache.getPlateSet(cf, plateSetId);
-    }
-
-    @Override
-    public @Nullable PlateSet getPlateSet(String plateSetID)
-    {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateSetId"), plateSetID);
-        String container = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet(), Collections.singleton("Container"), filter, null).getObject(String.class);
-        if (container != null)
-        {
-            Container c = ContainerManager.getForId(container);
-            if (c != null)
-                return PlateSetCache.getPlateSet(c, plateSetID);
-        }
-        return null;
+        return PlateSetCache.getPlateSet(cf, rowId);
     }
 
     @Override

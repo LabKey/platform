@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JsonUtil;
@@ -26,7 +26,7 @@ import java.util.Set;
 
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
-public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
+public class PlateSetDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
@@ -46,20 +46,15 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
         return PlateManager.get().PLATE_SET_CATEGORY;
     }
 
-    private static String getDocumentIdPrefix()
-    {
-        return getSearchCategory().getName() + ":";
-    }
+private static String getDocumentIdPrefix()
+{
+    return getSearchCategory().getName() + ":";
+}
 
-    public static String getDocumentId(@NotNull Lsid plateSetLsid)
-    {
-        return getDocumentIdPrefix() + plateSetLsid;
-    }
-
-    public static String getDocumentId(@NotNull PlateSet plateSet)
-    {
-        return getDocumentId(new Lsid(plateSet.getLSID()));
-    }
+public static String getDocumentId(@NotNull PlateSet plateSet)
+{
+    return getDocumentIdPrefix() + plateSet.getContainer().getId() + ":" + plateSet.getRowId();
+}
 
     public static WebdavResource createDocument(@NotNull PlateSet plateSet)
     {
@@ -70,7 +65,6 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
 
         identifiersHi.add(plateSet.getName());
         identifiersHi.add(plateSet.getPlateSetId());
-        identifiersMed.add(plateSet.getLSID());
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
@@ -88,13 +82,13 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
             append(body, plateSet.getDescription()); // PR Flag: what should the summary display?
 
         return new SimpleDocumentResource(
-                new Path(documentId),
-                documentId,
-                plateSet.getContainer().getId(),
-                "text/plain",
-                body.toString(),
-                url,
-                props
+            new Path(documentId),
+            documentId,
+            plateSet.getContainer().getId(),
+            "text/plain",
+            body.toString(),
+            url,
+            props
         );
     }
 
@@ -102,21 +96,34 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
     {
         return new SearchService.ResourceResolver()
         {
-            private Lsid fromDocumentId(@NotNull String resourceIdentifier)
-            {
-                final String prefix = getDocumentIdPrefix();
+private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
+{
+    final String prefix = getDocumentIdPrefix();
 
-                if (resourceIdentifier.startsWith(prefix))
-                    resourceIdentifier = resourceIdentifier.substring(prefix.length());
+    if (resourceIdentifier.startsWith(prefix))
+        resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-                return Lsid.parse(resourceIdentifier);
-            }
+    String[] parts = resourceIdentifier.split(":");
+    if (parts.length != 2)
+        return null;
 
-            private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
-            {
-                Lsid id = fromDocumentId(resourceIdentifier);
-                return PlateManager.get().getPlateSet(id.toString());
-            }
+    int rowId;
+    try
+    {
+        rowId = Integer.parseInt(parts[1]);
+    }
+    catch (NumberFormatException e)
+    {
+        // skip it
+        return null;
+    }
+
+    Container container = ContainerManager.getForId(parts[0]);
+    if (container == null)
+        return null;
+
+    return PlateManager.get().getPlateSet(container, rowId);
+}
 
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
@@ -169,10 +176,14 @@ public class PlateSetDocumentProvider  implements SearchService.DocumentProvider
                 return results;
             }
 
-            private Map<String, Object> serialize(@NotNull PlateSet plateSet) throws JsonProcessingException
-            {
-                return new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plateSet)).toMap();
-            }
+private Map<String, Object> serialize(@NotNull PlateSet plateSet) throws JsonProcessingException
+{
+    JSONObject json = new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plateSet));
+    // Skip serializing plates into search results
+    json.remove("plates");
+
+    return json.toMap();
+}
         };
     }
 }

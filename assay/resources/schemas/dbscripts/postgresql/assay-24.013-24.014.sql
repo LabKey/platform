@@ -1,4 +1,4 @@
-ALTER TABLE assay.plateset ADD COLUMN LSID VARCHAR(200);
+ALTER TABLE assay.plateset ADD COLUMN LSID LSIDtype;
 
 SELECT core.executeJavaUpgradeCode('addLsidToPlateSets');
 

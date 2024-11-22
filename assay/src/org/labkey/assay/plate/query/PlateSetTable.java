@@ -57,16 +57,17 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     public enum Column
     {
-        Name,
-        Folder,
-        Type,
-        Description,
-        PlateCount,
         Created,
         CreatedBy,
+        Description,
+        Folder,
+        Lsid,
         Modified,
         ModifiedBy,
-        Lsid;
+        Name,
+        PlateCount,
+        RowId,
+        Type;
 
         public FieldKey fieldKey()
         {
@@ -76,15 +77,15 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Name.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Folder.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Type.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Description.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.PlateCount.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Created.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.CreatedBy.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.Modified.name()));
-        defaultVisibleColumns.add(FieldKey.fromParts(PlateSetTable.Column.ModifiedBy.name()));
+        defaultVisibleColumns.add(PlateSetTable.Column.Name.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Folder.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Type.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Description.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.PlateCount.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Created.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.CreatedBy.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Modified.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.ModifiedBy.fieldKey());
     }
 
     public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)
@@ -130,7 +131,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         if ("Container".equalsIgnoreCase(col.getName()))
         {
-            wrap.setFieldKey(FieldKey.fromParts("Folder"));
+            wrap.setFieldKey(PlateSetTable.Column.Folder.fieldKey());
             wrap.setLabel(getContainer().hasProductFolders() ? "Project" : "Folder");
         }
     }
