@@ -19,16 +19,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
@@ -43,16 +36,12 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
-import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -118,55 +107,6 @@ public class ReportManager implements DatasetManager.DatasetListener
     public Report getReport(Container c, int reportId)
     {
         return ReportService.get().getReport(c, reportId);
-    }
-    
-    public void deleteReport(ViewContext context, Report report)
-    {
-        ReportService.get().deleteReport(context, report);
-    }
-
-    public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId)
-    {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
-        DatasetDefinition def = study.getDataset(datasetId);
-        if (def == null)
-        {
-            throw new NotFoundException();
-        }
-        if (!def.canRead(ctx.getUser()))
-            throw new UnauthorizedException();
-
-        VisitImpl visit = null;
-        if (visitRowId != 0)
-        {
-            visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
-            if (null == visit)
-                throw new NotFoundException();
-        }
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DatasetId"), datasetId);
-        if (visit != null)
-            visit.addVisitFilter(filter);
-//        filter.addCondition("container", ctx.getContainer().getId());
-
-        filter.addUrlFilters(ctx.getActionURL(), "participantdataset");
-
-        String typeURI = def.getTypeURI();
-        if (typeURI == null)
-            throw new IllegalStateException("Could not find type for dataset " + datasetId);
-
-        // UNDONE: use def.getTableInfo()
-        TableInfo tinfo = StudySchema.getInstance().getTableInfoStudyData(study, ctx.getUser());
-        List<BaseColumnInfo> propertyColumns = def.getDomain().getColumns(tinfo, tinfo.getColumn("LSID"), ctx.getContainer(), ctx.getUser());
-        if (propertyColumns == null || propertyColumns.isEmpty())
-            throw new IllegalArgumentException("No columns for type: " + typeURI);
-
-        ArrayList<ColumnInfo> columns = new ArrayList<>();
-        columns.add(tinfo.getColumn("ParticipantId"));
-        columns.add(tinfo.getColumn("SequenceNum"));
-        columns.addAll(propertyColumns);
-
-        return new TableSelector(tinfo, columns, filter, null).setForDisplay(true).getResults();
     }
 
     @Nullable
