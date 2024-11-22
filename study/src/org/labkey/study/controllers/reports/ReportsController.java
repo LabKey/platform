@@ -36,7 +36,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
@@ -79,7 +78,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -95,7 +93,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
 import org.springframework.validation.BindException;
@@ -149,76 +146,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    // Need insert and developer permissions, #35215. Keep these checks in sync with the "external report" permissions checks in StudyReportUIProvider.getDesignerInfo()
-    @RequiresPermission(InsertPermission.class)
-    public class ExternalReportAction extends FormViewAction<ExternalReportForm>
-    {
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            super.checkPermissions();
-
-            if (!getUser().isPlatformDeveloper())
-                throw new UnauthorizedException();
-        }
-
-        private ExternalReportForm _postedForm = new ExternalReportForm();
-
-        @Override
-        public ModelAndView getView(ExternalReportForm doNotUse, boolean reshow, BindException errors)
-        {
-            ExternalReport extReport = _postedForm.getBean();
-            JspView<ExternalReportBean> designer = new JspView<>("/org/labkey/study/view/externalReportDesigner.jsp", new ExternalReportBean(getViewContext(), extReport, "Dataset"));
-            HttpView resultView = extReport.renderReport(getViewContext());
-
-            VBox v = new VBox(designer, resultView);
-            v.addView(new SaveReportWidget(extReport));
-
-            return v;
-        }
-
-        @Override
-        public void validateCommand(ExternalReportForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(ExternalReportForm form, BindException errors)
-        {
-            _postedForm = form;
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ExternalReportForm externalReportForm)
-        {
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("advancedReport");
-            _addNavTrail(root, "External Report Builder");
-        }
-    }
-
-    public static class ExternalReportBean extends CreateQueryReportBean
-    {
-        private final ExternalReport extReport;
-
-        public ExternalReportBean(ViewContext context, ExternalReport extReport, String queryName)
-        {
-            super(context, queryName);
-            this.extReport = extReport;
-        }
-
-        public ExternalReport getExtReport()
-        {
-            return extReport;
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public static class StreamFileAction extends SimpleViewAction<Object>
     {
@@ -250,7 +177,7 @@ public class ReportsController extends BaseStudyController
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     /*
-      Action for non-query based views (static, xls export, advanced)
+      Action for non-query based views (static, xls export)
      */
     public class SaveReportAction extends FormHandlerAction<SaveReportForm>
     {
@@ -591,33 +518,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class ExportForm
-    {
-        private int locationId = 0;
-        private ReportIdentifier reportId;
-
-        public int getLocationId()
-        {
-            return locationId;
-        }
-
-        public void setLocationId(int locationId)
-        {
-            this.locationId = locationId;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return reportId;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            this.reportId = reportId;
-        }
-    }
-
-
     @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
     {
@@ -639,7 +539,6 @@ public class ReportsController extends BaseStudyController
     @RequiresNoPermission
     public class CreateCrosstabReportAction extends SimpleViewAction
     {
-
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
@@ -672,8 +571,8 @@ public class ReportsController extends BaseStudyController
 
     public static class CreateCrosstabBean
     {
-        private List<DatasetDefinition> _datasets;
-        private Collection<VisitImpl> _visits;
+        private final List<DatasetDefinition> _datasets;
+        private final Collection<VisitImpl> _visits;
 
         public CreateCrosstabBean(ViewContext context) throws IllegalStateException
         {
@@ -772,105 +671,6 @@ public class ReportsController extends BaseStudyController
 
         public void setReportView(String label){_reportView = label;}
         public String getReportView(){return _reportView;}
-    }
-
-
-    public static class SaveReportWidget extends HttpView
-    {
-        private final Report _report;
-        private final boolean _confirm;
-        private final ActionURL _returnUrl;
-        private final boolean _redirToReport;
-
-        public SaveReportWidget(Report report)
-        {
-            this(report, false, null, false);
-        }
-
-        public SaveReportWidget(Report report, boolean confirm, ActionURL returnUrl, boolean redirToReport)
-        {
-            _report = report;
-            _confirm = confirm;
-            _returnUrl = returnUrl;
-            _redirToReport = redirToReport;
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            out.write("<form method='post' name='saveReport' action='");
-            out.write(PageFlowUtil.filter(new ActionURL(SaveReportViewAction.class, getViewContext().getContainer())));
-            out.write("'>");
-            out.write("<table><tr>");
-            if (_confirm)
-            {
-                out.write("<td>");
-                out.write("There is already a report called: <i>");
-                out.write(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-                out.write("</i>.<br/>Overwrite the existing report?");
-                out.write("<input type=hidden name=confirmed value=1>");
-                out.write("<input type=hidden name=label value='");
-            }
-            else
-            {
-                out.write("<td><b>Save Report&nbsp;</b> Name:&nbsp;");
-                out.write("<input name='label' value='");
-            }
-            out.write(PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-            out.write("'></td>");
-            out.write("<td>");
-            if (!_confirm)
-            {
-                out.write(ReturnUrlForm.generateHiddenFormField(getViewContext().getActionURL()).toString());
-            }
-            out.write("<input type=hidden name=redirectToReport value='");
-            out.write(Boolean.toString(_redirToReport));
-            out.write("'>");
-            out.write("<input type=hidden name=reportType value='");
-            out.write(_report.getDescriptor().getReportType());
-            out.write("'>");
-            out.write("<input type=hidden name=params value='");
-            out.write(PageFlowUtil.filter(_report.getDescriptor().toQueryString()));
-            out.write("'></td>");
-
-            Container c = getViewContext().getContainer();
-            Study study = getStudyThrowIfNull(c);
-            List<DatasetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
-            out.write("<td>Add as Custom Report For: ");
-            out.write("<select name=\"showWithDataset\">");
-            //out.write("<option value=\"0\">Views and Reports Web Part</option>");
-            int showWithDataset = NumberUtils.toInt(_report.getDescriptor().getProperty("showWithDataset"));
-            for (Dataset def : defs)
-            {
-                out.write("<option ");
-                if (def.getDatasetId() == showWithDataset)
-                    out.write(" selected ");
-                out.write("value=\"");
-                out.write(String.valueOf(def.getDatasetId()));
-                out.write("\">");
-                out.write(PageFlowUtil.filter(def.getLabel()));
-                out.write("</option>");
-            }
-            out.write("</select></td>");
-
-            out.write("<td>" + PageFlowUtil.button("Save").submit(true));
-            out.write(new CsrfInput(getViewContext()).toString());
-            out.write("</form>");
-
-            if (_confirm)
-            {
-                out.write("&nbsp;" + PageFlowUtil.button("Cancel").href(_returnUrl));
-            }
-            out.write("</td></tr></table>");
-        }
-    }
-
-    public static class ExternalReportForm extends BeanViewForm<ExternalReport>
-    {
-        public ExternalReportForm()
-        {
-            super(ExternalReport.class);
-        }
     }
 
     public static class SaveReportForm extends ViewForm
