@@ -40,11 +40,9 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -83,8 +81,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -213,13 +209,7 @@ public class Portal implements ModuleChangeListener
                     append(getTableInfoPortalWebParts(), "pwp").
                     append(" GROUP BY Name");
 
-            Map<String, Object> counts = new HashMap<>();
-            new SqlSelector(getSchema(),
-                    sql).forEach(rs -> {
-                        counts.put(rs.getString("Name"), rs.getInt("C"));
-                    }
-            );
-            return Map.of("webPartCounts", counts);
+            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap());
         };
     }
 
@@ -852,7 +842,7 @@ public class Portal implements ModuleChangeListener
 
         try
         {
-            insertPortalPage(portalPageTable, c, pageId, index, null);
+            insertPortalPage(portalPageTable, c, pageId, index);
         }
         catch (RuntimeSQLException | DataIntegrityViolationException x)
         {
@@ -973,13 +963,11 @@ public class Portal implements ModuleChangeListener
         }
     }
 
-    private static void insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption)
+    private static void insertPortalPage(TableInfo portalTable, Container c, String pageId, int index)
     {
         PortalPage p = new PortalPage();
         p.setPageId(pageId);
         p.setIndex(index);
-        if (null != caption)
-            p.setCaption(caption);
         insertPortalPage(portalTable, c, p);
     }
 
@@ -1848,9 +1836,8 @@ public class Portal implements ModuleChangeListener
         RuntimeSQLException s = null;
         if (x instanceof RuntimeSQLException)
             s = (RuntimeSQLException)x;
-        else if (x instanceof DataIntegrityViolationException)
+        else if (x instanceof DataIntegrityViolationException d)
         {
-            DataIntegrityViolationException d = (DataIntegrityViolationException)x;
             if (d.getCause() instanceof RuntimeSQLException)
                 s = (RuntimeSQLException)d.getCause();
         }
