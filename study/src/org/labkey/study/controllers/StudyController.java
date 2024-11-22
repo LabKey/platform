@@ -1587,19 +1587,7 @@ public class StudyController extends BaseStudyController
 
     public static class DeleteParticipantForm
     {
-        private String _participantIdColumnName;
         private String _participantId;
-        private String _tableNamePrefix;
-
-        public String getParticipantIdColumnName()
-        {
-            return _participantIdColumnName;
-        }
-
-        public void setParticipantIdColumnName(String participantIdColumnName)
-        {
-            this._participantIdColumnName = participantIdColumnName;
-        }
 
         public String getParticipantId()
         {
@@ -1609,16 +1597,6 @@ public class StudyController extends BaseStudyController
         public void setParticipantId(String participantId)
         {
             this._participantId = participantId;
-        }
-
-        public String getTableNamePrefix()
-        {
-            return _tableNamePrefix;
-        }
-
-        public void setTableNamePrefix(String tableNamePrefix)
-        {
-            _tableNamePrefix = tableNamePrefix;
         }
     }
 

@@ -464,7 +464,7 @@
 
             var viewParticipantDataLink = Ext4.create('Ext.Component', {
                 tpl: new Ext4.XTemplate(
-                        '<a class="labkey-text-link" href="{[this.getURL(values)]}" target="_blank">View ' + <%=q(subjectNounSingular)%> + ' Data</a>',
+                        '<a class="labkey-text-link" href="{[this.getURL(values)]}" target="_blank">View ' + <%=q(h(subjectNounSingular))%> + ' Data</a>',
                         {
                             getURL : function(values){
                                 return LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': values.participantId })
@@ -508,7 +508,7 @@
             var deleteParticipant = function(participantIdToDelete) {
                 Ext4.Msg.show({
                     title   : 'Confirmation',
-                    msg     : "Are you sure you want to delete " + <%=q(subjectNounSingular.toLowerCase())%> + " '" + participantIdToDelete + "'?",
+                    msg     : "Are you sure you want to delete " + <%=q(h(subjectNounSingular.toLowerCase()))%> + " '" + participantIdToDelete + "'?",
                     buttons : Ext4.MessageBox.YESNO,
                     icon    : Ext4.MessageBox.QUESTION,
                     fn      : function(id){
@@ -517,19 +517,19 @@
                             Ext4.Ajax.request({
                                 url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
                                 method : 'POST',
-                                jsonData : { participantIdColumnName : <%=q(subjectNounColName)%>, participantId : participantIdToDelete, tableNamePrefix: <%=q(subjectNounSingular)%> },
+                                jsonData : {participantId : participantIdToDelete},
                                 headers : {'Content-Type' : 'application/json'},
                                 scope: this,
                                 success: function() {
                                     Ext4.getBody().unmask();
-                                    displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(subjectNounSingular)%> + " " + participantIdToDelete + '.');
+                                    displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + '.');
                                     // Refresh the ComboBox store after deletion
                                     participantCombo.setValue(null);
                                     participantCombo.getStore().load();
                                 },
                                 failure: function(response, options){
                                     Ext4.getBody().unmask();
-                                    LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "Failed to delete " + <%=q(subjectNounSingular)%> + " " + participantIdToDelete + ": " + response.responseText);
+                                    LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "Failed to delete " + <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + ": " + response.responseText);
                                 },
                             });
                         }
