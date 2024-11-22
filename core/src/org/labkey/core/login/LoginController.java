@@ -2273,8 +2273,7 @@ public class LoginController extends SpringActionController
                 {
                     out.print("<TokenAuthentication success=\"true\" ");
                     out.print("token=\"" + form.getLabkeyToken() + "\" ");
-                    out.print("email=\"" + user.getEmail() + "\" ");
-                    out.print("permissions=\"" + getContainer().getPermsAsOldBitMask(user) + "\"/>");
+                    out.print("email=\"" + user.getEmail() + "\"/>");
                 }
                 else
                 {

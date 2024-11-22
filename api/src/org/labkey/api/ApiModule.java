@@ -142,8 +142,8 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -198,7 +198,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.EnumSet.allOf;
-import static org.labkey.api.security.ACL.RESTORE_USE_OF_ACLS;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
@@ -228,10 +227,6 @@ public class ApiModule extends CodeOnlyModule
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
-        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(RESTORE_USE_OF_ACLS,
-                "Restore ability to use deprecated bitmask-based permissions",
-                "If enabled, module HTML view metadata (.view.xml) files with \"<permission name='read'>\"-type elements will be accepted and specific API responses will include user permissions as integer bitmasks. This option and all support for bitmask based permissions will be removed in LabKey Server v24.12.",
-                false, false, OptionalFeatureService.FeatureType.Deprecated));
         AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(FileStream.STAGE_FILE_TRANSFERS,
                 "Stage file uploads and downloads to temporary local file",
                 "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage",
