@@ -33,6 +33,11 @@
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
+
+    if ("1".equals(url.getParameter("_noindex")))
+        model.setNoIndex();
+    if ("1".equals(url.getParameter("_nofollow")))
+        model.setNoFollow();
 %>
 <!DOCTYPE html>
 <html lang="en">

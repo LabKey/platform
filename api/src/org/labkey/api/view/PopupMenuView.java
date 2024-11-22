@@ -18,10 +18,12 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
 
 public class PopupMenuView extends HttpView<PopupMenu>
 {
@@ -187,17 +189,31 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
         // NOTE: nofollow is not recommended as way to avoid crawling internal links
         // instead let's use an onclick handler to "hide" the link
-        String dataHref = null;
+        String dataQuery = null;
         String href = item.getHref();
         if (null != href && null == item.getScript() && !item.isPost())
         {
-            cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
-            dataHref = item.getHref();
-            href = null;
-            HttpView.currentPageConfig().addHandlerForQuerySelector(
-                    "A.noFollowNavigate",
-                    "click",
-                    "window.location = this.dataset['href']");
+            try
+            {
+                var context = HttpView.currentContext();
+                URLHelper url = new URLHelper(href);
+                if (null != context && context.isRobot())
+                    url.addParameter("_noindex", "1");
+                dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+                if (!dataQuery.isEmpty())
+                    dataQuery = "?" + dataQuery;
+                url.deleteParameters();
+                href = url.toString();
+                HttpView.currentPageConfig().addHandlerForQuerySelector(
+                        "A.noFollowNavigate",
+                        "click",
+                        "window.location = this.href + this.dataset['query']; return false;");
+                cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+            }
+            catch (URISyntaxException e)
+            {
+                // fall through
+            }
         }
 
         String id = config.makeId("popupMenuView");
@@ -208,8 +224,8 @@ public class PopupMenuView extends HttpView<PopupMenu>
             out.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
         else
             out.write(" href=\"#\"");
-        if (null != dataHref)
-            out.write(" data-href=\"" + PageFlowUtil.filter(dataHref) + "\"");
+        if (null != dataQuery)
+            out.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
         if (null != item.getTarget())
             out.write(" target=\"" + item.getTarget() + "\"");
         if (null != item.getDescription())
