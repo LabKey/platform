@@ -40,9 +40,11 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -64,6 +66,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -80,6 +83,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -199,7 +204,24 @@ public class Portal implements ModuleChangeListener
         return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
     }
 
-    public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
+    /** Issue 51727 - metrics to track web part usage */
+    public static UsageMetricsProvider getMetricsProvider()
+    {
+        return () ->
+        {
+            SQLFragment sql = new SQLFragment("SELECT Name, COUNT(*) AS C FROM ").
+                    append(getTableInfoPortalWebParts(), "pwp").
+                    append(" GROUP BY Name");
+
+            Map<String, Object> counts = new HashMap<>();
+            new SqlSelector(getSchema(),
+                    sql).forEach(rs -> {
+                        counts.put(rs.getString("Name"), rs.getInt("C"));
+                    }
+            );
+            return Map.of("webPartCounts", counts);
+        };
+    }
 
     /** Bean object for persisting web part configurations in the core.portalwebparts table
      * NOTE: implements Factory<> so this can be used as a builder for immutable object
