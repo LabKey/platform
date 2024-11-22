@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -184,14 +185,31 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
+        // NOTE: nofollow is not recommended as way to avoid crawling internal links
+        // instead let's use an onclick handler to "hide" the link
+        String dataHref = null;
+        String href = item.getHref();
+        if (null != href && null == item.getScript() && !item.isPost())
+        {
+            cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+            dataHref = item.getHref();
+            href = null;
+            HttpView.currentPageConfig().addHandlerForQuerySelector(
+                    "A.noFollowNavigate",
+                    "click",
+                    "window.location = this.dataset['href']");
+        }
+
         String id = config.makeId("popupMenuView");
         out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");
-        if (null != item.getHref() && !item.isPost())
-            out.write(" href=\"" + PageFlowUtil.filter(item.getHref()) + "\"");
+        if (null != href && !item.isPost())
+            out.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
         else
             out.write(" href=\"#\"");
+        if (null != dataHref)
+            out.write(" data-href=\"" + PageFlowUtil.filter(dataHref) + "\"");
         if (null != item.getTarget())
             out.write(" target=\"" + item.getTarget() + "\"");
         if (null != item.getDescription())
