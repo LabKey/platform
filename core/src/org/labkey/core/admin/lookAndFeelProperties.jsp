@@ -247,7 +247,7 @@
     <td class="labkey-form-label"><label for="<%=companyName%>">Organization name (appears in notification emails sent by system)</label></td>
     <% inherited = isInherited(laf.getCompanyNameStored()); %>
     <%=inheritCheckbox(inherited, companyName)%>
-    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %><%=disabled(inherited)%>"></td>
+    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %>" <%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
