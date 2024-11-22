@@ -470,7 +470,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
                 chartTypesToHide: ['time_chart'],
                 selectedType: this.getSelectedChartType(),
-                selectedFields: this.measures,
+                selectedFields: Ext4.apply({}, this.measures, { trendline: this.trendline }),
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
                 baseQueryKey: this.schemaName + '.' + this.queryName,
@@ -508,6 +508,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.measures = values.fields;
         if (values.fields.xSub) {
             this.measures.color = this.measures.xSub;
+        }
+
+        if (values.altValues.trendline) {
+            this.trendline = values.altValues.trendline;
+            // if the chart data has already been loaded then we only need to query the trendlineData
+            if (this.measureStore) this.queryTrendlineData();
         }
 
         this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
@@ -570,6 +576,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     apply: function(panel, values)
                     {
+                        // special case for trendlineData: if there was a change to x-axis scale type or range,
+                        // we need to reload the trendlineData
+                        if (this.trendlineData) this.queryTrendlineData();
+
                         // note: this event will only fire if a change was made in the Chart Layout panel
                         this.ensureChartLayoutOptions();
                         this.clearChartPanel(true);
@@ -2055,24 +2065,33 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     onSelectRowsSuccess : function(measureStore) {
         this.measureStore = measureStore;
+
+        // when not in edit mode, we'll use the column metadata from the data query
+        if (!this.editMode)
+            this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);
+
         this.queryTrendlineData();
     },
 
     queryTrendlineData : function() {
         var chartConfig = this.getChartConfig();
-        var data = this.getMeasureStoreRecords();
-        var scope = this;
-        LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data, function(trendlineData) {
-            scope.trendlineData = trendlineData;
-            scope.onQueryDataComplete();
-        });
+        if (chartConfig.geomOptions.trendlineType && chartConfig.geomOptions.trendlineType !== '') {
+            this.setDataLoading(true);
+
+            var data = this.getMeasureStoreRecords();
+            var scope = this;
+            LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data, function(trendlineData) {
+                scope.trendlineData = trendlineData;
+                scope.onQueryDataComplete();
+            });
+        } else {
+            // trendlineType of '' means use Point-to-Point, i.e. no trendlineData
+            this.trendlineData = undefined;
+            this.onQueryDataComplete();
+        }
     },
 
     onQueryDataComplete : function() {
-        // when not in edit mode, we'll use the column metadata from the data query
-        if (!this.editMode)
-            this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);
-
         this.setDataLoading(false);
         
         this.getMsgPanel().removeAll();

@@ -48,7 +48,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 fields: [
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
-                    {name: 'series', label: 'Series', nonNumericOnly: true}
+                    {name: 'series', label: 'Series', nonNumericOnly: true},
+                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField'},
                 ],
                 layoutOptions: {opacity: true, axisBased: true, series: true, chartLayout: true}
             },
@@ -665,7 +666,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(measures, function(key, measureObj) {
                 var measureArr = ensureMeasuresAsArray(measureObj);
                 $.each(measureArr, function(idx, measure) {
-                    if (LABKEY.Utils.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
+                    if (LABKEY.Utils.isObject(measure) && !LABKEY.Utils.isEmptyObj(measure) && distinctNames.indexOf(measure.name) == -1) {
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
                         sep = ', \n';
 
@@ -1123,7 +1124,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                             });
                             hoverText += '\nStats:\n';
                             $.each(trendline.data.stats, function (key, value) {
-                                hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+                                var label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
+                                hoverText += label + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
                             });
                             layerAes.hoverText = function () { return hoverText };
 
