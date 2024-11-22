@@ -2,7 +2,9 @@ package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -15,6 +17,7 @@ import org.labkey.api.data.triggers.TriggerFactory;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -31,17 +34,26 @@ import java.util.Map;
 public class AssayPlateTriggerFactory implements TriggerFactory
 {
     private final ExpProtocol _protocol;
+    private DomainProperty _qcStateProp;
 
     public AssayPlateTriggerFactory(ExpProtocol protocol)
     {
         _protocol = protocol;
+
+        if (_protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            if (provider != null)
+                _qcStateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(provider.getResultsDomain(_protocol));
+        }
     }
 
     @Override
     public @NotNull Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
     {
         return List.of(
-            new ReplicateStatsTrigger()
+            new ReplicateStatsTrigger(),
+            new DataStateTrigger()
         );
     }
 
@@ -118,6 +130,20 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             {
                 throw UnexpectedException.wrap(e);
             }
+        }
+    }
+
+    /**
+     * Trigger to help validate state values on update. Inserts will be handled on assay
+     * run creation.
+     */
+    private class DataStateTrigger implements Trigger
+    {
+        @Override
+        public void beforeUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+        {
+            if (newRow != null && _qcStateProp != null)
+                AssayPlateMetadataServiceImpl.validateRowDataStates(c, newRow, _qcStateProp);
         }
     }
 }

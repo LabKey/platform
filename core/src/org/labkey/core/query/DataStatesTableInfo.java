@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.qc.DataState;
@@ -45,9 +46,9 @@ import java.util.Map;
  */
 public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
 {
-    public DataStatesTableInfo(CoreQuerySchema schema)
+    public DataStatesTableInfo(CoreQuerySchema schema, ContainerFilter cf)
     {
-        super(CoreSchema.getInstance().getTableInfoDataStates(), schema);
+        super(CoreSchema.getInstance().getTableInfoDataStates(), schema, cf);
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
