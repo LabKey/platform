@@ -32,7 +32,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -70,7 +69,6 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -181,19 +179,6 @@ public class SecurityApiActions
                 groupPerms.put("isSystemGroup", group.isSystemGroup());
                 groupPerms.put("isProjectGroup", group.isProjectGroup());
 
-                if (isIncludeAcls())
-                {
-                    int perms = container.getPermsAsOldBitMask(group);
-                    groupPerms.put("permissions", perms);
-
-                    SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
-                    if (null != role)
-                    {
-                        groupPerms.put("role", role.toString());
-                        groupPerms.put("roleLabel", role.getLabel());
-                    }
-                }
-
                 //add effective roles
                 List<String> effectiveRoleList = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
                 groupPerms.put("roles", effectiveRoleList);
@@ -217,11 +202,6 @@ public class SecurityApiActions
 
             return groupsPerms;
         }
-    }
-
-    private static boolean isIncludeAcls()
-    {
-        return OptionalFeatureService.get().isFeatureEnabled(ACL.RESTORE_USE_OF_ACLS);
     }
 
     private static Map<String, Object> getGroupMap(Group group)
@@ -321,26 +301,6 @@ public class SecurityApiActions
             permsInfo.put("name", container.getName());
             permsInfo.put("path", container.getPath());
 
-            if (isIncludeAcls())
-            {
-                //add user's effective permissions
-                int perms = container.getPermsAsOldBitMask(user);
-                permsInfo.put("permissions", perms);
-
-                //see if those match a given role name
-                SecurityManager.PermissionSet role = SecurityManager.PermissionSet.findPermissionSet(perms);
-                if (null != role)
-                {
-                    permsInfo.put("role", role.toString());
-                    permsInfo.put("roleLabel", role.getLabel());
-                }
-                else
-                {
-                    permsInfo.put("role", "Mixed");
-                    permsInfo.put("roleLabel", "(Mixed)");
-                }
-            }
-
             //effective roles
             List<String> effectiveRoles = SecurityManager.getEffectiveRoles(container, user).map(Role::getUniqueName).toList();
             permsInfo.put("roles", effectiveRoles);
@@ -355,19 +315,6 @@ public class SecurityApiActions
                 Map<String, Object> groupInfo = new HashMap<>();
                 groupInfo.put("id", group.getUserId());
                 groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
-
-                if (isIncludeAcls())
-                {
-                    int groupPerms = container.getPermsAsOldBitMask(group);
-                    groupInfo.put("permissions", groupPerms);
-
-                    SecurityManager.PermissionSet groupRole = SecurityManager.PermissionSet.findPermissionSet(groupPerms);
-                    if (null != groupRole)
-                    {
-                        groupInfo.put("role", groupRole.toString());
-                        groupInfo.put("roleLabel", groupRole.getLabel());
-                    }
-                }
 
                 //effective roles
                 List<String> groupEffectiveRoles = SecurityManager.getEffectiveRoles(container, group).map(Role::getUniqueName).toList();
