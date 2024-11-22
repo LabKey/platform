@@ -21,6 +21,7 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateType;
@@ -71,6 +72,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataLoaderSettings;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -980,6 +982,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (measures.isEmpty())
             return;
 
+        DomainProperty qcStateProp = getAssayStateProp(resultDomain);
+
         List<Map<String, Object>> replicates = new ArrayList<>();
         List<Map<String, Object>> keys = new ArrayList<>();
 
@@ -993,6 +997,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // organize values for each replicate well group by measure
                 for (Map<String, Object> row : entry.getValue())
                 {
+                    // check whether this data row should be included for calculations
+                    DataState state = getStateFromRow(container, row, qcStateProp);
+                    if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.analysis))
+                        continue;
+
                     for (Map.Entry<String, Object> col : row.entrySet())
                     {
                         if (measures.containsKey(col.getKey()) && col.getValue() != null)
@@ -1040,6 +1049,64 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
         }
         catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    @Nullable
+    private static DataState getStateFromRow(Container container, Map<String, Object> row, @Nullable DomainProperty stateProp) throws ExperimentException
+    {
+        if (stateProp != null)
+        {
+            Set<String> importAlias = new CaseInsensitiveHashSet(stateProp.getName());
+            importAlias.addAll(stateProp.getImportAliasSet());
+            for (Map.Entry<String, Object> entry : row.entrySet())
+            {
+                if (importAlias.contains(entry.getKey()))
+                {
+                    if (entry.getValue() instanceof Integer stateRowId)
+                    {
+                        DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
+                        if (state == null)
+                            throw new ExperimentException(String.format("No data states for the rowID %d was found.", stateRowId));
+
+                        return state;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static DomainProperty getAssayStateProp(Domain resultDomain)
+    {
+        if (resultDomain == null)
+            return null;
+
+        return resultDomain.getProperties().stream().filter(dp -> AssayResultDomainKind.STATE_COLUMN_NAME.equalsIgnoreCase(dp.getName()))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Ensure the data state value in the row represents a data state in scope and is a valid state for plate based
+     * assays.
+     */
+    public static void validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
+    {
+        try
+        {
+            DataState state = getStateFromRow(container, row, stateProp);
+            if (state != null)
+            {
+                if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
+                {
+                    throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
+                }
+            }
+        }
+        catch (ExperimentException e)
         {
             throw UnexpectedException.wrap(e);
         }
@@ -1144,6 +1211,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             Domain runDomain = _provider.getRunDomain(_protocol);
             Domain resultDomain = _provider.getResultsDomain(_protocol);
+            DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
             DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
@@ -1212,6 +1280,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     _replicateRows.computeIfAbsent(lsid, k -> new ArrayList<>()).add(map);
                 }
             }
+
+            // validate any data state values on the row
+            validateRowDataStates(_container, map, stateProp);
         }
 
         @Override

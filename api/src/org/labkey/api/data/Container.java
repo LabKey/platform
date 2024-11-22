@@ -39,7 +39,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -48,16 +47,12 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerContext;
@@ -536,31 +531,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public final boolean hasOneOf(@NotNull User user, @NotNull Class<? extends Permission>... perms)
     {
         return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
-    }
-
-    /**
-     * This is purely for backwards compatibility with HTTP APIs--Do not use for new code!
-     * Does not respect impersonation, etc.
-     * @param principal the user/group
-     * @return old-style bitmask for basic permissions
-     */
-    @Deprecated // TODO: Let's remove this!
-    public int getPermsAsOldBitMask(UserPrincipal principal)
-    {
-        int perms = 0;
-        Set<Class<? extends Permission>> permClasses = SecurityManager.getPermissions(this, principal, Set.of());
-        if (permClasses.contains(ReadPermission.class))
-            perms |= ACL.PERM_READ;
-        if (permClasses.contains(InsertPermission.class))
-            perms |= ACL.PERM_INSERT;
-        if (permClasses.contains(UpdatePermission.class))
-            perms |= ACL.PERM_UPDATE;
-        if (permClasses.contains(DeletePermission.class))
-            perms |= ACL.PERM_DELETE;
-        if (permClasses.contains(AdminPermission.class))
-            perms |= ACL.PERM_ADMIN;
-
-        return perms;
     }
 
     public boolean isForbiddenProject(User user)
@@ -1429,10 +1399,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
             if (includePermissions)
             {
-                if (OptionalFeatureService.get().isFeatureEnabled(ACL.RESTORE_USE_OF_ACLS))
-                {
-                    containerProps.put("userPermissions", getPermsAsOldBitMask(user));
-                }
                 containerProps.put("effectivePermissions", SecurityManager.getPermissionNames(this, user));
             }
 
