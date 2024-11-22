@@ -400,15 +400,25 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         // do the least possible amount of work here
         final SearchService.IndexTask indexTask = task;
         var document = createIndexDocument();
-        indexTask.addResource(document, SearchService.PRIORITY.item);
+        if (document != null)
+        {
+            indexTask.addResource(document, SearchService.PRIORITY.item);
+        }
     }
 
 
-    @NotNull
+    /** returns null if the parent container is no longer available */
+    @Nullable
     public WebdavResource createIndexDocument()
     {
+        Container container = getContainer();
+        if (container == null)
+        {
+            return null;
+        }
+
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
-        url.setExtraPath(getContainer().getId());
+        url.setExtraPath(container.getId());
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
@@ -462,7 +472,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
 
         return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+                container.getId(), "text/plain",
                 body.toString(), url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),

@@ -35,4 +35,10 @@ public class TestResource extends AbstractResource
     {
         return IOUtils.toInputStream(_contents, StringUtilsLabKey.DEFAULT_CHARSET);
     }
+
+    @Override
+    public String toString()
+    {
+        return getPath().toString();
+    }
 }

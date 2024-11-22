@@ -188,11 +188,6 @@ public class ModuleHtmlView extends HtmlView
         return _viewdef.isRequiresLogin();
     }
 
-    public int getRequiredPerms()
-    {
-        return _viewdef.getRequiredPerms();
-    }
-
     public Set<Class<? extends Permission>> getRequiredPermissionClasses()
     {
         return _viewdef.getRequiredPermissionClasses();

@@ -124,7 +124,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     }
 
     @Override
-    public HttpView getEditView(WebPart webPart, ViewContext context)
+    public HttpView<?> getEditView(WebPart webPart, ViewContext context)
     {
         return null;
     }
