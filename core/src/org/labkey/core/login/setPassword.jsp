@@ -64,7 +64,7 @@
 
     <div class="auth-form-body">
     <% if (!bean.unrecoverableError) { %>
-        <p><%=h(bean.message)%></p>
+        <p><%=h(bean.successMessageSupplier.get())%></p>
 
         <%
             for (NamedObject input : bean.nonPasswordInputs)
