@@ -16,7 +16,6 @@
 
 package org.labkey.study.model;
 
-import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,8 +76,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.designer.StudyDesignInfo;
-import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.IOException;
@@ -297,6 +294,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     @Override
     public boolean hasGWTStudyDesign(Container c, User user)
     {
+/*
         StudyDesignManager manager = StudyDesignManager.get();
         StudyDesignInfo info = manager.getDesignForStudy(this);
         if (info != null)
@@ -309,6 +307,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
                     !def.getAssaySchedule().getAssays().isEmpty() || !def.getAssaySchedule().getTimepoints().isEmpty()
                 );
         }
+*/
 
         return false;
     }
