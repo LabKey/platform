@@ -168,6 +168,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
+import static org.labkey.assay.plate.PlateSetCache.getPlateSet;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
@@ -1354,10 +1355,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public void beforePlateSetDelete(Container container, User user, Integer rowId)
     {
-        beforePlateSetsDelete(List.of(rowId));
+        beforePlateSetsDelete(List.of(rowId), container);
     }
 
-    private void beforePlateSetsDelete(Collection<Integer> plateSetIds)
+    private void beforePlateSetsDelete(Collection<Integer> plateSetIds, Container container)
     {
         requireActiveTransaction();
 
@@ -1366,6 +1367,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
+
+        // De-index plate sets
+        try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
+        {
+            transaction.addCommitTask(() -> {
+                for (Integer plateSetId : plateSetIds)
+                {
+                    deindexPlateSet(getPlateSet(container, plateSetId));
+                }
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.commit();
+        }
 
         // delete PlateSetEdge relationships
         {
@@ -1488,7 +1501,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 if (!emptyPlateSetIds.isEmpty())
                 {
-                    beforePlateSetsDelete(emptyPlateSetIds);
+                    beforePlateSetsDelete(emptyPlateSetIds, container);
                     tx.addCommitTask(() -> clearPlateSetCache(container, emptyPlateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
                     SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
@@ -2060,6 +2073,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         ss.deleteResources(documentIds);
     }
 
+    public static void deindexPlateSet(PlateSet plateSet)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        Set<String> documentIds = new HashSet<>();
+        documentIds.add(PlateSetDocumentProvider.getDocumentId(plateSet));
+
+        ss.deleteResources(documentIds);
+    }
+
     private void pausePlateIndexing()
     {
         _pausePlateIndex.set(true);
@@ -2113,7 +2138,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
+    public static void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
     {
         WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
         task.addResource(resource, SearchService.PRIORITY.item);
@@ -2683,6 +2708,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             tx.commit();
         }
 
+        if (plateSet != null && SearchService.get() != null)
+            indexPlateSet(SearchService.get().defaultTask(), plateSet);
+
         return plateSet;
     }
 
@@ -2772,6 +2800,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (archivingPlateSets)
             {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
+                for (Integer plateSetId : plateSetIds)
+                    deindexPlateSet(getPlateSet(container, plateSetId));
                 tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
             }
 

@@ -33,6 +33,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+import static org.labkey.assay.plate.PlateManager.indexPlateSet;
 
 public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
@@ -273,7 +275,15 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
                 Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
-                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> {
+                    PlateSetCache.uncache(container, plateSet);
+
+                    boolean nameHasUpdated = !row.get(PlateSetTable.Column.Name.name()).equals(oldRow.get(PlateSetTable.Column.Name.name()));
+                    if (SearchService.get() != null && nameHasUpdated)
+                    {
+                        indexPlateSet(SearchService.get().defaultTask(), plateSet);
+                    }
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
                 return newRow;
             }

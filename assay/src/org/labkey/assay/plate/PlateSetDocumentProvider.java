@@ -46,15 +46,15 @@ public class PlateSetDocumentProvider implements SearchService.DocumentProvider
         return PlateManager.get().PLATE_SET_CATEGORY;
     }
 
-private static String getDocumentIdPrefix()
-{
-    return getSearchCategory().getName() + ":";
-}
+    private static String getDocumentIdPrefix()
+    {
+        return getSearchCategory().getName() + ":";
+    }
 
-public static String getDocumentId(@NotNull PlateSet plateSet)
-{
-    return getDocumentIdPrefix() + plateSet.getContainer().getId() + ":" + plateSet.getRowId();
-}
+    public static String getDocumentId(@NotNull PlateSet plateSet)
+    {
+        return getDocumentIdPrefix() + plateSet.getContainer().getId() + ":" + plateSet.getRowId();
+    }
 
     public static WebdavResource createDocument(@NotNull PlateSet plateSet)
     {
@@ -79,7 +79,7 @@ public static String getDocumentId(@NotNull PlateSet plateSet)
         StringBuilder body = new StringBuilder();
 
         if (plateSet.getDescription() != null)
-            append(body, plateSet.getDescription()); // PR Flag: what should the summary display?
+            append(body, plateSet.getDescription());
 
         return new SimpleDocumentResource(
             new Path(documentId),
@@ -96,34 +96,34 @@ public static String getDocumentId(@NotNull PlateSet plateSet)
     {
         return new SearchService.ResourceResolver()
         {
-private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
-{
-    final String prefix = getDocumentIdPrefix();
+            private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
+            {
+                final String prefix = getDocumentIdPrefix();
 
-    if (resourceIdentifier.startsWith(prefix))
-        resourceIdentifier = resourceIdentifier.substring(prefix.length());
+                if (resourceIdentifier.startsWith(prefix))
+                    resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-    String[] parts = resourceIdentifier.split(":");
-    if (parts.length != 2)
-        return null;
+                String[] parts = resourceIdentifier.split(":");
+                if (parts.length != 2)
+                    return null;
 
-    int rowId;
-    try
-    {
-        rowId = Integer.parseInt(parts[1]);
-    }
-    catch (NumberFormatException e)
-    {
-        // skip it
-        return null;
-    }
+                int rowId;
+                try
+                {
+                    rowId = Integer.parseInt(parts[1]);
+                }
+                catch (NumberFormatException e)
+                {
+                    // skip it
+                    return null;
+                }
 
-    Container container = ContainerManager.getForId(parts[0]);
-    if (container == null)
-        return null;
+                Container container = ContainerManager.getForId(parts[0]);
+                if (container == null)
+                    return null;
 
-    return PlateManager.get().getPlateSet(container, rowId);
-}
+                return PlateManager.get().getPlateSet(container, rowId);
+            }
 
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
@@ -176,14 +176,14 @@ private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
                 return results;
             }
 
-private Map<String, Object> serialize(@NotNull PlateSet plateSet) throws JsonProcessingException
-{
-    JSONObject json = new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plateSet));
-    // Skip serializing plates into search results
-    json.remove("plates");
+            private Map<String, Object> serialize(@NotNull PlateSet plateSet) throws JsonProcessingException
+            {
+                JSONObject json = new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plateSet));
+                // Skip serializing plates into search results
+                json.remove("plates");
 
-    return json.toMap();
-}
+                return json.toMap();
+            }
         };
     }
 }

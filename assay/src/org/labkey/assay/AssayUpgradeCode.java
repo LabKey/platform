@@ -693,29 +693,28 @@ public class AssayUpgradeCode implements UpgradeCode
         if (ctx.isNewInstall())
             return;
 
-DbSchema schema = AssayDbSchema.getInstance().getSchema();
-try (DbScope.Transaction tx = schema.getScope().ensureTransaction())
-{
-    TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
-    try (Results rs = new TableSelector(plateSetTable).getResults())
-    {
-        while (rs.next())
+        DbSchema schema = AssayDbSchema.getInstance().getSchema();
+        try (DbScope.Transaction tx = schema.getScope().ensureTransaction())
         {
-            Map<String, Object> row = rs.getRowMap();
-            Container container = ContainerManager.getForId(rs.getString("Container"));
-            Lsid lsid = PlateManager.get().getLsid(PlateSet.class, container);
+            TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
+            try (Results rs = new TableSelector(plateSetTable).getResults())
+            {
+                while (rs.next())
+                {
+                    Map<String, Object> row = rs.getRowMap();
+                    Container container = ContainerManager.getForId(rs.getString("Container"));
+                    Lsid lsid = PlateManager.get().getLsid(PlateSet.class, container);
 
-            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "")
-                    .append(" SET LSID = ?")
-                    .add(lsid)
-                    .append(" WHERE RowId = ?")
-                    .add(row.get("rowId"));
-            new SqlExecutor(schema).execute(sql);
+                    SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "")
+                            .append(" SET LSID = ?")
+                            .add(lsid)
+                            .append(" WHERE RowId = ?")
+                            .add(row.get("rowId"));
+                    new SqlExecutor(schema).execute(sql);
+                }
+            }
+            tx.commit();
         }
-    }
-
-    tx.commit();
-}
     }
 
     private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types)
