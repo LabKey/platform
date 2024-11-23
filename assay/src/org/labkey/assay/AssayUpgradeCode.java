@@ -2,15 +2,14 @@ package org.labkey.assay;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
@@ -20,11 +19,13 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -46,14 +47,15 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
-import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateSetImpl;
@@ -470,10 +472,10 @@ public class AssayUpgradeCode implements UpgradeCode
                 if (!plateSetsToHits.containsKey(plateSetRowId))
                 {
                     PlateSetLineage lineage = PlateManager.get().getPlateSetLineage(
-                        ContainerManager.getRoot(),
-                        User.getAdminServiceUser(),
-                        plateSetRowId,
-                        ContainerFilter.EVERYTHING
+                            ContainerManager.getRoot(),
+                            User.getAdminServiceUser(),
+                            plateSetRowId,
+                            ContainerFilter.EVERYTHING
                     );
                     String lineagePath = lineage.getSeedPath();
 
@@ -516,11 +518,11 @@ public class AssayUpgradeCode implements UpgradeCode
 
         // Determine all containers that have a Plate where Samples are specified in wells
         SQLFragment sql = new SQLFragment("""
-                SELECT DISTINCT P.Container
-                FROM assay.Well AS W
-                INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
-            """).add(TsvPlateLayoutHandler.TYPE);
+                    SELECT DISTINCT P.Container
+                    FROM assay.Well AS W
+                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                    WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
+                """).add(TsvPlateLayoutHandler.TYPE);
         List<String> containerIds = new SqlSelector(scope, sql).getArrayList(String.class);
 
         for (String containerId : containerIds)
@@ -544,13 +546,13 @@ public class AssayUpgradeCode implements UpgradeCode
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
                 SQLFragment wellSql = new SQLFragment("""
-                    SELECT W.RowId, W.PlateId
-                    FROM assay.Well AS W
-                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                    WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
-                        SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
-                    )
-                """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
+                            SELECT W.RowId, W.PlateId
+                            FROM assay.Well AS W
+                            INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                            WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
+                                SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
+                            )
+                        """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
 
                 Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
                 Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
@@ -642,6 +644,7 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     private static final String METADATA_RENAME_SUFFIX = "_PREV";
+
     private static String ensureNewName(DomainProperty dp, Domain domain)
     {
         String newName = dp.getName() + METADATA_RENAME_SUFFIX;
@@ -752,5 +755,56 @@ public class AssayUpgradeCode implements UpgradeCode
     private static boolean isBiologicsFolder(Container container)
     {
         return container != null && "Biologics".equals(ContainerManager.getFolderTypeName(container));
+    }
+
+    /**
+     * Called from assay-24.013-24.014.sql, in order to support row level exclusions for plate enabled assays.
+     * The upgrade ensures the default assay plate data states as well as creates the result domain qc state field.
+     */
+    @DeferredUpgrade
+    public static void initializeWellExclusions(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            Set<ExpProtocol> protocols = new HashSet<>();
+            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+            {
+                if (isBiologicsFolder(container))
+                {
+                    PlateDataStateManager.get().ensureDefaultStates(container, User.getAdminServiceUser());
+                    protocols.addAll(AssayService.get().getAssayProtocols(container));
+                }
+            }
+
+            for (ExpProtocol protocol : protocols)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider != null)
+                {
+                    if (provider.isPlateMetadataEnabled(protocol))
+                    {
+                        // ensure the QC state column exists in the result domain
+                        Domain resultDomain = provider.getResultsDomain(protocol);
+                        if (resultDomain.getPropertyByName(AssayResultDomainKind.STATE_COLUMN_NAME) == null)
+                        {
+                            _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.STATE_COLUMN_NAME, protocol.getName()));
+                            DomainProperty dp = resultDomain.addProperty(new PropertyStorageSpec(AssayResultDomainKind.STATE_COLUMN_NAME, JdbcType.INTEGER));
+                            dp.setLabel("QC State");
+                            dp.setImportAliasSet(Set.of("QCState", "QC State"));
+                            dp.setLookup(new Lookup(null, SchemaKey.fromParts(CoreSchema.getInstance().getSchemaName()), CoreSchema.DATA_STATES_TABLE_NAME));
+                            dp.setShownInInsertView(false);
+                            dp.setShownInUpdateView(false);
+
+                            resultDomain.save(User.getAdminServiceUser());
+                        }
+                    }
+                }
+            }
+            tx.commit();
+        }
     }
 }
