@@ -411,14 +411,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(Study.GWT_STUDY_DESIGN,
-            "Restore vaccine study protocol editor",
-            "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
-            "information will be shown in read-only mode. The edit button can be shown by enabling this feature, " +
-            "but this option and all support for this study protocol editor will be removed in LabKey Server v24.12. " +
-            "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
-            false, false, FeatureType.Deprecated));
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
