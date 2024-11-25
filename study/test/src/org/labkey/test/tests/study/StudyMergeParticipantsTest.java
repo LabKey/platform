@@ -206,7 +206,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
     private void goToManageAlternateIds()
     {
         goToManageStudy();
-        clickAndWait(Locator.linkContainingText("Manage Alternate"));
+        clickAndWait(Locator.linkContainingText("Manage Participants"));
     }
 
     private void goToMergeParticipants()
