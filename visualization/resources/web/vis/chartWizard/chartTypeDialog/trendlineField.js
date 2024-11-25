@@ -14,16 +14,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
     baseQueryKey: null,
     initData: null,
 
-    options: [
-        ['', 'Point-to-Point', false, false, null],
-        ['Linear', 'Linear Regression', false, false, null],
-        ['Polynomial', 'Polynomial', false, false, null],
-        ['Three Parameter', 'Nonlinear 3PL', false, true, 'assay'],
-        ['3 Parameter', 'Nonlinear 3PL (Alternate)', false, true, 'assay'],
-        ['Four Parameter', 'Nonlinear 4PL', true, true, 'assay'],
-        ['4 Parameter', 'Nonlinear 4PL (Simplex)', false, false, 'assay'],
-        ['Five Parameter', 'Nonlinear 5PL', true, true, 'assay'],
-    ],
+    options: ['', 'Linear', 'Polynomial', 'Three Parameter', '3 Parameter', 'Four Parameter', '4 Parameter', 'Five Parameter'],
 
     initComponent : function()
     {
@@ -39,9 +30,15 @@ Ext4.define('LABKEY.vis.TrendlineField', {
 
     getTrendlineTypeStore : function() {
         if (!this.trendlineTypeStore) {
+            var data = [];
+            for (var value in this.options) {
+                var option = LABKEY.vis.GenericChartHelper.TRENDLINE_OPTIONS[this.options[value]];
+                data.push([option.value, option.label, option.showMin, option.showMax, option.schemaPrefix]);
+            }
+
             this.trendlineTypeStore = Ext4.create('Ext.data.ArrayStore', {
                 fields: ['value','label','showMin','showMax', 'schemaPrefix'],
-                data: this.options
+                data: data
             });
 
             if (this.baseQueryKey) {

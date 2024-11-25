@@ -49,7 +49,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
                     {name: 'series', label: 'Series', nonNumericOnly: true},
-                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField', requiredModule: 'premium'},
+                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField'},
                 ],
                 layoutOptions: {opacity: true, axisBased: true, series: true, chartLayout: true}
             },
@@ -1117,17 +1117,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                                 layerAes.pathColor = function () { return trendline.name };
                             }
 
-                            var hoverText = trendline.name + '\n';
-                            hoverText += '\n' + trendline.data.curveFit.type + ':\n';
-                            $.each(trendline.data.curveFit, function (key, value) {
-                                if (key !== 'type') hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
-                            });
-                            hoverText += '\nStats:\n';
-                            $.each(trendline.data.stats, function (key, value) {
-                                var label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
-                                hoverText += label + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
-                            });
-                            layerAes.hoverText = function () { return hoverText };
+                            layerAes.hoverText = generateTrendlinePathHover(trendline);
 
                             layers.push(
                                 new LABKEY.vis.Layer({
@@ -1222,6 +1212,40 @@ LABKEY.vis.GenericChartHelper = new function(){
 
     var hasPremiumModule = function() {
         return LABKEY.getModuleContext('api').moduleNames.indexOf('premium') > -1;
+    };
+
+    var TRENDLINE_OPTIONS = {
+        '': { label: 'Point-to-Point', value: '' },
+        'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
+        'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1*x + a2*x^2' },
+        'Three Parameter': { label: 'Nonlinear 3PL', value: 'Three Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max / [1 + (inflection - x) * slope]' },
+        '3 Parameter': { label: 'Nonlinear 3PL (Alternate)', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
+        'Four Parameter': { label: 'Nonlinear 4PL', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
+        '4 Parameter': { label: 'Nonlinear 4PL (Simplex)', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
+        'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
+    }
+
+    var generateTrendlinePathHover = function(trendline)
+    {
+        var hoverText = trendline.name + '\n';
+        hoverText += '\n' + TRENDLINE_OPTIONS[trendline.data.curveFit.type].label + ':\n';
+        $.each(trendline.data.curveFit, function (key, value) {
+            if (key === 'coefficients') {
+                hoverText += key + ': ';
+                $.each(value, function (i, v) {
+                    hoverText += (i > 0 ? ', ' : '') + LABKEY.Utils.roundNumber(v, 4);
+                });
+                hoverText += '\n';
+            }
+            else if (key !== 'type') hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+        });
+        hoverText += '\nStatistics:\n';
+        $.each(trendline.data.stats, function (key, value) {
+            var label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
+            hoverText += label + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+        });
+
+        return function () { return hoverText };
     };
 
     // support for y-axis trendline data when a single y-axis measure is selected
@@ -1957,6 +1981,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         queryTrendlineData: queryTrendlineData,
         generateChartSVG: generateChartSVG,
         getMeasureStoreRecords: getMeasureStoreRecords,
+        TRENDLINE_OPTIONS: TRENDLINE_OPTIONS,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.
