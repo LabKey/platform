@@ -20,7 +20,6 @@ import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -72,13 +70,11 @@ import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -90,9 +86,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
@@ -118,7 +112,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -126,7 +119,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -2188,148 +2180,6 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             root.addChild("Reset Password");
-        }
-    }
-
-    public static final String REMOTE_LOGIN_FEATURE_FLAG = "remoteLoginFeature";
-
-    private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
-
-    private static void handleRemoteLoginAction(String actionName)
-    {
-        SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, actionName);
-
-        if (OptionalFeatureService.get().isFeatureEnabled(REMOTE_LOGIN_FEATURE_FLAG))
-            _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.12! Migrate uses to the CAS identity provider.");
-        else
-            throw new ApiUsageException("The Remote Login API has been removed. Migrate uses to the CAS identity provider. Site administrators can turn on a deprecated feature flag to temporarily restore support and ease migration.");
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresLogin
-    public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
-    {
-        @Override
-        public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
-        {
-            handleRemoteLoginAction("create");
-            URLHelper returnUrl = form.getValidReturnUrl();
-
-            if (null == returnUrl)
-            {
-                PageConfig page = getPageConfig();
-                page.setTemplate(PageConfig.Template.Dialog);
-                page.setTitle("Token Authentication Error");
-                return HtmlView.of("Error: a valid returnUrl was not specified.");
-            }
-
-            User user = getUser().isImpersonated() ? getUser().getImpersonatingUser() : getUser();
-            String token = TokenAuthenticationManager.get().createKey(getViewContext().getRequest(), user);
-            returnUrl.addParameter("labkeyToken", token);
-            returnUrl.addParameter("labkeyEmail", user.getEmail());
-
-            getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
-
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    @CSRF(CSRF.Method.NONE)
-    public static class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
-    {
-        @Override
-        public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
-        {
-            handleRemoteLoginAction("verify");
-            String message = null;
-            User user = null;
-
-            if (null == form.getLabkeyToken())
-            {
-                message = "Token was not specified";
-            }
-            else
-            {
-                user = TokenAuthenticationManager.get().getContext(form.getLabkeyToken());
-
-                if (null == user)
-                    message = "Unknown token";
-            }
-
-            HttpServletResponse response = getViewContext().getResponse();
-            response.setContentType("text/xml");
-
-            try (PrintWriter out = response.getWriter())
-            {
-                if (null != user)
-                {
-                    out.print("<TokenAuthentication success=\"true\" ");
-                    out.print("token=\"" + form.getLabkeyToken() + "\" ");
-                    out.print("email=\"" + user.getEmail() + "\" ");
-                    out.print("permissions=\"" + getContainer().getPermsAsOldBitMask(user) + "\"/>");
-                }
-                else
-                {
-                    out.print("<TokenAuthentication success=\"false\" ");
-                    out.print("message=\"" + message + "\"/>");
-                }
-            }
-
-            response.flushBuffer();
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresNoPermission
-    // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
-    // where the caller has a secret (the authentication token).
-    public static class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
-    {
-        @Override
-        public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
-        {
-            handleRemoteLoginAction("invalidate");
-            if (null != form.getLabkeyToken())
-                TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
-            URLHelper returnUrl = form.getValidReturnUrl();
-            if (null != returnUrl)
-                return returnUrl;
-            return AppProps.getInstance().getHomePageActionURL();
-        }
-    }
-
-    public static class TokenAuthenticationForm extends ReturnUrlForm
-    {
-        private String _labkeyToken;
-
-        public String getLabkeyToken()
-        {
-            return _labkeyToken;
-        }
-
-        @SuppressWarnings("unused")
-        public void setLabkeyToken(String labkeyToken)
-        {
-            _labkeyToken = labkeyToken;
-        }
-
-        public URLHelper getValidReturnUrl()
-        {
-            return getReturnURLHelper();
         }
     }
 

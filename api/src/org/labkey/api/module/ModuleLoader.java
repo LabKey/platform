@@ -843,7 +843,8 @@ public class ModuleLoader implements MemTrackerListener
         Module core = getCoreModule();
 
         SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
-        for (Module module : modules)
+        // Need to enumerate a copy of the list to avoid ConcurrentModificationException
+        for (Module module : new ArrayList<>(modules))
         {
             if (module == core)
                 continue;

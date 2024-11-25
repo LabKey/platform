@@ -1024,7 +1024,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         int rowCount = selector.forEach(Material.class, m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            task.addResource(expMaterial.createIndexDocument(), SearchService.PRIORITY.bulk);
+            var doc = expMaterial.createIndexDocument();
+            if (doc != null)
+            {
+                task.addResource(doc, SearchService.PRIORITY.bulk);
+            }
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 

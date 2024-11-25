@@ -163,9 +163,9 @@ public class CoreQuerySchema extends UserSchema
         if (FILES_TABLE_NAME.equalsIgnoreCase(name))
             return getFilesTable();
         if (QCSTATE_TABLE_NAME.equalsIgnoreCase(name))
-           return getQCStatesTable();
+           return getQCStatesTable(cf);
         if (DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
-            return getDataStatesTable();
+            return getDataStatesTable(cf);
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
         if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(name))
@@ -632,9 +632,9 @@ public class CoreQuerySchema extends UserSchema
         return new FileListTableInfo(this);
     }
 
-    protected TableInfo getDataStatesTable()
+    protected TableInfo getDataStatesTable(ContainerFilter cf)
     {
-        return new DataStatesTableInfo(this);
+        return new DataStatesTableInfo(this, cf);
     }
 
     protected TableInfo getMVIndicatorTable(ContainerFilter cf)
@@ -652,9 +652,9 @@ public class CoreQuerySchema extends UserSchema
         return result;
     }
 
-    public TableInfo getQCStatesTable()
+    public TableInfo getQCStatesTable(ContainerFilter cf)
     {
-        TableInfo dataStatesTable = getDataStatesTable();
+        TableInfo dataStatesTable = getDataStatesTable(cf);
         FilteredTable table = new FilteredTable<>(dataStatesTable, this);
         SQLFragment sql = new SQLFragment("(stateType IS NULL)");
         table.setName(QCSTATE_TABLE_NAME);

@@ -107,6 +107,7 @@
     String propString = numProperties == 1 ? "property" : "properties";
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(c);
+    String subjectNounPlural = StudyService.get().getSubjectNounPlural(c);
     List<ParticipantGroup> groups = new LinkedList<>();
 
     for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, user))
@@ -233,9 +234,9 @@
                         <td><%= link("Manage " + subjectNounSingle + " Groups", ManageParticipantCategoriesAction.class) %></td>
                     </tr>
                     <tr>
-                        <td class="lk-study-prop-label">Alternate <%= h(subjectNounSingle) %> IDs</td>
-                        <td class="lk-study-prop-desc">Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids and aliases are generated</td>
-                        <td><%= link("Manage Alternate " + subjectNounSingle + " IDs and Aliases", ManageAlternateIdsAction.class) %></td>
+                        <td class="lk-study-prop-label"><%= h(subjectNounPlural) %></td>
+                        <td class="lk-study-prop-desc">Delete participants and configure <%= h(subjectNounSingle.toLowerCase()) %> IDs</td>
+                        <td><%= link("Manage " + subjectNounPlural, ManageAlternateIdsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Security</td>

@@ -12,7 +12,7 @@ configurations {
 dependencies {
    antlr "org.antlr:antlr:${antlrVersion}"
     jspImplementation "org.olap4j:olap4j:${olap4jVersion}"
-    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    implementation "org.eclipse.angus:angus-mail:${angusMailVersion}"
     // we add this bridge jar because certain Mondrian classes require the log4j interface
     BuildUtils.addExternalDependency(
             project,
