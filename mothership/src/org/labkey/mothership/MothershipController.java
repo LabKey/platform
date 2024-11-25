@@ -591,7 +591,7 @@ public class MothershipController extends SpringActionController
             if (errorCode != null)
             {
                 TableInfo exceptionReportTable = new MothershipSchema(getUser(), getContainer()).getTable(MothershipSchema.EXCEPTION_REPORT_TABLE_NAME);
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("errorCode"), errorCode);
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("errorCode"), errorCode.toUpperCase());
                 List<String> stackTraceIds = new TableSelector(exceptionReportTable.getColumn(FieldKey.fromParts("ExceptionStackTraceId")), filter, null)
                                                 .getArrayList(String.class)
                                                 .stream()

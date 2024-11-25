@@ -713,7 +713,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 assert null != indexPtidOutput || hasErrors();
 
                 String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
-                sb.append(ptid);
+                sb.append(ptid.trim());
 
                 if (!_datasetDefinition.isDemographicData())
                 {

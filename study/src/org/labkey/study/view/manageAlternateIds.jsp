@@ -69,6 +69,13 @@
 </div>
 <div id="datasetMappingPanel"></div>
 
+<div style="max-width: 1000px">
+    <h2>Delete <%= h(subjectNounSingular)%> </h2>
+    <p>Select <%= h(subjectNounSingular.toLowerCase())%> you want to delete from this study.
+    </p>
+</div>
+<div id="deleteParticipantPanel"></div>
+
 <div id="donePanel"></div>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -422,9 +429,131 @@
                     style : 'background: none',
                     dock : 'bottom',
                     ui : 'footer',
+                    height: 30,
                     items: [saveButton, clearButton, importButton, manageButton]
                  }
 
+            });
+
+            Ext4.define('participantModel',{
+                extend : 'Ext.data.Model',
+                fields : [
+                    { name : <%=q(subjectNounColName)%>, type : 'string' },
+                ]
+            });
+
+            this.participantStore = Ext4.create('Ext.data.Store', {
+                model: 'participantModel',
+                sorters: { property: <%=q(subjectNounColName)%>, direction: 'ASC' },
+                pageSize: 50, // Fetch 50 items at a time
+                autoLoad: false, // Avoid pre-loading since we want to load on typing
+                proxy: {
+                    type: 'ajax',
+                    url : LABKEY.ActionURL.buildURL("query", "selectRows", LABKEY.container.path),
+                    reader: {
+                        type: 'json',
+                        rootProperty: 'rows',
+                        totalProperty: 'rowCount'
+                    },
+                    extraParams: {
+                        schemaName: 'study',
+                        queryName: <%=q(subjectNounSingular)%>
+                    }
+                },
+            });
+
+            var viewParticipantDataLink = Ext4.create('Ext.Component', {
+                tpl: new Ext4.XTemplate(
+                        '<a class="labkey-text-link" href="{[this.getURL(values)]}" target="_blank">View ' + <%=q(h(subjectNounSingular))%> + ' Data</a>',
+                        {
+                            getURL : function(values){
+                                return LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': values.participantId })
+                            }
+                        }
+                ),
+                padding: '3 0 0 20',
+                data: {participantId : null},
+                disabled: true
+            });
+
+            var participantCombo = Ext4.create('Ext.form.field.ComboBox',{
+                name : 'participantCombo',
+                store: this.participantStore,
+                valueField : <%=q(subjectNounColName)%>,
+                displayField : <%=q(subjectNounColName)%>,
+                labelWidth : 120,
+                labelSeparator: '',
+                fieldLabel : (<%=q(subjectNounSingular)%> + " ID"),
+                editable: true,
+                queryMode: 'remote',
+                minChars: 2,
+                typeAhead: true,
+                queryParam: "query." + <%=q(subjectNounColName)%> + "~contains",
+                listeners: {
+                    change: function(combo, value) {
+                        // Update link when a selection is made
+                        viewParticipantDataLink.update({participantId : value});
+                        viewParticipantDataLink.setDisabled(value === null);
+                        deleteButton.setDisabled(value === null);
+                    }
+                }
+            });
+
+            var deleteButton = Ext4.create('Ext.button.Button', {
+                text : 'Delete',
+                disabled: true,
+                handler :  function(){deleteParticipant(participantCombo.getValue());}
+            });
+
+            var deleteParticipant = function(participantIdToDelete) {
+                Ext4.Msg.show({
+                    title   : 'Confirmation',
+                    msg     : "Are you sure you want to delete " + <%=q(h(subjectNounSingular.toLowerCase()))%> + " '" + participantIdToDelete + "'?",
+                    buttons : Ext4.MessageBox.YESNO,
+                    icon    : Ext4.MessageBox.QUESTION,
+                    fn      : function(id){
+                        if (id === 'yes'){
+                            Ext4.getBody().mask("Deleting...");
+                            Ext4.Ajax.request({
+                                url : LABKEY.ActionURL.buildURL("study", "deleteParticipant"),
+                                method : 'POST',
+                                jsonData : {participantId : participantIdToDelete},
+                                headers : {'Content-Type' : 'application/json'},
+                                scope: this,
+                                success: function() {
+                                    Ext4.getBody().unmask();
+                                    displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + '.');
+                                    // Refresh the ComboBox store after deletion
+                                    participantCombo.setValue(null);
+                                    participantCombo.getStore().load();
+                                },
+                                failure: function(response, options){
+                                    Ext4.getBody().unmask();
+                                    LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "Failed to delete " + <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + ": " + response.responseText);
+                                },
+                            });
+                        }
+                    }
+                });
+            }
+
+            var deleteParticipantPanel = Ext4.create('Ext.form.FormPanel', {
+                renderTo : 'deleteParticipantPanel',
+                bodyPadding: 10,
+                bodyStyle: 'background: none',
+                frame: false,
+                border: false,
+                width: 600,
+                buttonAlign : 'left',
+                items: [participantCombo],
+                dockedItems : {
+                    xtype : 'toolbar',
+                    style : 'background: none',
+                    dock : 'bottom',
+                    ui : 'footer',
+                    height: 30,
+                    items: [deleteButton, viewParticipantDataLink]
+                }
             });
         };
 

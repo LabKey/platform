@@ -43,6 +43,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SimpleFilter;
@@ -477,6 +478,20 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     replicateLsid.setHidden(true);
 
                     newFields.add(replicateLsid);
+                }
+
+                if (!existingFields.contains(AssayResultDomainKind.STATE_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor qcState = new GWTPropertyDescriptor(AssayResultDomainKind.STATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    qcState.setLabel("QC State");
+                    qcState.setImportAliases("QCState,\"QC State\"");
+                    qcState.setLookupSchema(CoreSchema.getInstance().getSchemaName());
+                    qcState.setLookupQuery(CoreSchema.DATA_STATES_TABLE_NAME);
+                    qcState.setLookupContainer(null);
+                    qcState.setShownInInsertView(false);
+                    qcState.setShownInUpdateView(false);
+
+                    newFields.add(qcState);
                 }
 
                 if (!newFields.isEmpty())
