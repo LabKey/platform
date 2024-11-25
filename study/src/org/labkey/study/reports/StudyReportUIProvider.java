@@ -51,7 +51,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
     {
         _typeToIconMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
-        _typeToIconMap.put(ExternalReport.TYPE, "/reports/advanced.png");
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
@@ -60,7 +59,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
         _typeToIconClsMap.put(StudyQueryReport.TYPE, "fa fa-table");
-        _typeToIconClsMap.put(ExternalReport.TYPE, "fa fa-cogs");
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
 //      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
@@ -71,7 +69,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         if (ReportService.get().getGlobalItemFilterTypes().contains(type)) return true;
         if (StudyCrosstabReport.TYPE.equals(type)) return true;
         if (StudyRReport.TYPE.equals(type)) return true;
-        if (ExternalReport.TYPE.equals(type)) return true;
         if (StudyQueryReport.TYPE.equals(type)) return true;
         if (TimeChartReport.TYPE.equals(type)) return true;
         if (ParticipantReport.TYPE.equals(type)) return true;
@@ -156,18 +153,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
                 designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R Report", null, ReportUtil.getScriptReportDesignerURL(context, rBean),
                         _getIconPath(StudyRReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(StudyRReport.TYPE)));
-            }
-
-            if (OptionalFeatureService.get().isFeatureEnabled(ExternalReport.ENABLE_EXTERNAL_REPORT))
-            {
-                // external report - keep in sync with ExternalReportAction permissions checks
-                if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class) && context.getUser().isPlatformDeveloper())
-                {
-                    ActionURL buttonURL = context.getActionURL().clone();
-                    buttonURL.setAction(ReportsController.ExternalReportAction.class);
-                    designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced Report", "An External Command Report",
-                            buttonURL, _getIconPath(ExternalReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ExternalReport.TYPE)));
-                }
             }
         }
         else

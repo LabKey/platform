@@ -168,7 +168,6 @@ import org.labkey.study.query.studydesign.StudyProductDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
 import org.labkey.study.reports.StudyCrosstabReport;
@@ -201,8 +200,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
-
-import static org.labkey.study.reports.ExternalReport.ENABLE_EXTERNAL_REPORT;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
@@ -369,8 +366,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AuditLogService.get().registerAuditType(new ParticipantGroupAuditProvider());
 
         ReportService.get().registerReport(new StudyQueryReport());
-        if (OptionalFeatureService.get().isFeatureEnabled(ENABLE_EXTERNAL_REPORT))
-            ReportService.get().registerReport(new ExternalReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
         ReportService.get().registerReport(new StudyRReport());
@@ -430,11 +425,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "but this option and all support for this study protocol editor will be removed in LabKey Server v24.12. " +
             "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
             false, false, FeatureType.Deprecated));
-
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(ENABLE_EXTERNAL_REPORT,
-            "Restore support for deprecated advanced reports",
-            "This option and all support for advanced reports will be removed in LabKey Server v24.12.",
-            true, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
