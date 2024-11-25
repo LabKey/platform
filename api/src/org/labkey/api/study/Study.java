@@ -58,8 +58,6 @@ public interface Study extends StudyEntity
 
     Collection<? extends Cohort> getCohorts(User user);
 
-    boolean hasGWTStudyDesign(Container c, User user);
-
     Collection<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
 
     List<? extends Visit> getVisitsForAssaySchedule();

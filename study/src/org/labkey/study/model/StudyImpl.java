@@ -292,27 +292,6 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     }
 
     @Override
-    public boolean hasGWTStudyDesign(Container c, User user)
-    {
-/*
-        StudyDesignManager manager = StudyDesignManager.get();
-        StudyDesignInfo info = manager.getDesignForStudy(this);
-        if (info != null)
-        {
-            // consider the XML study design non-empty if we have an immunogen, adjuvant, immunization timepoint, etc.
-            GWTStudyDefinition def = manager.getGWTStudyDefinition(user, c, info);
-            return def != null && (
-                    !def.getImmunogens().isEmpty() || !def.getAdjuvants().isEmpty() ||
-                    !def.getImmunizationSchedule().getTimepoints().isEmpty() ||
-                    !def.getAssaySchedule().getAssays().isEmpty() || !def.getAssaySchedule().getTimepoints().isEmpty()
-                );
-        }
-*/
-
-        return false;
-    }
-
-    @Override
     public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
     {
         return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
