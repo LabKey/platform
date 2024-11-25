@@ -168,7 +168,6 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
-import static org.labkey.assay.plate.PlateSetCache.getPlateSet;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
@@ -1368,18 +1367,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
 
-        // De-index plate sets
-        try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
-        {
-            transaction.addCommitTask(() -> {
-                for (Integer plateSetId : plateSetIds)
-                {
-                    deindexPlateSet(getPlateSet(container, plateSetId));
-                }
-            }, DbScope.CommitTaskOption.IMMEDIATE);
-            transaction.commit();
-        }
-
         // delete PlateSetEdge relationships
         {
             SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
@@ -2070,18 +2057,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Set<String> documentIds = new HashSet<>();
         for (Lsid lsid : plateLsids)
             documentIds.add(PlateDocumentProvider.getDocumentId(lsid));
-        ss.deleteResources(documentIds);
-    }
-
-    public static void deindexPlateSet(PlateSet plateSet)
-    {
-        SearchService ss = SearchService.get();
-        if (ss == null)
-            return;
-
-        Set<String> documentIds = new HashSet<>();
-        documentIds.add(PlateSetDocumentProvider.getDocumentId(plateSet));
-
         ss.deleteResources(documentIds);
     }
 

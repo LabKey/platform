@@ -64,7 +64,6 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
 
         identifiersHi.add(plate.getName());
         identifiersHi.add(plate.getBarcode());
-        identifiersMed.add(plate.getLSID());
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
