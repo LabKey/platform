@@ -1376,7 +1376,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 {
                     deindexPlateSet(getPlateSet(container, plateSetId));
                 }
-            }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }, DbScope.CommitTaskOption.IMMEDIATE);
             transaction.commit();
         }
 
@@ -2800,8 +2800,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (archivingPlateSets)
             {
                 archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
-                for (Integer plateSetId : plateSetIds)
-                    deindexPlateSet(getPlateSet(container, plateSetId));
                 tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
             }
 
