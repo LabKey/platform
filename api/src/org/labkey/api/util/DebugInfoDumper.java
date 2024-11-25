@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
@@ -74,7 +75,7 @@ public class DebugInfoDumper
     {
         // Ensure there's a thread dump request file
         File labkeyRoot = modulesDir.getParentFile();
-        _threadDumpFile = new File(labkeyRoot, "threadDumpRequest");
+        _threadDumpFile = FileUtil.appendName(labkeyRoot, "threadDumpRequest");
         if (!_threadDumpFile.exists())
         {
             try (PrintWriter writer = PrintWriters.getPrintWriter(_threadDumpFile))
@@ -439,7 +440,9 @@ public class DebugInfoDumper
             var messages = extraInfo.toArray(new ThreadExtraContext[0]);
             for (var i = messages.length-1 ; i>= 0 ; i--)
             {
-                logWriter.debug("\t" + messages[i].context.replace('\n',' '));
+                for (String m : messages[i].context.split("\n"))
+                    if (StringUtils.isNotBlank(m))
+                        logWriter.debug("\t" + m);
                 var messageStack = messages[i].stack();
                 if (null != messageStack)
                 {

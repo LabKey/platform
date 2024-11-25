@@ -157,7 +157,7 @@ public class ViewServlet extends HttpServlet
         try
         {
             previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()), request.getUserPrincipal()));
-            try (var tdc = DebugInfoDumper.pushThreadDumpContext(request.getRequestURI()))
+            try (var tdc = DebugInfoDumper.pushThreadDumpContext(request.getRequestURI() + "\n" + request.getHeader("User-Agent")))
             {
                 _service(request, response);
             }
