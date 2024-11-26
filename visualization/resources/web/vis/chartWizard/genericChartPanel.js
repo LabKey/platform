@@ -2073,17 +2073,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.queryTrendlineData();
     },
 
-    queryTrendlineData : function() {
-        var chartConfig = this.getChartConfig();
+    queryTrendlineData : async function() {
+        const chartConfig = this.getChartConfig();
         if (chartConfig.geomOptions.trendlineType && chartConfig.geomOptions.trendlineType !== '') {
             this.setDataLoading(true);
 
-            var data = this.getMeasureStoreRecords();
-            var scope = this;
-            LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data, function(trendlineData) {
-                scope.trendlineData = trendlineData;
-                scope.onQueryDataComplete();
-            });
+            const data = this.getMeasureStoreRecords();
+            this.trendlineData = await LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data);
+            this.onQueryDataComplete();
         } else {
             // trendlineType of '' means use Point-to-Point, i.e. no trendlineData
             this.trendlineData = undefined;

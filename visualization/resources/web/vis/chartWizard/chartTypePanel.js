@@ -899,11 +899,11 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
             }
 
             // special case for trendline field, only visible for LIMS+ when premium module is available
-            var hidden = false;
+            let hidden = false;
             if (field.name === 'trendline') {
-                var productFeatures = LABKEY.getModuleContext('core').productFeatures ?? [];
-                hidden = LABKEY.getModuleContext('api').moduleNames.indexOf('premium') === -1
-                    || productFeatures.indexOf('ChartBuilding') === -1;
+                const hasChartBuilding = LABKEY.getModuleContext('core').productFeatures?.indexOf('ChartBuilding') !== -1;
+                const hasPremium = LABKEY.getModuleContext('api').moduleNames.indexOf('premium') !== -1;
+                hidden = !hasPremium || !hasChartBuilding;
             }
 
             this.fieldSelectionAreas[field.name] = Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {

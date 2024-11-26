@@ -331,8 +331,8 @@ LABKEY.vis.arrayObjectIndexOf = function(myArray, searchTerm, property) {
 
 LABKEY.vis.discreteSortFn = function(a,b) {
     // Issue 23015: sort categorical x-axis alphabetically with special case for "Not in X" and "[Blank]"
-    var aIsEmptyCategory = a && a.indexOf !== undefined && (a.indexOf("Not in ") == 0 || a == '[Blank]'),
-        bIsEmptyCategory = b && b.indexOf !== undefined && (b.indexOf("Not in ") == 0 || b == '[Blank]');
+    var aIsEmptyCategory = a && typeof a === 'string' && (a.indexOf("Not in ") == 0 || a == '[Blank]'),
+        bIsEmptyCategory = b && typeof b === 'string' && (b.indexOf("Not in ") == 0 || b == '[Blank]');
 
     if (aIsEmptyCategory)
         return 1;
@@ -349,7 +349,7 @@ LABKEY.vis.naturalSortFn = function(aso, bso) {
     var a, b, a1, b1, i= 0, n, L,
         rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
     if (aso === bso) return 0;
-    if (aso.toLowerCase === undefined || bso.toLowerCase === undefined) return 0;
+    if (typeof aso !== 'string' || typeof bso !== 'string') return 0;
 
     a = aso.toLowerCase().match(rx);
     b = bso.toLowerCase().match(rx);

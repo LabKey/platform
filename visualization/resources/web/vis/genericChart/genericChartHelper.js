@@ -1110,7 +1110,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 }
 
                 if (trendlineData) {
-                    $.each(trendlineData, async function (idx, trendline) {
+                    trendlineData.forEach(trendline => {
                         if (trendline.data) {
                             var layerAes = { x: 'x', y: 'y' };
                             if (hasSeries) {
@@ -1120,15 +1120,15 @@ LABKEY.vis.GenericChartHelper = new function(){
                             layerAes.hoverText = generateTrendlinePathHover(trendline);
 
                             layers.push(
-                                new LABKEY.vis.Layer({
-                                    geom: new LABKEY.vis.Geom.Path({
-                                        color: '#' + chartConfig.geomOptions.pointFillColor,
-                                        size: chartConfig.geomOptions.lineWidth ? chartConfig.geomOptions.lineWidth : 3,
-                                        opacity:chartConfig.geomOptions.opacity,
-                                    }),
-                                    aes: layerAes,
-                                    data: trendline.data.generatedPoints,
-                                })
+                                    new LABKEY.vis.Layer({
+                                        geom: new LABKEY.vis.Geom.Path({
+                                            color: '#' + chartConfig.geomOptions.pointFillColor,
+                                            size: chartConfig.geomOptions.lineWidth ? chartConfig.geomOptions.lineWidth : 3,
+                                            opacity:chartConfig.geomOptions.opacity,
+                                        }),
+                                        aes: layerAes,
+                                        data: trendline.data.generatedPoints,
+                                    })
                             );
                         }
                     });
@@ -1210,11 +1210,11 @@ LABKEY.vis.GenericChartHelper = new function(){
         return plotConfig;
     };
 
-    var hasPremiumModule = function() {
+    const hasPremiumModule = function() {
         return LABKEY.getModuleContext('api').moduleNames.indexOf('premium') > -1;
     };
 
-    var TRENDLINE_OPTIONS = {
+    const TRENDLINE_OPTIONS = {
         '': { label: 'Point-to-Point', value: '' },
         'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
         'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1*x + a2*x^2' },
@@ -1225,23 +1225,24 @@ LABKEY.vis.GenericChartHelper = new function(){
         'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
     }
 
-    var generateTrendlinePathHover = function(trendline)
-    {
-        var hoverText = trendline.name + '\n';
+    const generateTrendlinePathHover = function(trendline) {
+        let hoverText = trendline.name + '\n';
         hoverText += '\n' + TRENDLINE_OPTIONS[trendline.data.curveFit.type].label + ':\n';
-        $.each(trendline.data.curveFit, function (key, value) {
+        Object.entries(trendline.data.curveFit).forEach(([key, value]) => {
             if (key === 'coefficients') {
                 hoverText += key + ': ';
-                $.each(value, function (i, v) {
+                value.forEach((v, i) => {
                     hoverText += (i > 0 ? ', ' : '') + LABKEY.Utils.roundNumber(v, 4);
                 });
                 hoverText += '\n';
             }
-            else if (key !== 'type') hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+            else if (key !== 'type') {
+                hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+            }
         });
         hoverText += '\nStatistics:\n';
-        $.each(trendline.data.stats, function (key, value) {
-            var label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
+        Object.entries(trendline.data.stats).forEach(([key, value]) => {
+            const label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
             hoverText += label + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
         });
 
@@ -1249,25 +1250,26 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     // support for y-axis trendline data when a single y-axis measure is selected
-    var queryTrendlineData = function(chartConfig, data, callback) {
-        var chartType = getChartType(chartConfig);
-        var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
+    const queryTrendlineData = async function(chartConfig, data) {
+        const chartType = getChartType(chartConfig);
+        const yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
         if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
-            var xName = chartConfig.measures.x.name;
-            var trendlineConfig = getTrendlineConfig(chartConfig, data);
-            _queryTrendlineData(trendlineConfig, xName, yMeasures[0].name).then(function() {
-                callback.call(this, trendlineConfig.data);
-            }).catch(function(reason) {
+            const xName = chartConfig.measures.x.name;
+            const trendlineConfig = getTrendlineConfig(chartConfig, data);
+            try {
+                await _queryTrendlineData(trendlineConfig, xName, yMeasures[0].name);
+                return trendlineConfig.data;
+            } catch (reason) {
                 // skip this series and render without trendline
-                callback.call(this, trendlineConfig.data);
-            });
-        } else {
-            callback.call(this);
+                return trendlineConfig.data;
+            }
         }
+
+        return undefined;
     };
 
-    var getTrendlineConfig = function(chartConfig, data) {
-        var config = {
+    const getTrendlineConfig = function(chartConfig, data) {
+        const config = {
             type: chartConfig.geomOptions.trendlineType,
             logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
             asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
@@ -1285,8 +1287,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         return config;
     };
 
-    var _queryTrendlineData = async function(trendlineConfig, xName, yName) {
-        for (var series of trendlineConfig.data) {
+    const _queryTrendlineData = async function(trendlineConfig, xName, yName) {
+        for (let series of trendlineConfig.data) {
             try {
                 // we need at least 2 data points for curve fitting
                 if (series.rawData.length > 1) {
@@ -1298,22 +1300,22 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
     };
 
-    var _querySeriesTrendlineData = async function(trendlineConfig, seriesData, xName, yName) {
+    const _querySeriesTrendlineData = function(trendlineConfig, seriesData, xName, yName) {
         return new Promise(function(resolve, reject) {
             if (!hasPremiumModule()) {
                 reject('Premium module required for curve fitting.');
                 return;
             }
 
-            var points = seriesData.rawData.map(function(row) {
+            const points = seriesData.rawData.map(function(row) {
                 return {
                     x: _getRowValue(row, xName, 'value'),
                     y: _getRowValue(row, yName, 'value'),
                 };
             });
-            var xAcc = function(row) { return row.x };
-            var xMin = d3.min(points, xAcc);
-            var xMax = d3.max(points, xAcc);
+            const xAcc = function(row) { return row.x };
+            const xMin = d3.min(points, xAcc);
+            const xMax = d3.max(points, xAcc);
 
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
@@ -1816,10 +1818,9 @@ LABKEY.vis.GenericChartHelper = new function(){
             queryConfig.filterArray = filters;
         }
 
-        queryConfig.success = function(measureStore) {
-            queryTrendlineData(chartConfig, measureStore.records(), function(trendlineData) {
-                callback.call(this, measureStore, trendlineData);
-            });
+        queryConfig.success = async function(measureStore) {
+            const trendlineData = await queryTrendlineData(chartConfig, measureStore.records());
+            callback.call(this, measureStore, trendlineData);
         };
 
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
@@ -1977,10 +1978,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateYAxis: validateYAxis,
         renderChartSVG: renderChartSVG,
         queryChartData: queryChartData,
-        getTrendlineConfig: getTrendlineConfig,
-        queryTrendlineData: queryTrendlineData,
         generateChartSVG: generateChartSVG,
         getMeasureStoreRecords: getMeasureStoreRecords,
+        queryTrendlineData: queryTrendlineData,
         TRENDLINE_OPTIONS: TRENDLINE_OPTIONS,
         /**
          * Loads all of the required dependencies for a Generic Chart.

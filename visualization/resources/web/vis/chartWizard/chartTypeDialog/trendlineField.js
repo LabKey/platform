@@ -10,8 +10,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
 
     options: ['', 'Linear', 'Polynomial', 'Three Parameter', '3 Parameter', 'Four Parameter', '4 Parameter', 'Five Parameter'],
 
-    initComponent : function()
-    {
+    initComponent: function() {
         if (this.initData == null)
             this.initData = {};
 
@@ -22,11 +21,11 @@ Ext4.define('LABKEY.vis.TrendlineField', {
         this.callParent();
     },
 
-    getTrendlineTypeStore : function() {
+    getTrendlineTypeStore: function() {
         if (!this.trendlineTypeStore) {
-            var data = [];
-            for (var value in this.options) {
-                var option = LABKEY.vis.GenericChartHelper.TRENDLINE_OPTIONS[this.options[value]];
+            const data = [];
+            for (let value in this.options) {
+                const option = LABKEY.vis.GenericChartHelper.TRENDLINE_OPTIONS[this.options[value]];
                 data.push([option.value, option.label, option.showMin, option.showMax, option.schemaPrefix]);
             }
 
@@ -48,7 +47,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
         return this.trendlineTypeStore;
     },
 
-    getTrendlineTypeCombo : function() {
+    getTrendlineTypeCombo: function() {
         if (!this.trendlineTypeCombo)
         {
             this.trendlineTypeCombo = Ext4.create('Ext.form.field.ComboBox', {
@@ -70,12 +69,9 @@ Ext4.define('LABKEY.vis.TrendlineField', {
         return this.trendlineTypeCombo;
     },
 
-    getValue : function()
-    {
-        var values = {
+    getValue: function() {
+        return {
             trendlineType: this.getTrendlineTypeCombo().getValue()
         };
-
-        return values;
     }
 });
