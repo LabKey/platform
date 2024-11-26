@@ -5,10 +5,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JsonUtil;
@@ -17,6 +16,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,18 +26,24 @@ import java.util.Set;
 
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
-public class PlateDocumentProvider implements SearchService.DocumentProvider
+public class PlateSetDocumentProvider implements SearchService.DocumentProvider
 {
     @Override
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
-        Runnable runEnumerate = () -> PlateManager.get().indexPlates(task, c, modifiedSince);
+        Runnable runEnumerate = () -> PlateManager.get().indexPlateSets(task, c, modifiedSince);
         task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
+    }
+
+    @Override
+    public void indexDeleted() throws SQLException
+    {
+        SearchService.DocumentProvider.super.indexDeleted();
     }
 
     private static SearchService.SearchCategory getSearchCategory()
     {
-        return PlateManager.get().PLATE_CATEGORY;
+        return PlateManager.get().PLATE_SET_CATEGORY;
     }
 
     private static String getDocumentIdPrefix()
@@ -45,46 +51,45 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
         return getSearchCategory().getName() + ":";
     }
 
-    public static String getDocumentId(@NotNull Lsid plateLsid)
+    public static String getDocumentId(@NotNull PlateSet plateSet)
     {
-        return getDocumentIdPrefix() + plateLsid;
+        return getDocumentId(plateSet.getContainer(), plateSet.getRowId());
     }
 
-    public static String getDocumentId(@NotNull Plate plate)
+    public static String getDocumentId(@NotNull Container container, int plateSetRowId)
     {
-        return getDocumentId(new Lsid(plate.getLSID()));
+        return getDocumentIdPrefix() + container.getId() + ":" + plateSetRowId;
     }
 
-    public static WebdavResource createDocument(@NotNull Plate plate)
+    public static WebdavResource createDocument(@NotNull PlateSet plateSet)
     {
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
         Set<String> identifiersMed = new HashSet<>();
-        final String documentId = getDocumentId(plate);
+        final String documentId = getDocumentId(plateSet);
 
-        identifiersHi.add(plate.getName());
-        identifiersHi.add(plate.getBarcode());
+        identifiersHi.add(plateSet.getName());
+        identifiersHi.add(plateSet.getPlateSetId());
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Plate");
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "PlateSet");
         props.put(SearchService.PROPERTY.categories.toString(), getSearchCategory().getName());
-        props.put(SearchService.PROPERTY.title.toString(), "Plate - " + plate.getName());
+        props.put(SearchService.PROPERTY.title.toString(), "Plate Set - " + plateSet.getName());
+
+        ActionURL url = plateSet.detailsURL();
+        if (url != null)
+            url.setExtraPath(plateSet.getContainer().getId());
 
         StringBuilder body = new StringBuilder();
 
-        PlateType plateType = plate.getPlateType();
-        if (plateType != null)
-            append(body, plateType.getDescription());
-
-        ActionURL url = plate.detailsURL();
-        if (url != null)
-            url.setExtraPath(plate.getContainer().getId());
+        if (plateSet.getDescription() != null)
+            append(body, plateSet.getDescription());
 
         return new SimpleDocumentResource(
             new Path(documentId),
             documentId,
-            plate.getContainer().getId(),
+            plateSet.getContainer().getId(),
             "text/plain",
             body.toString(),
             url,
@@ -96,41 +101,54 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
     {
         return new SearchService.ResourceResolver()
         {
-            private Lsid fromDocumentId(@NotNull String resourceIdentifier)
+            private @Nullable PlateSet getPlateSet(@NotNull String resourceIdentifier)
             {
                 final String prefix = getDocumentIdPrefix();
 
                 if (resourceIdentifier.startsWith(prefix))
                     resourceIdentifier = resourceIdentifier.substring(prefix.length());
 
-                return Lsid.parse(resourceIdentifier);
-            }
+                String[] parts = resourceIdentifier.split(":");
+                if (parts.length != 2)
+                    return null;
 
-            private @Nullable Plate getPlate(@NotNull String resourceIdentifier)
-            {
-                Lsid lsid = fromDocumentId(resourceIdentifier);
-                return PlateManager.get().getPlate(lsid);
+                int rowId;
+                try
+                {
+                    rowId = Integer.parseInt(parts[1]);
+                }
+                catch (NumberFormatException e)
+                {
+                    // skip it
+                    return null;
+                }
+
+                Container container = ContainerManager.getForId(parts[0]);
+                if (container == null)
+                    return null;
+
+                return PlateManager.get().getPlateSet(container, rowId);
             }
 
             @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
             {
-                Plate plate = getPlate(resourceIdentifier);
-                if (plate == null)
+                PlateSet plateSet = getPlateSet(resourceIdentifier);
+                if (plateSet == null)
                     return null;
 
-                return createDocument(plate);
+                return createDocument(plateSet);
             }
 
             @Override
             public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
             {
-                Plate plate = getPlate(resourceIdentifier);
+                PlateSet plateSet = getPlateSet(resourceIdentifier);
 
                 try
                 {
-                    if (plate != null)
-                        return serialize(plate);
+                    if (plateSet != null)
+                        return serialize(plateSet);
                 }
                 catch (JsonProcessingException e)
                 {
@@ -146,12 +164,12 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
                 Map<String, Map<String, Object>> results = new HashMap<>();
                 for (String resourceIdentifier : resourceIdentifiers)
                 {
-                    Plate plate = getPlate(resourceIdentifier);
-                    if (plate != null)
+                    PlateSet plateSet = getPlateSet(resourceIdentifier);
+                    if (plateSet != null)
                     {
                         try
                         {
-                            results.put(resourceIdentifier, serialize(plate));
+                            results.put(resourceIdentifier, serialize(plateSet));
                         }
                         catch (JsonProcessingException e)
                         {
@@ -163,9 +181,13 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
                 return results;
             }
 
-            private Map<String, Object> serialize(@NotNull Plate plate) throws JsonProcessingException
+            private Map<String, Object> serialize(@NotNull PlateSet plateSet) throws JsonProcessingException
             {
-                return new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plate)).toMap();
+                JSONObject json = new JSONObject(JsonUtil.DEFAULT_MAPPER.writeValueAsString(plateSet));
+                // Skip serializing plates into search results
+                json.remove("plates");
+
+                return json.toMap();
             }
         };
     }

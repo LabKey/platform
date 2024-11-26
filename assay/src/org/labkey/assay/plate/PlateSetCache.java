@@ -12,11 +12,14 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -75,9 +78,21 @@ public class PlateSetCache
         }
     }
 
+    public static @NotNull List<PlateSet> getPlateSets(Container c)
+    {
+        List<Integer> ids = new TableSelector(
+            AssayDbSchema.getInstance().getTableInfoPlateSet(),
+            Collections.singleton(PlateSetTable.Column.RowId.name()),
+            SimpleFilter.createContainerFilter(c),
+            new Sort(PlateSetTable.Column.RowId.name())
+        ).getArrayList(Integer.class);
+
+        return ids.stream().map(id -> PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, id))).toList();
+    }
+
     public static @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
+        SimpleFilter filter = new SimpleFilter(PlateSetTable.Column.RowId.fieldKey(), rowId);
         Container c = PlateManager.getContainerWithPlateSetIdentifier(cf, filter);
 
         return c != null ? PLATE_SET_CACHE.get(PlateSetCacheKey.getCacheKey(c, rowId)) : null;
@@ -116,7 +131,7 @@ public class PlateSetCache
         {
             PlateSet plateSet = getPlateSet(c, rowId);
             if (plateSet != null)
-                uncache(c, getPlateSet(c, rowId));
+                uncache(c, plateSet);
             else
                 throw new IllegalStateException(String.format("Expected plate set with rowId : \"%d\" to be in the cache.", rowId));
         }
