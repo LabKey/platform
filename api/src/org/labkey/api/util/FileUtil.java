@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.SimplePathVisitor;
 import org.apache.commons.io.input.LabKeyByteBufferCleaner;
@@ -24,6 +25,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cloud.CloudStoreService;
@@ -72,6 +76,8 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -79,6 +85,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileUtil
@@ -97,6 +104,7 @@ public class FileUtil
 
     private static final ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(HashSet::new);
 
+    private static Pattern extensionChecker;
 
     public static void startRequest()
     {
@@ -301,8 +309,30 @@ public class FileUtil
         }
     }
 
+    public static String isAllowedFileName(String s, boolean checkFileExtension)
+    {
+        return isAllowedFileName(s, checkFileExtension, AppProps.getInstance());
+    }
 
-    public static String isAllowedFileName(String s)
+    static String isAllowedFileName(String s, boolean checkFileExtension, AppProps appProps)
+    {
+        if (appProps.isInvalidFilenameBlocked())
+        {
+            String msg = validateFileName(s);
+            if (msg != null)
+                return msg;
+        }
+
+        if (checkFileExtension)
+        {
+            String badExtension = checkExtension(s, AppProps.getInstance());
+            if (badExtension != null)
+                return "This file type [" + badExtension + "] is not allowed.";
+        }
+        return null;
+    }
+
+    private static @Nullable String validateFileName(String s)
     {
         if (StringUtils.isBlank(s))
             return "Filename must not be blank";
@@ -314,15 +344,36 @@ public class FileUtil
             return "Filename may not contain 'tab', 'new line', or 'return' characters.";
         if (StringUtils.contains("-$", s.charAt(0)))
             return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)",s))
+        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
             return "Filename may not contain space followed by dash.";
+
         return null;
     }
 
-
-    public static void checkAllowedFileName(String s) throws IOException
+    private static String checkExtension(String filename, AppProps appProps)
     {
-        String msg = isAllowedFileName(s);
+        // If the allow list is empty, allow any extension
+        if (appProps.getAllowedExtensions().isEmpty())
+            return null;
+
+        if (extensionChecker == null)
+            setExtensionChecker(appProps);
+
+        String extension = FilenameUtils.getExtension(filename);
+        return extensionChecker.matcher(filename).matches() ? null : extension;
+    }
+
+    public static void setExtensionChecker(AppProps appProps)
+    {
+        // Regex encode the allowed extensions (escape periods and add '|' optional matcher)
+        String allowedExtensions = appProps.getAllowedExtensions().stream().map(Pattern::quote).collect(Collectors.joining("|"));
+        // Allow any extension in the list unless it is preceeded by a '.' which we use as a proxy for double/multi extensions
+        extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
+    }
+
+    public static void checkAllowedFileName(String s, boolean checkFileExtension) throws IOException
+    {
+        String msg = isAllowedFileName(s, checkFileExtension);
         if (null == msg)
             return;
         throw new IOException(s + ": " + msg);
@@ -355,7 +406,7 @@ public class FileUtil
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), false);
         //noinspection SSBasedInspection
         return file.mkdir();
     }
@@ -381,7 +432,7 @@ public class FileUtil
         while (!Files.exists(parent.toPath()))
         {
             if (checkFileName)
-                checkAllowedFileName(parent.getName());
+                checkAllowedFileName(parent.getName(), false);
             parent = parent.getParentFile();
         }
         //noinspection SSBasedInspection
@@ -396,7 +447,7 @@ public class FileUtil
         {
             ret = true;
             if (checkFileName)
-                checkAllowedFileName(parent.getName());
+                checkAllowedFileName(parent.getName(), false);
             parent = parent.getParent();
         }
         //noinspection SSBasedInspection
@@ -414,7 +465,7 @@ public class FileUtil
     public static Path createDirectory(Path path, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(getFileName(path));
+            checkAllowedFileName(getFileName(path), false);
         if (!Files.exists(path))
             //noinspection SSBasedInspection
             return Files.createDirectory(path);
@@ -443,7 +494,7 @@ public class FileUtil
         while (!Files.exists(parent))
         {
             if (checkFileName)
-                checkAllowedFileName(getFileName(parent));
+                checkAllowedFileName(getFileName(parent), false);
             parent = parent.getParent();
         }
         //noinspection SSBasedInspection
@@ -467,7 +518,7 @@ public class FileUtil
     public static boolean createNewFile(File file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), true);
         //noinspection SSBasedInspection
         return file.createNewFile();
     }
@@ -476,7 +527,7 @@ public class FileUtil
     public static boolean createNewFile(FileLike file, boolean checkFileName) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(file.getName());
+            checkAllowedFileName(file.getName(), true);
         var ret = !file.exists();
         file.createFile();
         return ret;
@@ -492,7 +543,7 @@ public class FileUtil
     public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException
     {
         if (checkFileName)
-            checkAllowedFileName(getFileName(path));
+            checkAllowedFileName(getFileName(path), true);
         return Files.createFile(path, attrs);
     }
 
@@ -1500,8 +1551,8 @@ quickScan:
 
         String result = new String(ret);
 
-        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
-                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result);
+        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result, true) == null :
+                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result, true);
 
         return new String(ret);
     }
@@ -2184,42 +2235,107 @@ quickScan:
         @Test
         public void testAllowedFileName()
         {
-            assertNull(isAllowedFileName("a"));
-            assertNull(isAllowedFileName("a-b"));
-            assertNull(isAllowedFileName("a - b"));
-            assertNull(isAllowedFileName("a- b"));
-            assertNull(isAllowedFileName("a--b"));
-            assertNull(isAllowedFileName("a -- b"));
-            assertNull(isAllowedFileName("a-- b"));
-            assertNull(isAllowedFileName("a b"));
-            assertNull(isAllowedFileName("a%b"));
-            assertNull(isAllowedFileName("a$b"));
-            assertNull(isAllowedFileName("%ab"));
+            //Test Setup
+            Mockery _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            AppProps mockProps = _context.mock(AppProps.class);
+            _context.checking(new Expectations(){{
+                allowing(mockProps).isInvalidFilenameBlocked();
+                will(returnValue(true));
+            }});
 
-            assertNotNull(isAllowedFileName(null));
-            assertNotNull(isAllowedFileName(""));
-            assertNotNull(isAllowedFileName(" "));
-            assertNotNull(isAllowedFileName("a\tb"));
-            assertNotNull(isAllowedFileName("-a"));
-            assertNotNull(isAllowedFileName(" -a"));
-            assertNotNull(isAllowedFileName("a -b"));
-            assertNotNull(isAllowedFileName("--a"));
-            assertNotNull(isAllowedFileName(" --a"));
-            assertNotNull(isAllowedFileName("a --b"));
-            assertNotNull(isAllowedFileName("a ---b"));
-            assertNotNull(isAllowedFileName("a/b"));
-            assertNotNull(isAllowedFileName("a\b"));
-            assertNotNull(isAllowedFileName("a:b"));
-            assertNotNull(isAllowedFileName("a*b"));
-            assertNotNull(isAllowedFileName("a?b"));
-            assertNotNull(isAllowedFileName("a<b"));
-            assertNotNull(isAllowedFileName("a>b"));
-            assertNotNull(isAllowedFileName("a\"b"));
-            assertNotNull(isAllowedFileName("a|b"));
-            assertNotNull(isAllowedFileName("a`b"));
-            assertNotNull(isAllowedFileName("$ab"));
-            assertNotNull(isAllowedFileName("-ab"));
-            assertNotNull(isAllowedFileName("a`b"));
+            assertNull(isAllowedFileName("a", false, mockProps));
+            assertNull(isAllowedFileName("a-b", false, mockProps));
+            assertNull(isAllowedFileName("a - b", false, mockProps));
+            assertNull(isAllowedFileName("a- b", false, mockProps));
+            assertNull(isAllowedFileName("a--b", false, mockProps));
+            assertNull(isAllowedFileName("a -- b", false, mockProps));
+            assertNull(isAllowedFileName("a-- b", false, mockProps));
+            assertNull(isAllowedFileName("a b", false, mockProps));
+            assertNull(isAllowedFileName("a%b", false, mockProps));
+            assertNull(isAllowedFileName("a$b", false, mockProps));
+            assertNull(isAllowedFileName("%ab", false, mockProps));
+
+            assertNotNull(isAllowedFileName(null, false, mockProps));
+            assertNotNull(isAllowedFileName("", false, mockProps));
+            assertNotNull(isAllowedFileName(" ", false, mockProps));
+            assertNotNull(isAllowedFileName("a\tb", false, mockProps));
+            assertNotNull(isAllowedFileName("-a", false, mockProps));
+            assertNotNull(isAllowedFileName(" -a", false, mockProps));
+            assertNotNull(isAllowedFileName("a -b", false, mockProps));
+            assertNotNull(isAllowedFileName("--a", false, mockProps));
+            assertNotNull(isAllowedFileName(" --a", false, mockProps));
+            assertNotNull(isAllowedFileName("a --b", false, mockProps));
+            assertNotNull(isAllowedFileName("a ---b", false, mockProps));
+            assertNotNull(isAllowedFileName("a/b", false, mockProps));
+            assertNotNull(isAllowedFileName("a\b", false, mockProps));
+            assertNotNull(isAllowedFileName("a:b", false, mockProps));
+            assertNotNull(isAllowedFileName("a*b", false, mockProps));
+            assertNotNull(isAllowedFileName("a?b", false, mockProps));
+            assertNotNull(isAllowedFileName("a<b", false, mockProps));
+            assertNotNull(isAllowedFileName("a>b", false, mockProps));
+            assertNotNull(isAllowedFileName("a\"b", false, mockProps));
+            assertNotNull(isAllowedFileName("a|b", false, mockProps));
+            assertNotNull(isAllowedFileName("a`b", false, mockProps));
+            assertNotNull(isAllowedFileName("$ab", false, mockProps));
+            assertNotNull(isAllowedFileName("-ab", false, mockProps));
+            assertNotNull(isAllowedFileName("a`b", false, mockProps));
+        }
+
+        @Test
+        public void testAcceptableExtensions()
+        {
+            List<String> allowedExtensions = Arrays.asList(
+                    ".1",
+                    ".txt",
+                    ".tar",
+                    ".tar.gz",
+                    ".a_v",
+                    ".xlsx",
+                    ".l-()[]{}1☃");
+
+            //Test Setup
+            Mockery _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            AppProps mockProps = _context.mock(AppProps.class);
+            _context.checking(new Expectations(){{
+                allowing(mockProps).getAllowedExtensions();
+                will(returnValue(allowedExtensions));
+            }});
+
+
+            assertNull("Extension should be allowed", checkExtension("test.txt", mockProps));
+            assertNull("Multiple extension should be allowed", checkExtension("archive.tar.gz", mockProps));
+            assertNull("Case-insensitive extension should be allowed", checkExtension("archive.TaR.Gz", mockProps));
+            assertNull("Special characters aren't escaped properly", checkExtension("my test.l-()[]{}1☃", mockProps));
+            assertNull("Numeric extension should be allowed", checkExtension("test.1", mockProps));
+            assertNotNull("Multiple extension matched when it shouldn't", checkExtension("tar.gz", mockProps));
+            assertNotNull("Matched unlist extension", checkExtension("my test.notListed", mockProps));
+            assertNotNull("Combined multiple extension matched incorrectly", checkExtension("multi.a_v.tar", mockProps));
+            assertNotNull("Multi-multi extension matched unexpectedly", checkExtension("multi.not.tar.gz", mockProps));
+            assertNotNull("No extension matched unexpectedly", checkExtension("No extension", mockProps));
+        }
+
+        @Test
+        public void testNoAcceptableExtensions()
+        {
+            List<String> allowedExtensions = Collections.emptyList();
+
+            //Test Setup
+            Mockery _context;
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            AppProps mockProps = _context.mock(AppProps.class);
+            _context.checking(new Expectations(){{
+                allowing(mockProps).getAllowedExtensions();
+                will(returnValue(allowedExtensions));
+            }});
+
+            assertNull("Special characters aren't escaped properly", checkExtension("my test.l-()[]{}1☃", mockProps));
+            assertNull("Unlisted extension should be allowed, but wasn't", checkExtension("my test.notListed", mockProps));
+            assertNull("Combined extension should be allowed, but wasn't", checkExtension("multi.tar.a_v", mockProps));
+            assertNull("No extension should be allowed, but wasn't", checkExtension("No extension", mockProps));
+            assertNull("Numeric extension should be allowed", checkExtension("test.1", mockProps));
         }
     }
 }

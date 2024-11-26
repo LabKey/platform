@@ -493,11 +493,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new ButtonBuilder(text);
     }
 
-    public ButtonBuilder button(Renderable html)
-    {
-        return new ButtonBuilder(html);
-    }
-
     public SelectBuilder select()
     {
         return new SelectBuilder();
