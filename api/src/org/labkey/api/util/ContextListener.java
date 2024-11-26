@@ -19,6 +19,7 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -57,6 +58,13 @@ public class ContextListener implements ServletContextListener
             // Set this only if the user hasn't overridden it
             System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
         }
+
+        // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041. Since this
+        // is set statically, it must be called very early, before any reference to UrlValidator occurs. Any
+        // reference to that class, including its constants or classes that might extend it, results in
+        // UrlValidator statically constructing a default UrlValidator, which causes any subsequent call to
+        // updateTLDOverride() to throw.
+        DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, "local");
     }
 
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();

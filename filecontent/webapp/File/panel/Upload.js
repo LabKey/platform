@@ -292,6 +292,8 @@ Ext4.define('File.panel.Upload', {
                                 code = resp.status;
                                 if (resp.status === 503)
                                     title = "Connection";
+                                else if (resp.status === 406)
+                                    title = resp.exception ?? "Not Accepted"
                                 else
                                     title = "Unauthorized/Connection";
                             }

@@ -255,4 +255,6 @@ public interface AppProps
     @NotNull String getDistributionFilename();
 
     @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
+
+    @NotNull List<String> getAllowedExtensions();
 }

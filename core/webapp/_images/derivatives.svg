@@ -1,18 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>Derivatives_blue_svg</title>
-    <g id="Derivatives_blue" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g>
-            <rect id="Rectangle" x="0" y="0" width="64" height="64"></rect>
-            <g id="Branches" transform="translate(30.000000, 14.000000)" stroke="#0067C5" stroke-width="2">
-                <line x1="0" y1="7" x2="7" y2="0" id="Path-2"></line>
-                <line x1="5" y1="18" x2="15" y2="18" id="Path-3"></line>
-                <line x1="0" y1="36" x2="7" y2="29" id="Path-2" transform="translate(3.500000, 32.500000) scale(1, -1) translate(-3.500000, -32.500000) "></line>
-            </g>
-            <circle id="Main-Sample" stroke="#99C9E8" stroke-width="2" fill="#99C9E8" cx="19" cy="32" r="16"></circle>
-            <circle id="Sub-3" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="42" cy="55" r="7"></circle>
-            <circle id="Sub-2" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="52" cy="32" r="7"></circle>
-            <circle id="Sub-1" stroke="#99C9E8" stroke-width="2" fill="#0067C5" cx="42" cy="9" r="7"></circle>
-        </g>
-    </g>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M38 33H28V31H38V33Z" fill="#0067C5"/>
+<path d="M16 45C23.1797 45 29 39.1797 29 32C29 24.8203 23.1797 19 16 19C8.8203 19 3 24.8203 3 32C3 39.1797 8.8203 45 16 45Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M16 20C9.37258 20 4 25.3726 4 32C4 38.6274 9.37258 44 16 44C22.6274 44 28 38.6274 28 32C28 25.3726 22.6274 20 16 20ZM2 32C2 24.268 8.26801 18 16 18C23.732 18 30 24.268 30 32C30 39.732 23.732 46 16 46C8.26801 46 2 39.732 2 32Z" fill="#99C9E8"/>
+<path d="M48 45C55.1797 45 61 39.1797 61 32C61 24.8203 55.1797 19 48 19C40.8203 19 35 24.8203 35 32C35 39.1797 40.8203 45 48 45Z" fill="#0067C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M48 20C41.3726 20 36 25.3726 36 32C36 38.6274 41.3726 44 48 44C54.6274 44 60 38.6274 60 32C60 25.3726 54.6274 20 48 20ZM34 32C34 24.268 40.268 18 48 18C55.732 18 62 24.268 62 32C62 39.732 55.732 46 48 46C40.268 46 34 39.732 34 32Z" fill="#99C9E8"/>
 </svg>

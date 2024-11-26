@@ -1,26 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>Pooled_grey_svg</title>
-    <g id="Pooled_grey" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g transform="translate(32.000000, 32.000000) scale(-1, 1) translate(-32.000000, -32.000000) ">
-            <rect id="Rectangle" x="0" y="0" width="64" height="64"></rect>
-            <g id="Branches" transform="translate(31.000000, 14.000000)" stroke="#808080" stroke-width="2">
-                <line x1="0" y1="7" x2="7" y2="0" id="Path-2"></line>
-                <line x1="5" y1="18" x2="15" y2="18" id="Path-3"></line>
-                <line x1="0" y1="36" x2="7" y2="29" id="Path-2" transform="translate(3.500000, 32.500000) scale(1, -1) translate(-3.500000, -32.500000) "></line>
-            </g>
-            <circle id="Main-Sample" stroke="#D3D3D3" stroke-width="2" fill="#FFFFFF" cx="20" cy="32" r="16"></circle>
-            <g id="Sub-3" transform="translate(35.000000, 47.000000)" fill="#FFFFFF" stroke="#D3D3D3" stroke-width="2">
-                <circle cx="8" cy="8" r="7"></circle>
-            </g>
-            <g id="Sub-2" transform="translate(45.000000, 24.000000)">
-                <circle stroke="#D3D3D3" stroke-width="2" fill="#99C9E8" cx="8" cy="8" r="7"></circle>
-                <circle fill="#FFFFFF" cx="8" cy="8" r="6"></circle>
-            </g>
-            <g id="Sub-1" transform="translate(35.000000, 1.000000)">
-                <circle stroke="#D3D3D3" stroke-width="2" fill="#99C9E8" cx="8" cy="8" r="7"></circle>
-                <circle fill="#FFFFFF" cx="8" cy="8" r="6"></circle>
-            </g>
-        </g>
-    </g>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M24.2928 14.7071L31.2928 21.7071L32.707 20.2928L25.707 13.2928L24.2928 14.7071Z" fill="#808080"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M17 32.9999H27V30.9999H17V32.9999Z" fill="#808080"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M24.2928 49.2928L31.2928 42.2928L32.707 43.7071L25.707 50.7071L24.2928 49.2928Z" fill="#808080"/>
+<path d="M43 48C34.1634 48 27 40.8366 27 32C27 23.1634 34.1634 16 43 16C51.8366 16 59 23.1634 59 32C59 40.8366 51.8366 48 43 48Z" fill="#808080"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M43 17C51.2843 17 58 23.7157 58 32C58 40.2843 51.2843 47 43 47C34.7157 47 28 40.2843 28 32C28 23.7157 34.7157 17 43 17ZM60 32C60 22.6112 52.3888 15 43 15C33.6112 15 26 22.6112 26 32C26 41.3888 33.6112 49 43 49C52.3888 49 60 41.3888 60 32Z" fill="#D3D3D3"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20 49C23.3137 49 26 51.6863 26 55C26 58.3137 23.3137 61 20 61C16.6863 61 14 58.3137 14 55C14 51.6863 16.6863 49 20 49ZM28 55C28 50.5817 24.4183 47 20 47C15.5817 47 12 50.5817 12 55C12 59.4183 15.5817 63 20 63C24.4183 63 28 59.4183 28 55Z" fill="#D3D3D3"/>
+<path d="M20 61C16.6863 61 14 58.3137 14 55C14 51.6863 16.6863 49 20 49C23.3137 49 26 51.6863 26 55C26 58.3137 23.3137 61 20 61Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M10 26C13.3137 26 16 28.6863 16 32C16 35.3137 13.3137 38 10 38C6.68629 38 4 35.3137 4 32C4 28.6863 6.68629 26 10 26ZM18 32C18 27.5817 14.4183 24 10 24C5.58172 24 2 27.5817 2 32C2 36.4183 5.58172 40 10 40C14.4183 40 18 36.4183 18 32Z" fill="#D3D3D3"/>
+<path d="M10 38C6.68629 38 4 35.3137 4 32C4 28.6863 6.68629 26 10 26C13.3137 26 16 28.6863 16 32C16 35.3137 13.3137 38 10 38Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M20 3C23.3137 3 26 5.68629 26 9C26 12.3137 23.3137 15 20 15C16.6863 15 14 12.3137 14 9C14 5.68629 16.6863 3 20 3ZM28 9C28 4.58172 24.4183 1 20 1C15.5817 1 12 4.58172 12 9C12 13.4183 15.5817 17 20 17C24.4183 17 28 13.4183 28 9Z" fill="#D3D3D3"/>
+<path d="M20 15C16.6863 15 14 12.3137 14 9C14 5.68629 16.6863 3 20 3C23.3137 3 26 5.68629 26 9C26 12.3137 23.3137 15 20 15Z" fill="white"/>
 </svg>
