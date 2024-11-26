@@ -705,6 +705,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             List<String> errors = new ArrayList<>();
             StudyManager.getInstance().updateDatasetDefinition(user, updated, errors);
+            StudyManager.datasetModified(updated, true);
 
             for (String errorMsg: errors)
                 exception.addGlobalError(errorMsg);
