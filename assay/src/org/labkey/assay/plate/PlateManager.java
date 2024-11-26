@@ -2113,7 +2113,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    public static void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
+    public void indexPlateSet(Container container, Integer plateSetRowId)
+    {
+        PlateSet plateSet = getPlateSet(container, plateSetRowId);
+        SearchService ss = SearchService.get();
+
+        if (ss == null || plateSet == null)
+            return;
+
+        indexPlateSet(ss.defaultTask(), plateSet);
+    }
+
+    private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
     {
         WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
         task.addResource(resource, SearchService.PRIORITY.item);

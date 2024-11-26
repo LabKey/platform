@@ -46,10 +46,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
-import static org.labkey.assay.plate.PlateManager.indexPlateSet;
 
 public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
@@ -245,10 +245,10 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
-            Integer plateSetId = (Integer) oldRowMap.get("RowId");
-            PlateSet plateSet = PlateManager.get().getPlateSet(container, plateSetId);
+            Integer rowId = (Integer) oldRowMap.get(Column.RowId.name());
+            PlateSet plateSet = PlateManager.get().getPlateSet(container, rowId);
             if (plateSet == null)
-                throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", plateSetId));
+                throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", rowId));
 
             List<Plate> plates = plateSet.getPlates();
             if (!plates.isEmpty())
@@ -256,7 +256,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
-                PlateManager.get().beforePlateSetDelete(container, user, (Integer) oldRowMap.get("RowId"));
+                PlateManager.get().beforePlateSetDelete(container, user, rowId);
 
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
@@ -267,23 +267,28 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(
+            User user,
+            Container container,
+            Map<String, Object> row,
+            @NotNull Map<String, Object> oldRow,
+            @Nullable Map<Enum, Object> configParameters
+        ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer plateSetId = (Integer) oldRow.get("rowId");
-            PlateSet plateSet = PlateManager.get().requirePlateSet(container, plateSetId, "Failed to update plate set.");
+            Integer rowId = (Integer) oldRow.get(Column.RowId.name());
+            PlateSet plateSet = PlateManager.get().requirePlateSet(container, rowId, "Failed to update plate set.");
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
                 Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
+
                 transaction.addCommitTask(() -> {
                     PlateSetCache.uncache(container, plateSet);
 
-                    boolean nameHasUpdated = !row.get(PlateSetTable.Column.Name.name()).equals(oldRow.get(PlateSetTable.Column.Name.name()));
-                    if (SearchService.get() != null && nameHasUpdated)
-                    {
-                        indexPlateSet(SearchService.get().defaultTask(), plateSet);
-                    }
+                    if (row.containsKey(Column.Name.name()) && !Objects.equals(oldRow.get(Column.Name.name()), row.get(Column.Name.name())))
+                        PlateManager.get().indexPlateSet(container, plateSet.getRowId());
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
+
                 transaction.commit();
                 return newRow;
             }
