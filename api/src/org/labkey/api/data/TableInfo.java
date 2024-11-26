@@ -226,12 +226,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     }
 
     /**
-     * @return a Map<columnName, alternativeColumnName> of additionally required fields during import.
+     * @return a List<Set<String>> a list of additionally required fields during import, each field can have a Set of alternative field keys
      * Example usage is specifying the set of required lineage columns during sample/dataclass data creation.
      */
-    @NotNull default Map<String, String> getAdditionalRequiredInsertColumns()
+    @NotNull default List<Set<String>> getAdditionalRequiredInsertColumns()
     {
-        return Collections.emptyMap();
+        return Collections.emptyList();
     }
 
     ColumnInfo getVersionColumn();

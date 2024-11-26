@@ -35,6 +35,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -44,12 +45,16 @@ import org.labkey.experiment.lineage.LineageForeignKey;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
@@ -306,5 +311,27 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         }
 
         return hasProvisionedCol;
+    }
+
+    protected List<Set<String>> getRequiredParentImportFields(@Nullable Map<String, String> requiredImportAliases)
+    {
+        if (requiredImportAliases == null || requiredImportAliases.isEmpty())
+            return Collections.emptyList();
+
+        List<Set<String>> required = new ArrayList<>();
+        for (Map.Entry<String, String> importAlias : requiredImportAliases.entrySet())
+        {
+            Set<String> fields = new HashSet<>();
+            String dataType = importAlias.getValue();
+            boolean isParentSamples = dataType.toLowerCase().startsWith(MATERIAL_INPUTS_ALIAS_PREFIX.toLowerCase());
+            String prefix = isParentSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
+            String dataTypeName = dataType.substring(prefix.length());
+            String encoded = prefix + QueryKey.encodePart(dataTypeName);
+            fields.add(dataType); // MaterialInputs/Sample.Type1
+            fields.add(importAlias.getKey()); // pAlias
+            fields.add(encoded); // MaterialInputs/Sample$PType1
+            required.add(fields);
+        }
+        return required;
     }
 }
