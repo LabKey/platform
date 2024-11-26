@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.NavTreeManager;
 
@@ -239,5 +240,11 @@ public class WriteableAppProps extends AppPropsImpl
     private void setExternalHosts(RandomStartupProperties propName, @NotNull Collection<String> externalSourceHosts)
     {
         storeStringValue(propName, String.join(EXTERNAL_HOST_DELIMITER, externalSourceHosts));
+    }
+
+    public void setAllowedFileExtensions(Collection<String> allowedFileExtensions)
+    {
+        setExternalHosts(RandomStartupProperties.allowedFileExtensions, allowedFileExtensions);
+        FileUtil.setExtensionChecker(AppProps.getInstance());
     }
 }

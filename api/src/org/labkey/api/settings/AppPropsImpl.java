@@ -584,6 +584,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         if (not_init == staticFilesPrefix)
         {
             String s = trimToNull(System.getProperty("static.files.prefix"));
+            String prefix = null;
             if (null != s)
             {
                 try
@@ -591,13 +592,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                     var url = new URLHelper(s).setPath("");
                     if (StringUtils.isNotEmpty(url.getHost()))
                         ContentSecurityPolicyFilter.registerAllowedConnectionSource("static.files.prefix", url.toString());
-                    staticFilesPrefix = s;
+                    prefix = s;
                 }
-                catch (URISyntaxException e)
+                catch (URISyntaxException ignore)
                 {
-                    staticFilesPrefix = null;
                 }
             }
+            staticFilesPrefix = prefix;
         }
         return staticFilesPrefix;
     }
@@ -666,6 +667,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public List<String> getExternalSourceHosts()
     {
         return getExternalHosts(externalSourceHostURLs);
+    }
+
+    @Override
+    @NotNull
+    public List<String> getAllowedExtensions()
+    {
+        return getExternalHosts(allowedFileExtensions);
     }
 
     private List<String> getExternalHosts(RandomStartupProperties propName)

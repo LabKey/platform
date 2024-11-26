@@ -20,12 +20,11 @@
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
 <%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -53,8 +52,7 @@
             extraFormFields += o.toString() + ",\n";
     }
 
-
-    if (bean.urlExcelTemplates != null && bean.urlExcelTemplates.size() > 0)
+    if (bean.urlExcelTemplates != null && !bean.urlExcelTemplates.isEmpty())
     {
         if (bean.urlExcelTemplates.size() == 1)
         {
@@ -72,7 +70,12 @@
             <%= button("Download").onClick("window.location = document.getElementById('importTemplate').value;") %><br>&nbsp;<br>
             <%
         }
-    }%>
+    }
+
+    // We really want an en dash here; ignore IntelliJ which tries to replace this with a simple short dash.
+    //noinspection UnnecessaryUnicodeEscape
+    String ndash = "\u2013";
+%>
 
 <style>
     .lk-import-expando .labkey-button {
@@ -102,7 +105,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
-            <%=button(NDASH).id(copyPasteDivId + "Expando") %>
+            <%=button(ndash).id(copyPasteDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>
@@ -136,7 +139,7 @@
 
     function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
     {
-        var collapsed = -1 !== toggleButton.dom.innerHTML.indexOf("+");
+        const collapsed = -1 !== toggleButton.dom.innerHTML.indexOf("+");
         toggleButton.dom.innerHTML = collapsed ? "&ndash;" : "+";
         toggleDiv.parent().setStyle("display",collapsed?"block":"none");
 

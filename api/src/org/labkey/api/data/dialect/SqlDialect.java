@@ -958,11 +958,13 @@ public abstract class SqlDialect
             throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
+    /**
+     * @return The absolute maximum length for this database. Callers are responsible for truncating generated names,
+     * handing suffixes, etc.
+     */
     public int getIdentifierMaxLength()
     {
-        // 63 probably works, but save 2 chars for appending chars to
-        // create aliases for extra tables used in the lookup (e.g. junctionAlias = getTableAlias() + "_j")
-        return 61;
+        return 63;
     }
 
     protected SQLFragment getIdentifierTestSql(String candidate)

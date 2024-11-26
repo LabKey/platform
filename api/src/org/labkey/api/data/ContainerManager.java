@@ -360,7 +360,7 @@ public class ContainerManager
                 SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
             }
 
-            _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
+            _removeFromCache(c, true); // seems odd, but it removes c.getProject() which clears other things from the cache
 
             // Initialize the list of active modules in the Container
             c.getActiveModules(true, true, user);
@@ -382,7 +382,7 @@ public class ContainerManager
             // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
             // since mutating cached objects is frowned upon, just uncache parent
             // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
-            _removeFromCache(parent);
+            _removeFromCache(parent, true);
 
             if (null != configureContainer)
                 configureContainer.accept(c);
@@ -511,7 +511,7 @@ public class ContainerManager
             folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
             // TODO: Not needed? I don't think we've changed the container's state.
-            _removeFromCache(c);
+            _removeFromCache(c, false);
         }
         else
         {
@@ -810,7 +810,7 @@ public class ContainerManager
         new SqlExecutor(CORE.getSchema()).execute(sql, description, container.getRowId());
         
         String oldValue = container.getDescription();
-        _removeFromCache(container);
+        _removeFromCache(container, false);
         container = getForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Description, oldValue, description);
         firePropertyChangeEvent(evt);
@@ -825,7 +825,7 @@ public class ContainerManager
         sql.append(" SET Searchable=? WHERE RowID=?");
         new SqlExecutor(CORE.getSchema()).execute(sql, searchable, container.getRowId());
 
-        _removeFromCache(container);
+        _removeFromCache(container, false);
     }
 
     public static void updateLockState(Container container, LockState lockState, @NotNull Runnable auditRunnable)
@@ -837,7 +837,7 @@ public class ContainerManager
         sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?");
         new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
 
-        _removeFromCache(container);
+        _removeFromCache(container, false);
 
         auditRunnable.run();
     }
@@ -920,7 +920,7 @@ public class ContainerManager
         // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
         new SqlExecutor(CORE.getSchema()).execute(sql, java.sql.Date.valueOf(expirationDate), container.getRowId());
 
-        _removeFromCache(container);
+        _removeFromCache(container, false);
 
         auditRunnable.run();
     }
@@ -934,7 +934,7 @@ public class ContainerManager
         sql.append(" SET Type=? WHERE RowID=?");
         new SqlExecutor(CORE.getSchema()).execute(sql, newType, container.getRowId());
 
-        _removeFromCache(container);
+        _removeFromCache(container, false);
     }
 
     public static void updateTitle(Container container, String title, User user)
@@ -949,7 +949,7 @@ public class ContainerManager
         sql.append(" SET Title=? WHERE RowID=?");
         new SqlExecutor(CORE.getSchema()).execute(sql, title, container.getRowId());
 
-        _removeFromCache(container);
+        _removeFromCache(container, false);
         String oldValue = container.getTitle();
         container = getForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
@@ -958,7 +958,7 @@ public class ContainerManager
 
     public static void uncache(Container c)
     {
-        _removeFromCache(c);
+        _removeFromCache(c, true);
     }
 
     public static final String SHARED_CONTAINER_PATH = "/Shared";
@@ -1910,7 +1910,7 @@ public class ContainerManager
 
             if (sel.exists())
             {
-                _removeFromCache(c);
+                _removeFromCache(c, true);
                 return false;
             }
 
@@ -1948,7 +1948,7 @@ public class ContainerManager
                 DATABASE_QUERY_LOCK.lock();
                 try
                 {
-                    _removeFromCache(c);
+                    _removeFromCache(c, true);
                 }
                 finally
                 {
@@ -2097,14 +2097,22 @@ public class ContainerManager
         navTreeManageUncache(c);
     }
 
-    private static void _removeFromCache(Container c)
+    /** @param hierarchyChange whether the shape of the container tree has changed */
+    private static void _removeFromCache(Container c, boolean hierarchyChange)
     {
         CACHE.remove(toString(c));
         CACHE.remove(c.getId());
 
-        // blow away the children caches
-        CACHE_CHILDREN.clear();
+        // Blow away the children caches, which can be outdated even if the hierarchy hasn't changed
+        // For example, changing the folder type or enabled modules in a parent can impact child workbooks
         CACHE_ALL_CHILDREN.clear();
+
+        if (hierarchyChange)
+        {
+            // This is strictly keeping track of the parent/child relationships themselves so it only needs to be
+            // cleared when the tree changes
+            CACHE_CHILDREN.clear();
+        }
 
         navTreeManageUncache(c);
     }
@@ -2146,7 +2154,7 @@ public class ContainerManager
         Container c = getForId(id);
         if (null != c)
         {
-            _removeFromCache(c);
+            _removeFromCache(c, false);
             c = getForId(id);  // load a fresh container since the original might be stale.
             if (null != c)
             {

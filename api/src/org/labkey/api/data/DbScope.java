@@ -375,6 +375,18 @@ public class DbScope
             _driverClass = initializeDriver();
             _url = _dsPropertyReader.getUrl();
 
+            if (_dialect.isPostgreSQL())
+            {
+                // Starting with 17.x, PostgreSQL won't connect to a database name longer than 63 chars, but it fails
+                // with a misleading message, so we proactively look for this and throw. Issue #51676.
+                String name = _dialect.getDatabaseName(_url);
+
+                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect we
+                // don't know what database version is there.
+                if (name.length() > _dialect.getIdentifierMaxLength())
+                    throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
+            }
+
             // Validate that data source is using a supported connection pool
             validateConnectionPool();
 
@@ -1756,20 +1768,6 @@ public class DbScope
         // Attempt a connection three times before giving up
         for (int i = 0; i < 3; i++)
         {
-            if (i > 0)
-            {
-                LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
-
-                try
-                {
-                    Thread.sleep(10000);  // Wait 10 seconds before trying again
-                }
-                catch (InterruptedException e)
-                {
-                    LOG.warn("ensureDataBase", e);
-                }
-            }
-
             // Create non-pooled connection... don't want to pool a failed connection
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
@@ -1794,6 +1792,20 @@ public class DbScope
                     LOG.warn("Connection to \"{}\" at {} failed with the following error:", ds.getDsName(), ds.getUrl());
                     LOG.warn("Message: {} SQLState: {} ErrorCode: {}", e.getMessage(), e.getSQLState(), e.getErrorCode(), e);
                     lastException = e;
+
+                    if (i < 2)
+                    {
+                        LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
+
+                        try
+                        {
+                            Thread.sleep(10000);  // Wait 10 seconds before trying again
+                        }
+                        catch (InterruptedException ie)
+                        {
+                            LOG.warn("ensureDataBase", ie);
+                        }
+                    }
                 }
             }
             catch (Exception e)
