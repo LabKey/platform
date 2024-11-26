@@ -163,9 +163,9 @@ public interface PlateService
      *
      * @return A plate set instance or null if it can't be located
      */
-    @Nullable PlateSet getPlateSet(Container container, int plateSetId);
+    @Nullable PlateSet getPlateSet(Container container, int rowId);
 
-    @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId);
+    @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId);
 
     /**
      * Returns the list of available plate types.

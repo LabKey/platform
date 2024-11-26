@@ -684,6 +684,39 @@ public class AssayUpgradeCode implements UpgradeCode
         }
     }
 
+    /**
+     * Called from assay-24.013-24.014.sql, which adds an LSID column to plate sets. Here, we populate the LSID values.
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void addLsidToPlateSets(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbSchema schema = AssayDbSchema.getInstance().getSchema();
+        try (DbScope.Transaction tx = schema.getScope().ensureTransaction())
+        {
+            TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
+            try (Results rs = new TableSelector(plateSetTable).getResults())
+            {
+                while (rs.next())
+                {
+                    Map<String, Object> row = rs.getRowMap();
+                    Container container = ContainerManager.getForId(rs.getString("Container"));
+                    Lsid lsid = PlateManager.get().getLsid(PlateSet.class, container);
+
+                    SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "")
+                            .append(" SET LSID = ?")
+                            .add(lsid)
+                            .append(" WHERE RowId = ?")
+                            .add(row.get("rowId"));
+                    new SqlExecutor(schema).execute(sql);
+                }
+            }
+            tx.commit();
+        }
+    }
+
     private static void addInsertedValues(List<List<?>> insertedValues, Integer rowId, String... types)
     {
         for (String type : types)
