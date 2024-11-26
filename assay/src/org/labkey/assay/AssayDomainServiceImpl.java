@@ -28,6 +28,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
+import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
@@ -45,7 +46,6 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
@@ -127,14 +127,24 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         return getAssayTemplate(provider, template, false);
     }
 
-    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    private List<GWTDomain<GWTPropertyDescriptor>> getDomains(
+        AssayProvider provider,
+        ExpProtocol protocol,
+        List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos,
+        boolean copy
+    )
     {
-        ExpProtocol protocol = template.getKey();
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
+        boolean supportsFlagColumnType = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
+        String resultsDomainPrefix = ":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".";
+        boolean isPlateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
+        List<HitCriterion> allHitCriteria = null;
+
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain);
+            boolean isResultsDomain = gwtDomain.getDomainURI().contains(resultsDomainPrefix);
 
             // If assay is new default value options and default may not have been available in getDomainDescriptor, so try again with provider.
             if (provider.allowDefaultValues(domain) && (gwtDomain.getDefaultValueOptions() == null || gwtDomain.getDefaultValueOptions().length == 0))
@@ -143,27 +153,23 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             if (copy)
                 gwtDomain.setDomainId(0);
 
-            gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
+            gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(protocol, domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDomainKindName("Assay");
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomain.setProvisioned(domain.isProvisioned());
-            gwtDomains.add(gwtDomain);
-
-            DomainKind<?> kind = domain.getDomainKind();
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
-            List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
-            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(domain));
+            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(domain.getDomainKind().getMandatoryPropertyNames(domain));
 
-            for (DomainProperty prop : properties)
+            for (DomainProperty prop : domain.getProperties())
             {
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
                 if (gwtProp.getDefaultValueType() == null)
                 {
-                    // we want to explicitly set these "special" properties NOT to remember the user's last entered
+                    // Explicitly set these "special" properties NOT to remember the user's last entered
                     // value if it hasn't been set before:
                     if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
                         AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
@@ -175,7 +181,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     else
                         gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
                 }
-                gwtProps.add(gwtProp);
+
                 Object defaultValue = defaultValues.get(prop);
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()) && defaultValue instanceof String)
                 {
@@ -189,29 +195,60 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 gwtProp.setDefaultValue(ConvertUtils.convert(defaultValue));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
+
+                if (isResultsDomain && isPlateMetadataEnabled)
+                {
+                    if (allHitCriteria == null)
+                        allHitCriteria = PlateManager.get().getHitCriteria(domain, protocol);
+
+                    List<HitCriterion> fieldHitCriteria = allHitCriteria.stream()
+                            .filter(criterion -> prop.getPropertyId() == criterion.referencePropertyId())
+                            .toList();
+
+                    gwtProp.setPlateHitCriteria(HitCriterion.toJSON(fieldHitCriteria));
+                }
+
+                gwtProps.add(gwtProp);
             }
+
             gwtProps.addAll(gwtDomain.getCalculatedFields());
             gwtDomain.setFields(gwtProps);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
+
+            if (isResultsDomain)
+                gwtDomain.setAllowFlagProperties(supportsFlagColumnType);
+
+            gwtDomains.add(gwtDomain);
         }
+
+        return gwtDomains;
+    }
+
+    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    {
+        ExpProtocol protocol = template.getKey();
 
         GWTProtocol result = new GWTProtocol();
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);
-        result.setDomains(gwtDomains);
+        result.setDomains(getDomains(provider, protocol, template.getValue(), copy));
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
         result.setStatus(protocol.getStatus() != null ? protocol.getStatus().name() : ExpProtocol.Status.Active.name());
-        Map<String, String> gwtProtocolParams = new HashMap<>();
-        for (ProtocolParameter property : protocol.getProtocolParameters().values())
+
+        // Configure protocol parameters
         {
-            if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
+            Map<String, String> gwtProtocolParams = new HashMap<>();
+            for (ProtocolParameter property : protocol.getProtocolParameters().values())
             {
-                throw new IllegalStateException("Did not expect non-string protocol parameter " + property.getOntologyEntryURI() + " (" + property.getValueType() + ")");
+                if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
+                    throw new IllegalStateException("Did not expect non-string protocol parameter " + property.getOntologyEntryURI() + " (" + property.getValueType() + ")");
+
+                gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
             }
-            gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
+            result.setProtocolParameters(gwtProtocolParams);
         }
-        result.setProtocolParameters(gwtProtocolParams);
+
         if (provider instanceof PlateBasedAssayProvider plateProvider)
         {
             Plate plateTemplate = plateProvider.getPlate(getContainer(), protocol);
@@ -239,6 +276,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             }
             result.setSelectedMetadataInputFormat(plateProvider.getMetadataInputFormat(protocol).name());
         }
+
         if (provider instanceof DetectionMethodAssayProvider dmProvider)
         {
             String method = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
@@ -296,13 +334,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
-
         result.setAllowPlateMetadata(provider.supportsPlateMetadata(protocol));
-
-        boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
-        for (GWTDomain<?> gwtDomain : result.getDomains())
-            if (gwtDomain.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + "."))
-                gwtDomain.setAllowFlagProperties(supportsFlag);
 
         return result;
     }

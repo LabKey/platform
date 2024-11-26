@@ -17,6 +17,7 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.json.JSONArray;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -29,10 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * User: matthewb
- * Date: Apr 24, 2007
- * Time: 1:28:42 PM
- *
  * see org.labkey.api.exp.PropertyDescriptor
  */
 public class GWTPropertyDescriptor implements IsSerializable
@@ -82,14 +79,13 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
     private BooleanProperty scannable = new BooleanProperty(false);
     private StringProperty valueExpression = new StringProperty();
+    private JSONArray plateHitCriteria = null;
 
     // for controlling the property editor (not persisted or user settable)
-//    private boolean isEditable = true;
     private boolean isTypeEditable = true;
-//    private boolean isNameEditable = true;
 
-    private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
-    private List<GWTConditionalFormat> conditionalFormats = new ArrayList<GWTConditionalFormat>();
+    private List<GWTPropertyValidator> validators = new ArrayList<>();
+    private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
 
     public GWTPropertyDescriptor()
     {
@@ -148,6 +144,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDerivationDataScope(s.getDerivationDataScope());
         setScannable(s.isScannable());
         setValueExpression(s.getValueExpression());
+        setPlateHitCriteria(s.getPlateHitCriteria());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -595,6 +592,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.valueExpression.set(valueExpression);
     }
 
+    public JSONArray getPlateHitCriteria()
+    {
+        return this.plateHitCriteria;
+    }
+
+    public void setPlateHitCriteria(JSONArray plateHitCriteria)
+    {
+        this.plateHitCriteria = plateHitCriteria;
+    }
+
     public boolean getIsPrimaryKey()
     {
         return isPrimaryKey.booleanValue();
@@ -690,6 +697,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
         if (isScannable() != that.isScannable()) return false;
         if (!equals(getValueExpression(),that.getValueExpression())) return false;
+        // TODO: Implement equals
 
         return true;
     }
@@ -737,6 +745,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + derivationDataScope.hashCode();
         result = 31 * result + (scannable.getBoolean() != null ? scannable.getBoolean().hashCode() : 0);
         result = 31 * result + valueExpression.hashCode();
+        result = 31 * result + (plateHitCriteria != null ? plateHitCriteria.hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -807,18 +816,6 @@ public class GWTPropertyDescriptor implements IsSerializable
                "http://www.labkey.org/exp/xml#attachment".equals(getRangeURI());
     }
 
-
-    // for communicating with the type editor, not persisted
-//    public void setEditable(boolean b)
-//    {
-//        isEditable = b;
-//    }
-//
-//    public boolean isEditable()
-//    {
-//        return isEditable;
-//    }
-
     public void setTypeEditable(boolean b)
     {
         isTypeEditable = b;
@@ -828,14 +825,4 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         return isTypeEditable;
     }
-
-//    public void setNameEditable(boolean b)
-//    {
-//        isNameEditable = b;
-//    }
-//
-//    public boolean isNameEditable()
-//    {
-//        return isNameEditable;
-//    }
 }

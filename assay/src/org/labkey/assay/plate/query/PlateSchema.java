@@ -38,6 +38,7 @@ public class PlateSchema extends SimpleUserSchema
 
     private static final Set<String> AVAILABLE_TABLES = new CaseInsensitiveTreeSet(List.of(
         HitTable.NAME,
+        HitCriteriaTable.NAME,
         PlateTable.NAME,
         PlateSetTable.NAME,
         PlateTypeTable.NAME,
@@ -73,6 +74,8 @@ public class PlateSchema extends SimpleUserSchema
             return new PlateTypeTable(this, cf, false).init();
         if (HitTable.NAME.equalsIgnoreCase(name))
             return new HitTable(this, cf, false).init();
+        if (HitCriteriaTable.NAME.equalsIgnoreCase(name))
+            return new HitCriteriaTable(this, cf, false).init();
         if (WellGroupTable.NAME.equalsIgnoreCase(name))
             return new WellGroupTable(this, cf, false).init();
         if (WellGroupTypeTable.NAME.equalsIgnoreCase(name))

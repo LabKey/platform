@@ -201,6 +201,17 @@
       </column>
     </columns>
   </table>
+  <table tableName="HitCriteria" tableDbType="TABLE">
+    <description>Contains one row per assay hit criteria.</description>
+    <columns>
+      <column columnName="DomainId"/>
+      <column columnName="Operation"/>
+      <column columnName="PropertyId"/>
+      <column columnName="ReferencePropertyId"/>
+      <column columnName="RowId"/>
+      <column columnName="Value"/>
+    </columns>
+  </table>
   <table tableName="Well" tableDbType="TABLE">
     <description>Contains one row per well in a plate.</description>
     <columns>

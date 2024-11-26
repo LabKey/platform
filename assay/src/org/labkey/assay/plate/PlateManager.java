@@ -30,6 +30,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateDataStateManager;
@@ -374,7 +375,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         @Nullable PlateSet plateSet
     ) throws Exception
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         Set<PlateCustomField> customFields = new LinkedHashSet<>(getDefaultFieldsForPlateSet(plate, plateSet));
 
@@ -1323,7 +1324,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // Called by the Plate Query Update Service prior to deleting a plate
     public void beforePlateDelete(Container container, Integer plateId)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         Plate plate = PlateCache.getPlate(container, plateId);
         List<String> lsids = new ArrayList<>();
@@ -1362,7 +1363,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void beforePlateSetsDelete(Collection<Integer> plateSetIds, Container container)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         if (plateSetIds.isEmpty())
             return;
@@ -1695,7 +1696,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void copyWellData(User user, @NotNull Plate source, @NotNull Plate copy, boolean copySample) throws Exception
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         var container = source.getContainer();
         var wellTable = getWellTable(container, user);
@@ -2740,7 +2741,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void savePlateSetHeritage(Integer plateSetId, PlateSetType plateSetType, @Nullable PlateSetImpl parentPlateSet)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         // Configure rootPlateSetId
         Integer rootPlateSetId = null;
@@ -3115,6 +3116,62 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(filter);
     }
 
+    public List<HitCriterion> getHitCriteria(Domain domain, ExpProtocol protocol)
+    {
+        var criteria = new ArrayList<HitCriterion>();
+        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
+        var tableSelector = new TableSelector(AssayDbSchema.getInstance().getTableInfoHitCriteria(), filter, null);
+
+        Domain replicateStatsDomain = null;
+        boolean isReplicateStatsResolved = false;
+
+        try (Results results = tableSelector.getResults())
+        {
+            while (results.next())
+            {
+                var propertyId = results.getInt("PropertyId");
+
+                var property = domain.getProperty(propertyId);
+
+                // Lookup on the replicate stats domain
+                if (property == null)
+                {
+                    if (!isReplicateStatsResolved)
+                    {
+                        isReplicateStatsResolved = true;
+                        replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+                    }
+
+                    if (replicateStatsDomain != null)
+                        property = replicateStatsDomain.getProperty(propertyId);
+                }
+
+                if (property == null)
+                {
+                    // TODO: Log a warning
+                    continue;
+                }
+
+                var criterion = new HitCriterion(
+                    results.getString("Operation"),
+                    results.getString("Value"),
+                    property.getPropertyId(),
+                    property.getName(),
+                    results.getInt("ReferencePropertyId"),
+                    results.getInt("DomainId")
+                );
+
+                criteria.add(criterion);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return criteria;
+    }
+
     private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -3239,10 +3296,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void requireActiveTransaction()
+    private boolean requireActiveTransaction()
     {
-        if (!AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive())
-            throw new IllegalStateException("This method must be called from within a transaction");
+        return AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
     }
 
     Pair<Integer, List<Map<String, Object>>> getWellSampleData(
@@ -3656,7 +3712,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Integer, Map<Integer, WellGroupChange>> wellGroupChanges
     ) throws ValidationException
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         if (wellGroupChanges.isEmpty())
             return;

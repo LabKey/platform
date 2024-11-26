@@ -78,4 +78,9 @@ public class AssayDbSchema
     {
         return getSchema().getTable("Hit");
     }
+
+    public TableInfo getTableInfoHitCriteria()
+    {
+        return getSchema().getTable("HitCriteria");
+    }
 }

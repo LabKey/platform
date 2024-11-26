@@ -15,7 +15,6 @@ import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
@@ -130,7 +129,11 @@ public class AssayPlateTriggerFactory implements TriggerFactory
 
                 AssayPlateMetadataService.get().updateReplicateStats(c, user, _protocol, replicates);
             }
-            catch (ExperimentException | SQLException e)
+            catch (ValidationException ve)
+            {
+                errors.addRowError(ve);
+            }
+            catch (SQLException e)
             {
                 throw UnexpectedException.wrap(e);
             }
@@ -146,7 +149,15 @@ public class AssayPlateTriggerFactory implements TriggerFactory
         Set<Integer> _excludedRows = new HashSet<>();
 
         @Override
-        public void beforeUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+        public void beforeUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        ) throws ValidationException
         {
             if (newRow != null && _qcStateProp != null)
             {

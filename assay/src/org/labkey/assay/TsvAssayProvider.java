@@ -71,6 +71,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -98,11 +99,6 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 
-/**
- * User: brittp
- * Date: Jul 11, 2007
- * Time: 9:59:39 AM
- */
 public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
     public static final String NAME = "General";
@@ -375,7 +371,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
     {
-        return type== ExpProtocol.AssayDomainTypes.Result;
+        return ExpProtocol.AssayDomainTypes.Result.equals(type);
     }
 
     @Override
@@ -393,7 +389,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
         super.changeDomain(user, protocol, orig, update);
 
@@ -500,15 +496,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     update.setFields(newFields);
                 }
 
-                try
-                {
-                    // update fields in the replicate stats table to match any changes to measures in the results domain
-                    AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update, resultsDomain);
-                }
-                catch (ExperimentException e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
+                // update fields in the replicate stats table to match any changes to measures in the results domain
+                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update, resultsDomain);
+                AssayPlateMetadataService.get().updateHitCriteria(user, protocol, update, resultsDomain);
             }
         }
     }
@@ -671,7 +661,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         @Test
         public void testReshowDataCollectorList()
         {
-            // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacment
+            // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacement
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
                 will(returnValue(new HashMap()));

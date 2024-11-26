@@ -20,7 +20,9 @@ import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
+import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
@@ -859,7 +861,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update, Domain resultsDomain) throws ExperimentException
+    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update, Domain resultsDomain) throws ValidationException
     {
         Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
         boolean domainDirty = false;
@@ -908,7 +910,16 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         if (domainDirty)
-            replicateDomain.save(user);
+        {
+            try
+            {
+                replicateDomain.save(user);
+            }
+            catch (ExperimentException e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -920,7 +931,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private String getPlateReplicateStatsDomainUri(ExpProtocol protocol)
     {
-        DomainKind domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
+        var domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
         return domainKind.generateDomainURI(AssaySchema.NAME, protocol.getName(), protocol.getContainer(), null);
     }
 
@@ -940,7 +951,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         ExpProtocol protocol,
         @NotNull ExpRun run,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         insertOrUpdateReplicateStats(container, user, protocol, run, true, replicateRows);
     }
@@ -951,7 +962,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         insertOrUpdateReplicateStats(container, user, protocol, null, false, replicateRows);
     }
@@ -963,13 +974,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         @Nullable ExpRun run,
         boolean forInsert,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         if (replicateRows.isEmpty())
             return;
 
         if (run == null && forInsert)
-            throw new ExperimentException("Run is required when inserting into the replicate stats table");
+            throw new ValidationException("Run is required when inserting into the replicate stats table");
 
         AssayProvider provider = requireProvider(protocol);
         Domain resultDomain = provider.getResultsDomain(protocol);
@@ -1055,7 +1066,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Nullable
-    private static DataState getStateFromRow(Container container, Map<String, Object> row, @Nullable DomainProperty stateProp) throws ExperimentException
+    private static DataState getStateFromRow(Container container, Map<String, Object> row, @Nullable DomainProperty stateProp) throws ValidationException
     {
         if (stateProp != null)
         {
@@ -1069,7 +1080,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     {
                         DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                         if (state == null)
-                            throw new ExperimentException(String.format("No data states for the rowID %d was found.", stateRowId));
+                            throw new ValidationException(String.format("No data states for the rowID %d was found.", stateRowId));
 
                         return state;
                     }
@@ -1096,29 +1107,21 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Nullable
     public static DataState validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
     {
-        try
+        DataState state = getStateFromRow(container, row, stateProp);
+        if (state != null)
         {
-            DataState state = getStateFromRow(container, row, stateProp);
-            if (state != null)
-            {
-                if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
-                {
-                    throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
-                }
-            }
-            return state;
+            if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
+                throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
         }
-        catch (ExperimentException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+
+        return state;
     }
 
-    private @NotNull AssayProvider requireProvider(ExpProtocol protocol) throws ExperimentException
+    private @NotNull AssayProvider requireProvider(ExpProtocol protocol) throws ValidationException
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
-            throw new ExperimentException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
+            throw new ValidationException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
 
         return provider;
     }
@@ -1129,7 +1132,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         AssayProvider provider,
         ExpProtocol protocol
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         QueryUpdateService qus = null;
         AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
@@ -1141,7 +1144,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         if (qus == null)
-            throw new ExperimentException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
+            throw new ValidationException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
 
         return qus;
     }
@@ -1152,7 +1155,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         if (keys.isEmpty())
             return;
@@ -1168,6 +1171,46 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    @Override
+    public void updateHitCriteria(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> update,
+        Domain resultsDomain
+    ) throws ValidationException
+    {
+        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
+
+        var provider = requireProvider(protocol);
+        if (!provider.isPlateMetadataEnabled(protocol))
+            return;
+
+        Set<HitCriterion> newCriteria = new HashSet<>();
+        for (GWTPropertyDescriptor prop : update.getFields())
+            newCriteria.addAll(HitCriterion.getCriteriaFromJSON(prop.getPlateHitCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId()));
+
+        Set<HitCriterion> oldCriteria = new HashSet<>(PlateManager.get().getHitCriteria(resultsDomain, protocol));
+        Set<HitCriterion> toAdd = new HashSet<>(newCriteria);
+        Set<HitCriterion> toRemove = new HashSet<>();
+
+        for (var criterion : newCriteria)
+        {
+            if (oldCriteria.contains(criterion))
+                toAdd.remove(criterion);
+        }
+
+        for (var criterion : oldCriteria)
+        {
+            if (!newCriteria.contains(criterion))
+                toRemove.add(criterion);
+        }
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return;
+
+
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

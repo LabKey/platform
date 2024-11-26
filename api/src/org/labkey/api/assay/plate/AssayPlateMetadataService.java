@@ -17,6 +17,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataLoaderSettings;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.vfs.FileLike;
@@ -106,7 +107,7 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         GWTDomain<GWTPropertyDescriptor> update,
         Domain resultsDomain
-    ) throws ExperimentException;
+    ) throws ValidationException;
 
     /**
      * Computes and inserts replicate statistics into the protocol schema table.
@@ -120,19 +121,26 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         @NotNull ExpRun run,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException;
+    ) throws ValidationException;
 
     void updateReplicateStats(
         Container container,
         User user,
         ExpProtocol protocol,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException;
+    ) throws ValidationException;
 
     void deleteReplicateStats(
         Container container,
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
-    ) throws ExperimentException;
+    ) throws ValidationException;
+
+    void updateHitCriteria(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> update,
+        Domain resultsDomain
+    ) throws ValidationException;
 }
