@@ -93,10 +93,10 @@ LABKEY.vis.GenericChartHelper = new function(){
     /**
      * Gets the chart type (i.e. box or scatter) based on the chartConfig object.
      */
-    var getChartType = function(chartConfig)
+    const getChartType = function(chartConfig)
     {
-        var renderType = chartConfig.renderType
-        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
+        const renderType = chartConfig.renderType
+        const xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
 
         if (renderType === 'time_chart' || renderType === "bar_chart" || renderType === "pie_chart"
             || renderType === "box_plot" || renderType === "scatter_plot" || renderType === "line_plot")
@@ -1083,8 +1083,8 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
-                        var aVal = _getRowValue(a, xName);
-                        var bVal = _getRowValue(b, xName);
+                        const aVal = _getRowValue(a, xName);
+                        const bVal = _getRowValue(b, xName);
 
                         // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
                         // not currently included in this plot.
@@ -1098,7 +1098,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 pathAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
 
                 // use the series measure's values for the distinct colors and grouping
-                var hasSeries = chartConfig.measures.series !== undefined;
+                const hasSeries = chartConfig.measures.series !== undefined;
                 if (hasSeries) {
                     pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
@@ -1112,7 +1112,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 if (trendlineData) {
                     trendlineData.forEach(trendline => {
                         if (trendline.data) {
-                            var layerAes = { x: 'x', y: 'y' };
+                            const layerAes = { x: 'x', y: 'y' };
                             if (hasSeries) {
                                 layerAes.pathColor = function () { return trendline.name };
                             }

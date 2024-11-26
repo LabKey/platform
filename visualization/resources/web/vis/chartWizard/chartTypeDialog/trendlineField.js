@@ -48,8 +48,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
     },
 
     getTrendlineTypeCombo: function() {
-        if (!this.trendlineTypeCombo)
-        {
+        if (!this.trendlineTypeCombo) {
             this.trendlineTypeCombo = Ext4.create('Ext.form.field.ComboBox', {
                 name: 'trendlineType',
                 fieldLabel: 'Type',
