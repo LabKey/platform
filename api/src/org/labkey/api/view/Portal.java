@@ -1712,10 +1712,9 @@ public class Portal implements ModuleChangeListener
         }
         catch(Throwable t)
         {
-            WebPartView errorView;
             int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             String message = "An unexpected error occurred";
-            errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
+            WebPartView<?> errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
             errorView.setTitle(webPart.getName());
             errorView.setWebPart(webPart);
             return errorView;
