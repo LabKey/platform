@@ -260,7 +260,10 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> {
+                    PlateSetCache.uncache(container, plateSet);
+                    PlateManager.deindexPlateSet(container, rowId);
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
                 return returnMap;
             }

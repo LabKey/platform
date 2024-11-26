@@ -53,7 +53,12 @@ public class PlateSetDocumentProvider implements SearchService.DocumentProvider
 
     public static String getDocumentId(@NotNull PlateSet plateSet)
     {
-        return getDocumentIdPrefix() + plateSet.getContainer().getId() + ":" + plateSet.getRowId();
+        return getDocumentId(plateSet.getContainer(), plateSet.getRowId());
+    }
+
+    public static String getDocumentId(@NotNull Container container, int plateSetRowId)
+    {
+        return getDocumentIdPrefix() + container.getId() + ":" + plateSetRowId;
     }
 
     public static WebdavResource createDocument(@NotNull PlateSet plateSet)

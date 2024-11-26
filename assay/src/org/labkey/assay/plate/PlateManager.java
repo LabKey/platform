@@ -1352,6 +1352,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
     }
 
+    // Called by the Plate Set Query Update Service before deleting a plate set
     public void beforePlateSetDelete(Container container, User user, Integer rowId)
     {
         beforePlateSetsDelete(List.of(rowId), container);
@@ -1392,6 +1393,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // The following tables are cleaned up via ON DELETE CASCADE when a plate set is deleted:
         // - assay.PlateSetProperty
+
+        // Plate set documents in the search index are cleaned up via the search service container listener.
     }
 
     private void deleteWellGroups(Container container, User user, List<Integer> wellGroupRowIds) throws Exception
@@ -2137,6 +2140,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateset).getModified()))
                 indexPlateSet(task, plateset);
         }
+    }
+
+    public static void deindexPlateSet(Container container, Integer plateSetRowId)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null || plateSetRowId == null)
+            return;
+
+        ss.deleteResources(Set.of(PlateSetDocumentProvider.getDocumentId(container, plateSetRowId)));
     }
 
     /**
