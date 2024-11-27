@@ -22,7 +22,6 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
@@ -68,7 +67,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -1189,7 +1187,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         Set<HitCriterion> newCriteria = new HashSet<>();
         for (GWTPropertyDescriptor prop : update.getFields())
-            newCriteria.addAll(HitCriterion.getCriteriaFromJSON(prop.getPlateHitCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId()));
+            newCriteria.addAll(HitCriterion.getCriteriaFromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId()));
 
         Set<HitCriterion> oldCriteria = new HashSet<>(PlateManager.get().getHitCriteria(resultsDomain, protocol));
         Set<HitCriterion> toAdd = new HashSet<>(newCriteria);

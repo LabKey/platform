@@ -205,7 +205,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                             .filter(criterion -> prop.getPropertyId() == criterion.referencePropertyId())
                             .toList();
 
-                    gwtProp.setPlateHitCriteria(HitCriterion.toJSON(fieldHitCriteria));
+                    gwtProp.setFilterCriteria(HitCriterion.toGWTFilterCriteria(fieldHitCriteria));
                 }
 
                 gwtProps.add(gwtProp);

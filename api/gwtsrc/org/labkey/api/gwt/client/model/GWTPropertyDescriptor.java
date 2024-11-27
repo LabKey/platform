@@ -17,7 +17,6 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
-import org.json.JSONArray;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -79,13 +78,13 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
     private BooleanProperty scannable = new BooleanProperty(false);
     private StringProperty valueExpression = new StringProperty();
-    private JSONArray plateHitCriteria = null;
 
     // for controlling the property editor (not persisted or user settable)
     private boolean isTypeEditable = true;
 
-    private List<GWTPropertyValidator> validators = new ArrayList<>();
     private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
+    private List<GWTFilterCriteria> filterCriteria = new ArrayList<>();
+    private List<GWTPropertyValidator> validators = new ArrayList<>();
 
     public GWTPropertyDescriptor()
     {
@@ -144,7 +143,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDerivationDataScope(s.getDerivationDataScope());
         setScannable(s.isScannable());
         setValueExpression(s.getValueExpression());
-        setPlateHitCriteria(s.getPlateHitCriteria());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -154,6 +152,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         for (GWTConditionalFormat f : s.getConditionalFormats())
         {
             conditionalFormats.add(new GWTConditionalFormat(f));
+        }
+
+        for (GWTFilterCriteria fc : s.getFilterCriteria())
+        {
+            filterCriteria.add(new GWTFilterCriteria(fc));
         }
     }
 
@@ -592,16 +595,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.valueExpression.set(valueExpression);
     }
 
-    public JSONArray getPlateHitCriteria()
-    {
-        return this.plateHitCriteria;
-    }
-
-    public void setPlateHitCriteria(JSONArray plateHitCriteria)
-    {
-        this.plateHitCriteria = plateHitCriteria;
-    }
-
     public boolean getIsPrimaryKey()
     {
         return isPrimaryKey.booleanValue();
@@ -682,10 +675,9 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
 
         if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
-        if (!getConditionalFormats().equals(that.getConditionalFormats()))
-        {
-            return false;
-        }
+        if (!getConditionalFormats().equals(that.getConditionalFormats())) return false;
+        if (!getFilterCriteria().equals(that.getFilterCriteria())) return false;
+
         if (!getScale().equals(that.getScale())) return false;
 
         if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
@@ -745,7 +737,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + derivationDataScope.hashCode();
         result = 31 * result + (scannable.getBoolean() != null ? scannable.getBoolean().hashCode() : 0);
         result = 31 * result + valueExpression.hashCode();
-        result = 31 * result + (plateHitCriteria != null ? plateHitCriteria.hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -824,5 +815,15 @@ public class GWTPropertyDescriptor implements IsSerializable
     public boolean isTypeEditable()
     {
         return isTypeEditable;
+    }
+
+    public List<GWTFilterCriteria> getFilterCriteria()
+    {
+        return filterCriteria;
+    }
+
+    public void setFilterCriteria(List<GWTFilterCriteria> filterCriteria)
+    {
+        this.filterCriteria = filterCriteria;
     }
 }

@@ -1,10 +1,12 @@
 package org.labkey.api.assay.plate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.gwt.client.model.GWTFilterCriteria;
 import org.labkey.api.query.ValidationException;
 
 import java.util.ArrayList;
@@ -13,34 +15,30 @@ import java.util.List;
 
 public record HitCriterion(String operation, String value, @Nullable Integer propertyId, @Nullable String name, Integer referencePropertyId, Integer domainId)
 {
-    public static @NotNull List<HitCriterion> getCriteriaFromJSON(JSONArray jsonArray, int referencePropertyId, String referencePropertyName, int domainId) throws ValidationException
+    public static @NotNull List<HitCriterion> getCriteriaFromGWTFilterCriteria(List<GWTFilterCriteria> filterCriteria, int referencePropertyId, String referencePropertyName, int domainId) throws ValidationException
     {
-        if (jsonArray == null || jsonArray.isEmpty())
+        if (filterCriteria == null || filterCriteria.isEmpty())
             return Collections.emptyList();
 
         var criteria = new ArrayList<HitCriterion>();
 
-        for (int i = 0; i < jsonArray.length(); i++)
+        for (int i = 0; i < filterCriteria.size(); i++)
         {
-            var entry = jsonArray.get(i);
+            var filterCriterion = filterCriteria.get(i);
 
-            if (!(entry instanceof JSONObject json))
-                throw new ValidationException(errorMessage(referencePropertyName, i, "JSON array contains invalid elements."));
+            boolean hasValidPropertyId = filterCriterion.getPropertyId() != null && filterCriterion.getPropertyId() > 0;
+            String name = StringUtils.trimToNull(filterCriterion.getName());
+            String operation = StringUtils.trimToNull(filterCriterion.getOp());
 
-            boolean hasPropertyId = json.has("propertyId");
-            boolean hasName = json.has("name");
-
-            if (!hasPropertyId && !hasName)
+            if (!hasValidPropertyId && name == null)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "Either a \"propertyId\" or \"name\" is required."));
-            if (!json.has("op"))
+            if (operation == null)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "An \"op\" (operation) property is required."));
 
             try
             {
-                Integer propertyId = hasPropertyId ? json.getInt("propertyId") : null;
-                String name = hasName ? json.getString("name") : null;
-                String operation = json.getString("op");
-                Object value = json.has("value") ? json.get("value") : null;
+                Integer propertyId = hasValidPropertyId ? filterCriterion.getPropertyId() : null;
+                Object value = filterCriterion.getValue() == null ? null : filterCriterion.getValue();
 
                 criteria.add(new HitCriterion(operation, value == null ? null : value.toString(), propertyId, name, referencePropertyId, domainId));
             }
@@ -51,6 +49,29 @@ public record HitCriterion(String operation, String value, @Nullable Integer pro
         }
 
         return criteria;
+    }
+
+    public static List<GWTFilterCriteria> toGWTFilterCriteria(List<HitCriterion> criteria)
+    {
+        if (criteria == null || criteria.isEmpty())
+            return Collections.emptyList();
+
+        var filterCriteria = new ArrayList<GWTFilterCriteria>();
+
+        for (var criterion : criteria)
+        {
+            var filterCriterion = new GWTFilterCriteria();
+            filterCriterion.setName(criterion.name);
+            filterCriterion.setOp(criterion.operation);
+            filterCriterion.setPropertyId(criterion.propertyId);
+            filterCriterion.setValue(criterion.value);
+            // Intentionally not serializing "ReferencePropertyId"
+            // Intentionally not serializing "DomainId"
+
+            filterCriteria.add(filterCriterion);
+        }
+
+        return filterCriteria;
     }
 
     public static JSONArray toJSON(List<HitCriterion> criteria)
