@@ -178,8 +178,7 @@ public class AliasManager
             ret = "X_";
         if (dialect != null)
             ret = dialect.makeLegalIdentifierName(ret);
-        // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
-        int maxLength = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength());
+        int maxLength = getMaxLength(dialect, useLegacyMaxLength);
         if (reserveCount > 0)
             maxLength -= reserveCount;
         if (maxLength < 5)
@@ -202,12 +201,18 @@ public class AliasManager
             sb.append(legalNameFromName(part));
             connector = "_";
         }
-        // we use 28 here because Oracle has a limit or 30 characters, and that is likely the shortest restriction
-        var ret = truncate(sb.toString(), useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength()));
+        var ret = truncate(sb.toString(), getMaxLength(dialect, useLegacyMaxLength));
         assert isLegalName(ret);
         return ret;
     }
 
+    private static int getMaxLength(@Nullable SqlDialect dialect, boolean useLegacyMaxLength)
+    {
+        // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
+
+        // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
+        return useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
+    }
 
     public static String truncate(String str, int to)
     {
@@ -375,7 +380,7 @@ public class AliasManager
 
             assertEquals("select_", m.decideAlias("select"));
 
-            assertEquals(m._dialect.getIdentifierMaxLength(), m.decideAlias("This is a very long name for a column, but it happens! go figure.").length());
+            assertEquals(m._dialect.getIdentifierMaxLength() - 3, m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
         }
     }
 }

@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.view.ViewServlet;
 
 import javax.management.DynamicMBean;
@@ -43,6 +44,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final Stats _transactionStats;
     private final @Nullable StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
+
+    // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or
+    // miss a brief spike by only updating the max size stat every so often
+    private boolean _maxSizeDirty;
+    private long _maxSizeNextUpdate;
 
     CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
@@ -212,6 +218,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     @Override
     public Stats getStats()
     {
+        updateMaxSize();
         return _stats;
     }
 
@@ -248,6 +255,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
     private V trackGet(V value)
     {
+        updateMaxSizeIfStale();
         _stats.gets.incrementAndGet();
 
         if (value == null)
@@ -263,25 +271,47 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
         _stats.puts.incrementAndGet();
 
+        _maxSizeDirty = true;
+        updateMaxSizeIfStale();
+    }
+
+    /** @return current size */
+    private int updateMaxSize()
+    {
+        _maxSizeDirty = false;
+        // Don't update the max size more than once every five seconds
+        _maxSizeNextUpdate = HeartBeat.currentTimeMillis() + 5_000;
         long maxSize = _stats.max_size.get();
-        long currentSize = size();
+        int currentSize = size();
         if (currentSize > maxSize)
             _stats.max_size.compareAndSet(maxSize, currentSize);
+        return currentSize;
+    }
+
+    private void updateMaxSizeIfStale()
+    {
+        if (_maxSizeDirty &&  _maxSizeNextUpdate <= HeartBeat.currentTimeMillis())
+        {
+            updateMaxSize();
+        }
     }
 
     private void trackRemove()
     {
+        updateMaxSizeIfStale();
         _stats.removes.incrementAndGet();
     }
 
     private int trackRemoves(int removes)
     {
+        updateMaxSizeIfStale();
         _stats.removes.addAndGet(removes);
         return removes;
     }
 
     private void trackClear()
     {
+        updateMaxSizeIfStale();
         _stats.clears.incrementAndGet();
     }
 
@@ -296,7 +326,8 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     @Override
     public int getSize()
     {
-        return size();
+        // Since we're being asked for the current size, go ahead and update the max size stat too
+        return updateMaxSize();
     }
 
     @Override

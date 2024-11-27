@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="jakarta.servlet.jsp.JspWriter" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
@@ -24,7 +25,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.settings.Theme" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.DateUtil.DateTimeFormat" %>
@@ -39,15 +42,20 @@
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="org.labkey.core.admin.DateDisplayFormatType" %>
 <%@ page import="java.io.IOException" %>
+<%@ page import="java.lang.Enum" %>
+<%@ page import="java.lang.IllegalArgumentException" %>
+<%@ page import="java.lang.Object" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.lang.StringBuilder" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -164,7 +172,7 @@
         FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         inherited = isInherited(laf.getFolderDisplayModeStored());
     %>
-    <%=inheritCheckbox(inherited, folderDisplayMode, "folder_always", "folder_admin")%>
+    <%=inheritCheckbox(inherited, folderDisplayMode, true, "folder_always", "folder_admin")%>
     <td>
         <label><input id="folder_always" type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
         <label><input id="folder_admin" type="radio" name="<%=folderDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
@@ -180,7 +188,7 @@
         FolderDisplayMode currentMenuDisplayMode = laf.getApplicationMenuDisplayMode();
         inherited = isInherited(laf.getApplicationMenuDisplayModeStored());
     %>
-    <%=inheritCheckbox(inherited, applicationMenuDisplayMode, "menu_always", "menu_admin")%>
+    <%=inheritCheckbox(inherited, applicationMenuDisplayMode, true, "menu_always", "menu_admin")%>
     <td>
         <label><input id="menu_always" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%><%=disabled(inherited)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
         <label><input id="menu_admin"  type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%><%=disabled(inherited)%>>
@@ -240,14 +248,14 @@
         <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
     <% inherited = isInherited(laf.getSystemEmailAddressStored()); %>
-    <%=inheritCheckbox(inherited, systemEmailAddress)%>
-    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="<%=standardInputWidth%>" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%><%=disabled(inherited)%>></td>
+    <%=inheritCheckbox(inherited, systemEmailAddress, hasAdminOpsPerm)%>
+    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="<%=standardInputWidth%>" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm || inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=companyName%>">Organization name (appears in notification emails sent by system)</label></td>
     <% inherited = isInherited(laf.getCompanyNameStored()); %>
     <%=inheritCheckbox(inherited, companyName)%>
-    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %><%=disabled(inherited)%>"></td>
+    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCompanyName()) %>" <%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -330,7 +338,7 @@
 <tr>
     <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
     <% inherited = isInherited(laf.getDefaultDateTimeFormatStored()); %>
-    <%=inheritCheckbox(inherited, defaultDateTimeFormat, "dateSelect", "timeSelect")%>
+    <%=inheritCheckbox(inherited, defaultDateTimeFormat, true, "dateSelect", "timeSelect")%>
 <%
         String dateTimeFormat = laf.getDefaultDateTimeFormat();
         DateTimeFormat td = DateUtil.splitDateTimeFormat(dateTimeFormat);
@@ -356,18 +364,22 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
+<%
+    boolean includeParsingPatterns = OptionalFeatureService.get().isFeatureEnabled(FolderSettingsCache.EXTRA_PARSING_PATTERNS_FEATURE_FLAG);
+    if (c.isRoot() || includeParsingPatterns)
+    {
+%>
 <tr>
     <td colspan=3>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
-    if (c.isRoot())
-    {
-        DateParsingMode mode = laf.getDateParsingMode();
-        String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
-            "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
-            "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
-            "parsing mode that matches your users' expectations.";
+        if (c.isRoot())
+        {
+            DateParsingMode mode = laf.getDateParsingMode();
+            String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+                "For example, if a user enters the date \"10/4/2024\" does that person mean October 4, 2024 (typical interpretation " +
+                "in the United States) or April 10, 2024 (typical interpretation in most other countries)? Choose the " +
+                "parsing mode that matches your users' expectations.";
 %>
 <tr>
     <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
@@ -377,7 +389,10 @@
     </td>
 </tr>
 <%
-    }
+        }
+
+        if (includeParsingPatterns)
+        {
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
@@ -397,10 +412,15 @@
     <%=inheritCheckbox(inherited, extraTimeParsingPattern)%>
     <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
+<%
+        }
+%>
 <tr>
     <td>&nbsp;</td>
 </tr>
-
+<%
+    }
+%>
 <tr>
     <td colspan=3>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>
@@ -426,7 +446,7 @@
 <tr>
     <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
     <% inherited = isInherited(laf.getCustomLoginStored()); %>
-    <%=inheritCheckbox(inherited, customLogin)%>
+    <%=inheritCheckbox(inherited, customLogin, hasAdminOpsPerm)%>
     <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
@@ -569,10 +589,15 @@
 
     private HtmlString inheritCheckbox(boolean inherited, Enum<?> e)
     {
-        return inheritCheckbox(inherited, e, e.name());
+        return inheritCheckbox(inherited, e, true);
     }
 
-    private HtmlString inheritCheckbox(boolean inherited, Enum<?> e, String... ids)
+    private HtmlString inheritCheckbox(boolean inherited, Enum<?> e, boolean enabled)
+    {
+        return inheritCheckbox(inherited, e, enabled, e.name());
+    }
+
+    private HtmlString inheritCheckbox(boolean inherited, Enum<?> e, boolean enabled, String... ids)
     {
         if (getContainer().isRoot())
             return HtmlString.EMPTY_STRING;
@@ -592,6 +617,9 @@
 
         if (inherited)
             builder.append(" checked");
+
+        if (!enabled)
+            builder.append(" disabled");
 
         return builder.append(HtmlString.unsafe("></td>")).getHtmlString();
     }
