@@ -17,6 +17,10 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import io.micrometer.common.util.StringUtils;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -31,6 +35,7 @@ import java.util.List;
 /**
  * see org.labkey.api.exp.PropertyDescriptor
  */
+@EqualsAndHashCode
 public class GWTPropertyDescriptor implements IsSerializable
 {
     private IntegerProperty propertyId = new IntegerProperty(0);
@@ -82,9 +87,15 @@ public class GWTPropertyDescriptor implements IsSerializable
     // for controlling the property editor (not persisted or user settable)
     private boolean isTypeEditable = true;
 
+    @Setter
+    @Getter
     private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
+    @Setter
+    @Getter
     private List<GWTFilterCriteria> filterCriteria = new ArrayList<>();
-    private List<GWTPropertyValidator> validators = new ArrayList<>();
+    @Setter
+    @Getter
+    private List<GWTPropertyValidator> propertyValidators = new ArrayList<>();
 
     public GWTPropertyDescriptor()
     {
@@ -146,7 +157,7 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
-            validators.add(new GWTPropertyValidator(v));
+            propertyValidators.add(new GWTPropertyValidator(v));
         }
 
         for (GWTConditionalFormat f : s.getConditionalFormats())
@@ -626,145 +637,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
     }
 
-    private boolean equals(String a, String b)
-    {
-        if (null == a || null == b)
-            return a==b;
-        return a.equals(b);
-    }
-
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (!(o instanceof GWTPropertyDescriptor))
-            return false;
-        
-        GWTPropertyDescriptor that = (GWTPropertyDescriptor) o;
-
-        if (getPropertyId() != that.getPropertyId()) return false;
-        if (isRequired() != that.isRequired()) return false;
-        if (isHidden() != that.isHidden()) return false;
-        if (getMvEnabled() != that.getMvEnabled()) return false;
-        if (getContainer() != null ? !getContainer().equals(that.getContainer()) : that.getContainer() != null) return false;
-        if (getConceptURI() != null ? !getConceptURI().equals(that.getConceptURI()) : that.getConceptURI() != null) return false;
-        if (getDescription() != null ? !getDescription().equals(that.getDescription()) : that.getDescription() != null) return false;
-        if (getFormat() != null ? !getFormat().equals(that.getFormat()) : that.getFormat() != null) return false;
-        if (getLabel() != null ? !getLabel().equals(that.getLabel()) : that.getLabel() != null) return false;
-        if (getLookupContainer() != null ? !getLookupContainer().equals(that.getLookupContainer()) : that.getLookupContainer() != null)
-            return false;
-        if (getLookupQuery() != null ? !getLookupQuery().equals(that.getLookupQuery()) : that.getLookupQuery() != null) return false;
-        if (getLookupSchema() != null ? !getLookupSchema().equals(that.getLookupSchema()) : that.getLookupSchema() != null) return false;
-        if (getName() != null ? !getName().equals(that.getName()) : that.getName() != null) return false;
-        if (getPropertyURI() != null ? !getPropertyURI().equals(that.getPropertyURI()) : that.getPropertyURI() != null) return false;
-        if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
-        if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
-        if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
-        if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
-        if (getImportAliases() != null ? !getImportAliases().equals(that.getImportAliases()) : that.getImportAliases() != null) return false;
-        if (getURL() != null ? !getURL().equals(that.getURL()) : that.getURL() != null) return false;
-        if (isShownInDetailsView() != that.isShownInDetailsView()) return false;
-        if (isShownInInsertView() != that.isShownInInsertView()) return false;
-        if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
-        if (isMeasure() != that.isMeasure()) return false;
-        if (isDimension() != that.isDimension()) return false;
-        if (isRecommendedVariable() != that.isRecommendedVariable()) return false;
-        if (!equals(getDefaultScale(), that.getDefaultScale())) return false;
-        if (!equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
-        if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
-        if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
-
-        if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
-        if (!getConditionalFormats().equals(that.getConditionalFormats())) return false;
-        if (!getFilterCriteria().equals(that.getFilterCriteria())) return false;
-
-        if (!getScale().equals(that.getScale())) return false;
-
-        if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
-        if (!equals(getSourceOntology(),that.getSourceOntology())) return false;
-        if (!equals(getConceptSubtree(), that.getConceptSubtree())) return false;
-        if (!equals(getConceptImportColumn(),that.getConceptImportColumn())) return false;
-        if (!equals(getConceptLabelColumn(),that.getConceptLabelColumn())) return false;
-        if (!equals(getDerivationDataScope(),that.getDerivationDataScope())) return false;
-        if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
-        if (isScannable() != that.isScannable()) return false;
-        if (!equals(getValueExpression(),that.getValueExpression())) return false;
-        // TODO: Implement equals
-
-        return true;
-    }
-
-    public int hashCode()
-    {
-        int result;
-        result = (propertyId.getInteger() != null ? propertyId.getInteger().hashCode() : 0);
-        result = 31 * result + (propertyURI.getString() != null ? propertyURI.getString().hashCode() : 0);
-        result = 31 * result + (name.getString() != null ? name.getString().hashCode() : 0);
-        result = 31 * result + (description.getString() != null ? description.getString().hashCode() : 0);
-        result = 31 * result + (container.getString() != null ? container.getString().hashCode() : 0);
-        result = 31 * result + (rangeURI.getString() != null ? rangeURI.getString().hashCode() : 0);
-        result = 31 * result + (conceptURI.getString() != null ? conceptURI.getString().hashCode() : 0);
-        result = 31 * result + (label.getString() != null ? label.getString().hashCode() : 0);
-        result = 31 * result + (format.getString() != null ? format.getString().hashCode() : 0);
-        result = 31 * result + (required.getBoolean() != null ? required.getBoolean().hashCode() : 0);
-        result = 31 * result + (hidden.getBoolean() != null ? hidden.getBoolean().hashCode() : 0);
-        result = 31 * result + (mvEnabled.getBoolean() != null ? mvEnabled.getBoolean().hashCode() : 0);
-        result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
-        result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
-        result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
-        result = 31 * result + (defaultValueType != null ? defaultValueType.hashCode() : 0);
-        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
-        result = 31 * result + (defaultDisplayValue != null ? defaultDisplayValue.hashCode() : 0);
-        result = 31 * result + (url != null ? url.hashCode() : 0);
-        result = 31 * result + (importAliases != null ? importAliases.hashCode() : 0);
-        result = 31 * result + (shownInDetailsView.getBoolean() != null ? shownInDetailsView.getBoolean().hashCode() : 0);
-        result = 31 * result + (shownInInsertView.getBoolean() != null ? shownInInsertView.getBoolean().hashCode() : 0);
-        result = 31 * result + (shownInUpdateView.getBoolean() != null ? shownInUpdateView.getBoolean().hashCode() : 0);
-        result = 31 * result + (dimension.getBoolean() != null ? dimension.getBoolean().hashCode() : 0);
-        result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
-        result = 31 * result + (recommendedVariable.getBoolean() != null ? recommendedVariable.getBoolean().hashCode() : 0);
-        result = 31 * result + (defaultScale.getString() != null ? defaultScale.getString().hashCode() : 0);
-        result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
-        result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
-        result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
-        result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
-        result = 31 * result + sourceOntology.hashCode();
-        result = 31 * result + conceptSubtree.hashCode();
-        result = 31 * result + conceptImportColumn.hashCode();
-        result = 31 * result + conceptLabelColumn.hashCode();
-        result = 31 * result + principalConceptCode.hashCode();
-        result = 31 * result + redactedText.hashCode();
-        result = 31 * result + derivationDataScope.hashCode();
-        result = 31 * result + (scannable.getBoolean() != null ? scannable.getBoolean().hashCode() : 0);
-        result = 31 * result + valueExpression.hashCode();
-
-        for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
-        {
-            result = 31 * result + gwtPropertyValidator.hashCode();
-        }
-        return result;
-    }
-
-    public List<GWTPropertyValidator> getPropertyValidators()
-    {
-        return validators;
-    }
-
-    public void setPropertyValidators(List<GWTPropertyValidator> validators)
-    {
-        this.validators = validators;
-    }
-
-    public List<GWTConditionalFormat> getConditionalFormats()
-    {
-        return conditionalFormats;
-    }
-
-    public void setConditionalFormats(List<GWTConditionalFormat> conditionalFormats)
-    {
-        this.conditionalFormats = conditionalFormats;
-    }
-
     public String getImportAliases()
     {
         return importAliases.toString();
@@ -787,12 +659,10 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public String getLookupDescription()
     {
-        if (getLookupQuery() != null && getLookupQuery().length() > 0 &&
-                getLookupSchema() != null && getLookupSchema().length() > 0)
-        {
-            return getLookupSchema() + "." + getLookupQuery();
-        }
-        return "(none)";
+        if (StringUtils.isEmpty(getLookupSchema()) || StringUtils.isEmpty(getLookupQuery()))
+            return "(none)";
+
+        return getLookupSchema() + "." + getLookupQuery();
     }
 
     @Override
@@ -815,15 +685,5 @@ public class GWTPropertyDescriptor implements IsSerializable
     public boolean isTypeEditable()
     {
         return isTypeEditable;
-    }
-
-    public List<GWTFilterCriteria> getFilterCriteria()
-    {
-        return filterCriteria;
-    }
-
-    public void setFilterCriteria(List<GWTFilterCriteria> filterCriteria)
-    {
-        this.filterCriteria = filterCriteria;
     }
 }
