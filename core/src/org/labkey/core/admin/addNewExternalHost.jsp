@@ -43,7 +43,7 @@
 <labkey:form method="post">
     <table>
         <tr>
-            <td class="labkey-form-label"><label for="newExternalHostTextField">Host</label></td>
+            <td class="labkey-form-label"><label for="newExternalHostTextField"><%=bean.getTypeEnum().getLabel()%></label></td>
             <td><input name="newExternalHost" id="newExternalHostTextField" size="75" /></td>
         </tr>
         <tr>

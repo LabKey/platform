@@ -61,7 +61,7 @@ public class StudyPHIExportTest extends StudyExportTest
     protected void setParticipantIdPreface(String idPreface, int idLength)
     {
         clickTab("Manage");
-        clickAndWait(Locator.linkContainingText("Manage Alternate"));
+        clickAndWait(Locator.linkContainingText("Manage Mice"));
         _extHelper.setExtFormElementByLabel("Prefix", idPreface);
         setFormElement(Locator.name("numberOfDigits"), "" + idLength);
         clickButton("Change Alternate IDs", 0);
@@ -325,7 +325,7 @@ public class StudyPHIExportTest extends StudyExportTest
     private void verifyImportingAlternateIds()
     {
         goToManageStudy();
-        clickAndWait(Locator.linkContainingText("Manage Alternate"));
+        clickAndWait(Locator.linkContainingText("Manage Mice"));
         clickButton("Import");
         ImportDataPage importDataPage = new ImportDataPage(getDriver());
         assertTextPresent("Export Participant Transforms");

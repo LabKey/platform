@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp.query;
 
+import org.labkey.api.query.FieldKey;
+
 /**
  * User: kevink
  * Date: 9/21/15
@@ -36,6 +38,11 @@ public interface ExpDataClassTable extends ExpTable<ExpDataClassTable.Column>
         SampleSet,
         Category,
         DataCount,
-        ImportAliases
+        ImportAliases;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 }

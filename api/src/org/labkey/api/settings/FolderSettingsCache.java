@@ -33,6 +33,7 @@ import java.util.Collections;
 public class FolderSettingsCache
 {
     private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, argument) -> new FolderSettings(c));
+    public static final String EXTRA_PARSING_PATTERNS_FEATURE_FLAG = "extraDateTimeParsingPatterns";
 
     public static String getDefaultDateFormat(Container c)
     {
@@ -56,17 +57,23 @@ public class FolderSettingsCache
 
     public static String getExtraDateParsingPattern(Container c)
     {
-        return CACHE.get(c).getExtraDateParsingPattern();
+        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
+            CACHE.get(c).getExtraDateParsingPattern() :
+            null;
     }
 
     public static String getExtraDateTimeParsingPattern(Container c)
     {
-        return CACHE.get(c).getExtraDateTimeParsingPattern();
+        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
+            CACHE.get(c).getExtraDateTimeParsingPattern() :
+            null;
     }
 
     public static String getExtraTimeParsingPattern(Container c)
     {
-        return CACHE.get(c).getExtraTimeParsingPattern();
+        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
+            CACHE.get(c).getExtraTimeParsingPattern() :
+            null;
     }
 
     public static boolean areRestrictedColumnsEnabled(Container c)
