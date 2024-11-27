@@ -24,6 +24,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -1349,7 +1350,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException
+    public void setSaveScriptFiles(ExpProtocol protocol, boolean save)
     {
         setBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX, save);
     }
@@ -1453,12 +1454,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ObjectProperty prop = protocol.getObjectProperties().get(createPropertyURI(protocol, propertySuffix));
 
-        if (prop != null)
-        {
-            Object o = prop.value();
-            if (o instanceof Boolean)
-                return (Boolean)o;
-        }
+        if (prop != null && prop.value() instanceof Boolean b)
+            return b;
+
         return null;
     }
 
@@ -1745,6 +1743,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
         return supportsPlateMetadata(protocol) && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol)
+    {
+        Domain resultsDomain = getResultsDomain(protocol);
+        if (resultsDomain == null)
+            return Collections.emptyList();
+
+        return getFilterCriteria(protocol, resultsDomain);
+    }
+
+    protected @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
+    {
+        return Collections.emptyList();
     }
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}

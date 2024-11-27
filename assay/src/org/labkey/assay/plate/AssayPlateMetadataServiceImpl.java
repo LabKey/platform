@@ -20,7 +20,6 @@ import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
-import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
@@ -859,7 +858,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update, Domain resultsDomain) throws ValidationException
+    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
         Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
         boolean domainDirty = false;
@@ -1169,46 +1168,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             throw UnexpectedException.wrap(e);
         }
-    }
-
-    @Override
-    public void updateHitCriteria(
-        User user,
-        ExpProtocol protocol,
-        GWTDomain<GWTPropertyDescriptor> update,
-        Domain resultsDomain
-    ) throws ValidationException
-    {
-        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
-
-        var provider = requireProvider(protocol);
-        if (!provider.isPlateMetadataEnabled(protocol))
-            return;
-
-        Set<HitCriterion> newCriteria = new HashSet<>();
-        for (GWTPropertyDescriptor prop : update.getFields())
-            newCriteria.addAll(HitCriterion.getCriteriaFromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId()));
-
-        Set<HitCriterion> oldCriteria = new HashSet<>(PlateManager.get().getHitCriteria(resultsDomain, protocol));
-        Set<HitCriterion> toAdd = new HashSet<>(newCriteria);
-        Set<HitCriterion> toRemove = new HashSet<>();
-
-        for (var criterion : newCriteria)
-        {
-            if (oldCriteria.contains(criterion))
-                toAdd.remove(criterion);
-        }
-
-        for (var criterion : oldCriteria)
-        {
-            if (!newCriteria.contains(criterion))
-                toRemove.add(criterion);
-        }
-
-        if (toAdd.isEmpty() && toRemove.isEmpty())
-            return;
-
-
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

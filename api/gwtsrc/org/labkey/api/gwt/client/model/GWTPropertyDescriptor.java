@@ -17,10 +17,10 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
-import io.micrometer.common.util.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -33,69 +33,60 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * see org.labkey.api.exp.PropertyDescriptor
+ * See {@link org.labkey.api.exp.PropertyDescriptor}
  */
 @EqualsAndHashCode
 public class GWTPropertyDescriptor implements IsSerializable
 {
-    private IntegerProperty propertyId = new IntegerProperty(0);
-    private StringProperty propertyURI = new StringProperty();
-    private StringProperty container = new StringProperty();
-    private StringProperty name = new StringProperty();
-    private StringProperty description = new StringProperty();
-    private StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
-    private StringProperty conceptURI = new StringProperty();
-    private StringProperty label = new StringProperty();
-    private StringProperty format = new StringProperty();
-    private BooleanProperty required = new BooleanProperty(false);
-    private BooleanProperty hidden = new BooleanProperty(false);
-    private StringProperty lookupContainer = new StringProperty();
-    private StringProperty lookupSchema = new StringProperty();
-    private StringProperty lookupQuery = new StringProperty();
-    private BooleanProperty lookupIsValid = new BooleanProperty(true);
+    private final IntegerProperty propertyId = new IntegerProperty(0);
+    private final StringProperty propertyURI = new StringProperty();
+    private final StringProperty container = new StringProperty();
+    private final StringProperty name = new StringProperty();
+    private final StringProperty description = new StringProperty();
+    private final StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
+    private final StringProperty conceptURI = new StringProperty();
+    private final StringProperty label = new StringProperty();
+    private final StringProperty format = new StringProperty();
+    private final BooleanProperty required = new BooleanProperty(false);
+    private final BooleanProperty hidden = new BooleanProperty(false);
+    private final StringProperty lookupContainer = new StringProperty();
+    private final StringProperty lookupSchema = new StringProperty();
+    private final StringProperty lookupQuery = new StringProperty();
+    private final BooleanProperty lookupIsValid = new BooleanProperty(true);
     private String defaultValueType = null;
-    private StringProperty defaultValue = new StringProperty();
-    private StringProperty defaultDisplayValue = new StringProperty("[none]");
-    private BooleanProperty mvEnabled = new BooleanProperty(false);
-    private StringProperty importAliases = new StringProperty();
-    private StringProperty url = new StringProperty();
-    private BooleanProperty shownInInsertView = new BooleanProperty(true);
-    private BooleanProperty shownInUpdateView = new BooleanProperty(true);
-    private BooleanProperty shownInDetailsView = new BooleanProperty(true);
-    private BooleanProperty measure = new BooleanProperty();
-    private BooleanProperty dimension = new BooleanProperty();
-    private BooleanProperty recommendedVariable = new BooleanProperty(false);
-    private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
-    private StringProperty facetingBehaviorType = new StringProperty();
-    private StringProperty phi = new StringProperty("NotPHI"); // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
-    private BooleanProperty isExcludeFromShifting = new BooleanProperty();
-    private BooleanProperty isPreventReordering = new BooleanProperty();
-    private BooleanProperty isDisableEditing = new BooleanProperty();
-    private IntegerProperty scale = new IntegerProperty(4000);
-    private StringProperty principalConceptCode = new StringProperty();
-    private StringProperty sourceOntology = new StringProperty();
-    private StringProperty conceptSubtree = new StringProperty();
-    private StringProperty conceptImportColumn = new StringProperty();
-    private StringProperty conceptLabelColumn = new StringProperty();
-    private StringProperty redactedText = new StringProperty();
-    private StringProperty derivationDataScope = new StringProperty();
-    private BooleanProperty isPrimaryKey = new BooleanProperty(false);
-    private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
-    private BooleanProperty scannable = new BooleanProperty(false);
-    private StringProperty valueExpression = new StringProperty();
+    private final StringProperty defaultValue = new StringProperty();
+    private final StringProperty defaultDisplayValue = new StringProperty("[none]");
+    private final BooleanProperty mvEnabled = new BooleanProperty(false);
+    private final StringProperty importAliases = new StringProperty();
+    private final StringProperty url = new StringProperty();
+    private final BooleanProperty shownInInsertView = new BooleanProperty(true);
+    private final BooleanProperty shownInUpdateView = new BooleanProperty(true);
+    private final BooleanProperty shownInDetailsView = new BooleanProperty(true);
+    private final BooleanProperty measure = new BooleanProperty();
+    private final BooleanProperty dimension = new BooleanProperty();
+    private final BooleanProperty recommendedVariable = new BooleanProperty(false);
+    private final StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
+    private final StringProperty facetingBehaviorType = new StringProperty();
+    private final StringProperty phi = new StringProperty("NotPHI"); // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
+    private final BooleanProperty isExcludeFromShifting = new BooleanProperty();
+    private final BooleanProperty isPreventReordering = new BooleanProperty();
+    private final BooleanProperty isDisableEditing = new BooleanProperty();
+    private final IntegerProperty scale = new IntegerProperty(4000);
+    private final StringProperty principalConceptCode = new StringProperty();
+    private final StringProperty sourceOntology = new StringProperty();
+    private final StringProperty conceptSubtree = new StringProperty();
+    private final StringProperty conceptImportColumn = new StringProperty();
+    private final StringProperty conceptLabelColumn = new StringProperty();
+    private final StringProperty redactedText = new StringProperty();
+    private final StringProperty derivationDataScope = new StringProperty();
+    private final BooleanProperty isPrimaryKey = new BooleanProperty(false);
+    private final StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
+    private final BooleanProperty scannable = new BooleanProperty(false);
+    private final StringProperty valueExpression = new StringProperty();
 
-    // for controlling the property editor (not persisted or user settable)
-    private boolean isTypeEditable = true;
-
-    @Setter
-    @Getter
-    private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
-    @Setter
-    @Getter
-    private List<GWTFilterCriteria> filterCriteria = new ArrayList<>();
-    @Setter
-    @Getter
-    private List<GWTPropertyValidator> propertyValidators = new ArrayList<>();
+    @Getter @Setter private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
+    @Getter @Setter private List<GWTFilterCriteria> filterCriteria = new ArrayList<>();
+    @Getter @Setter private List<GWTPropertyValidator> propertyValidators = new ArrayList<>();
 
     public GWTPropertyDescriptor()
     {
@@ -129,6 +120,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRecommendedVariable(s.isRecommendedVariable());
         setDefaultScale(s.getDefaultScale());
         setLookupContainer(s.getLookupContainer());
+        setLookupIsValid(s.getLookupIsValid());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
         setDefaultValueType(s.getDefaultValueType());
@@ -145,7 +137,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRedactedText(s.getRedactedText());
         setIsPrimaryKey(s.getIsPrimaryKey());
         setLockType(s.getLockType());
-        setTypeEditable(s.isTypeEditable());
         setPrincipalConceptCode(s.getPrincipalConceptCode());
         setSourceOntology(s.getSourceOntology());
         setConceptSubtree(s.getConceptSubtree());
@@ -285,7 +276,6 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         setDimension(getLookupQuery() != null && !isHidden());
     }
-
 
     public String getConceptURI()
     {
@@ -675,15 +665,5 @@ public class GWTPropertyDescriptor implements IsSerializable
     {
         return "http://cpas.fhcrc.org/exp/xml#fileLink".equals(getRangeURI()) ||
                "http://www.labkey.org/exp/xml#attachment".equals(getRangeURI());
-    }
-
-    public void setTypeEditable(boolean b)
-    {
-        isTypeEditable = b;
-    }
-
-    public boolean isTypeEditable()
-    {
-        return isTypeEditable;
     }
 }

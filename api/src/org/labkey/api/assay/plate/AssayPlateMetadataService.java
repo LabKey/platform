@@ -102,12 +102,7 @@ public interface AssayPlateMetadataService
      * Called when a plate enabled protocol has changes to its results domain. This is to allow analogous changes
      * to the replicate table to create/delete fields to track replicate statistics.
      */
-    void updateReplicateStatsDomain(
-        User user,
-        ExpProtocol protocol,
-        GWTDomain<GWTPropertyDescriptor> update,
-        Domain resultsDomain
-    ) throws ValidationException;
+    void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
 
     /**
      * Computes and inserts replicate statistics into the protocol schema table.
@@ -135,12 +130,5 @@ public interface AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
-    ) throws ValidationException;
-
-    void updateHitCriteria(
-        User user,
-        ExpProtocol protocol,
-        GWTDomain<GWTPropertyDescriptor> update,
-        Domain resultsDomain
     ) throws ValidationException;
 }

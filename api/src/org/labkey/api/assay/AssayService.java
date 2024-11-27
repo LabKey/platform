@@ -80,7 +80,7 @@ public interface AssayService
 
     @NotNull Collection<AssayProvider> getAssayProviders();
 
-    WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
+    WebPartView<?> createAssayListView(ViewContext context, boolean portalView, BindException errors);
 
     ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
 

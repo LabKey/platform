@@ -3116,62 +3116,6 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         deleteHits(filter);
     }
 
-    public List<HitCriterion> getHitCriteria(Domain domain, ExpProtocol protocol)
-    {
-        var criteria = new ArrayList<HitCriterion>();
-        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
-        var tableSelector = new TableSelector(AssayDbSchema.getInstance().getTableInfoHitCriteria(), filter, null);
-
-        Domain replicateStatsDomain = null;
-        boolean isReplicateStatsResolved = false;
-
-        try (Results results = tableSelector.getResults())
-        {
-            while (results.next())
-            {
-                var propertyId = results.getInt("PropertyId");
-
-                var property = domain.getProperty(propertyId);
-
-                // Lookup on the replicate stats domain
-                if (property == null)
-                {
-                    if (!isReplicateStatsResolved)
-                    {
-                        isReplicateStatsResolved = true;
-                        replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
-                    }
-
-                    if (replicateStatsDomain != null)
-                        property = replicateStatsDomain.getProperty(propertyId);
-                }
-
-                if (property == null)
-                {
-                    // TODO: Log a warning
-                    continue;
-                }
-
-                var criterion = new HitCriterion(
-                    results.getString("Operation"),
-                    results.getString("Value"),
-                    property.getPropertyId(),
-                    property.getName(),
-                    results.getInt("ReferencePropertyId"),
-                    results.getInt("DomainId")
-                );
-
-                criteria.add(criterion);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
-        return criteria;
-    }
-
     private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);

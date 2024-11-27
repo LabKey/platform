@@ -120,9 +120,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
         if (provider == null)
-        {
             throw new NotFoundException("Could not find assay provider " + providerName);
-        }
+
         Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getUser(), getContainer());
         return getAssayTemplate(provider, template, false);
     }
@@ -135,9 +134,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     )
     {
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
-        boolean supportsFlagColumnType = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         String resultsDomainPrefix = ":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".";
-        boolean isPlateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
         List<HitCriterion> allHitCriteria = null;
 
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
@@ -196,10 +193,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
 
-                if (isResultsDomain && isPlateMetadataEnabled)
+                if (isResultsDomain)
                 {
                     if (allHitCriteria == null)
-                        allHitCriteria = PlateManager.get().getHitCriteria(domain, protocol);
+                        allHitCriteria = provider.getFilterCriteria(protocol);
 
                     List<HitCriterion> fieldHitCriteria = allHitCriteria.stream()
                             .filter(criterion -> prop.getPropertyId() == criterion.referencePropertyId())
@@ -216,7 +213,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
 
             if (isResultsDomain)
-                gwtDomain.setAllowFlagProperties(supportsFlagColumnType);
+                gwtDomain.setAllowFlagProperties(provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result));
 
             gwtDomains.add(gwtDomain);
         }

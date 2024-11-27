@@ -3,9 +3,7 @@ package org.labkey.api.assay.plate;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTFilterCriteria;
 import org.labkey.api.query.ValidationException;
 
@@ -13,39 +11,78 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record HitCriterion(String operation, String value, @Nullable Integer propertyId, @Nullable String name, Integer referencePropertyId, Integer domainId)
+public record HitCriterion(
+    String operation,
+    String value,
+    @Nullable Integer propertyId,
+    @Nullable String name,
+    Integer referencePropertyId,
+    Integer domainId
+)
 {
-    public static @NotNull List<HitCriterion> getCriteriaFromGWTFilterCriteria(List<GWTFilterCriteria> filterCriteria, int referencePropertyId, String referencePropertyName, int domainId) throws ValidationException
+    public static @NotNull List<HitCriterion> fromGWTFilterCriteria(
+        List<GWTFilterCriteria> filterCriteria,
+        int referencePropertyId,
+        String referencePropertyName,
+        int domainId,
+        @Nullable Domain replicateStatsDomain
+    ) throws ValidationException
     {
         if (filterCriteria == null || filterCriteria.isEmpty())
             return Collections.emptyList();
+
+        // Invariants
+        if (referencePropertyId <= 0)
+            throw new IllegalArgumentException("A valid \"referencePropertyId\" must be specified for filter criteria.");
+        if (StringUtils.trimToNull(referencePropertyName) == null)
+            throw new IllegalArgumentException("A valid \"referencePropertyName\" must be specified for filter criteria.");
+        if (domainId <= 0)
+            throw new IllegalArgumentException("A valid \"domainId\" must be specified for filter criteria.");
 
         var criteria = new ArrayList<HitCriterion>();
 
         for (int i = 0; i < filterCriteria.size(); i++)
         {
             var filterCriterion = filterCriteria.get(i);
+            Integer propertyId = filterCriterion.getPropertyId();
 
-            boolean hasValidPropertyId = filterCriterion.getPropertyId() != null && filterCriterion.getPropertyId() > 0;
+            if (propertyId != null && propertyId <= 0)
+                throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value."));
+
             String name = StringUtils.trimToNull(filterCriterion.getName());
-            String operation = StringUtils.trimToNull(filterCriterion.getOp());
 
-            if (!hasValidPropertyId && name == null)
-                throw new ValidationException(errorMessage(referencePropertyName, i, "Either a \"propertyId\" or \"name\" is required."));
+            // Attempt to resolve the field by name
+            if (propertyId == null && name != null)
+            {
+                if (replicateStatsDomain != null)
+                {
+                    var property = replicateStatsDomain.getPropertyByName(name);
+                    if (property == null)
+                        throw new ValidationException(errorMessage(referencePropertyName, i, String.format("Unable to resolve field from name \"%s\".", name)));
+
+                    propertyId = property.getPropertyId();
+                }
+                else if (name.equalsIgnoreCase(referencePropertyName))
+                {
+                    propertyId = referencePropertyId;
+                    name = null;
+                }
+            }
+            else if (propertyId != null && propertyId != referencePropertyId)
+                throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value. Cannot specify criteria against other fields."));
+
+            if (propertyId == null)
+            {
+                propertyId = referencePropertyId;
+                name = null;
+            }
+
+            String operation = StringUtils.trimToNull(filterCriterion.getOp());
             if (operation == null)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "An \"op\" (operation) property is required."));
 
-            try
-            {
-                Integer propertyId = hasValidPropertyId ? filterCriterion.getPropertyId() : null;
-                Object value = filterCriterion.getValue() == null ? null : filterCriterion.getValue();
-
-                criteria.add(new HitCriterion(operation, value == null ? null : value.toString(), propertyId, name, referencePropertyId, domainId));
-            }
-            catch (JSONException e)
-            {
-                throw new ValidationException(errorMessage(referencePropertyName, i, e.getMessage()));
-            }
+            String value = filterCriterion.getValue() == null ? null : filterCriterion.getValue().toString();
+            criteria.add(new HitCriterion(operation, value, propertyId, name, referencePropertyId, domainId));
         }
 
         return criteria;
@@ -64,9 +101,8 @@ public record HitCriterion(String operation, String value, @Nullable Integer pro
             filterCriterion.setName(criterion.name);
             filterCriterion.setOp(criterion.operation);
             filterCriterion.setPropertyId(criterion.propertyId);
+            filterCriterion.setReferencePropertyId(criterion.referencePropertyId);
             filterCriterion.setValue(criterion.value);
-            // Intentionally not serializing "ReferencePropertyId"
-            // Intentionally not serializing "DomainId"
 
             filterCriteria.add(filterCriterion);
         }
@@ -74,29 +110,8 @@ public record HitCriterion(String operation, String value, @Nullable Integer pro
         return filterCriteria;
     }
 
-    public static JSONArray toJSON(List<HitCriterion> criteria)
+    private static String errorMessage(String referencePropertyName, int index, String message)
     {
-        var json = new JSONArray();
-
-        for (HitCriterion criterion : criteria)
-        {
-            var object = new JSONObject();
-
-            object.put("name", criterion.name);
-            object.put("op", criterion.operation);
-            object.put("propertyId", criterion.propertyId);
-            object.put("value", criterion.value);
-            // Intentionally not serializing "ReferencePropertyId"
-            // Intentionally not serializing "DomainId"
-
-            json.put(object);
-        }
-
-        return json;
-    }
-
-    private static String errorMessage(String parentName, int index, String message)
-    {
-        return String.format("Invalid hit criteria for field \"%s\" at index [%d]. %s", parentName, index, message);
+        return String.format("Invalid hit criteria for field \"%s\" at index [%d]. %s", referencePropertyName, index, message);
     }
 }

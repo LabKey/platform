@@ -32,6 +32,7 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayPipelineProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -41,12 +42,19 @@ import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
@@ -82,16 +90,21 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -428,8 +441,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 }
             }
 
-            Domain resultsDomain = getResultsDomain(protocol);
-            if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
+            if (isResultsDomain(update))
             {
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
 
@@ -497,10 +509,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 }
 
                 // update fields in the replicate stats table to match any changes to measures in the results domain
-                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update, resultsDomain);
-                AssayPlateMetadataService.get().updateHitCriteria(user, protocol, update, resultsDomain);
+                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update);
             }
         }
+
+        updateFilterCriteria(user, protocol, orig, update);
     }
 
     @Override
@@ -533,6 +546,145 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public boolean supportsSampleLookupsAsMaterialInputs()
     {
         return true;
+    }
+
+    @Override
+    protected @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol, Domain domain)
+    {
+        return new ArrayList<>(getFilterCriteriaMap(protocol, domain).values());
+    }
+
+    private @NotNull Map<Integer, HitCriterion> getFilterCriteriaMap(ExpProtocol protocol, Domain domain)
+    {
+        var criteria = new LinkedHashMap<Integer, HitCriterion>();
+        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
+
+        Domain replicateStatsDomain = null;
+        boolean isReplicateStatsResolved = false;
+
+        try (Results results = new TableSelector(AssayDbSchema.getInstance().getTableInfoHitCriteria(), filter, new Sort(FieldKey.fromParts("RowId"))).getResults())
+        {
+            while (results.next())
+            {
+                var propertyId = results.getInt("PropertyId");
+
+                var property = domain.getProperty(propertyId);
+
+                // Lookup on the replicate stats domain
+                if (property == null)
+                {
+                    if (!isReplicateStatsResolved)
+                    {
+                        isReplicateStatsResolved = true;
+                        replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+                    }
+
+                    if (replicateStatsDomain != null)
+                        property = replicateStatsDomain.getProperty(propertyId);
+                }
+
+                if (property == null)
+                {
+                    // TODO: Log a warning
+                    continue;
+                }
+
+                var criterion = new HitCriterion(
+                    results.getString("Operation"),
+                    results.getString("Value"),
+                    property.getPropertyId(),
+                    property.getName(),
+                    results.getInt("ReferencePropertyId"),
+                    results.getInt("DomainId")
+                );
+
+                criteria.put(results.getInt("RowId"), criterion);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return criteria;
+    }
+
+    private void updateFilterCriteria(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update
+    ) throws ValidationException
+    {
+        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
+
+        // Filter criteria are only available to result domains
+        if (!isResultsDomain(update))
+            return;
+
+        Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+
+        Set<HitCriterion> newCriteria = new HashSet<>();
+        for (GWTPropertyDescriptor prop : update.getFields())
+            newCriteria.addAll(HitCriterion.fromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId(), replicateStatsDomain));
+
+        Map<Integer, HitCriterion> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
+        Set<HitCriterion> oldCriteria = new HashSet<>(keyedCriteria.values());
+        Set<HitCriterion> toAdd = new HashSet<>(newCriteria);
+        Set<Integer> toRemove = new HashSet<>();
+
+        for (var criterion : newCriteria)
+        {
+            if (oldCriteria.contains(criterion))
+                toAdd.remove(criterion);
+        }
+
+        for (var criterion : oldCriteria)
+        {
+            if (!newCriteria.contains(criterion))
+            {
+                for (var entry : keyedCriteria.entrySet())
+                {
+                    if (entry.getValue().equals(criterion))
+                        toRemove.add(entry.getKey());
+                }
+            }
+        }
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return;
+
+        var table = AssayDbSchema.getInstance().getTableInfoHitCriteria();
+
+        if (!toRemove.isEmpty())
+        {
+            var sql = new SQLFragment("DELETE FROM ").append(table, "criteria")
+                    .append("WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
+            new SqlExecutor(table.getSchema()).execute(sql);
+        }
+
+        if (!toAdd.isEmpty())
+        {
+            List<List<?>> criteriaToInsert = new ArrayList<>();
+            for (var criterion : toAdd)
+                criteriaToInsert.add(Arrays.asList(criterion.propertyId(), criterion.referencePropertyId(), criterion.domainId(), criterion.operation(), criterion.value()));
+
+            String sql = "INSERT INTO " + table + " (propertyId, referencePropertyId, domainId, operation, value) VALUES (?, ?, ?, ?, ?)";
+
+            try
+            {
+                Table.batchExecute(table.getSchema(), sql, criteriaToInsert);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+    }
+
+    private static boolean isResultsDomain(GWTDomain<?> domain)
+    {
+        return domain != null && domain.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".");
     }
 
     public static class TestCase extends Assert

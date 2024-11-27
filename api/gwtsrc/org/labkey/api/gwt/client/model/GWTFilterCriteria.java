@@ -2,16 +2,21 @@ package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 
+@Setter
+@Getter
 @EqualsAndHashCode
 public class GWTFilterCriteria implements Serializable, IsSerializable
 {
-    private String _name;
-    private String _op;
-    private Integer _propertyId;
-    private Object _value;
+    private String name;
+    private String op;
+    private Integer propertyId;
+    private Integer referencePropertyId;
+    private Object value;
 
     public GWTFilterCriteria()
     {
@@ -22,47 +27,8 @@ public class GWTFilterCriteria implements Serializable, IsSerializable
         setName(fc.getName());
         setOp(fc.getOp());
         setPropertyId(fc.getPropertyId());
+        setReferencePropertyId(fc.getReferencePropertyId());
         setValue(fc.getValue());
-    }
-
-    public String getName()
-    {
-        return _name;
-    }
-
-    public void setName(String name)
-    {
-        _name = name;
-    }
-
-    public String getOp()
-    {
-        return _op;
-    }
-
-    public void setOp(String op)
-    {
-        _op = op;
-    }
-
-    public Integer getPropertyId()
-    {
-        return _propertyId;
-    }
-
-    public void setPropertyId(Integer propertyId)
-    {
-        _propertyId = propertyId;
-    }
-
-    public Object getValue()
-    {
-        return _value;
-    }
-
-    public void setValue(Object value)
-    {
-        _value = value;
     }
 }
 
