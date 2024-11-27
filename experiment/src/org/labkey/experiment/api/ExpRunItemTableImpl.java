@@ -47,6 +47,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -321,7 +322,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         List<Set<String>> required = new ArrayList<>();
         for (Map.Entry<String, String> importAlias : requiredImportAliases.entrySet())
         {
-            Set<String> fields = new HashSet<>();
+            Set<String> fields = new LinkedHashSet<>();
             String dataType = importAlias.getValue();
             boolean isParentSamples = dataType.toLowerCase().startsWith(MATERIAL_INPUTS_ALIAS_PREFIX.toLowerCase());
             String prefix = isParentSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
