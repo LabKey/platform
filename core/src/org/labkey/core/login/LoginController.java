@@ -20,7 +20,6 @@ import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -72,13 +70,11 @@ import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
-import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.SecurityMessage;
-import org.labkey.api.security.TokenAuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -90,9 +86,7 @@ import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
@@ -118,7 +112,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -126,13 +119,13 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
@@ -1606,7 +1599,7 @@ public class LoginController extends SpringActionController
             NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
             SetPasswordBean bean = new SetPasswordBean(
-                    form, getEmailForForm(form), _unrecoverableError, getMessage(form),
+                    form, getEmailForForm(form), _unrecoverableError, getSuccessMessageSupplier(form),
                     nonPasswordInputs, passwordInputs, getClass(), isCancellable(form),
                     buttonText, getTitle()
             );
@@ -1675,7 +1668,7 @@ public class LoginController extends SpringActionController
         }
 
         protected abstract void verify(SetPasswordForm form, Errors errors);
-        protected abstract String getMessage(SetPasswordForm form);
+        protected abstract Supplier<String> getSuccessMessageSupplier(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
         protected boolean clearVerification()
         {
@@ -1709,9 +1702,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return "Your email address (" + _user.getEmail() + ") has been verified! Create an account password below.";
+            return () -> "Your email address (" + _user.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -1766,12 +1759,12 @@ public class LoginController extends SpringActionController
         User user = LoginManager.verify(verification);
         boolean isVerified = user != null;
 
-        LoginController.checkVerificationErrors(isVerified, user, errors);
+        LoginController.checkVerificationErrors(isVerified, user, verification, errors);
 
         return isVerified && !errors.hasErrors() ? user : null;
     }
 
-    public static void checkVerificationErrors(boolean isVerified, User user, Errors errors)
+    public static void checkVerificationErrors(boolean isVerified, User user, String verification, Errors errors)
     {
         if (isVerified)
         {
@@ -1783,10 +1776,13 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            // Verification string wasn't found. User might have already verified, they don't have a login (should be
-            // using LDAP or SSO), or the link got mangled. Don't provide detailed guidance since that could reveal
-            // information about existing users.
-            errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
+            // Verification failed. Inspect the verification token to provide a bit of guidance.
+            if (null == verification)
+                errors.reject("setPassword", "Verification failed. The verification parameter is missing. Make sure you've copied the entire link into your browser's address bar.");
+            else if (verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
+                errors.reject("setPassword", "Verification failed. The verification parameter is shorter than expected. Make sure you've copied the entire link into your browser's address bar.");
+            else
+                errors.reject("setPassword", "Verification failed. You may have already verified.");
         }
     }
 
@@ -1811,9 +1807,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return "Welcome! We see that this is your first time logging in. This wizard will guide you through " +
+            return () -> "Welcome! We see that this is your first time logging in. This wizard will guide you through " +
                     "creating a Site Administrator account that has full control over this server, installing the modules " +
                     "required to use LabKey Server, and setting some basic configuration.";
         }
@@ -1967,9 +1963,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return form.getMessage();
+            return () -> form.getMessage();
         }
 
         @Override
@@ -2044,7 +2040,7 @@ public class LoginController extends SpringActionController
         public final String email;
         public final SetPasswordForm form;
         public final boolean unrecoverableError;
-        public final String message;
+        public final Supplier<String> successMessageSupplier;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
         public final Class<? extends AbstractSetPasswordAction> action;
@@ -2054,14 +2050,14 @@ public class LoginController extends SpringActionController
 
         // TODO switch to builder pattern
         private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError,
-                                String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
+                                Supplier<String> successMessageSupplier, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
                                 Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable,
                                 String buttonText, String title)
         {
             this.form = form;
             this.email = emailForForm;
             this.unrecoverableError = unrecoverableError;
-            this.message = message;
+            this.successMessageSupplier = successMessageSupplier;
             this.nonPasswordInputs = nonPasswordInputs;
             this.passwordInputs = passwordInputs;
             this.action = clazz;
@@ -2188,147 +2184,6 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             root.addChild("Reset Password");
-        }
-    }
-
-    public static final String REMOTE_LOGIN_FEATURE_FLAG = "remoteLoginFeature";
-
-    private static final String REMOTE_LOGIN_FEATURE_AREA = "remoteLoginInvocations";
-
-    private static void handleRemoteLoginAction(String actionName)
-    {
-        SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, REMOTE_LOGIN_FEATURE_AREA, actionName);
-
-        if (OptionalFeatureService.get().isFeatureEnabled(REMOTE_LOGIN_FEATURE_FLAG))
-            _log.warn("The Remote Login API has been deprecated and will be removed in LabKey Server 24.12! Migrate uses to the CAS identity provider.");
-        else
-            throw new ApiUsageException("The Remote Login API has been removed. Migrate uses to the CAS identity provider. Site administrators can turn on a deprecated feature flag to temporarily restore support and ease migration.");
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresLogin
-    public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
-    {
-        @Override
-        public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
-        {
-            handleRemoteLoginAction("create");
-            URLHelper returnUrl = form.getValidReturnUrl();
-
-            if (null == returnUrl)
-            {
-                PageConfig page = getPageConfig();
-                page.setTemplate(PageConfig.Template.Dialog);
-                page.setTitle("Token Authentication Error");
-                return HtmlView.of("Error: a valid returnUrl was not specified.");
-            }
-
-            User user = getUser().isImpersonated() ? getUser().getImpersonatingUser() : getUser();
-            String token = TokenAuthenticationManager.get().createKey(getViewContext().getRequest(), user);
-            returnUrl.addParameter("labkeyToken", token);
-            returnUrl.addParameter("labkeyEmail", user.getEmail());
-
-            getViewContext().getResponse().sendRedirect(returnUrl.getURIString());
-
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    @CSRF(CSRF.Method.NONE)
-    public static class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
-    {
-        @Override
-        public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
-        {
-            handleRemoteLoginAction("verify");
-            String message = null;
-            User user = null;
-
-            if (null == form.getLabkeyToken())
-            {
-                message = "Token was not specified";
-            }
-            else
-            {
-                user = TokenAuthenticationManager.get().getContext(form.getLabkeyToken());
-
-                if (null == user)
-                    message = "Unknown token";
-            }
-
-            HttpServletResponse response = getViewContext().getResponse();
-            response.setContentType("text/xml");
-
-            try (PrintWriter out = response.getWriter())
-            {
-                if (null != user)
-                {
-                    out.print("<TokenAuthentication success=\"true\" ");
-                    out.print("token=\"" + form.getLabkeyToken() + "\" ");
-                    out.print("email=\"" + user.getEmail() + "\"/>");
-                }
-                else
-                {
-                    out.print("<TokenAuthentication success=\"false\" ");
-                    out.print("message=\"" + message + "\"/>");
-                }
-            }
-
-            response.flushBuffer();
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresNoPermission
-    // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
-    // where the caller has a secret (the authentication token).
-    public static class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
-    {
-        @Override
-        public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
-        {
-            handleRemoteLoginAction("invalidate");
-            if (null != form.getLabkeyToken())
-                TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
-            URLHelper returnUrl = form.getValidReturnUrl();
-            if (null != returnUrl)
-                return returnUrl;
-            return AppProps.getInstance().getHomePageActionURL();
-        }
-    }
-
-    public static class TokenAuthenticationForm extends ReturnUrlForm
-    {
-        private String _labkeyToken;
-
-        public String getLabkeyToken()
-        {
-            return _labkeyToken;
-        }
-
-        @SuppressWarnings("unused")
-        public void setLabkeyToken(String labkeyToken)
-        {
-            _labkeyToken = labkeyToken;
-        }
-
-        public URLHelper getValidReturnUrl()
-        {
-            return getReturnURLHelper();
         }
     }
 

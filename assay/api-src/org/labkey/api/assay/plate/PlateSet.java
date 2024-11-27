@@ -1,10 +1,10 @@
 package org.labkey.api.assay.plate;
 
-import org.labkey.api.data.Container;
+import org.labkey.api.exp.Identifiable;
 
 import java.util.List;
 
-public interface PlateSet
+public interface PlateSet extends Identifiable
 {
     int MAX_PLATES = 60;
     int MAX_PLATE_WELL_SIZE = 384;
@@ -12,11 +12,7 @@ public interface PlateSet
 
     Integer getRowId();
 
-    Container getContainer();
-
     String getDescription();
-
-    String getName();
 
     String getPlateSetId();
 

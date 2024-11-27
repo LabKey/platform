@@ -1,27 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>Aliquots_blue_svg</title>
-    <g id="Aliquots_blue" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g>
-            <rect id="Rectangle" x="0" y="0" width="64" height="64"></rect>
-            <g id="Branches" transform="translate(30.000000, 14.000000)" stroke="#0067C5" stroke-width="2">
-                <line x1="0" y1="7" x2="7" y2="0" id="Path-2"></line>
-                <line x1="5" y1="18" x2="15" y2="18" id="Path-3"></line>
-                <line x1="0" y1="36" x2="7" y2="29" id="Path-2" transform="translate(3.500000, 32.500000) scale(1, -1) translate(-3.500000, -32.500000) "></line>
-            </g>
-            <circle id="Main-Sample" stroke="#99C9E8" stroke-width="2" fill="#FFFFFF" cx="19" cy="32" r="16"></circle>
-            <g id="Sub-3" transform="translate(34.000000, 47.000000)">
-                <circle stroke="#99C9E8" stroke-width="2" fill="#99C9E8" cx="8" cy="8" r="7"></circle>
-                <circle fill="#FFFFFF" cx="8" cy="8" r="6"></circle>
-            </g>
-            <g id="Sub-2" transform="translate(44.000000, 24.000000)">
-                <circle stroke="#99C9E8" stroke-width="2" fill="#99C9E8" cx="8" cy="8" r="7"></circle>
-                <circle fill="#FFFFFF" cx="8" cy="8" r="6"></circle>
-            </g>
-            <g id="Sub-1" transform="translate(34.000000, 1.000000)">
-                <circle stroke="#99C9E8" stroke-width="2" fill="#99C9E8" cx="8" cy="8" r="7"></circle>
-                <circle fill="#FFFFFF" cx="8" cy="8" r="6"></circle>
-            </g>
-        </g>
-    </g>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M37.7072 14.7071L30.7072 21.7071L29.293 20.2929L36.293 13.2929L37.7072 14.7071Z" fill="#0067C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M45 33H35V31H45V33Z" fill="#0067C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M37.7072 49.2929L30.7072 42.2929L29.293 43.7071L36.293 50.7071L37.7072 49.2929Z" fill="#0067C5"/>
+<path d="M19 48C27.8366 48 35 40.8366 35 32C35 23.1634 27.8366 16 19 16C10.1634 16 3 23.1634 3 32C3 40.8366 10.1634 48 19 48Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M19 17C10.7157 17 4 23.7157 4 32C4 40.2843 10.7157 47 19 47C27.2843 47 34 40.2843 34 32C34 23.7157 27.2843 17 19 17ZM2 32C2 22.6112 9.61116 15 19 15C28.3888 15 36 22.6112 36 32C36 41.3888 28.3888 49 19 49C9.61116 49 2 41.3888 2 32Z" fill="#99C9E8"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M42 49C38.6863 49 36 51.6863 36 55C36 58.3137 38.6863 61 42 61C45.3137 61 48 58.3137 48 55C48 51.6863 45.3137 49 42 49ZM34 55C34 50.5817 37.5817 47 42 47C46.4183 47 50 50.5817 50 55C50 59.4183 46.4183 63 42 63C37.5817 63 34 59.4183 34 55Z" fill="#99C9E8"/>
+<path d="M42 61C45.3137 61 48 58.3137 48 55C48 51.6863 45.3137 49 42 49C38.6863 49 36 51.6863 36 55C36 58.3137 38.6863 61 42 61Z" fill="#0067C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M52 26C48.6863 26 46 28.6863 46 32C46 35.3137 48.6863 38 52 38C55.3137 38 58 35.3137 58 32C58 28.6863 55.3137 26 52 26ZM44 32C44 27.5817 47.5817 24 52 24C56.4183 24 60 27.5817 60 32C60 36.4183 56.4183 40 52 40C47.5817 40 44 36.4183 44 32Z" fill="#99C9E8"/>
+<path d="M52 38C55.3137 38 58 35.3137 58 32C58 28.6863 55.3137 26 52 26C48.6863 26 46 28.6863 46 32C46 35.3137 48.6863 38 52 38Z" fill="#0067C5"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M42 3C38.6863 3 36 5.68629 36 9C36 12.3137 38.6863 15 42 15C45.3137 15 48 12.3137 48 9C48 5.68629 45.3137 3 42 3ZM34 9C34 4.58172 37.5817 1 42 1C46.4183 1 50 4.58172 50 9C50 13.4183 46.4183 17 42 17C37.5817 17 34 13.4183 34 9Z" fill="#99C9E8"/>
+<path d="M42 15C45.3137 15 48 12.3137 48 9C48 5.68629 45.3137 3 42 3C38.6863 3 36 5.68629 36 9C36 12.3137 38.6863 15 42 15Z" fill="#0067C5"/>
 </svg>

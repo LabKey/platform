@@ -507,6 +507,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 if (errors.hasErrors())
                                     return null;
 
+                                // Issue 50545 : synchronize PHI settings from the source dataset
+                                updateDomainProperties(form.getViewContext().getUser(), def, dsDef);
+
                                 if (!suppressVisitManagerRecalc)
                                 {
                                     ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
@@ -544,41 +547,36 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
-    @Override
-    public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
+    /**
+     * Synchronizes domain properties from the source query to the snapshot dataset. For now only
+     * PHI annotations are copied over.
+     */
+    private void updateDomainProperties(User user, QuerySnapshotDefinition snapshotDefinition, DatasetDefinition dsDef) throws Exception
     {
-        ActionURL ret = super.updateSnapshotDefinition(context, def, errors);
-
-        // update the study dataset columns
-/*
-        Study study = StudyManager.getInstance().getStudy(context.getContainer());
-        DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, def.getName());
-        if (dsDef != null)
+        QueryDefinition sourceDef = snapshotDefinition.getQueryDefinition(user);
+        if (sourceDef != null)
         {
-            String domainURI = dsDef.getTypeURI();
-            Domain domain = PropertyService.get().getDomain(context.getContainer(), domainURI);
+            TableInfo sourceTable = sourceDef.getSchema().getTable(sourceDef.getName(), null);
+            Domain sourceDomain = sourceTable != null ? sourceTable.getDomain() : null;
+            Domain snapshotDomain = dsDef.getDomain();
 
-            if (domain != null)
+            // source domain may be null if from a query
+            if (sourceDomain != null && snapshotDomain != null)
             {
-                Map<String, DomainProperty> propertyMap = new HashMap<String, DomainProperty>();
-
-                for (DomainProperty prop : domain.getProperties())
-                    propertyMap.put(prop.getName(), prop);
-
-                for (ColumnInfo col : QueryService.get().getColumns(dsDef.getTableInfo(context.getUser()), def.getColumns()).values())
+                boolean dirty = false;
+                for (var sourceProp : sourceDomain.getProperties())
                 {
-                    if (propertyMap.containsKey(col.getName()))
-                        propertyMap.remove(col.getName());
-                    else
-                        addAsDomainProperty(domain, col);
+                    var targetProp = snapshotDomain.getPropertyByName(sourceProp.getName());
+                    if (targetProp != null && !sourceProp.getPHI().equals(targetProp.getPHI()))
+                    {
+                        targetProp.setPhi(sourceProp.getPHI());
+                        dirty = true;
+                    }
                 }
-
-                for (DomainProperty prop : propertyMap.values())
-                    prop.delete();
+                if (dirty)
+                    snapshotDomain.save(user);
             }
         }
-*/
-        return ret;
     }
 
     @Override

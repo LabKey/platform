@@ -356,7 +356,6 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
-import static org.labkey.core.login.LoginController.REMOTE_LOGIN_FEATURE_FLAG;
 import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
@@ -1121,8 +1120,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             UsageReportingLevel.reportNow();
         });
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(REMOTE_LOGIN_FEATURE_FLAG, "Restore ability to use the deprecated Remote Login API", "This option and all support for the Remote Login API will be removed in LabKey Server v24.12.", false, false, FeatureType.Deprecated));
-
         if (null != PropertyService.get())
         {
             PropertyService.get().registerDomainKind(new UsersDomainKind());
@@ -1199,6 +1196,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), Portal.getMetricsProvider());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

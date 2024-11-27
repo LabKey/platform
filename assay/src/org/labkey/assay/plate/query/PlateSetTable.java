@@ -33,6 +33,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -45,6 +46,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
@@ -55,17 +57,37 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private final boolean _allowInsert;
 
+    public enum Column
+    {
+        Created,
+        CreatedBy,
+        Description,
+        Folder,
+        Lsid,
+        Modified,
+        ModifiedBy,
+        Name,
+        PlateCount,
+        RowId,
+        Type;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
+    }
+
     static
     {
-        defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Folder"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
-        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
-        defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
+        defaultVisibleColumns.add(PlateSetTable.Column.Name.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Folder.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Type.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Description.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.PlateCount.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Created.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.CreatedBy.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.Modified.fieldKey());
+        defaultVisibleColumns.add(PlateSetTable.Column.ModifiedBy.fieldKey());
     }
 
     public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf, boolean allowInsert)
@@ -111,7 +133,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         if ("Container".equalsIgnoreCase(col.getName()))
         {
-            wrap.setFieldKey(FieldKey.fromParts("Folder"));
+            wrap.setFieldKey(PlateSetTable.Column.Folder.fieldKey());
             wrap.setLabel(getContainer().hasProductFolders() ? "Project" : "Folder");
         }
     }
@@ -156,11 +178,27 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
-            SimpleTranslator nameExpressionTranslator = new SimpleTranslator(data.getDataIterator(context), context);
+            SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
+            lsidRemover.selectAll();
+            if (lsidRemover.getColumnNameMap().containsKey(PlateTable.Column.Lsid.name()))
+            {
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get(PlateTable.Column.Lsid.name()));
+            }
+
+            SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
+            lsidGenerator.setDebugName("lsidGenerator");
+            lsidGenerator.selectAll();
+
+            // generate a value for the lsid
+            final TableInfo plateSetTable = getQueryTable();
+            lsidGenerator.addColumn(plateSetTable.getColumn(PlateTable.Column.Lsid.name()),
+                    (Supplier) () -> PlateManager.get().getLsid(PlateSet.class, container));
+
+            SimpleTranslator nameExpressionTranslator = new SimpleTranslator(lsidGenerator, context);
             nameExpressionTranslator.setDebugName("nameExpressionTranslator");
             nameExpressionTranslator.selectAll();
             final Map<String, Integer> nameMap = nameExpressionTranslator.getColumnNameMap();
-            final TableInfo plateSetTable = getQueryTable();
+
             if (!nameMap.containsKey("name"))
             {
                 ColumnInfo nameCol = plateSetTable.getColumn("name");
@@ -207,10 +245,10 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
-            Integer plateSetId = (Integer) oldRowMap.get("RowId");
-            PlateSet plateSet = PlateManager.get().getPlateSet(container, plateSetId);
+            Integer rowId = (Integer) oldRowMap.get(Column.RowId.name());
+            PlateSet plateSet = PlateManager.get().getPlateSet(container, rowId);
             if (plateSet == null)
-                throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", plateSetId));
+                throw new QueryUpdateServiceException(String.format("Plate set could not be found for ID : %d", rowId));
 
             List<Plate> plates = plateSet.getPlates();
             if (!plates.isEmpty())
@@ -218,26 +256,42 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
-                PlateManager.get().beforePlateSetDelete(container, user, (Integer) oldRowMap.get("RowId"));
+                PlateManager.get().beforePlateSetDelete(container, user, rowId);
 
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> {
+                    PlateSetCache.uncache(container, plateSet);
+                    PlateManager.deindexPlateSet(container, rowId);
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
                 return returnMap;
             }
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(
+            User user,
+            Container container,
+            Map<String, Object> row,
+            @NotNull Map<String, Object> oldRow,
+            @Nullable Map<Enum, Object> configParameters
+        ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer plateSetId = (Integer) oldRow.get("rowId");
-            PlateSet plateSet = PlateManager.get().requirePlateSet(container, plateSetId, "Failed to update plate set.");
+            Integer rowId = (Integer) oldRow.get(Column.RowId.name());
+            PlateSet plateSet = PlateManager.get().requirePlateSet(container, rowId, "Failed to update plate set.");
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
                 Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
-                transaction.addCommitTask(() -> PlateSetCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+
+                transaction.addCommitTask(() -> {
+                    PlateSetCache.uncache(container, plateSet);
+
+                    if (row.containsKey(Column.Name.name()) && !Objects.equals(oldRow.get(Column.Name.name()), row.get(Column.Name.name())))
+                        PlateManager.get().indexPlateSet(container, plateSet.getRowId());
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+
                 transaction.commit();
                 return newRow;
             }
