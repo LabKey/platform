@@ -24,7 +24,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.assay.plate.HitCriterion;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -1746,7 +1746,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol)
+    public @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol)
     {
         Domain resultsDomain = getResultsDomain(protocol);
         if (resultsDomain == null)
@@ -1755,7 +1755,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getFilterCriteria(protocol, resultsDomain);
     }
 
-    protected @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
+    protected @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
     {
         return Collections.emptyList();
     }

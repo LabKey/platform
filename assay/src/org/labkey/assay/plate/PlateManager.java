@@ -30,7 +30,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.HitCriterion;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateDataStateManager;

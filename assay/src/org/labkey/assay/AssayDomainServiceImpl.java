@@ -28,7 +28,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
-import org.labkey.api.assay.plate.HitCriterion;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
@@ -135,7 +135,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     {
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
         String resultsDomainPrefix = ":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".";
-        List<HitCriterion> allHitCriteria = null;
+        List<FilterCriteria> allFilterCriteria = null;
 
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
         {
@@ -195,14 +195,14 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 if (isResultsDomain)
                 {
-                    if (allHitCriteria == null)
-                        allHitCriteria = provider.getFilterCriteria(protocol);
+                    if (allFilterCriteria == null)
+                        allFilterCriteria = provider.getFilterCriteria(protocol);
 
-                    List<HitCriterion> fieldHitCriteria = allHitCriteria.stream()
+                    List<FilterCriteria> fieldFilterCriteria = allFilterCriteria.stream()
                             .filter(criterion -> prop.getPropertyId() == criterion.referencePropertyId())
                             .toList();
 
-                    gwtProp.setFilterCriteria(HitCriterion.toGWTFilterCriteria(fieldHitCriteria));
+                    gwtProp.setFilterCriteria(FilterCriteria.toGWTFilterCriteria(fieldFilterCriteria));
                 }
 
                 gwtProps.add(gwtProp);

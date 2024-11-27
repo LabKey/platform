@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record HitCriterion(
+public record FilterCriteria(
     String operation,
     String value,
     @Nullable Integer propertyId,
@@ -20,7 +20,7 @@ public record HitCriterion(
     Integer domainId
 )
 {
-    public static @NotNull List<HitCriterion> fromGWTFilterCriteria(
+    public static @NotNull List<FilterCriteria> fromGWTFilterCriteria(
         List<GWTFilterCriteria> filterCriteria,
         int referencePropertyId,
         String referencePropertyName,
@@ -39,17 +39,17 @@ public record HitCriterion(
         if (domainId <= 0)
             throw new IllegalArgumentException("A valid \"domainId\" must be specified for filter criteria.");
 
-        var criteria = new ArrayList<HitCriterion>();
+        var criteria = new ArrayList<FilterCriteria>();
 
         for (int i = 0; i < filterCriteria.size(); i++)
         {
-            var filterCriterion = filterCriteria.get(i);
-            Integer propertyId = filterCriterion.getPropertyId();
+            var criterion = filterCriteria.get(i);
+            Integer propertyId = criterion.getPropertyId();
 
             if (propertyId != null && propertyId <= 0)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value."));
 
-            String name = StringUtils.trimToNull(filterCriterion.getName());
+            String name = StringUtils.trimToNull(criterion.getName());
 
             // Attempt to resolve the field by name
             if (propertyId == null && name != null)
@@ -77,18 +77,18 @@ public record HitCriterion(
                 name = null;
             }
 
-            String operation = StringUtils.trimToNull(filterCriterion.getOp());
+            String operation = StringUtils.trimToNull(criterion.getOp());
             if (operation == null)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "An \"op\" (operation) property is required."));
 
-            String value = filterCriterion.getValue() == null ? null : filterCriterion.getValue().toString();
-            criteria.add(new HitCriterion(operation, value, propertyId, name, referencePropertyId, domainId));
+            String value = criterion.getValue() == null ? null : criterion.getValue().toString();
+            criteria.add(new FilterCriteria(operation, value, propertyId, name, referencePropertyId, domainId));
         }
 
         return criteria;
     }
 
-    public static List<GWTFilterCriteria> toGWTFilterCriteria(List<HitCriterion> criteria)
+    public static List<GWTFilterCriteria> toGWTFilterCriteria(List<FilterCriteria> criteria)
     {
         if (criteria == null || criteria.isEmpty())
             return Collections.emptyList();

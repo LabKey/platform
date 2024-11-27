@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.assay.plate.HitCriterion;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
@@ -275,7 +275,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
     boolean isPlateMetadataEnabled(ExpProtocol protocol);
 
-    @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol);
+    @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol);
 
     /**
      * @return the data type that this run creates for its analyzed results

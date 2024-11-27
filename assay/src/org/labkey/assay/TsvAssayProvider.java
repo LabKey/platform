@@ -32,7 +32,6 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayPipelineProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
-import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -42,7 +41,7 @@ import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
-import org.labkey.api.assay.plate.HitCriterion;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -57,7 +56,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
@@ -87,10 +85,8 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
@@ -549,14 +545,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    protected @NotNull List<HitCriterion> getFilterCriteria(ExpProtocol protocol, Domain domain)
+    protected @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol, Domain domain)
     {
         return new ArrayList<>(getFilterCriteriaMap(protocol, domain).values());
     }
 
-    private @NotNull Map<Integer, HitCriterion> getFilterCriteriaMap(ExpProtocol protocol, Domain domain)
+    private @NotNull Map<Integer, FilterCriteria> getFilterCriteriaMap(ExpProtocol protocol, Domain domain)
     {
-        var criteria = new LinkedHashMap<Integer, HitCriterion>();
+        var criteria = new LinkedHashMap<Integer, FilterCriteria>();
         var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
 
         Domain replicateStatsDomain = null;
@@ -589,7 +585,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     continue;
                 }
 
-                var criterion = new HitCriterion(
+                var criterion = new FilterCriteria(
                     results.getString("Operation"),
                     results.getString("Value"),
                     property.getPropertyId(),
@@ -624,13 +620,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
         Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
 
-        Set<HitCriterion> newCriteria = new HashSet<>();
+        Set<FilterCriteria> newCriteria = new HashSet<>();
         for (GWTPropertyDescriptor prop : update.getFields())
-            newCriteria.addAll(HitCriterion.fromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId(), replicateStatsDomain));
+            newCriteria.addAll(FilterCriteria.fromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId(), replicateStatsDomain));
 
-        Map<Integer, HitCriterion> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
-        Set<HitCriterion> oldCriteria = new HashSet<>(keyedCriteria.values());
-        Set<HitCriterion> toAdd = new HashSet<>(newCriteria);
+        Map<Integer, FilterCriteria> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
+        Set<FilterCriteria> oldCriteria = new HashSet<>(keyedCriteria.values());
+        Set<FilterCriteria> toAdd = new HashSet<>(newCriteria);
         Set<Integer> toRemove = new HashSet<>();
 
         for (var criterion : newCriteria)
