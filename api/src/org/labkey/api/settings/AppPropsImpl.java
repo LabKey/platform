@@ -316,8 +316,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public int getReadOnlyHttpRequestTimeout()
     {
-        // TODO - change to 0 prior to merging. Setting to 15 seconds to test feature on TeamCity
-        return lookupIntValue(readOnlyHttpRequestTimeout, 15);
+        return lookupIntValue(readOnlyHttpRequestTimeout, 0);
     }
 
     @Override
