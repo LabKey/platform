@@ -558,7 +558,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         Domain replicateStatsDomain = null;
         boolean isReplicateStatsResolved = false;
 
-        try (Results results = new TableSelector(AssayDbSchema.getInstance().getTableInfoHitCriteria(), filter, new Sort(FieldKey.fromParts("RowId"))).getResults())
+        try (Results results = new TableSelector(AssayDbSchema.getInstance().getTableInfoFilterCriteria(), filter, new Sort(FieldKey.fromParts("RowId"))).getResults())
         {
             while (results.next())
             {
@@ -650,7 +650,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (toAdd.isEmpty() && toRemove.isEmpty())
             return;
 
-        var table = AssayDbSchema.getInstance().getTableInfoHitCriteria();
+        var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
 
         if (!toRemove.isEmpty())
         {

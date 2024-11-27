@@ -201,8 +201,8 @@
       </column>
     </columns>
   </table>
-  <table tableName="HitCriteria" tableDbType="TABLE">
-    <description>Contains one row per assay hit criteria.</description>
+  <table tableName="FilterCriteria" tableDbType="TABLE">
+    <description>Contains one row per assay result field filter criteria.</description>
     <columns>
       <column columnName="DomainId"/>
       <column columnName="Operation"/>
