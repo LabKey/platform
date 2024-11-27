@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="jakarta.servlet.jsp.JspWriter" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
@@ -24,7 +25,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.settings.Theme" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.DateUtil.DateTimeFormat" %>
@@ -39,15 +42,20 @@
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="org.labkey.core.admin.DateDisplayFormatType" %>
 <%@ page import="java.io.IOException" %>
+<%@ page import="java.lang.Enum" %>
+<%@ page import="java.lang.IllegalArgumentException" %>
+<%@ page import="java.lang.Object" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.lang.StringBuilder" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -356,18 +364,22 @@
 <tr>
     <td>&nbsp;</td>
 </tr>
-
+<%
+    boolean includeParsingPatterns = OptionalFeatureService.get().isFeatureEnabled(FolderSettingsCache.EXTRA_PARSING_PATTERNS_FEATURE_FLAG);
+    if (c.isRoot() || includeParsingPatterns)
+    {
+%>
 <tr>
     <td colspan=3>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
-    if (c.isRoot())
-    {
-        DateParsingMode mode = laf.getDateParsingMode();
-        String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
-            "For example, if a user enters the date \"10/4/2013\" does that person mean October 4, 2013 (typical interpretation " +
-            "in the United States) or April 10, 2013 (typical interpretation in most other countries)? Choose the " +
-            "parsing mode that matches your users' expectations.";
+        if (c.isRoot())
+        {
+            DateParsingMode mode = laf.getDateParsingMode();
+            String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+                "For example, if a user enters the date \"10/4/2024\" does that person mean October 4, 2024 (typical interpretation " +
+                "in the United States) or April 10, 2024 (typical interpretation in most other countries)? Choose the " +
+                "parsing mode that matches your users' expectations.";
 %>
 <tr>
     <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
@@ -377,7 +389,10 @@
     </td>
 </tr>
 <%
-    }
+        }
+
+        if (includeParsingPatterns)
+        {
 %>
 <tr>
     <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
@@ -397,10 +412,15 @@
     <%=inheritCheckbox(inherited, extraTimeParsingPattern)%>
     <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
+<%
+        }
+%>
 <tr>
     <td>&nbsp;</td>
 </tr>
-
+<%
+    }
+%>
 <tr>
     <td colspan=3>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>

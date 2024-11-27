@@ -50,7 +50,7 @@ public class LookAndFeelFolderPropertiesTest extends Assert
         testFolderPropertiesInherited(folderProps, subFolderProps);
 
         // Overwrite project properties and ensure those inherit down to the subfolder
-        testWriteFolderProperties(_project, "ddMMMyyyy", "HH:mm:ss.SSS", "00.00", "yyyy.MM.dd", "HH.mm", !rootProps.areRestrictedColumnsEnabled());
+        testWriteFolderProperties(_project, "ddMMMyyyy", "HH:mm:ss.SSS", "00.00", !rootProps.areRestrictedColumnsEnabled());
         projectProps = LookAndFeelProperties.getInstance(_project);
         folderProps = LookAndFeelProperties.getInstance(_folder);
         subFolderProps = LookAndFeelProperties.getInstance(_subFolder);
@@ -58,7 +58,7 @@ public class LookAndFeelFolderPropertiesTest extends Assert
         testFolderPropertiesInherited(folderProps, subFolderProps);
 
         // Change project properties and ensure new values inherit down to the subfolder
-        testWriteFolderProperties(_project, "MMMddyyyy", "HH.mm.ss.SSS", "##.##", "yyyy/MM/dd", "HH:mm", rootProps.areRestrictedColumnsEnabled());
+        testWriteFolderProperties(_project, "MMMddyyyy", "HH.mm.ss.SSS", "##.##", rootProps.areRestrictedColumnsEnabled());
         projectProps = LookAndFeelProperties.getInstance(_project);
         folderProps = LookAndFeelProperties.getInstance(_folder);
         subFolderProps = LookAndFeelProperties.getInstance(_subFolder);
@@ -66,13 +66,13 @@ public class LookAndFeelFolderPropertiesTest extends Assert
         testFolderPropertiesInherited(folderProps, subFolderProps);
 
         // Overwrite folder properties and ensure those inherit to the subfolder
-        testWriteFolderProperties(_folder, "MMMyyyydd", "HH:mm:ss.SSS", "##.00", "yyyy:MM:dd", "HH.mm", !rootProps.areRestrictedColumnsEnabled());
+        testWriteFolderProperties(_folder, "MMMyyyydd", "HH:mm:ss.SSS", "##.00", !rootProps.areRestrictedColumnsEnabled());
         folderProps = LookAndFeelProperties.getInstance(_folder);
         subFolderProps = LookAndFeelProperties.getInstance(_subFolder);
         testFolderPropertiesInherited(folderProps, subFolderProps);
 
         // Overwrite subfolder properties and ensure those stick
-        testWriteFolderProperties(_folder, "yyyy-MM-dd", "HH:mm", "#0.00", "yyyy-MM-dd", "HH:mm", rootProps.areRestrictedColumnsEnabled());
+        testWriteFolderProperties(_folder, "yyyy-MM-dd", "HH:mm", "#0.00", rootProps.areRestrictedColumnsEnabled());
 
         // Clear properties in each container and ensure they then inherit from their parent
         testClearAndInherit(_subFolder, _folder);
@@ -86,30 +86,22 @@ public class LookAndFeelFolderPropertiesTest extends Assert
         assertEquals(parent.getDefaultDateTimeFormat(), child.getDefaultDateTimeFormat());
         assertEquals(parent.getDefaultTimeFormat(), child.getDefaultTimeFormat());
         assertEquals(parent.getDefaultNumberFormat(), child.getDefaultNumberFormat());
-        assertEquals(parent.getExtraDateParsingPattern(), child.getExtraDateParsingPattern());
-        assertEquals(parent.getExtraDateTimeParsingPattern(), child.getExtraDateTimeParsingPattern());
-        assertEquals(parent.getExtraTimeParsingPattern(), child.getExtraTimeParsingPattern());
         assertEquals(parent.areRestrictedColumnsEnabled(), child.areRestrictedColumnsEnabled());
         assertNull(child.getDefaultDateFormatStored());
         assertNull(child.getDefaultDateTimeFormatStored());
         assertNull(child.getDefaultTimeFormatStored());
         assertNull(child.getDefaultNumberFormatStored());
-        assertNull(child.getExtraDateParsingPatternStored());
-        assertNull(child.getExtraDateTimeParsingPatternStored());
-        assertNull(child.getExtraTimeParsingPatternStored());
+
         assertNull(child.areRestrictedColumnsEnabledStored());
     }
 
-    private void testWriteFolderProperties(Container c, String dateDisplay, String timeDisplay, String numberDisplay, String dateParsing, String timeParsing, boolean restricted)
+    private void testWriteFolderProperties(Container c, String dateDisplay, String timeDisplay, String numberDisplay, boolean restricted)
     {
         WriteableFolderLookAndFeelProperties writeable = new WriteableFolderLookAndFeelProperties(c);
         writeable.setDefaultDateFormat(dateDisplay);
         writeable.setDefaultDateTimeFormat(dateDisplay + " " + timeDisplay);
         writeable.setDefaultTimeFormat(timeDisplay);
         writeable.setDefaultNumberFormat(numberDisplay);
-        writeable.setExtraDateParsingPattern(dateParsing);
-        writeable.setExtraDateTimeParsingPattern(dateParsing + " " + timeParsing);
-        writeable.setExtraTimeParsingPattern(timeParsing);
         writeable.setRestrictedColumnsEnabled(restricted);
         writeable.save();
 
@@ -122,12 +114,6 @@ public class LookAndFeelFolderPropertiesTest extends Assert
         assertEquals(timeDisplay, props.getDefaultTimeFormatStored());
         assertEquals(numberDisplay, props.getDefaultNumberFormat());
         assertEquals(numberDisplay, props.getDefaultNumberFormatStored());
-        assertEquals(dateParsing, props.getExtraDateParsingPattern());
-        assertEquals(dateParsing, props.getExtraDateParsingPatternStored());
-        assertEquals(dateParsing + " " + timeParsing, props.getExtraDateTimeParsingPattern());
-        assertEquals(dateParsing + " " + timeParsing, props.getExtraDateTimeParsingPattern());
-        assertEquals(timeParsing, props.getExtraTimeParsingPattern());
-        assertEquals(timeParsing, props.getExtraTimeParsingPattern());
         assertEquals(restricted, props.areRestrictedColumnsEnabled());
         assertEquals(restricted, props.areRestrictedColumnsEnabledStored());
     }
