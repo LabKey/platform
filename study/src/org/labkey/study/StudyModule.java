@@ -68,7 +68,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -126,7 +125,6 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
-import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
@@ -134,7 +132,6 @@ import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
-import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
@@ -176,7 +173,6 @@ import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
-import org.labkey.study.view.StudySummaryWebPartFactory;
 import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
@@ -210,9 +206,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory();
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
-    public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
-    public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudyDesignSummaryWebPartFactory();
-    public static final WebPartFactory studyDesignsWebPartFactory = new StudyDesignsWebPartFactory();
+    public static final WebPartFactory manageStudyPartFactory = new org.labkey.study.view.StudySummaryWebPartFactory();
+    public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudySummaryWebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
     public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
@@ -241,7 +236,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("publish", PublishController.class);
         addController("study-definition", StudyDefinitionController.class);
         addController("study-design", StudyDesignController.class);
-        addController("study-designer", DesignerController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-security", SecurityController.class);
@@ -311,7 +305,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             manageStudyPartFactory,
             reportsPartFactory,
             studyDesignSummaryWebPartFactory,
-            studyDesignsWebPartFactory,
             studyListWebPartFactory,
             studyScheduleWebPartFactory,
             subjectDetailsWebPartFactory,
@@ -417,14 +410,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow merge of study dataset that uses server-managed additional key fields",
             "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
-
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(Study.GWT_STUDY_DESIGN,
-            "Restore vaccine study protocol editor",
-            "The study protocol editor (accessed from the Vaccine Study Protocols webpart) has been deprecated and protocol " +
-            "information will be shown in read-only mode. The edit button can be shown by enabling this feature, " +
-            "but this option and all support for this study protocol editor will be removed in LabKey Server v24.12. " +
-            "Please create any new study protocols in the format as defined by the \"Manage Study Products\" link on the study Manage tab.",
-            false, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
@@ -687,36 +672,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
     }
 
-    private static class StudyDesignsWebPartFactory extends BaseWebPartFactory
+    private static class StudySummaryWebPartFactory extends BaseWebPartFactory
     {
-        public StudyDesignsWebPartFactory()
-        {
-            super("Vaccine Study Protocols");
-            addLegacyNames("Study Designs");
-        }
-
-        @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
-        {
-            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
-                return new StudyDesignsWebPart(portalCtx, true);
-            else
-                return null;
-        }
-
-        @Override
-        public boolean isAvailable(Container c, String scope, String location)
-        {
-            if (OptionalFeatureService.get().isFeatureEnabled(Study.GWT_STUDY_DESIGN))
-                return super.isAvailable(c, scope, location);
-            else
-                return false;
-        }
-    }
-
-    private static class StudyDesignSummaryWebPartFactory extends BaseWebPartFactory
-    {
-        public StudyDesignSummaryWebPartFactory()
+        public StudySummaryWebPartFactory()
         {
             super("Study Protocol Summary");
         }
@@ -724,7 +682,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
-            JspView view = new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
+            JspView view = new JspView("/org/labkey/study/designer/view/studySummary.jsp");
             view.setTitle("Study Protocol Summary");
             view.setFrame(WebPartView.FrameType.PORTAL);
             return view;
