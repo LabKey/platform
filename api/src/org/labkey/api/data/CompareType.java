@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
@@ -43,17 +44,22 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -2443,7 +2449,83 @@ public abstract class CompareType
         {
             CompareClause ct = (CompareClause)CompareType.DATE_GT.createFilterClause(new FieldKey(null,"datecol"), "-1");
             // make sure this isn't converted into a date
-            assertEquals("-1",ct.toURLParamValue());
+            assertEquals("-1", ct.toURLParamValue());
+        }
+
+        @Test
+        public void testDateComparisons()
+        {
+            User user = TestContext.get().getUser();
+            TableInfo table = TestSchema.getInstance().getTableInfoTestTable();
+            // Skip DATE_GT and DATE_LTE testing on SQL Server until 24.7 fix is merged to develop TODO: Remove this check
+            boolean isPostgreSQL = table.getSqlDialect().isPostgreSQL();
+            Table.truncate(table);
+
+            Container c = JunitUtil.getTestContainer();
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("Container", c);
+            map.put("IntNotNull", 0);
+            map.put("BitNotNull", true);
+
+            // Test with arbitrary hard-coded dates so we don't run afoul of leap years, tests running at midnight, etc.
+            LocalDateTime jan1 = LocalDate.of(2024, Month.JANUARY, 1).atStartOfDay();
+            LocalDateTime jan5 = LocalDate.of(2024, Month.JANUARY, 5).atStartOfDay();
+            LocalDateTime jan15 = LocalDate.of(2024, Month.JANUARY, 15).atStartOfDay();
+
+            // Insert rows for 20 consecutive dates, at 10-minute intervals (2880 rows total)
+            int days = 20;
+            int minuteInterval = 10;
+            int rowsPerDay = 24 * 60 / minuteInterval;
+            int totalRows = days * rowsPerDay;
+
+            for (int i = 0; i < totalRows; i++)
+            {
+                LocalDateTime insertDateTIme = jan1.plusMinutes((long) i * minuteInterval);
+                map.put("DateTimeNotNull", insertDateTIme);
+                Table.insert(user, table, map);
+            }
+
+            FieldKey dateField = table.getColumn("DateTimeNotNull").getFieldKey();
+            Assert.assertEquals(totalRows, new TableSelector(table).getRowCount());
+
+            Assert.assertEquals(rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_EQUAL), null).getRowCount());
+            Assert.assertEquals(totalRows - rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_NOT_EQUAL), null).getRowCount());
+            Assert.assertEquals(totalRows, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_GTE), null).getRowCount());
+            if (isPostgreSQL)
+            {
+                Assert.assertEquals(totalRows - rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_GT), null).getRowCount());
+                Assert.assertEquals(rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_LTE), null).getRowCount());
+            }
+            Assert.assertEquals(0, new TableSelector(table, new SimpleFilter(dateField, jan1, DATE_LT), null).getRowCount());
+
+            Assert.assertEquals(rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_EQUAL), null).getRowCount());
+            Assert.assertEquals(totalRows - rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_NOT_EQUAL), null).getRowCount());
+            Assert.assertEquals(rowsPerDay * (days - 4), new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_GTE), null).getRowCount());
+            if (isPostgreSQL)
+            {
+                Assert.assertEquals(rowsPerDay * (days - 5), new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_GT), null).getRowCount());
+                Assert.assertEquals(rowsPerDay * 5, new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_LTE), null).getRowCount());
+            }
+            Assert.assertEquals(rowsPerDay * 4, new TableSelector(table, new SimpleFilter(dateField, jan5, DATE_LT), null).getRowCount());
+
+            Assert.assertEquals(rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_EQUAL), null).getRowCount());
+            Assert.assertEquals(totalRows - rowsPerDay, new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_NOT_EQUAL), null).getRowCount());
+            Assert.assertEquals(rowsPerDay * (days - 14), new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_GTE), null).getRowCount());
+            if (isPostgreSQL)
+            {
+                Assert.assertEquals(rowsPerDay * (days - 15), new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_GT), null).getRowCount());
+                Assert.assertEquals(rowsPerDay * 15, new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_LTE), null).getRowCount());
+            }
+            Assert.assertEquals(rowsPerDay * 14, new TableSelector(table, new SimpleFilter(dateField, jan15, DATE_LT), null).getRowCount());
+
+//          Not sure how BETWEEN is supposed to work for dates, so leave it untested for now
+//            if (isPostgreSQL)
+//            {
+//                Assert.assertEquals(rowsPerDay * 11, new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan5, jan15, false)), null).getRowCount());
+//            }
+
+            Table.truncate(table);
         }
     }
 }
