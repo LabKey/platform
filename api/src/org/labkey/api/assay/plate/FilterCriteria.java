@@ -65,7 +65,7 @@ public record FilterCriteria(
                 else if (name.equalsIgnoreCase(referencePropertyName))
                 {
                     propertyId = referencePropertyId;
-                    name = null;
+                    name = referencePropertyName;
                 }
             }
             else if (propertyId != null && propertyId != referencePropertyId)
@@ -74,7 +74,7 @@ public record FilterCriteria(
             if (propertyId == null)
             {
                 propertyId = referencePropertyId;
-                name = null;
+                name = referencePropertyName;
             }
 
             String operation = StringUtils.trimToNull(criterion.getOp());

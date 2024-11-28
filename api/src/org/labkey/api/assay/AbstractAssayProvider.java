@@ -401,6 +401,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
+    protected @Nullable Domain getResultsDomainIfExists(ExpProtocol protocol)
+    {
+        return getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+    }
+
     @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
@@ -1748,7 +1753,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol)
     {
-        Domain resultsDomain = getResultsDomain(protocol);
+        Domain resultsDomain = getResultsDomainIfExists(protocol);
         if (resultsDomain == null)
             return Collections.emptyList();
 
@@ -1758,6 +1763,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
+    {
     }
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}

@@ -28,6 +28,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -276,6 +277,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean isPlateMetadataEnabled(ExpProtocol protocol);
 
     @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol);
+    void removeFilterCriteriaForProperty(PropertyDescriptor pd);
 
     /**
      * @return the data type that this run creates for its analyzed results
