@@ -91,10 +91,6 @@ import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * User: rossb
- * Date: Oct 26, 2006
- */
 public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
@@ -1509,38 +1505,12 @@ public class ExceptionUtil
             headers.put(s,String.valueOf(i));
         }
 
-    //  This will be required when we upgrade servlet-api to a more modern version
-    //    @Override
-    //    public String getHeader(String s)
-    //    {
-    //        return headers.get(s);
-    //    }
-    //
-    //    @Override
-    //    public Collection<String> getHeaders(String s)
-    //    {
-    //        return Collections.singleton(getHeader(s));
-    //    }
-    //
-    //    @Override
-    //    public Collection<String> getHeaderNames()
-    //    {
-    //        return headers.keySet();
-    //    }
-    //
         @Override
         public void setStatus(int i)
         {
             status = i;
         }
 
-
-    //    @Override
-    //    public int getStatus()
-    //    {
-    //        return status;
-    //    }
-    //
         @Override
         public String getCharacterEncoding()
         {
