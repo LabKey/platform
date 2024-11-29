@@ -1513,20 +1513,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     @Override
     @NotNull
-    public Map<String, String> getAdditionalRequiredInsertColumns()
+    public List<Set<String>> getAdditionalRequiredInsertColumns()
     {
         if (getSampleType() == null)
-            return Collections.emptyMap();
+            return Collections.emptyList();
 
-        Map<String, String> required = new CaseInsensitiveHashMap<>();
         try
         {
-            required.putAll(getSampleType().getRequiredImportAliases());
-            return required;
+            return getRequiredParentImportFields(getSampleType().getRequiredImportAliases());
         }
         catch (IOException e)
         {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
     }
 

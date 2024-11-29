@@ -223,6 +223,12 @@ public class SubstitutionFormat
             Collection<?> c = (Collection)value;
             return c.stream().skip(1).collect(Collectors.toList());
         }
+
+        @Override
+        public int argumentCount()
+        {
+            return 0;
+        }
     };
 
     static final SubstitutionFormat last = new SubstitutionFormat("last")
