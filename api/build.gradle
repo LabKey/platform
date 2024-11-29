@@ -280,7 +280,7 @@ dependencies {
             "http://commons.apache.org/pool/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Object pooling - Pipeline & TargetedMS dependency",
+            "Object pooling - Pipeline & TargetedMS dependency"
         )
     )
 
@@ -322,8 +322,6 @@ dependencies {
             "Consistent API for accessing files of different types"
         )
     )
-
-
 
     BuildUtils.addExternalDependency(
         project,
@@ -507,7 +505,6 @@ dependencies {
         )
     )
 
-
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -520,7 +517,7 @@ dependencies {
             "Jackson support for org.json data types, to ease migration out of code that uses them",
         ),
         {
-            // exclude this because it gets in the way of our own JSON object implementations from server/api
+            // we explicitly include a more recent version of JSON-java below
             exclude group: "org.json", module:"json"
         }
     )
@@ -600,24 +597,24 @@ dependencies {
             "https://github.com/stleary/JSON-java",
             "Public Domain",
             "https://github.com/stleary/JSON-java/blob/master/LICENSE",
-            "JSON library",
+            "JSON library"
         )
     )
 
     BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "org.jsoup:jsoup:${jsoupVersion}",
-                    "JSoup",
-                    "Jonathan Hedley",
-                    "https://jsoup.org",
-                    ExternalDependency.MIT_LICENSE_NAME,
-                    ExternalDependency.MIT_LICENSE_URL,
-                    "Validating HTML content",
-            )
+        project,
+        new ExternalDependency(
+            "org.jsoup:jsoup:${jsoupVersion}",
+            "JSoup",
+            "Jonathan Hedley",
+            "https://jsoup.org",
+            ExternalDependency.MIT_LICENSE_NAME,
+            ExternalDependency.MIT_LICENSE_URL,
+            "Validating HTML content"
+        )
     )
 
-// These are required for running unit tests through the server junit controller
+    // These are required for running unit tests through the server junit controller
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -627,7 +624,7 @@ dependencies {
             "http://www.junit.org",
             "CPL 1.0",
             "http://www.opensource.org/licenses/cpl1.0.php",
-            "Unit testing",
+            "Unit testing"
         )
     )
 
@@ -643,7 +640,7 @@ dependencies {
             "Java Excel library",
         ),
         {
-            // exclude this because it brings older version of log4j
+            // this brings in an old version of log4j
             exclude group: "log4j", module:"log4j"
         }
     )
@@ -861,6 +858,9 @@ dependencies {
         )
     )
 
+    // Note: spring-beans, spring-context, and spring-core are duplicated in the embedded jar. If we combine the
+    // embedded and webapp classloaders into one we could stop including these three jars as external dependencies.
+
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -870,7 +870,7 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "spring-webmvc.jar dependency",
+            "spring-webmvc dependency",
         )
     )
 
@@ -883,7 +883,7 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "spring-webmvc.jar dependency",
+            "spring-webmvc dependency",
         )
     )
 
@@ -896,7 +896,7 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "spring-webmvc.jar dependency",
+            "spring-webmvc dependency",
         )
     )
 
@@ -910,7 +910,12 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "SQL exceptions and errors",
-        )
+        ),
+        {
+            // In the future, if the webapp ends up using the spring jars in embedded, this will prevent duplicate jars
+            exclude group: "org.springframework", module:"spring-beans"
+            exclude group: "org.springframework", module:"spring-core"
+        }
     )
 
     BuildUtils.addExternalDependency(
@@ -922,22 +927,16 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Object instantiation framework",
-        )
+            "Mock implementations of HttpServletRequest, HttpServletResponse, etc."
+        ),
+        {
+            // In the future, if the webapp ends up using the spring jars in embedded, this will prevent duplicate jars
+            exclude group: "org.springframework", module:"spring-core"
+        }
     )
 
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.springframework:spring-tx:${springVersion}",
-            "Spring Framework",
-            "Spring",
-            "http://www.springframework.org/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "DAO and transactions",
-        )
-    )
+    // Note: spring-web and spring-webmvc are duplicated in the embedded jar. If we combine the embedded and webapp
+    // classloaders into one we could stop including these two jars as external dependencies.
 
     BuildUtils.addExternalDependency(
         project,
@@ -948,7 +947,7 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Basis of web framework",
+            "spring-webmvc dependency",
         )
     )
 
@@ -961,7 +960,7 @@ dependencies {
             "http://www.springframework.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "spring-webmvc.jar dependency",
+            "Web framework",
         )
     )
 
