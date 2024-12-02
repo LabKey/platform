@@ -1092,7 +1092,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                             return new Date(aVal) - new Date(bVal);
                         }
                         return aVal - bVal;
-                    }
+                    },
+                    hoverText: emptyTextFn(),
                 };
 
                 pathAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
@@ -1102,6 +1103,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 if (hasSeries) {
                     pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
+                    pathAes.hoverText = function (row) { return chartConfig.measures.series.label + ': ' + row.group };
                 }
                 // if no series measures but we have multiple y-measures, force the color and grouping to be distinct for each measure
                 else if (yMeasures.length > 1) {
