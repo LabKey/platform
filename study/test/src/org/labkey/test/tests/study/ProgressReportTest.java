@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -30,6 +31,7 @@ import org.labkey.test.pages.AssayQueryConfig;
 import org.labkey.test.pages.ProgressReportConfigPage;
 import org.labkey.test.tests.ReportTest;
 import org.labkey.test.util.ExcelHelper;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
@@ -139,8 +141,14 @@ public class ProgressReportTest extends ReportTest
     @Override
     protected void doVerifySteps()
     {
+        Connection cn = createDefaultConnection();
+        String featureFlag = "assayProgressReportFlag";
+        boolean previous = OptionalFeatureHelper.enableOptionalFeature(cn, featureFlag);
         progressReportBasicTest();
         progressReportExportTest();
+        // Restore feature flag to disabled if that was its previous value
+        if (!previous)
+            OptionalFeatureHelper.disableOptionalFeature(cn, featureFlag);
     }
 
     private void progressReportBasicTest()
