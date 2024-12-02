@@ -21,10 +21,10 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="org.labkey.api.data.TransactionFilter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<AdminController.ThreadsBean> me = (HttpView<AdminController.ThreadsBean>) HttpView.currentView();
+    HttpView<AdminController.ThreadsBean> me = HttpView.currentView();
     AdminController.ThreadsBean bean = me.getModelBean();
 %>
 <p><strong>Threads as of <%= h(DateUtil.formatDateTime(new Date(), "yyyy-MM-dd HH:mm:ss.SSS")) %></strong></p>
@@ -35,7 +35,7 @@ for (Thread t : bean.threads)
     {
     %><a href="#<%=h(t.getName())%>"><strong><%= h(t.getName()) %></strong></a> (<%=h(t.getState())%>)<%
     Set<Integer> values = bean.spids.get(t);
-    if (values.size() > 0)
+    if (!values.isEmpty())
     {
         %><span class="labkey-error">DB Connection SPID(s): <%= h(StringUtils.join(values, ",")) %></span><%
     }
@@ -56,11 +56,11 @@ for (Thread t : bean.threads)
         %><a name="<%= h(t.getName()) %>"></a><%
         %><pre><%= h(t.getName()) %> (<%=h(t.getState())%>)<%=unsafe("\n")%><%
         Set<Integer> values = bean.spids.get(t);
-        if (values.size() > 0)
+        if (!values.isEmpty())
         {
             %>  DB Connection SPID(s): <%= h(StringUtils.join(values, ", "))%> <%
         }
-        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(t);
+        TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(t);
         if (null != uri)
         { %>    For URL <%= h(uri + "\n") %><%
         }

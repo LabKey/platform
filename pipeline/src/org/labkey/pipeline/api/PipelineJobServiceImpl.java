@@ -280,14 +280,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             return;
         }
 
-        List<Process> processes = _processesByJob.remove(jobThread);
-        if (processes != null)
-        {
-            for (Process p : processes)
-            {
-                p.destroyForcibly();
-            }
-        }
+        killProcessesForThread(jobThread);
 
         if (PipelineSchema.getInstance().getSqlDialect().isPostgreSQL())
         {
@@ -302,7 +295,21 @@ public class PipelineJobServiceImpl implements PipelineJobService
             // Piggyback on the job thread so we can shut down open connections on its behalf
             try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
             {
-                DbScope.closeAllConnectionsForCurrentThread();
+                DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
+            }
+        }
+    }
+
+    /** Kill any processes that were launched by this thread. Used to cancel pipeline jobs and abort running reports when the HTTP request times out */
+    @Override
+    public void killProcessesForThread(Thread thread)
+    {
+        List<Process> processes = _processesByJob.remove(thread);
+        if (processes != null)
+        {
+            for (Process p : processes)
+            {
+                p.destroyForcibly();
             }
         }
     }

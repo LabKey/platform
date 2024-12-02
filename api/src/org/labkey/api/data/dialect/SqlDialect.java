@@ -50,6 +50,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -59,7 +60,6 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -183,7 +183,7 @@ public abstract class SqlDialect
                 sb.append(", SPIDs = ");
                 sb.append(spids);
                 sb.append("\n");
-                ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+                TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
                 if (null != uri)
                 {
                     sb.append("\t");
