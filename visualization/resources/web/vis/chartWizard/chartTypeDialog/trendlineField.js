@@ -8,7 +8,7 @@ Ext4.define('LABKEY.vis.TrendlineField', {
     baseQueryKey: null,
     initData: null,
 
-    options: ['', 'Linear', 'Polynomial', 'Three Parameter', '3 Parameter', 'Four Parameter', '4 Parameter', 'Five Parameter'],
+    options: ['', 'Linear', 'Polynomial', '3 Parameter', 'Three Parameter', '4 Parameter', 'Four Parameter', 'Five Parameter'],
 
     initComponent: function() {
         if (this.initData == null)
