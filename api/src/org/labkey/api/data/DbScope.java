@@ -42,6 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
@@ -51,6 +52,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -141,6 +143,9 @@ public class DbScope
         ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
     private static volatile DbScope _labkeyScope = null;
+
+    /** Threads that we are attempting to cancel and shouldn't be allowed to get another DB connection */
+    private static final Set<Thread> BANNED_THREADS = Collections.synchronizedSet(new HashSet<>());
 
     private final DbScopeLoader _dbScopeLoader;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS data sources
@@ -1194,7 +1199,7 @@ public class DbScope
      * connection for this thread, to help scenarios that are prone to race conditions
      * (like killing pipeline jobs) ignore it.
      */
-    public static class ConnectionAlreadyReleaseException extends IllegalStateException
+    public static class ConnectionAlreadyReleaseException extends IllegalStateException implements SkipMothershipLogging
     {
         public ConnectionAlreadyReleaseException(String s)
         {
@@ -1384,6 +1389,12 @@ public class DbScope
 
     public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
+        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed
+        if (BANNED_THREADS.remove(getEffectiveThread()))
+        {
+            throw new AbortedRequestException("Cannot get another DB connection for this thread");
+        }
+
         Connection conn;
 
         try
@@ -2102,6 +2113,22 @@ public class DbScope
                 .forEach(DbScopeLoader::clearDbScope);
     }
 
+
+
+    /**
+     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
+     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
+     */
+    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    {
+        boolean closed = ConnectionWrapper.closeConnections();
+        if (!closed)
+        {
+            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
+            BANNED_THREADS.add(getEffectiveThread());
+        }
+    }
+
     /**
      * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
      * associated/effective thread. Also releases locks acquired as part of opening the transaction.
@@ -2153,6 +2180,7 @@ public class DbScope
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         closeAllConnectionsForCurrentThread();
         QueryService.get().clearEnvironment();
+        BANNED_THREADS.remove(Thread.currentThread());
     }
 
     /**

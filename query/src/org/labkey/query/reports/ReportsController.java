@@ -55,6 +55,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
@@ -589,11 +590,11 @@ public class ReportsController extends SpringActionController
             if (null == report)
                 throw new IllegalArgumentException("Unknown report id or report name");
 
-            if (!(report instanceof Report.ScriptExecutor))
+            if (!(report instanceof Report.ScriptExecutor exec))
                 throw new IllegalArgumentException("The specified report is not based upon a script and therefore cannot be executed.");
 
             //
-            // used a shared sesssion if specfied and the feature is turned on
+            // used a shared session if specified and the feature is turned on
             //
             if (PremiumService.get().isRemoteREnabled())
             {
@@ -603,7 +604,6 @@ public class ReportsController extends SpringActionController
             //
             // execute the script
             //
-            Report.ScriptExecutor exec = (Report.ScriptExecutor) report;
             return exec.executeScript(getViewContext(), inputParams);
         }
 
@@ -705,7 +705,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class getSessionsAction extends MutatingApiAction
+    public static class getSessionsAction extends MutatingApiAction<Object>
     {
         public static final String REPORT_SESSIONS = "reportSessions";
         @Override
@@ -743,9 +743,9 @@ public class ReportsController extends SpringActionController
 
         public static class ReportSession
         {
-            private String _reportSessionId;
-            private boolean _inUse;
-            private Object _clientContext;
+            private final String _reportSessionId;
+            private final boolean _inUse;
+            private final Object _clientContext;
 
             public ReportSession(RConnectionHolder rh)
             {
@@ -830,6 +830,9 @@ public class ReportsController extends SpringActionController
         {
             // TODO: Do something with errors?
 
+            // Consider this request read-only (and eligible for killing if the HTTP timeout is exceeded)
+            getViewContext().getRequest().setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
+
             // ApiAction doesn't seem to bind URL parameters on POST... so manually populate them into the bean.
             errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
             VBox resultsView = new VBox();
@@ -843,8 +846,8 @@ public class ReportsController extends SpringActionController
                 // for now, limit pipeline view to saved R reports
                 if (null != bean.getReportId() && bean.isRunInBackground())
                 {
-                    if (report instanceof RReport)
-                        resultsView.addView(new RenderBackgroundRReportView((RReport)report));
+                    if (report instanceof RReport rReport)
+                        resultsView.addView(new RenderBackgroundRReportView(rReport));
                     else
                         resultsView.addView(new HtmlView(DIV(cl("labkey-error"), "Report type not support background execution: " + report.getClass().getSimpleName())));
                 }
@@ -923,13 +926,13 @@ public class ReportsController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class ViewScriptReportAction extends BaseViewScriptReportAction<ScriptReportBean>
+    public static class ViewScriptReportAction extends BaseViewScriptReportAction<ScriptReportBean>
     {
     }
 
     @RequiresPermission(UpdatePermission.class)  // At least update; canEdit() will perform additional permissions checks
     @Action(ActionType.Configure.class)
-    public class DesignScriptReportAction extends BaseViewScriptReportAction<ScriptReportDesignBean>
+    public static class DesignScriptReportAction extends BaseViewScriptReportAction<ScriptReportDesignBean>
     {
         @Override
         public ApiResponse execute(ScriptReportDesignBean bean, BindException errors) throws Exception
@@ -968,7 +971,7 @@ public class ReportsController extends SpringActionController
                 html.append(PageFlowUtil.filter(statusFile.getEmail()));
                 html.append("</td></tr>\n");
                 html.append("<tr><td class=\"labkey-form-label\">Info</td><td>");
-                html.append(PageFlowUtil.filter(StringUtils.defaultString(statusFile.getInfo(), "")));
+                html.append(PageFlowUtil.filter(Objects.toString(statusFile.getInfo(), "")));
                 html.append("</td></tr>\n");
                 html.append("<tr><td colspan=\"2\">&nbsp;</td></tr>\n");
             }
@@ -996,12 +999,12 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class RunReportAction extends SimpleViewAction<ReportDesignBean>
+    public class RunReportAction extends SimpleViewAction<ReportDesignBean<?>>
     {
         private Report _report;
 
         @Override
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
         {
             _report = null;
 
@@ -1011,7 +1014,7 @@ public class ReportsController extends SpringActionController
             if (null == _report)
                 throw new NotFoundException("Invalid report identifier, unable to create report.");
 
-            HttpView reportView;
+            HttpView<?> reportView;
             try
             {
                 reportView = _report.getRunReportView(getViewContext());
@@ -1111,7 +1114,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class ShareReportForm extends ReportDesignBean
+    public static class ShareReportForm extends ReportDesignBean<Report>
     {
         private String _recipientList;
         private String _messageSubject;
@@ -1154,10 +1157,10 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<ReportDesignBean>
+    public class DetailsAction extends SimpleViewAction<ReportDesignBean<?>>
     {
         @Override
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
                 throw new NotFoundException();
@@ -1189,10 +1192,10 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class ReportInfoAction extends SimpleViewAction<ReportDesignBean>
+    public static class ReportInfoAction extends SimpleViewAction<ReportDesignBean<?>>
     {
         @Override
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
         {
             return new ReportInfoView(form.getReport(getViewContext()));
         }
@@ -1205,9 +1208,9 @@ public class ReportsController extends SpringActionController
     }
 
 
-    public static class ReportInfoView extends HttpView
+    public static class ReportInfoView extends HttpView<Object>
     {
-        private Report _report;
+        private final Report _report;
 
         public ReportInfoView(Report report)
         {
@@ -1489,14 +1492,14 @@ public class ReportsController extends SpringActionController
         public ModelAndView getView(ScriptReportBean form, BindException errors) throws Exception
         {
             ScriptReport report = form.getReport(getViewContext());
-            if (report instanceof RReport)
+            if (report instanceof RReport rReport)
             {
                 try
                 {
-                    File file = ((RReport)report).createInputDataFile(getViewContext());
+                    File file = rReport.createInputDataFile(getViewContext());
                     if (file.exists())
                     {
-                        PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+                        PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), true);
                     }
                 }
                 catch (SQLException e)
@@ -1515,7 +1518,7 @@ public class ReportsController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public static class StreamFileAction extends SimpleViewAction
+    public static class StreamFileAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -1535,11 +1538,10 @@ public class ReportsController extends SpringActionController
                         responseHeaders = new HashMap<>();
 
                         responseHeaders.put("Pragma", "private");
-                        responseHeaders.put("Cache-Control", "private");
-                        responseHeaders.put("Cache-Control", "max-age=3600");
+                        responseHeaders.put("Cache-Control", "private, max-age=3600");
                         _log.debug("Caching file: " + file.getAbsolutePath());
                     }
-                    PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
+                    PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file.toPath(), BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                     {
                         file.delete();
@@ -1814,7 +1816,7 @@ public class ReportsController extends SpringActionController
                 return;
 
             Map<String, MultipartFile> fileMap = getFileMap();
-            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
+            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[0]);
 
             if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
             {
@@ -1910,7 +1912,7 @@ public class ReportsController extends SpringActionController
             if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
             {
                 List<AttachmentFile> attachments = getAttachmentFileList();
-                if (attachments != null && attachments.size() > 0)
+                if (attachments != null && !attachments.isEmpty())
                 {
                     AttachmentService.get().addAttachments(report, attachments, getUser());
                 }
@@ -1976,7 +1978,7 @@ public class ReportsController extends SpringActionController
                 // otherwise, keep the existing attachment.  There is no way to "clear" an attachment.  An
                 // attachment report must either specify a local or server attachment.
                 //
-                if (attachments != null && attachments.size() > 0)
+                if (attachments != null && !attachments.isEmpty())
                 {
                     // be sure to remove any existing local attachments
                     AttachmentService.get().deleteAttachments(report);
@@ -2066,10 +2068,8 @@ public class ReportsController extends SpringActionController
             if (null == report)
                 throw new NotFoundException("Report not found");
 
-            if (report instanceof AttachmentReport)
+            if (report instanceof AttachmentReport aReport)
             {
-                AttachmentReport aReport = (AttachmentReport)report;
-
                 if (null == aReport.getFilePath())
                     throw new NotFoundException("Report is not a server file attachment report");
 
@@ -2080,7 +2080,7 @@ public class ReportsController extends SpringActionController
                 boolean isInlineImage = _mimeMap.isInlineImageFor(aReport.getFilePath());
                 boolean asAttachment = !isInlineImage;
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, asAttachment);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), asAttachment);
             }
             return null;
         }
@@ -2341,7 +2341,7 @@ public class ReportsController extends SpringActionController
                 Portal.WebPart part = factory.createWebPart();
                 part.getPropertyMap().put("manageView", "true");
 
-                WebPartView view = factory.getWebPartView(getViewContext(), part);
+                WebPartView<?> view = factory.getWebPartView(getViewContext(), part);
 
                 setTitle("Manage Views");
                 setHelpTopic("manageViews");
@@ -2360,13 +2360,13 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class RenameReportAction extends FormViewAction<ReportDesignBean>
+    public static class RenameReportAction extends FormViewAction<ReportDesignBean<?>>
     {
         private String _newReportName;
         private Report _report;
 
         @Override
-        public void validateCommand(ReportDesignBean form, Errors errors)
+        public void validateCommand(ReportDesignBean<?> form, Errors errors)
         {
             ReportIdentifier reportId =  form.getReportId();
             _newReportName =  form.getReportName();
@@ -2403,7 +2403,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(ReportDesignBean form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean<?> form, boolean reshow, BindException errors) throws Exception
         {
             ManageViewsAction action = new ManageViewsAction();
             action.setViewContext(getViewContext());
@@ -2412,7 +2412,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ReportDesignBean form, BindException errors)
+        public boolean handlePost(ReportDesignBean<?> form, BindException errors)
         {
             _report.getDescriptor().setReportName(_newReportName);
             ReportService.get().saveReportEx(getViewContext(), _report.getDescriptor().getReportKey(), _report);
@@ -2421,7 +2421,7 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSuccessURL(ReportDesignBean form)
+        public ActionURL getSuccessURL(ReportDesignBean<?> form)
         {
             return new ActionURL(ManageViewsAction.class, getContainer());
         }
@@ -2433,7 +2433,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class ReportSectionsAction extends ReadOnlyApiAction
+    public static class ReportSectionsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2475,7 +2475,7 @@ public class ReportsController extends SpringActionController
                         sb.append("</option>");
                     }
 
-                    if (sb.length() > 0)
+                    if (!sb.isEmpty())
                         response.put("sectionNames", sb.toString());
                 }
             }
@@ -2484,18 +2484,18 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
+    public static class CrosstabExportAction extends SimpleViewAction<ReportDesignBean<?>>
     {
         @Override
-        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
         {
             ReportIdentifier reportId = form.getReportId();
             if (reportId != null)
             {
                 Report report = reportId.getReport(getViewContext());
-                if (report instanceof CrosstabReport)
+                if (report instanceof CrosstabReport crosstabReport)
                 {
-                    ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
+                    ExcelWriter writer = crosstabReport.getExcelWriter(getViewContext());
                     writer.renderWorkbook(getViewContext().getResponse());
                 }
             }
@@ -2559,12 +2559,12 @@ public class ReportsController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class RenderQueryReport extends SimpleViewAction<ReportDesignBean>
+    public class RenderQueryReport extends SimpleViewAction<ReportDesignBean<?>>
     {
         String _reportName;
 
         @Override
-        public ModelAndView getView(ReportDesignBean form, BindException errors)
+        public ModelAndView getView(ReportDesignBean<?> form, BindException errors)
         {
             ReportIdentifier id = form.getReportId();
 
@@ -2948,7 +2948,7 @@ public class ReportsController extends SpringActionController
 
     static final Comparator<ViewCategory> categoryComparator = (c1, c2) ->
     {
-        int order = ((Integer) c1.getDisplayOrder()).compareTo(c2.getDisplayOrder());
+        int order = Integer.compare(c1.getDisplayOrder(), c2.getDisplayOrder());
         if (order == 0)
             return c1.getLabel().compareToIgnoreCase(c2.getLabel());
         else if (c1.getLabel().equalsIgnoreCase("Uncategorized"))

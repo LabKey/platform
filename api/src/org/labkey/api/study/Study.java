@@ -37,8 +37,6 @@ import java.util.Map;
  */
 public interface Study extends StudyEntity
 {
-    public static final String GWT_STUDY_DESIGN = "GWTStudyDesign";
-
     String getShortName();
 
     Collection<? extends Visit> getVisits(Visit.Order order);
@@ -59,8 +57,6 @@ public interface Study extends StudyEntity
     List<? extends Location> getLocations();
 
     Collection<? extends Cohort> getCohorts(User user);
-
-    boolean hasGWTStudyDesign(Container c, User user);
 
     Collection<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
 

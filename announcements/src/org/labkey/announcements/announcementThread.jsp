@@ -36,7 +36,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
-    ThreadView me = (ThreadView) HttpView.currentView();
+    ThreadView me = HttpView.currentView();
     Container c = getContainer();
     User user = getUser();
     ThreadViewBean bean = me.getModelBean();

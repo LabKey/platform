@@ -147,6 +147,7 @@ public interface PipelineJobService extends TaskPipelineRegistry
     QuietCloser trackForCancellation(Process process);
 
     void cancelForJob(String jobGuid);
+    void killProcessesForThread(Thread thread);
 
     /**
      * Similar to getExecutablePath(), but allows resolution of non-executable tool directory files

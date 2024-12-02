@@ -23,7 +23,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<TabStripView> me = (JspView<TabStripView>) HttpView.currentView();
+    JspView<TabStripView> me = HttpView.currentView();
     TabStripView view = me.getModelBean();
 
     List<NavTree> tabs = view.getTabList();

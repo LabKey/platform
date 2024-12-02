@@ -314,6 +314,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getReadOnlyHttpRequestTimeout()
+    {
+        return lookupIntValue(readOnlyHttpRequestTimeout, 0);
+    }
+
+    @Override
     public int getMaxBLOBSize()
     {
         return lookupIntValue(maxBLOBSize, 50_000_000);

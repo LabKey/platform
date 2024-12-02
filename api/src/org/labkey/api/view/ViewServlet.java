@@ -45,7 +45,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionAppender;
-import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -64,14 +63,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.Principal;
-import java.util.Collections;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -104,12 +101,9 @@ public class ViewServlet extends HttpServlet
     private static ServletContext _servletContext = null;
 
     private static final AtomicInteger _requestCount = new AtomicInteger();
-    // NOTE: can't use ThreadLocal for this as you can't inspect the values for other threads
-    private static final Map<Thread, RequestSummary> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
     private static final ThreadLocal<Boolean> IS_REQUEST_THREAD = new ThreadLocal<>();
 
     private static Map<Class<? extends Controller>, String> _controllerClassToName = null;
-    private static volatile boolean _shuttingDown = false;
 
     private static SecurityPointcutService securityPointcut = null;
 
@@ -123,51 +117,13 @@ public class ViewServlet extends HttpServlet
         return _requestCount.get();
     }
 
-    public record RequestSummary(String url, Principal user, long startTime)
-    {
-        private RequestSummary(String url, @Nullable Principal user)
-        {
-            this(url, user, System.currentTimeMillis());
-        }
-
-        @Override
-        public String toString()
-        {
-            return url() + "  running for " + (System.currentTimeMillis() - startTime) + "ms by " + (user == null ? "guest" : user.getName());
-        }
-    }
-
-    /**
-     * Map our custom path names to ones that struts can deal with.
-     * /<PathInfo>/<PageFlow>/<Action>.view --> /</PageFlow>/<Action>.do?_pathInfo=<PathInfo> .
-     * NYI: special case /<Action>.view --> /action.do
-     */
-
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
-        if (_shuttingDown)
+        try (var ignored = DebugInfoDumper.pushThreadDumpContext(request.getRequestURI()))
         {
-            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
-            return;
-        }
-        final Thread t = Thread.currentThread();
-        RequestSummary previousSummary = null;
-        try
-        {
-            previousSummary = _pendingRequests.put(t, new RequestSummary(request.getRequestURI() + "?" + trimToEmpty(request.getQueryString()), request.getUserPrincipal()));
-            try (var tdc = DebugInfoDumper.pushThreadDumpContext(request.getRequestURI()))
-            {
-                _service(request, response);
-            }
-        }
-        finally
-        {
-            if (null == previousSummary)
-                _pendingRequests.remove(t);
-            else
-                _pendingRequests.put(t, previousSummary);
+            _service(request, response);
         }
     }
 
@@ -186,7 +142,7 @@ public class ViewServlet extends HttpServlet
         {
             User user = (User) request.getUserPrincipal();
             String description = request.getMethod() + " " + request.getRequestURI() + "?" + Objects.toString(request.getQueryString(), "") + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + session.getId() + ")";
-            _log.debug(">> " + description);
+            _log.debug(">> {}", description);
         }
 
         assert ThreadContext.isEmpty();  // Prevent/detect leaks
@@ -244,7 +200,7 @@ public class ViewServlet extends HttpServlet
 
             if (isDebugEnabled)
             {
-                _log.debug("<< " + request.getMethod());
+                _log.debug("<< {}", request.getMethod());
             }
         }
         finally
@@ -333,13 +289,13 @@ public class ViewServlet extends HttpServlet
         timer.start();
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            for (Class controllerClass : module.getControllerClassToName().keySet())
+            for (Class<?> controllerClass : module.getControllerClassToName().keySet())
             {
                 if (Controller.class.isAssignableFrom(controllerClass))
                 {
                     try
                     {
-                        getController(module, controllerClass);
+                        getController(module, controllerClass.asSubclass(Controller.class));
                     }
                     catch (Throwable t)
                     {
@@ -361,40 +317,12 @@ public class ViewServlet extends HttpServlet
             _controllerClassToName.putAll(module.getControllerClassToName());
     }
 
-    public static int getPendingRequestCount()
+    public static Controller getController(Module module, Class<? extends Controller> controllerClass) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException
     {
-        return _pendingRequests.size();
-    }
-
-    public static void setShuttingDown(long msWaitForRequests)
-    {
-        _shuttingDown = true;
-        while (msWaitForRequests > 0)
-        {
-            if (0==getPendingRequestCount())
-                break;
-            try {Thread.sleep(100);}catch(InterruptedException ignored){}
-            msWaitForRequests -= 100;
-        }
-    }
-
-    public static boolean isShuttingDown()
-    {
-        return _shuttingDown;
-    }
-
-    public static void checkShuttingDown()
-    {
-        if (_shuttingDown)
-            throw new ShuttingDownException();
-    }
-
-    public static Controller getController(Module module, Class controllerClass) throws IllegalAccessException, InstantiationException
-    {
-        if (module instanceof SpringModule)
-            return ((SpringModule)module).getController(null, controllerClass);
+        if (module instanceof SpringModule sm)
+            return sm.getController(null, controllerClass);
         else
-            return (Controller)controllerClass.newInstance();
+            return controllerClass.getDeclaredConstructor().newInstance();
     }
 
 
@@ -454,7 +382,7 @@ public class ViewServlet extends HttpServlet
         {
             url.setIsCanonical(false);
             // recover from duplicated controller (e.g. /project/home/announcements-begin.view)
-            if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0).toLowerCase()))
+            if (null != url.getController() && !path.isEmpty() && null != ModuleLoader.getInstance().getModuleForController(path.get(0).toLowerCase()))
             {
                 String controllerPart = path.get(0);
                 Path pathFixUp = path.subpath(1,path.size());
@@ -575,7 +503,7 @@ public class ViewServlet extends HttpServlet
         }
 
         @Override
-        public @NotNull String @NotNull [] getParameterValues(String name)
+        public @NotNull String @NotNull [] getParameterValues(@NotNull String name)
         {
             List<String> parameters = _actionURL.getParameterValues(name);
             return parameters.toArray(new String[0]);
@@ -633,7 +561,7 @@ public class ViewServlet extends HttpServlet
             }
 
             @Override
-            public String getContentAsString() throws UnsupportedEncodingException
+            public @NotNull String getContentAsString() throws UnsupportedEncodingException
             {
                 if (StringUtils.equals(getHeader("Content-Encoding"),"gzip"))
                     return Compress.decompressGzip(getContentAsByteArray());
@@ -643,7 +571,7 @@ public class ViewServlet extends HttpServlet
         };
 
         final Object state =  QueryService.get().cloneEnvironment();
-        try (RequestInfo r = MemTracker.get().startProfiler(request, url.getController() + "/" + url.getAction()))
+        try (RequestInfo ignored = MemTracker.get().startProfiler(request, url.getController() + "/" + url.getAction()))
         {
             Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
             if (module == null)
@@ -725,12 +653,6 @@ public class ViewServlet extends HttpServlet
         IS_REQUEST_THREAD.set(true);
     }
 
-    /* Similar to getRequestURL(), but can be used by a different thread (e.g. for thread dump) */
-    public static RequestSummary getRequestSummary(Thread t)
-    {
-        return _pendingRequests.get(t);
-    }
-
     // Returns true if the current thread is a request thread, false if it's a background thread
     public static boolean isRequestThread()
     {
@@ -742,20 +664,6 @@ public class ViewServlet extends HttpServlet
     {
         Long ms = (Long)request.getAttribute(REQUEST_STARTTIME);
         return ms == null ? 0 : ms.longValue();
-    }
-
-
-    public static void ensureViewServlet(HttpServletResponse response)
-    {
-        try
-        {
-            HttpView.getRootContext();
-        }
-        catch (ArrayIndexOutOfBoundsException x)
-        {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            throw new NotFoundException();
-        }
     }
 
 
@@ -859,28 +767,6 @@ public class ViewServlet extends HttpServlet
             return false;
         }
         return true;
-    }
-
-    /**
-     * Replace any invalid characters with the unicode inverted question mark.
-     * @param s Character sequence to be fixed.
-     * @return The fixed String.
-     */
-    public static String replaceInvalid(CharSequence s)
-    {
-        int len = s.length();
-        StringBuilder sb = new StringBuilder(len);
-
-        for (int i = 0; i < len; i++)
-        {
-            char c = s.charAt(i);
-            if (validChar(c))
-                sb.append(c);
-            else
-                sb.append('\u00BF'); // inverted question mark
-        }
-
-        return sb.toString();
     }
 
     // Adapt Map<String, String[]> returned by getParameterMap() to match InsertView.setInitialValues(Map<String, Object>).

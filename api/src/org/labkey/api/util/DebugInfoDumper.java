@@ -21,11 +21,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.PrintWriters;
 
 import java.io.File;
@@ -396,7 +396,7 @@ public class DebugInfoDumper
             logWriter.debug("*********************************************");
             logWriter.debug("Start dump of all open connections");
             logWriter.debug("*********************************************");
-            ConnectionWrapper.dumpOpenConnections(logWriter);
+            ConnectionWrapper.dumpOpenConnections(logWriter, null);
             logWriter.debug("*********************************************");
             logWriter.debug("Completed dump of all open connections");
             logWriter.debug("*********************************************");
@@ -423,7 +423,7 @@ public class DebugInfoDumper
         }
         logWriter.debug(threadInfo.toString());
 
-        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+        TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
         if (null != uri)
             logWriter.debug(uri.toString());
 

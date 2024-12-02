@@ -2701,7 +2701,6 @@ public class StudyManager
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            StudyDesignManager.get().deleteStudyDesigns(c, deletedTables);
             StudyDesignManager.get().deleteStudyDesignLookupValues(c, deletedTables);
 
             for (DatasetDefinition dsd : dsds)

@@ -894,20 +894,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     @Override
     @NotNull
-    public Map<String, String> getAdditionalRequiredInsertColumns()
+    public List<Set<String>> getAdditionalRequiredInsertColumns()
     {
         if (getDataClass() == null)
-            return Collections.emptyMap();
+            return Collections.emptyList();
 
-        Map<String, String> required = new CaseInsensitiveHashMap<>();
         try
         {
-            required.putAll(getDataClass().getRequiredImportAliases());
-            return required;
+            return getRequiredParentImportFields(getDataClass().getRequiredImportAliases());
         }
         catch (IOException e)
         {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
     }
 

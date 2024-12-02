@@ -306,8 +306,13 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=memoryUsageDumpInterval%>">Log memory usage frequency, in minutes (for debugging, set to 0 to disable)</label></td>
+    <td class="labkey-form-label"><label for="<%=memoryUsageDumpInterval%>">Log memory usage frequency, in minutes (for debugging; set to 0 to disable)</label></td>
     <td><input type="text" name="<%=memoryUsageDumpInterval%>" id="<%=memoryUsageDumpInterval%>" size="4" value="<%=appProps.getMemoryUsageDumpInterval()%>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label"><label for="<%=readOnlyHttpRequestTimeout%>">Timeout for read-only HTTP requests, in seconds<%=helpPopup("Read-only HTTP request timeout",
+            "After the timeout, resources like database connections and spawned processes will be killed to abort processing the request. Set to 0 to disable the timeout.")%></label></td>
+    <td><input type="text" name="<%=readOnlyHttpRequestTimeout%>" id="<%=readOnlyHttpRequestTimeout%>" size="4" value="<%=appProps.getReadOnlyHttpRequestTimeout()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>

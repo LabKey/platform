@@ -15,23 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTAntigen" %>
-<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTCohort" %>
-<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTImmunogen" %>
-<%@ page import="gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition" %>
-<%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
-<%@ page import="org.labkey.study.designer.StudyDesignInfo" %>
-<%@ page import="org.labkey.study.designer.StudyDesignManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -40,89 +31,24 @@
     User user = getUser();
     Study study = StudyManager.getInstance().getStudy(c);
     if (null == study)
-    {      %>
-    No study is active in the current container.<br>
-    <%= button("Create Study").href(new ActionURL(StudyController.ManageStudyPropertiesAction.class, c)) %>
+    {
+%>
+        No study is active in the current container.<br>
+        <%= button("Create Study").href(new ActionURL(StudyController.ManageStudyPropertiesAction.class, c)) %>
 <%
         return;
     }
+%>
 
-    // issue 21432: only create study design as admin if the label is not already in use
-    StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(study);
-    boolean designExistsForLabel = StudyDesignManager.get().getStudyDesign(c, study.getLabel()) != null;
-    if (info == null && c.hasPermission(user, AdminPermission.class) && !designExistsForLabel)
-    {
-        try (var ignored = SpringActionController.ignoreSqlUpdates())
-        {
-            info = StudyDesignManager.get().ensureDesignForStudy(user, study, true);
-        }
-    }
-
-    if (null == info)
-    {%>
-        No protocol has been registered for this study.<%
-        return;
-    }
-    //Shouldn't happen, but being defensive
-    if (!info.getContainer().equals(study.getContainer()) && !info.getContainer().hasPermission(getUser(), ReadPermission.class))
-    {%>
-        Study protocol is in another folder you do not have permission to read.
 <%
-
-    }
-    GWTStudyDefinition revision = StudyDesignManager.get().getGWTStudyDefinition(user, info.getContainer(), info);
+    boolean isAdmin = c.hasPermission(user, AdminPermission.class);
+    HtmlString descriptionHtml = study.getDescriptionHtml();
+    String investigator = study.getInvestigator();
+    String grant = study.getGrant();
+    List<Attachment> protocolDocs = study.getProtocolDocuments();
+    ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
+    editMetadataURL.addReturnURL(getActionURL());
 %>
-<%
-    if (null == study.getDescription() && null != revision.getDescription()) //No study description. Generate one from the study design
-    {
-%>
-This study was created from a vaccine study protocol with the following description.
-<blockquote>
-    <%=h(revision.getDescription(), true)%>
-</blockquote>
-<b>Immunogens:</b> <%
-    String sep = "";
-    for (GWTImmunogen immunogen : revision.getImmunogens())
-    {
-        out.print(unsafe(sep));
-        out.print(h(immunogen.getName()));
-        String antigenSep = "";
-        for (GWTAntigen antigen : immunogen.getAntigens())
-        {
-            out.print(unsafe(antigenSep));
-            out.print(h(antigen.getName()));
-            antigenSep = ",";
-        }
-        sep = ", ";
-    }
-%><br>
-<b>Cohorts:</b> <%
-    sep = "";
-    for (GWTCohort cohort : revision.getGroups())
-    {
-        out.print(unsafe(sep));
-        out.print(h(cohort.getName() + " (" + cohort.getCount() + ")"));
-        sep = ", ";
-    }
-%>
-    <br>
-<%
-    ActionURL url = new ActionURL(DesignerController.DesignerAction.class, info.getContainer());
-    url.replaceParameter("studyId", info.getStudyId());
-%>
-<%=link("View Complete Protocol", url)%>
-<%
-    }
-    else
-    {
-        boolean isAdmin = c.hasPermission(user, AdminPermission.class);
-        HtmlString descriptionHtml = study.getDescriptionHtml();
-        String investigator = study.getInvestigator();
-        String grant = study.getGrant();
-        List<Attachment> protocolDocs = study.getProtocolDocuments();
-        ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-        editMetadataURL.addReturnURL(getActionURL());
-    %>
     <script type="text/javascript" nonce="<%=getScriptNonce()%>">
         LABKEY.requiresCss("editInPlaceElement.css");
     </script>
@@ -184,9 +110,10 @@ This study was created from a vaccine study protocol with the following descript
         </tr>
     </table>
 <%
-      if (isAdmin)
-      { %>
-<%=link("Edit", editMetadataURL)%>
-<%    }
-  }
+    if (isAdmin)
+    {
+%>
+    <%=link("Edit", editMetadataURL)%>
+<%
+    }
 %>

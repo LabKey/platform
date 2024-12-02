@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.query.reports.ReportsController.ShareReportForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ShareReportForm> me = (JspView<ShareReportForm>) HttpView.currentView();
+    JspView<ShareReportForm> me = HttpView.currentView();
     ShareReportForm bean = me.getModelBean();
 
     Report report = null;

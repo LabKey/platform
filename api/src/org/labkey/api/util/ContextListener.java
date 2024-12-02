@@ -26,10 +26,10 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.web.context.ContextLoaderListener;
 
 import java.util.List;
@@ -73,6 +73,8 @@ public class ContextListener implements ServletContextListener
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
     private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
 
+    private static volatile boolean _shuttingDown = false;
+
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
@@ -87,11 +89,12 @@ public class ContextListener implements ServletContextListener
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
-        ViewServlet.setShuttingDown(0);
+        _shuttingDown = true;
 
+        TransactionFilter.shutDown(0);
         callShutdownListeners();
+        TransactionFilter.shutDown(1000);
 
-        ViewServlet.setShuttingDown(1000);
         getSpringContextListener().contextDestroyed(servletContextEvent);
         CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
         LogManager.shutdown();
@@ -101,6 +104,17 @@ public class ContextListener implements ServletContextListener
         java.beans.Introspector.flushCaches();
         LogFactory.releaseAll();       // Might help with PermGen. See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
         ModuleLoader.getInstance().destroy();
+    }
+
+    public static boolean isShuttingDown()
+    {
+        return _shuttingDown;
+    }
+
+    public static void checkShuttingDown()
+    {
+        if (_shuttingDown)
+            throw new ShuttingDownException();
     }
 
     public static void callShutdownListeners()

@@ -77,6 +77,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setMemoryUsageDumpInterval(Integer.parseInt(value));
         }
     },
+    readOnlyHttpRequestTimeout("Timeout in seconds for read-only HTTP requests, after which resources like DB connections and spawned processes will be killed. Set to 0 to disable.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setReadOnlyHttpRequestTimeout(Integer.parseInt(value));
+        }
+    },
     maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
     {
         @Override
