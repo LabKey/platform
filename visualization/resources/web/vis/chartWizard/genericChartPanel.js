@@ -470,7 +470,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
                 chartTypesToHide: ['time_chart'],
                 selectedType: this.getSelectedChartType(),
-                selectedFields: Ext4.apply({}, this.measures, { trendline: this.trendline }),
+                selectedFields: Ext4.apply(this.measures, { trendline: this.trendline }),
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
                 baseQueryKey: this.schemaName + '.' + this.queryName,
@@ -1801,7 +1801,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Checks to make sure the measures are still available, if not we show an error.
         Ext4.each(measureNames, function(propName) {
-            if (this.measures[propName]) {
+            if (this.measures[propName] && propName !== 'trendline') {
                 var propMeasures = this.measures[propName];
 
                 // some properties allowMultiple so treat all as arrays
