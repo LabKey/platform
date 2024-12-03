@@ -19,13 +19,12 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
@@ -41,6 +40,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.study.StudyModule.ASSAY_PROGRESS_REPORT_FLAG;
 
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
@@ -108,11 +109,14 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
 
-                DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, AssayProgressReport.REPORT_LABEL, null,
-                        new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer()),
-                        _getIconPath(AssayProgressReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AssayProgressReport.TYPE));
-                prInfo.setId("create_assayProgressReport");
-                designers.add(progressReportInfo);
+                if (OptionalFeatureService.get().isFeatureEnabled(ASSAY_PROGRESS_REPORT_FLAG))
+                {
+                    DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, AssayProgressReport.REPORT_LABEL, null,
+                            new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer()),
+                            _getIconPath(AssayProgressReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AssayProgressReport.TYPE));
+                    prInfo.setId("create_assayProgressReport");
+                    designers.add(progressReportInfo);
+                }
             }
             catch (Exception e)
             {
