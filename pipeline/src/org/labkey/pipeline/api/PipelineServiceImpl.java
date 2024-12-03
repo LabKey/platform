@@ -480,7 +480,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                     {
                         bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar");
                     }
-                    if (entry.getName().contains("tomcat-servlet-api") && entry.getName().toLowerCase().endsWith(".jar"))
+                    if (entry.getName().contains("tomcat-embed-core") && entry.getName().toLowerCase().endsWith(".jar"))
                     {
                         servlet = extractEntry(j, entry, "servletApi.jar");
                     }

@@ -200,6 +200,7 @@ import java.util.stream.Collectors;
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
     public static final String MODULE_NAME = "Study";
+    public static final String ASSAY_PROGRESS_REPORT_FLAG = "assayProgressReportFlag";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
     public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
@@ -410,6 +411,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow merge of study dataset that uses server-managed additional key fields",
             "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
+
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(ASSAY_PROGRESS_REPORT_FLAG,
+            "Restore Assay Progress Report",
+            "This option and all support for assay progress reports will be removed in LabKey Server v25.4.",
+            false, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
