@@ -67,6 +67,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -857,17 +858,75 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateMetadataImportHelper(data, container, user, run, protocol, provider, context);
     }
 
-    @Override
-    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    private @NotNull DomainProperty addField(Domain replicateDomain, String fieldName, @Nullable String format)
     {
-        Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
-        boolean domainDirty = false;
+        // create the property and copy the format
+        PropertyStorageSpec spec = new PropertyStorageSpec(fieldName, JdbcType.DOUBLE);
+
+        // Default formatting is 4 decimal places
+        DomainProperty domainProperty = replicateDomain.addProperty(spec);
+        domainProperty.setFormat(format == null ? "#.####" : format);
+
+        return domainProperty;
+    }
+
+    private Map<String, DomainProperty> getExistingFields(Domain replicateDomain)
+    {
         Set<String> domainBaseProperties = replicateDomain.getBaseProperties().stream().map(DomainProperty::getName).collect(Collectors.toSet());
         Map<String, DomainProperty> existingFields = new HashMap<>();
         replicateDomain.getProperties().forEach(dp -> {
             if (!domainBaseProperties.contains(dp.getName()))
                 existingFields.put(dp.getName(), dp);
         });
+
+        return existingFields;
+    }
+
+    @Override
+    public Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull ExpProtocol protocol, List<String> columnNames)
+    {
+        return previewFilterCriteriaColumns(protocol.getContainer(), protocol.getName(), columnNames);
+    }
+
+    @Override
+    public Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull Container container, String protocolName, List<String> columnNames)
+    {
+        if (columnNames.isEmpty())
+            return Collections.emptyMap();
+
+        var replicateDomain = ensurePlateReplicateStatsDomain(container, protocolName);
+        var existingFields = getExistingFields(replicateDomain);
+        var columnMap = new HashMap<String, List<GWTPropertyDescriptor>>();
+
+        for (var columnName : columnNames)
+        {
+            var properties = new ArrayList<GWTPropertyDescriptor>();
+
+            for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(columnName))
+            {
+                DomainProperty dp;
+                if (existingFields.containsKey(name))
+                    dp = existingFields.get(name);
+                else
+                    dp = addField(replicateDomain, name, null);
+
+                properties.add(DomainUtil.getPropertyDescriptor(dp));
+            }
+
+            columnMap.put(columnName, properties);
+        }
+
+        // Notably, this method does not commit/save the changes made on the underlying domain.
+
+        return columnMap;
+    }
+
+    @Override
+    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+        Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
+        Map<String, DomainProperty> existingFields = getExistingFields(replicateDomain);
+        boolean domainDirty = false;
 
         for (GWTPropertyDescriptor prop : update.getFields())
         {
@@ -882,13 +941,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         // check for additions
                         if (!existingFields.containsKey(name))
                         {
-                            // create the property and copy the format
-                            PropertyStorageSpec spec = new PropertyStorageSpec(name, JdbcType.DOUBLE);
-
-                            // Default formatting is 4 decimal places
-                            DomainProperty domainProperty = replicateDomain.addProperty(spec);
-                            domainProperty.setFormat(prop.getFormat() == null ? "#.####" : prop.getFormat());
-
+                            addField(replicateDomain, name, prop.getFormat());
                             domainDirty = true;
                         }
                         else
@@ -922,21 +975,31 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Override
     public @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        String uri = getPlateReplicateStatsDomainUri(protocol);
-        return PropertyService.get().getDomain(protocol.getContainer(), uri);
+        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
     }
 
-    private String getPlateReplicateStatsDomainUri(ExpProtocol protocol)
+    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName)
+    {
+        String uri = getPlateReplicateStatsDomainUri(container, protocolName);
+        return PropertyService.get().getDomain(container, uri);
+    }
+
+    private String getPlateReplicateStatsDomainUri(Container container, String protocolName)
     {
         var domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
-        return domainKind.generateDomainURI(AssaySchema.NAME, protocol.getName(), protocol.getContainer(), null);
+        return domainKind.generateDomainURI(AssaySchema.NAME, protocolName, container, null);
     }
 
     private @NotNull Domain ensurePlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        Domain domain = getPlateReplicateStatsDomain(protocol);
+        return ensurePlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
+    }
+
+    private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName)
+    {
+        Domain domain = getPlateReplicateStatsDomain(container, protocolName);
         if (domain == null)
-            domain = PropertyService.get().createDomain(protocol.getContainer(), getPlateReplicateStatsDomainUri(protocol), PlateReplicateStatsDomainKind.NAME);
+            domain = PropertyService.get().createDomain(container, getPlateReplicateStatsDomainUri(container, protocolName), PlateReplicateStatsDomainKind.NAME);
 
         return domain;
     }

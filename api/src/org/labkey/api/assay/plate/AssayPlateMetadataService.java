@@ -47,6 +47,9 @@ public interface AssayPlateMetadataService
         return ServiceRegistry.get().getService(AssayPlateMetadataService.class);
     }
 
+    Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull ExpProtocol protocol, List<String> columnNames);
+    Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull Container container, String protocolName, List<String> columnNames);
+
     /**
      * Merges the results data with the plate metadata to produce a single row map
      *

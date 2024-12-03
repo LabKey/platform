@@ -59,6 +59,7 @@ import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -1874,6 +1875,63 @@ public class AssayController extends SpringActionController
                 throw batchErrors;
 
             return success();
+        }
+    }
+
+    public static class FilterCriteriaColumnsForm
+    {
+        private List<String> _columnNames = new ArrayList<>();
+        private Integer _protocolId;
+
+        public List<String> getColumnNames()
+        {
+            return _columnNames;
+        }
+
+        public void setColumnNames(List<String> columnNames)
+        {
+            _columnNames = columnNames;
+        }
+
+        public Integer getProtocolId()
+        {
+            return _protocolId;
+        }
+
+        public void setProtocolId(Integer protocolId)
+        {
+            _protocolId = protocolId;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class FilterCriteriaColumnsAction extends MutatingApiAction<FilterCriteriaColumnsForm>
+    {
+        @Override
+        public void validateForm(FilterCriteriaColumnsForm form, Errors errors)
+        {
+            if (form.getProtocolId() != null && form.getProtocolId() <= 0)
+                errors.reject(ERROR_REQUIRED, "A valid \"protocolId\" is required.");
+            else if (form.getColumnNames() == null || form.getColumnNames().isEmpty())
+                errors.reject(ERROR_REQUIRED, "At least one \"columnNames\" must be specified.");
+            // TODO: Sanitize, validate column names? Need to ensure mapping back to user provided values.
+        }
+
+        @Override
+        public Object execute(FilterCriteriaColumnsForm form, BindException errors) throws Exception
+        {
+            if (form.getProtocolId() == null)
+                return AssayPlateMetadataService.get().previewFilterCriteriaColumns(getContainer(), "FilterCriteriaColumnsAction", form.getColumnNames());
+
+            var protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
+            if (protocol == null || !protocol.getContainer().hasPermission(getUser(), ReadPermission.class) || AssayService.get().getProvider(protocol) == null)
+            {
+                errors.reject(ERROR_GENERIC, String.format("Unable to resolve assay protocol with id (%d).", form.getProtocolId()));
+                return null;
+            }
+
+            return AssayPlateMetadataService.get().previewFilterCriteriaColumns(protocol, form.getColumnNames());
         }
     }
 }
