@@ -1514,7 +1514,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if ((chartType == 'scatter_plot' || chartType == 'line_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
             message = 'All data values for ' + measure.label + ' are null. Please choose a different measure or review/remove data filters.';
-            return {success: false, message: message};
+            return {success: true, message: message};
         }
 
         if (scales[measureName] && scales[measureName].trans == "log")
