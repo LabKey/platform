@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="jakarta.servlet.jsp.JspWriter" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationProviderFactory" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
+<%@ page import="org.labkey.api.util.CSRFUtil" %>
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationBackgroundAction" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.lang.String" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
@@ -70,7 +69,7 @@
     {
 %>
 Clicking the "Validate" button will run the selected validators in the designated folder(s). Producing the results could take some time, especially with many folders, providers, and/or objects that need to be validated.<br><br>
-<labkey:form id="form" action="<%=urlFor(SiteValidationAction.class)%>" method="get">
+<labkey:form id="form">
     <%
         if (getContainer().isRoot())
             renderProviderList("Site Validation Providers", validationService.getSiteFactories(), out);
@@ -118,7 +117,11 @@ Clicking the "Validate" button will run the selected validators in the designate
     }
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    // We want to GET SiteValidationAction for foreground render (keep parameters on the URL for link sharing)
+    LABKEY.Utils.onReady(function(){
+        change(); // initialize the form, csrf element, etc.
+    });
+
+    // We want to GET SiteValidationAction for foreground render (keep parameters on the URL for link sharing, but no CSRF)
     // or POST to SiteValidationBackgroundAction for background render (handle CSRF and mutating SQL)
     function change()
     {
@@ -126,5 +129,9 @@ Clicking the "Validate" button will run the selected validators in the designate
         const form = document.getElementById("form");
         form.action = background ? <%=q(urlFor(SiteValidationBackgroundAction.class))%> : <%=q(urlFor(SiteValidationAction.class))%>;
         form.method = background ? "post" : "get";
+
+        const elements = document.getElementsByName(<%=q(CSRFUtil.csrfName)%>);
+        for (let i = 0; i < elements.length; i++)
+            elements[i].disabled = !background;
     }
 </script>
