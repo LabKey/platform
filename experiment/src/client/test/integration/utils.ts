@@ -11,6 +11,19 @@ export const SOURCE_TYPE_NAME_2 = 'SourceType2';
 export const ATTACHMENT_FIELD_1_NAME = 'SourceFile1';
 export const ATTACHMENT_FIELD_2_NAME = 'SourceFile2';
 
+// TODO move getSourceDataByName to ExperimentCrudUtils
+export async function getSourceDataByName(server: IntegrationTestServer, sourceName: string, queryName: string, columns: string = 'Name, RowId', folderOptions: RequestOptions , userOptions: RequestOptions, debug?: boolean) : Promise<any> {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: 'exp.data',
+        queryName,
+        'query.Name~eq': sourceName,
+        'query.columns': columns,
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    if (debug)
+        console.log(response);
+    return response.body.rows[0];
+}
+
 export async function getSampleData(server: IntegrationTestServer, sampleRowId: number, folderOptions: RequestOptions, userOptions: RequestOptions, sampleType: string = SAMPLE_TYPE_NAME_1, columns: string = 'RowId') {
     return await ExperimentCRUDUtils.getSamplesData(server, [sampleRowId], sampleType, columns, folderOptions, userOptions);
 }
@@ -498,6 +511,64 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     successResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData5\tPDataHome', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample);
     expect(JSON.parse(successResp.text).success).toBeTruthy();
 
+    // Issue 51717: When viewing the exp.Data table, both Inputs/Data/First and Outputs/Data/First show the same values
+    if (!isParentSample && !isChildSample) {
+        const columns = 'Name, Inputs/Data/First/Name, Outputs/Data/First/Name';
+        let inputOutputs = await getSourceDataByName(server, 'PDataHome', parentDataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(5);
+        inputOutputs = await getSourceDataByName(server, 'PDataC1', parentDataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(1);
+        inputOutputs = await getSourceDataByName(server, 'CData1', dataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(2);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        inputOutputs = await getSourceDataByName(server, 'CData2', dataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toEqual(['PDataC2']);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+    }
+    if (!isParentSample && isChildSample) {
+        const columns = 'Name, Inputs/Data/First/Name, Outputs/Data/First/Name, Inputs/Materials/First/Name, Outputs/Materials/First/Name';
+        let inputOutputs = await getSourceDataByName(server, 'PDataHome', parentDataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(5);
+        inputOutputs = await getSourceDataByName(server, 'PDataC1', parentDataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(1);
+        inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'CData1', dataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(2);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(5);
+        inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'CData2', dataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toEqual(['PDataC2']);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+    }
+    if (isParentSample && isChildSample) {
+        const columns = 'Name, Inputs/Data/First/Name, Outputs/Data/First/Name, Inputs/Materials/First/Name, Outputs/Materials/First/Name';
+        let inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'PDataHome', parentDataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(5);
+        inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'PDataC1', parentDataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(1);
+        inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'CData1', dataType, columns, topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Data/First/Name')).toHaveLength(0);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toHaveLength(2);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(5);
+        inputOutputs = await ExperimentCRUDUtils.getSampleDataByName(server, 'CData2', dataType, columns, subfolder1Options, editorUserOptions);
+        expect(caseInsensitive(inputOutputs, 'Inputs/Materials/First/Name')).toEqual(['PDataC2']);
+        expect(caseInsensitive(inputOutputs, 'Outputs/Materials/First/Name')).toHaveLength(0);
+    }
     // Issue 51410: LKSM: A deleted required source type still shows up in the sample type grids
     await deleteDataType(server, isParentSample ? 'deleteSampleTypes' : 'deleteDataClass', parentDtaTypeRowId, topFolderOptions, adminUserOptions);
     await ExperimentCRUDUtils.insertRows(server, [{'name': 'CNoParent'}], dataSchema, dataType, topFolderOptions, editorUserOptions);
