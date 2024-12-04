@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -96,6 +97,7 @@ public class QueryProfiler
     private boolean _hasBeenReset = false;
 
     private final List<DatabaseQueryListener> _listeners = new CopyOnWriteArrayList<>();
+    private int _droppedQueries;
 
     public static QueryProfiler getInstance()
     {
@@ -202,8 +204,21 @@ public class QueryProfiler
         _listeners.add(listener);
     }
 
-    @Nullable
-    public StackTraceElement[] track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
+    @NotNull
+    public Query preTrack(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters,
+                          @Nullable StackTraceElement[] stackTrace, boolean requestThread)
+    {
+        // Don't block if queue is full
+        Query query = new Query(scope, sql, parameters, -1, stackTrace, requestThread);
+        if (!_queue.offer(query))
+        {
+            _droppedQueries++;
+        }
+        return query;
+    }
+
+    @NotNull
+    public Query track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
           @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
     {
         if (null == stackTrace)
@@ -222,8 +237,12 @@ public class QueryProfiler
         MiniProfiler.addQuery(elapsed, sql, stackTrace);
 
         // Don't block if queue is full
-        _queue.offer(new Query(scope, sql, parameters, elapsed, stackTrace, requestThread));
-        return stackTrace;
+        Query query = new Query(scope, sql, parameters, elapsed, stackTrace, requestThread);
+        if (!_queue.offer(query))
+        {
+            _droppedQueries++;
+        }
+        return query;
     }
 
     public void resetAllStatistics()
@@ -310,10 +329,10 @@ public class QueryProfiler
                         out.println("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>");
                         out.println("  <tr><td colspan=5>&nbsp;</td></tr>");
 
-                        out.println("  <tr><td>Total Unique Queries");
+                        out.print("  <tr><td>Total Unique Queries");
 
                         if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
-                            out.println(" (Estimate)");
+                            out.print(" (Estimate)");
 
                         out.println(":</td><td style=\"text-align:right\">" + Formats.commaf0.format(_uniqueQueryCountEstimate) + "</td>");
                         out.println("<td style=\"width:10px\">&nbsp;</td>");
@@ -326,6 +345,7 @@ public class QueryProfiler
                             out.println("<td>" + (_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime") + ":</td><td style=\"text-align:right\">" + DateUtil.formatDuration(upTime) + "</td>");
                         }
                         out.println("</tr>");
+                        out.println("<tr><td>Dropped Due to Throttling:</td><td style=\"text-align:right\">" + Formats.commaf0.format(_droppedQueries) + "</td></tr>");
                         out.println("</table><br><br>");
 
                         out.println("<table>");
@@ -526,23 +546,36 @@ public class QueryProfiler
         {
             try
             {
-                //noinspection InfiniteLoopStatement
                 while (!interrupted())
                 {
                     Query query = _queue.take();
+
+                    boolean preTrack = query.getElapsed() < 0;
 
                     // Don't update or add while we're rendering the report or vice versa
                     synchronized (_lock)
                     {
                         if (query.isRequestThread())
                         {
-                            _requestQueryCount++;
-                            _requestQueryTime += query.getElapsed();
+                            if (preTrack)
+                            {
+                                _requestQueryCount++;
+                            }
+                            else
+                            {
+                                _requestQueryTime += query.getElapsed();
+                            }
                         }
                         else
                         {
-                            _backgroundQueryCount++;
-                            _backgroundQueryTime += query.getElapsed();
+                            if (preTrack)
+                            {
+                                _backgroundQueryCount++;
+                            }
+                            else
+                            {
+                                _backgroundQueryTime += query.getElapsed();
+                            }
                         }
 
                         String sql = query.getSql();
@@ -567,7 +600,7 @@ public class QueryProfiler
 
                             _queries.put(hash, tracker);
                         }
-                        else
+                        else if (!preTrack)
                         {
                             for (QueryTrackerSet set : getTrackerSets())
                                 set.beforeUpdate(tracker);

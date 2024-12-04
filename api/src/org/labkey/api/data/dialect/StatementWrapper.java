@@ -27,6 +27,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.ResultSetWrapper;
+import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
@@ -1237,7 +1238,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public ResultSet executeQuery()
             throws SQLException
     {
-        beforeExecute();
+        Query preQuery = beforeExecute(_debugSql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
         {
@@ -1255,7 +1256,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(_debugSql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -1263,7 +1264,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int executeUpdate()
             throws SQLException
     {
-        beforeExecute();
+        Query preQuery = beforeExecute(_debugSql);
         SQLException ex = null;
         int rows = -1;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -1277,7 +1278,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(_debugSql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -1610,7 +1611,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public boolean execute()
             throws SQLException
     {
-        beforeExecute();
+        Query preQuery = beforeExecute(_debugSql);
         SQLException ex = null;
         Boolean ret=null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -1626,7 +1627,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         finally
         {
             int rows = (ret==Boolean.FALSE) ? _stmt.getUpdateCount() : -1;
-            afterExecute(_debugSql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -1827,7 +1828,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public ResultSet executeQuery(String sql)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
         {
@@ -1842,7 +1843,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(_debugSql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -1850,7 +1851,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int executeUpdate(String sql)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         int rows = -1;
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -1864,7 +1865,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -2045,7 +2046,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public boolean execute(String sql)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(sql))
         {
@@ -2058,7 +2059,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -2224,7 +2225,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int[] executeBatch()
             throws SQLException
     {
-        beforeExecute();
+        Query preQuery = beforeExecute(_debugSql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
         {
@@ -2237,7 +2238,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(_debugSql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -2281,7 +2282,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int executeUpdate(String sql, int autoGeneratedKeys)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         int rows = -1;
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -2295,7 +2296,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -2303,7 +2304,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int executeUpdate(String sql, int[] columnIndexes)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         int rows = -1;
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -2317,7 +2318,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -2325,7 +2326,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int executeUpdate(String sql, String[] columnNames)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         int rows = -1;
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(_debugSql))
@@ -2339,7 +2340,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, rows);
+            afterExecute(preQuery, ex, rows);
         }
     }
 
@@ -2347,7 +2348,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public boolean execute(String sql, int autoGeneratedKeys)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(sql))
         {
@@ -2360,7 +2361,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -2368,7 +2369,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public boolean execute(String sql, int[] columnIndexes)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(sql))
         {
@@ -2381,7 +2382,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -2389,7 +2390,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public boolean execute(String sql, String[] columnNames)
             throws SQLException
     {
-        beforeExecute(sql);
+        Query preQuery = beforeExecute(sql);
         SQLException ex = null;
         try (var ignore = DebugInfoDumper.pushThreadDumpContext(sql))
         {
@@ -2402,7 +2403,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
         finally
         {
-            afterExecute(sql, ex, -1);
+            afterExecute(preQuery, ex, -1);
         }
     }
 
@@ -2793,36 +2794,34 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         throw new UnsupportedOperationException();
     }
 
-    private void beforeExecute(String sql)
+    private Query beforeExecute(String sql)
     {
         _debugSql = sql;
-        beforeExecute();
-    }
-
-    private void beforeExecute()
-    {
         // Crawler.java and BaseWebDriverTest.java use "8(" as attempted injection string
         if (_debugSql.contains("\"8(\"") && !_debugSql.contains("\"\"8(\"\"")) // 18196
             throw new IllegalArgumentException("SQL injection test failed: " + _debugSql);
         _msStart = System.currentTimeMillis();
+
+        List<Object> zeroBasedList = translateParametersForQueryTracking();
+        return QueryProfiler.getInstance().preTrack(_conn.getScope(), sql, zeroBasedList, _stackTrace, isRequestThread());
     }
 
 
-    private void afterExecute(String sql, @Nullable SQLException x, int rowsAffected)
+    private void afterExecute(Query query, @Nullable SQLException x, int rowsAffected)
     {
         if (null != x)
         {
-            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.DialectSQL, sql, true);
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.DialectSQL, query.getOriginalSql(), true);
             if (SqlDialect.isConfigurationException(x))
             {
                 ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             }
         }
-        _logStatement(sql, x, rowsAffected, getQueryLogging());
+        _logStatement(query.getOriginalSql(), x, rowsAffected, getQueryLogging());
     }
     
 
-    private static final Package _java_lang = java.lang.String.class.getPackage();
+    private static final Package JAVA_LANG = java.lang.String.class.getPackage();
 
     private void _logStatement(String sql, @Nullable SQLException x, int rowsAffected, QueryLogging queryLogging)
     {
@@ -2833,40 +2832,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         if (isAssertEnabled && AppProps.getInstance().isDevMode() && isMutatingSql(sql))
             SpringActionController.executingMutatingSql(sql);
 
-        // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
-        List<Object> zeroBasedList;
-
-        if (null != _parameters)
-        {
-            zeroBasedList = new ArrayList<>(_parameters.size());
-
-            // Translate parameters that can't be cached (for now, just JDBC arrays). I'd rather stash the original parameters and send
-            // those to the query profiler, but this would require one or more non-standard methods on StatementWrapper. See #24314.
-            for (Object o : _parameters)
-            {
-                if (o instanceof Array a)
-                {
-                    try
-                    {
-                        o = a.getArray();
-                    }
-                    catch (Exception e)
-                    {
-                        _log.error("Could not retrieve array", e);
-                        o = null;
-                    }
-                }
-
-                zeroBasedList.add(o);
-            }
-        }
-        else
-        {
-            zeroBasedList = null;
-        }
-
         // Hold on to this stack trace so that we can reuse it later (if collection has been enabled)
-        StackTraceElement[] stack = QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread(), queryLogging);
+        Query query = QueryProfiler.getInstance().track(_conn.getScope(), sql, translateParametersForQueryTracking(), elapsed, _stackTrace, isRequestThread(), queryLogging);
 
         if (x != null)
         {
@@ -2914,14 +2881,13 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                     logEntry.append(value);
                     Class<?> c = null==o ? null : o.getClass();
                     if (null != c && c != String.class && c != Integer.class)
-                        logEntry.append(" :").append(c.getPackage() == _java_lang ? c.getSimpleName() : c.getName());
+                        logEntry.append(" :").append(c.getPackage() == JAVA_LANG ? c.getSimpleName() : c.getName());
                 }
                 catch (Exception ex)
                 {
                     /* */
                 }
             }
-            _parameters.clear();
         }
         _parameters = null;
 
@@ -2929,7 +2895,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             logEntry.append("\n    cancelled by user");
         if (null != x)
             logEntry.append("\n    ").append(x);
-        _appendTableStackTrace(logEntry, 5, stack);
+        _appendTableStackTrace(logEntry, 5, query.getStackTraceElements());
 
         final String logString = logEntry.toString();
         _log.log(Level.DEBUG, logString);
@@ -2939,6 +2905,43 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             DebugInfoDumper.dumpThreads(_log);
         }
+    }
+
+    private @Nullable List<Object> translateParametersForQueryTracking()
+    {
+        // Make a copy of the parameters list (it gets modified by callers) and switch to zero-based list (_parameters is a one-based list)
+
+        List<Object> zeroBasedList;
+
+        if (null != _parameters)
+        {
+            zeroBasedList = new ArrayList<>(_parameters.size());
+
+            // Translate parameters that can't be cached (for now, just JDBC arrays). I'd rather stash the original parameters and send
+            // those to the query profiler, but this would require one or more non-standard methods on StatementWrapper. See #24314.
+            for (Object o : _parameters)
+            {
+                if (o instanceof Array a)
+                {
+                    try
+                    {
+                        o = a.getArray();
+                    }
+                    catch (Exception e)
+                    {
+                        _log.error("Could not retrieve array", e);
+                        o = null;
+                    }
+                }
+
+                zeroBasedList.add(o);
+            }
+        }
+        else
+        {
+            zeroBasedList = null;
+        }
+        return zeroBasedList;
     }
 
     private boolean isMutatingSql(String sql)
