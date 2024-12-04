@@ -2909,7 +2909,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     private @Nullable List<Object> translateParametersForQueryTracking()
     {
-        // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
+        // Make a copy of the parameters list (it gets modified by callers) and switch to zero-based list (_parameters is a one-based list)
+
         List<Object> zeroBasedList;
 
         if (null != _parameters)
