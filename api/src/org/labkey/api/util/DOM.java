@@ -917,22 +917,29 @@ public class DOM
                 for (var entry : attrs)
                 {
                     Object key = entry.getKey();
-                    if (key instanceof DOM.Attribute)
-                        ((DOM.Attribute) key).render(builder, entry.getValue());
-                    else if (key instanceof String)
+                    if (key instanceof DOM.Attribute a)
+                       a.render(builder, entry.getValue());
+                    else if (key instanceof String s)
                     {
-                        appendAttribute(builder, (String) key, entry.getValue());
+                        appendAttribute(builder, s, entry.getValue());
+                    }
+                    else if (key == null)
+                    {
+                        if (entry.getValue() != null)
+                        {
+                            throw new IllegalArgumentException("Cannot have a null attribute name with a non-null value: " + entry.getValue());
+                        }
                     }
                     else
                     {
-                        throw new IllegalArgumentException(String.valueOf(key));
+                        throw new IllegalArgumentException("Invalid attribute key '" + key + "' of type " + key.getClass().getName());
                     }
                 }
                 // TODO again horrible hack, make this go away
-                if (attrs instanceof _Attributes && null != ((_Attributes) attrs).callback)
+                if (attrs instanceof _Attributes a && null != a.callback)
                 {
                     builder.append(" ");
-                    ((_Attributes) attrs).callback.accept(builder);
+                    a.callback.accept(builder);
                 }
             }
             if (selfClosing)

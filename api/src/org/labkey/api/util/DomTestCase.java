@@ -7,11 +7,14 @@ import java.util.Arrays;
 
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.selected;
+import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.Element;
 import static org.labkey.api.util.DOM.H1;
 import static org.labkey.api.util.DOM.H2;
+import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.LK;
 import static org.labkey.api.util.DOM.OPTION;
 import static org.labkey.api.util.DOM.SELECT;
@@ -82,6 +85,10 @@ public class DomTestCase extends Assert
                         DIV("I don't care if they equal"),
                         1 != 2 ? "1 does not equal 2" : null));
         assertEquals("<div><div>I don&#039;t care if they equal</div>1 does not equal 2</div>", h.toString());
+
+        HtmlString h2 = createHtml(
+                INPUT(at(name, "myName", type, "text", /* checked */null, null)));
+        assertEquals("<input name=\"myName\" type=\"text\" />", h2.toString());
     }
 
     /**
