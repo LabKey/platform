@@ -2484,8 +2484,11 @@ public abstract class CompareType
             // Note: There is no DATE_BETWEEN operator, so this is a date-time comparison, unlike all of the above operators.
             // BETWEEN is inclusive of the begin and end values.
             Assert.assertEquals(1, new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan1, jan1, false)), null).getRowCount());
+            Assert.assertEquals(totalRows - 1, new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan1, jan1, true)), null).getRowCount());
             Assert.assertEquals(60/minuteInterval + 1, new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan1, jan1.plusMinutes(60), false)), null).getRowCount());
+            Assert.assertEquals(totalRows - (60/minuteInterval + 1), new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan1, jan1.plusMinutes(60), true)), null).getRowCount());
             Assert.assertEquals(rowsPerDay * 10 + 1, new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan5, jan15, false)), null).getRowCount());
+            Assert.assertEquals(totalRows - (rowsPerDay * 10 + 1), new TableSelector(table, new SimpleFilter(new BetweenClause(dateField, jan5, jan15, true)), null).getRowCount());
 
             Table.truncate(table);
         }
