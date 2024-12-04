@@ -1288,21 +1288,31 @@ public class AuthenticationManager
      * @return A case-insensitive map of user attribute names and values that was stashed in the associated session at
      * authentication time. This map will often be empty but will never be null.
      */
-    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpServletRequest request)
+    public static @NotNull Map<String, String> getUserAttributes(HttpServletRequest request)
     {
         HttpSession session = request.getSession(false);
 
-        return getAuthenticationAttributes(session);
+        return getUserAttributes(session);
     }
 
-    public static @NotNull Map<String, String> getAuthenticationAttributes(HttpSession session)
+    public static @NotNull Map<String, String> getUserAttributes(HttpSession session)
     {
         Map<String, String> attributeMap = null;
 
         if (null != session)
-            attributeMap = (Map<String, String>)session.getAttribute(SecurityManager.AUTHENTICATION_ATTRIBUTES_KEY);
+            attributeMap = (Map<String, String>)session.getAttribute(SecurityManager.USER_ATTRIBUTES_KEY);
 
         return null != attributeMap ? attributeMap : Collections.emptyMap();
+    }
+
+    public static @NotNull Map<String, Object> getAuthenticationProperties(HttpSession session)
+    {
+        Map<String, Object> authenticationProperties = null;
+
+        if (null != session)
+            authenticationProperties = (Map<String, Object>)session.getAttribute(SecurityManager.AUTHENTICATION_PROPERTIES);
+
+        return null != authenticationProperties ? authenticationProperties : Collections.emptyMap();
     }
 
     private static boolean areNotBlank(String id, String password)

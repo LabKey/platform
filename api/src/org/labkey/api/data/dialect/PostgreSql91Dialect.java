@@ -91,7 +91,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 {
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
     public static final String PRODUCT_NAME = "PostgreSQL";
-    public static final String RECOMMENDED = PRODUCT_NAME + " 16.x is the recommended version.";
+    public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
 
     private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -637,8 +637,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         // This will handle both mixed case and special characters on PostgreSQL
         String legal = getSelectNameFromMetaDataName(dbName);
-        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8';\n" +
-                "ALTER DATABASE " + legal + " SET default_with_oids TO OFF";
+        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8'";
     }
 
     @Override

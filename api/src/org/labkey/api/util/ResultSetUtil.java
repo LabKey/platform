@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.CachedResultSets;
@@ -28,6 +30,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.beans.Introspector;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -108,6 +111,27 @@ public class ResultSetUtil
         return factory.getRowMap(rs);
     }
 
+    public static Map<String, Integer> populateFindMap(ResultSetMetaData md, Map<String, Integer> findMap) throws SQLException
+    {
+        findMap.put("_row", 0);  // We're going to stuff the current row index at index 0
+
+        for (int i = 1; i <= md.getColumnCount(); i++)
+        {
+            String propName = md.getColumnLabel(i);
+
+            if (!propName.isEmpty() && Character.isUpperCase(propName.charAt(0)))
+                propName = Introspector.decapitalize(propName);
+
+            findMap.put(propName, i);
+        }
+
+        return findMap;
+    }
+
+    public static Map<String, Integer> getFindMap(ResultSetMetaData md) throws SQLException
+    {
+        return populateFindMap(md, new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>()));
+    }
 
     // Just for testing purposes... splats ResultSet metadata to log
     @SuppressWarnings("unused")

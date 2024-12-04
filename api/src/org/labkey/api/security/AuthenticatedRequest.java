@@ -594,7 +594,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                 if (_allocationThread != Thread.currentThread())
                     throw new IllegalStateException("Using request closed by a different thread");
                 else
-                    throw new IllegalStateException("Requset has been closed");
+                    throw new IllegalStateException("Request has been closed");
             }
             return true;
         }

@@ -26,6 +26,6 @@ public interface AntiVirusProviderRegistry
 
     default StandardServletMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
     {
-        return new StandardServletMultipartResolver();
+        return new DefaultAVMultipartResolver();
     }
 }
