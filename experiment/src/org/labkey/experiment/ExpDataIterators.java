@@ -432,12 +432,15 @@ public class ExpDataIterators
         {
             Object parentObj = get(i);
             Collection<String> parentNames = getParentNames(parentObj, _tsvWriter, "AliquotedFrom", null);
-            List<String> parents = parentNames.stream()
-                    .map(String::trim)
-                    .filter(s -> !StringUtils.isEmpty(s))
-                    .collect(Collectors.toList());
-            if (parents.size() > 0)
-                return parents.get(0);
+            if (parentNames != null)
+            {
+                List<String> parents = parentNames.stream()
+                        .map(String::trim)
+                        .filter(s -> !StringUtils.isEmpty(s))
+                        .toList();
+                if (!parents.isEmpty())
+                    return parents.get(0);
+            }
 
             return null;
         }
@@ -1060,13 +1063,16 @@ public class ExpDataIterators
                 {
                     Collection<String> parentNames = getParentNames(o, _tsvWriter, _parentCols.get(parentCol), getErrors());
 
-                    String parentColName = _parentCols.get(parentCol);
-                    Set<Pair<String, String>> parts = parentNames.stream()
-                        .map(String::trim)
-                        .map(s -> Pair.of(parentColName, s))
-                        .collect(Collectors.toSet());
+                    if (parentNames != null)
+                    {
+                        String parentColName = _parentCols.get(parentCol);
+                        Set<Pair<String, String>> parts = parentNames.stream()
+                                .map(String::trim)
+                                .map(s -> Pair.of(parentColName, s))
+                                .collect(Collectors.toSet());
 
-                    allParts.addAll(parts);
+                        allParts.addAll(parts);
+                    }
                 }
                 else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
                 {
