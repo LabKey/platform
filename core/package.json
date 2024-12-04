@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.3.0-fb-result-exclusions.0",
+    "@labkey/components": "6.4.0",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
