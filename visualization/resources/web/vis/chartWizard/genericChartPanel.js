@@ -470,7 +470,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.chartTypePanel = Ext4.create('LABKEY.vis.ChartTypePanel', {
                 chartTypesToHide: ['time_chart'],
                 selectedType: this.getSelectedChartType(),
-                selectedFields: this.measures,
+                selectedFields: Ext4.apply(this.measures, { trendline: this.trendline }),
                 restrictColumnsEnabled: this.restrictColumnsEnabled,
                 customRenderTypes: this.customRenderTypes,
                 baseQueryKey: this.schemaName + '.' + this.queryName,
@@ -508,6 +508,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.measures = values.fields;
         if (values.fields.xSub) {
             this.measures.color = this.measures.xSub;
+        }
+
+        if (values.altValues.trendline) {
+            this.trendline = values.altValues.trendline;
+            // if the chart data has already been loaded then we only need to query the trendlineData
+            if (this.measureStore) this.queryTrendlineData();
         }
 
         this.getChartLayoutPanel().onMeasuresChange(this.measures, this.renderType);
@@ -570,6 +576,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     },
                     apply: function(panel, values)
                     {
+                        // special case for trendlineData: if there was a change to x-axis scale type or range,
+                        // we need to reload the trendlineData
+                        if (this.trendlineData) this.queryTrendlineData();
+
                         // note: this event will only fire if a change was made in the Chart Layout panel
                         this.ensureChartLayoutOptions();
                         this.clearChartPanel(true);
@@ -961,7 +971,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         config.measures = Ext4.apply({}, this.measures);
         config.scales = {};
         config.labels = {};
-        
+
         this.ensureChartLayoutOptions();
         if (this.options.general)
         {
@@ -1007,8 +1017,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (this.options.developer)
             config.measures.pointClickFn = this.options.developer.pointClickFn;
 
-        if (this.curveFit)
+        if (this.curveFit) {
             config.curveFit = this.curveFit;
+        } else if (this.trendline) {
+            config.geomOptions.trendlineType = this.trendline.trendlineType;
+            config.geomOptions.trendlineAsymptoteMin = this.trendline.trendlineAsymptoteMin;
+            config.geomOptions.trendlineAsymptoteMax = this.trendline.trendlineAsymptoteMax;
+        }
 
         if (this.getCustomChartOptions)
             config.customOptions = this.getCustomChartOptions();
@@ -1201,7 +1216,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.loadOptionsFromConfig(chartConfig);
 
         // if the renderType was not saved with the report info, get it based off of the x-axis measure type
-        this.renderType = chartConfig.renderType || this.getRenderType();
+        this.renderType = chartConfig.renderType || this.getRenderType(chartConfig);
 
         this.markDirty(false);
         this.reportLoaded = true;
@@ -1289,8 +1304,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (chartConfig.measures && chartConfig.measures.pointClickFn)
                 this.options.developer.pointClickFn = chartConfig.measures.pointClickFn;
 
-            if (chartConfig.curveFit)
+            if (chartConfig.curveFit) {
                 this.curveFit = chartConfig.curveFit;
+            } else if (chartConfig.geomOptions.trendlineType) {
+                this.trendline = {
+                    trendlineType: chartConfig.geomOptions.trendlineType,
+                    trendlineAsymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
+                    trendlineAsymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+                }
+            }
         }
     },
 
@@ -1354,8 +1376,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.clearChartPanel(false);
 
-        var chartConfig = this.getChartConfig(),
-            renderType = this.getRenderType();
+        var chartConfig = this.getChartConfig();
+        var renderType = this.getRenderType(chartConfig);
 
         this.renderGenericChart(renderType, chartConfig);
 
@@ -1363,15 +1385,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.setRenderRequested(false);
     },
 
-    getRenderType : function()
+    getRenderType : function(chartConfig)
     {
-        var xAxisType = this.getXAxisType(this.measures.x);
-        return LABKEY.vis.GenericChartHelper.getChartType(this.renderType, xAxisType);
+        return LABKEY.vis.GenericChartHelper.getChartType(chartConfig);
     },
 
     renderGenericChart : function(chartType, chartConfig)
     {
-        var aes, scales, plotConfigArr, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
+        var aes, scales, customRenderType, hasNoDataMsg, newChartDiv, valueConversionResponse;
 
         hasNoDataMsg = LABKEY.vis.GenericChartHelper.validateResponseHasData(this.getMeasureStore(), true);
         if (hasNoDataMsg != null)
@@ -1423,7 +1444,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         newChartDiv = this.getNewChartDisplayDiv();
         this.getViewPanel().add(newChartDiv);
 
-        plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType);
+        var plotConfigArr = this.getPlotConfigs(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, this.trendlineData);
 
         Ext4.each(plotConfigArr, function(plotConfig) {
             if (this.renderType === 'pie_chart') {
@@ -1564,7 +1585,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return true;
     },
 
-    getPlotConfigs : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType)
+    getPlotConfigs : function(newChartDiv, chartType, chartConfig, aes, scales, customRenderType, trendlineData)
     {
         var plotConfigArr = [], geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
@@ -1618,7 +1639,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             plotConfigArr.push(plotConfig);
         }
         else {
-            plotConfigArr = LABKEY.vis.GenericChartHelper.generatePlotConfigs(newChartDiv.id, chartConfig, labels, aes, scales, geom, data);
+            plotConfigArr = LABKEY.vis.GenericChartHelper.generatePlotConfigs(newChartDiv.id, chartConfig, labels, aes, scales, geom, data, trendlineData);
 
             if (this.renderType === 'pie_chart')
             {
@@ -1780,7 +1801,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         // Checks to make sure the measures are still available, if not we show an error.
         Ext4.each(measureNames, function(propName) {
-            if (this.measures[propName]) {
+            if (this.measures[propName] && propName !== 'trendline') {
                 var propMeasures = this.measures[propName];
 
                 // some properties allowMultiple so treat all as arrays
@@ -2042,14 +2063,32 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return Ext4.isDefined(this.getMeasureStore()) && Ext4.isArray(this.getMeasureStoreRecords());
     },
 
-    onSelectRowsSuccess : function(measureStore)
-    {
+    onSelectRowsSuccess : function(measureStore) {
         this.measureStore = measureStore;
 
         // when not in edit mode, we'll use the column metadata from the data query
         if (!this.editMode)
             this.getChartTypePanel().loadQueryColumns(this.getMeasureStoreMetadata().fields);
 
+        this.queryTrendlineData();
+    },
+
+    queryTrendlineData : async function() {
+        const chartConfig = this.getChartConfig();
+        if (chartConfig.geomOptions.trendlineType && chartConfig.geomOptions.trendlineType !== '') {
+            this.setDataLoading(true);
+
+            const data = this.getMeasureStoreRecords();
+            this.trendlineData = await LABKEY.vis.GenericChartHelper.queryTrendlineData(chartConfig, data);
+            this.onQueryDataComplete();
+        } else {
+            // trendlineType of '' means use Point-to-Point, i.e. no trendlineData
+            this.trendlineData = undefined;
+            this.onQueryDataComplete();
+        }
+    },
+
+    onQueryDataComplete : function() {
         this.setDataLoading(false);
         
         this.getMsgPanel().removeAll();

@@ -1659,15 +1659,10 @@ public abstract class CompareType
         @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
+            // See Issue 51472
             return dialect.isSqlServer() ?
-                dialect.getColumnSelectName(alias) + getSqlServerComparison() :
+                dialect.getColumnSelectName(alias) + _comparison.getSql().replace("?", SS_CAST) :
                 super.toWhereClause(dialect, alias);
-        }
-
-        // See Issue 51472
-        protected String getSqlServerComparison()
-        {
-            throw new IllegalStateException("Must override either toWhereClause() or getSqlServerComparison()");
         }
 
         @Override
@@ -1783,12 +1778,6 @@ public abstract class CompareType
         }
 
         @Override
-        protected String getSqlServerComparison()
-        {
-            return " > " + SS_CAST;
-        }
-
-        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -1810,12 +1799,6 @@ public abstract class CompareType
         DateGteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_GTE, " >= ", rawFilterValue, startValue);
-        }
-
-        @Override
-        protected String getSqlServerComparison()
-        {
-            return " >= " + SS_CAST;
         }
 
         @Override
@@ -1843,12 +1826,6 @@ public abstract class CompareType
         }
 
         @Override
-        protected String getSqlServerComparison()
-        {
-            return " < " + SS_CAST;
-        }
-
-        @Override
         protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
@@ -1870,12 +1847,6 @@ public abstract class CompareType
         DateLteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
         {
             super(fieldKey, DATE_LTE, " <= ", rawFilterValue, addOneDay(startValue));
-        }
-
-        @Override
-        protected String getSqlServerComparison()
-        {
-            return " <= " + SS_CAST;
         }
 
         @Override
