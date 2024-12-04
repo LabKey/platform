@@ -3110,9 +3110,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public void deleteHits(int protocolId, Collection<Integer> resultIds)
     {
+        if (resultIds == null || resultIds.isEmpty())
+            return;
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolId"), protocolId);
         filter.addCondition(FieldKey.fromParts("ResultId"), resultIds, CompareType.IN);
         deleteHits(filter);
+    }
+
+    public void deleteHitsForRuns(Collection<Integer> runIds)
+    {
+        if (runIds == null || runIds.isEmpty())
+            return;
+
+        deleteHits(new SimpleFilter(FieldKey.fromParts("RunId"), runIds, CompareType.IN));
     }
 
     private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)

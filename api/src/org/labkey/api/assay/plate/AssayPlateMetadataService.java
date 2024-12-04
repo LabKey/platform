@@ -6,6 +6,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -133,5 +134,13 @@ public interface AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
+    ) throws ValidationException;
+
+    void applyHitSelectionCriteria(
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        TableInfo resultsTable,
+        List<Integer> runIds
     ) throws ValidationException;
 }

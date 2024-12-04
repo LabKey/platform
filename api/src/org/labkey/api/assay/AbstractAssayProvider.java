@@ -1766,6 +1766,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
+    public boolean hasFilterCriteria(ExpProtocol protocol)
+    {
+        Domain resultsDomain = getResultsDomainIfExists(protocol);
+        if (resultsDomain == null)
+            return false;
+
+        return hasFilterCriteria(protocol, resultsDomain);
+    }
+
+    protected boolean hasFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
+    {
+        return false;
+    }
+
+    @Override
     public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
     {
     }

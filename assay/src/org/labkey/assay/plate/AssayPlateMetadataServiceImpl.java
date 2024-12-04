@@ -35,6 +35,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
@@ -43,6 +44,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -87,6 +89,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateTable;
@@ -95,6 +98,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -112,6 +116,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.labkey.api.assay.AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME;
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
+import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -254,7 +259,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (context.getReRunId() != null)
         {
             // check if we are merging the re-imported data
-            if (context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA)
+            if (context.getReImportOption() == MERGE_DATA)
                 rows = mergeReRunData(container, user, context, rows, plates, provider, protocol, data, dataFile);
             else
             {
@@ -1233,6 +1238,91 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
     }
 
+    @Override
+    public void applyHitSelectionCriteria(
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        TableInfo table,
+        List<Integer> runIds
+    ) throws ValidationException
+    {
+        if (runIds.isEmpty())
+            return;
+
+        var provider = requireProvider(protocol);
+        var filterCriteria = provider.getFilterCriteria(protocol);
+        if (filterCriteria.isEmpty())
+            return;
+
+        var domain = table.getDomain();
+        if (domain == null)
+        {
+            LOG.error("Automatic hit selection failed. Unable to resolve domain from table ({}).", table);
+            return;
+        }
+
+        var url = new ActionURL();
+        var replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+
+        for (var criteria : filterCriteria) // TODO: Need to validate filterCriteria compare types coming in
+        {
+            var domainProperty = domain.getProperty(criteria.propertyId());
+            boolean isReplicateProperty = false;
+
+            if (domainProperty == null && replicateDomain != null)
+            {
+                domainProperty = replicateDomain.getProperty(criteria.propertyId());
+                isReplicateProperty = domainProperty != null;
+            }
+
+            if (domainProperty == null)
+            {
+                LOG.error("Automatic hit selection failed. Unable to resolve domain property from propertyId ({}).", criteria.propertyId());
+                return;
+            }
+
+            FieldKey fieldKey;
+            if (isReplicateProperty)
+                fieldKey = FieldKey.fromParts("Replicate", domainProperty.getName());
+            else
+                fieldKey = FieldKey.fromParts(domainProperty.getName());
+
+            CompareType ct = CompareType.getByURLKey(criteria.operation());
+            if (ct == null)
+            {
+                LOG.error("Automatic hit selection failed. Unable to resolve filter comparison type from operation \"{}\".", criteria.operation());
+                return;
+            }
+
+            url.addFilter(null, fieldKey, ct, criteria.value());
+        }
+
+        // The referenced plate well must have a sample value
+        var filter = new SimpleFilter(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
+
+        // Applying filters via ActionURL allows for automatic type coercion of the filter value
+        filter.addUrlFilters(url, null);
+
+        var selector = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null);
+        var matchingResults = selector.getArrayList(Integer.class);
+
+        // Remove previous hits against the runs that have been modified
+        PlateManager.get().deleteHitsForRuns(runIds);
+
+        if (matchingResults.isEmpty())
+            return;
+
+        try
+        {
+            PlateManager.get().markHits(container, user, protocol.getRowId(), true, matchingResults, null);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
         private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;       // map of plate position to well table
@@ -1369,15 +1459,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // compute replicate calculations and insert into the replicate stats table
                 AssayPlateMetadataService.get().insertReplicateStats(_container, _user, _protocol, _run, _replicateRows);
 
+                AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
+                TableInfo resultsTable = schema.createDataTable(null, false);
+
                 // re-select any hits that were present in the previous run
                 if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)
                     {
-                        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
-                        TableInfo resultsTable = schema.createDataTable(null, false);
-
                         SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
                                 .append(" JOIN ").append(AssayDbSchema.getInstance().getTableInfoHit(), "HT")
                                 .append(" ON AR.welllsid = HT.welllsid")
@@ -1390,9 +1480,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);
 
                         // remove the selections from the previous run
-                        PlateManager.get().deleteHits(FieldKey.fromParts("RunId"), List.of(prevRun));
+                        PlateManager.get().deleteHitsForRuns(List.of(prevRun.getRowId()));
                     }
                 }
+
+                AssayPlateMetadataService.get().applyHitSelectionCriteria(_container, _user, _protocol, resultsTable, List.of(_run.getRowId()));
+
                 tx.commit();
             }
             catch (Throwable e)

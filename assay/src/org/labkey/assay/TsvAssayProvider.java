@@ -606,6 +606,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return criteria;
     }
 
+    @Override
+    protected boolean hasFilterCriteria(ExpProtocol protocol, Domain domain)
+    {
+        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoFilterCriteria(), Collections.singleton("RowId"), filter, null).exists();
+    }
+
     private void updateFilterCriteria(
         User user,
         ExpProtocol protocol,

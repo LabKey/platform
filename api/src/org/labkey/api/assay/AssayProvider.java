@@ -277,6 +277,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean isPlateMetadataEnabled(ExpProtocol protocol);
 
     @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol);
+    boolean hasFilterCriteria(ExpProtocol protocol);
     void removeFilterCriteriaForProperty(PropertyDescriptor pd);
 
     /**

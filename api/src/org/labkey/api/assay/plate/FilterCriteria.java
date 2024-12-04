@@ -14,7 +14,7 @@ import java.util.List;
 public record FilterCriteria(
     String operation,
     String value,
-    @Nullable Integer propertyId,
+    Integer propertyId,
     @Nullable String name,
     Integer referencePropertyId,
     Integer domainId

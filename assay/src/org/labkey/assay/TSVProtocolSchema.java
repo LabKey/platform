@@ -149,11 +149,12 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 }
             }
 
-            List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
+                List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
+
                 // plate related triggers
-                addTriggerFactory(new AssayPlateTriggerFactory(getProtocol()));
+                addTriggerFactory(new AssayPlateTriggerFactory(getProvider(), getProtocol()));
 
                 // join to the well table which may have plate metadata
                 ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
@@ -221,6 +222,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                         defaultColumns = newDefaultColumns;
                     }
                 }
+
                 setDefaultVisibleColumns(defaultColumns);
             }
         }
