@@ -31,6 +31,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -1055,7 +1056,16 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                 // Call getTable() to ensure consistency with name resolution. Specifically, getTable() resolves datasets
                 // after attempting to resolve all standard tables by name, so dataset labels don't shadow standard tables.
                 // Before this check was added, createView() would resolve dataset labels before table names. See Issue 47444
-                TableInfo table = getTable(queryName);
+                TableInfo table = null;
+                try
+                {
+                    table = getTable(queryName);
+                }
+                catch (QueryException qpe)
+                {
+                    // We don't need to track this exception.  Presumably we'll hit it again in when the QueryView tries to render
+                    // NOTE that UserSchema.createView() behaves the same way by ignoring the errors collection passed into qdef.getTable()
+                }
                 if (table instanceof DatasetTable)
                 {
                     DatasetDefinition dsd = getDatasetDefinitionByQueryName(queryName);
