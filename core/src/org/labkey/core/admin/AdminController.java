@@ -3911,10 +3911,10 @@ public class AdminController extends SpringActionController
                 {
                     divisor = getDivisor(Math.max(usage.getInit(), Math.max(usage.getUsed(), Math.max(usage.getCommitted(), usage.getMax()))));
 
-                    types.add(new MemoryCategory("Init", usage.getInit() / divisor.first));
-                    types.add(new MemoryCategory("Used", usage.getUsed() / divisor.first));
-                    types.add(new MemoryCategory("Committed", usage.getCommitted() / divisor.first));
-                    types.add(new MemoryCategory("Max", usage.getMax() / divisor.first));
+                    types.add(new MemoryCategory("Init", (double) usage.getInit() / divisor.first));
+                    types.add(new MemoryCategory("Used", (double) usage.getUsed() / divisor.first));
+                    types.add(new MemoryCategory("Committed", (double) usage.getCommitted() / divisor.first));
+                    types.add(new MemoryCategory("Max", (double) usage.getMax() / divisor.first));
                 }
             }
 
@@ -4532,7 +4532,7 @@ public class AdminController extends SpringActionController
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String fullyQualifiedSchemaName = form.getDbSchema();
-            if (null == fullyQualifiedSchemaName || fullyQualifiedSchemaName.length() == 0)
+            if (null == fullyQualifiedSchemaName || fullyQualifiedSchemaName.isEmpty())
             {
                 throw new NotFoundException("Must specify dbSchema parameter");
             }
