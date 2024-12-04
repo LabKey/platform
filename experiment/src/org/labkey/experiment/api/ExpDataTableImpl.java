@@ -530,7 +530,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 return createLineageColumn(this, alias, true, false);
 
             case Outputs:
-                return createLineageColumn(this, alias, true, false);
+                return createLineageColumn(this, alias, false, false);
 
             case Properties:
                 return createPropertiesColumn(alias);
