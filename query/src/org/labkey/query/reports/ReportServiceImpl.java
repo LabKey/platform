@@ -92,6 +92,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
@@ -110,6 +111,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
@@ -1067,17 +1069,27 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             svc.registerUsageMetrics(moduleName, () -> {
                 // Iterate all the database reports once and produce two occurrence maps: all reports by type and just the charts by render type
                 MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
+                AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
                 Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
                     .flatMap(c -> ReportService.get().getReports(null, c).stream())
                     .peek(report -> {
                         if (report instanceof GenericChartReport chart)
+                        {
                             chartCountsByRenderType.add(chart.getRenderType());
+                            if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
+                            {
+                                String configJson = descriptor.getJSON();
+                                if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
+                                    genericChartWithTrendlineTypeCount.getAndIncrement();
+                            }
+                        }
                     })
                     .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
 
                 return Map.of(
                     "reportCountsByType", countsByType,
-                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType)
+                    "genericChartCountsByRenderType", MultiSetUtils.getOccurrenceMap(chartCountsByRenderType),
+                    "genericChartWithTrendlineTypeCount", genericChartWithTrendlineTypeCount
                 );
             });
         }
