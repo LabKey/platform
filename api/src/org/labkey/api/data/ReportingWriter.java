@@ -251,7 +251,7 @@ public class ReportingWriter
         TableInfo lookupTable = columnInfo.getFkTableInfo();
         if (null != fk
                 && null != lookupTable
-                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
+                && (!(fk instanceof RowIdForeignKey rfk) || !(rfk.getOriginalColumn().equals(columnInfo))))
         {
             Map<String, Object> lookupInfo = new HashMap<>();
             if (null != fk.getLookupContainer())
@@ -289,6 +289,13 @@ public class ReportingWriter
                     LOG.debug("userSchema for non-public lookup table " + queryName + " was null on column " + columnInfo.getName() + " in table " + parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + ". Using " + lookupTable.getSchema().getName());
                 }
             }
+
+            if (queryName == null || schemaName == null)
+            {
+                // Bail out if something went wrong with creating the lookup target
+                return null;
+            }
+
             lookupInfo.put("queryName", queryName);
             lookupInfo.put("schemaName", schemaName);
 
@@ -305,7 +312,7 @@ public class ReportingWriter
             }
             String key = null;
             List<String> pks = lookupTable.getPkColumnNames();
-            if (null != pks && pks.size() > 0)
+            if (null != pks && !pks.isEmpty())
                 key = pks.get(0);
             if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
                 key = pks.get(1);
