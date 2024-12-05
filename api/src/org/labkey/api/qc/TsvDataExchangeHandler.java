@@ -169,13 +169,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             writeRunProperties(context, mergedProps, scriptDir, pw, writer);
 
             // add the run data entries
-            Set<FileLike> dataFiles = writeRunData(context, run, scriptDir, pw);
+            Set<FileLike> dataFiles = writeRunData(context, run, scriptDir, pw, writer);
 
             // any additional sample property sets
             for (Map.Entry<String, DataIteratorBuilder> set : _sampleProperties.entrySet())
             {
                 FileLike sampleData = scriptDir.resolveChild(set.getKey() + ".tsv");
-                getDataSerializer().exportRunData(context.getProtocol(), set.getValue(), sampleData);
+                getDataSerializer().exportRunData(context.getProtocol(), Collections.singletonList(set.getValue()), sampleData, writer);
 
                 pw.append(set.getKey());
                 pw.append('\t');
@@ -213,13 +213,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Writes out a tsv representation of the assay uploaded data.
      */
-    protected Set<FileLike> writeRunData(AssayRunUploadContext<?> context, ExpRun run, FileLike scriptDir, PrintWriter pw) throws Exception
+    protected Set<FileLike> writeRunData(AssayRunUploadContext<?> context, ExpRun run, FileLike scriptDir, PrintWriter pw, TSVWriter tsvWriter) throws Exception
     {
         TransformResult transform = context.getTransformResult();
         if (!transform.getTransformedData().isEmpty())
-            return _writeTransformedRunData(context, transform, run, scriptDir, pw);
+            return _writeTransformedRunData(context, transform, run, scriptDir, pw, tsvWriter);
         else
-            return _writeRunData(context, run, scriptDir, pw);
+            return _writeRunData(context, run, scriptDir, pw, tsvWriter);
     }
 
     /**
@@ -229,7 +229,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
      * assay-saveAssayBatch.api: does not include uploadedData but may include an inputData file along with rawData rows.
      * assay-importRun.api: may include uploadedData or rawData (with or without an inputData file).
      */
-    protected Set<FileLike> _writeRunData(AssayRunUploadContext<?> context, ExpRun run, FileLike scriptDir, PrintWriter pw) throws Exception
+    protected Set<FileLike> _writeRunData(AssayRunUploadContext<?> context, ExpRun run, FileLike scriptDir, PrintWriter pw, TSVWriter tsvWriter) throws Exception
     {
         List<FileLike> result = new ArrayList<>();
 
@@ -330,7 +330,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         for (Map.Entry<DataType, List<DataIteratorBuilder>> dataEntry : mergedDataMap.entrySet())
         {
             FileLike runData = scriptDir.resolveChild(Props.runDataFile + ".tsv");
-            getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData);
+            getDataSerializer().exportRunData(context.getProtocol(), dataEntry.getValue(), runData, tsvWriter);
             _filesToIgnore.add(runData.toNioPathForRead().toFile());
 
             pw.append(Props.runDataFile.name());
@@ -367,7 +367,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     /**
      * Called to write out uploaded run data that has been previously transformed.
      */
-    protected Set<FileLike> _writeTransformedRunData(AssayRunUploadContext<?> context, TransformResult transformResult, ExpRun run, FileLike scriptDir, PrintWriter pw) throws Exception
+    protected Set<FileLike> _writeTransformedRunData(AssayRunUploadContext<?> context, TransformResult transformResult, ExpRun run, FileLike scriptDir, PrintWriter pw, TSVWriter tsvWriter) throws Exception
     {
         assert (!transformResult.getTransformedData().isEmpty());
 
@@ -395,7 +395,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             ExpData data = entry.getKey();
             FileLike runData = scriptDir.resolveChild( Props.runDataFile + ".tsv");
             // ask the data serializer to write the data map out to the temp file
-            getDataSerializer().exportRunData(context.getProtocol(), entry.getValue(), runData);
+            getDataSerializer().exportRunData(context.getProtocol(), Collections.singletonList(entry.getValue()), runData, tsvWriter);
 
             pw.append(Props.runDataFile.name());
             pw.append('\t');
@@ -729,14 +729,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 pw.append('\t');
                 pw.println(runData.toNioPathForRead().toString());
 
-                getDataSerializer().exportRunData(protocol, MapDataIterator.of(dataRows), runData);
+                getDataSerializer().exportRunData(protocol, Collections.singletonList(MapDataIterator.of(dataRows)), runData, writer);
             }
 
             // any additional sample property sets
             for (Map.Entry<String, DataIteratorBuilder> set : _sampleProperties.entrySet())
             {
                 FileLike sampleData = scriptDir.resolveChild(set.getKey() + ".tsv");
-                getDataSerializer().exportRunData(protocol, set.getValue(), sampleData);
+                getDataSerializer().exportRunData(protocol, Collections.singletonList(set.getValue()), sampleData, writer);
 
                 pw.append(set.getKey());
                 pw.append('\t');
