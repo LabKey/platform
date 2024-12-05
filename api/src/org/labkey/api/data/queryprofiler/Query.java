@@ -39,8 +39,7 @@ public class Query
     DbScope _scope;
     private final String _sql;
     private boolean _truncated;
-    private final @Nullable
-    List<Object> _parameters;
+    private final @Nullable List<Object> _parameters;
     private final long _elapsed;
     private final StackTraceElement[] _stackTrace;
     private final boolean _isRequestThread;
@@ -60,6 +59,11 @@ public class Query
     public DbScope getScope()
     {
         return _scope;
+    }
+
+    public String getOriginalSql()
+    {
+        return _sql;
     }
 
     public String getSql()
@@ -85,6 +89,11 @@ public class Query
     public long getElapsed()
     {
         return _elapsed;
+    }
+
+    public StackTraceElement[] getStackTraceElements()
+    {
+        return _stackTrace;
     }
 
     public String getStackTrace()

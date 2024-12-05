@@ -17,6 +17,8 @@ package org.labkey.api.data.statistics;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -224,5 +226,38 @@ public interface CurveFit<P extends CurveFit.Parameters>
     {
         int n = getData().length;
         return 1 - (1 - rSquared(parameters)) * (n - 1) / (n - p - 1);
+    }
+
+    default List<Map<String, Object>> generateCurvePoints(Double xMin, Double xMax, Integer numberOfPoints, boolean logXScale)
+    {
+        List<Map<String, Object>> generatedPoints = new ArrayList<>();
+
+        if (!logXScale)
+        {
+            double stepSize = (xMax - xMin) / (numberOfPoints - 1);
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                double xVal = xMin + (i * stepSize);
+                generatedPoints.add(Map.of("x", xVal, "y", fitCurve(xVal)));
+            }
+        }
+        else
+        {
+            double logXValMin = xMin == 0 ? Math.log10(Double.MIN_VALUE) : Math.log10(xMin);
+            double stepSize = (Math.log10(xMax) - logXValMin) / (numberOfPoints - 1);
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                double logValue = logXValMin + (i * stepSize);
+                double xVal = Math.pow(10, logValue);
+                if (!Double.isNaN(xVal))
+                {
+                    double yVal = fitCurve(xVal);
+                    if (!Double.isNaN(yVal) && !Double.isInfinite(yVal))
+                        generatedPoints.add(Map.of("x", xVal, "y", yVal));
+                }
+            }
+        }
+
+        return generatedPoints;
     }
 }
