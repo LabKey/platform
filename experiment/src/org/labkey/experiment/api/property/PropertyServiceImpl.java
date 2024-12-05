@@ -680,7 +680,11 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         );
     }
 
-    /** @return a map where the URI keys have been stripped of everything before the hash. http://www.labkey.org/exp/xml#attachment -> attachment */
+    /**
+     * @return a map where the URI keys have been stripped of everything before the hash or xsd: prefix.
+     * http://www.labkey.org/exp/xml#attachment -> attachment
+     * xsd:int -> int
+     */
     private Map<String, Integer> stripUriPrefixes(@NotNull Map<String, Object> valueMap)
     {
         Map<String, Integer> result = new HashMap<>();
@@ -691,8 +695,9 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             if (key.contains("#"))
             {
                 key = key.split("#")[1];
-                result.compute(key, (k, v) -> v == null ? value : v.intValue() + value);
             }
+            key = key.replace("xsd:", "");
+            result.compute(key, (k, v) -> v == null ? value : v.intValue() + value);
         }
         return result;
     }
