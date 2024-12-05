@@ -964,7 +964,10 @@ public class DbScope
                 throw (T) getCause();
         }
 
-        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        /* this "returns" RuntimeException so the caller can do the following to avoid compiler warnings:
+         *     throw retryException.throwRuntimeException()
+         */
+        public <T extends Throwable> RuntimeException throwRuntimeException() throws RuntimeException
         {
             throw UnexpectedException.wrap(getCause());
         }
