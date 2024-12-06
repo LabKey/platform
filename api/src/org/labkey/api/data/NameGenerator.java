@@ -445,6 +445,29 @@ public class NameGenerator
 
     }
 
+    public static String validateFieldKeyConflict(String fieldKey)
+    {
+        String fieldKeyLc = fieldKey.toLowerCase();
+
+        Set<String> formatNames = new HashSet<>(SubstitutionFormat.getFormatNames());
+        formatNames.add(SubstitutionValue.withCounter.name());
+        for (String formatName : formatNames)
+        {
+            String lcFormatName = ":" + formatName.toLowerCase();
+            int matchInd = fieldKeyLc.indexOf(lcFormatName);
+            if (matchInd > -1)
+                return "'" + fieldKey.substring(matchInd, matchInd + lcFormatName.length()) + "' is a reserved pattern.";
+        }
+
+        for (SubstitutionValue subValue : SubstitutionValue.values())
+        {
+            if (subValue.getKey().equalsIgnoreCase(fieldKey))
+                return fieldKey + " is a reserved name.";
+        }
+
+        return null;
+    }
+
     static Pair<List<String>, List<String>> getReservedFieldValidationResults(String nameExpression)
     {
         // For each substitution format, find its location in the string

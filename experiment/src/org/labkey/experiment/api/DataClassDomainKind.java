@@ -494,4 +494,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         return ComplianceService.get().isComplianceSupported();
     }
+
+    @Override
+    public boolean supportNamingPattern()
+    {
+        return true;
+    }
 }

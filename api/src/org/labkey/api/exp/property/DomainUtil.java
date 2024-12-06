@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
@@ -76,6 +77,7 @@ import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
@@ -104,6 +106,8 @@ import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTE
 public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
+    private static final String ILLEGAL_CHARSET = "<>$[]{};,`\"~!@#$%^*=|?\\";
+
     private DomainUtil()
     {
     }
@@ -688,10 +692,6 @@ public class DomainUtil
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
         domain = new GWTDomain(domain);
-        if (domainName != null)
-        {
-            domain.setName(domainName);
-        }
 
         DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
         if (kind == null)
@@ -699,6 +699,17 @@ public class DomainUtil
 
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
+
+
+        if (domainName != null)
+            domain.setName(domainName);
+
+        if (domain.getName() != null)
+        {
+            String domainNameError = validateDomainName(domain.getName(), kind.supportNamingPattern());
+            if (!StringUtils.isEmpty(domainNameError))
+                throw new IllegalArgumentException(domainNameError);
+        }
 
         // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
         boolean strictFieldValidation = arguments != null ? (Boolean) arguments.getOrDefault("strictFieldValidation", true) : true;
@@ -754,10 +765,17 @@ public class DomainUtil
             return validationException;
         }
 
-        if (updateDomainName && !d.getName().equals(update.getName()))
+        String updatedName = update.getName();
+        if (updateDomainName && !d.getName().equals(updatedName))
         {
+            String domainNameError = validateDomainName(updatedName, kind.supportNamingPattern());
+            if (!StringUtils.isEmpty(domainNameError))
+            {
+                validationException.addError(new SimpleValidationError(domainNameError));
+                return validationException;
+            }
             DefaultValueService.get().clearDefaultValues(d.getContainer(), d); // default values exp.objects will be re-created
-            d.setName(update.getName());
+            d.setName(updatedName);
         }
 
         d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
@@ -915,6 +933,23 @@ public class DomainUtil
         }
 
         return validationException;
+    }
+
+    private static @Nullable String validateDomainName(@NotNull String domainName, boolean supportNamingPattern)
+    {
+        //final String legalChars = " -_()&/.:";
+        String legalCharacterCheck = StringUtilsLabKey.validateLegalNames(domainName, ILLEGAL_CHARSET, "Domain name");
+        if (legalCharacterCheck != null)
+            return legalCharacterCheck;
+
+        char start = domainName.charAt(0);
+        if (!Character.isLetterOrDigit(start))
+            return "Domain name must start with a letter or a number character.";
+
+        if (supportNamingPattern)
+            return NameGenerator.validateFieldKeyConflict(domainName);
+        
+        return null;
     }
 
     private static String getMissingMandatoryField(List<? extends GWTPropertyDescriptor> updatedFields,
@@ -1331,6 +1366,16 @@ public class DomainUtil
                     exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
+            }
+
+            if (domainKind != null && domainKind.supportNamingPattern())
+            {
+                String nameSyntaxError = NameGenerator.validateFieldKeyConflict(name);
+                if (nameSyntaxError != null)
+                {
+                    exception.addFieldError(name, nameSyntaxError);
+                    continue;
+                }
             }
 
             if (namePropertyIdMap.containsKey(name))
