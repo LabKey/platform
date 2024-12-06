@@ -399,9 +399,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    public void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
-        super.changeDomain(user, protocol, orig, update);
+        super.beforeDomainChange(user, protocol, orig, update);
 
         if (hasDomainNameChanged(protocol, orig))
         {
@@ -504,13 +504,26 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
-
-                // update fields in the replicate stats table to match any changes to measures in the results domain
-                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update);
             }
         }
+    }
 
-        updateFilterCriteria(user, protocol, orig, update);
+    @Override
+    public void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+        super.afterDomainChange(user, protocol, orig, update);
+
+        if (isResultsDomain(update))
+        {
+            if (isPlateMetadataEnabled(protocol))
+            {
+                // Update fields in the replicate stats table to match any changes to measures in the results domain
+                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, orig, update);
+            }
+
+            // Filter criteria are only available to result domains
+            updateFilterCriteria(user, protocol, orig, update);
+        }
     }
 
     @Override
@@ -621,10 +634,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     ) throws ValidationException
     {
         assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
-
-        // Filter criteria are only available to result domains
-        if (!isResultsDomain(update))
-            return;
 
         Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
 

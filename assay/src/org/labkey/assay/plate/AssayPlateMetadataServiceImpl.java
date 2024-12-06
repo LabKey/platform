@@ -927,40 +927,115 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    public void updateReplicateStatsDomain(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update
+    ) throws ValidationException
     {
-        Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
-        Map<String, DomainProperty> existingFields = getExistingFields(replicateDomain);
-        boolean domainDirty = false;
+        var replicateDomain = ensurePlateReplicateStatsDomain(protocol);
+        var existingReplicateFields = getExistingFields(replicateDomain);
 
-        for (GWTPropertyDescriptor prop : update.getFields())
+        var originalFields = new HashMap<Integer, GWTPropertyDescriptor>();
+        for (var field : original.getFields())
+            originalFields.put(field.getPropertyId(), field);
+
+        var domainDirty = false;
+        var fieldsToRemove = new ArrayList<DomainProperty>();
+
+        for (var updateField : update.getFields())
         {
-            // for measures of type : numeric create the stats fields
-            if (prop.isMeasure())
+            var propertyId = updateField.getPropertyId();
+            var isNew = !originalFields.containsKey(propertyId);
+            var isValidType = updateField.isMeasure() && PropertyType.getFromURI(null, updateField.getRangeURI()).getJdbcType().isNumeric();
+
+            if (isNew)
             {
-                PropertyType type = PropertyType.getFromURI(null, prop.getRangeURI());
-                if (type.getJdbcType().isNumeric())
+                if (isValidType)
                 {
-                    for (String name : PlateReplicateStatsDomainKind.getStatsFieldNames(prop.getName()))
+                    for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
                     {
-                        // check for additions
-                        if (!existingFields.containsKey(name))
+                        addField(replicateDomain, name, null);
+                        domainDirty = true;
+                    }
+                }
+            }
+            else
+            {
+                var originalField = originalFields.get(propertyId);
+                var renamed = !originalField.getName().equals(updateField.getName());
+                var wasValidType = originalField.isMeasure() && PropertyType.getFromURI(null, originalField.getRangeURI()).getJdbcType().isNumeric();
+
+                if (isValidType)
+                {
+                    if (wasValidType)
+                    {
+                        if (renamed)
                         {
-                            addField(replicateDomain, name, prop.getFormat());
+                            var originalNames = PlateReplicateStatsDomainKind.getStatsFieldNames(originalField.getName());
+                            var updatedNames = PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName());
+
+                            for (int i = 0; i < originalNames.size(); i++)
+                            {
+                                var name = originalNames.get(i);
+                                if (existingReplicateFields.containsKey(name))
+                                {
+                                    var updatedName = updatedNames.get(i);
+                                    var dp = replicateDomain.getPropertyByName(name);
+                                    dp.setName(updatedName);
+                                    domainDirty = true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // something else to numeric measure
+                        for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
+                        {
+                            addField(replicateDomain, name, null);
                             domainDirty = true;
                         }
-                        else
-                            existingFields.remove(name);
                     }
+                }
+                else if (wasValidType)
+                {
+                    // numeric measure to something else
+                    var fieldName = renamed ? originalField.getName() : updateField.getName();
+                    for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(fieldName))
+                    {
+                        var field = existingReplicateFields.get(name);
+                        if (field != null)
+                            fieldsToRemove.add(field);
+                    }
+                }
+            }
+
+            originalFields.remove(propertyId);
+        }
+
+        // The only fields that remain in "originalFields" are ones that no longer exist in the updated domain.
+        // Remove any related replicate fields.
+        for (var originalField : originalFields.values())
+        {
+            var wasValidType = originalField.isMeasure() && PropertyType.getFromURI(null, originalField.getRangeURI()).getJdbcType().isNumeric();
+            if (wasValidType)
+            {
+                var fieldName = originalField.getName();
+                for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(fieldName))
+                {
+                    var field = existingReplicateFields.get(name);
+                    if (field != null)
+                        fieldsToRemove.add(field);
                 }
             }
         }
 
-        // check for removals
-        if (!existingFields.isEmpty())
+        if (!fieldsToRemove.isEmpty())
         {
             domainDirty = true;
-            for (DomainProperty prop : existingFields.values())
+            for (DomainProperty prop : fieldsToRemove)
                 prop.delete();
         }
 

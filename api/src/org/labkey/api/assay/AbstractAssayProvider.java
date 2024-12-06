@@ -407,7 +407,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    public void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+    }
+
+    @Override
+    public void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
     }
 
