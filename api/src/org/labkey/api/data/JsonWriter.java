@@ -354,12 +354,6 @@ public class JsonWriter
             else
                 queryName = lookupTable.getName();
 
-            if (queryName == null || schemaName == null)
-            {
-                // Bail out if something went wrong with creating the lookup target
-                return null;
-            }
-
             // Duplicate info with different property names for backwards compatibility
             lookupInfo.put("queryName", queryName);
             lookupInfo.put("table", queryName);

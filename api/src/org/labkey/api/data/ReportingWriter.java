@@ -290,12 +290,6 @@ public class ReportingWriter
                 }
             }
 
-            if (queryName == null || schemaName == null)
-            {
-                // Bail out if something went wrong with creating the lookup target
-                return null;
-            }
-
             lookupInfo.put("queryName", queryName);
             lookupInfo.put("schemaName", schemaName);
 
