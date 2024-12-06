@@ -664,7 +664,7 @@ public class ExceptionUtil
                 return true;
             }
 
-            if (ex instanceof AbortedRequestException || ex instanceof DbScope.ConnectionAlreadyReleaseException)
+            if (ex instanceof AbortedRequestException || ex instanceof DbScope.ConnectionAlreadyReleasedException)
             {
                 return true;
             }

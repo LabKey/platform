@@ -295,7 +295,29 @@ public class PipelineJobServiceImpl implements PipelineJobService
             // Piggyback on the job thread so we can shut down open connections on its behalf
             try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
             {
-                DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
+                DbScope.DifferentConnectionException lastException;
+                int retry = 0;
+                do
+                {
+                    try
+                    {
+                        DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
+                        lastException = null;
+                    }
+                    catch (DbScope.DifferentConnectionException e)
+                    {
+                        // The connection we tried to close has already been closed and the thread has already
+                        // started using a different connection. Try again
+                        lastException = e;
+                        retry++;
+                    }
+                }
+                while (lastException != null && retry < 3);
+
+                if (lastException != null)
+                {
+                    throw lastException;
+                }
             }
         }
     }

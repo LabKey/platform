@@ -1175,10 +1175,10 @@ public class DbScope
             log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
 
             if (_conn == null)
-                throw new ConnectionAlreadyReleaseException("Connection has already been nulled out, but was passed: " + conn);
+                throw new ConnectionAlreadyReleasedException("Connection has already been nulled out, but was passed: " + conn);
 
             if (_conn != conn)
-                throw new IllegalStateException("Incorrect Connection: " + conn + " vs. " + _conn);
+                throw new DifferentConnectionException("Incorrect Connection: " + conn + " vs. " + _conn);
 
             if (_refCount <= 0)
                 throw new IllegalStateException("Reference count is too low (" + _refCount + ") for " + _conn);
@@ -1195,13 +1195,25 @@ public class DbScope
     }
 
     /**
-     * Special case for when the connection being closed doesn't match the expected
-     * connection for this thread, to help scenarios that are prone to race conditions
-     * (like killing pipeline jobs) ignore it.
+     * Special case for when the connection that we expected to close has already been closed.
+     * Makes it easier to ignore this error for scenarios that are prone to race conditions, like killing pipeline jobs.
      */
-    public static class ConnectionAlreadyReleaseException extends IllegalStateException implements SkipMothershipLogging
+    public static class ConnectionAlreadyReleasedException extends IllegalStateException implements SkipMothershipLogging
     {
-        public ConnectionAlreadyReleaseException(String s)
+        public ConnectionAlreadyReleasedException(String s)
+        {
+            super(s);
+        }
+    }
+
+    /**
+     * Special case for when the connection that we expected to close already been closed and another connection
+     * is in use instead.
+     * Makes it easier to retry in cases that are prone to race conditions, like killing pipeline jobs.
+     */
+    public static class DifferentConnectionException extends IllegalStateException implements SkipMothershipLogging
+    {
+        public DifferentConnectionException(String s)
         {
             super(s);
         }
@@ -2153,7 +2165,7 @@ public class DbScope
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
                     t.close();
                 }
-                catch (ConnectionAlreadyReleaseException ignored)
+                catch (ConnectionAlreadyReleasedException ignored)
                 {
                     // The code in another thread has already released the connection
                 }
