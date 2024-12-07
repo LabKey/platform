@@ -349,6 +349,7 @@ public class ExpDataIterators
 
     public static class AliquotRollupDataIterator extends WrapperDataIterator
     {
+        private final DataIteratorContext _context;
         private final Integer _storedAmountCol;
         private final Integer _unitsCol;
         private final Integer _sampleStateCol;
@@ -364,6 +365,7 @@ public class ExpDataIterators
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, Container container)
         {
             super(di);
+            _context = context;
             _isInsert = !context.getInsertOption().allowUpdate;
             _isUpdate = context.getInsertOption().updateOnly;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
@@ -439,7 +441,11 @@ public class ExpDataIterators
                         .filter(s -> !StringUtils.isEmpty(s))
                         .toList();
                 if (!parents.isEmpty())
+                {
+                    if (parents.size() > 1)
+                        _context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
                     return parents.get(0);
+                }
             }
 
             return null;
