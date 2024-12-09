@@ -349,6 +349,7 @@ public class ExpDataIterators
 
     public static class AliquotRollupDataIterator extends WrapperDataIterator
     {
+        private final DataIteratorContext _context;
         private final Integer _storedAmountCol;
         private final Integer _unitsCol;
         private final Integer _sampleStateCol;
@@ -359,10 +360,12 @@ public class ExpDataIterators
         private final boolean _isInsert;
         private final boolean _isUpdate;
         private final List<Integer> availableSampleStatuses = new ArrayList<>();
+        private final TSVWriter _tsvWriter;
 
         protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, Container container)
         {
             super(di);
+            _context = context;
             _isInsert = !context.getInsertOption().allowUpdate;
             _isUpdate = context.getInsertOption().updateOnly;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
@@ -373,6 +376,14 @@ public class ExpDataIterators
             _rootMaterialRowIdCol = map.get(RootMaterialRowId.name());
             _rootIdToRecomputeCol = map.get(ROOT_RECOMPUTE_ROWID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
+            _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+            {
+                @Override
+                protected int write()
+                {
+                    throw new UnsupportedOperationException();
+                }
+            };
 
             if (SampleStatusService.get().supportsSampleStatus())
             {
@@ -419,6 +430,27 @@ public class ExpDataIterators
             return amountChanged ? new Pair<>(true, rootAliquot) : null;
         }
 
+        private String getAliquotParent(int i)
+        {
+            Object parentObj = get(i);
+            Collection<String> parentNames = getParentNames(parentObj, _tsvWriter, "AliquotedFrom", null);
+            if (parentNames != null)
+            {
+                List<String> parents = parentNames.stream()
+                        .map(String::trim)
+                        .filter(s -> !StringUtils.isEmpty(s))
+                        .toList();
+                if (!parents.isEmpty())
+                {
+                    if (parents.size() > 1)
+                        _context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
+                    return parents.get(0);
+                }
+            }
+
+            return null;
+        }
+
         @Override
         public Object get(int i)
         {
@@ -427,7 +459,7 @@ public class ExpDataIterators
                 if (_isInsert)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
                     return null;
                 }
 
@@ -452,7 +484,7 @@ public class ExpDataIterators
                 if (!_isUpdate)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
                     return null;
                 }
                 // update only, return rootMaterialRowId that's queried from SampleUpdateAliquotedFromDataIterator
@@ -874,6 +906,70 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
+    static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
+    {
+        Collection<String> parentNames = null;
+        if (parentObj != null)
+        {
+            if (parentObj instanceof String)
+            {
+                if (((String) parentObj).trim().isEmpty())
+                {
+                    parentNames = Arrays.asList(((String) parentObj).trim());
+                }
+                else
+                {
+                    // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
+                    // using TabLoader instead of just splitting on the comma.
+                    String quotedStr = ((String) parentObj).contains(",") ? (String) parentObj : tsvWriter.quoteValue((String) parentObj); // if value contains comma, no need to quote again
+                    try (TabLoader tabLoader = new TabLoader(quotedStr))
+                    {
+                        tabLoader.setDelimiterCharacter(',');
+                        tabLoader.setUnescapeBackslashes(false);
+                        // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
+                        tabLoader.setIncludeComments(true);
+                        // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
+                        tabLoader.setParseEnclosedQuotes(true);
+                        try
+                        {
+                            String[][] values = tabLoader.getFirstNLines(1);
+                            if (values.length > 0)
+                                parentNames = Arrays.asList(values[0]);
+                            else
+                                parentNames = Collections.emptyList();
+                        }
+                        catch (IOException e)
+                        {
+                            parentNames = Collections.emptyList();
+                            if (errors != null)
+                                errors.addRowError(new ValidationException("Unable to parse parent names from " + parentObj, fieldName));
+                        }
+                    }
+                }
+            }
+            else if (parentObj instanceof JSONArray ja)
+            {
+                parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
+            }
+            else if (parentObj instanceof Collection)
+            {
+                //noinspection rawtypes
+                Collection<?> c = ((Collection) parentObj);
+                parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
+            }
+            else if (parentObj instanceof Number)
+            {
+                parentNames = Arrays.asList(parentObj.toString());
+            }
+            else
+            {
+                if (errors != null)
+                    errors.addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + parentObj, fieldName));
+            }
+        }
+        return parentNames;
+    }
+
     static class DerivationDataIteratorBase extends WrapperDataIterator
     {
         final DataIteratorContext _context;
@@ -962,7 +1058,7 @@ public class ExpDataIterators
         {
             return _context.getErrors();
         }
-        
+
         protected Set<Pair<String, String>> _getParentParts()
         {
             Set<Pair<String, String>> allParts = new HashSet<>();
@@ -971,69 +1067,18 @@ public class ExpDataIterators
                 Object o = get(parentCol);
                 if (o != null)
                 {
-                    Collection<String> parentNames;
-                    if (o instanceof String)
-                    {
-                        if (((String) o).trim().isEmpty())
-                        {
-                            parentNames = Arrays.asList(((String) o).trim());
-                        }
-                        else
-                        {
-                            // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
-                            // using TabLoader instead of just splitting on the comma.
-                            String quotedStr = ((String) o).contains(",") ? (String) o : _tsvWriter.quoteValue((String) o); // if value contains comma, no need to quote again
-                            try (TabLoader tabLoader = new TabLoader(quotedStr))
-                            {
-                                tabLoader.setDelimiterCharacter(',');
-                                tabLoader.setUnescapeBackslashes(false);
-                                // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
-                                tabLoader.setIncludeComments(true);
-                                // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
-                                tabLoader.setParseEnclosedQuotes(true);
-                                try
-                                {
-                                    String[][] values = tabLoader.getFirstNLines(1);
-                                    if (values.length > 0)
-                                        parentNames = Arrays.asList(values[0]);
-                                    else
-                                        parentNames = Collections.emptyList();
-                                }
-                                catch (IOException e)
-                                {
-                                    parentNames = Collections.emptyList();
-                                    getErrors().addRowError(new ValidationException("Unable to parse parent names from " + o, _parentCols.get(parentCol)));
-                                }
-                            }
-                        }
-                    }
-                    else if (o instanceof JSONArray ja)
-                    {
-                        parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
-                    }
-                    else if (o instanceof Collection)
-                    {
-                        //noinspection rawtypes
-                        Collection<?> c = ((Collection)o);
-                        parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
-                    }
-                    else if (o instanceof Number)
-                    {
-                        parentNames = Arrays.asList(o.toString());
-                    }
-                    else
-                    {
-                        getErrors().addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + o, _parentCols.get(parentCol)));
-                        continue;
-                    }
+                    Collection<String> parentNames = getParentNames(o, _tsvWriter, _parentCols.get(parentCol), getErrors());
 
-                    String parentColName = _parentCols.get(parentCol);
-                    Set<Pair<String, String>> parts = parentNames.stream()
-                        .map(String::trim)
-                        .map(s -> Pair.of(parentColName, s))
-                        .collect(Collectors.toSet());
+                    if (parentNames != null)
+                    {
+                        String parentColName = _parentCols.get(parentCol);
+                        Set<Pair<String, String>> parts = parentNames.stream()
+                                .map(String::trim)
+                                .map(s -> Pair.of(parentColName, s))
+                                .collect(Collectors.toSet());
 
-                    allParts.addAll(parts);
+                        allParts.addAll(parts);
+                    }
                 }
                 else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
                 {

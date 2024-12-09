@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -50,14 +51,14 @@ import java.util.Map;
 public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
 {
     @Override
-    public void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileLike runDataFile) throws IOException, BatchValidationException
+    public void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileLike runDataFile, TSVWriter tsvWriter) throws IOException, BatchValidationException
     {
         List<String> columns = null;
         try (PrintWriter pw = PrintWriters.getPrintWriter(runDataFile.openOutputStream()))
         {
             for (DataIteratorBuilder dib : data)
             {
-                columns = exportData(dib, columns, pw);
+                columns = exportData(dib, columns, pw, tsvWriter);
             }
         }
 
@@ -68,7 +69,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         }
     }
 
-    private List<String> exportData(DataIteratorBuilder data, List<String> columns, PrintWriter pw) throws IOException, BatchValidationException
+    private List<String> exportData(DataIteratorBuilder data, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException, BatchValidationException
     {
         try (MapDataIterator iter = DataIteratorUtil.wrapMap(data.getDataIterator(new DataIteratorContext()), false))
         {
@@ -89,21 +90,21 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         sep = "\t";
                     }
                     pw.println();
-                    writeRow(row, columns, pw);
+                    writeRow(row, columns, pw, tsvWriter);
                 }
 
                 // write the remaining rows
                 while (iter.next())
                 {
                     row = iter.getMap();
-                    writeRow(row, columns, pw);
+                    writeRow(row, columns, pw, tsvWriter);
                 }
             }
         }
         return columns;
     }
 
-    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw)
+    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException, BatchValidationException
     {
         String sep;
         sep = "";
@@ -123,11 +124,11 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                     pw.append(StringUtils.join((Object[]) o, ","));
                 else
                 {
-                    String val = String.valueOf(o);
+                    String val = tsvWriter.quoteValue(String.valueOf(o));
                     // Issue 51629 double quote the value if it contains backslashes to avoid tab loader mangling
                     // on import
                     if (!val.startsWith("\"") && !val.endsWith("\"") && val.contains("\\"))
-                        val = "\"" + StringUtils.replace(val,"\"", "\"\"") + "\"";
+                        val = "\"" + StringUtils.replace(val, "\"", "\"\"") + "\"";
                     pw.append(val);
                 }
             }
