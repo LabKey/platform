@@ -18,6 +18,7 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -54,12 +55,8 @@ public interface DataExchangeHandler
         /**
          * Called to save or import transformed or QC'd run data to the specified reader or writer.
          */
-        void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileLike runData) throws IOException, BatchValidationException;
+        void exportRunData(ExpProtocol protocol, List<DataIteratorBuilder> data, FileLike runData, TSVWriter tsvWriter) throws IOException, BatchValidationException;
 
-        default void exportRunData(ExpProtocol protocol, DataIteratorBuilder data, FileLike runData) throws IOException, BatchValidationException
-        {
-            exportRunData(protocol, Collections.singletonList(data), runData);
-        }
         DataIteratorBuilder importRunData(ExpProtocol protocol, File runData) throws Exception;
     }
 }
