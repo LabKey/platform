@@ -925,7 +925,7 @@ public class DOM
                     }
                     else
                     {
-                        throw new IllegalArgumentException(String.valueOf(key));
+                        throw new IllegalArgumentException("Bad attribute in '" + tagName + "' element: " + String.valueOf(key));
                     }
                 }
                 // TODO again horrible hack, make this go away
