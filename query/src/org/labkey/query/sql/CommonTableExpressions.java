@@ -304,7 +304,8 @@ public class CommonTableExpressions
             {
                 _isCTESet = true;       // Set first to prevent endless recursion
                 SQLFragment sqlf = _queryTableWith._wrapped.getSql();
-                _sql.setCommonTableExpressionSql(_cteKey, sqlf, isRecursive);
+                if (null != sqlf)
+                    _sql.setCommonTableExpressionSql(_cteKey, sqlf, isRecursive);
             }
         }
 
