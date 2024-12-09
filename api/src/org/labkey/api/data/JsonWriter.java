@@ -329,7 +329,7 @@ public class JsonWriter
         TableDescription lookupTable = columnInfo.getFkTableDescription();
         if (null != fk
                 && null != lookupTable
-                && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
+                && (!(fk instanceof RowIdForeignKey rfk) || !(rfk.getOriginalColumn().equals(columnInfo))))
         {
             JSONObject lookupInfo = new JSONObject();
             if (null != fk.getLookupContainer())
@@ -408,7 +408,7 @@ public class JsonWriter
 
             if (key == null)
             {
-                if (null != pks && pks.size() > 0)
+                if (null != pks && !pks.isEmpty())
                     key = pks.get(0);
                 if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
                     key = pks.get(1);
