@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -75,6 +76,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -117,6 +119,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     String LSID_COUNTER_DB_SEQUENCE_PREFIX = "LsidCounter-";
 
     String LINEAGE_DEFAULT_MAXIMUM_DEPTH_PROPERTY_NAME = "lineageDefaultMaximumDepth";
+
+    String ILLEGAL_PARENT_ALIAS_CHARSET = "/:<>$[]{};,`\"~!@#$%^*=|?\\";
 
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
@@ -538,6 +542,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
             {
                 throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
             }
+
+            String legalCharacterCheck = StringUtilsLabKey.validateLegalNames(trimmedKey, ILLEGAL_PARENT_ALIAS_CHARSET, "Parent alias");
+            if (legalCharacterCheck != null)
+                throw new IllegalArgumentException(legalCharacterCheck);
+
+            String nameSyntaxError = NameGenerator.validateFieldKeyConflict(trimmedKey);
+            if (nameSyntaxError != null)
+                throw new IllegalArgumentException("Invalid Parent alias '" + trimmedKey + "'. " + nameSyntaxError);
 
             //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_TYPE_ALIAS_VALUE, or DataInput/<name> or NEW_DATA_CLASS_ALIAS_VALUE
             if (!ExperimentService.parentAliasHasCorrectFormat(trimmedValue))
