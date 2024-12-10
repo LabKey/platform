@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ViewContext;
@@ -231,7 +232,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         Domain domain = _provider.getResultsDomain(protocol);
         Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
         for (DomainProperty prop : domain.getProperties())
-            propertyMap.put(prop.getName(), prop);
+            PropertyService.get().getDomainPropertyImportAliases(prop).forEach(alias -> propertyMap.put(alias, prop));
         List<Map<String, Object>> dataRows = new ArrayList<>();
 
         for (Map<String, Object> row : JsonUtil.toMapList(dataArray))
