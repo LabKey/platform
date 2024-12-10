@@ -1,6 +1,7 @@
 import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {
+    checkDomainName,
     checkLackDesignerOrReaderPerm,
     createSource,
     deleteSourceType,
@@ -68,9 +69,13 @@ afterEach(() => {
     mock.restore();
 });
 
-describe('Data Class Designer - Permissions', () => {
+describe('Data Class Designer', () => {
     it('Lack designer or Reader permission', async () => {
         await checkLackDesignerOrReaderPerm(server, 'DataClass', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
+    });
+
+    it('Data class name validation', async () => {
+        await checkDomainName(server, 'DataClass', true, topFolderOptions, designerReaderOptions);
     });
 
     describe('Create/update/delete designs', () => {

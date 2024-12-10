@@ -1,4 +1,10 @@
-import { ExperimentCRUDUtils, IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
+import {
+    ExperimentCRUDUtils,
+    IntegrationTestServer,
+    RequestOptions,
+    selectRandomN,
+    successfulResponse
+} from '@labkey/test';
 import { caseInsensitive, SAMPLE_TYPE_DESIGNER_ROLE } from '@labkey/components';
 import { PermissionRoles } from '@labkey/api';
 
@@ -299,6 +305,98 @@ export async function initProject(server: IntegrationTestServer, projectName: st
     }
 }
 
+async function verifyDomainCreateFailure(server: IntegrationTestServer, domainType: string, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const field = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+    const badDomainNameResp = await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: badDomainName, fields: [field] },
+        options: {
+            name: badDomainName,
+        }
+    }, {...folderOptions, ...userOptions});
+
+    expect(badDomainNameResp['body']['success']).toBeFalsy();
+    expect(badDomainNameResp['body']['exception']).toBe(error);
+}
+
+async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const options = {
+        name: badDomainName
+    }
+    if (dataTypeRowId)
+        options['rowId'] = dataTypeRowId;
+    const updatedDomainPayload = {
+        domainId,
+        domainDesign: {name: badDomainName, domainId, domainURI},
+        options
+    };
+
+    const badDomainNameResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...folderOptions, ...userOptions});
+
+    expect(badDomainNameResp['body']['success']).toBeFalsy();
+    expect(badDomainNameResp['body']['exception']).toBe(error);
+}
+
+async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainType: string, domainName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    let domainId, domainURI;
+    const field = domainType === 'SampleSet' ? { name: 'Name' } : { name: 'Prop' };
+    await server.post('property', 'createDomain', {
+        kind: domainType,
+        domainDesign: { name: domainName, fields: [field] },
+        options: {
+            name: domainName,
+        }
+    }, {...folderOptions, ...userOptions}).expect((result) => {
+        const domain = JSON.parse(result.text);
+        domainId = domain.domainId;
+        domainURI = domain.domainURI;
+        return true;
+    });
+    return {domainId, domainURI};
+}
+
+const EMPTY_DOMAIN_NAME_MSG = 'Domain name must not be blank';
+export const ILLEGAL_DOMAIN_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
+const LEGAL_CHARSET = [' ', '+', '-', '_', '.', ':', '', '&', '(', ')', '/'];
+const alphaNumeric = ['a', 'A', '1', '0'];
+export async function checkDomainName(server: IntegrationTestServer, domainType: string, supportNameExpression: boolean, folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const badNames = {
+        '': EMPTY_DOMAIN_NAME_MSG,
+        ' ': EMPTY_DOMAIN_NAME_MSG,
+        'with\0nullCharacter': `Invalid ${domainType} name. Domain name must contain only valid unicode characters.`,
+        'with\tnewLines': `Invalid ${domainType} name. Domain name may not contain 'tab', 'new line', or 'return' characters.`,
+        '.startWithDot': `Invalid ${domainType} name. Domain name must start with a letter or a number character.`,
+        ' startWithSpace': `Invalid ${domainType} name. Domain name must start with a letter or a number character.`,
+        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid ${domainType} name. Domain name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+        'a -b': `Invalid ${domainType} name. Domain name may not contain space followed by dash.`
+    };
+    if (supportNameExpression) {
+        badNames['withCounter'] = `Invalid ${domainType} name. 'withCounter' is a reserved name.`;
+        badNames['int:withCounter'] = `Invalid ${domainType} name. ':withCounter' is a reserved pattern.`;
+        badNames['drawdate:first'] = `Invalid ${domainType} name. ':first' is a reserved pattern.`;
+    }
+
+    let badNameKeys = Object.keys(badNames);
+    for (let i = 0; i < badNameKeys.length; i++)
+        await verifyDomainCreateFailure(server, domainType, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
+
+    if (!supportNameExpression)
+    {
+        await verifyDomainCreateSuccess(server, domainType, 'withCounter', folderOptions, userOptions);
+    }
+
+    const domainName = selectRandomN(alphaNumeric, 2).join('') + selectRandomN(LEGAL_CHARSET, 5).join('');
+    const { domainId, domainURI } = await verifyDomainCreateSuccess(server, domainType, domainName, folderOptions, userOptions);
+
+    let dataTypeRowId = 0;
+    if (domainType !== 'SampleSet')
+        dataTypeRowId = await getDataClassRowIdByName(server, domainName, folderOptions);
+    for (let i = 0; i < badNameKeys.length; i++){
+        await verifyDomainUpdateFailure(server, domainId, domainURI, dataTypeRowId, badNameKeys[i], badNames[badNameKeys[i]], folderOptions, userOptions);
+    }
+
+}
+
 export async function checkLackDesignerOrReaderPerm(server: IntegrationTestServer, domainType: string, topFolderOptions: RequestOptions, readerUserOptions: RequestOptions, editorUserOptions: RequestOptions, designerOptions: RequestOptions) {
     await server.post('property', 'createDomain', {
         kind: domainType,
@@ -582,7 +680,7 @@ export const getAssayDesignPayload = (name: string, runFields: any[], resultFiel
         "domains": [
             {
                 "name": "Batch Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:${AssayName}",
+                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:${GpatAssayDBSeq}",
                 "domainId": 0,
                 "fields": [],
                 "indices": [],
@@ -591,7 +689,7 @@ export const getAssayDesignPayload = (name: string, runFields: any[], resultFiel
             },
             {
                 "name": "Run Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:${AssayName}",
+                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:${GpatAssayDBSeq}",
                 "domainId": 0,
                 "fields": runFields,
                 "indices": [],
@@ -600,7 +698,7 @@ export const getAssayDesignPayload = (name: string, runFields: any[], resultFiel
             },
             {
                 "name": "Data Fields",
-                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:${AssayName}",
+                "domainURI": "urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:${GpatAssayDBSeq}",
                 "domainId": 0,
                 "fields": resultFields,
                 "indices": [],

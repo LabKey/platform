@@ -1,10 +1,12 @@
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 
 import {
     deleteAssayDesign,
     getAssayDesignPayload,
-    getAssayDesignRowIdByName, importRun,
+    getAssayDesignRowIdByName,
+    ILLEGAL_DOMAIN_CHARSET,
+    importRun,
     initProject
 } from './utils';
 import { ASSAY_DESIGNER_ROLE } from '@labkey/components';
@@ -91,75 +93,150 @@ describe('Assay Designer - Permissions', () => {
 
     });
 
+    async function verifyAssayDesignCreateFailure(badDomainName: string, error: string) {
+        let exception = null;
+        const badDomainNameResp = await server.post(
+            'assay',
+            'saveProtocol.api',
+            getAssayDesignPayload(badDomainName, [], []),
+            {...topFolderOptions, ...designerReaderOptions}
+        ).expect((resp) => {
+            exception = JSON.parse(resp.text).exception;
+        })
+
+        if (exception !== error)
+            console.log(badDomainName);
+
+        expect(exception).toBe(error);
+    }
+
+    async function verifyAssayDesignUpdateFailure(payload: any, badDomainName: string, error: string) {
+        let exception = null;
+        payload['name'] = badDomainName;
+        const badDomainNameResp = await server.post(
+            'assay',
+            'saveProtocol.api',
+            payload,
+            {...topFolderOptions, ...designerReaderOptions}
+        ).expect((resp) => {
+            exception = JSON.parse(resp.text).exception;
+        })
+
+        if (exception !== error)
+            console.log(badDomainName);
+
+        expect(exception).toBe(error);
+    }
+
+    it('Assay design name validation', async () => {
+        const badNames = {
+            '': 'Domain name must not be blank',
+            ' ': 'Domain name must not be blank',
+            'with\0nullCharacter': `Invalid Assay Design name. Domain name must contain only valid unicode characters.`,
+            'with\tnewLines': `Invalid Assay Design name. Domain name may not contain 'tab', 'new line', or 'return' characters.`,
+            '.startWithDot': `Invalid Assay Design name. Domain name must start with a letter or a number character.`,
+            ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid Assay Design name. Domain name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+            'a -b': `Invalid Assay Design name. Domain name may not contain space followed by dash.`
+        };
+
+        let badNameKeys = Object.keys(badNames);
+        for (let i = 0; i < badNameKeys.length; i++)
+            await verifyAssayDesignCreateFailure(badNameKeys[i], badNames[badNameKeys[i]]);
+        
+        let assayDesignPayload = getAssayDesignPayload('good', [], []);
+
+        await server.post(
+            'assay',
+            'saveProtocol.api',
+            assayDesignPayload,
+            {...topFolderOptions, ...designerReaderOptions}
+        ).expect((res) => {
+            const result = JSON.parse(res.text);
+            assayDesignPayload.protocolId = result.data.protocolId;
+            const domains = result.data.domains;
+            assayDesignPayload.domains[0].domainId = domains[0].domainId;
+            assayDesignPayload.domains[0].domainURI = domains[0].domainURI;
+            assayDesignPayload.domains[1].domainId = domains[1].domainId;
+            assayDesignPayload.domains[1].domainURI = domains[1].domainURI;
+            assayDesignPayload.domains[2].domainId = domains[2].domainId;
+            assayDesignPayload.domains[2].domainURI = domains[2].domainURI;
+            return true;
+        });
+
+        for (let i = 0; i < badNameKeys.length; i++)
+            await verifyAssayDesignUpdateFailure(assayDesignPayload, badNameKeys[i], badNames[badNameKeys[i]]);
+
+    });
+
     describe('Create/update/delete designs', () => {
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design.', async () => {
             const dataType = "ToBeDeleted";
-            const assayDesignPaylod = getAssayDesignPayload(dataType, [], []);
+            const assayDesignPayload = getAssayDesignPayload(dataType, [], []);
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...readerUserOptions}
             ).expect(403);
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...editorUserOptions}
             ).expect(403);
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect((res) => {
                 const result = JSON.parse(res.text);
-                assayDesignPaylod.protocolId = result.data.protocolId;
+                assayDesignPayload.protocolId = result.data.protocolId;
                 const domains = result.data.domains;
-                assayDesignPaylod.domains[0].domainId = domains[0].domainId;
-                assayDesignPaylod.domains[0].domainURI = domains[0].domainURI;
-                assayDesignPaylod.domains[1].domainId = domains[1].domainId;
-                assayDesignPaylod.domains[1].domainURI = domains[1].domainURI;
-                assayDesignPaylod.domains[2].domainId = domains[2].domainId;
-                assayDesignPaylod.domains[2].domainURI = domains[2].domainURI;
+                assayDesignPayload.domains[0].domainId = domains[0].domainId;
+                assayDesignPayload.domains[0].domainURI = domains[0].domainURI;
+                assayDesignPayload.domains[1].domainId = domains[1].domainId;
+                assayDesignPayload.domains[1].domainURI = domains[1].domainURI;
+                assayDesignPayload.domains[2].domainId = domains[2].domainId;
+                assayDesignPayload.domains[2].domainURI = domains[2].domainURI;
                 return true;
             });
 
-            assayDesignPaylod.domains[2].fields = [resultPropField];
+            assayDesignPayload.domains[2].fields = [resultPropField];
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...readerUserOptions}
             ).expect(403);
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...editorUserOptions}
             ).expect(403);
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect(successfulResponse);
 
             const dataTypeRowId = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
-            expect(dataTypeRowId).toBe(assayDesignPaylod.protocolId);
+            expect(dataTypeRowId).toBe(assayDesignPayload.protocolId);
 
-            let deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            let deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, readerUserOptions);
             expect(deleteResult.status).toEqual(403);
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, editorUserOptions);
             expect(deleteResult.status).toEqual(403);
 
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerReaderOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, designerReaderOptions);
             expect(deleteResult.status).toEqual(200);
 
             const removeddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
@@ -168,7 +245,7 @@ describe('Assay Designer - Permissions', () => {
         //
         it('Designer can update non-empty design but cannot delete non-empty design, admin can delete non-empty design', async () => {
             const dataType = "FailedDelete";
-            const assayDesignPaylod = getAssayDesignPayload(dataType, [], []);
+            const assayDesignPayload = getAssayDesignPayload(dataType, [], []);
             await server.post(
                 'assay',
                 'saveProtocol.api',
@@ -176,57 +253,57 @@ describe('Assay Designer - Permissions', () => {
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect((res) => {
                 const result = JSON.parse(res.text);
-                assayDesignPaylod.protocolId = result.data.protocolId;
+                assayDesignPayload.protocolId = result.data.protocolId;
                 const domains = result.data.domains;
-                assayDesignPaylod.domains[0].domainId = domains[0].domainId;
-                assayDesignPaylod.domains[0].domainURI = domains[0].domainURI;
-                assayDesignPaylod.domains[1].domainId = domains[1].domainId;
-                assayDesignPaylod.domains[1].domainURI = domains[1].domainURI;
-                assayDesignPaylod.domains[2].domainId = domains[2].domainId;
-                assayDesignPaylod.domains[2].domainURI = domains[2].domainURI;
+                assayDesignPayload.domains[0].domainId = domains[0].domainId;
+                assayDesignPayload.domains[0].domainURI = domains[0].domainURI;
+                assayDesignPayload.domains[1].domainId = domains[1].domainId;
+                assayDesignPayload.domains[1].domainURI = domains[1].domainURI;
+                assayDesignPayload.domains[2].domainId = domains[2].domainId;
+                assayDesignPayload.domains[2].domainURI = domains[2].domainURI;
                 return true;
             });
 
-            assayDesignPaylod.domains[2].fields = [resultPropField];
+            assayDesignPayload.domains[2].fields = [resultPropField];
 
             // create run in child folder
-            const { runId } = await importRun(server, assayDesignPaylod.protocolId, 'ChildRun', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+            const { runId } = await importRun(server, assayDesignPayload.protocolId, 'ChildRun', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
             expect(runId > 0).toBeTruthy();
 
             await server.post(
                 'assay',
                 'saveProtocol.api',
-                assayDesignPaylod,
+                assayDesignPayload,
                 {...topFolderOptions, ...designerReaderOptions}
             ).expect(successfulResponse);
 
             // verify data exist in child prevent designer from delete design
-            let deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerReaderOptions);
+            let deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, designerReaderOptions);
             expect(deleteResult.status).toEqual(403);
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, readerUserOptions);
             expect(deleteResult.status).toEqual(403);
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, editorUserOptions);
             expect(deleteResult.status).toEqual(403);
 
             let failedRemoveddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
-            expect(failedRemoveddataType).toEqual(assayDesignPaylod.protocolId);
+            expect(failedRemoveddataType).toEqual(assayDesignPayload.protocolId);
 
             // create another run in top folder
-            await importRun(server, assayDesignPaylod.protocolId, 'TopRun', [{"Prop":"EFG"}], topFolderOptions, editorUserOptions);
+            await importRun(server, assayDesignPayload.protocolId, 'TopRun', [{"Prop":"EFG"}], topFolderOptions, editorUserOptions);
 
             // verify data exist in Top prevent designer from delete design
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, designerEditorOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, designerEditorOptions);
             expect(deleteResult.status).toEqual(403);
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, readerUserOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, readerUserOptions);
             expect(deleteResult.status).toEqual(403);
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, editorUserOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, editorUserOptions);
             expect(deleteResult.status).toEqual(403);
 
             failedRemoveddataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);
-            expect(failedRemoveddataType).toEqual(assayDesignPaylod.protocolId);
+            expect(failedRemoveddataType).toEqual(assayDesignPayload.protocolId);
 
             //admin can delete design with data
-            deleteResult = await deleteAssayDesign(server, assayDesignPaylod.protocolId, topFolderOptions, adminOptions);
+            deleteResult = await deleteAssayDesign(server, assayDesignPayload.protocolId, topFolderOptions, adminOptions);
             expect(deleteResult.status).toEqual(200);
 
             const removedDataType = await getAssayDesignRowIdByName(server, dataType, topFolderOptions);

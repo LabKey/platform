@@ -462,7 +462,7 @@ public class NameGenerator
         for (SubstitutionValue subValue : SubstitutionValue.values())
         {
             if (subValue.getKey().equalsIgnoreCase(fieldKey))
-                return fieldKey + " is a reserved name.";
+                return "'" + fieldKey + "' is a reserved name.";
         }
 
         return null;

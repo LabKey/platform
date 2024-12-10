@@ -106,7 +106,7 @@ import static org.labkey.api.util.StringExpressionFactory.SUBSTITUTION_EXP_PATTE
 public class DomainUtil
 {
     private static final Logger LOG = LogManager.getLogger(DomainUtil.class);
-    private static final String ILLEGAL_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
+    public static final String ILLEGAL_DOMAIN_NAME_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
 
     private DomainUtil()
     {
@@ -706,7 +706,7 @@ public class DomainUtil
 
         if (domain.getName() != null)
         {
-            String domainNameError = validateDomainName(domain.getName(), kind);
+            String domainNameError = validateDomainName(domain.getName(), kind.getKindName(), kind.supportNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
                 throw new IllegalArgumentException(domainNameError);
         }
@@ -768,7 +768,7 @@ public class DomainUtil
         String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
-            String domainNameError = validateDomainName(updatedName, kind);
+            String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
             {
                 validationException.addError(new SimpleValidationError(domainNameError));
@@ -935,19 +935,23 @@ public class DomainUtil
         return validationException;
     }
 
-    private static @Nullable String validateDomainName(@NotNull String domainName, DomainKind kind)
+    public static @Nullable String validateDomainName(@NotNull String domainName, String kindName, boolean supportNamingPattern)
     {
-        String prefix = "Invalid " + kind.getKindName() + " name. ";
-        //final String legalChars = " -_()&/.:";
-        String legalCharacterCheck = StringUtilsLabKey.validateLegalNames(domainName, ILLEGAL_CHARSET, "Domain name");
-        if (legalCharacterCheck != null)
-            return prefix + legalCharacterCheck;
+        String prefix = "Invalid " + kindName + " name. ";
+
+        if (StringUtils.isBlank(domainName))
+            return "Domain name must not be blank";
 
         char start = domainName.charAt(0);
         if (!Character.isLetterOrDigit(start))
             return prefix + "Domain name must start with a letter or a number character.";
 
-        if (kind.supportNamingPattern())
+        //final String legalChars = " -_()&/.:";
+        String legalCharacterCheck = StringUtilsLabKey.validateLegalNames(domainName, ILLEGAL_DOMAIN_NAME_CHARSET, "Domain name");
+        if (legalCharacterCheck != null)
+            return prefix + legalCharacterCheck;
+
+        if (supportNamingPattern)
         {
             String invalidPattenError = NameGenerator.validateFieldKeyConflict(domainName);
             if (invalidPattenError != null)
