@@ -3,6 +3,7 @@ package org.labkey.api.assay.plate;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTFilterCriteria;
 import org.labkey.api.query.ValidationException;
@@ -80,6 +81,8 @@ public record FilterCriteria(
             String operation = StringUtils.trimToNull(criterion.getOp());
             if (operation == null)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "An \"op\" (operation) property is required."));
+            if (CompareType.getByURLKey(operation) == null)
+                throw new ValidationException(errorMessage(referencePropertyName, i, String.format("\"%s\" is not a valid operation.", operation)));
 
             String value = criterion.getValue() == null ? null : criterion.getValue().toString();
             criteria.add(new FilterCriteria(operation, value, propertyId, name, referencePropertyId, domainId));

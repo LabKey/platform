@@ -448,20 +448,17 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                             updateDomainDescriptor(assayProvider, protocol, previous, domain, false);
                             domainURIs.add(domain.getDomainURI());
                         }
-
                     }
+
                     setPropertyDomainURIs(protocol, domainURIs, assayProvider);
                 }
                 else
                 {
                     protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
-
                     if (protocol == null)
-                    {
                         throw new ValidationException("Assay design has been deleted");
-                    }
 
-                    //ensure that the user has edit perms in this container
+                    // ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())
                         throw new ValidationException("You do not have sufficient permissions to update this Assay");
 
@@ -517,11 +514,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (provider instanceof PlateBasedAssayProvider plateProvider && assay.getSelectedPlateTemplate() != null)
                 {
                     Plate plate = PlateManager.get().getPlateByName(getContainer(), assay.getSelectedPlateTemplate());
-                    if (plate != null)
-                        plateProvider.setPlate(getContainer(), protocol, plate);
-                    else
+                    if (plate == null)
                         throw new ValidationException("The selected plate could not be found.  Perhaps it was deleted by another user?");
 
+                    plateProvider.setPlate(getContainer(), protocol, plate);
                     String selectedFormat = assay.getSelectedMetadataInputFormat();
                     SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
                     if (inputFormat != null)
@@ -529,25 +525,24 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
 
                 // data transform scripts
-                List<File> transformScripts = new ArrayList<>();
                 List<String> submittedScripts = assay.getProtocolTransformScripts();
                 if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
                     throw new ValidationException("You must be a platform developer or site admin to configure assay transformation scripts.");
-                for (String script : assay.getProtocolTransformScripts())
+
+                List<File> transformScripts = new ArrayList<>();
+                for (String script : submittedScripts)
                 {
                     if (!StringUtils.isBlank(script))
-                    {
                         transformScripts.add(new File(script));
-                    }
                 }
 
                 if (provider instanceof DetectionMethodAssayProvider dmProvider && assay.getSelectedDetectionMethod() != null)
                 {
                     String detectionMethod = assay.getSelectedDetectionMethod();
-                    if (detectionMethod != null)
-                        dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
-                    else
+                    if (detectionMethod == null)
                         throw new ValidationException("The selected detection method could not be found.");
+
+                    dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
                 }
 
                 ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
@@ -582,23 +577,15 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
 
                 if (autoLinkTargetContainerId != null)
-                {
                     props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
-                }
                 else
-                {
                     props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
-                }
 
                 String autoLinkCategory = assay.getAutoLinkCategory();
                 if (autoLinkCategory != null)
-                {
                     props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
-                }
                 else
-                {
                     props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
-                }
 
                 protocol.setObjectProperties(props);
 

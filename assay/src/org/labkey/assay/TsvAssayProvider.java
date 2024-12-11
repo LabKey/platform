@@ -68,8 +68,10 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTFilterCriteria;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -626,6 +628,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoFilterCriteria(), Collections.singleton("RowId"), filter, null).exists();
     }
 
+    private @NotNull GWTDomain<GWTPropertyDescriptor> getSavedDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+        GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(user, update.getDomainURI(), protocol.getContainer());
+        if (savedDomain == null)
+            throw new ValidationException(String.format("Failed to resolve saved domain for domain URI \"%s\" in %s.", update.getDomainURI(), protocol.getContainer().getPath()));
+
+        return savedDomain;
+    }
+
     private void updateFilterCriteria(
         User user,
         ExpProtocol protocol,
@@ -636,10 +647,45 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
 
         Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+        GWTDomain<GWTPropertyDescriptor> savedDomain = null;
 
-        Set<FilterCriteria> newCriteria = new HashSet<>();
+        Set<FilterCriteria> newCriteria = new HashSet<>(); // TODO: Maintain declaration order
         for (GWTPropertyDescriptor prop : update.getFields())
-            newCriteria.addAll(FilterCriteria.fromGWTFilterCriteria(prop.getFilterCriteria(), prop.getPropertyId(), prop.getName(), update.getDomainId(), replicateStatsDomain));
+        {
+            List<GWTFilterCriteria> filterCriteria = prop.getFilterCriteria();
+            if (filterCriteria == null || filterCriteria.isEmpty())
+                continue;
+
+            int referencePropertyId = prop.getPropertyId();
+            if (referencePropertyId == 0)
+            {
+                if (savedDomain == null)
+                    savedDomain = getSavedDomain(user, protocol, update);
+
+                for (GWTPropertyDescriptor savedProp : savedDomain.getFields(true))
+                {
+                    if (savedProp.getPropertyURI().equals(prop.getPropertyURI()))
+                    {
+                        referencePropertyId = savedProp.getPropertyId();
+                        break;
+                    }
+                }
+
+                if (referencePropertyId == 0)
+                    throw new ValidationException(String.format("Failed to resolve \"referencePropertyId\" for field \"%s\"", prop.getName()));
+            }
+
+            int domainId = update.getDomainId();
+            if (domainId == 0)
+            {
+                if (savedDomain == null)
+                    savedDomain = getSavedDomain(user, protocol, update);
+
+                domainId = savedDomain.getDomainId();
+            }
+
+            newCriteria.addAll(FilterCriteria.fromGWTFilterCriteria(filterCriteria, referencePropertyId, prop.getName(), domainId, replicateStatsDomain));
+        }
 
         Map<Integer, FilterCriteria> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
         Set<FilterCriteria> oldCriteria = new HashSet<>(keyedCriteria.values());
