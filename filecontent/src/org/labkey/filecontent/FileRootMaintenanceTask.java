@@ -1,6 +1,6 @@
 package org.labkey.filecontent;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.file.PathUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.time.DateUtils;
@@ -17,7 +17,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Objects;
 
@@ -69,27 +71,34 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                     {
                         if (service.isCloudRoot(c))
                             return;
-                        File root = service.getFileRoot(c);
-                        Long size = null != root && root.isDirectory() ? FileUtils.sizeOfDirectory(root) : null;
-                        long current = HeartBeat.currentTimeMillis();
-
-                        // Update FileRootSize only if it changed. Always update LastCrawled, even for invalid file
-                        // roots and non-changing sizes.
-                        boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
-                        SQLFragment updateSql = sizeChanged ?
-                            new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), size, record.entityId()) :
-                            new SQLFragment(updateLastCrawledSql, new Date(current), record.entityId());
-
-                        // core.Containers has no PK, so Table.update() is not an option
-                        executor.execute(updateSql);
-                        ContainerManager.uncache(c);  // Container stashes FileRootLastCrawled & FileRootSize
-
-                        rootCount.increment();
-
-                        if (current >= deadline)
+                        Path root = service.getFileRootPath(c);
+                        try
                         {
-                            finished.setFalse();
-                            throw new StopIteratingException();
+                            Long size = null != root && Files.isDirectory(root) ? PathUtils.sizeOfDirectory(root) : null;
+                            long current = HeartBeat.currentTimeMillis();
+
+                            // Update FileRootSize only if it changed. Always update LastCrawled, even for invalid file
+                            // roots and non-changing sizes.
+                            boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
+                            SQLFragment updateSql = sizeChanged ?
+                                    new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), size, record.entityId()) :
+                                    new SQLFragment(updateLastCrawledSql, new Date(current), record.entityId());
+
+                            // core.Containers has no PK, so Table.update() is not an option
+                            executor.execute(updateSql);
+                            ContainerManager.uncache(c);  // Container stashes FileRootLastCrawled & FileRootSize
+
+                            rootCount.increment();
+
+                            if (current >= deadline)
+                            {
+                                finished.setFalse();
+                                throw new StopIteratingException();
+                            }
+                        }
+                        catch (IOException e)
+                        {
+                            log.error("Failed to get size for {} in {}", root, c.getPath(), e);
                         }
                     }
                 });
