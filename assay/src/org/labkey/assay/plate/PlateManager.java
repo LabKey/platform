@@ -3086,7 +3086,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (Integer state : dataStates)
             {
                 DataState dataState = PlateDataStateManager.get().getStateForRowId(container, state);
-                if (dataState != null && !PlateDataStateManager.get().isOperationPermitted(dataState, operation))
+                if (!PlateDataStateManager.get().isOperationPermitted(dataState, operation))
                 {
                     return false;
                 }
