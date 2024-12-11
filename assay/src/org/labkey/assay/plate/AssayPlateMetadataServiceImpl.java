@@ -1182,7 +1182,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private final ExpProtocol _protocol;
         private final AssayProvider _provider;
         private final AssayRunUploadContext<?> _context;
-        private final Set<Integer> _excludedRows;
+        private DomainProperty _stateProp;
 
         public PlateMetadataImportHelper(
             ExpData data,
@@ -1205,7 +1205,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             _protocol = protocol;
             _provider = provider;
             _context = context;
-            _excludedRows = new HashSet<>();
         }
 
         @Override
@@ -1215,7 +1214,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             Domain runDomain = _provider.getRunDomain(_protocol);
             Domain resultDomain = _provider.getResultsDomain(_protocol);
-            DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+            _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
             DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
@@ -1285,14 +1284,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 }
             }
 
-            // validate any data state values on the row
-            DataState state = validateRowDataStates(_container, map, stateProp);
-            if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
-            {
-                Object o = map.get("RowId");
-                if (o instanceof Integer rowId)
-                    _excludedRows.add(rowId);
-            }
+            // Validate any data state values on the row. No hit selection / data state processing is done on import
+            // because at this time transform script hit selection is not supported nor is there any intersection
+            // in the re-import case yet.
+            validateRowDataStates(_container, map, _stateProp);
+        }
+
+        /**
+         * Is data being added to a previous run
+         */
+        private boolean isExistingRun()
+        {
+            return _context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA && _context.getReRunId() != null;
         }
 
         @Override
@@ -1304,7 +1307,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 AssayPlateMetadataService.get().insertReplicateStats(_container, _user, _protocol, _run, _replicateRows);
 
                 // re-select any hits that were present in the previous run
-                if (_context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA && _context.getReRunId() != null)
+                if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)
@@ -1320,8 +1323,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 .append(" WHERE HT.runId = ? ").add(prevRun.getRowId())
                                 .append(" AND ED.runId = ? ").add(_run.getRowId());
                         List<Integer> rowIds = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql).getArrayList(Integer.class);
-                        // omit excluded rows from being re-selected as hits
-                        rowIds.removeAll(_excludedRows);
                         if (!rowIds.isEmpty())
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);
 
