@@ -58,16 +58,17 @@ public record FilterCriteria(
                 if (replicateStatsDomain != null)
                 {
                     var property = replicateStatsDomain.getPropertyByName(name);
-                    if (property == null)
-                        throw new ValidationException(errorMessage(referencePropertyName, i, String.format("Unable to resolve field from name \"%s\".", name)));
-
-                    propertyId = property.getPropertyId();
+                    if (property != null)
+                        propertyId = property.getPropertyId();
                 }
                 else if (name.equalsIgnoreCase(referencePropertyName))
                 {
                     propertyId = referencePropertyId;
                     name = referencePropertyName;
                 }
+
+                if (propertyId == null)
+                    throw new ValidationException(errorMessage(referencePropertyName, i, String.format("Unable to resolve field from name \"%s\".", name)));
             }
             else if (propertyId != null && propertyId != referencePropertyId)
                 throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value. Cannot specify criteria against other fields."));

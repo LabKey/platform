@@ -173,6 +173,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1908,6 +1909,8 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class FilterCriteriaColumnsAction extends MutatingApiAction<FilterCriteriaColumnsForm>
     {
+        private List<String> columnNames;
+
         @Override
         public void validateForm(FilterCriteriaColumnsForm form, Errors errors)
         {
@@ -1915,14 +1918,28 @@ public class AssayController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "A valid \"protocolId\" is required.");
             else if (form.getColumnNames() == null || form.getColumnNames().isEmpty())
                 errors.reject(ERROR_REQUIRED, "At least one \"columnNames\" must be specified.");
-            // TODO: Sanitize, validate column names? Need to ensure mapping back to user provided values.
+
+            var columnNameSet = new LinkedHashSet<String>();
+            for (String columnName : form.getColumnNames())
+            {
+                var name = StringUtils.trimToNull(columnName);
+                if (name == null)
+                {
+                    errors.reject(ERROR_REQUIRED, String.format("A column name of \"%s\" is not supported.", columnName));
+                    return;
+                }
+
+                columnNameSet.add(name);
+            }
+
+            columnNames = new ArrayList<>(columnNameSet);
         }
 
         @Override
         public Object execute(FilterCriteriaColumnsForm form, BindException errors) throws Exception
         {
             if (form.getProtocolId() == null)
-                return AssayPlateMetadataService.get().previewFilterCriteriaColumns(getContainer(), "FilterCriteriaColumnsAction", form.getColumnNames());
+                return AssayPlateMetadataService.get().previewFilterCriteriaColumns(getContainer(), "FilterCriteriaColumnsAction", columnNames);
 
             var protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
             if (protocol == null || !protocol.getContainer().hasPermission(getUser(), ReadPermission.class) || AssayService.get().getProvider(protocol) == null)

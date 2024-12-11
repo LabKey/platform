@@ -863,14 +863,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateMetadataImportHelper(data, container, user, run, protocol, provider, context);
     }
 
-    private @NotNull DomainProperty addField(Domain replicateDomain, String fieldName, @Nullable String format)
+    private @NotNull DomainProperty addField(Domain replicateDomain, String fieldName)
     {
         // create the property and copy the format
         PropertyStorageSpec spec = new PropertyStorageSpec(fieldName, JdbcType.DOUBLE);
 
         // Default formatting is 4 decimal places
         DomainProperty domainProperty = replicateDomain.addProperty(spec);
-        domainProperty.setFormat(format == null ? "#.####" : format);
+        domainProperty.setFormat("#.####");
 
         return domainProperty;
     }
@@ -903,8 +903,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         var existingFields = getExistingFields(replicateDomain);
         var columnMap = new HashMap<String, List<GWTPropertyDescriptor>>();
 
-        for (var columnName : columnNames)
+        for (var rawName : columnNames)
         {
+            var columnName = StringUtils.trimToNull(rawName);
+            if (columnName == null)
+                continue;
+
             var properties = new ArrayList<GWTPropertyDescriptor>();
 
             for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(columnName))
@@ -913,7 +917,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (existingFields.containsKey(name))
                     dp = existingFields.get(name);
                 else
-                    dp = addField(replicateDomain, name, null);
+                    dp = addField(replicateDomain, name);
 
                 properties.add(DomainUtil.getPropertyDescriptor(dp));
             }
@@ -956,7 +960,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
                     {
-                        addField(replicateDomain, name, null);
+                        addField(replicateDomain, name);
                         domainDirty = true;
                     }
                 }
@@ -994,7 +998,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         // something else to numeric measure
                         for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
                         {
-                            addField(replicateDomain, name, null);
+                            addField(replicateDomain, name);
                             domainDirty = true;
                         }
                     }

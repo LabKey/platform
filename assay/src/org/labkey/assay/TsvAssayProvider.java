@@ -18,6 +18,7 @@ package org.labkey.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -88,6 +89,7 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -104,6 +106,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -113,6 +116,8 @@ import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
+    private static final Logger LOG = LogHelper.getLogger(TsvAssayProvider.class, "General Assay Provider");
+
     public static final String NAME = "General";
     public static final String PLATE_TEMPLATE_PROPERTY_NAME = "PlateTemplate";
     public static final String PLATE_TEMPLATE_PROPERTY_CAPTION = "Plate Template";
@@ -579,6 +584,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             while (results.next())
             {
                 var propertyId = results.getInt("PropertyId");
+                var rowId = results.getInt("RowId");
 
                 var property = domain.getProperty(propertyId);
 
@@ -597,7 +603,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
                 if (property == null)
                 {
-                    // TODO: Log a warning
+                    LOG.warn("Failed to resolve filter criteria property for propertyId ({}). See rowId ({}).", propertyId, rowId);
                     continue;
                 }
 
@@ -610,7 +616,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     results.getInt("DomainId")
                 );
 
-                criteria.put(results.getInt("RowId"), criterion);
+                criteria.put(rowId, criterion);
             }
         }
         catch (SQLException e)
@@ -649,7 +655,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
         GWTDomain<GWTPropertyDescriptor> savedDomain = null;
 
-        Set<FilterCriteria> newCriteria = new HashSet<>(); // TODO: Maintain declaration order
+        Set<FilterCriteria> newCriteria = new LinkedHashSet<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
             List<GWTFilterCriteria> filterCriteria = prop.getFilterCriteria();
@@ -689,7 +695,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
         Map<Integer, FilterCriteria> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
         Set<FilterCriteria> oldCriteria = new HashSet<>(keyedCriteria.values());
-        Set<FilterCriteria> toAdd = new HashSet<>(newCriteria);
+        Set<FilterCriteria> toAdd = new LinkedHashSet<>(newCriteria);
         Set<Integer> toRemove = new HashSet<>();
 
         for (var criterion : newCriteria)
