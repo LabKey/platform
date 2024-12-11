@@ -2318,12 +2318,8 @@ public class NameGenerator
                                @Nullable Map<String, String> parentImportAliases)
         {
             String[] parts = colName.split("/", 2);
-            boolean isParentAliasInput = false;
             if (parts.length == 1 && parentImportAliases != null && parentImportAliases.containsKey(colName))
-            {
-                isParentAliasInput = true;
                 parts = parentImportAliases.get(colName).split("/", 2);
-            }
 
             if (parts.length == 2)
             {
@@ -2339,6 +2335,7 @@ public class NameGenerator
                     Collection<String> parents = parentNames(value, colName);
                     inputs.get(INPUT_PARENT).addAll(parents);
                     inputs.get(inputsCategory).addAll(parents);
+                    // TODO, parents broken
 
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);
@@ -2351,7 +2348,7 @@ public class NameGenerator
                     }
 
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
-                    if (parentImportAliases != null && !isParentAliasInput)
+                    if (parentImportAliases != null)
                     {
                         Optional<Map.Entry<String, String>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(colName)).findFirst();
                         aliasEntry.ifPresent(entry -> {
