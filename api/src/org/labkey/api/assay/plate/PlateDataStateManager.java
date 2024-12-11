@@ -64,7 +64,8 @@ public class PlateDataStateManager implements DataStateHandler
      */
     public enum DataOperation
     {
-        analysis("included for any data or statistical analysis, curve fitting etc");
+        analysis("included for any data or statistical analysis, curve fitting etc"),
+        hitSelection("can mark data for hit selection");
 
         final String _description;
 

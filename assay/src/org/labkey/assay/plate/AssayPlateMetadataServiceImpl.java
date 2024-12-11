@@ -1093,7 +1093,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
      * Ensure the data state value in the row represents a data state in scope and is a valid state for plate based
      * assays.
      */
-    public static void validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
+    @Nullable
+    public static DataState validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
     {
         try
         {
@@ -1105,6 +1106,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
                 }
             }
+            return state;
         }
         catch (ExperimentException e)
         {
@@ -1180,6 +1182,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private final ExpProtocol _protocol;
         private final AssayProvider _provider;
         private final AssayRunUploadContext<?> _context;
+        private final Set<Integer> _excludedRows;
 
         public PlateMetadataImportHelper(
             ExpData data,
@@ -1202,6 +1205,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             _protocol = protocol;
             _provider = provider;
             _context = context;
+            _excludedRows = new HashSet<>();
         }
 
         @Override
@@ -1282,7 +1286,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             }
 
             // validate any data state values on the row
-            validateRowDataStates(_container, map, stateProp);
+            DataState state = validateRowDataStates(_container, map, stateProp);
+            if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
+            {
+                Object o = map.get("RowId");
+                if (o instanceof Integer rowId)
+                    _excludedRows.add(rowId);
+            }
         }
 
         @Override
@@ -1310,6 +1320,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 .append(" WHERE HT.runId = ? ").add(prevRun.getRowId())
                                 .append(" AND ED.runId = ? ").add(_run.getRowId());
                         List<Integer> rowIds = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql).getArrayList(Integer.class);
+                        // omit excluded rows from being re-selected as hits
+                        rowIds.removeAll(_excludedRows);
                         if (!rowIds.isEmpty())
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);
 
