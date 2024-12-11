@@ -2350,6 +2350,8 @@ public class NameGenerator
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
                     if (parentImportAliases != null)
                     {
+                        if (parentImportAliases.containsKey(colName))
+                            inputs.computeIfAbsent(colName,  (s) -> new LinkedHashSet<>()).addAll(parents);
                         Optional<Map.Entry<String, String>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(colName)).findFirst();
                         aliasEntry.ifPresent(entry -> {
                             inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
