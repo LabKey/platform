@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.4.0",
+    "@labkey/components": "6.5.1-fb-domainNameValidation.1",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
