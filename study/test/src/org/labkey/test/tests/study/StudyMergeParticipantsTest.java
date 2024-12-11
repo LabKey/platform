@@ -135,8 +135,8 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
         log("Check url's to are correctly constructed");
         final String url = WebTestHelper.buildRelativeUrl("study", PROJECT_NAME + "/" + FOLDER_NAME, "dataset",
-            Maps.of("datasetId", 5018,
-                "Dataset.ParticipantId~in", PTID_NO_ALIAS + ";" + PTID_NEW_2));
+            Maps.of("datasetId", 5018, "Dataset.ParticipantId~in", PTID_NO_ALIAS + ";" + PTID_NEW_2))
+            .replace("%7E", "~"); // '~' isn't encoded in href
         assertElementPresent(Locator.linkWithHref(url));
 
         log("Resolve conflicts and check for correct row retention");
@@ -148,8 +148,8 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         clickTab(SUBJECT_NOUN_PLURAL);
         waitAndClick(Locator.linkWithText(PTID_NEW_2));
         waitForElement(Locator.tag("th").containing("5008: Demographics"));
-        assertElementPresent(Locator.tag("td").containing("Start Date").append("/following-sibling::td['2008-04-27']")); //value from oldId demographic row
-        assertElementPresent(Locator.tag("td").containing("Genetic Consent").append("/following-sibling::td['false']")); //value from newId consent row
+        assertElementPresent(Locator.tag("td").containing("Start Date").followingSibling("td").withText("2008-04-27")); //value from oldId demographic row
+        assertElementPresent(Locator.tag("td").containing("Genetic Consent").followingSibling("td").withText("false")); //value from newId consent row
     }
 
     private void configureAliases()

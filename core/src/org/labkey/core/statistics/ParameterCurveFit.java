@@ -252,6 +252,10 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
         if (is3Parameter() || is4Parameter())
             parameters.asymmetry = 1;
 
+        double slopeRadiansSteps = Math.PI / 30;
+        if (is3Parameter())
+            slopeRadiansSteps = Math.PI / 180;
+
         // try reasonable variants of max and min, in case there's a better fit.  We'll keep going past "reasonable" if
         // we haven't found a single bestFit option, but we need to bail out at some point.  We currently quit once max
         // reaches 200 or min reaches -100, since these values don't seem biologically reasonable.
@@ -266,7 +270,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
                 {
                     parameters.max = getAsymptoteMax() != null ? getAsymptoteMax() : max;
                     parameters.inflection = relativeEC50;
-                    for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += Math.PI / 30)
+                    for (double slopeRadians = 0; slopeRadians < Math.PI; slopeRadians += slopeRadiansSteps)
                     {
                         parameters.slope = Math.tan(slopeRadians);
                         switch (_fitType)
