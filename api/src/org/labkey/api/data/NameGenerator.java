@@ -747,7 +747,7 @@ public class NameGenerator
 
     public static boolean isParentInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
     {
-        return isParentInputToken(token, importAliases, false) || isParentInputWithDataType(token.toString().split("/"), currentDataTypeName, false, container, user);
+        return isParentInputToken(token, importAliases, false) || isParentInputWithDataType(token.toString().split("/", 2), currentDataTypeName, false, container, user);
     }
 
     public static boolean isParentLookup(List<String> fieldParts, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
@@ -1167,7 +1167,7 @@ public class NameGenerator
                             if (!isAncestorSearch)
                                 parentLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                            String[] inputParts = dataTypeToken.split("/");
+                            String[] inputParts = dataTypeToken.split("/", 2);
                             lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, inputParts[0], inputParts[1], ancestorPartOption, lookupField, user, dataClassNames, sampleTypeNames);
                         }
                         else if (!isParentAlias && fieldParts.size() <= 3)
