@@ -12,3 +12,5 @@ CREATE TABLE assay.FilterCriteria
     CONSTRAINT FK_FilterCriteria_PropertyDescriptor_Reference FOREIGN KEY (ReferencePropertyId) REFERENCES exp.PropertyDescriptor (PropertyId) ON DELETE CASCADE,
     CONSTRAINT FK_FilterCriteria_DomainDescriptor FOREIGN KEY (DomainId) REFERENCES exp.DomainDescriptor (DomainId) ON DELETE CASCADE
 );
+
+SELECT core.executeJavaUpgradeCode('initializeHitSelectionCriteria');

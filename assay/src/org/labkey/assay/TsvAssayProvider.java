@@ -438,6 +438,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(plateSet);
                 }
 
+                if (!existingFields.contains(AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor criteriaColumn = new GWTPropertyDescriptor(AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    criteriaColumn.setShownInInsertView(false);
+                    criteriaColumn.setShownInUpdateView(false);
+
+                    newFields.add(criteriaColumn);
+                }
+
                 if (!newFields.isEmpty())
                 {
                     newFields.addAll(update.getFields());

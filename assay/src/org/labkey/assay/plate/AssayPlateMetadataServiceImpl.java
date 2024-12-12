@@ -1377,42 +1377,89 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             url.addFilter(null, fieldKey, ct, criteria.value());
         }
 
-        // The referenced plate well must have a sample value
-        var filter = new SimpleFilter(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
-
-        // Filter out result rows that are excluded
-        {
-            PlateDataStateManager stateManager = PlateDataStateManager.get();
-            var exclusionStateRowIds = stateManager.getStates(container)
-                    .stream()
-                    .filter(state -> !stateManager.isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
-                    .map(DataState::getRowId)
-                    .toList();
-
-            if (!exclusionStateRowIds.isEmpty())
-                filter.addCondition(table.getColumn(AssayResultDomainKind.STATE_COLUMN_NAME), exclusionStateRowIds, CompareType.NOT_IN);
-        }
+        var filter = new SimpleFilter();
 
         // Applying filters via ActionURL allows for automatic type coercion of the filter value
         filter.addUrlFilters(url, null);
 
-        var selector = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null);
-        var matchingResults = selector.getArrayList(Integer.class);
+        // Generate the description for the applied filter criteria prior to incorporating additional clauses
+        var criteriaDescription = generateFilterCriteriaDescription(filter);
+
+        // The referenced plate well must have a sample value
+        filter.addCondition(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
+
+        // Filter out result rows that are excluded
+        filterOutExcludedRows(container, table, filter);
 
         // Remove previous hits against the runs that have been modified
         PlateManager.get().deleteHitsForRuns(runIds);
 
-        if (matchingResults.isEmpty())
-            return;
+        var matchingResults = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null).getArrayList(Integer.class);
 
         try
         {
-            PlateManager.get().markHits(container, user, protocol.getRowId(), true, matchingResults, null);
+            if (!matchingResults.isEmpty())
+                PlateManager.get().markHits(container, user, protocol.getRowId(), true, matchingResults, null);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
+
+        var runDomain = provider.getRunDomain(protocol);
+        if (runDomain != null)
+        {
+            var property = runDomain.getPropertyByName(HIT_SELECTION_CRITERIA_COLUMN_NAME);
+            if (property != null)
+            {
+                var pd = property.getPropertyDescriptor();
+                for (var run : ExperimentService.get().getExpRuns(runIds))
+                {
+                    var value = run.getProperty(pd);
+                    if (!criteriaDescription.equals(value))
+                        run.setProperty(user, pd, criteriaDescription);
+                }
+            }
+        }
+    }
+
+    private static void filterOutExcludedRows(Container container, TableInfo table, SimpleFilter filter)
+    {
+        PlateDataStateManager stateManager = PlateDataStateManager.get();
+        var exclusionStateRowIds = stateManager.getStates(container)
+                .stream()
+                .filter(state -> !stateManager.isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
+                .map(DataState::getRowId)
+                .toList();
+
+        if (!exclusionStateRowIds.isEmpty())
+            filter.addCondition(table.getColumn(AssayResultDomainKind.STATE_COLUMN_NAME), exclusionStateRowIds, CompareType.NOT_IN);
+    }
+
+    private static String generateFilterCriteriaDescription(SimpleFilter filter)
+    {
+        var formatter = new SimpleFilter.ColumnNameFormatter()
+        {
+            @Override
+            public String format(FieldKey fieldKey)
+            {
+                var formatted = super.format(fieldKey);
+                var dotIndex = formatted.lastIndexOf('.');
+                if (dotIndex >= 0)
+                    formatted = formatted.substring(dotIndex + 1);
+                return formatted;
+            }
+        };
+
+        var parts = new ArrayList<String>();
+        for (var clause : filter.getClauses())
+        {
+            var sub = new StringBuilder();
+            clause.appendFilterText(sub, formatter);
+            parts.add(sub.toString());
+        }
+
+        return StringUtils.join(parts, " and ");
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper

@@ -29,6 +29,7 @@ import java.util.Map;
 public interface AssayPlateMetadataService
 {
     String PLATE_SET_COLUMN_NAME = "PlateSet";
+    String HIT_SELECTION_CRITERIA_COLUMN_NAME = "HitSelectionCriteria";
 
     static void setInstance(AssayPlateMetadataService serviceImpl)
     {

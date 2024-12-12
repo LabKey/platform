@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.assay.plate.AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
@@ -845,6 +846,48 @@ public class AssayUpgradeCode implements UpgradeCode
                     }
                 }
             }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.015-24.016.sql, in order to support hit selection criteria for plate enabled assays.
+     * The upgrade creates the run domain hit selection criteria field.
+     */
+    @DeferredUpgrade
+    public static void initializeHitSelectionCriteria(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            Set<ExpProtocol> protocols = new HashSet<>();
+            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+            {
+                if (isBiologicsFolder(container))
+                    protocols.addAll(AssayService.get().getAssayProtocols(container));
+            }
+
+            for (ExpProtocol protocol : protocols)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider != null && provider.isPlateMetadataEnabled(protocol))
+                {
+                    // ensure the QC state column exists in the result domain
+                    Domain runDomain = provider.getRunDomain(protocol);
+                    if (runDomain != null && runDomain.getPropertyByName(HIT_SELECTION_CRITERIA_COLUMN_NAME) == null)
+                    {
+                        _log.info("Adding the \"{}\" field to the run domain for assay : {}", HIT_SELECTION_CRITERIA_COLUMN_NAME, protocol.getName());
+                        DomainProperty dp = runDomain.addProperty(new PropertyStorageSpec(HIT_SELECTION_CRITERIA_COLUMN_NAME, JdbcType.VARCHAR));
+                        dp.setShownInInsertView(false);
+                        dp.setShownInUpdateView(false);
+
+                        runDomain.save(User.getAdminServiceUser());
+                    }
+                }
+            }
+
             tx.commit();
         }
     }
