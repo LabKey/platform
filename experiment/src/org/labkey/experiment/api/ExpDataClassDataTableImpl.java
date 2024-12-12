@@ -192,7 +192,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    @NotNull
     public Domain getDomain()
     {
         return _dataClass.getDomain();
@@ -372,8 +371,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         else
             setDescription("Contains one row per registered data in the " + _dataClass.getName() + " data class");
 
-        TableInfo extTable = _dataClassDataTableSupplier.get();
-
         LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
         defaultVisible.add(FieldKey.fromParts(Column.Name));
 
@@ -412,73 +409,78 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
 
         // Add the domain columns
-        Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name", "classid");
-        for (ColumnInfo col : extTable.getColumns())
+        // It is not true that getDomain() does not return null
+        if (null != getDomain())
         {
-            // Don't include PHI columns in full text search index
-            // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
-            if (schema.getUser().isSearchUser() && !col.getPHI().isLevelAllowed(PHI.NotPHI))
-                continue;
-
-            // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
-            String colName = col.getName();
-            if (skipCols.contains(colName))
-                continue;
-
-            if (colName.equalsIgnoreCase("genid"))
+            TableInfo extTable = _dataClassDataTableSupplier.get();
+            Set<String> skipCols = CaseInsensitiveHashSet.of("lsid", "rowid", "name", "classid");
+            for (ColumnInfo col : extTable.getColumns())
             {
-                ((BaseColumnInfo)col).setHidden(true);
-                ((BaseColumnInfo)col).setUserEditable(false);
-                ((BaseColumnInfo)col).setShownInDetailsView(false);
-                ((BaseColumnInfo)col).setShownInInsertView(false);
-                ((BaseColumnInfo)col).setShownInUpdateView(false);
-            }
-            String newName = col.getName();
-            for (int i = 0; null != getColumn(newName); i++)
-                newName = newName + i;
+                // Don't include PHI columns in full text search index
+                // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
+                if (schema.getUser().isSearchUser() && !col.getPHI().isLevelAllowed(PHI.NotPHI))
+                    continue;
 
-            if (col.isMvIndicatorColumn())
-                continue;
+                // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
+                String colName = col.getName();
+                if (skipCols.contains(colName))
+                    continue;
 
-            // Can't use addWrapColumn here since 'col' isn't from the parent table
-            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
-            if (col.isHidden())
-                wrapped.setHidden(true);
-
-            // Copy the property descriptor settings to the wrapped column.
-            // NOTE: The column must be configured before calling .addColumn() where the PHI ComplianceTableRules will be applied to the column.
-            String propertyURI = col.getPropertyURI();
-            DomainProperty dp = propertyURI != null ? _dataClass.getDomain().getPropertyByURI(propertyURI) : null;
-            PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
-            if (dp != null && pd != null)
-            {
-                defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
-                wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
-
-                if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                if (colName.equalsIgnoreCase("genid"))
                 {
-                    configureAttachmentURL(wrapped);
+                    ((BaseColumnInfo) col).setHidden(true);
+                    ((BaseColumnInfo) col).setUserEditable(false);
+                    ((BaseColumnInfo) col).setShownInDetailsView(false);
+                    ((BaseColumnInfo) col).setShownInInsertView(false);
+                    ((BaseColumnInfo) col).setShownInUpdateView(false);
+                }
+                String newName = col.getName();
+                for (int i = 0; null != getColumn(newName); i++)
+                    newName = newName + i;
+
+                if (col.isMvIndicatorColumn())
+                    continue;
+
+                // Can't use addWrapColumn here since 'col' isn't from the parent table
+                var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+                if (col.isHidden())
+                    wrapped.setHidden(true);
+
+                // Copy the property descriptor settings to the wrapped column.
+                // NOTE: The column must be configured before calling .addColumn() where the PHI ComplianceTableRules will be applied to the column.
+                String propertyURI = col.getPropertyURI();
+                DomainProperty dp = propertyURI != null ? _dataClass.getDomain().getPropertyByURI(propertyURI) : null;
+                PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
+                if (dp != null && pd != null)
+                {
+                    defaultsSupplier = PropertyColumn.copyAttributes(_userSchema.getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                    wrapped.setFieldKey(FieldKey.fromParts(dp.getName()));
+
+                    if (pd.getPropertyType() == PropertyType.ATTACHMENT)
+                    {
+                        configureAttachmentURL(wrapped);
+                    }
+
+                    if (wrapped.isMvEnabled())
+                    {
+                        // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
+                        // it with a "MVIndicator" suffix (no underscore)
+                        var mvCol = StorageProvisioner.get().getMvIndicatorColumn(extTable, dp.getPropertyDescriptor(), "No MV column found for: " + dp.getName());
+                        var wrappedMvCol = wrapColumnFromJoinedTable(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, mvCol);
+                        wrappedMvCol.setHidden(true);
+                        wrappedMvCol.setMvIndicatorColumn(true);
+
+                        addColumn(wrappedMvCol);
+                        wrappedMvCol.getFieldKey();
+                        wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
+                    }
                 }
 
-                if (wrapped.isMvEnabled())
-                {
-                    // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
-                    // it with a "MVIndicator" suffix (no underscore)
-                    var mvCol = StorageProvisioner.get().getMvIndicatorColumn(extTable, dp.getPropertyDescriptor(), "No MV column found for: " + dp.getName());
-                    var wrappedMvCol = wrapColumnFromJoinedTable(wrapped.getName() + MvColumn.MV_INDICATOR_SUFFIX, mvCol);
-                    wrappedMvCol.setHidden(true);
-                    wrappedMvCol.setMvIndicatorColumn(true);
+                addColumn(wrapped);
 
-                    addColumn(wrappedMvCol);
-                    wrappedMvCol.getFieldKey();
-                    wrapped.setMvColumnName(wrappedMvCol.getFieldKey());
-                }
+                if (isVisibleByDefault(col))
+                    defaultVisible.add(FieldKey.fromParts(col.getName()));
             }
-
-            addColumn(wrapped);
-
-            if (isVisibleByDefault(col))
-                defaultVisible.add(FieldKey.fromParts(col.getName()));
         }
 
         addColumn(Column.DataFileUrl);
