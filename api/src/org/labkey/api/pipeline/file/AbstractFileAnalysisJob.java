@@ -133,7 +133,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         else
             fileDefaults = protocol.getFactory().getDefaultParametersFile(root);
 
-        _parametersDefaults = getInputParameters(fileDefaults).getInputParameters();
+        _parametersDefaults = fileDefaults != null && Files.exists(fileDefaults) ?
+                getInputParameters(fileDefaults).getInputParameters() :
+                Collections.emptyMap();
 
         if (_log.isDebugEnabled())
         {
