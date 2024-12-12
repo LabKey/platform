@@ -45,33 +45,53 @@ public record FilterCriteria(
         for (int i = 0; i < filterCriteria.size(); i++)
         {
             var criterion = filterCriteria.get(i);
-            Integer propertyId = criterion.getPropertyId();
+            var propertyId = criterion.getPropertyId();
 
-            if (propertyId != null && propertyId <= 0)
-                throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value."));
+            if (propertyId != null)
+            {
+                if (propertyId == 0)
+                    throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value."));
+                else if (propertyId < 0)
+                    propertyId = null;
+            }
 
             String name = StringUtils.trimToNull(criterion.getName());
 
-            // Attempt to resolve the field by name
-            if (propertyId == null && name != null)
+            if (propertyId == null)
             {
-                if (replicateStatsDomain != null)
+                // Attempt to resolve the field by name
+                if (name != null)
                 {
-                    var property = replicateStatsDomain.getPropertyByName(name);
-                    if (property != null)
-                        propertyId = property.getPropertyId();
-                }
-                else if (name.equalsIgnoreCase(referencePropertyName))
-                {
-                    propertyId = referencePropertyId;
-                    name = referencePropertyName;
-                }
+                    if (replicateStatsDomain != null)
+                    {
+                        var property = replicateStatsDomain.getPropertyByName(name);
+                        if (property != null)
+                        {
+                            propertyId = property.getPropertyId();
+                            name = property.getName();
+                        }
+                    }
+                    else if (name.equalsIgnoreCase(referencePropertyName))
+                    {
+                        propertyId = referencePropertyId;
+                        name = referencePropertyName;
+                    }
 
-                if (propertyId == null)
-                    throw new ValidationException(errorMessage(referencePropertyName, i, String.format("Unable to resolve field from name \"%s\".", name)));
+                    if (propertyId == null)
+                        throw new ValidationException(errorMessage(referencePropertyName, i, String.format("Unable to resolve field from name \"%s\".", name)));
+                }
             }
-            else if (propertyId != null && propertyId != referencePropertyId)
-                throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value. Cannot specify criteria against other fields."));
+            else
+            {
+                if (propertyId == referencePropertyId)
+                    name = referencePropertyName;
+                else if (replicateStatsDomain != null)
+                {
+                    var property = replicateStatsDomain.getProperty(propertyId);
+                    if (property == null)
+                        throw new ValidationException(errorMessage(referencePropertyName, i, "Invalid \"propertyId\" value. Cannot specify criteria against other fields."));
+                }
+            }
 
             if (propertyId == null)
             {

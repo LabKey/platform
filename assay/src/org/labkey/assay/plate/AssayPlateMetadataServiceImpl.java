@@ -1344,7 +1344,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         var url = new ActionURL();
         var replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
 
-        for (var criteria : filterCriteria) // TODO: Need to validate filterCriteria compare types coming in
+        for (var criteria : filterCriteria)
         {
             var domainProperty = domain.getProperty(criteria.propertyId());
             boolean isReplicateProperty = false;
@@ -1367,7 +1367,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             else
                 fieldKey = FieldKey.fromParts(domainProperty.getName());
 
-            CompareType ct = CompareType.getByURLKey(criteria.operation());
+            var ct = CompareType.getByURLKey(criteria.operation());
             if (ct == null)
             {
                 LOG.error("Automatic hit selection failed. Unable to resolve filter comparison type from operation \"{}\".", criteria.operation());
@@ -1379,6 +1379,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         // The referenced plate well must have a sample value
         var filter = new SimpleFilter(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
+
+        // TODO: Filter out rows that are excluded and filter not in AssayResultDomainKind.STATE_COLUMN_NAME
+//        var states = PlateDataStateManager.get().getStates(container);
+//        for (var state : states)
+//        {
+//            if (PlateDataStateManager.get().isOperationPermitted(state, hitSelection));
+//        }
 
         // Applying filters via ActionURL allows for automatic type coercion of the filter value
         filter.addUrlFilters(url, null);
