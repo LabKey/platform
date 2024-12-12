@@ -1093,7 +1093,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
      * Ensure the data state value in the row represents a data state in scope and is a valid state for plate based
      * assays.
      */
-    public static void validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
+    @Nullable
+    public static DataState validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
     {
         try
         {
@@ -1105,6 +1106,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
                 }
             }
+            return state;
         }
         catch (ExperimentException e)
         {
@@ -1180,6 +1182,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         private final ExpProtocol _protocol;
         private final AssayProvider _provider;
         private final AssayRunUploadContext<?> _context;
+        private DomainProperty _stateProp;
 
         public PlateMetadataImportHelper(
             ExpData data,
@@ -1211,7 +1214,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             Domain runDomain = _provider.getRunDomain(_protocol);
             Domain resultDomain = _provider.getResultsDomain(_protocol);
-            DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+            _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
             DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
@@ -1281,8 +1284,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 }
             }
 
-            // validate any data state values on the row
-            validateRowDataStates(_container, map, stateProp);
+            // Validate any data state values on the row. No hit selection / data state processing is done on import
+            // because at this time transform script hit selection is not supported nor is there any intersection
+            // in the re-import case yet.
+            validateRowDataStates(_container, map, _stateProp);
+        }
+
+        /**
+         * Is data being added to a previous run
+         */
+        private boolean isExistingRun()
+        {
+            return _context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA && _context.getReRunId() != null;
         }
 
         @Override
@@ -1294,7 +1307,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 AssayPlateMetadataService.get().insertReplicateStats(_container, _user, _protocol, _run, _replicateRows);
 
                 // re-select any hits that were present in the previous run
-                if (_context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA && _context.getReRunId() != null)
+                if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)

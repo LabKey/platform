@@ -90,7 +90,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     public File getFileSystemDirectory()
     {
         Path path = getFileSystemDirectoryPath();
-        FileContentServiceImpl.throwIfPathNotFile(path);
+        FileContentServiceImpl.throwIfPathNotFile(path, getContainer());
         return path.toFile();
     }
 

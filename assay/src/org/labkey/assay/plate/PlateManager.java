@@ -32,6 +32,7 @@ import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
@@ -95,6 +96,7 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -2991,6 +2993,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (markAsHit)
             {
+                // Validate that none of the selected rows have exclusions
+                if (!isOperationPermittedOnResults(container, user, protocol, rowIds, PlateDataStateManager.DataOperation.hitSelection))
+                    throw new ValidationException("Failed to mark hits, some of the rows have QC states which prevent the operation.");
+
                 // Exclude preexisting hits
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
@@ -3060,6 +3066,33 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             tx.commit();
         }
+    }
+
+    /**
+     * Checks whether the specified data operation is permitted on the existing assay result rows.
+     */
+    private boolean isOperationPermittedOnResults(Container container, User user, @NotNull ExpProtocol protocol, Collection<Integer> rowIds, PlateDataStateManager.DataOperation operation)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Domain resultDomain = provider.getResultsDomain(protocol);
+        DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+        if (stateProp != null)
+        {
+            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+            TableInfo resultsTable = schema.createDataTable(null, false);
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, CompareType.IN);
+            Set<Integer> dataStates = new HashSet<>(new TableSelector(resultsTable, Collections.singleton(stateProp.getName()), filter, null).getArrayList(Integer.class));
+            for (Integer state : dataStates)
+            {
+                DataState dataState = PlateDataStateManager.get().getStateForRowId(container, state);
+                if (!PlateDataStateManager.get().isOperationPermitted(dataState, operation))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void deleteHits(SimpleFilter filter)

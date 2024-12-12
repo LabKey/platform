@@ -1998,10 +1998,17 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getFailView(UserForm form, BindException errors)
         {
-            HtmlStringBuilder builder = HtmlStringBuilder.of()
-                .unsafeAppend("<p>")
-                .append(form.getUser(true).getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
-                .unsafeAppend("</p><p>")
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+
+            User user = form.getUser();
+            if (user != null)
+            {
+                builder.unsafeAppend("<p>")
+                    .append(user.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
+                    .unsafeAppend("</p>");
+            }
+
+            builder.unsafeAppend("<p>")
                 .append(getErrorMessage(errors))
                 .unsafeAppend("</p>")
                 .append(PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL())));

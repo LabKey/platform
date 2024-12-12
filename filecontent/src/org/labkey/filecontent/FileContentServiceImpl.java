@@ -273,7 +273,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public @Nullable File getFileRoot(@NotNull Container c)
     {
         java.nio.file.Path path = getFileRootPath(c);
-        throwIfPathNotFile(path);
+        throwIfPathNotFile(path, c);
         return path.toFile();
     }
 
@@ -1602,10 +1602,10 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         return WebdavService.get().getResolver().lookup(path);
     }
 
-    public static void throwIfPathNotFile(java.nio.file.Path path)
+    public static void throwIfPathNotFile(java.nio.file.Path path, Container container)
     {
         if (null == path || FileUtil.hasCloudScheme(path))
-            throw new RuntimeException("Cannot get File object from Cloud File Root.");    // TODO: new exception?
+            throw new RuntimeException("Cannot get File object from Cloud File Root in " + container.getPath());
     }
 
     private boolean containsUrlOrVariation(List<String> existingUrls, java.nio.file.Path path)

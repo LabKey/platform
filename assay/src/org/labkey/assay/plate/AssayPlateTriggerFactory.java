@@ -6,6 +6,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -18,6 +19,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -28,8 +30,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class AssayPlateTriggerFactory implements TriggerFactory
 {
@@ -139,11 +143,29 @@ public class AssayPlateTriggerFactory implements TriggerFactory
      */
     private class DataStateTrigger implements Trigger
     {
+        Set<Integer> _excludedRows = new HashSet<>();
+
         @Override
         public void beforeUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext) throws ValidationException
         {
             if (newRow != null && _qcStateProp != null)
-                AssayPlateMetadataServiceImpl.validateRowDataStates(c, newRow, _qcStateProp);
+            {
+                DataState state = AssayPlateMetadataServiceImpl.validateRowDataStates(c, newRow, _qcStateProp);
+                if (!PlateDataStateManager.get().isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
+                {
+                    Object o = oldRow.get("RowId");
+                    if (o instanceof Integer rowId)
+                        _excludedRows.add(rowId);
+                }
+            }
+        }
+
+        @Override
+        public void complete(TableInfo table, Container c, User user, TableInfo.TriggerType event, BatchValidationException errors, Map<String, Object> extraContext)
+        {
+            // clear out hit selections for exclusions which don't allow the operation
+            if (!_excludedRows.isEmpty())
+                PlateManager.get().deleteHits(_protocol.getRowId(), _excludedRows);
         }
     }
 }
