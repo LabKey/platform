@@ -122,16 +122,13 @@ describe('Assay Designer - Permissions', () => {
             exception = JSON.parse(resp.text).exception;
         })
 
-        if (exception !== error)
-            console.log(badDomainName);
-
         expect(exception).toBe(error.replace("REPLACE", badDomainName));
     }
 
     it('Assay design name validation', async () => {
         const badNames = {
-            '': 'Assay Design name must not be blank',
-            ' ': 'Assay Design name must not be blank',
+            '': 'Assay Design name must not be blank.',
+            ' ': 'Assay Design name must not be blank.',
             'with\0nullCharacter': `Invalid Assay Design name "REPLACE". Assay Design name must contain only valid unicode characters.`,
             'with\tnewLines': `Invalid Assay Design name "REPLACE". Assay Design name may not contain 'tab', 'new line', or 'return' characters.`,
             '.startWithDot': `Invalid Assay Design name "REPLACE". Assay Design name must start with a letter or a number.`,
