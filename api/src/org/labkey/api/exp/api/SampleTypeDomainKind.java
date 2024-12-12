@@ -673,7 +673,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public boolean supportNamingPattern()
+    public boolean supportsNamingPattern()
     {
         return true;
     }

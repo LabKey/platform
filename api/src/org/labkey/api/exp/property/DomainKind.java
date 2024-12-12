@@ -411,7 +411,7 @@ abstract public class DomainKind<T> implements Handler<String>
         return false;
     }
 
-    public boolean supportNamingPattern()
+    public boolean supportsNamingPattern()
     {
         return false;
     }

@@ -107,7 +107,7 @@ describe('Assay Designer - Permissions', () => {
         if (exception !== error)
             console.log(badDomainName);
 
-        expect(exception).toBe(error);
+        expect(exception).toBe(error.replace("REPLACE", badDomainName));
     }
 
     async function verifyAssayDesignUpdateFailure(payload: any, badDomainName: string, error: string) {
@@ -125,18 +125,18 @@ describe('Assay Designer - Permissions', () => {
         if (exception !== error)
             console.log(badDomainName);
 
-        expect(exception).toBe(error);
+        expect(exception).toBe(error.replace("REPLACE", badDomainName));
     }
 
     it('Assay design name validation', async () => {
         const badNames = {
-            '': 'Domain name must not be blank',
-            ' ': 'Domain name must not be blank',
-            'with\0nullCharacter': `Invalid Assay Design name. Domain name must contain only valid unicode characters.`,
-            'with\tnewLines': `Invalid Assay Design name. Domain name may not contain 'tab', 'new line', or 'return' characters.`,
-            '.startWithDot': `Invalid Assay Design name. Domain name must start with a letter or a number character.`,
-            ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid Assay Design name. Domain name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
-            'a -b': `Invalid Assay Design name. Domain name may not contain space followed by dash.`
+            '': 'Assay Design name must not be blank',
+            ' ': 'Assay Design name must not be blank',
+            'with\0nullCharacter': `Invalid Assay Design name "REPLACE". Assay Design name must contain only valid unicode characters.`,
+            'with\tnewLines': `Invalid Assay Design name "REPLACE". Assay Design name may not contain 'tab', 'new line', or 'return' characters.`,
+            '.startWithDot': `Invalid Assay Design name "REPLACE". Assay Design name must start with a letter or a number.`,
+            ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid Assay Design name "REPLACE". Assay Design name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+            'a -b': `Invalid Assay Design name "REPLACE". Assay Design name may not contain space followed by dash.`
         };
 
         let badNameKeys = Object.keys(badNames);

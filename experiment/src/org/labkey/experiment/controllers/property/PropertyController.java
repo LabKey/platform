@@ -1477,7 +1477,7 @@ public class PropertyController extends SpringActionController
 
         if (original.getName() != null && update.getName() != null && !original.getName().equals(update.getName()))
         {
-            String domainNameError = DomainUtil.validateDomainName(update.getName(), kind.getKindName(), kind.supportNamingPattern());
+            String domainNameError = DomainUtil.validateDomainName(update.getName(), kind.getKindName(), kind.supportsNamingPattern());
             if (domainNameError != null)
                 throw new IllegalArgumentException(domainNameError);
         }

@@ -496,7 +496,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public boolean supportNamingPattern()
+    public boolean supportsNamingPattern()
     {
         return true;
     }

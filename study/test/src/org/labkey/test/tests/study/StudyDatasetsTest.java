@@ -136,13 +136,13 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasets()
     {
-        createDataset(TestDataGenerator.randomInvalidDomainName(5), "Invalid StudyDatasetVisit name. Domain name must start with a letter or a number character.");
+        String badDataSetName = TestDataGenerator.randomInvalidDomainName(5);
+        createDataset(badDataSetName, "Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.");
 
         String datasetA = TestDataGenerator.randomDomainName();
         createDataset(datasetA, null);
 
-        String badDataSetName = TestDataGenerator.randomInvalidDomainName(5);
-        renameDataset("Invalid StudyDatasetVisit name. Domain name must start with a letter or a number character.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
+        renameDataset("Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
 
         String datasetAUpdated = TestDataGenerator.randomDomainName();
         renameDataset(null, datasetA, datasetAUpdated, datasetA, datasetAUpdated, "XTest", "YTest", "ZTest");
@@ -228,7 +228,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    protected void renameDataset(String error, String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
+    protected void renameDataset(@Nullable String error, String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
         DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
             .selectDatasetByName(orgName)

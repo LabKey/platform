@@ -2335,7 +2335,6 @@ public class NameGenerator
                     Collection<String> parents = parentNames(value, colName);
                     inputs.get(INPUT_PARENT).addAll(parents);
                     inputs.get(inputsCategory).addAll(parents);
-                    // TODO, parents broken
 
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);

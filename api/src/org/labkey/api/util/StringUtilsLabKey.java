@@ -58,7 +58,7 @@ public class StringUtilsLabKey
     public static @Nullable String validateLegalNames(String s, @NotNull String illegalCharset, String type)
     {
         if (StringUtils.isBlank(s))
-            return type + " must not be blank";
+            return type + " must not be blank.";
         if (!ViewServlet.validChars(s))
             return type + " must contain only valid unicode characters.";
         if (StringUtils.containsAny(s, illegalCharset))

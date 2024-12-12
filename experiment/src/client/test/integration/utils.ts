@@ -316,7 +316,7 @@ async function verifyDomainCreateFailure(server: IntegrationTestServer, domainTy
     }, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error);
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace("REPLACE", badDomainName));
 }
 
 async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId: number, domainURI: string, dataTypeRowId/*needed for updating dataclass*/: number, badDomainName: string, error: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -334,7 +334,7 @@ async function verifyDomainUpdateFailure(server: IntegrationTestServer, domainId
     const badDomainNameResp = await server.post('property', 'saveDomain', updatedDomainPayload, {...folderOptions, ...userOptions});
 
     expect(badDomainNameResp['body']['success']).toBeFalsy();
-    expect(badDomainNameResp['body']['exception']).toBe(error);
+    expect(badDomainNameResp['body']['exception']).toBe(error.replace("REPLACE", badDomainName));
 }
 
 async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainType: string, domainName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
@@ -355,25 +355,24 @@ async function verifyDomainCreateSuccess(server: IntegrationTestServer, domainTy
     return {domainId, domainURI};
 }
 
-const EMPTY_DOMAIN_NAME_MSG = 'Domain name must not be blank';
 export const ILLEGAL_DOMAIN_CHARSET = "<>[]{};,`\"~!@#$%^*=|?\\";
 const LEGAL_CHARSET = [' ', '+', '-', '_', '.', ':', '', '&', '(', ')', '/'];
 const alphaNumeric = ['a', 'A', '1', '0'];
 export async function checkDomainName(server: IntegrationTestServer, domainType: string, supportNameExpression: boolean, folderOptions: RequestOptions, userOptions: RequestOptions) {
     const badNames = {
-        '': EMPTY_DOMAIN_NAME_MSG,
-        ' ': EMPTY_DOMAIN_NAME_MSG,
-        'with\0nullCharacter': `Invalid ${domainType} name. Domain name must contain only valid unicode characters.`,
-        'with\tnewLines': `Invalid ${domainType} name. Domain name may not contain 'tab', 'new line', or 'return' characters.`,
-        '.startWithDot': `Invalid ${domainType} name. Domain name must start with a letter or a number character.`,
-        ' startWithSpace': `Invalid ${domainType} name. Domain name must start with a letter or a number character.`,
-        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid ${domainType} name. Domain name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
-        'a -b': `Invalid ${domainType} name. Domain name may not contain space followed by dash.`
+        '': `${domainType} name must not be blank.`,
+        ' ': `${domainType} name must not be blank.`,
+        'with\0nullCharacter': `Invalid ${domainType} name "REPLACE". ${domainType} name must contain only valid unicode characters.`,
+        'with\tnewLines': `Invalid ${domainType} name "REPLACE". ${domainType} name may not contain 'tab', 'new line', or 'return' characters.`,
+        '.startWithDot': `Invalid ${domainType} name "REPLACE". ${domainType} name must start with a letter or a number.`,
+        ' startWithSpace': `Invalid ${domainType} name "REPLACE". ${domainType} name must start with a letter or a number.`,
+        ['c' + selectRandomN(ILLEGAL_DOMAIN_CHARSET.split(''), 2).join('')]: `Invalid ${domainType} name "REPLACE". ${domainType} name may not contain any of these characters: ` + ILLEGAL_DOMAIN_CHARSET,
+        'a -b': `Invalid ${domainType} name "REPLACE". ${domainType} name may not contain space followed by dash.`
     };
     if (supportNameExpression) {
-        badNames['withCounter'] = `Invalid ${domainType} name. 'withCounter' is a reserved name.`;
-        badNames['int:withCounter'] = `Invalid ${domainType} name. ':withCounter' is a reserved pattern.`;
-        badNames['drawdate:first'] = `Invalid ${domainType} name. ':first' is a reserved pattern.`;
+        badNames['withCounter'] = `Invalid ${domainType} name "REPLACE". 'withCounter' is a reserved name.`;
+        badNames['int:withCounter'] = `Invalid ${domainType} name "REPLACE". ':withCounter' is a reserved pattern.`;
+        badNames['drawdate:first'] = `Invalid ${domainType} name "REPLACE". ':first' is a reserved pattern.`;
     }
 
     let badNameKeys = Object.keys(badNames);
