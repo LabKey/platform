@@ -1380,12 +1380,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // The referenced plate well must have a sample value
         var filter = new SimpleFilter(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
 
-        // TODO: Filter out rows that are excluded and filter not in AssayResultDomainKind.STATE_COLUMN_NAME
-//        var states = PlateDataStateManager.get().getStates(container);
-//        for (var state : states)
-//        {
-//            if (PlateDataStateManager.get().isOperationPermitted(state, hitSelection));
-//        }
+        // Filter out result rows that are excluded
+        {
+            PlateDataStateManager stateManager = PlateDataStateManager.get();
+            var exclusionStateRowIds = stateManager.getStates(container)
+                    .stream()
+                    .filter(state -> !stateManager.isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
+                    .map(DataState::getRowId)
+                    .toList();
+
+            if (!exclusionStateRowIds.isEmpty())
+                filter.addCondition(table.getColumn(AssayResultDomainKind.STATE_COLUMN_NAME), exclusionStateRowIds, CompareType.NOT_IN);
+        }
 
         // Applying filters via ActionURL allows for automatic type coercion of the filter value
         filter.addUrlFilters(url, null);
