@@ -2962,7 +2962,7 @@ public class ExpDataIterators
                 header.add(name);
             }
 
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + dataClass.getName() + ".tsv");
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv");
 
             List<String> dataRows = new ArrayList<String>();
             dataRows.add(StringUtils.join(header, "\t"));
@@ -2980,7 +2980,7 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
                 return null;
             }
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + sampleType.getName() + ".tsv");
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(sampleType.getName()) + ".tsv");
             Set<String> validFields = new CaseInsensitiveHashSet();
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
