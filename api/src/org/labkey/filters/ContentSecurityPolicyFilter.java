@@ -8,7 +8,6 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
@@ -156,25 +155,6 @@ public class ContentSecurityPolicyFilter implements Filter
                 s = s.replace((char)0x2018, (char)0x027);     // LEFT SINGLE QUOTATION MARK -> APOSTROPHE
                 s = s.replace((char)0x2019, (char)0x027);     // RIGHT SINGLE QUOTATION MARK -> APOSTROPHE
 
-                // This is temporary. TODO: Remove once we've propagated this substitution into our CSPs
-                String directive = "report-uri";
-                int reportUriIdx = StringUtils.indexOfIgnoreCase(s, directive);
-                if (reportUriIdx != -1)
-                {
-                    int semicolonIdx = s.indexOf(';', reportUriIdx);
-
-                    if (semicolonIdx != -1)
-                    {
-                        int urlStart = reportUriIdx + directive.length();
-                        String oldUrl = s.substring(urlStart, semicolonIdx).stripTrailing();
-                        if (!oldUrl.contains("?"))
-                        {
-                            String newUrl = oldUrl + "?${" + REPORT_PARAMETER_SUBSTITUTION + "}";
-                            s = s.substring(0, urlStart) + newUrl + s.substring(urlStart + oldUrl.length());
-                        }
-                    }
-                }
-
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
                 s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
                     .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
@@ -194,11 +174,6 @@ public class ContentSecurityPolicyFilter implements Filter
                 throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected parameter name: " + paramName);
             }
         }
-    }
-
-    @Override
-    public void destroy()
-    {
     }
 
     @Override

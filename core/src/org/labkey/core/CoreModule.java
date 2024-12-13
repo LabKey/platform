@@ -1418,6 +1418,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         return Set.of(
             ApiJsonWriter.TestCase.class,
+            ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
@@ -1448,7 +1449,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SmileyFilterTest.class,
             ListFilterTest.class,
             HeadingFilterTest.class
-
         );
     }
 
