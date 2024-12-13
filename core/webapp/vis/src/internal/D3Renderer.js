@@ -2496,6 +2496,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .attr('fill', 'none');
 
         if (geom.hoverTextAes) {
+            pathSel.attr('title', geom.hoverTextAes.getValue);
             pathSel.append('title').text(geom.hoverTextAes.getValue);
         }
 

@@ -389,10 +389,16 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 new RemoteServerStartup().getRequeueRequest(((EPipelineQueueImpl) queue).getJMSFactory(), locations, null).performRequest();
             }
 
-            // TODO: is this the correct spot to start all of the trigger configs?
             for (PipelineTriggerType<?> triggerType : PipelineTriggerRegistry.get().getTypes())
             {
-                triggerType.startAll();
+                try
+                {
+                    triggerType.startAll();
+                }
+                catch (RuntimeException e)
+                {
+                    _log.error("Failed to start up {}", triggerType, e);
+                }
             }
         }
 

@@ -84,7 +84,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     
     protected Map<String, ModelAndView> _views;
     protected ViewContext _viewContext;
-    protected Map _renderMap = null;
+    protected Map<?, ?> _renderMap = null;
     @Nullable
     protected final StackTraceElement[] _creationStackTrace;
 
@@ -96,14 +96,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      * to require any particular implementation of Model, I track request/response in the
      * _viewContexts stack.
      */
-    protected static record ViewStackEntry(ModelAndView mv, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig) {};
+    protected record ViewStackEntry(ModelAndView mv, HttpServletRequest request, HttpServletResponse response, PageConfig pageConfig) {}
 
 
     /**
      * convert org.springframework.web.servlet.View.render(Map) to View.render(ModelBean)
      */
     @Override
-    public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
+    public final void render(Map map, @NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception
     {
         // HttpView acts like map is not important, however, stash it so we can get it back
         // it is not always the same as getModel()
@@ -194,9 +194,9 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         for (int i=stack.size()-1 ; i>= 0 ;i--)
         {
             ModelAndView mv = stack.get(i).mv;
-            if (mv instanceof HttpView)
+            if (mv instanceof HttpView<?> hv)
             {
-                ViewContext context =((HttpView)mv).getViewContext();
+                ViewContext context = hv.getViewContext();
                 assert null != context;
                 return context;
             }
@@ -302,7 +302,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static ViewContext getRootContext()
     {
 		ViewStack stack = _viewContexts.get();
-		return stack.isEmpty() ? null : ((HttpView) stack.elementAt(0).mv).getViewContext();
+		return stack.isEmpty() ? null : ((HttpView<?>) stack.elementAt(0).mv).getViewContext();
     }
 
 
@@ -310,10 +310,10 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     // static methods
     //
 
-    public static HttpView currentView()
+    public static <K extends HttpView<?>> K currentView()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        return (HttpView)s.peek().mv;
+        return (K)s.peek().mv;
     }
 
     public static boolean hasCurrentView()
@@ -329,8 +329,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
      */
     public static Object currentModel()
     {
-        ModelAndView mv = currentView();
-        return ((HttpView)mv).getModelBean();
+        return currentView().getModelBean();
     }
 
 
@@ -338,14 +337,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static HttpServletRequest currentRequest()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        return s.size() == 0 ? null : s.peek().request;
+        return s.isEmpty() ? null : s.peek().request;
     }
 
     @Nullable
     public static HttpServletResponse currentResponse()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        return s.size() == 0 ? null : s.peek().response;
+        return s.isEmpty() ? null : s.peek().response;
     }
 
     @NotNull
@@ -443,7 +442,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    public static HttpView viewFromString(String viewName)
+    public static HttpView<?> viewFromString(String viewName)
     {
         if (null == viewName)
             return null;
@@ -451,19 +450,18 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         try
         {
             if (viewName.endsWith(".jsp"))
-                return new JspView(viewName);
+                return new JspView<>(viewName);
 
             WebPartFactory f = Portal.getPortalPart(viewName);
             if (null != f)
             {
-                HttpView v = f.getWebPartView(HttpView.getRootContext(), new Portal.WebPart());
+                HttpView<?> v = f.getWebPartView(HttpView.getRootContext(), new Portal.WebPart());
                 if (null != v)
                     return v;
             }
 
-            Class clss = Class.forName(viewName);
-            if (null != clss)
-                return (HttpView) clss.newInstance();
+            Class<?> clss = Class.forName(viewName);
+            return (HttpView<?>) clss.getDeclaredConstructor().newInstance();
         }
         catch (Exception x)
         {
@@ -477,7 +475,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         ModelAndView v = getView(name);
         if (null == v || v.getClass() == DebugView.class)
         {
-            HttpView w = viewFromString(defaultView);
+            HttpView<?> w = viewFromString(defaultView);
             if (null != w)
                 v = w;
         }
@@ -563,7 +561,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     /**
      * allows some views to previewed out-of-context
      */
-    protected static class DebugView extends HttpView
+    protected static class DebugView extends HttpView<Object>
     {
         String _name = "";
 
@@ -595,17 +593,17 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         }
     }
 
-    public static HttpView redirect(URLHelper url, boolean allowAbsoluteUrl)
+    public static HttpView<?> redirect(URLHelper url, boolean allowAbsoluteUrl)
     {
         return new HttpRedirectView((!allowAbsoluteUrl || url.isLocalUri(getRootContext())) ? url.getLocalURIString() : url.getURIString());
     }
 
-    public static HttpView redirect(URLHelper url)
+    public static HttpView<?> redirect(URLHelper url)
     {
         return new HttpRedirectView(url.getLocalURIString());
     }
 
-    public static HttpView redirect(String url)
+    public static HttpView<?> redirect(String url)
     {
         return new HttpRedirectView(url);
     }
@@ -664,15 +662,14 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     }
 
 
-    public String toString()
+    public @NotNull String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClass().getName()).append(" {");
         ViewContext ctx = getViewContext();
 
-        for (Object o : ctx.entrySet())
+        for (Map.Entry<?, ?> entry : ctx.entrySet())
         {
-            Map.Entry entry = (Map.Entry) o;
             sb.append(entry.getKey()).append("=");
 
             Object v;
@@ -780,21 +777,21 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         {
             for (ModelAndView v : _views.values())
             {
-                if(v instanceof HttpView)
-                    resources.addAll(((HttpView) v).getClientDependencies());
+                if(v instanceof HttpView<?> hv)
+                    resources.addAll(hv.getClientDependencies());
             }
         }
 
         // necessary for hbox, vbox
-        if (_view != null && _view instanceof HttpView)
+        if (_view != null && _view instanceof HttpView<?> hv)
         {
-            List<ModelAndView> views = ((HttpView) _view).getViews();
+            List<ModelAndView> views = hv.getViews();
             if (views != null)
             {
                 for (ModelAndView v : views)
                 {
-                    if (v instanceof HttpView)
-                        resources.addAll(((HttpView) v).getClientDependencies());
+                    if (v instanceof HttpView<?> hv2)
+                        resources.addAll(hv2.getClientDependencies());
                 }
             }
         }

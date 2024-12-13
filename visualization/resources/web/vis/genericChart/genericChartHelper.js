@@ -48,7 +48,8 @@ LABKEY.vis.GenericChartHelper = new function(){
                 fields: [
                     {name: 'x', label: 'X Axis', required: true, numericOrDateOnly: true},
                     {name: 'y', label: 'Y Axis', required: true, numericOnly: true, allowMultiple: true},
-                    {name: 'series', label: 'Series', nonNumericOnly: true}
+                    {name: 'series', label: 'Series', nonNumericOnly: true},
+                    {name: 'trendline', label: 'Trendline', required: false, altSelectionOnly: true, altFieldType: 'LABKEY.vis.TrendlineField'},
                 ],
                 layoutOptions: {opacity: true, axisBased: true, series: true, chartLayout: true}
             },
@@ -90,14 +91,13 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     /**
-     * Gets the chart type (i.e. box or scatter).
-     * @param {String} renderType The selected renderType, this can be SCATTER_PLOT, BOX_PLOT, or BAR_CHART. Determined
-     * at chart creation time in the Generic Chart Wizard.
-     * @param {String} xAxisType The datatype of the x-axis, i.e. String, Boolean, Number.
-     * @returns {String}
+     * Gets the chart type (i.e. box or scatter) based on the chartConfig object.
      */
-    var getChartType = function(renderType, xAxisType)
+    const getChartType = function(chartConfig)
     {
+        const renderType = chartConfig.renderType
+        const xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
+
         if (renderType === 'time_chart' || renderType === "bar_chart" || renderType === "pie_chart"
             || renderType === "box_plot" || renderType === "scatter_plot" || renderType === "line_plot")
         {
@@ -666,7 +666,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(measures, function(key, measureObj) {
                 var measureArr = ensureMeasuresAsArray(measureObj);
                 $.each(measureArr, function(idx, measure) {
-                    if (LABKEY.Utils.isObject(measure) && distinctNames.indexOf(measure.name) == -1) {
+                    if (LABKEY.Utils.isObject(measure) && !LABKEY.Utils.isEmptyObj(measure) && distinctNames.indexOf(measure.name) == -1) {
                         hover += sep + measure.label + ': ' + _getRowValue(row, measure.name);
                         sep = ', \n';
 
@@ -937,9 +937,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param scales
      * @param geom
      * @param data
+     * @param trendlineData
      * @returns {Array} array of plot config objects
      */
-    var generatePlotConfigs = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    var generatePlotConfigs = function(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData)
     {
         var plotConfigArr = [];
 
@@ -974,11 +975,11 @@ LABKEY.vis.GenericChartHelper = new function(){
                     newScales.yRight = $.extend(true, {}, scales.yRight);
                 }
 
-                plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data));
+                plotConfigArr.push(generatePlotConfig(renderTo, newChartConfig, newLabels, aes, newScales, geom, data, trendlineData));
             }, this);
         }
         else {
-            plotConfigArr.push(generatePlotConfig(renderTo, chartConfig, labels, aes, scales, geom, data));
+            plotConfigArr.push(generatePlotConfig(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData));
         }
 
         return plotConfigArr;
@@ -1015,9 +1016,10 @@ LABKEY.vis.GenericChartHelper = new function(){
      * @param scales
      * @param geom
      * @param data
+     * @param trendlineData
      * @returns {Object}
      */
-    var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data)
+    var generatePlotConfig = function(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData)
     {
         var renderType = chartConfig.renderType,
             layers = [], clipRect,
@@ -1081,21 +1083,27 @@ LABKEY.vis.GenericChartHelper = new function(){
             $.each(yMeasures, function(idx, yMeasure) {
                 var pathAes = {
                     sortFn: function(a, b) {
+                        const aVal = _getRowValue(a, xName);
+                        const bVal = _getRowValue(b, xName);
+
                         // No need to handle the case for a or b or a.getValue() or b.getValue() null as they are
                         // not currently included in this plot.
                         if (isDate){
-                            return new Date(a.getValue(xName)) - new Date(b.getValue(xName));
+                            return new Date(aVal) - new Date(bVal);
                         }
-                        return a.getValue(xName) - b.getValue(xName);
-                    }
+                        return aVal - bVal;
+                    },
+                    hoverText: emptyTextFn(),
                 };
 
                 pathAes[yMeasure.yAxis === 'right' ? 'yRight' : 'yLeft'] = getYMeasureAes(yMeasure);
 
                 // use the series measure's values for the distinct colors and grouping
-                if (chartConfig.measures.series) {
+                const hasSeries = chartConfig.measures.series !== undefined;
+                if (hasSeries) {
                     pathAes.pathColor = generateGroupingAcc(chartConfig.measures.series.name);
                     pathAes.group = generateGroupingAcc(chartConfig.measures.series.name);
+                    pathAes.hoverText = function (row) { return chartConfig.measures.series.label + ': ' + row.group };
                 }
                 // if no series measures but we have multiple y-measures, force the color and grouping to be distinct for each measure
                 else if (yMeasures.length > 1) {
@@ -1103,17 +1111,42 @@ LABKEY.vis.GenericChartHelper = new function(){
                     pathAes.group = emptyTextFn;
                 }
 
-                layers.push(
-                    new LABKEY.vis.Layer({
-                        name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
-                        geom: new LABKEY.vis.Geom.Path({
-                            color: '#' + chartConfig.geomOptions.pointFillColor,
-                            size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
-                            opacity:chartConfig.geomOptions.opacity
-                        }),
-                        aes: pathAes
-                    })
-                );
+                if (trendlineData) {
+                    trendlineData.forEach(trendline => {
+                        if (trendline.data) {
+                            const layerAes = { x: 'x', y: 'y' };
+                            if (hasSeries) {
+                                layerAes.pathColor = function () { return trendline.name };
+                            }
+
+                            layerAes.hoverText = generateTrendlinePathHover(trendline);
+
+                            layers.push(
+                                    new LABKEY.vis.Layer({
+                                        geom: new LABKEY.vis.Geom.Path({
+                                            color: '#' + chartConfig.geomOptions.pointFillColor,
+                                            size: chartConfig.geomOptions.lineWidth ? chartConfig.geomOptions.lineWidth : 3,
+                                            opacity:chartConfig.geomOptions.opacity,
+                                        }),
+                                        aes: layerAes,
+                                        data: trendline.data.generatedPoints,
+                                    })
+                            );
+                        }
+                    });
+                } else {
+                    layers.push(
+                        new LABKEY.vis.Layer({
+                            name: yMeasures.length > 1 ? yMeasure.label || yMeasure.name : undefined,
+                            geom: new LABKEY.vis.Geom.Path({
+                                color: '#' + chartConfig.geomOptions.pointFillColor,
+                                size: chartConfig.geomOptions.lineWidth?chartConfig.geomOptions.lineWidth:3,
+                                opacity:chartConfig.geomOptions.opacity
+                            }),
+                            aes: pathAes
+                        })
+                    );
+                }
             }, this);
         }
 
@@ -1177,6 +1210,136 @@ LABKEY.vis.GenericChartHelper = new function(){
         });
 
         return plotConfig;
+    };
+
+    const hasPremiumModule = function() {
+        return LABKEY.getModuleContext('api').moduleNames.indexOf('premium') > -1;
+    };
+
+    const TRENDLINE_OPTIONS = {
+        '': { label: 'Point-to-Point', value: '' },
+        'Linear': { label: 'Linear Regression', value: 'Linear', equation: 'y = x * slope + intercept' },
+        'Polynomial': { label: 'Polynomial', value: 'Polynomial', equation: 'y = a0 + a1 * x + a2 * x^2' },
+        '3 Parameter': { label: 'Nonlinear 3PL', value: '3 Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max * abs(x/inflection)^abs(slope) / [1 + abs(x/inflection)^abs(slope)]' },
+        'Three Parameter': { label: 'Nonlinear 3PL (Alternate)', value: 'Three Parameter', showMax: true, schemaPrefix: 'assay', equation: 'y = max / [1 + (inflection - x) * slope]' },
+        '4 Parameter': { label: 'Nonlinear 4PL', value: '4 Parameter', schemaPrefix: 'assay', equation: 'y = max + (min - max) / [1 + (x/inflection)^slope]' },
+        'Four Parameter': { label: 'Nonlinear 4PL (Alternate)', value: 'Four Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [1 + (inflection - x) * slope]' },
+        'Five Parameter': { label: 'Nonlinear 5PL', value: 'Five Parameter', showMin: true, showMax: true, schemaPrefix: 'assay', equation: 'y = min + (max - min) / [[1 + (inflection - x) * slope]^asymmetry]' },
+    }
+
+    const generateTrendlinePathHover = function(trendline) {
+        let hoverText = trendline.name + '\n';
+        hoverText += '\n' + TRENDLINE_OPTIONS[trendline.data.curveFit.type].label + ':\n';
+        Object.entries(trendline.data.curveFit).forEach(([key, value]) => {
+            if (key === 'coefficients') {
+                hoverText += key + ': ';
+                value.forEach((v, i) => {
+                    hoverText += (i > 0 ? ', ' : '') + LABKEY.Utils.roundNumber(v, 4);
+                });
+                hoverText += '\n';
+            }
+            else if (key !== 'type') {
+                hoverText += key + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+            }
+        });
+        hoverText += '\nStatistics:\n';
+        Object.entries(trendline.data.stats).forEach(([key, value]) => {
+            const label = key === 'RSquared' ? 'R-Squared' : (key === 'adjustedRSquared' ? 'Adjusted R-Squared' : key);
+            hoverText += label + ': ' + LABKEY.Utils.roundNumber(value, 4) + '\n';
+        });
+
+        return function () { return hoverText };
+    };
+
+    // support for y-axis trendline data when a single y-axis measure is selected
+    const queryTrendlineData = async function(chartConfig, data) {
+        const chartType = getChartType(chartConfig);
+        const yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
+        if (chartType === 'line_plot' && chartConfig.geomOptions?.trendlineType && chartConfig.geomOptions.trendlineType !== '' && yMeasures.length === 1) {
+            const xName = chartConfig.measures.x.name;
+            const trendlineConfig = getTrendlineConfig(chartConfig, data);
+            try {
+                await _queryTrendlineData(trendlineConfig, xName, yMeasures[0].name);
+                return trendlineConfig.data;
+            } catch (reason) {
+                // skip this series and render without trendline
+                return trendlineConfig.data;
+            }
+        }
+
+        return undefined;
+    };
+
+    const getTrendlineConfig = function(chartConfig, data) {
+        const config = {
+            type: chartConfig.geomOptions.trendlineType,
+            logXScale: chartConfig.scales.x && chartConfig.scales.x.trans === 'log',
+            asymptoteMin: chartConfig.geomOptions.trendlineAsymptoteMin,
+            asymptoteMax: chartConfig.geomOptions.trendlineAsymptoteMax,
+            data: chartConfig.measures.series
+                    ? LABKEY.vis.groupCountData(data, generateGroupingAcc(chartConfig.measures.series.name))
+                    : [{name: 'All', rawData: data}],
+        };
+
+        // special case to only use logXScale for linear trendlines
+        if (config.type === 'Linear') {
+            config.logXScale = false;
+        }
+
+        return config;
+    };
+
+    const _queryTrendlineData = async function(trendlineConfig, xName, yName) {
+        for (let series of trendlineConfig.data) {
+            try {
+                // we need at least 2 data points for curve fitting
+                if (series.rawData.length > 1) {
+                    series.data = await _querySeriesTrendlineData(trendlineConfig, series, xName, yName);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
+
+    const _querySeriesTrendlineData = function(trendlineConfig, seriesData, xName, yName) {
+        return new Promise(function(resolve, reject) {
+            if (!hasPremiumModule()) {
+                reject('Premium module required for curve fitting.');
+                return;
+            }
+
+            const points = seriesData.rawData.map(function(row) {
+                return {
+                    x: _getRowValue(row, xName, 'value'),
+                    y: _getRowValue(row, yName, 'value'),
+                };
+            });
+            const xAcc = function(row) { return row.x };
+            const xMin = d3.min(points, xAcc);
+            const xMax = d3.max(points, xAcc);
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('premium', 'calculateCurveFit.api'),
+                method: 'POST',
+                jsonData: {
+                    curveFitType: trendlineConfig.type,
+                    points: points,
+                    logXScale: trendlineConfig.logXScale,
+                    asymptoteMin: trendlineConfig.asymptoteMin,
+                    asymptoteMax: trendlineConfig.asymptoteMax,
+                    xMin: xMin,
+                    xMax: xMax,
+                    numberOfPoints: 1000,
+                },
+                success : LABKEY.Utils.getCallbackWrapper(function(response) {
+                    resolve(response);
+                }),
+                failure : LABKEY.Utils.getCallbackWrapper(function(reason) {
+                    reject(reason);
+                }, this, true),
+            });
+        });
     };
 
     var _willRotateXAxisTickText = function(scales, plotConfig, maxTickLength, data) {
@@ -1351,7 +1514,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if ((chartType == 'scatter_plot' || chartType == 'line_plot' || measureName == 'y') && dataIsNull && !dataConversionHappened)
         {
             message = 'All data values for ' + measure.label + ' are null. Please choose a different measure or review/remove data filters.';
-            return {success: false, message: message};
+            return {success: true, message: message};
         }
 
         if (scales[measureName] && scales[measureName].trans == "log")
@@ -1632,12 +1795,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
-        queryChartData(renderTo, queryConfig, function(measureStore) {
-            generateChartSVG(renderTo, chartConfig, measureStore);
+        queryChartData(renderTo, queryConfig, chartConfig, function(measureStore, trendlineData) {
+            generateChartSVG(renderTo, chartConfig, measureStore, trendlineData);
         });
     };
 
-    var queryChartData = function(renderTo, queryConfig, callback) {
+    var queryChartData = function(renderTo, queryConfig, chartConfig, callback) {
         queryConfig.containerPath = LABKEY.container.path;
 
         if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
@@ -1657,22 +1820,22 @@ LABKEY.vis.GenericChartHelper = new function(){
             queryConfig.filterArray = filters;
         }
 
-        queryConfig.success = function(measureStore) {
-            callback.call(this, measureStore);
+        queryConfig.success = async function(measureStore) {
+            const trendlineData = await queryTrendlineData(chartConfig, measureStore.records());
+            callback.call(this, measureStore, trendlineData);
         };
 
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
-    var generateChartSVG = function(renderTo, chartConfig, measureStore) {
+    var generateChartSVG = function(renderTo, chartConfig, measureStore, trendlineData) {
         var responseMetaData = measureStore.getResponseMetadata();
 
         // explicitly set the chart width/height if not set in the config
         if (!chartConfig.hasOwnProperty('width') || chartConfig.width == null) chartConfig.width = 1000;
         if (!chartConfig.hasOwnProperty('height') || chartConfig.height == null) chartConfig.height = 600;
 
-        var xAxisType = chartConfig.measures.x ? (chartConfig.measures.x.normalizedType || chartConfig.measures.x.type) : null;
-        var chartType = getChartType(chartConfig.renderType, xAxisType);
+        var chartType = getChartType(chartConfig);
         var aes = generateAes(chartType, chartConfig.measures, responseMetaData.schemaName, responseMetaData.queryName);
         var valueConversionResponse = doValueConversion(chartConfig, aes, chartType, measureStore.records());
         if (!LABKEY.Utils.isEmptyObj(valueConversionResponse.processed)) {
@@ -1716,7 +1879,7 @@ LABKEY.vis.GenericChartHelper = new function(){
         if (!validation.success)
             return;
 
-        var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data);
+        var plotConfigArr = generatePlotConfigs(renderTo, chartConfig, labels, aes, scales, geom, data, trendlineData);
         $.each(plotConfigArr, function(idx, plotConfig) {
             if (chartType === 'pie_chart') {
                 new LABKEY.vis.PieChart(plotConfig);
@@ -1725,7 +1888,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 new LABKEY.vis.Plot(plotConfig).render();
             }
         }, this);
-    };
+    }
 
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
@@ -1819,6 +1982,8 @@ LABKEY.vis.GenericChartHelper = new function(){
         queryChartData: queryChartData,
         generateChartSVG: generateChartSVG,
         getMeasureStoreRecords: getMeasureStoreRecords,
+        queryTrendlineData: queryTrendlineData,
+        TRENDLINE_OPTIONS: TRENDLINE_OPTIONS,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.

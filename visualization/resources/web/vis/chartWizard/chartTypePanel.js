@@ -898,10 +898,20 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionsPanel', {
                 fieldSelection = undefined;
             }
 
+            // special case for trendline field, only visible for LIMS+ when premium module is available
+            let hidden = false;
+            if (field.name === 'trendline') {
+                const hasChartBuilding = LABKEY.getModuleContext('core').productFeatures?.indexOf('ChartBuilding') !== -1;
+                const hasPremium = LABKEY.getModuleContext('api').moduleNames.indexOf('premium') !== -1;
+                hidden = !hasPremium || !hasChartBuilding;
+            }
+
             this.fieldSelectionAreas[field.name] = Ext4.create('LABKEY.vis.ChartTypeFieldSelectionPanel', {
+                baseQueryKey: this.baseQueryKey,
                 chartTypeName: this.chartType.get('name'),
                 field: field,
-                selection: fieldSelection
+                selection: fieldSelection,
+                hidden: hidden,
             });
 
             this.add(this.fieldSelectionAreas[field.name]);
@@ -991,6 +1001,7 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
     selection: null,
     allowableTypes: null,
     chartTypeName: null,
+    baseQueryKey: null,
 
     initComponent : function()
     {
@@ -1060,7 +1071,8 @@ Ext4.define('LABKEY.vis.ChartTypeFieldSelectionPanel', {
             {
                 this.field.altFieldCmp = Ext4.create(this.field.altFieldType, Ext4.apply({
                     cls: 'alternate-field-selection',
-                    initData: this.selection
+                    initData: this.selection,
+                    baseQueryKey: this.baseQueryKey,
                 }, this.field.altFieldConfig || {}));
 
                 this.fieldAreaCmp = Ext4.create('Ext.panel.Panel', {

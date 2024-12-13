@@ -66,7 +66,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.query.olap.metadata.Olap4JCachedCubeFactory;
 import org.labkey.query.olap.metadata.RolapCachedCubeFactory;
 import org.labkey.query.olap.rolap.RolapCubeDef;
@@ -94,7 +93,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -215,7 +213,7 @@ public class ServerManager
             .map(Map::values)
             .flatMap(Collection::stream)
             .filter(osd -> osd.isExposed(c))
-            .collect(Collectors.toList()));
+            .toList());
 
         ret.addAll(DB_DESCRIPTOR_CACHE.get(c).values());
 
@@ -267,7 +265,7 @@ public class ServerManager
         }
 
         String cubeCacheKey = c.getId() + "/" + cube.getSchema().getName() + "/" + cube.getUniqueName();
-        final SQLException ex[] = new SQLException[1];
+        final SQLException[] ex = new SQLException[1];
         Cube cachedCube = CUBES.get(cubeCacheKey, cube, (key, src) ->
         {
             try
@@ -327,7 +325,7 @@ public class ServerManager
 
     private static ServerReferenceCount getServer(Container c, User user)
     {
-        ViewServlet.checkShuttingDown();
+        ContextListener.checkShuttingDown();
 
         synchronized (SERVERS_LOCK)
         {
@@ -457,7 +455,7 @@ public class ServerManager
                         if (!isCountDistinctLevel)
                         {
 
-                            if (ViewServlet.isShuttingDown())
+                            if (ContextListener.isShuttingDown())
                                 return "warm cache stopped because of server shutdown";
                             s = System.currentTimeMillis();
                             execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
@@ -471,7 +469,7 @@ public class ServerManager
                         {
                             jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
 
-                            if (ViewServlet.isShuttingDown())
+                            if (ContextListener.isShuttingDown())
                                 return "warm cache stopped because of server shutdown";
 
                             s = System.currentTimeMillis();

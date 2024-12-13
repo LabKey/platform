@@ -6,6 +6,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -60,7 +61,11 @@ public class SiteValidationJob extends PipelineJob
             setStatus(s);
         });
         JspTemplate<SiteValidationForm> template = new JspTemplate<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp", _form);
-        ViewContext context = new ViewContext(getInfo());
+        // Issue 51749 - ensure we have a URL for wiki validation
+        ViewBackgroundInfo info = new ViewBackgroundInfo(getInfo().getContainer(),
+                getInfo().getUser(),
+                getInfo().getURL() == null ? AppProps.getInstance().getHomePageActionURL() : getInfo().getURL());
+        ViewContext context = new ViewContext(info);
         template.setViewContext(context);
         File results = FileUtil.appendName(getPipeRoot().getLogDirectory(), getResultsFileName());
 

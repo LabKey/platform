@@ -42,12 +42,17 @@ public class PlateDataStateManager implements DataStateHandler
             return _permittedOps;
         }
 
+        public String getStateType()
+        {
+            return name();
+        }
+
         @Nullable
-        public static StateType getType(String typeName)
+        public static StateType getType(String stateType)
         {
             for (StateType type : StateType.values())
             {
-                if (type.name().equals(typeName))
+                if (type.getStateType().equals(stateType))
                     return type;
             }
             return null;
@@ -59,7 +64,8 @@ public class PlateDataStateManager implements DataStateHandler
      */
     public enum DataOperation
     {
-        analysis("included for any data or statistical analysis, curve fitting etc");
+        analysis("included for any data or statistical analysis, curve fitting etc"),
+        hitSelection("can mark data for hit selection");
 
         final String _description;
 
@@ -85,23 +91,50 @@ public class PlateDataStateManager implements DataStateHandler
         return stateType != null && stateType.getPermittedOps().contains(operation);
     }
 
+    /**
+     * Ensure that all plate data states exist for the container.
+     */
     public void ensureDefaultStates(Container container, User user)
     {
         Container c = getDataStateContainer(container);
+        Map<String, DataState> dataStates = DataStateManager.getInstance().getStates(c)
+                .stream()
+                .collect(Collectors.toMap(DataState::getLabel, k -> k));
         Set<String> typeNames = getStates(c).stream().map(DataState::getStateType).collect(Collectors.toSet());
+
         for (StateType type : StateType.values())
         {
-            if (!typeNames.contains(type.name()))
-            {
-                DataState state = new DataState();
-                state.setContainer(c);
-                state.setStateType(type.name());
-                state.setLabel(type.name());
-                state.setDescription(type._description);
+            if (typeNames.contains(type.getStateType()))
+                continue;
 
-                DataStateManager.getInstance().insertState(user, state);
+            DataState existing = dataStates.get(type.name());
+            if (existing == null)
+            {
+                createDataState(c, user, type.name(), type.getStateType(), type._description);
+            }
+            else if (!type.getStateType().equals(existing.getStateType()))
+            {
+                // name matches but not the required state type, try generating a unique name
+                int i = 1;
+                String newName = type.name();
+                while (dataStates.containsKey(newName))
+                {
+                    newName = String.format("%s (%d)", type.name(), i++);
+                }
+                createDataState(c, user, newName, type.getStateType(), type._description);
             }
         }
+    }
+
+    private void createDataState(Container c, User user, String name, String stateType, String description)
+    {
+        DataState state = new DataState();
+        state.setContainer(c);
+        state.setLabel(name);
+        state.setStateType(stateType);
+        state.setDescription(description);
+
+        DataStateManager.getInstance().insertState(user, state);
     }
 
     @Nullable
@@ -127,7 +160,7 @@ public class PlateDataStateManager implements DataStateHandler
     @Override
     public List<DataState> getStates(Container container)
     {
-        return DataStateManager.getInstance().getStates(container).stream()
+        return DataStateManager.getInstance().getStates(getDataStateContainer(container)).stream()
                 .filter(state -> StateType.getType(state.getStateType()) != null)
                 .collect(Collectors.toList());
     }

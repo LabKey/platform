@@ -124,6 +124,9 @@
     <description>Contains one row per plate set.</description>
     <columns>
       <column columnName="RowId"/>
+      <column columnName="LSID">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="Name"/>
       <column columnName="Description"/>
       <column columnName="PlateSetId">

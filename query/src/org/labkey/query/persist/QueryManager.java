@@ -823,7 +823,12 @@ public class QueryManager
 
         boolean isPublic = o.getBoolean("isPublic");
         SchemaKey schemaPath = SchemaKey.fromString(o.optString("schemaName"));
-        String queryName = o.getString("queryName");
+        String queryName = o.optString("queryName");
+        if (queryName == null)
+        {
+            // Likely a lookup that targets something not exposed via a UserSchema. Bail out without further validation
+            return true;
+        }
         String displayColumn = o.optString("displayColumn");
         String keyColumn = o.optString("keyColumn");
         String containerPath = o.optString("containerPath");

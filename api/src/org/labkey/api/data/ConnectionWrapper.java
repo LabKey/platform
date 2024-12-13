@@ -167,7 +167,6 @@ public class ConnectionWrapper implements java.sql.Connection
         _log = log != null ? log : getConnectionLogger();
     }
 
-
     /** this is a best guess logger, pass one in to be predictable */
     static Logger getConnectionLogger()
     {
@@ -185,7 +184,6 @@ public class ConnectionWrapper implements java.sql.Connection
         return LOG;
     }
 
-
     public @NotNull Logger getLogger()
     {
         return _log;
@@ -197,27 +195,22 @@ public class ConnectionWrapper implements java.sql.Connection
         return _scope;
     }
 
-
-    public static boolean dumpOpenConnections()
-    {
-        return dumpOpenConnections(LOG);
-    }
-
-    public static boolean dumpOpenConnections(@NotNull LoggerWriter logWriter)
+    public static void dumpOpenConnections(@NotNull LoggerWriter logWriter, @Nullable Thread thread)
     {
         synchronized (_openConnections)
         {
             for (ConnectionWrapper w : _openConnections)
             {
-                String thread = w._allocatingThread.getName();
-                logWriter.debug("Connection opened on thread: " + thread, w._allocation);
+                if (thread == null || thread == w._allocatingThread)
+                {
+                    logWriter.debug("Connection opened on thread: " + w._allocatingThread.getName(), w._allocation);
+                }
             }
         }
-
-        return true;
     }
 
-    public static void closeConnections()
+    /** @return true if there was a connection to close */
+    public static boolean closeConnections()
     {
         Thread thread = DbScope.getEffectiveThread();
         List<ConnectionWrapper> toClose = new ArrayList<>();
@@ -241,28 +234,21 @@ public class ConnectionWrapper implements java.sql.Connection
             }
             catch (SQLException ignored) {}
         }
+        return !toClose.isEmpty();
     }
 
-    public static boolean dumpOpenConnections(@NotNull Logger log)
+    public static void dumpLeaksForThread(Thread t)
     {
-        dumpOpenConnections(new SimpleLoggerWriter(log));
-
-        return true;
+        dumpLeaksForThread(t, LOG);
     }
 
-    public static boolean dumpLeaksForThread(Thread t)
+    public static void dumpLeaksForThread(Thread t, Logger log)
     {
-        return dumpLeaksForThread(t, LOG);
+        dumpOpenConnections(new SimpleLoggerWriter(log), t);
     }
 
-    public static boolean dumpLeaksForThread(Thread t, Logger log)
+    public static void dumpLeaksForThread(Thread t, LoggerWriter log)
     {
-        return dumpOpenConnections(new SimpleLoggerWriter(log));
-    }
-
-    public static boolean dumpLeaksForThread(Thread t, LoggerWriter log)
-    {
-        boolean leaks = false;
         synchronized (_openConnections)
         {
             for (ConnectionWrapper connection : _openConnections)
@@ -273,12 +259,10 @@ public class ConnectionWrapper implements java.sql.Connection
                     {
                         log.error("Probable connection leak for thread '" + t.getName() + "', connection was acquired at: ", connection._allocation);
                         _loggedLeaks.add(connection);
-                        leaks = true;
                     }
                 }
             }
         }
-        return leaks;
     }
 
     public static HashSetValuedHashMap<Thread,Integer> getSPIDsForThreads()
@@ -939,7 +923,8 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     protected void finalize() throws Throwable
     {
-        if (!isClosed())
+        // If the thread was banned from getting a connection, _connection will be null, and we shouldn't complain that it wasn't closed
+        if (_connection != null && !isClosed())
         {
             LOG.error("Connection was not closed! " + this);
             realClose();
@@ -948,12 +933,12 @@ public class ConnectionWrapper implements java.sql.Connection
         super.finalize();
     }
 
-    public Closer getRunOnClose()
+    public @NotNull Closer getRunOnClose()
     {
         return _runOnClose;
     }
 
-    public void setRunOnClose(Closer runOnClose)
+    public void setRunOnClose(@NotNull Closer runOnClose)
     {
         _runOnClose = runOnClose;
     }

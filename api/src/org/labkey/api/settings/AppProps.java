@@ -167,6 +167,9 @@ public interface AppProps
 
     int getMemoryUsageDumpInterval();
 
+    /** Timeout in seconds for read-only HTTP requests, after which resources like DB connections and spawned processes will be killed. Set to 0 to disable. */
+    int getReadOnlyHttpRequestTimeout();
+
     int getMaxBLOBSize();
 
     boolean isExt3Required();
@@ -255,4 +258,6 @@ public interface AppProps
     @NotNull String getDistributionFilename();
 
     @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
+
+    @NotNull List<String> getAllowedExtensions();
 }

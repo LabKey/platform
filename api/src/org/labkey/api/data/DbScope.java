@@ -42,6 +42,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
@@ -51,6 +52,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -141,6 +143,9 @@ public class DbScope
         ModuleResourceCaches.create("Parsed schema XML metadata", new SchemaXmlCacheHandler(), ResourceRootProvider.getStandard(QueryService.MODULE_SCHEMAS_PATH));
 
     private static volatile DbScope _labkeyScope = null;
+
+    /** Threads that we are attempting to cancel and shouldn't be allowed to get another DB connection */
+    private static final Set<Thread> BANNED_THREADS = Collections.synchronizedSet(new HashSet<>());
 
     private final DbScopeLoader _dbScopeLoader;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS data sources
@@ -369,6 +374,18 @@ public class DbScope
             MemTracker.get().remove(_dialect);
             _driverClass = initializeDriver();
             _url = _dsPropertyReader.getUrl();
+
+            if (_dialect.isPostgreSQL())
+            {
+                // Starting with 17.x, PostgreSQL won't connect to a database name longer than 63 chars, but it fails
+                // with a misleading message, so we proactively look for this and throw. Issue #51676.
+                String name = _dialect.getDatabaseName(_url);
+
+                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect we
+                // don't know what database version is there.
+                if (name.length() > _dialect.getIdentifierMaxLength())
+                    throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
+            }
 
             // Validate that data source is using a supported connection pool
             validateConnectionPool();
@@ -947,7 +964,10 @@ public class DbScope
                 throw (T) getCause();
         }
 
-        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        /* this "returns" RuntimeException so the caller can do the following to avoid compiler warnings:
+         *     throw retryException.throwRuntimeException()
+         */
+        public <T extends Throwable> RuntimeException throwRuntimeException() throws RuntimeException
         {
             throw UnexpectedException.wrap(getCause());
         }
@@ -1158,10 +1178,10 @@ public class DbScope
             log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
 
             if (_conn == null)
-                throw new ConnectionAlreadyReleaseException("Connection has already been nulled out, but was passed: " + conn);
+                throw new ConnectionAlreadyReleasedException("Connection has already been nulled out, but was passed: " + conn);
 
             if (_conn != conn)
-                throw new IllegalStateException("Incorrect Connection: " + conn + " vs. " + _conn);
+                throw new DifferentConnectionException("Incorrect Connection: " + conn + " vs. " + _conn);
 
             if (_refCount <= 0)
                 throw new IllegalStateException("Reference count is too low (" + _refCount + ") for " + _conn);
@@ -1178,13 +1198,26 @@ public class DbScope
     }
 
     /**
-     * Special case for when the connection being closed doesn't match the expected
-     * connection for this thread, to help scenarios that are prone to race conditions
-     * (like killing pipeline jobs) ignore it.
+     * Special case for when the connection that we expected to close has already been closed.
+     * Makes it easier to ignore this error for scenarios that are prone to race conditions, like killing pipeline jobs.
      */
-    public static class ConnectionAlreadyReleaseException extends IllegalStateException
+    public static class ConnectionAlreadyReleasedException extends IllegalStateException implements SkipMothershipLogging
     {
-        public ConnectionAlreadyReleaseException(String s)
+        public ConnectionAlreadyReleasedException(String s)
+        {
+            super(s);
+        }
+    }
+
+    /**
+     * Special case for when the connection that we expected to close has already been closed and another connection
+
+     * is in use instead.
+     * Makes it easier to retry in cases that are prone to race conditions, like killing pipeline jobs.
+     */
+    public static class DifferentConnectionException extends IllegalStateException implements SkipMothershipLogging
+    {
+        public DifferentConnectionException(String s)
         {
             super(s);
         }
@@ -1372,6 +1405,12 @@ public class DbScope
 
     public ConnectionWrapper getPooledConnection(ConnectionType type, @Nullable Logger log) throws SQLException
     {
+        // If the thread is banned, release the ban so that future DB cleanup (dropping temp tables, for example) can proceed
+        if (BANNED_THREADS.remove(getEffectiveThread()))
+        {
+            throw new AbortedRequestException("Cannot get another DB connection for this thread");
+        }
+
         Connection conn;
 
         try
@@ -1745,20 +1784,6 @@ public class DbScope
         // Attempt a connection three times before giving up
         for (int i = 0; i < 3; i++)
         {
-            if (i > 0)
-            {
-                LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
-
-                try
-                {
-                    Thread.sleep(10000);  // Wait 10 seconds before trying again
-                }
-                catch (InterruptedException e)
-                {
-                    LOG.warn("ensureDataBase", e);
-                }
-            }
-
             // Create non-pooled connection... don't want to pool a failed connection
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
@@ -1783,6 +1808,20 @@ public class DbScope
                     LOG.warn("Connection to \"{}\" at {} failed with the following error:", ds.getDsName(), ds.getUrl());
                     LOG.warn("Message: {} SQLState: {} ErrorCode: {}", e.getMessage(), e.getSQLState(), e.getErrorCode(), e);
                     lastException = e;
+
+                    if (i < 2)
+                    {
+                        LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
+
+                        try
+                        {
+                            Thread.sleep(10000);  // Wait 10 seconds before trying again
+                        }
+                        catch (InterruptedException ie)
+                        {
+                            LOG.warn("ensureDataBase", ie);
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -2090,6 +2129,22 @@ public class DbScope
                 .forEach(DbScopeLoader::clearDbScope);
     }
 
+
+
+    /**
+     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
+     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
+     */
+    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    {
+        boolean closed = ConnectionWrapper.closeConnections();
+        if (!closed)
+        {
+            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
+            BANNED_THREADS.add(getEffectiveThread());
+        }
+    }
+
     /**
      * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
      * associated/effective thread. Also releases locks acquired as part of opening the transaction.
@@ -2114,7 +2169,7 @@ public class DbScope
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
                     t.close();
                 }
-                catch (ConnectionAlreadyReleaseException ignored)
+                catch (ConnectionAlreadyReleasedException ignored)
                 {
                     // The code in another thread has already released the connection
                 }
@@ -2141,6 +2196,7 @@ public class DbScope
         ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
         closeAllConnectionsForCurrentThread();
         QueryService.get().clearEnvironment();
+        BANNED_THREADS.remove(Thread.currentThread());
     }
 
     /**

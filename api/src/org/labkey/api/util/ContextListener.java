@@ -19,16 +19,17 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.web.context.ContextLoaderListener;
 
 import java.util.List;
@@ -57,6 +58,13 @@ public class ContextListener implements ServletContextListener
             // Set this only if the user hasn't overridden it
             System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
         }
+
+        // Adds non-standard TLDs to allowable values for Apache Commons Validator. See Issue 25041. Since this
+        // is set statically, it must be called very early, before any reference to UrlValidator occurs. Any
+        // reference to that class, including its constants or classes that might extend it, results in
+        // UrlValidator statically constructing a default UrlValidator, which causes any subsequent call to
+        // updateTLDOverride() to throw.
+        DomainValidator.updateTLDOverride(DomainValidator.ArrayType.GENERIC_PLUS, "local");
     }
 
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
@@ -64,6 +72,8 @@ public class ContextListener implements ServletContextListener
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
     private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
+
+    private static volatile boolean _shuttingDown = false;
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
@@ -79,11 +89,12 @@ public class ContextListener implements ServletContextListener
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
-        ViewServlet.setShuttingDown(0);
+        _shuttingDown = true;
 
+        TransactionFilter.shutDown(0);
         callShutdownListeners();
+        TransactionFilter.shutDown(1000);
 
-        ViewServlet.setShuttingDown(1000);
         getSpringContextListener().contextDestroyed(servletContextEvent);
         CacheManager.shutdown();   // Don't use a listener... we want this shutdown late
         LogManager.shutdown();
@@ -93,6 +104,17 @@ public class ContextListener implements ServletContextListener
         java.beans.Introspector.flushCaches();
         LogFactory.releaseAll();       // Might help with PermGen. See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
         ModuleLoader.getInstance().destroy();
+    }
+
+    public static boolean isShuttingDown()
+    {
+        return _shuttingDown;
+    }
+
+    public static void checkShuttingDown()
+    {
+        if (_shuttingDown)
+            throw new ShuttingDownException();
     }
 
     public static void callShutdownListeners()

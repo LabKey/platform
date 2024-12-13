@@ -30,6 +30,7 @@ import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -304,7 +305,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     @Override
-    public View resolveViewName(String viewName, Locale locale)
+    public View resolveViewName(@NotNull String viewName, @NotNull Locale locale)
     {
         if (null != _applicationContext)
         {
@@ -372,7 +373,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
        if (x instanceof AntiVirusException)
        {
            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-           HttpView view = SimpleErrorView.fromMessage(x.getMessage());
+           HttpView<?> view = SimpleErrorView.fromMessage(x.getMessage());
 
            PageConfig page = new PageConfig(request);
            page.setTemplate(Dialog);
@@ -398,7 +399,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     @Override
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
+    public ModelAndView handleRequest(HttpServletRequest request, @NotNull HttpServletResponse response)
     {
         request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());
         _viewContext.setApplicationContext(_applicationContext);
@@ -512,6 +513,14 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (actionClass.isAnnotationPresent(Action.class))
             {
                 Action actionAnnotation = actionClass.getAnnotation(Action.class);
+                if (actionAnnotation.value().equals(ActionType.Export.class) ||
+                    actionAnnotation.value().equals(ActionType.PhiReport.class) ||
+                    actionAnnotation.value().equals(ActionType.SelectData.class) ||
+                    actionAnnotation.value().equals(ActionType.SelectMetaData.class))
+                {
+                    // Consider these action types read-only and eligible for killing after a timeout
+                    request.setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
+                }
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
@@ -660,17 +669,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return null;
     }
 
-    private static boolean siteManagerExist() {
-        return false;
-    }
-
     protected void renderInTemplate(ViewContext context, Controller action, PageConfig page, ModelAndView mv) throws Exception
     {
         View view = resolveView(mv);
         mv.setView(view);
 
-        if (mv instanceof HttpView)
-            page.addClientDependencies(((HttpView)mv).getClientDependencies());
+        if (mv instanceof HttpView<?> httpView)
+            page.addClientDependencies(httpView.getClientDependencies());
 
         HttpView<PageConfig> template = getTemplate(context, mv, action, page);
 
@@ -993,11 +998,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         private void addInnerClassActions(Map<String, ActionDescriptor> nameToDescriptor, Class<? extends Controller> outerClass)
         {
-            Class[] innerClasses = outerClass.getDeclaredClasses();
+            Class<?>[] innerClasses = outerClass.getDeclaredClasses();
 
-            for (Class innerClass : innerClasses)
+            for (Class<?> innerClass : innerClasses)
                 if (Controller.class.isAssignableFrom(innerClass) && !Modifier.isAbstract(innerClass.getModifiers()))
-                    addAction(nameToDescriptor, innerClass);
+                    addAction(nameToDescriptor, innerClass.asSubclass(Controller.class));
         }
 
         private void addAction(Map<String, ActionDescriptor> nameToDescriptor, Class<? extends Controller> actionClass)
@@ -1056,7 +1061,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private class DefaultActionDescriptor extends BaseActionDescriptor
         {
             private final Class<? extends Controller> _actionClass;
-            private final Constructor _con;
+            private final Constructor<?> _con;
             private final String _primaryName;
             private final List<String> _allNames;
 
@@ -1073,7 +1078,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _allNames = (null != actionNames ? initializeNames(actionNames.value().split(",")) : initializeNames(getDefaultActionName()));
                 _primaryName = _allNames.get(0);
 
-                Constructor con = null;
+                Constructor<?> con = null;
 
                 if (_outerClass != null)
                 {
@@ -1199,7 +1204,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     // helpers for debug checks related to Action
-    private static final ThreadLocal<ArrayList<Class>> currentAction = ThreadLocal.withInitial(ArrayList::new);
+    private static final ThreadLocal<ArrayList<Class<?>>> currentAction = ThreadLocal.withInitial(ArrayList::new);
     private static final ThreadLocal<Boolean> ignoreUpdates = ThreadLocal.withInitial(() -> FALSE);
 
     public static void setActionForThread(Controller c)
@@ -1208,11 +1213,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
             setActionForThread(c.getClass());
     }
 
-    public static void setActionForThread(Class c)
+    public static void setActionForThread(Class<?> c)
     {
-        boolean enableasserts = false;
-        assert true == (enableasserts = true);
-        if (enableasserts && AppProps.getInstance().isDevMode())
+        if (assertsEnabled() && AppProps.getInstance().isDevMode())
         {
             currentAction.get().add(c);
         }
@@ -1224,27 +1227,31 @@ public abstract class SpringActionController implements Controller, HasViewConte
             clearActionForThread(c.getClass());
     }
 
-    public static void clearActionForThread(Class c)
+    public static void clearActionForThread(Class<?> c)
     {
-        boolean enableasserts = false;
-        assert true == (enableasserts = true);
-        if (enableasserts && AppProps.getInstance().isDevMode())
+        if (assertsEnabled() && AppProps.getInstance().isDevMode())
         {
-            ArrayList<Class> list = currentAction.get();
+            ArrayList<Class<?>> list = currentAction.get();
             assert !list.isEmpty();
             assert list.get(list.size()-1) == c;
             list.remove(list.size() - 1);
         }
     }
 
-    @Nullable
-    public static Class getActionForThread()
+    private static boolean assertsEnabled()
     {
         boolean enableasserts = false;
-        assert true == (enableasserts = true);
-        if (enableasserts && AppProps.getInstance().isDevMode())
+        //noinspection AssertWithSideEffects
+        assert (enableasserts = true);
+        return enableasserts;
+    }
+
+    @Nullable
+    public static Class<?> getActionForThread()
+    {
+        if (assertsEnabled() && AppProps.getInstance().isDevMode())
         {
-            ArrayList<Class> list = currentAction.get();
+            ArrayList<Class<?>> list = currentAction.get();
             if (!list.isEmpty())
                 return list.get(list.size()-1);
         }
@@ -1253,14 +1260,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void executingMutatingSql(String sql)
     {
-        boolean enableasserts = false;
-        //noinspection AssertWithSideEffects
-        assert enableasserts = true;
-        if (!enableasserts)
+        if (!assertsEnabled())
             return;
         if (ignoreUpdates.get())
             return;
-        Class c = getActionForThread();
+        Class<?> c = getActionForThread();
         if (null == c)
             return;
 
@@ -1308,10 +1312,5 @@ public abstract class SpringActionController implements Controller, HasViewConte
         final Boolean prevValue = ignoreUpdates.get();
         ignoreUpdates.set(TRUE);
         return () -> ignoreUpdates.set(prevValue);
-    }
-
-    public static Set<String> getMutatingActionsWarned()
-    {
-        return mutatingActionsWarned;
     }
 }

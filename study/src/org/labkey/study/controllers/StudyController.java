@@ -62,6 +62,7 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
@@ -88,6 +89,7 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.Table;
@@ -124,6 +126,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
@@ -131,6 +134,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
@@ -223,6 +227,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
+import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.controllers.publish.SampleTypePublishConfirmAction;
 import org.labkey.study.controllers.publish.SampleTypePublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
@@ -237,6 +242,7 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.CustomParticipantView;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DatasetDomainKindProperties;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.DatasetReorderer;
@@ -280,7 +286,9 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1465,6 +1473,130 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("manageStudy");
             _addManageStudy(root);
+        }
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteParticipantAction extends MutatingApiAction<DeleteParticipantForm>
+    {
+        @Override
+        public Object execute(DeleteParticipantForm deleteParticipantForm, BindException errors) throws Exception
+        {
+            //Note: In the EHR system, 'Participant' tables are prefixed with "Animal". For example, the equivalent of the
+            //Participant table is named Animal, and ParticipantGroupMap is AnimalGroupMap, etc.
+            //Additionally, the participantId column is labeled as "Id" in the Animal table and other "Animal" tables.
+
+            DbSchema schema = StudySchema.getInstance().getSchema();
+
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (study == null)
+            {
+                errors.reject(ERROR_MSG, "Study not found in this folder.");
+                return new ApiSimpleResponse("success", false);
+            }
+            String participantId = deleteParticipantForm.getParticipantId();
+            String participantIdColumnName = study.getSubjectColumnName();
+            String participantTableNamePrefix = study.getSubjectNounSingular();
+
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
+                _log.info("Starting participant deletion for ID: " + participantId);
+                List<? extends Dataset> datasets = study.getDatasets();
+
+                //delete participant rows from datasets
+                for (Dataset dataset : datasets)
+                {
+                    if (dataset.isDemographicData())
+                        deleteParticipantFromDemographics(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
+                    else
+                        deleteParticipantFromDatasets(dataset.getTableInfo(getUser()), participantIdColumnName, participantId, errors);
+                }
+
+                //delete from study.participantGroupMap
+                TableInfo participantGroupMapTable = QueryService.get().getUserSchema(getUser(), getContainer(), "study").getTable(participantTableNamePrefix + "GroupMap");
+                if (null != participantGroupMapTable)
+                {
+                    TableSelector ts = new TableSelector(participantGroupMapTable, Set.of(participantIdColumnName, "GroupId"), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+                    ParticipantGroupManager.ParticipantGroupMap[] pgm = ts.getArray(ParticipantGroupManager.ParticipantGroupMap.class);
+                    deleteFromParticipantGroupMapTable(participantGroupMapTable, participantId, participantIdColumnName, pgm, errors);
+                }
+                transaction.commit();
+            }
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", !errors.hasErrors());
+            if (errors.hasErrors())
+            {
+                _log.error("Failed to delete participant: {}", participantId);
+                response.put("message", errors.getMessage());
+            }
+            else
+            {
+                _log.info("Successfully deleted participant: {}", participantId);
+                response.put("message", "Successfully deleted participant " + participantId);
+            }
+            return response;
+        }
+
+        private void deleteParticipantFromDemographics(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
+        {
+            ColumnInfo idCol = ti.getColumn(FieldKey.fromParts(participantIdColumnName));
+            deleteParticipantRows(ti, Collections.singletonList(Collections.singletonMap(idCol.getName(), participantId)), errors);
+        }
+
+        private void deleteParticipantFromDatasets(TableInfo ti, String participantIdColumnName, String participantId, BindException errors)
+        {
+            TableSelector ts = new TableSelector(ti, Collections.singleton(DatasetDomainKind.LSID), new SimpleFilter(FieldKey.fromString(participantIdColumnName), participantId), null);
+            deleteParticipantRows(ti, ts.getMapCollection().stream().toList(), errors);
+        }
+
+        private void deleteParticipantRows(TableInfo ti, List<Map<String, Object>> keys, BindException errors)
+        {
+            try
+            {
+                ti.getUpdateService().deleteRows(getUser(), getContainer(), keys, null, null);
+            }
+            catch (InvalidKeyException | BatchValidationException | QueryUpdateServiceException | SQLException e)
+            {
+                String msg = "Failed to delete participant rows from " + ti.getName();
+                _log.error(msg, e);
+                errors.reject(ERROR_MSG, msg + ": " + e.getMessage());
+            }
+        }
+
+        private void deleteFromParticipantGroupMapTable(TableInfo ti, String participantId, String participantColName, ParticipantGroupManager.ParticipantGroupMap[] groups, BindException errors)
+        {
+            try
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM study.participantgroupmap WHERE participantid = ?", participantId);
+                new SqlExecutor(ti.getSchema()).execute(sql);
+            }
+            catch (Exception e)
+            {
+                String msg = "Failed to delete row from " + ti.getSchema().getName() + "." + ti.getName() + " for " + participantColName + " '" + participantId + "'";
+                _log.error(msg, e);
+                errors.reject(ERROR_MSG, msg + " :" + e.getMessage());
+            }
+
+            for (ParticipantGroupManager.ParticipantGroupMap group : groups)
+            {
+                ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.participantDeleted(participantId, getContainer(), group.getLabel(), group.getGroupId());
+                AuditLogService.get().addEvent(getUser(), event);
+            }
+        }
+    }
+
+    public static class DeleteParticipantForm
+    {
+        private String _participantId;
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            this._participantId = participantId;
         }
     }
 

@@ -44,7 +44,7 @@ public enum WebdavStatus
     SC_FORBIDDEN(HttpServletResponse.SC_FORBIDDEN, "Forbidden"),
     SC_NOT_FOUND(HttpServletResponse.SC_NOT_FOUND, "Not Found"),
     SC_METHOD_NOT_ALLOWED(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method Not Allowed"),
-    //406=Not Acceptable
+    SC_NOT_ACCEPTABLE(HttpServletResponse.SC_NOT_ACCEPTABLE, "Not Acceptable"),
     //407=Proxy Authentication Required
     //408=Request Time-out
     SC_CONFLICT(HttpServletResponse.SC_CONFLICT, "Conflict"),

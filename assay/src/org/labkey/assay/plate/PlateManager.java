@@ -32,6 +32,7 @@ import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
@@ -95,6 +96,7 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -196,6 +198,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public static final String PLATE_SAVE_FLAG = ".plateSave";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Assay Plates", false) {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, ReadPermission.class);
+        }
+    };
+
+    public SearchService.SearchCategory PLATE_SET_CATEGORY = new SearchService.SearchCategory("plateSet", "Assay Plate Sets", false) {
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
@@ -462,15 +472,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
+    public @Nullable PlateSet getPlateSet(Container container, int rowId)
     {
-        return PlateSetCache.getPlateSet(container, plateSetId);
+        return PlateSetCache.getPlateSet(container, rowId);
     }
 
     @Override
-    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
+    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int rowId)
     {
-        return PlateSetCache.getPlateSet(cf, plateSetId);
+        return PlateSetCache.getPlateSet(cf, rowId);
     }
 
     @Override
@@ -799,6 +809,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return PlateCache.getPlates(c);
     }
 
+    public @NotNull List<PlateSet> getPlateSets(Container c)
+    {
+        return PlateSetCache.getPlateSets(c);
+    }
+
     public List<Plate> getPlatesForPlateSet(PlateSet plateSet)
     {
         return PlateCache.getPlatesForPlateSet(plateSet.getContainer(), plateSet.getRowId());
@@ -954,6 +969,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         String nameSpace;
         if (type == Plate.class)
             nameSpace = "Plate";
+        else if (type == PlateSet.class)
+            nameSpace = "PlateSet";
         else if (type == WellGroup.class)
             nameSpace = "WellGroup";
         else if (type == Well.class)
@@ -1153,6 +1170,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
                 indexPlate(container, plateRowId, false);
+                if (plate.getPlateSet() != null && SearchService.get() != null)
+                    indexPlateSet(SearchService.get().defaultTask(), plate.getPlateSet());
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
 
@@ -1335,12 +1354,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
     }
 
+    // Called by the Plate Set Query Update Service before deleting a plate set
     public void beforePlateSetDelete(Container container, User user, Integer rowId)
     {
-        beforePlateSetsDelete(List.of(rowId));
+        beforePlateSetsDelete(List.of(rowId), container);
     }
 
-    private void beforePlateSetsDelete(Collection<Integer> plateSetIds)
+    private void beforePlateSetsDelete(Collection<Integer> plateSetIds, Container container)
     {
         requireActiveTransaction();
 
@@ -1375,6 +1395,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // The following tables are cleaned up via ON DELETE CASCADE when a plate set is deleted:
         // - assay.PlateSetProperty
+
+        // Plate set documents in the search index are cleaned up via the search service container listener.
     }
 
     private void deleteWellGroups(Container container, User user, List<Integer> wellGroupRowIds) throws Exception
@@ -1471,7 +1493,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 if (!emptyPlateSetIds.isEmpty())
                 {
-                    beforePlateSetsDelete(emptyPlateSetIds);
+                    beforePlateSetsDelete(emptyPlateSetIds, container);
                     tx.addCommitTask(() -> clearPlateSetCache(container, emptyPlateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
                     SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
@@ -2096,6 +2118,41 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
+    public void indexPlateSet(Container container, Integer plateSetRowId)
+    {
+        PlateSet plateSet = getPlateSet(container, plateSetRowId);
+        SearchService ss = SearchService.get();
+
+        if (ss == null || plateSet == null)
+            return;
+
+        indexPlateSet(ss.defaultTask(), plateSet);
+    }
+
+    private void indexPlateSet(SearchService.IndexTask task, @NotNull PlateSet plateSet)
+    {
+        WebdavResource resource = PlateSetDocumentProvider.createDocument(plateSet);
+        task.addResource(resource, SearchService.PRIORITY.item);
+    }
+
+    public void indexPlateSets(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    {
+        for (PlateSet plateset : getPlateSets(c))
+        {
+            if (modifiedSince == null || modifiedSince.before(((PlateSetImpl) plateset).getModified()))
+                indexPlateSet(task, plateset);
+        }
+    }
+
+    public static void deindexPlateSet(Container container, Integer plateSetRowId)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null || plateSetRowId == null)
+            return;
+
+        ss.deleteResources(Set.of(PlateSetDocumentProvider.getDocumentId(container, plateSetRowId)));
+    }
+
     /**
      * Returns the domain attached to the Well table,
      */
@@ -2651,6 +2708,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             tx.commit();
         }
 
+        if (plateSet != null && SearchService.get() != null)
+            indexPlateSet(SearchService.get().defaultTask(), plateSet);
+
         return plateSet;
     }
 
@@ -2933,6 +2993,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (markAsHit)
             {
+                // Validate that none of the selected rows have exclusions
+                if (!isOperationPermittedOnResults(container, user, protocol, rowIds, PlateDataStateManager.DataOperation.hitSelection))
+                    throw new ValidationException("Failed to mark hits, some of the rows have QC states which prevent the operation.");
+
                 // Exclude preexisting hits
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
@@ -3002,6 +3066,33 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             tx.commit();
         }
+    }
+
+    /**
+     * Checks whether the specified data operation is permitted on the existing assay result rows.
+     */
+    private boolean isOperationPermittedOnResults(Container container, User user, @NotNull ExpProtocol protocol, Collection<Integer> rowIds, PlateDataStateManager.DataOperation operation)
+    {
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Domain resultDomain = provider.getResultsDomain(protocol);
+        DomainProperty stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
+        if (stateProp != null)
+        {
+            AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+            TableInfo resultsTable = schema.createDataTable(null, false);
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, CompareType.IN);
+            Set<Integer> dataStates = new HashSet<>(new TableSelector(resultsTable, Collections.singleton(stateProp.getName()), filter, null).getArrayList(Integer.class));
+            for (Integer state : dataStates)
+            {
+                DataState dataState = PlateDataStateManager.get().getStateForRowId(container, state);
+                if (!PlateDataStateManager.get().isOperationPermitted(dataState, operation))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void deleteHits(SimpleFilter filter)

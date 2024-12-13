@@ -21,7 +21,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewServlet;
 
 import java.io.File;
 import java.util.Collection;
@@ -68,7 +67,7 @@ class MaintenancePipelineJob extends PipelineJob
 
         for (MaintenanceTask task : _tasks)
         {
-            if (ViewServlet.isShuttingDown())
+            if (ContextListener.isShuttingDown())
             {
                 info("System maintenance is stopping due to server shut down");
                 break;

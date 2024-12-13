@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
-    HttpView me = HttpView.currentView();
-    GWTView.GWTViewBean bean = (GWTView.GWTViewBean) me.getModelBean();
+    HttpView<GWTView.GWTViewBean> me = HttpView.currentView();
+    GWTView.GWTViewBean bean = me.getModelBean();
 %>
 <div id="<%= h(bean.getModuleName()) %>-Root" class="<%=h(bean.getLoadingStyleName())%>"></div>
 <%

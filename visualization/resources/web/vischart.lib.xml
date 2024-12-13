@@ -20,6 +20,7 @@
 
         <script path="vis/chartWizard/chartTypeDialog/timeChartXAxisField.js"/>
         <script path="vis/chartWizard/chartTypeDialog/timeChartYMeasureField.js"/>
+        <script path="vis/chartWizard/chartTypeDialog/trendlineField.js"/>
 
         <script path="vis/timeChart/timeChartHelper.js"/>
         <script path="vis/genericChart/genericChartHelper.js"/>

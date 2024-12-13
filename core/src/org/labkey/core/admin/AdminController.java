@@ -29,7 +29,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -122,6 +121,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -435,6 +435,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "deprecated features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Deprecated.name()), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Experimental.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "optional features", new ActionURL(OptionalFeaturesAction.class, root).addParameter("type", FeatureType.Optional.name()), TroubleshooterPermission.class);
         if (!ProductRegistry.getProducts().isEmpty())
             AdminConsole.addLink(Configuration, "product configuration", new ActionURL(ProductConfigurationAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule
@@ -449,6 +450,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -956,7 +958,7 @@ public class AdminController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             JSONObject result = new JSONObject();
-            result.put("pendingRequestCount", ViewServlet.getPendingRequestCount() - 1 /* Exclude this request */);
+            result.put("pendingRequestCount", TransactionFilter.getPendingRequestCount() - 1 /* Exclude this request */);
 
             return new ApiSimpleResponse(result);
         }
@@ -1308,6 +1310,11 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            if (form.getReadOnlyHttpRequestTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Read only HTTP request timeout must be non-negative");
+            }
+
             WriteableAppProps props = AppProps.getWriteableInstance();
 
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
@@ -1315,6 +1322,7 @@ public class AdminController extends SpringActionController
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
+            props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setExt3Required(form.isExt3Required());
             props.setExt3APIRequired(form.isExt3APIRequired());
@@ -2226,6 +2234,7 @@ public class AdminController extends SpringActionController
         private String _ribbonMessage;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
+        private int _readOnlyHttpRequestTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2380,6 +2389,16 @@ public class AdminController extends SpringActionController
         public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
         {
             _memoryUsageDumpInterval = memoryUsageDumpInterval;
+        }
+
+        public int getReadOnlyHttpRequestTimeout()
+        {
+            return _readOnlyHttpRequestTimeout;
+        }
+
+        public void setReadOnlyHttpRequestTimeout(int timeout)
+        {
+            _readOnlyHttpRequestTimeout = timeout;
         }
 
         public int getMaxBLOBSize()
@@ -3599,7 +3618,7 @@ public class AdminController extends SpringActionController
                     if (labkeyThread)
                     {
                         String threadInfo = thread.getName();
-                        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+                        TransactionFilter.RequestTracker uri = TransactionFilter.getRequestSummary(thread);
                         if (null != uri)
                             threadInfo += "; processing URL " + uri;
                         activeThreads.add(threadInfo);
@@ -3892,10 +3911,10 @@ public class AdminController extends SpringActionController
                 {
                     divisor = getDivisor(Math.max(usage.getInit(), Math.max(usage.getUsed(), Math.max(usage.getCommitted(), usage.getMax()))));
 
-                    types.add(new MemoryCategory("Init", usage.getInit() / divisor.first));
-                    types.add(new MemoryCategory("Used", usage.getUsed() / divisor.first));
-                    types.add(new MemoryCategory("Committed", usage.getCommitted() / divisor.first));
-                    types.add(new MemoryCategory("Max", usage.getMax() / divisor.first));
+                    types.add(new MemoryCategory("Init", (double) usage.getInit() / divisor.first));
+                    types.add(new MemoryCategory("Used", (double) usage.getUsed() / divisor.first));
+                    types.add(new MemoryCategory("Committed", (double) usage.getCommitted() / divisor.first));
+                    types.add(new MemoryCategory("Max", (double) usage.getMax() / divisor.first));
                 }
             }
 
@@ -4513,7 +4532,7 @@ public class AdminController extends SpringActionController
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String fullyQualifiedSchemaName = form.getDbSchema();
-            if (null == fullyQualifiedSchemaName || fullyQualifiedSchemaName.length() == 0)
+            if (null == fullyQualifiedSchemaName || fullyQualifiedSchemaName.isEmpty())
             {
                 throw new NotFoundException("Must specify dbSchema parameter");
             }
@@ -10757,10 +10776,10 @@ public class AdminController extends SpringActionController
             form.setExistingHostsList(form.getTypeEnum().getHosts());
 
             JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
-            newView.setTitle(String.format("Register New External %1$s Host", form.getTypeEnum().name()));
+            newView.setTitle("Register New " + form.getTypeEnum().getTitle());
             newView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
-            existingView.setTitle(String.format("Existing External %1$s Hosts", form.getTypeEnum().name()));
+            existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
             return new VBox(newView, existingView);
@@ -10817,30 +10836,12 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(_type.getHelpTopic());
-            addAdminNavTrail(root, String.format("External %1$s Host Admin", _type.name()), getClass());
+            addAdminNavTrail(root, String.format("%1$s Admin", _type.getTitle()), getClass());
         }
     }
 
-    private static class AuthorityValidator extends UrlValidator
-    {
-        public AuthorityValidator(long options)
-        {
-            super(options);
-        }
-
-        @Override
-        public boolean isValidAuthority(String authority)
-        {
-            String base = authority.startsWith("*.") ? authority.substring(2) : authority;
-            return super.isValidAuthority(base);
-        }
-    };
-
     public static class ExternalHostsForm
     {
-        @JsonIgnore
-        private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
-
         private String _newExternalHost;
         private String _existingExternalHost;
         private boolean _delete;
@@ -10947,7 +10948,7 @@ public class AdminController extends SpringActionController
         public Set<String> validateNewExternalHost(BindException errors)
         {
             String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
-            validateHostFormat(newExternalHost, errors);
+            getTypeEnum().validateHostFormat(newExternalHost, errors);
             if (errors.hasErrors())
                 return null;
 
@@ -10966,7 +10967,7 @@ public class AdminController extends SpringActionController
             {
                 for (String host : hosts)
                 {
-                    validateHostFormat(host, errors);
+                    getTypeEnum().validateHostFormat(host, errors);
                     if (errors.hasErrors())
                         continue;
 
@@ -10975,19 +10976,6 @@ public class AdminController extends SpringActionController
             }
 
             return hostSet;
-        }
-
-        @JsonIgnore
-        private void validateHostFormat(String externalHost, BindException errors)
-        {
-            if (StringUtils.isEmpty(externalHost))
-            {
-                errors.addError(new LabKeyError("External host name must not be blank."));
-            }
-            else if (!AUTHORITY_VALIDATOR.isValidAuthority(externalHost))
-            {
-                errors.addError(new LabKeyError(String.format("External host name %1$s is not formatted correctly", externalHost)));
-            }
         }
 
         /**
@@ -11266,12 +11254,12 @@ public class AdminController extends SpringActionController
     public static class MenuBarAction extends ProjectSettingsViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HttpView<?> getTabView()
         {
             if (getContainer().isRoot())
                 return HtmlView.err("Menu bar must be configured for each project separately.");
 
-            WebPartView v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
+            WebPartView<?> v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
             v.setView("menubar", new VBox());
             Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true, true, false);
 

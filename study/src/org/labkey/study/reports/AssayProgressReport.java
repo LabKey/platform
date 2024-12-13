@@ -37,6 +37,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -62,6 +65,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.labkey.study.StudyModule.ASSAY_PROGRESS_REPORT_FLAG;
 
 /**
  * Created by klum on 7/13/2017.
@@ -159,6 +164,14 @@ public class AssayProgressReport extends AbstractReport
             }
             return data;
         }
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Container c, @NotNull Class<? extends Permission> perm)
+    {
+        // Checking the optional feature flag here instead of report registration time means no need for a server
+        // restart on change, allowing testing of the deprecated functionality.
+        return OptionalFeatureService.get().isFeatureEnabled(ASSAY_PROGRESS_REPORT_FLAG) && super.hasPermission(user, c, perm);
     }
 
     @Override

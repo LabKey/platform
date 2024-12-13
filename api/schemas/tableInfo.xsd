@@ -255,7 +255,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         A list of import templates that will be available for download on the default excel upload page.
-                        Each template can have a label and a URL. This should should either point to a static file or an action that
+                        Each template can have a label and a URL. This should either point to a static file or an action that
                         will generate the template.
                     </xs:documentation>
                 </xs:annotation>

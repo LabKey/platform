@@ -74,8 +74,6 @@ class QueryTracker
         _validSql = validSql;
         _firstInvocation = System.currentTimeMillis();
         _truncated = truncated;
-
-        addInvocation(elapsed, stackTrace);
     }
 
     public void addInvocation(long elapsed, String stackTrace)
@@ -174,7 +172,7 @@ class QueryTracker
 
     public long getAverage()
     {
-        return _cumulative / _count;
+        return _count == 0 ? 0 : _cumulative / _count;
     }
 
     public int getStackTraceCount()
