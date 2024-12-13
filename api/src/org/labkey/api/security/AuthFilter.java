@@ -40,14 +40,16 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Rate;
+import org.labkey.api.util.RateLimiter;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.PageConfig;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -228,21 +230,9 @@ public class AuthFilter implements Filter
 
         QueryService.get().setEnvironment(QueryService.Environment.USER, user);
 
-        if (AppProps.getInstance().isOptionalFeatureEnabled("experimental-unsafe-inline"))
-        {
-            String csp = StringUtils.trimToEmpty(((HttpServletResponse) response).getHeader("Content-Security-Policy"));
-            String nonceDirectiveValue = "'nonce-" + PageConfig.getScriptNonceHeader(req) + "'";
-            if (!csp.contains(nonceDirectiveValue))
-            {
-                if (!csp.contains("script-src "))
-                {
-                    if (StringUtils.isNotBlank(csp))
-                        csp = StringUtils.appendIfMissing(csp, ";");
-                    csp += "script-src 'unsafe-eval' http: https:  " + nonceDirectiveValue + ";";
-                }
-                ((HttpServletResponse) response).setHeader("Content-Security-Policy", csp);
-            }
-        }
+        // checkRateLimiterOverage() will set response status
+        if (user.isGuest() && checkRateLimiterOverage((AuthenticatedRequest)req, resp))
+            return;
 
         try
         {
@@ -312,5 +302,27 @@ public class AuthFilter implements Filter
 
             _firstRequestHandled = true;
         }
+    }
+
+    static final RateLimiter robotLimiter = new RateLimiter("Robots", new Rate(20, TimeUnit.MINUTES));
+
+    static boolean checkRateLimiterOverage(AuthenticatedRequest req, HttpServletResponse res)
+    {
+        var userAgent = req.getHeader("User-Agent");
+        /* NOTE: the health checker is currently considered a robot.  Don't 429 the healthchecker */
+        if (StringUtils.contains(userAgent, "healthchecker"))
+            return false;
+        if (!req.isRobot())
+            return false;
+        var count = robotLimiter.getCount();
+        var delay = robotLimiter.getDelay();
+        if (count >= 10 && delay > 0)
+        {
+            res.addHeader("Retry-After", String.valueOf((int)(delay/1000 + 5)));
+            res.setStatus(429); // TOO MANY REQUESTS why no HttpServletResoonse constant?
+            return true;
+        }
+        robotLimiter.add(1, false);
+        return false;
     }
 }
