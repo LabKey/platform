@@ -69,8 +69,6 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                     Container c = ContainerManager.getForId(record.entityId());
                     if (c != null)
                     {
-                        if (service.isCloudRoot(c))
-                            return;
                         Path root = service.getFileRootPath(c);
                         try
                         {
