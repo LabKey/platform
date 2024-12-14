@@ -15,7 +15,6 @@
  */
 package org.labkey.test.tests.study;
 
-import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
@@ -103,7 +102,7 @@ public class StudyPHIExportTest extends StudyExportTest
         assertEquals("unexpected number of rows for cohort 2", 2, drt.getDataRowCount());
     }
 
-    private void verifyStatsDoNotMatch(Map originalFirstMouseStats, Map alteredFirstMouseStats)
+    private void verifyStatsDoNotMatch(Map<String, String> originalFirstMouseStats, Map<String, String> alteredFirstMouseStats)
     {
         for(String columnName : defaultStatsToCollect)
         {
@@ -111,7 +110,7 @@ public class StudyPHIExportTest extends StudyExportTest
         }
     }
 
-    private void verifyStatsMatch(Map originalFirstMouseStats, Map alteredFirstMouseStats)
+    private void verifyStatsMatch(Map<String, String> originalFirstMouseStats, Map<String, String> alteredFirstMouseStats)
     {
         for(String columnName : defaultStatsToCollect)
         {
@@ -198,7 +197,7 @@ public class StudyPHIExportTest extends StudyExportTest
         selectQuery("study", "Location");
         waitAndClickAndWait(Locator.linkWithText("view data"));
         DataRegionTable query = new DataRegionTable("query", this);
-        Assert.assertTrue("Lab Code column should not be in default view", query.getColumnIndex("LabwareLabCode") == -1);
+        assertEquals("Lab Code column should not be in default view", -1, query.getColumnIndex("LabwareLabCode"));
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.addColumn("LabwareLabCode");
         _customizeViewsHelper.applyCustomView();
@@ -225,7 +224,7 @@ public class StudyPHIExportTest extends StudyExportTest
         }
         assertEquals("Unexpected number of clinics", clinicCount, foundClinics);
 
-// Redundent because schema browser "view data" of study/locations and "manage Locations" link to the same table.
+// Redundant because schema browser "view data" of study/locations and "manage Locations" link to the same table.
 //
 //        clickTab("Manage");
 //        clickAndWait(Locator.linkWithText("Manage Locations"));
@@ -281,45 +280,50 @@ public class StudyPHIExportTest extends StudyExportTest
         goToDatasets();
         clickAndWait(Locator.linkContainingText("DEM-1"));
         DataRegionTable drt = new DataRegionTable("Dataset", this);
-        Map stats = new HashMap();
+        Map<String, String> stats = new HashMap<>();
 
-
-        for(int i = 0; i <defaultStatsToCollect.length; i++)
+        for (String s : defaultStatsToCollect)
         {
-            stats.put(defaultStatsToCollect[i], drt.getDataAsText(0, defaultStatsToCollect[i]));
+            stats.put(s, drt.getDataAsText(0, s));
         }
 
         return stats;
     }
 
     private static final String BAD_ALTERNATEID_MAPPING =
-            "ParticipantId\tAlternateId\tDateOffset\n" +
-                    "999320582\tNEWALT_32\t0\n" +
-                    "999320638\tNEWALT_32\t1";
+            """
+                    ParticipantId\tAlternateId\tDateOffset
+                    999320582\tNEWALT_32\t0
+                    999320638\tNEWALT_32\t1""";
 
     private static final String ALTERNATEID_MAPPING =
-            "ParticipantId\tAlternateId\tDateOffset\n" +
-                    "999320582\tNEWALT_32\t0\n" +
-                    "999320638\tNEWALT_33\t1";
+            """
+                    ParticipantId\tAlternateId\tDateOffset
+                    999320582\tNEWALT_32\t0
+                    999320638\tNEWALT_33\t1""";
 
     private static final String BAD_ALTERNATEID_MAPPING_2 =
-            "ParticipantId\tAlternateId\tDateOffset\n" +
-                    "999320533\tNEWALT_32\t0\n" +
-                    "999320638\tNEWALT_33\t1";
+            """
+                    ParticipantId\tAlternateId\tDateOffset
+                    999320533\tNEWALT_32\t0
+                    999320638\tNEWALT_33\t1""";
 
     private static final String BAD_ALTERNATEID_MAPPING_3 =
-            "ParticipantId\tAlternateId\tDateOffset\n" +
-                    "999320582\n" +
-                    "999320638\tNEWALT_13\t1";
+            """
+                    ParticipantId\tAlternateId\tDateOffset
+                    999320582
+                    999320638\tNEWALT_13\t1""";
 
     private static final String BAD_ALTERNATEID_MAPPING_4 =
-                    "999320582\tNEWALT_12\t0\n" +
-                    "999320638\tNEWALT_13\t1";
+            """
+                    999320582\tNEWALT_12\t0
+                    999320638\tNEWALT_13\t1""";
 
     private static final String ALTERNATEID_MAPPING_2 =
-            "AlternateId\tParticipantId\tDateOffset\n" +
-                    "NEWALT_32AB9\t999320582\t0\n" +
-                    "NEWALT_333Q\t999320638\t1";
+            """
+                    AlternateId\tParticipantId\tDateOffset
+                    NEWALT_32AB9\t999320582\t0
+                    NEWALT_333Q\t999320638\t1""";
 
     @LogMethod
     private void verifyImportingAlternateIds()
@@ -353,7 +357,7 @@ public class StudyPHIExportTest extends StudyExportTest
         importDataPage.setText(ALTERNATEID_MAPPING_2);
         importDataPage.submit();
 
-        assertTextPresent("Manage Alternate", "Aliases");
+        assertTextPresent("Manage Mice", "Alternate", "Aliases");
         clickButton("Done");
     }
 }
