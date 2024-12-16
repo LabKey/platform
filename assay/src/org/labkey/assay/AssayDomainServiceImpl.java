@@ -392,6 +392,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
                         throw new ValidationException("Assay protocol already exists for this name.");
 
+                    String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                    if (nameError != null)
+                        throw new ValidationException(nameError);
+
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
 
@@ -437,6 +441,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                                 "This assay was created in folder " + protocol.getContainer().getPath());
                     oldAssayName = protocol.getName();
                     hasNameChange = !assay.getName().equals(oldAssayName);
+                    if (hasNameChange)
+                    {
+                        String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                        if (nameError != null)
+                            throw new ValidationException(nameError);
+                    }
                     protocol.setName(assay.getName());
                     protocol.setProtocolDescription(assay.getDescription());
                     if (assay.getStatus() != null)

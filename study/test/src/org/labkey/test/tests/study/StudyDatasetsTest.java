@@ -37,6 +37,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
@@ -135,18 +136,26 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasets()
     {
-        createDataset("A");
-        renameDataset("A", "Original A", "A", "Original A", "XTest", "YTest", "ZTest");
-        createDataset("A");
-        deleteFields("A");
+        String badDataSetName = TestDataGenerator.randomInvalidDomainName(5);
+        createDataset(badDataSetName, "Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.");
 
-        checkFieldsPresent("Original A", "YTest", "ZTest");
+        String datasetA = TestDataGenerator.randomDomainName();
+        createDataset(datasetA, null);
+
+        renameDataset("Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
+
+        String datasetAUpdated = TestDataGenerator.randomDomainName();
+        renameDataset(null, datasetA, datasetAUpdated, datasetA, datasetAUpdated, "XTest", "YTest", "ZTest");
+        createDataset(datasetA, null);
+        deleteFields(datasetA);
+
+        checkFieldsPresent(datasetAUpdated, "YTest", "ZTest");
 
         verifySideFilter();
 
         verifyReportAndViewDatasetReferences();
 
-        createDataset("B");
+        createDataset("B", null);
         importDatasetData("B", DATASET_HEADER, DATASET_B_DATA, "All data");
         checkDataElementsPresent("B",  DATASET_B_DATA.split("\t|\n"));
 
@@ -199,7 +208,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    protected void createDataset(@LoggedParam String name)
+    protected void createDataset(@LoggedParam String name, @Nullable String error)
     {
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
             .clickCreateNewDataset()
@@ -209,11 +218,17 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         panel.manuallyDefineFields("XTest");
         panel.addField("YTest");
         panel.addField("ZTest");
-        definitionPage.clickSave();
+        if (error == null)
+            definitionPage.clickSave();
+        else
+        {
+            definitionPage.saveExpectFail(error);
+            definitionPage.clickCancel();
+        }
     }
 
     @LogMethod
-    protected void renameDataset(String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
+    protected void renameDataset(@Nullable String error, String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
         DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
             .selectDatasetByName(orgName)
@@ -228,7 +243,14 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             assertTextPresent(fieldName);
         }
 
-        editDatasetPage.clickSave();
+        if (error == null)
+            editDatasetPage.clickSave();
+        else
+        {
+            editDatasetPage.saveExpectFail(error);
+            editDatasetPage.clickCancel();
+            return;
+        }
 
         // fix dataset label references in report and view mappings
         for (Map.Entry<String, String> entry : EXPECTED_REPORTS.entrySet())
@@ -442,10 +464,10 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         verifyCustomViewWithDatasetJoins("CPS-1: Screening Chemistry Panel", CUSTOM_VIEW_PRIVATE, false, false, "DataSets/DEM-1/DEMbdt", "DataSets/DEM-1/DEMsex");
 
         // rename and relabel the datasets related to these reports and views
-        renameDataset("DEM-1", "demo", "DEM-1: Demographics", "Demographics");
-        renameDataset("APX-1", "abbrphy", "APX-1: Abbreviated Physical Exam", "Abbreviated Physical Exam");
-        renameDataset("ECI-1", "eligcrit", "ECI-1: Eligibility Criteria", "Eligibility Criteria");
-        renameDataset("CPS-1", "scrchem", "CPS-1: Screening Chemistry Panel", "Screening Chemistry Panel");
+        renameDataset(null, "DEM-1", "demo", "DEM-1: Demographics", "Demographics");
+        renameDataset(null, "APX-1", "abbrphy", "APX-1: Abbreviated Physical Exam", "Abbreviated Physical Exam");
+        renameDataset(null, "ECI-1", "eligcrit", "ECI-1: Eligibility Criteria", "Eligibility Criteria");
+        renameDataset(null, "CPS-1", "scrchem", "CPS-1: Screening Chemistry Panel", "Screening Chemistry Panel");
 
         // verify the reports and views dataset label/name references after dataset rename and relabel
         //verifyExpectedReportsAndViewsExist();

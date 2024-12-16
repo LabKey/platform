@@ -1,6 +1,7 @@
 import { ExperimentCRUDUtils, hookServer, RequestOptions, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {
+    checkDomainName,
     checkLackDesignerOrReaderPerm,
     createSample,
     deleteSampleType,
@@ -136,12 +137,16 @@ afterEach(() => {
     mock.restore();
 });
 
-describe('Sample Type Designer - Permissions', () => {
+describe('Sample Type Designer', () => {
     it('Lack designer or Reader permission', async () => {
         await checkLackDesignerOrReaderPerm(server, 'SampleSet', topFolderOptions, readerUserOptions, editorUserOptions, designerOptions);
     });
 
     describe('Create/update/delete designs', () => {
+        it('Sample type name validation', async () => {
+            await checkDomainName(server, 'SampleSet', true, topFolderOptions, designerReaderOptions);
+        });
+
         it('Designer can create, update and delete empty design, reader and editors cannot create/update/delete design', async () => {
             const sampleType = "ToDelete";
             let domainId = -1, domainURI = '';

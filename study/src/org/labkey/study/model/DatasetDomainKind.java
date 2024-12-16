@@ -583,6 +583,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             // Now check standard study tables
             if (schema.getTableNames().contains(name))
                 throw new IllegalArgumentException("A study table exists with the name \"" + name + "\".");
+
+            String datasetNameError = DomainUtil.validateDomainName(name, getKindName(), false);
+            if (datasetNameError != null)
+                throw new IllegalArgumentException(datasetNameError);
         }
 
         // Label related exceptions
