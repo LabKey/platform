@@ -62,7 +62,12 @@ public record FilterCriteria(
                 // Attempt to resolve the field by name
                 if (name != null)
                 {
-                    if (replicateStatsDomain != null)
+                    if (name.equalsIgnoreCase(referencePropertyName))
+                    {
+                        propertyId = referencePropertyId;
+                        name = referencePropertyName;
+                    }
+                    else if (replicateStatsDomain != null)
                     {
                         var property = replicateStatsDomain.getPropertyByName(name);
                         if (property != null)
@@ -70,11 +75,6 @@ public record FilterCriteria(
                             propertyId = property.getPropertyId();
                             name = property.getName();
                         }
-                    }
-                    else if (name.equalsIgnoreCase(referencePropertyName))
-                    {
-                        propertyId = referencePropertyId;
-                        name = referencePropertyName;
                     }
 
                     if (propertyId == null)

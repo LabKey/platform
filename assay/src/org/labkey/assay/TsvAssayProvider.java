@@ -672,7 +672,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 continue;
 
             int referencePropertyId = prop.getPropertyId();
-            if (referencePropertyId == 0)
+            if (referencePropertyId <= 0)
             {
                 if (savedDomain == null)
                     savedDomain = getSavedDomain(user, protocol, update);
@@ -686,7 +686,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     }
                 }
 
-                if (referencePropertyId == 0)
+                if (referencePropertyId <= 0)
                     throw new ValidationException(String.format("Failed to resolve \"referencePropertyId\" for field \"%s\"", prop.getName()));
             }
 
