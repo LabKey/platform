@@ -515,19 +515,6 @@ public class ModuleLoader implements MemTrackerListener
             ServiceRegistry.get().registerService(ExplodedModuleService.class, service);
         }
 
-        // TODO: Remove the chunk below? I don't think we support WAR-style deployment anymore.
-        // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
-        File webinfModulesDir = FileUtil.appendPath(webapp, Path.parse("WEB-INF/modules"));
-        if (!webinfModulesDir.isDirectory() && null == service)
-            throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
-        File[] webInfModules = webinfModulesDir.listFiles(File::isDirectory);
-        if (null != webInfModules)
-        {
-            Arrays.stream(webInfModules)
-                .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
-                .forEach(explodedModuleDirs::add);
-        }
-
         doInitWithSourceModule(explodedModuleDirs);
 
         // set the project source root before calling .initialize() on modules
@@ -621,7 +608,7 @@ public class ModuleLoader implements MemTrackerListener
         _log.info("Server installation GUID: {}, server session GUID: {}", AppProps.getInstance().getServerGUID(), AppProps.getInstance().getServerSessionGUID());
         _log.info("Deploying to context path {}", AppProps.getInstance().getContextPath());
 
-        // Temporary logging to help track down issues we're having with upgrading XMLBeans from v5.2.0
+        // Temporary logging to help track down issues we're having with upgrading XMLBeans from v5.2.0. TODO: Remove after upgrade
         _log.info("XMLBeans version: {}", XmlBeans.getVersion());
 
         synchronized (_modulesLock)
