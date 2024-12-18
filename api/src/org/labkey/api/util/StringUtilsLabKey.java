@@ -488,6 +488,23 @@ public class StringUtilsLabKey
         return combined;
     }
 
+    /**
+     * @return the indefinite article to use with the passed in noun. Returns "a" for words starting with most
+     * consonants, "an" for words starting with a vowel, and "a(n)" for words starting with "h". This isn't perfect
+     * since it's not distinguishing voiced vs. unvoiced "h", acronyms that are spelled out, and other pronunciation
+     * quirks.
+     */
+    public static String getArticleForNoun(String noun)
+    {
+        char firstChar = noun.charAt(0);
+        return switch (firstChar)
+        {
+            case 'h', 'H' -> "a(n)";
+            case 'a', 'e', 'i', 'o', 'u' -> "an";
+            default -> "a";
+        };
+    }
+
     public static class TestCase extends Assert
     {
         @Test

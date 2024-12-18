@@ -17,7 +17,8 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -32,46 +33,53 @@
     }
 %>
 <%
-    JspView<StudyController.ChangeAlternateIdsForm> me = (JspView<StudyController.ChangeAlternateIdsForm>) HttpView.currentView();
+    JspView<StudyController.ChangeAlternateIdsForm> me = HttpView.currentView();
     StudyController.ChangeAlternateIdsForm bean = me.getModelBean();
     Container c = getContainer();
     Study s = StudyManager.getInstance().getStudy(c);
-    String subjectNounSingular = s.getSubjectNounSingular();
-    String subjectNounPlural = s.getSubjectNounPlural();
+    String subjectNounSingularTitleString = s.getSubjectNounSingular();
+    HtmlString subjectNounSingularTitle = h(subjectNounSingularTitleString);
+    HtmlString subjectNounSingular = h(s.getSubjectNounSingular().toLowerCase());
+    HtmlString subjectNounPlural = h(s.getSubjectNounPlural().toLowerCase());
     String subjectNounColName = s.getSubjectColumnName();
     int aliasDatasetId = bean.getAliasDatasetId();
     String aliasColumn = bean.getAliasColumn();
     String sourceColumn = bean.getSourceColumn();
-//    boolean isAdmin = c.hasPermission(getUser(), AdminPermission.class);
     Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
 <div style="max-width: 1000px">
-<h2>Alternate <%= h(subjectNounSingular)%> IDs</h2>
-<p>Alternate <%= h(subjectNounSingular) %> IDs allow you to publish and export a study with all <%= h(subjectNounSingular.toLowerCase()) %> IDs
-    replaced by randomly generated alternate IDs or by IDs you specify. Alternate IDs must be unique. The Change Alternate IDs button clears all alternate IDs, whether you had specified them or not.
-    Random alternate IDs will then be generated automatically for all <%= h(subjectNounPlural.toLowerCase()) %> using
+<h2>Alternate <%=subjectNounSingularTitle%> IDs for Masking</h2>
+<p>Alternate <%=subjectNounSingular%> IDs allow you to publish and export a study with all <%=subjectNounSingular%> IDs
+    replaced by masked IDs that either you specify or the system generates randomly. Alternate IDs must be unique. The Change Alternate IDs button clears all
+    alternate IDs, whether you had specified them or not. Random alternate IDs will then be generated automatically for all <%=subjectNounPlural%> using
     the prefix and the number of digits specified below.
 </p>
 <p>
-    Every <%= h(subjectNounSingular.toLowerCase()) %> is also given a date offset that is used when you publish or export a study, if you request date shifting. Date offsets never change.
-    The Export button exports a TSV that contains the alternate ID and date offset for each <%= h(subjectNounSingular.toLowerCase()) %>.
-    The Import button imports a TSV that contains an alternate ID and/or date offset for some or all <%= h(subjectNounPlural.toLowerCase()) %>.
+    Every <%=subjectNounSingular%> is also given a date offset that is used when you publish or export a study, if you request date shifting. Date offsets never change.
+    The Export button exports a TSV that contains the alternate ID and date offset for each <%=subjectNounSingular%>.
+    The Import button imports a TSV that contains an alternate ID and/or date offset for some or all <%=subjectNounPlural%>.
 </p>
 </div>
 <div id="alternateIdsPanel"></div>
 
 <div style="max-width: 1000px">
-<h2><%= h(subjectNounSingular)%> Aliases</h2>
-<p>You may link <%= h(subjectNounPlural.toLowerCase())%> in this study with <%= h(subjectNounPlural.toLowerCase())%> from another source
-    by specifying a dataset that contains aliases for each <%= h(subjectNounSingular.toLowerCase())%>.
+    <h2>Change or Merge <%=subjectNounSingularTitle%> IDs</h2>
+    Click the button below to change a <%=subjectNounSingular%> ID or merge data from multiple <%=subjectNounSingular%> IDs to a single <%=subjectNounSingular%> ID.
+</div>
+<div id="changeOrMergePanel"></div>
+
+<div style="max-width: 1000px">
+<h2><%=subjectNounSingularTitle%> Aliases</h2>
+<p>You may link <%=subjectNounPlural%> in this study with <%=subjectNounPlural%> from another source
+    by specifying a dataset that contains aliases for each <%=subjectNounSingular%>.
     You must also specify which dataset columns contain the aliases and source organization names that use the aliases.
 </p>
 </div>
 <div id="datasetMappingPanel"></div>
 
 <div style="max-width: 1000px">
-    <h2>Delete <%= h(subjectNounSingular)%> </h2>
-    <p>Select <%= h(subjectNounSingular.toLowerCase())%> you want to delete from this study.
+    <h2>Delete <%=subjectNounSingularTitle%> </h2>
+    <p>Select <%=subjectNounSingular%> you want to delete from this study.
     </p>
 </div>
 <div id="deleteParticipantPanel"></div>
@@ -138,10 +146,6 @@
                         xtype: 'button',
                         text: 'Import',
                         handler: function() {window.location = <%= q(new ActionURL(StudyController.ImportAlternateIdMappingAction.class, getContainer()))%>;}
-                    },{
-                        xtype: 'button',
-                        text: 'Change or Merge ' + <%= q(subjectNounColName) %>,
-                        handler: function() {window.location = <%= q(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()))%>;}
                     }]
                 }]
             });
@@ -162,7 +166,7 @@
                     buttons: Ext4.MessageBox.OKCANCEL,
                     icon: Ext4.MessageBox.WARNING,
                     fn : function(buttonID) {
-                        if (buttonID == 'ok')
+                        if (buttonID === 'ok')
                         {
                             var preVal = prefixField.getValue();
                             var digVal = digitsField.getValue();
@@ -197,7 +201,7 @@
                     dock: 'bottom',
                     ui : 'footer',
                     style : 'background: none',
-                    height : 30,
+                    height : 31,
                     items: [{
                         xtype: 'button',
                         text: 'Done',
@@ -209,7 +213,7 @@
             //Alias mapping components start here
 
             var aliasDatasetId = <%=aliasDatasetId%>;
-            var previousValue = (aliasDatasetId != -1);
+            var previousValue = (aliasDatasetId !== -1);
             Ext4.define('datasetModel',{
                 extend : 'Ext.data.Model',
                 fields : [
@@ -222,7 +226,6 @@
                 model : 'datasetModel',
                 sorters : {property : 'Label', direction : 'ASC'}
             });
-//
 
             var dataCombo = Ext4.create('Ext.form.field.ComboBox',{
                 name : 'datasetCombo',
@@ -235,21 +238,21 @@
                 fieldLabel : 'Dataset Containing Aliases',
                 editable: false,
                 listeners : {
-                     select : function(cb){
-                            aliasCombo.clearValue();
-                            sourceCombo.clearValue();
-                            populateOtherBoxes(cb.getRawValue());
-                            aliasCombo.setDisabled(false);
-                            sourceCombo.setDisabled(false);
+                    select : function(cb){
+                        aliasCombo.clearValue();
+                        sourceCombo.clearValue();
+                        populateOtherBoxes(cb.getRawValue());
+                        aliasCombo.setDisabled(false);
+                        sourceCombo.setDisabled(false);
 
-                     },
-                     setup : function(cb){
+                    },
+                    setup : function(cb){
                          aliasCombo.clearValue();
                          sourceCombo.clearValue();
                          populateOtherBoxes(cb.getRawValue(), true);
                          aliasCombo.setDisabled(false);
                          sourceCombo.setDisabled(false);
-                     }
+                    }
                 }
             });
 
@@ -317,10 +320,10 @@
                         {
                             var field = details.metaData.fields[i];
                             // Filter out irrelevant columns based on type
-                            if (field.jsonType == 'string' || field.jsonType == 'int')
+                            if (field.jsonType === 'string' || field.jsonType === 'int')
                             {
                                 // Filter out some built-in columns
-                                if (field.name != 'lsid' && field.name != <%= q(subjectNounColName)%>)
+                                if (field.name !== 'lsid' && field.name !== <%= q(subjectNounColName)%>)
                                 {
                                     filteredFields.push({ name: field.name });
                                 }
@@ -330,11 +333,11 @@
                         aliasCombo.fireEvent('dataloaded', aliasCombo);
                         sourceCombo.fireEvent('dataloaded', sourceCombo);
                         if(setup){
-                            if('<%=h(aliasColumn)%>' != "")
+                            if('<%=h(aliasColumn)%>' !== "")
                             {
                                 aliasCombo.select(aliasCombo.findRecord('name', '<%=h(aliasColumn)%>'));
                             }
-                            if('<%=h(sourceColumn)%>' != "")
+                            if('<%=h(sourceColumn)%>' !== "")
                             {
                                 sourceCombo.select(sourceCombo.findRecord('name', '<%=h(sourceColumn)%>'));
                             }
@@ -374,12 +377,12 @@
                         method : 'POST',
 
                         success: function(details){
-                            if(datasetId != -1)
-                                displayDoneChangingMessage("Save Alias Settings", <%=q(subjectNounSingular)%> + " alias settings saved successfully.");
+                            if (datasetId !== -1)
+                                displayDoneChangingMessage("Save Alias Settings", <%=q(subjectNounSingularTitleString)%> + " alias settings saved successfully.");
                             else
-                                displayDoneChangingMessage("Clear Alias Settings", <%=q(subjectNounSingular)%> + " alias settings cleared.")
+                                displayDoneChangingMessage("Clear Alias Settings", <%=q(subjectNounSingularTitleString)%> + " alias settings cleared.")
                             aliasDatasetId = datasetId;
-                            if(datasetId != -1)
+                            if (datasetId !== -1)
                                 importButton.setDisabled(false);
 
                         },
@@ -392,9 +395,8 @@
                     });
                 }
                 else {
-                        displayBadFormMessage();
+                    displayBadFormMessage();
                 }
-
             };
 
             var saveButton = Ext4.create('Ext.button.Button', {
@@ -429,7 +431,7 @@
                     style : 'background: none',
                     dock : 'bottom',
                     ui : 'footer',
-                    height: 30,
+                    height: 31,
                     items: [saveButton, clearButton, importButton, manageButton]
                  }
 
@@ -457,14 +459,14 @@
                     },
                     extraParams: {
                         schemaName: 'study',
-                        queryName: <%=q(subjectNounSingular)%>
+                        queryName: <%=q(subjectNounSingularTitleString)%>
                     }
                 },
             });
 
             var viewParticipantDataLink = Ext4.create('Ext.Component', {
                 tpl: new Ext4.XTemplate(
-                        '<a class="labkey-text-link" href="{[this.getURL(values)]}" target="_blank">View ' + <%=q(h(subjectNounSingular))%> + ' Data</a>',
+                        '<a class="labkey-text-link" href="{[this.getURL(values)]}" target="_blank">View ' + <%=q(subjectNounSingularTitle)%> + ' Data</a>',
                         {
                             getURL : function(values){
                                 return LABKEY.ActionURL.buildURL('study', 'participant.view', null, { 'participantId': values.participantId })
@@ -483,7 +485,7 @@
                 displayField : <%=q(subjectNounColName)%>,
                 labelWidth : 120,
                 labelSeparator: '',
-                fieldLabel : (<%=q(subjectNounSingular)%> + " ID"),
+                fieldLabel : (<%=q(subjectNounSingularTitleString)%> + " ID"),
                 editable: true,
                 queryMode: 'remote',
                 minChars: 2,
@@ -508,7 +510,7 @@
             var deleteParticipant = function(participantIdToDelete) {
                 Ext4.Msg.show({
                     title   : 'Confirmation',
-                    msg     : "Are you sure you want to delete " + <%=q(h(subjectNounSingular.toLowerCase()))%> + " '" + participantIdToDelete + "'?",
+                    msg     : "Are you sure you want to delete " + <%=q(subjectNounSingular)%> + " '" + participantIdToDelete + "'?",
                     buttons : Ext4.MessageBox.YESNO,
                     icon    : Ext4.MessageBox.QUESTION,
                     fn      : function(id){
@@ -522,14 +524,14 @@
                                 scope: this,
                                 success: function() {
                                     Ext4.getBody().unmask();
-                                    displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + '.');
+                                    displayDoneChangingMessage("Success", "Successfully deleted " +  <%=q(subjectNounSingular)%> + " " + participantIdToDelete + '.');
                                     // Refresh the ComboBox store after deletion
                                     participantCombo.setValue(null);
                                     participantCombo.getStore().load();
                                 },
                                 failure: function(response, options){
                                     Ext4.getBody().unmask();
-                                    LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "Failed to delete " + <%=q(h(subjectNounSingular))%> + " " + participantIdToDelete + ": " + response.responseText);
+                                    LABKEY.Utils.displayAjaxErrorResponse(response, options, false, "Failed to delete " + <%=q(subjectNounSingular)%> + " " + participantIdToDelete + ": " + response.responseText);
                                 },
                             });
                         }
@@ -551,9 +553,31 @@
                     style : 'background: none',
                     dock : 'bottom',
                     ui : 'footer',
-                    height: 30,
+                    height: 31,
                     items: [deleteButton, viewParticipantDataLink]
                 }
+            });
+
+            var changeOrMergePanel = Ext4.create('Ext.form.FormPanel', {
+                renderTo: 'changeOrMergePanel',
+                bodyPadding: 10,
+                bodyStyle: 'background: none',
+                frame: false,
+                border: false,
+                width: 600,
+                buttonAlign : 'left',
+                dockedItems: [{
+                    xtype: 'toolbar',
+                    dock: 'bottom',
+                    ui : 'footer',
+                    style : 'background: none',
+                    height : 31,
+                    items: [{
+                        xtype: 'button',
+                        text: 'Change or Merge ' + <%=q(subjectNounSingularTitleString)%> + ' IDs',
+                        handler: function() {window.location = <%=q(new ActionURL(StudyController.MergeParticipantsAction.class, getContainer()))%>;}
+                    }]
+                }]
             });
         };
 

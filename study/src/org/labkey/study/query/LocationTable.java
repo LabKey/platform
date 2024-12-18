@@ -126,7 +126,7 @@ public class LocationTable extends BaseStudyTable
         return "Label";
     }
 
-    private class LocationQueryUpdateService extends DefaultQueryUpdateService
+    private static class LocationQueryUpdateService extends DefaultQueryUpdateService
     {
         public LocationQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {

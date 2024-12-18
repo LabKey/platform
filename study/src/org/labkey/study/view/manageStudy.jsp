@@ -44,10 +44,10 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageAlternateIdsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageExternalReloadAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantCategoriesAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageQCStatesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
@@ -235,8 +235,8 @@
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label"><%= h(subjectNounPlural) %></td>
-                        <td class="lk-study-prop-desc">Delete participants and configure <%= h(subjectNounSingle.toLowerCase()) %> IDs</td>
-                        <td><%= link("Manage " + subjectNounPlural, ManageAlternateIdsAction.class) %></td>
+                        <td class="lk-study-prop-desc">Delete <%= h(subjectNounPlural.toLowerCase()) %>  and configure <%= h(subjectNounSingle.toLowerCase()) %> IDs</td>
+                        <td><%= link("Manage " + subjectNounPlural, ManageParticipantsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Security</td>
