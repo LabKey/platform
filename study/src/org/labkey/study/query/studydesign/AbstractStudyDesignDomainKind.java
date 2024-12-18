@@ -44,9 +44,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * Created by klum on 12/10/13.
- */
 public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKind
 {
     private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
@@ -54,9 +51,6 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
 
     private static final String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
     private static final String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
-
-    // Prevent race conditions, #21128. TODO: Ideally, this would be one lock per DomainKind, but we new these up all over the place, #21199.
-    private static final Object ENSURE_DOMAIN_LOCK = new Object();
 
     private static final Set<PropertyStorageSpec> BASE_FIELDS;
 

@@ -22,7 +22,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;

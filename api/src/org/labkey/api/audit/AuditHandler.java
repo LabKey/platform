@@ -11,6 +11,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -72,11 +73,21 @@ public interface AuditHandler
                     .orElse(key);
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
-            if (!lcName.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase()) && !lcName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase()))
+            boolean isExpInput = false;
+            if (lcName.startsWith(ExpData.DATA_INPUTS_PREFIX.toLowerCase()) || lcName.startsWith(ExpMaterial.MATERIAL_INPUTS_PREFIX.toLowerCase()))
+            {
+                String[] parts = nameFromAlias.split("/", 2);
+                String prefix = parts[0];
+                String dataType = parts[1];
+                // MaterialInputs/datypeTypeEncoded
+                if (row.containsKey(prefix + "/" + QueryKey.encodePart(dataType)))
+                    isExpInput = true;
+            }
+            else
                 nameFromAlias = lcName;
 
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
-            if (!excludedFromDetailDiff.contains(nameFromAlias) && row.containsKey(nameFromAlias))
+            if (!excludedFromDetailDiff.contains(nameFromAlias) && (row.containsKey(nameFromAlias) || isExpInput))
             {
                 Object oldValue = entry.getValue();
                 Object newValue = row.get(nameFromAlias);

@@ -327,7 +327,14 @@ public abstract class ClientDependency
 
         if (path == null)
         {
-            LOG.error("Invalid client dependency path: " + requestedPath);
+            if (AppProps.getInstance().isDevMode())
+            {
+                LOG.error("Invalid client dependency path: {}", requestedPath);
+            }
+            else
+            {
+                LOG.debug("Invalid client dependency path: {}", requestedPath);
+            }
             return null;
         }
 

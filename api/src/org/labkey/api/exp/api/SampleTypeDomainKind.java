@@ -671,4 +671,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     {
         return ComplianceService.get().isComplianceSupported();
     }
+
+    @Override
+    public boolean supportsNamingPattern()
+    {
+        return true;
+    }
 }

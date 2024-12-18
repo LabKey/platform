@@ -862,6 +862,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
                 for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
                 {
+                    // getDependencies() can execute LabKey SQL.  Make sure environment is set up here.
+                    // Also see 51200.
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sourceData.getContainer());
                     for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
                     {
                         QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, snapshotDef.getContainer());

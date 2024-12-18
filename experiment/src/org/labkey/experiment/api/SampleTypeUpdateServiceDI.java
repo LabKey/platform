@@ -480,8 +480,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
             finalConfigParameters.put(ExperimentService.QueryOptions.UseLsidForUpdate, true);
 
-            results = scope.executeWithRetry(transaction ->
-                    super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext));
+            try
+            {
+                results = scope.executeWithRetry(transaction ->
+                {
+                    var context = getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters);
+                    var ret = super._updateRowsUsingDIB(user, container, rows, context, extraScriptContext);
+                    // we need to throw if we don't want executeWithRetry() attempt commit()
+                    if (context.getErrors().hasErrors())
+                        throw new DbScope.RetryPassthroughException(context.getErrors());
+                    return ret;
+                });
+            }
+            catch (DbScope.RetryPassthroughException retryException)
+            {
+                retryException.rethrow(BatchValidationException.class);
+                throw retryException.throwRuntimeException();
+            }
         }
         else
         {
