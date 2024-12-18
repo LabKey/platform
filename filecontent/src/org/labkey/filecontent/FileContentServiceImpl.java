@@ -1604,8 +1604,14 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     public static void throwIfPathNotFile(java.nio.file.Path path, Container container)
     {
-        if (null == path || FileUtil.hasCloudScheme(path))
+        if (null == path)
+        {
+            throw new RuntimeException("No path to evaluate in " + container.getPath());
+        }
+        if (FileUtil.hasCloudScheme(path))
+        {
             throw new RuntimeException("Cannot get File object from Cloud File Root in " + container.getPath());
+        }
     }
 
     private boolean containsUrlOrVariation(List<String> existingUrls, java.nio.file.Path path)
