@@ -70,7 +70,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (oldRow != null)
             {
                 // check if the change is to a replicate well row
-                Object replicateLsid = oldRow.get(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                Object replicateLsid = oldRow.get(AssayResultDomainKind.Column.ReplicateLsid.name());
                 if (replicateLsid != null)
                     _replicateLsid.put(String.valueOf(replicateLsid), isUpdate);
             }
@@ -100,7 +100,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (_replicateLsid.isEmpty() || errors.hasErrors())
                 return;
 
-            var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet(), CompareType.IN);
+            var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.Column.ReplicateLsid.name()), _replicateLsid.keySet(), CompareType.IN);
 
             try (TableResultSet rs = new TableSelector(table, filter, null).getResultSet())
             {
@@ -108,7 +108,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
 
                 while (rs.next())
                 {
-                    var lsid = rs.getString(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    var lsid = rs.getString(AssayResultDomainKind.Column.ReplicateLsid.name());
                     replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(rs.getRowMap());
                     _replicateLsid.remove(lsid);
                 }

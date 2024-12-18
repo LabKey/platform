@@ -831,10 +831,10 @@ public class AssayUpgradeCode implements UpgradeCode
                     {
                         // ensure the QC state column exists in the result domain
                         Domain resultDomain = provider.getResultsDomain(protocol);
-                        if (resultDomain.getPropertyByName(AssayResultDomainKind.STATE_COLUMN_NAME) == null)
+                        if (resultDomain.getPropertyByName(AssayResultDomainKind.Column.State.name()) == null)
                         {
-                            _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.STATE_COLUMN_NAME, protocol.getName()));
-                            DomainProperty dp = resultDomain.addProperty(new PropertyStorageSpec(AssayResultDomainKind.STATE_COLUMN_NAME, JdbcType.INTEGER));
+                            _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.Column.State.name(), protocol.getName()));
+                            DomainProperty dp = resultDomain.addProperty(new PropertyStorageSpec(AssayResultDomainKind.Column.State.name(), JdbcType.INTEGER));
                             dp.setLabel("QC State");
                             dp.setImportAliasSet(Set.of("QCState", "QC State"));
                             dp.setLookup(new Lookup(null, SchemaKey.fromParts(CoreSchema.getInstance().getSchemaName()), CoreSchema.DATA_STATES_TABLE_NAME));

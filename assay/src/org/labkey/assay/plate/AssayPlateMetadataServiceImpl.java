@@ -114,8 +114,6 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.labkey.api.assay.AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME;
-import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
@@ -133,8 +131,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     )
     {
         Domain resultDomain = provider.getResultsDomain(protocol);
-        DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
-        DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
+        DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
+        DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
 
         return DataIteratorUtil.mapTransformer(rows, cols ->
         {
@@ -207,22 +205,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // need to adjust the column value to be 0 based to match the template locations
                 well.setColumn(well.getColumn() - 1);
 
-                if (positionToWell.containsKey(well))
-                {
-                    WellBean wellBean = positionToWell.get(well);
-                    for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
-                        row.put(customField.getName(), customField.getValue());
-
-                    // include the sample information from the well (Issue 50276)
-                    if (!sampleMap.isEmpty())
-                    {
-                        ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
-                        row.put("SampleID", sample != null ? sample.getRowId() : null);
-                        row.put("SampleName", sample != null ? sample.getName() : null);
-                    }
-                }
-                else
+                if (!positionToWell.containsKey(well))
                     throw new RuntimeValidationException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
+
+                WellBean wellBean = positionToWell.get(well);
+                for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
+                    row.put(customField.getName(), customField.getValue());
+
+                // Issue 50276: include the sample information from the well
+                if (!sampleMap.isEmpty())
+                {
+                    ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
+                    row.put("SampleID", sample != null ? sample.getRowId() : null);
+                    row.put("SampleName", sample != null ? sample.getName() : null);
+                }
 
                 return row;
             }
@@ -353,7 +349,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Set<Object> incomingPlates = new HashSet<>();       // incoming plates may be either row IDs or plate IDs
         for (var row : rows)
         {
-            var plateId = row.get(AssayResultDomainKind.PLATE_COLUMN_NAME);
+            var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
@@ -365,20 +361,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException(String.format("Unable to query the assay results for protocol : %s", protocol.getName()));
 
         // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging existing data.
-        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name());
         // Note that in the case where there is a transform script on the assay design, the LK data parsing might not have
         // found any rows and we might be deferring to the transform script to do that parsing. This block of code should
         // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
         if (!rows.isEmpty())
         {
-            Object plateObj = rows.get(0).get(AssayResultDomainKind.PLATE_COLUMN_NAME);
+            Object plateObj = rows.get(0).get(AssayResultDomainKind.Column.Plate.name());
             if (plateObj instanceof String)
-                plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME, PlateTable.Column.PlateId.name());
+                plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name(), PlateTable.Column.PlateId.name());
         }
 
         FieldKey finalPlateFieldKey = plateFieldKey;
         List<FieldKey> columns = resultsTable.getDomain().getProperties().stream().map(dp -> {
-            if (dp.getName().equalsIgnoreCase(AssayResultDomainKind.PLATE_COLUMN_NAME))
+            if (dp.getName().equalsIgnoreCase(AssayResultDomainKind.Column.Plate.name()))
                 return finalPlateFieldKey;
             return FieldKey.fromParts(dp.getName());
         }).toList();
@@ -404,7 +400,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             if (rowMap.containsKey(entry.getKey()))
                                 row.put(entry.getValue().getName(), rowMap.get(entry.getKey()));
                         }
-                        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plate);
+                        row.put(AssayResultDomainKind.Column.Plate.name(), plate);
                         newRows.add(row);
                         prevPlateRowIDs.add(plateMap.get(plate).getRowId());
                     }
@@ -503,7 +499,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return true;
 
         // only the tabular formats will have the well location field
-        return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME) && !data.get(0).containsKey("Well Location");
+        return !data.get(0).containsKey(AssayResultDomainKind.Column.WellLocation.name()) && !data.get(0).containsKey("Well Location");
     }
 
     private List<Map<String, Object>> parsePlateRows(
@@ -513,9 +509,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         List<Map<String, Object>> data
     ) throws ExperimentException
     {
-        DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.Column.Plate.name());
         Set<String> importAliases = new CaseInsensitiveHashSet(plateProp.getImportAliasSet());
-        importAliases.add(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        importAliases.add(AssayResultDomainKind.Column.Plate.name());
 
         // check whether the data rows have plate identifiers
         String plateIdField = data.get(0).keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
@@ -547,7 +543,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (Map<String, Object> row : data)
         {
             // well location field is required, return if not provided or it will fail downstream
-            String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
+            String well = String.valueOf(row.get(AssayResultDomainKind.Column.WellLocation.name()));
             if (well == null)
                 return data;
 
@@ -557,7 +553,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             positions.add(position);
             Map<String, Object> newRow = new HashMap<>(row);
-            newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plates.get(curPlate).getRowId());
+            newRow.put(AssayResultDomainKind.Column.Plate.name(), plates.get(curPlate).getRowId());
             newData.add(newRow);
 
             if (++rowCount >= plateSize)
@@ -598,7 +594,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 });
 
                 if (plateRowId != null)
-                    newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateRowId);
+                    newRow.put(AssayResultDomainKind.Column.Plate.name(), plateRowId);
             }
 
             newData.add(newRow);
@@ -835,8 +831,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private Map<String, Object> getDataRowFromWell(String plateId, Well well, String measure)
     {
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
-        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateId);
-        row.put(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, well.getDescription());
+        row.put(AssayResultDomainKind.Column.Plate.name(), plateId);
+        row.put(AssayResultDomainKind.Column.WellLocation.name(), well.getDescription());
         row.put(measure, getWellValue(well));
         return row;
     }
@@ -1240,7 +1236,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (resultDomain == null)
             return null;
 
-        return resultDomain.getProperties().stream().filter(dp -> AssayResultDomainKind.STATE_COLUMN_NAME.equalsIgnoreCase(dp.getName()))
+        return resultDomain.getProperties().stream().filter(dp -> AssayResultDomainKind.Column.State.name().equalsIgnoreCase(dp.getName()))
                 .findFirst().orElse(null);
     }
 
@@ -1363,7 +1359,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             FieldKey fieldKey;
             if (isReplicateProperty)
-                fieldKey = FieldKey.fromParts("Replicate", domainProperty.getName());
+                fieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Replicate.name(), domainProperty.getName());
             else
                 fieldKey = FieldKey.fromParts(domainProperty.getName());
 
@@ -1433,7 +1429,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 .toList();
 
         if (!exclusionStateRowIds.isEmpty())
-            filter.addCondition(table.getColumn(AssayResultDomainKind.STATE_COLUMN_NAME), exclusionStateRowIds, CompareType.NOT_IN);
+            filter.addCondition(table.getColumn(AssayResultDomainKind.Column.State.name()), exclusionStateRowIds, CompareType.NOT_IN);
     }
 
     private static String generateFilterCriteriaDescription(SimpleFilter filter)
@@ -1508,8 +1504,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Domain resultDomain = _provider.getResultsDomain(_protocol);
             _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-            DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
-            DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
+            DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
+            DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
 
             // get the plate associated with this row (checking the results domain field first)
             Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, map);
@@ -1565,13 +1561,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // need to adjust the column value to be 0 based to match the template locations
                 pos.setCol(pos.getColumn() - 1);
                 if (positionToWellLsid.containsKey(pos))
-                    target.put(WELL_LSID_COLUMN_NAME, positionToWellLsid.get(pos));
+                    target.put(AssayResultDomainKind.Column.WellLsid.name(), positionToWellLsid.get(pos));
 
                 // find the associated replicate well group for this position (if any)
                 if (positionToReplicateLsid.containsKey(pos))
                 {
                     Lsid lsid = positionToReplicateLsid.get(pos);
-                    target.put(REPLICATE_LSID_COLUMN_NAME, lsid);
+                    target.put(AssayResultDomainKind.Column.ReplicateLsid.name(), lsid);
                     _replicateRows.computeIfAbsent(lsid, k -> new ArrayList<>()).add(map);
                 }
             }

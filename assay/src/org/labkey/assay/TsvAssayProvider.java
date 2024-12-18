@@ -458,9 +458,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             {
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
 
-                if (!existingFields.contains(AssayResultDomainKind.PLATE_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.Plate.name()))
                 {
-                    GWTPropertyDescriptor plate = new GWTPropertyDescriptor(AssayResultDomainKind.PLATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    GWTPropertyDescriptor plate = new GWTPropertyDescriptor(AssayResultDomainKind.Column.Plate.name(), PropertyType.INTEGER.getTypeUri());
                     plate.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plate.setLookupQuery(PlateTable.NAME);
                     plate.setLookupContainer(null);
@@ -472,18 +472,18 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(plate);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.WellLocation.name()))
                 {
-                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.Column.WellLocation.name(), PropertyType.STRING.getTypeUri());
                     wellLocation.setImportAliases("Well,\"Well Location\"");
                     wellLocation.setShownInUpdateView(false);
 
                     newFields.add(wellLocation);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.WellLsid.name()))
                 {
-                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.Column.WellLsid.name(), PropertyType.STRING.getTypeUri());
                     wellLsid.setShownInInsertView(false);
                     wellLsid.setShownInUpdateView(false);
                     wellLsid.setHidden(true);
@@ -491,9 +491,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(wellLsid);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.ReplicateLsid.name()))
                 {
-                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.Column.ReplicateLsid.name(), PropertyType.STRING.getTypeUri());
                     replicateLsid.setShownInInsertView(false);
                     replicateLsid.setShownInUpdateView(false);
                     replicateLsid.setHidden(true);
@@ -501,9 +501,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(replicateLsid);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.STATE_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.State.name()))
                 {
-                    GWTPropertyDescriptor qcState = new GWTPropertyDescriptor(AssayResultDomainKind.STATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    GWTPropertyDescriptor qcState = new GWTPropertyDescriptor(AssayResultDomainKind.Column.State.name(), PropertyType.INTEGER.getTypeUri());
                     qcState.setLabel("QC State");
                     qcState.setImportAliases("QCState,\"QC State\"");
                     qcState.setLookupSchema(CoreSchema.getInstance().getSchemaName());
@@ -759,6 +759,8 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
     {
+        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
+
         var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
         var sql = new SQLFragment("DELETE FROM ").append(table)
                 .append(" WHERE (PropertyId = ? OR ReferencePropertyId = ?)")

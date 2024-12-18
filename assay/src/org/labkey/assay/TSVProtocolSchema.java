@@ -157,7 +157,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 addTriggerFactory(new AssayPlateTriggerFactory(getProvider(), getProtocol()));
 
                 // join to the well table which may have plate metadata
-                ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
+                ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.Column.WellLsid.name());
                 if (wellLsidCol != null)
                 {
                     BaseColumnInfo col = new AliasedColumn("Well", wellLsidCol);
@@ -194,10 +194,10 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
                 if (replicateDomain != null)
                 {
-                    ColumnInfo replicateLsidCol = getColumn(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    ColumnInfo replicateLsidCol = getColumn(AssayResultDomainKind.Column.ReplicateLsid.name());
                     if (replicateLsidCol != null)
                     {
-                        BaseColumnInfo replicateCol = new AliasedColumn("Replicate", replicateLsidCol);
+                        BaseColumnInfo replicateCol = new AliasedColumn(AssayResultDomainKind.Column.Replicate.name(), replicateLsidCol);
                         replicateCol.setFk(QueryForeignKey
                                 .from(getUserSchema(), getContainerFilter())
                                 .to(PLATE_REPLICATE_STATS_TABLE, PlateReplicateStatsDomainKind.Column.Lsid.name(), null)
@@ -209,7 +209,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                         // adjust the default columns to position the replicate columns adjacent to the measures they track
                         Map<String, FieldKey> replicateFields = new HashMap<>();
                         for (DomainProperty prop : replicateDomain.getProperties())
-                            replicateFields.put(prop.getName(), FieldKey.fromParts("Replicate", prop.getName()));
+                            replicateFields.put(prop.getName(), FieldKey.fromParts(AssayResultDomainKind.Column.Replicate.name(), prop.getName()));
 
                         List<FieldKey> newDefaultColumns = new ArrayList<>();
                         for (FieldKey fk : defaultColumns)
