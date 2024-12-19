@@ -992,8 +992,13 @@ public class PipelineJobServiceImpl implements PipelineJobService
     @Override
     public AbstractFileAnalysisProtocolFactory<?> getProtocolFactory(TaskPipeline<?> taskPipeline)
     {
+        String pipelineProviderName = taskPipeline.getPipelineProviderName();
+        if (pipelineProviderName == null)
+        {
+            pipelineProviderName = FileAnalysisPipelineProvider.name;
+        }
         AbstractFileAnalysisProvider provider = (AbstractFileAnalysisProvider)
-                PipelineService.get().getPipelineProvider(FileAnalysisPipelineProvider.name);
+                PipelineService.get().getPipelineProvider(pipelineProviderName);
         if (provider == null)
             throw new NotFoundException("No pipeline provider found for task pipeline: " + taskPipeline);
 

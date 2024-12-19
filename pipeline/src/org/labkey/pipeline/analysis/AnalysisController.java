@@ -202,7 +202,7 @@ public class AnalysisController extends SpringActionController
                 throw new NotFoundException("No protocol specified");
             }
             PipelineService.PathAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
-            AbstractFileAnalysisProtocol protocol = props.getFactory().getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false);
+            AbstractFileAnalysisProtocol<?> protocol = props.getFactory().getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false);
             //NOTE: if protocol if null, initFileStatus() will return a result of UNKNOWN
             Path dirAnalysis = props.getFactory().getAnalysisDir(props.getDirData(), form.getProtocolName(), props.getPipeRoot());
             form.initStatus(protocol, props.getDirData(), dirAnalysis);

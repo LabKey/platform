@@ -50,7 +50,7 @@ import java.util.List;
 /**
  * Base class for protocol factories that are primarily focused on analyzing data files (as opposed to other types of resources)
  */
-abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFileAnalysisProtocol> extends PipelineProtocolFactory<T>
+abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFileAnalysisProtocol<?>> extends PipelineProtocolFactory<T>
 {
     private static final Logger _log = LogHelper.getLogger(AbstractFileAnalysisProtocolFactory.class, "Pipeline protocol and parameter errors");
 
@@ -306,7 +306,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
 
     public void setDefaultParametersXML(PipeRoot root, String xml) throws IOException
     {
-        if (xml == null || xml.length() == 0)
+        if (xml == null || xml.isEmpty())
             throw new IllegalArgumentException("You must supply default parameters for " + getName() + ".");
 
         ParamParser parser = createParamParser();
@@ -334,7 +334,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
     }
 
-    public static <T extends AbstractFileAnalysisProvider<F, TaskPipeline>, F extends AbstractFileAnalysisProtocolFactory>
+    public static <T extends AbstractFileAnalysisProvider<F, TaskPipeline<?>>, F extends AbstractFileAnalysisProtocolFactory<?>>
             F fromFile(Class<T> clazz, File file)
     {
         List<PipelineProvider> providers = PipelineService.get().getPipelineProviders();
@@ -354,12 +354,12 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     }
 
     @Nullable
-    public AbstractFileAnalysisProtocol getProtocol(PipeRoot root, Path dirData, String protocolName, boolean archived)
+    public AbstractFileAnalysisProtocol<?> getProtocol(PipeRoot root, Path dirData, String protocolName, boolean archived)
     {
         try
         {
             Path protocolFile = getParametersFile(dirData, protocolName, root);
-            AbstractFileAnalysisProtocol result;
+            AbstractFileAnalysisProtocol<?> result;
             if (NetworkDrive.exists(protocolFile))
             {
                 result = loadInstance(protocolFile);

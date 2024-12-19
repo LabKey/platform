@@ -151,7 +151,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleRedirectAction
+    public static class BeginAction extends SimpleRedirectAction<Object>
     {
         @Override
         public ActionURL getRedirectURL(Object o)
@@ -343,7 +343,7 @@ public class PipelineController extends SpringActionController
 
                     if (!errors.hasErrors() && getViewContext().getRequest().getParameter(PipelineController.Params.rootset.toString()) != null)
                     {
-                        bean.setConfirmMessage("The pipeline root was set to " + pipeRoot.toString());
+                        bean.setConfirmMessage("The pipeline root was set to " + pipeRoot);
                     }
                 }
 
@@ -367,7 +367,7 @@ public class PipelineController extends SpringActionController
                     {
                         if (activeModules.contains(provider.getOwningModule()))
                         {
-                            HttpView part = provider.getSetupWebPart(c);
+                            HttpView<?> part = provider.getSetupWebPart(c);
                             if (part != null)
                                 main.addView(part);
                         }
@@ -400,7 +400,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseAction extends SimpleViewAction<PathForm>
+    public static class BrowseAction extends SimpleViewAction<PathForm>
     {
         public BrowseAction()
         {
@@ -411,7 +411,7 @@ public class PipelineController extends SpringActionController
         {
             Path path = null;
             if (pathForm.getPath() != null)
-            try { path = Path.parse(pathForm.getPath()); } catch (Exception x) { }
+                try { path = Path.parse(pathForm.getPath()); } catch (Exception ignored) { }
             BrowseWebPart wp = new BrowseWebPart(path);
             wp.getModelBean().setAutoResize(true);
             wp.setFrame(WebPartView.FrameType.NONE);
@@ -495,7 +495,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ActionsAction extends ReadOnlyApiAction<PipelineActionsForm>
+    public static class ActionsAction extends ReadOnlyApiAction<PipelineActionsForm>
     {
         @Override
         public ApiResponse execute(PipelineActionsForm form, BindException errors)
@@ -526,7 +526,7 @@ public class PipelineController extends SpringActionController
 
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
             // S3-backed storage may not have an entry for the root if there are no children, see issue 38377
-            if (!("".equals(relativePath) && pr.isCloudRoot()) && (fileCurrent == null || !Files.exists(fileCurrent)))
+            if (!(relativePath.isEmpty() && pr.isCloudRoot()) && (fileCurrent == null || !Files.exists(fileCurrent)))
             {
                 errors.reject(ERROR_MSG, "File not found: " + form.getPath());
             }
@@ -570,7 +570,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdatePipelineActionConfigAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class UpdatePipelineActionConfigAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
@@ -586,7 +586,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineActionConfigAction extends ReadOnlyApiAction
+    public class GetPipelineActionConfigAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -617,7 +617,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineFilePropertiesAction extends ReadOnlyApiAction
+    public class GetPipelineFilePropertiesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
@@ -642,15 +642,11 @@ public class PipelineController extends SpringActionController
         {
             case useCustom:
                 String uri = svc.getDomainURI(container, config);
-                GWTDomain domain = DomainUtil.getDomainDescriptor(getUser(), uri, container);
+                GWTDomain<?> domain = DomainUtil.getDomainDescriptor(getUser(), uri, container);
 
                 if (domain != null)
                 {
-                    for (Object o : domain.getFields())
-                    {
-                        if (o instanceof GWTPropertyDescriptor)
-                            properties.add((GWTPropertyDescriptor)o);
-                    }
+                    properties.addAll(domain.getFields());
                 }
                 break;
             case useDefault:
@@ -681,7 +677,7 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(PermissionForm form, BindException errors) throws Exception
+        public boolean handlePost(PermissionForm form, BindException errors)
         {
             Container c = getContainer();
             PipeRoot pipeRoot = getPipelineRoot(c);
@@ -734,7 +730,7 @@ public class PipelineController extends SpringActionController
 
     public static class PermissionForm extends ReturnUrlForm
     {
-        private List<Integer> groups = new FormArrayList<Integer>(Integer.class)
+        private List<Integer> groups = new FormArrayList<>(Integer.class)
         {
             @Override
             protected Integer newInstance()
@@ -783,7 +779,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public class PermissionView extends JspView<PipeRoot>
+    public static class PermissionView extends JspView<PipeRoot>
     {
         PermissionView(PipeRoot pipeRoot)
         {
@@ -1073,7 +1069,7 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(StatusController.RowIdForm form, BindException errors) throws Exception
+        public boolean handlePost(StatusController.RowIdForm form, BindException errors)
         {
             try
             {
@@ -1155,7 +1151,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPipelineContainerAction extends ReadOnlyApiAction
+    public static class GetPipelineContainerAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1498,12 +1494,12 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CreatePipelineTriggerAction extends SimpleViewAction<PipelineTriggerForm>
+    public static class CreatePipelineTriggerAction extends SimpleViewAction<PipelineTriggerForm>
     {
         String _title = "Create Pipeline Trigger";
 
         @Override
-        public ModelAndView getView(PipelineTriggerForm form, BindException errors) throws Exception
+        public ModelAndView getView(PipelineTriggerForm form, BindException errors)
         {
             if (form.getRowId() != null)
             {
@@ -1542,7 +1538,7 @@ public class PipelineController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SavePipelineTriggerAction extends MutatingApiAction<PipelineTriggerForm>
+    public static class SavePipelineTriggerAction extends MutatingApiAction<PipelineTriggerForm>
     {
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
@@ -1774,7 +1770,7 @@ public class PipelineController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class PipelineConfigurationAction extends GWTServiceAction
+    public static class PipelineConfigurationAction extends GWTServiceAction
     {
         @Override
         protected BaseRemoteService createService()
@@ -1795,14 +1791,14 @@ public class PipelineController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new BeginAction(),
-                controller.new BrowseAction(),
-                controller.new ActionsAction(),
+                    new BeginAction(),
+                    new BrowseAction(),
+                    new ActionsAction(),
                 controller.new GetPipelineActionConfigAction(),
                 controller.new GetPipelineFilePropertiesAction(),
                 controller.new DownloadAction(),
-                controller.new GetPipelineContainerAction(),
-                controller.new PipelineConfigurationAction()
+                    new GetPipelineContainerAction(),
+                    new PipelineConfigurationAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
@@ -1812,7 +1808,7 @@ public class PipelineController extends SpringActionController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new UpdatePipelineActionConfigAction(),
+                    new UpdatePipelineActionConfigAction(),
                 controller.new UpdateEmailNotificationAction(),
                 controller.new ResetEmailNotificationAction(),
                 controller.new ImportFolderFromPipelineAction(),

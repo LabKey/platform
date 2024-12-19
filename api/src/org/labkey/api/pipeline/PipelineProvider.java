@@ -94,7 +94,7 @@ abstract public class PipelineProvider
             }
             else
             {
-                _initialFileTypes = initialFileTypes.toArray(new FileType[initialFileTypes.size()]);
+                _initialFileTypes = initialFileTypes.toArray(new FileType[0]);
             }
         }
         
@@ -279,7 +279,7 @@ abstract public class PipelineProvider
      * @return Web part shown on the setup page.
      */
     @Nullable
-    public HttpView getSetupWebPart(Container container)
+    public HttpView<?> getSetupWebPart(Container container)
     {
         // No setup.
         return null;
@@ -351,7 +351,7 @@ abstract public class PipelineProvider
     protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
-        if (!includeAll && (files == null || files.size() == 0))
+        if (!includeAll && (files == null || files.isEmpty()))
             return;
 
         entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
@@ -360,7 +360,7 @@ abstract public class PipelineProvider
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
-        if (!includeAll && (files == null || files.size() == 0))
+        if (!includeAll && (files == null || files.isEmpty()))
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);

@@ -423,7 +423,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 return provider;
         }
 
-        return null;
+        return _mapPipelineProviders.get(name);
     }
 
     @Nullable
@@ -989,16 +989,16 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (pr == null || !pr.isValid())
             throw new NotFoundException();
 
-        Path dirData = null;
+        Path dirData = pr.getRootNioPath();
         if (path != null)
         {
             dirData = pr.resolveToNioPath(path);
-            if (dirData == null || !NetworkDrive.exists(dirData))
+            if (!NetworkDrive.exists(dirData))
                 throw new NotFoundException("Could not resolve path: " + path);
         }
 
-        TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(taskId);
-        AbstractFileAnalysisProtocolFactory factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
+        TaskPipeline<?> taskPipeline = PipelineJobService.get().getTaskPipeline(taskId);
+        AbstractFileAnalysisProtocolFactory<?> factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
         return new PathAnalysisProperties(pr, dirData, factory);
     }
 
@@ -1025,11 +1025,11 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         {
             throw new IllegalArgumentException("Must specify a protocol name");
         }
-        TaskPipeline taskPipeline = PipelineJobService.get().getTaskPipeline(form.getTaskId());
+        TaskPipeline<?> taskPipeline = PipelineJobService.get().getTaskPipeline(form.getTaskId());
         PathAnalysisProperties props = getFileAnalysisProperties(context.getContainer(), form.getTaskId(), form.getPath());
         PipeRoot root = props.getPipeRoot();
         Path dirData = props.getDirData();
-        AbstractFileAnalysisProtocolFactory factory = props.getFactory();
+        AbstractFileAnalysisProtocolFactory<?> factory = props.getFactory();
 
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
