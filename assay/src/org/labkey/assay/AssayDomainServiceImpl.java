@@ -254,7 +254,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         {
             List<String> scriptNames = new ArrayList<>();
             for (AnalysisScript script : typeScripts)
-                scriptNames.add(script.getScript().toNioPathForRead().toString());
+                scriptNames.add(script.getScriptPath());
 
             result.setModuleTransformScripts(scriptNames);
         }
@@ -272,7 +272,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         for (AnalysisScript transformScript : transformScripts)
         {
             // TODO, add allowable operations once we have UI that controls those options
-            transformScriptStrings.add(transformScript.getScript().toNioPathForRead().toString());
+            transformScriptStrings.add(transformScript.getScriptPath());
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 

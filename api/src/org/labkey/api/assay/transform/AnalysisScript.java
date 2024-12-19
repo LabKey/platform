@@ -30,12 +30,24 @@ public class AnalysisScript
     {
         _script = new FileSystemLike.Builder(script).build().getRoot();
         for (String op : operations)
-            _operations.add(DataTransformService.TransformOperation.valueOf(op));
+        {
+            if (op != null)
+                _operations.add(DataTransformService.TransformOperation.valueOf(op));
+        }
+
+        // default to insert only
+        if (_operations.isEmpty())
+            _operations.add(DataTransformService.TransformOperation.INSERT);
     }
 
     public FileLike getScript()
     {
         return _script;
+    }
+
+    public String getScriptPath()
+    {
+        return _script.toNioPathForRead().toString();
     }
 
     public boolean canExecute(DataTransformService.TransformOperation operation)
