@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.7.0-fb-auto-hits.3",
+    "@labkey/components": "6.7.0-fb-auto-hits.4",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
