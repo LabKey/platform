@@ -35,6 +35,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
@@ -43,6 +44,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -66,8 +68,8 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -87,6 +89,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.query.PlateTable;
@@ -95,6 +98,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.vfs.FileLike;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,8 +114,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.labkey.api.assay.AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME;
-import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
+import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -128,8 +131,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     )
     {
         Domain resultDomain = provider.getResultsDomain(protocol);
-        DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
-        DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
+        DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
+        DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
 
         return DataIteratorUtil.mapTransformer(rows, cols ->
         {
@@ -202,22 +205,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // need to adjust the column value to be 0 based to match the template locations
                 well.setColumn(well.getColumn() - 1);
 
-                if (positionToWell.containsKey(well))
-                {
-                    WellBean wellBean = positionToWell.get(well);
-                    for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
-                        row.put(customField.getName(), customField.getValue());
-
-                    // include the sample information from the well (Issue 50276)
-                    if (!sampleMap.isEmpty())
-                    {
-                        ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
-                        row.put("SampleID", sample != null ? sample.getRowId() : null);
-                        row.put("SampleName", sample != null ? sample.getName() : null);
-                    }
-                }
-                else
+                if (!positionToWell.containsKey(well))
                     throw new RuntimeValidationException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
+
+                WellBean wellBean = positionToWell.get(well);
+                for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, wellBean.getRowId()))
+                    row.put(customField.getName(), customField.getValue());
+
+                // Issue 50276: include the sample information from the well
+                if (!sampleMap.isEmpty())
+                {
+                    ExpMaterial sample = sampleMap.get(wellBean.getSampleId());
+                    row.put("SampleID", sample != null ? sample.getRowId() : null);
+                    row.put("SampleName", sample != null ? sample.getName() : null);
+                }
 
                 return row;
             }
@@ -254,7 +255,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (context.getReRunId() != null)
         {
             // check if we are merging the re-imported data
-            if (context.getReImportOption() == AssayRunUploadContext.ReImportOption.MERGE_DATA)
+            if (context.getReImportOption() == MERGE_DATA)
                 rows = mergeReRunData(container, user, context, rows, plates, provider, protocol, data, dataFile);
             else
             {
@@ -348,7 +349,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Set<Object> incomingPlates = new HashSet<>();       // incoming plates may be either row IDs or plate IDs
         for (var row : rows)
         {
-            var plateId = row.get(AssayResultDomainKind.PLATE_COLUMN_NAME);
+            var plateId = row.get(AssayResultDomainKind.Column.Plate.name());
             if (plateId != null)
                 incomingPlates.add(plateId);
         }
@@ -360,20 +361,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             throw new ExperimentException(String.format("Unable to query the assay results for protocol : %s", protocol.getName()));
 
         // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging existing data.
-        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name());
         // Note that in the case where there is a transform script on the assay design, the LK data parsing might not have
         // found any rows and we might be deferring to the transform script to do that parsing. This block of code should
         // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
         if (!rows.isEmpty())
         {
-            Object plateObj = rows.get(0).get(AssayResultDomainKind.PLATE_COLUMN_NAME);
+            Object plateObj = rows.get(0).get(AssayResultDomainKind.Column.Plate.name());
             if (plateObj instanceof String)
-                plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.PLATE_COLUMN_NAME, PlateTable.Column.PlateId.name());
+                plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name(), PlateTable.Column.PlateId.name());
         }
 
         FieldKey finalPlateFieldKey = plateFieldKey;
         List<FieldKey> columns = resultsTable.getDomain().getProperties().stream().map(dp -> {
-            if (dp.getName().equalsIgnoreCase(AssayResultDomainKind.PLATE_COLUMN_NAME))
+            if (dp.getName().equalsIgnoreCase(AssayResultDomainKind.Column.Plate.name()))
                 return finalPlateFieldKey;
             return FieldKey.fromParts(dp.getName());
         }).toList();
@@ -399,7 +400,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             if (rowMap.containsKey(entry.getKey()))
                                 row.put(entry.getValue().getName(), rowMap.get(entry.getKey()));
                         }
-                        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plate);
+                        row.put(AssayResultDomainKind.Column.Plate.name(), plate);
                         newRows.add(row);
                         prevPlateRowIDs.add(plateMap.get(plate).getRowId());
                     }
@@ -498,7 +499,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return true;
 
         // only the tabular formats will have the well location field
-        return !data.get(0).containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME) && !data.get(0).containsKey("Well Location");
+        return !data.get(0).containsKey(AssayResultDomainKind.Column.WellLocation.name()) && !data.get(0).containsKey("Well Location");
     }
 
     private List<Map<String, Object>> parsePlateRows(
@@ -508,9 +509,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         List<Map<String, Object>> data
     ) throws ExperimentException
     {
-        DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        DomainProperty plateProp = provider.getResultsDomain(protocol).getPropertyByName(AssayResultDomainKind.Column.Plate.name());
         Set<String> importAliases = new CaseInsensitiveHashSet(plateProp.getImportAliasSet());
-        importAliases.add(AssayResultDomainKind.PLATE_COLUMN_NAME);
+        importAliases.add(AssayResultDomainKind.Column.Plate.name());
 
         // check whether the data rows have plate identifiers
         String plateIdField = data.get(0).keySet().stream().filter(importAliases::contains).findFirst().orElse(null);
@@ -542,7 +543,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (Map<String, Object> row : data)
         {
             // well location field is required, return if not provided or it will fail downstream
-            String well = String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME));
+            String well = String.valueOf(row.get(AssayResultDomainKind.Column.WellLocation.name()));
             if (well == null)
                 return data;
 
@@ -552,7 +553,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             positions.add(position);
             Map<String, Object> newRow = new HashMap<>(row);
-            newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plates.get(curPlate).getRowId());
+            newRow.put(AssayResultDomainKind.Column.Plate.name(), plates.get(curPlate).getRowId());
             newData.add(newRow);
 
             if (++rowCount >= plateSize)
@@ -593,7 +594,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 });
 
                 if (plateRowId != null)
-                    newRow.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateRowId);
+                    newRow.put(AssayResultDomainKind.Column.Plate.name(), plateRowId);
             }
 
             newData.add(newRow);
@@ -830,8 +831,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private Map<String, Object> getDataRowFromWell(String plateId, Well well, String measure)
     {
         Map<String, Object> row = new CaseInsensitiveHashMap<>();
-        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateId);
-        row.put(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, well.getDescription());
+        row.put(AssayResultDomainKind.Column.Plate.name(), plateId);
+        row.put(AssayResultDomainKind.Column.WellLocation.name(), well.getDescription());
         row.put(measure, getWellValue(well));
         return row;
     }
@@ -858,11 +859,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return new PlateMetadataImportHelper(data, container, user, run, protocol, provider, context);
     }
 
-    @Override
-    public void updateReplicateStatsDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update, Domain resultsDomain) throws ExperimentException
+    private @NotNull DomainProperty addField(Domain replicateDomain, String fieldName)
     {
-        Domain replicateDomain = ensurePlateReplicateStatsDomain(protocol);
-        boolean domainDirty = false;
+        // create the property and copy the format
+        PropertyStorageSpec spec = new PropertyStorageSpec(fieldName, JdbcType.DOUBLE);
+
+        // Default formatting is 4 decimal places
+        DomainProperty domainProperty = replicateDomain.addProperty(spec);
+        domainProperty.setFormat("#.####");
+
+        return domainProperty;
+    }
+
+    private Map<String, DomainProperty> getExistingFields(Domain replicateDomain)
+    {
         Set<String> domainBaseProperties = replicateDomain.getBaseProperties().stream().map(DomainProperty::getName).collect(Collectors.toSet());
         Map<String, DomainProperty> existingFields = new HashMap<>();
         replicateDomain.getProperties().forEach(dp -> {
@@ -870,65 +880,206 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 existingFields.put(dp.getName(), dp);
         });
 
-        for (GWTPropertyDescriptor prop : update.getFields())
+        return existingFields;
+    }
+
+    @Override
+    public Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull ExpProtocol protocol, List<String> columnNames)
+    {
+        return previewFilterCriteriaColumns(protocol.getContainer(), protocol.getName(), columnNames);
+    }
+
+    @Override
+    public Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull Container container, String protocolName, List<String> columnNames)
+    {
+        if (columnNames.isEmpty())
+            return Collections.emptyMap();
+
+        var replicateDomain = ensurePlateReplicateStatsDomain(container, protocolName);
+        var existingFields = getExistingFields(replicateDomain);
+        var columnMap = new HashMap<String, List<GWTPropertyDescriptor>>();
+
+        for (var rawName : columnNames)
         {
-            // for measures of type : numeric create the stats fields
-            if (prop.isMeasure())
+            var columnName = StringUtils.trimToNull(rawName);
+            if (columnName == null)
+                continue;
+
+            var properties = new ArrayList<GWTPropertyDescriptor>();
+
+            for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(columnName))
             {
-                PropertyType type = PropertyType.getFromURI(null, prop.getRangeURI());
-                if (type.getJdbcType().isNumeric())
+                DomainProperty dp;
+                if (existingFields.containsKey(name))
+                    dp = existingFields.get(name);
+                else
+                    dp = addField(replicateDomain, name);
+
+                properties.add(DomainUtil.getPropertyDescriptor(dp));
+            }
+
+            columnMap.put(columnName, properties);
+        }
+
+        // Notably, this method does not commit/save the changes made on the underlying domain.
+
+        return columnMap;
+    }
+
+    @Override
+    public void updateReplicateStatsDomain(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update
+    ) throws ValidationException
+    {
+        var replicateDomain = ensurePlateReplicateStatsDomain(protocol);
+        var existingReplicateFields = getExistingFields(replicateDomain);
+
+        var originalFields = new HashMap<Integer, GWTPropertyDescriptor>();
+        for (var field : original.getFields())
+            originalFields.put(field.getPropertyId(), field);
+
+        var domainDirty = false;
+        var fieldsToRemove = new ArrayList<DomainProperty>();
+
+        for (var updateField : update.getFields())
+        {
+            var propertyId = updateField.getPropertyId();
+            var isNew = !originalFields.containsKey(propertyId);
+            var isValidType = updateField.isMeasure() && PropertyType.getFromURI(null, updateField.getRangeURI()).getJdbcType().isNumeric();
+
+            if (isNew)
+            {
+                if (isValidType)
                 {
-                    for (String name : PlateReplicateStatsDomainKind.getStatsFieldNames(prop.getName()))
+                    for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
                     {
-                        // check for additions
-                        if (!existingFields.containsKey(name))
+                        addField(replicateDomain, name);
+                        domainDirty = true;
+                    }
+                }
+            }
+            else
+            {
+                var originalField = originalFields.get(propertyId);
+                var renamed = !originalField.getName().equals(updateField.getName());
+                var wasValidType = originalField.isMeasure() && PropertyType.getFromURI(null, originalField.getRangeURI()).getJdbcType().isNumeric();
+
+                if (isValidType)
+                {
+                    if (wasValidType)
+                    {
+                        if (renamed)
                         {
-                            // create the property and copy the format
-                            PropertyStorageSpec spec = new PropertyStorageSpec(name, JdbcType.DOUBLE);
+                            var originalNames = PlateReplicateStatsDomainKind.getStatsFieldNames(originalField.getName());
+                            var updatedNames = PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName());
 
-                            // Default formatting is 4 decimal places
-                            DomainProperty domainProperty = replicateDomain.addProperty(spec);
-                            domainProperty.setFormat(prop.getFormat() == null ? "#.####" : prop.getFormat());
-
+                            for (int i = 0; i < originalNames.size(); i++)
+                            {
+                                var name = originalNames.get(i);
+                                if (existingReplicateFields.containsKey(name))
+                                {
+                                    var updatedName = updatedNames.get(i);
+                                    var dp = replicateDomain.getPropertyByName(name);
+                                    dp.setName(updatedName);
+                                    domainDirty = true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // something else to numeric measure
+                        for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName()))
+                        {
+                            addField(replicateDomain, name);
                             domainDirty = true;
                         }
-                        else
-                            existingFields.remove(name);
                     }
+                }
+                else if (wasValidType)
+                {
+                    // numeric measure to something else
+                    var fieldName = renamed ? originalField.getName() : updateField.getName();
+                    for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(fieldName))
+                    {
+                        var field = existingReplicateFields.get(name);
+                        if (field != null)
+                            fieldsToRemove.add(field);
+                    }
+                }
+            }
+
+            originalFields.remove(propertyId);
+        }
+
+        // The only fields that remain in "originalFields" are ones that no longer exist in the updated domain.
+        // Remove any related replicate fields.
+        for (var originalField : originalFields.values())
+        {
+            var wasValidType = originalField.isMeasure() && PropertyType.getFromURI(null, originalField.getRangeURI()).getJdbcType().isNumeric();
+            if (wasValidType)
+            {
+                var fieldName = originalField.getName();
+                for (var name : PlateReplicateStatsDomainKind.getStatsFieldNames(fieldName))
+                {
+                    var field = existingReplicateFields.get(name);
+                    if (field != null)
+                        fieldsToRemove.add(field);
                 }
             }
         }
 
-        // check for removals
-        if (!existingFields.isEmpty())
+        if (!fieldsToRemove.isEmpty())
         {
             domainDirty = true;
-            for (DomainProperty prop : existingFields.values())
+            for (DomainProperty prop : fieldsToRemove)
                 prop.delete();
         }
 
         if (domainDirty)
-            replicateDomain.save(user);
+        {
+            try
+            {
+                replicateDomain.save(user);
+            }
+            catch (ExperimentException e)
+            {
+                throw new ValidationException(e.getMessage());
+            }
+        }
     }
 
     @Override
     public @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        String uri = getPlateReplicateStatsDomainUri(protocol);
-        return PropertyService.get().getDomain(protocol.getContainer(), uri);
+        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
     }
 
-    private String getPlateReplicateStatsDomainUri(ExpProtocol protocol)
+    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName)
     {
-        DomainKind domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
-        return domainKind.generateDomainURI(AssaySchema.NAME, protocol.getName(), protocol.getContainer(), null);
+        String uri = getPlateReplicateStatsDomainUri(container, protocolName);
+        return PropertyService.get().getDomain(container, uri);
+    }
+
+    private String getPlateReplicateStatsDomainUri(Container container, String protocolName)
+    {
+        var domainKind = PropertyService.get().getDomainKindByName(PlateReplicateStatsDomainKind.KIND_NAME);
+        return domainKind.generateDomainURI(AssaySchema.NAME, protocolName, container, null);
     }
 
     private @NotNull Domain ensurePlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        Domain domain = getPlateReplicateStatsDomain(protocol);
+        return ensurePlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
+    }
+
+    private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName)
+    {
+        Domain domain = getPlateReplicateStatsDomain(container, protocolName);
         if (domain == null)
-            domain = PropertyService.get().createDomain(protocol.getContainer(), getPlateReplicateStatsDomainUri(protocol), PlateReplicateStatsDomainKind.NAME);
+            domain = PropertyService.get().createDomain(container, getPlateReplicateStatsDomainUri(container, protocolName), PlateReplicateStatsDomainKind.NAME);
 
         return domain;
     }
@@ -940,7 +1091,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         ExpProtocol protocol,
         @NotNull ExpRun run,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         insertOrUpdateReplicateStats(container, user, protocol, run, true, replicateRows);
     }
@@ -951,7 +1102,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         insertOrUpdateReplicateStats(container, user, protocol, null, false, replicateRows);
     }
@@ -963,13 +1114,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         @Nullable ExpRun run,
         boolean forInsert,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         if (replicateRows.isEmpty())
             return;
 
         if (run == null && forInsert)
-            throw new ExperimentException("Run is required when inserting into the replicate stats table");
+            throw new ValidationException("Run is required when inserting into the replicate stats table");
 
         AssayProvider provider = requireProvider(protocol);
         Domain resultDomain = provider.getResultsDomain(protocol);
@@ -1055,7 +1206,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Nullable
-    private static DataState getStateFromRow(Container container, Map<String, Object> row, @Nullable DomainProperty stateProp) throws ExperimentException
+    private static DataState getStateFromRow(Container container, Map<String, Object> row, @Nullable DomainProperty stateProp) throws ValidationException
     {
         if (stateProp != null)
         {
@@ -1069,7 +1220,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     {
                         DataState state = PlateDataStateManager.get().getStateForRowId(container, stateRowId);
                         if (state == null)
-                            throw new ExperimentException(String.format("No data states for the rowID %d was found.", stateRowId));
+                            throw new ValidationException(String.format("No data states for the rowID %d was found.", stateRowId));
 
                         return state;
                     }
@@ -1085,7 +1236,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (resultDomain == null)
             return null;
 
-        return resultDomain.getProperties().stream().filter(dp -> AssayResultDomainKind.STATE_COLUMN_NAME.equalsIgnoreCase(dp.getName()))
+        return resultDomain.getProperties().stream().filter(dp -> AssayResultDomainKind.Column.State.name().equalsIgnoreCase(dp.getName()))
                 .findFirst().orElse(null);
     }
 
@@ -1096,29 +1247,21 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Nullable
     public static DataState validateRowDataStates(Container container, Map<String, Object> row, DomainProperty stateProp) throws ValidationException
     {
-        try
+        DataState state = getStateFromRow(container, row, stateProp);
+        if (state != null)
         {
-            DataState state = getStateFromRow(container, row, stateProp);
-            if (state != null)
-            {
-                if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
-                {
-                    throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
-                }
-            }
-            return state;
+            if (PlateDataStateManager.StateType.getType(state.getStateType()) == null)
+                throw new ValidationException(String.format("The data state '%s' is not valid for this assay.", state.getLabel()));
         }
-        catch (ExperimentException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+
+        return state;
     }
 
-    private @NotNull AssayProvider requireProvider(ExpProtocol protocol) throws ExperimentException
+    private @NotNull AssayProvider requireProvider(ExpProtocol protocol) throws ValidationException
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
-            throw new ExperimentException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
+            throw new ValidationException(String.format("Unable to find the provider for protocol : %s", protocol.getName()));
 
         return provider;
     }
@@ -1129,7 +1272,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         AssayProvider provider,
         ExpProtocol protocol
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         QueryUpdateService qus = null;
         AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
@@ -1141,7 +1284,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         if (qus == null)
-            throw new ExperimentException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
+            throw new ValidationException(String.format("There is no replicate stats update service available for assay : %s", protocol.getName()));
 
         return qus;
     }
@@ -1152,7 +1295,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
-    ) throws ExperimentException
+    ) throws ValidationException
     {
         if (keys.isEmpty())
             return;
@@ -1168,6 +1311,151 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             throw UnexpectedException.wrap(e);
         }
+    }
+
+    @Override
+    public void applyHitSelectionCriteria(
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        TableInfo table,
+        List<Integer> runIds
+    ) throws ValidationException
+    {
+        if (runIds.isEmpty())
+            return;
+
+        var provider = requireProvider(protocol);
+        var filterCriteria = provider.getFilterCriteria(protocol);
+        if (filterCriteria.isEmpty())
+            return;
+
+        var domain = table.getDomain();
+        if (domain == null)
+        {
+            LOG.error("Automatic hit selection failed. Unable to resolve domain from table ({}).", table);
+            return;
+        }
+
+        var url = new ActionURL();
+        var replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+
+        for (var criteria : filterCriteria)
+        {
+            var domainProperty = domain.getProperty(criteria.propertyId());
+            boolean isReplicateProperty = false;
+
+            if (domainProperty == null && replicateDomain != null)
+            {
+                domainProperty = replicateDomain.getProperty(criteria.propertyId());
+                isReplicateProperty = domainProperty != null;
+            }
+
+            if (domainProperty == null)
+            {
+                LOG.error("Automatic hit selection failed. Unable to resolve domain property from propertyId ({}).", criteria.propertyId());
+                return;
+            }
+
+            FieldKey fieldKey;
+            if (isReplicateProperty)
+                fieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Replicate.name(), domainProperty.getName());
+            else
+                fieldKey = FieldKey.fromParts(domainProperty.getName());
+
+            var ct = CompareType.getByURLKey(criteria.operation());
+            if (ct == null)
+            {
+                LOG.error("Automatic hit selection failed. Unable to resolve filter comparison type from operation \"{}\".", criteria.operation());
+                return;
+            }
+
+            url.addFilter(null, fieldKey, ct, criteria.value());
+        }
+
+        var filter = new SimpleFilter();
+
+        // Applying filters via ActionURL allows for automatic type coercion of the filter value
+        filter.addUrlFilters(url, null);
+
+        // Generate the description for the applied filter criteria prior to incorporating additional clauses
+        var criteriaDescription = generateFilterCriteriaDescription(filter);
+
+        // The referenced plate well must have a sample value
+        filter.addCondition(FieldKey.fromParts("Well", "SampleId"), null, CompareType.NONBLANK);
+
+        // Filter out result rows that are excluded
+        filterOutExcludedRows(container, table, filter);
+
+        // Remove previous hits against the runs that have been modified
+        PlateManager.get().deleteHitsForRuns(runIds);
+
+        var matchingResults = new TableSelector(table, Collections.singleton(table.getColumn(FieldKey.fromParts("RowId"))), filter, null).getArrayList(Integer.class);
+
+        try
+        {
+            if (!matchingResults.isEmpty())
+                PlateManager.get().markHits(container, user, protocol.getRowId(), true, matchingResults, null);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        var runDomain = provider.getRunDomain(protocol);
+        if (runDomain != null)
+        {
+            var property = runDomain.getPropertyByName(HIT_SELECTION_CRITERIA_COLUMN_NAME);
+            if (property != null)
+            {
+                var pd = property.getPropertyDescriptor();
+                for (var run : ExperimentService.get().getExpRuns(runIds))
+                {
+                    var value = run.getProperty(pd);
+                    if (!criteriaDescription.equals(value))
+                        run.setProperty(user, pd, criteriaDescription);
+                }
+            }
+        }
+    }
+
+    private static void filterOutExcludedRows(Container container, TableInfo table, SimpleFilter filter)
+    {
+        PlateDataStateManager stateManager = PlateDataStateManager.get();
+        var exclusionStateRowIds = stateManager.getStates(container)
+                .stream()
+                .filter(state -> !stateManager.isOperationPermitted(state, PlateDataStateManager.DataOperation.hitSelection))
+                .map(DataState::getRowId)
+                .toList();
+
+        if (!exclusionStateRowIds.isEmpty())
+            filter.addCondition(table.getColumn(AssayResultDomainKind.Column.State.name()), exclusionStateRowIds, CompareType.NOT_IN);
+    }
+
+    private static String generateFilterCriteriaDescription(SimpleFilter filter)
+    {
+        var formatter = new SimpleFilter.ColumnNameFormatter()
+        {
+            @Override
+            public String format(FieldKey fieldKey)
+            {
+                var formatted = super.format(fieldKey);
+                var dotIndex = formatted.lastIndexOf('.');
+                if (dotIndex >= 0)
+                    formatted = formatted.substring(dotIndex + 1);
+                return formatted;
+            }
+        };
+
+        var parts = new ArrayList<String>();
+        for (var clause : filter.getClauses())
+        {
+            var sub = new StringBuilder();
+            clause.appendFilterText(sub, formatter);
+            parts.add(sub.toString());
+        }
+
+        return StringUtils.join(parts, " and ");
     }
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
@@ -1216,8 +1504,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             Domain resultDomain = _provider.getResultsDomain(_protocol);
             _stateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(resultDomain);
             DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-            DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
-            DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
+            DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.Plate.name());
+            DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.Column.WellLocation.name());
 
             // get the plate associated with this row (checking the results domain field first)
             Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, map);
@@ -1273,13 +1561,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // need to adjust the column value to be 0 based to match the template locations
                 pos.setCol(pos.getColumn() - 1);
                 if (positionToWellLsid.containsKey(pos))
-                    target.put(WELL_LSID_COLUMN_NAME, positionToWellLsid.get(pos));
+                    target.put(AssayResultDomainKind.Column.WellLsid.name(), positionToWellLsid.get(pos));
 
                 // find the associated replicate well group for this position (if any)
                 if (positionToReplicateLsid.containsKey(pos))
                 {
                     Lsid lsid = positionToReplicateLsid.get(pos);
-                    target.put(REPLICATE_LSID_COLUMN_NAME, lsid);
+                    target.put(AssayResultDomainKind.Column.ReplicateLsid.name(), lsid);
                     _replicateRows.computeIfAbsent(lsid, k -> new ArrayList<>()).add(map);
                 }
             }
@@ -1306,15 +1594,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 // compute replicate calculations and insert into the replicate stats table
                 AssayPlateMetadataService.get().insertReplicateStats(_container, _user, _protocol, _run, _replicateRows);
 
+                AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
+                TableInfo resultsTable = schema.createDataTable(null, false);
+
                 // re-select any hits that were present in the previous run
                 if (isExistingRun())
                 {
                     ExpRun prevRun = ExperimentService.get().getExpRun(_context.getReRunId());
                     if (prevRun != null)
                     {
-                        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _container, _protocol, null);
-                        TableInfo resultsTable = schema.createDataTable(null, false);
-
                         SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
                                 .append(" JOIN ").append(AssayDbSchema.getInstance().getTableInfoHit(), "HT")
                                 .append(" ON AR.welllsid = HT.welllsid")
@@ -1327,9 +1615,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);
 
                         // remove the selections from the previous run
-                        PlateManager.get().deleteHits(FieldKey.fromParts("RunId"), List.of(prevRun));
+                        PlateManager.get().deleteHitsForRuns(List.of(prevRun.getRowId()));
                     }
                 }
+
+                AssayPlateMetadataService.get().applyHitSelectionCriteria(_container, _user, _protocol, resultsTable, List.of(_run.getRowId()));
+
                 tx.commit();
             }
             catch (Throwable e)

@@ -35,19 +35,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/*
- * User: Dave
- * Date: Jun 9, 2008
- * Time: 4:49:33 PM
- */
-
 /**
  * This class is thrown if there were validation errors during a save.
  * This class is essentially a container for objects that implement
  * ValidationError, so use the <code>getErrors()</code> method to
  * retrieve individual validation errors. The <code>toString()</code>
  * method will simply concatenate all the error messages together,
- * separated by semi-colons.
+ * separated by semicolons.
  */
 public class ValidationException extends Exception implements Iterable<ValidationError>
 {
@@ -56,8 +50,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public static final String ERROR_QUERY_KEY = "_queryName";
     public static final String ERROR_ROW_KEY = "_row";
 
-    private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<>();
-    private List<SimpleValidationError> _globalErrors = new ArrayList<>();
+    private final Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<>();
+    private final List<SimpleValidationError> _globalErrors = new ArrayList<>();
 
     private String _schemaName;
     private String _queryName;
@@ -85,8 +79,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
         WARN("Warning", Level.WARN),
         INFO("Info", Level.INFO);
 
-        String _sevName;
-        Level _level;
+        final String _sevName;
+        final Level _level;
 
         SEVERITY(String sevName, Level level)
         {
@@ -293,10 +287,10 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public ValidationException addError(ValidationError error)
     {
-        if (error instanceof PropertyValidationError)
-            addFieldError((PropertyValidationError) error);
-        else if (error instanceof SimpleValidationError)
-            addGlobalError((SimpleValidationError) error);
+        if (error instanceof PropertyValidationError pve)
+            addFieldError(pve);
+        else if (error instanceof SimpleValidationError sve)
+            addGlobalError(sve);
         else
             throw new IllegalArgumentException();
 

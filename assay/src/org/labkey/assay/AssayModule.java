@@ -118,7 +118,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.015;
+        return 24.016;
     }
 
     @Override
