@@ -110,6 +110,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
 
@@ -1545,7 +1546,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         try
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampletype");
+                    .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
             SearchService searchService = SearchService.get();
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
 

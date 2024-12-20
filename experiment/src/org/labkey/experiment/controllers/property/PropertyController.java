@@ -27,6 +27,7 @@ import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.json.XML;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
@@ -42,12 +43,14 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Identifiable;
@@ -73,7 +76,14 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -106,6 +116,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -122,6 +133,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,6 +148,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
+import static org.labkey.api.query.AbstractQueryUpdateService.saveFile;
+import static org.labkey.api.query.QueryDefinition.DEFAULT_METADATA_TEXT;
 
 public class PropertyController extends SpringActionController
 {
@@ -497,6 +511,207 @@ public class PropertyController extends SpringActionController
                 resp.put("warnings", results.warnings());
                 resp.put("previews", results.previews());
             }
+            return resp;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DomainTemplateForm
+    {
+        private String schemaName;
+        private String queryName;
+        private List<String> templateLabels;
+        private List<String> templateUrls;
+
+        public void setQueryName(String queryName)
+        {
+            this.queryName = queryName;
+        }
+
+        public List<String> getTemplateLabels()
+        {
+            return templateLabels == null ? Collections.emptyList() : templateLabels;
+        }
+
+        public void setTemplateLabels(List<String> templateLabels)
+        {
+            this.templateLabels = templateLabels;
+        }
+
+        public List<String> getTemplateUrls()
+        {
+            return templateUrls == null ? Collections.emptyList() : templateUrls;
+        }
+
+        public void setTemplateUrls(List<String> templateUrls)
+        {
+            this.templateUrls = templateUrls;
+        }
+
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return queryName;
+        }
+
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
+    public class UpdateDomainImportTemplateAction extends MutatingApiAction<DomainTemplateForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public void validateForm(DomainTemplateForm form, Errors errors)
+        {
+        }
+
+        private Map<Integer, Object> getRowFiles()
+        {
+            Map<Integer, Object> rowFiles = new HashMap<>();
+            if (getFileMap() != null)
+            {
+                for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
+                {
+                    // allow for the fileMap key to include the row index for defining which row to attach this file to
+                    // ex: "templateFile::0", "templateFile::1"
+                    String fieldKey = fileEntry.getKey();
+                    int delimIndex = fieldKey.lastIndexOf("::");
+                    if (delimIndex > -1)
+                    {
+                        Integer fieldRowIndex = Integer.parseInt(fieldKey.substring(delimIndex + 2));
+                        SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
+                        rowFiles.put(fieldRowIndex, file.isEmpty() ? null : file);
+                    }
+                }
+            }
+            return rowFiles;
+        }
+
+        private List<Pair<String, String>> getUploadedTemplates(DomainTemplateForm form, DomainKind kind, Domain domain) throws ValidationException, QueryUpdateServiceException
+        {
+            Map<Integer, Object> rowFiles = getRowFiles();
+            List<String> templateLabels = form.getTemplateLabels();
+            Set<String> labels = new HashSet<>(templateLabels);
+            if (labels.size() < templateLabels.size())
+                throw new IllegalArgumentException("Duplicate template name is not allowed.");
+
+            List<String> templateUrls = form.getTemplateUrls();
+            List<Pair<String, String>> uploadedTemplates = new ArrayList<>();
+            for (int rowIndex = 0; rowIndex < form.getTemplateLabels().size(); rowIndex++)
+            {
+                String templateLabel = templateLabels.get(rowIndex);
+                String templateUrl = templateUrls.get(rowIndex);
+                Object file = rowFiles.get(rowIndex);
+                if (StringUtils.isEmpty(templateUrl) && file == null)
+                    throw new IllegalArgumentException("Template file is not provided.");
+
+                if (file instanceof MultipartFile || file instanceof SpringAttachmentFile)
+                {
+                    Object savedFile = saveFile(getUser(), getContainer(), "template file", file, "_templates");
+
+                    //Object savedFile = saveFile(getUser(), getContainer(), "template file", file, kind.getDomainFileDirectory() + "/_templates/" + domain.getName());
+                    if (savedFile instanceof File ioFile)
+                        templateUrl = ioFile.getPath();
+                    else if (savedFile instanceof FileLike fl)
+                        templateUrl = fl.toNioPathForRead().toString();
+                    else
+                        throw UnexpectedException.wrap(null,"Unable to upload template file.");
+                }
+
+                uploadedTemplates.add(Pair.of(templateLabel, templateUrl));
+            }
+            return uploadedTemplates;
+        }
+
+        @Override
+        public Object execute(DomainTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException
+        {
+            User user = getUser();
+            Container container = getContainer();
+            String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
+            DomainKind kind = PropertyService.get().getDomainKind(domainURI);
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain == null)
+                throw new IllegalArgumentException("Domain '" + domainURI + "' not found");
+            if (!kind.canEditDefinition(user, domain))
+                throw new UnauthorizedException("You don't have permission to update import templates for this domain.");
+
+            List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, kind, domain);
+
+            QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
+            if (!(querySchema instanceof UserSchema schema))
+                throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
+            QueryDefinition queryDef = settings.getQueryDef(schema);
+            if (null == queryDef)
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+            if (!queryDef.isMetadataEditable())
+                throw new UnsupportedOperationException("Query metadata is not editable.");
+            TableInfo tInfo = queryDef.getTable(schema, new ArrayList<>(), true, true);
+            if (tInfo == null)
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+
+            List<Pair<String, String>> existingTemplates = tInfo.getImportTemplates(getViewContext());
+            List<Pair<String, String>> existingCustomTemplates = new ArrayList<>();
+            for (Pair<String, String> template_ : existingTemplates)
+            {
+                if (!template_.second.toLowerCase().contains("exportexceltemplate"))
+                    existingCustomTemplates.add(template_);
+            }
+            if (!updatedTemplates.equals(existingCustomTemplates))
+            {
+                String metadata = StringUtils.trimToNull(queryDef.getMetadataXml());
+                if (metadata == null)
+                    metadata = String.format(DEFAULT_METADATA_TEXT, XML.escape(form.getQueryName()));
+
+                // remove old <importTemplates></importTemplates>
+                int startInd = metadata.indexOf("<importTemplates>");
+                int endInd = metadata.indexOf("</importTemplates>");
+                if (startInd > 0 && endInd > 0)
+                    metadata = metadata.substring(0, startInd) + metadata.substring(endInd + "</importTemplates>".length());
+
+                // insert new templates
+                if (updatedTemplates.size() > 0)
+                {
+                    StringBuilder newTemplateBuilder = new StringBuilder("\n\t\t<importTemplates>\n");
+                    for (Pair<String, String> template_ : updatedTemplates)
+                    {
+                        newTemplateBuilder.append("\t\t\t<template label=\"");
+                        newTemplateBuilder.append(template_.first);
+                        newTemplateBuilder.append("\" url=\"");
+                        newTemplateBuilder.append(template_.second);
+                        newTemplateBuilder.append("\">\n\t\t\t</template>\n");
+                    }
+                    newTemplateBuilder.append("\t\t</importTemplates>\n");
+
+                    String newTemplateStr = newTemplateBuilder.toString();
+                    final String insertLocator = "tableDbType=\"NOT_IN_DB\">";
+                    metadata = metadata.replace(insertLocator, insertLocator + newTemplateStr);
+                }
+
+                JavaScriptFragment.ensureXMLMetadataNoJavaScript(metadata);
+                queryDef.setMetadataXml(metadata);
+                queryDef.save(user, container);
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
             return resp;
         }
     }

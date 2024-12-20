@@ -415,4 +415,9 @@ abstract public class DomainKind<T> implements Handler<String>
     {
         return false;
     }
+
+    public String getDomainFileDirectory()
+    {
+        return getKindName();
+    }
 }

@@ -117,6 +117,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -196,9 +197,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -207,7 +205,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1368,7 +1365,7 @@ public class QueryController extends SpringActionController
 
                         if (!getUser().isTrustedBrowserDev())
                         {
-                            ensureNoJavaScript(metadataText);
+                            JavaScriptFragment.ensureXMLMetadataNoJavaScript(metadataText);
                         }
 
                         queryDef.setMetadataXml(metadataText);
@@ -1426,63 +1423,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        private static final Set<String> DISALLOWED_SCRIPT_ELEMENTS = Collections.unmodifiableSet(new CaseInsensitiveHashSet("onClick", "onRender", "includeScript"));
-        private static final String CLASS_NAME_ELEMENT = "className";
-
-        private static void ensureNoJavaScript(String metadataText)
-        {
-            try
-            {
-                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
-
-                // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
-                // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag
-                StringBuilder className = null;
-
-                while (reader.hasNext())
-                {
-                    reader.next();
-                    if (reader.isStartElement())
-                    {
-                        String localPath = reader.getName().getLocalPart();
-                        // These three elements directly include JavaScript or pointers to script files
-                        if (DISALLOWED_SCRIPT_ELEMENTS.contains(localPath))
-                        {
-                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
-                        }
-                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath))
-                        {
-                            className = new StringBuilder();
-                        }
-                    }
-
-                    if (reader.isCharacters() && className != null)
-                    {
-                        // Accumulate the content of the <className>
-                        className.append(reader.getText());
-                    }
-
-                    if (reader.isEndElement())
-                    {
-                        String localPath = reader.getName().getLocalPart();
-                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath) && className != null)
-                        {
-                            if (className.toString().contains(JavaScriptDisplayColumn.class.getName()))
-                            {
-                                throw new UnauthorizedException("For permissions to use JavaScriptDisplayColumn, contact your system administrator");
-                            }
-                            className = null;
-                        }
-                    }
-                }
-            }
-            catch (XMLStreamException ignored)
-            {
-                // Let other XML validation and error feedback handle malformed XML
-            }
-        }
-    }
+     }
 
 
     // Trusted analysts who are editors can create and modify queries
