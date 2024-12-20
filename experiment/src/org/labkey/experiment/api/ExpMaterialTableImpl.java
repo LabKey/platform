@@ -782,9 +782,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             sql = new SQLFragment()
                     .append("CASE WHEN EXISTS (")
                     .append(existsSubquery)
-                    .append(") THEN ")
-                    .append(rowIdField).append("|| ':Plated'")
-                    .append(" ELSE ").append(rowIdField).append("|| ':Not Plated'")
+                    .append(") THEN 'Plated' ELSE 'Not Plated'")
                     .append(" END");
         }
         else
@@ -792,13 +790,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             sql = new SQLFragment("SELECT NULL");
         }
         var col = new ExprColumn(this, Column.IsPlated.name(), sql, JdbcType.VARCHAR);
-        col.setDescription("The record of the sample that has been plated, when plating is supported.");
+        col.setDescription("Whether the sample that has been plated, if plating is supported.");
         col.setUserEditable(false);
         col.setReadOnly(true);
         col.setHidden(true);
         col.setShownInDetailsView(false);
         col.setShownInInsertView(false);
         col.setShownInUpdateView(false);
+        col.setURL(DetailsURL.fromString("plate-isPlated.api?sampleId=${" + Column.RowId.name() + "}"));
         addColumn(col);
 
         addVocabularyDomains();
