@@ -16,7 +16,6 @@
 
 package org.labkey.mothership;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -301,11 +300,13 @@ public class MothershipController extends SpringActionController
         {
             UpgradeMessageForm form = new UpgradeMessageForm();
 
-            form.setCurrentBuildDate(MothershipManager.get().getCurrentBuildDate(getContainer()));
-            form.setMessage(MothershipManager.get().getUpgradeMessage(getContainer()));
-            form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
-            form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
-            form.setMarketingMessage(MothershipManager.get().getMarketingMessage(getContainer()));
+            form.setCurrentBuildDate(MothershipManager.get().getCurrentBuildDate());
+            form.setMessage(MothershipManager.get().getUpgradeMessage());
+            form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL());
+            form.setIssuesContainer(MothershipManager.get().getIssuesContainer());
+            form.setMarketingMessage(MothershipManager.get().getMarketingMessage());
+            form.setStatusCakeApiKey(StringUtils.trimToNull(MothershipManager.get().getStatusCakeApiKey()));
+            form.setUptimeContainer(MothershipManager.get().getUptimeContainer());
 
             return new VBox(new LinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
@@ -329,11 +330,18 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(UpgradeMessageForm form, BindException errors)
         {
-            MothershipManager.get().setCurrentBuildDate(getContainer(), form.getCurrentBuildDate());
-            MothershipManager.get().setUpgradeMessage(getContainer(), form.getMessage());
-            MothershipManager.get().setCreateIssueURL(getContainer(), form.getCreateIssueURL());
-            MothershipManager.get().setIssuesContainer(getContainer(), form.getIssuesContainer());
-            MothershipManager.get().setMarketingMessage(getContainer(), form.getMarketingMessage());
+            MothershipManager.get().setCurrentBuildDate(form.getCurrentBuildDate());
+            MothershipManager.get().setUpgradeMessage(form.getMessage());
+            MothershipManager.get().setCreateIssueURL(form.getCreateIssueURL());
+            MothershipManager.get().setIssuesContainer(form.getIssuesContainer());
+            MothershipManager.get().setMarketingMessage(form.getMarketingMessage());
+            MothershipManager.get().setUptimeContainer(form.getUptimeContainer());
+
+            if (form.getStatusCakeApiKey() != null)
+            {
+                MothershipManager.get().setStatusCakeApiKey(form.getStatusCakeApiKey());
+            }
+
             return true;
         }
 
@@ -509,7 +517,7 @@ public class MothershipController extends SpringActionController
             }
             cifModel.put("body", body.toString());
             cifModel.put("title", title.toString());
-            cifModel.put("action", MothershipManager.get().getCreateIssueURL(getContainer()));
+            cifModel.put("action", MothershipManager.get().getCreateIssueURL());
 
             return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
         }
@@ -757,7 +765,7 @@ public class MothershipController extends SpringActionController
                 {
                     JSONObject response = new JSONObject();
                     response.put("upgradeMessage", getUpgradeMessage(sessionAndRelease.second));
-                    response.put("marketingUpdate", MothershipManager.get().getMarketingMessage(getContainer()));
+                    response.put("marketingUpdate", MothershipManager.get().getMarketingMessage());
 
                     return success(response);
                 }
@@ -906,12 +914,12 @@ public class MothershipController extends SpringActionController
 
     private String getUpgradeMessage(@NotNull SoftwareRelease release)
     {
-        Date currentBuildDate = MothershipManager.get().getCurrentBuildDate(getContainer());
+        Date currentBuildDate = MothershipManager.get().getCurrentBuildDate();
         Date reportedBuildDate = release.getBuildTime();
 
         if (reportedBuildDate != null && currentBuildDate != null && reportedBuildDate.before(currentBuildDate))
         {
-            return MothershipManager.get().getUpgradeMessage(getContainer());
+            return MothershipManager.get().getUpgradeMessage();
         }
         return "";
     }
@@ -1865,6 +1873,8 @@ public class MothershipController extends SpringActionController
         private String _createIssueURL;
         private String _issuesContainer;
         private String _marketingMessage;
+        private String _statusCakeApiKey;
+        private String _uptimeContainer;
 
         public Date getCurrentBuildDate()
         {
@@ -1914,6 +1924,26 @@ public class MothershipController extends SpringActionController
         public void setMarketingMessage(String marketingMessage)
         {
             _marketingMessage = marketingMessage;
+        }
+
+        public String getStatusCakeApiKey()
+        {
+            return _statusCakeApiKey;
+        }
+
+        public void setStatusCakeApiKey(String statusCakeApiKey)
+        {
+            _statusCakeApiKey = statusCakeApiKey;
+        }
+
+        public String getUptimeContainer()
+        {
+            return _uptimeContainer;
+        }
+
+        public void setUptimeContainer(String uptimeContainer)
+        {
+            _uptimeContainer = uptimeContainer;
         }
     }
 }

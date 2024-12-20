@@ -116,7 +116,7 @@ public class LineageClause extends CompareType.CompareClause
     }
 
     @Override
-    protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+    public void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
     {
         ExpRunItem start = getStart();
         if (start == null)

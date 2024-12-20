@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -62,11 +63,14 @@ public class MothershipManager
     private static final MothershipManager INSTANCE = new MothershipManager();
     private static final String SCHEMA_NAME = "mothership";
     private static final String UPGRADE_MESSAGE_PROPERTY_CATEGORY = "upgradeMessage";
+    private static final String MOTHERSHIP_SECURE_CATEGORY = "mothershipSecure";
     private static final String CURRENT_BUILD_DATE_PROP = "currentBuildDate";
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
     private static final String MARKETING_MESSAGE_PROP = "marketingMessage";
+    private static final String UPTIME_CONTAINER_PROP = "uptimeContainer";
+    private static final String STATUS_CAKE_API_KEY_PROP = "statusCakeApiKey";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLockWithName(MothershipManager.class, "INSERT_EXCEPTION_LOCK");
 
     private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
@@ -462,26 +466,50 @@ public class MothershipManager
         return getSchema().getSqlDialect();
     }
 
-    private WritablePropertyMap getWritableProperties(Container c)
+    private WritablePropertyMap getWritableProperties(Container c, boolean secure)
     {
-        return PropertyManager.getWritableProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
+        if (secure)
+        {
+            return PropertyManager.getEncryptedStore().getWritableProperties(c, MOTHERSHIP_SECURE_CATEGORY, true);
+        }
+        else
+        {
+            return PropertyManager.getWritableProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
+        }
     }
 
-    private @NotNull Map<String, String> getProperties(Container c)
+    private @NotNull Map<String, String> getProperties(boolean secure)
     {
-        return PropertyManager.getProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY);
+        if (secure)
+        {
+            return PropertyManager.getEncryptedStore().getProperties(getContainer(), MOTHERSHIP_SECURE_CATEGORY);
+        }
+        else
+        {
+            return PropertyManager.getProperties(getContainer(), UPGRADE_MESSAGE_PROPERTY_CATEGORY);
+        }
     }
 
-    public Date getCurrentBuildDate(Container c)
+    private static Container getContainer()
     {
-        Map<String, String> props = getProperties(c);
+        return ContainerManager.getForPath(MothershipReport.CONTAINER_PATH);
+    }
+
+    public Date getCurrentBuildDate()
+    {
+        Map<String, String> props = getProperties(false);
         String buildDate = props.get(CURRENT_BUILD_DATE_PROP);
         return  null == buildDate ? null : new Date(DateUtil.parseISODateTime(buildDate));
     }
 
-    private String getStringProperty(Container c, String name)
+    private String getStringProperty(String name)
     {
-        Map<String, String> props = getProperties(c);
+        return getStringProperty(name, false);
+    }
+
+    private String getStringProperty(String name, boolean secure)
+    {
+        Map<String, String> props = getProperties(secure);
         String message = props.get(name);
         if (message == null)
         {
@@ -490,46 +518,51 @@ public class MothershipManager
         return message;
     }
 
-    public String getUpgradeMessage(Container c)
+    public String getUpgradeMessage()
     {
-        return getStringProperty(c, UPGRADE_MESSAGE_PROP);
+        return getStringProperty(UPGRADE_MESSAGE_PROP);
     }
 
-    public String getMarketingMessage(Container c)
+    public String getMarketingMessage()
     {
-        return getStringProperty(c, MARKETING_MESSAGE_PROP);
+        return getStringProperty(MARKETING_MESSAGE_PROP);
     }
 
-    private void saveProperty(Container c, String name, String value)
+    private void saveProperty(String name, String value)
     {
-        WritablePropertyMap props = getWritableProperties(c);
+        saveProperty(name, value, false);
+    }
+
+    private void saveProperty(String name, String value, boolean secure)
+    {
+        WritablePropertyMap props = getWritableProperties(getContainer(), secure);
         props.put(name, value);
         props.save();
     }
 
-    public void setCurrentBuildDate(Container c, Date buildDate)
+    public void setCurrentBuildDate(Date buildDate)
     {
-        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatIsoDateShortTime(buildDate));
+        saveProperty(CURRENT_BUILD_DATE_PROP, DateUtil.formatIsoDateShortTime(buildDate));
     }
 
-    public void setUpgradeMessage(Container c, String message)
+    public void setUpgradeMessage(String message)
     {
-        saveProperty(c, UPGRADE_MESSAGE_PROP, message);
+        saveProperty(UPGRADE_MESSAGE_PROP, message);
     }
 
-    public void setMarketingMessage(Container c, String message)
+    public void setMarketingMessage(String message)
     {
-        saveProperty(c, MARKETING_MESSAGE_PROP, message);
+        saveProperty(MARKETING_MESSAGE_PROP, message);
     }
 
-    public String getCreateIssueURL(Container c)
+    public String getCreateIssueURL()
     {
-        return getStringProperty(c, CREATE_ISSUE_URL_PROP);
+        return getStringProperty(CREATE_ISSUE_URL_PROP);
     }
 
-    public void setCreateIssueURL(Container c, String url)
+    public void setCreateIssueURL(String url)
     {
-        saveProperty(c, CREATE_ISSUE_URL_PROP, url);
+        saveProperty(CREATE_ISSUE_URL_PROP, url);
     }
 
     public void updateExceptionStackTrace(ExceptionStackTrace stackTrace, User user)
@@ -537,14 +570,34 @@ public class MothershipManager
         Table.update(user, getTableInfoExceptionStackTrace(), stackTrace, stackTrace.getExceptionStackTraceId());
     }
 
-    public String getIssuesContainer(Container c)
+    public String getIssuesContainer()
     {
-        return getStringProperty(c, ISSUES_CONTAINER_PROP);
+        return getStringProperty(ISSUES_CONTAINER_PROP);
     }
 
-    public void setIssuesContainer(Container c, String container)
+    public void setIssuesContainer(String container)
     {
-        saveProperty(c, ISSUES_CONTAINER_PROP, container);
+        saveProperty(ISSUES_CONTAINER_PROP, container);
+    }
+
+    public String getUptimeContainer()
+    {
+        return getStringProperty(UPTIME_CONTAINER_PROP);
+    }
+
+    public void setUptimeContainer(String uptimeContainer)
+    {
+        saveProperty(UPTIME_CONTAINER_PROP, uptimeContainer);
+    }
+
+    public String getStatusCakeApiKey()
+    {
+        return getStringProperty(STATUS_CAKE_API_KEY_PROP, true);
+    }
+
+    public void setStatusCakeApiKey(String statusCakeApiKey)
+    {
+        saveProperty(STATUS_CAKE_API_KEY_PROP, statusCakeApiKey, true);
     }
 
     public void updateSoftwareRelease(Container container, User user, SoftwareRelease bean)

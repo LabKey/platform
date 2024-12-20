@@ -15,14 +15,10 @@
  */
 package org.labkey.api.query;
 
+import lombok.EqualsAndHashCode;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
-import java.util.Objects;
-
-/**
- * User: jeckels
- * Date: Nov 14, 2008
- */
+@EqualsAndHashCode(callSuper = true)
 public class MetadataColumnJSON extends GWTPropertyDescriptor
 {
     private String _wrappedColumnName;
@@ -41,6 +37,7 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
         setWrappedColumnName(ci.getWrappedColumnName());
         setValueExpression(ci.getValueExpression());
         setLookupCustom(ci.isLookupCustom());
+        setLockExistingField(ci.isLockExistingField());
     }
 
     public MetadataColumnJSON(GWTPropertyDescriptor ci)
@@ -59,11 +56,13 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
         _wrappedColumnName = wrappedColumnName;
     }
 
+    @Override
     public String getValueExpression()
     {
         return _valueExpression;
     }
 
+    @Override
     public void setValueExpression(String valueExpression)
     {
         _valueExpression = valueExpression;
@@ -113,33 +112,7 @@ public class MetadataColumnJSON extends GWTPropertyDescriptor
     public String getLookupDescription()
     {
         if (_lookupCustom)
-        {
             return "(custom)";
-        }
         return super.getLookupDescription();
-    }
-    
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-
-        MetadataColumnJSON that = (MetadataColumnJSON)o;
-
-        if (_lookupCustom != that._lookupCustom) return false;
-        if (!Objects.equals(_valueExpression, that._valueExpression)) return false;
-        return Objects.equals(_wrappedColumnName, that._wrappedColumnName);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = super.hashCode();
-        result = 31 * result + (_wrappedColumnName != null ? _wrappedColumnName.hashCode() : 0);
-        result = 31 * result + (_valueExpression != null ? _valueExpression.hashCode() : 0);
-        result = 31 * result + (_lookupCustom ? 1 : 0);
-        return result;
     }
 }

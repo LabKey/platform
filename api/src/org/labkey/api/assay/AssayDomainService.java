@@ -25,5 +25,5 @@ public interface AssayDomainService
 
     GWTProtocol getAssayTemplate(String providerName);
 
-    GWTProtocol saveChanges(GWTProtocol plate, boolean replaceIfExisting) throws ValidationException;
+    GWTProtocol saveChanges(GWTProtocol protocol, boolean replaceIfExisting) throws ValidationException;
 }

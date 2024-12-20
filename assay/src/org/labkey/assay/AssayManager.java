@@ -429,7 +429,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors)
+    public WebPartView<?> createAssayListView(ViewContext context, boolean portalView, BindException errors)
     {
         String name = AssaySchema.ASSAY_LIST_TABLE_NAME;
         UserSchema schema = createSchema(context.getUser(), context.getContainer(), null);

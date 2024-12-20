@@ -17,6 +17,10 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.LockedPropertyType;
@@ -29,67 +33,60 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * User: matthewb
- * Date: Apr 24, 2007
- * Time: 1:28:42 PM
- *
- * see org.labkey.api.exp.PropertyDescriptor
+ * See {@link org.labkey.api.exp.PropertyDescriptor}
  */
+@EqualsAndHashCode
 public class GWTPropertyDescriptor implements IsSerializable
 {
-    private IntegerProperty propertyId = new IntegerProperty(0);
-    private StringProperty propertyURI = new StringProperty();
-    private StringProperty container = new StringProperty();
-    private StringProperty name = new StringProperty();
-    private StringProperty description = new StringProperty();
-    private StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
-    private StringProperty conceptURI = new StringProperty();
-    private StringProperty label = new StringProperty();
-    private StringProperty format = new StringProperty();
-    private BooleanProperty required = new BooleanProperty(false);
-    private BooleanProperty hidden = new BooleanProperty(false);
-    private StringProperty lookupContainer = new StringProperty();
-    private StringProperty lookupSchema = new StringProperty();
-    private StringProperty lookupQuery = new StringProperty();
-    private BooleanProperty lookupIsValid = new BooleanProperty(true);
+    private final IntegerProperty propertyId = new IntegerProperty(0);
+    private final StringProperty propertyURI = new StringProperty();
+    private final StringProperty container = new StringProperty();
+    private final StringProperty name = new StringProperty();
+    private final StringProperty description = new StringProperty();
+    private final StringProperty rangeURI = new StringProperty("http://www.w3.org/2001/XMLSchema#string");
+    private final StringProperty conceptURI = new StringProperty();
+    private final StringProperty label = new StringProperty();
+    private final StringProperty format = new StringProperty();
+    private final BooleanProperty required = new BooleanProperty(false);
+    private final BooleanProperty hidden = new BooleanProperty(false);
+    private final StringProperty lookupContainer = new StringProperty();
+    private final StringProperty lookupSchema = new StringProperty();
+    private final StringProperty lookupQuery = new StringProperty();
+    private final BooleanProperty lookupIsValid = new BooleanProperty(true);
     private String defaultValueType = null;
-    private StringProperty defaultValue = new StringProperty();
-    private StringProperty defaultDisplayValue = new StringProperty("[none]");
-    private BooleanProperty mvEnabled = new BooleanProperty(false);
-    private StringProperty importAliases = new StringProperty();
-    private StringProperty url = new StringProperty();
-    private BooleanProperty shownInInsertView = new BooleanProperty(true);
-    private BooleanProperty shownInUpdateView = new BooleanProperty(true);
-    private BooleanProperty shownInDetailsView = new BooleanProperty(true);
-    private BooleanProperty measure = new BooleanProperty();
-    private BooleanProperty dimension = new BooleanProperty();
-    private BooleanProperty recommendedVariable = new BooleanProperty(false);
-    private StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
-    private StringProperty facetingBehaviorType = new StringProperty();
-    private StringProperty phi = new StringProperty("NotPHI"); // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
-    private BooleanProperty isExcludeFromShifting = new BooleanProperty();
-    private BooleanProperty isPreventReordering = new BooleanProperty();
-    private BooleanProperty isDisableEditing = new BooleanProperty();
-    private IntegerProperty scale = new IntegerProperty(4000);
-    private StringProperty principalConceptCode = new StringProperty();
-    private StringProperty sourceOntology = new StringProperty();
-    private StringProperty conceptSubtree = new StringProperty();
-    private StringProperty conceptImportColumn = new StringProperty();
-    private StringProperty conceptLabelColumn = new StringProperty();
-    private StringProperty redactedText = new StringProperty();
-    private StringProperty derivationDataScope = new StringProperty();
-    private BooleanProperty isPrimaryKey = new BooleanProperty(false);
-    private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
-    private BooleanProperty scannable = new BooleanProperty(false);
-    private StringProperty valueExpression = new StringProperty();
+    private final StringProperty defaultValue = new StringProperty();
+    private final StringProperty defaultDisplayValue = new StringProperty("[none]");
+    private final BooleanProperty mvEnabled = new BooleanProperty(false);
+    private final StringProperty importAliases = new StringProperty();
+    private final StringProperty url = new StringProperty();
+    private final BooleanProperty shownInInsertView = new BooleanProperty(true);
+    private final BooleanProperty shownInUpdateView = new BooleanProperty(true);
+    private final BooleanProperty shownInDetailsView = new BooleanProperty(true);
+    private final BooleanProperty measure = new BooleanProperty();
+    private final BooleanProperty dimension = new BooleanProperty();
+    private final BooleanProperty recommendedVariable = new BooleanProperty(false);
+    private final StringProperty defaultScale = new StringProperty(DefaultScaleType.LINEAR.name());
+    private final StringProperty facetingBehaviorType = new StringProperty();
+    private final StringProperty phi = new StringProperty("NotPHI"); // Must match PHI.NotPHI and tableInfo.xsd enum PHIType.NotPHI
+    private final BooleanProperty isExcludeFromShifting = new BooleanProperty();
+    private final BooleanProperty isPreventReordering = new BooleanProperty();
+    private final BooleanProperty isDisableEditing = new BooleanProperty();
+    private final IntegerProperty scale = new IntegerProperty(4000);
+    private final StringProperty principalConceptCode = new StringProperty();
+    private final StringProperty sourceOntology = new StringProperty();
+    private final StringProperty conceptSubtree = new StringProperty();
+    private final StringProperty conceptImportColumn = new StringProperty();
+    private final StringProperty conceptLabelColumn = new StringProperty();
+    private final StringProperty redactedText = new StringProperty();
+    private final StringProperty derivationDataScope = new StringProperty();
+    private final BooleanProperty isPrimaryKey = new BooleanProperty(false);
+    private final StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
+    private final BooleanProperty scannable = new BooleanProperty(false);
+    private final StringProperty valueExpression = new StringProperty();
 
-    // for controlling the property editor (not persisted or user settable)
-//    private boolean isEditable = true;
-    private boolean isTypeEditable = true;
-//    private boolean isNameEditable = true;
-
-    private List<GWTPropertyValidator> validators = new ArrayList<GWTPropertyValidator>();
-    private List<GWTConditionalFormat> conditionalFormats = new ArrayList<GWTConditionalFormat>();
+    @Getter @Setter private List<GWTConditionalFormat> conditionalFormats = new ArrayList<>();
+    @Getter @Setter private List<GWTFilterCriteria> filterCriteria = new ArrayList<>();
+    @Getter @Setter private List<GWTPropertyValidator> propertyValidators = new ArrayList<>();
 
     public GWTPropertyDescriptor()
     {
@@ -123,6 +120,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRecommendedVariable(s.isRecommendedVariable());
         setDefaultScale(s.getDefaultScale());
         setLookupContainer(s.getLookupContainer());
+        setLookupIsValid(s.getLookupIsValid());
         setLookupSchema(s.getLookupSchema());
         setLookupQuery(s.getLookupQuery());
         setDefaultValueType(s.getDefaultValueType());
@@ -139,7 +137,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRedactedText(s.getRedactedText());
         setIsPrimaryKey(s.getIsPrimaryKey());
         setLockType(s.getLockType());
-        setTypeEditable(s.isTypeEditable());
         setPrincipalConceptCode(s.getPrincipalConceptCode());
         setSourceOntology(s.getSourceOntology());
         setConceptSubtree(s.getConceptSubtree());
@@ -151,12 +148,17 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
-            validators.add(new GWTPropertyValidator(v));
+            propertyValidators.add(new GWTPropertyValidator(v));
         }
 
         for (GWTConditionalFormat f : s.getConditionalFormats())
         {
             conditionalFormats.add(new GWTConditionalFormat(f));
+        }
+
+        for (GWTFilterCriteria fc : s.getFilterCriteria())
+        {
+            filterCriteria.add(new GWTFilterCriteria(fc));
         }
     }
 
@@ -274,7 +276,6 @@ public class GWTPropertyDescriptor implements IsSerializable
 
         setDimension(getLookupQuery() != null && !isHidden());
     }
-
 
     public String getConceptURI()
     {
@@ -626,145 +627,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
     }
 
-    private boolean equals(String a, String b)
-    {
-        if (null == a || null == b)
-            return a==b;
-        return a.equals(b);
-    }
-
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (!(o instanceof GWTPropertyDescriptor))
-            return false;
-        
-        GWTPropertyDescriptor that = (GWTPropertyDescriptor) o;
-
-        if (getPropertyId() != that.getPropertyId()) return false;
-        if (isRequired() != that.isRequired()) return false;
-        if (isHidden() != that.isHidden()) return false;
-        if (getMvEnabled() != that.getMvEnabled()) return false;
-        if (getContainer() != null ? !getContainer().equals(that.getContainer()) : that.getContainer() != null) return false;
-        if (getConceptURI() != null ? !getConceptURI().equals(that.getConceptURI()) : that.getConceptURI() != null) return false;
-        if (getDescription() != null ? !getDescription().equals(that.getDescription()) : that.getDescription() != null) return false;
-        if (getFormat() != null ? !getFormat().equals(that.getFormat()) : that.getFormat() != null) return false;
-        if (getLabel() != null ? !getLabel().equals(that.getLabel()) : that.getLabel() != null) return false;
-        if (getLookupContainer() != null ? !getLookupContainer().equals(that.getLookupContainer()) : that.getLookupContainer() != null)
-            return false;
-        if (getLookupQuery() != null ? !getLookupQuery().equals(that.getLookupQuery()) : that.getLookupQuery() != null) return false;
-        if (getLookupSchema() != null ? !getLookupSchema().equals(that.getLookupSchema()) : that.getLookupSchema() != null) return false;
-        if (getName() != null ? !getName().equals(that.getName()) : that.getName() != null) return false;
-        if (getPropertyURI() != null ? !getPropertyURI().equals(that.getPropertyURI()) : that.getPropertyURI() != null) return false;
-        if (getRangeURI() != null ? !getRangeURI().equals(that.getRangeURI()) : that.getRangeURI() != null) return false;
-        if (getDefaultValueType() != null ? !getDefaultValueType().equals(that.getDefaultValueType()) : that.getDefaultValueType() != null) return false;
-        if (getDefaultValue() != null ? !getDefaultValue().equals(that.getDefaultValue()) : that.getDefaultValue() != null) return false;
-        if (getDefaultDisplayValue() != null ? !getDefaultDisplayValue().equals(that.getDefaultDisplayValue()) : that.getDefaultDisplayValue() != null) return false;
-        if (getImportAliases() != null ? !getImportAliases().equals(that.getImportAliases()) : that.getImportAliases() != null) return false;
-        if (getURL() != null ? !getURL().equals(that.getURL()) : that.getURL() != null) return false;
-        if (isShownInDetailsView() != that.isShownInDetailsView()) return false;
-        if (isShownInInsertView() != that.isShownInInsertView()) return false;
-        if (isShownInUpdateView() != that.isShownInUpdateView()) return false;
-        if (isMeasure() != that.isMeasure()) return false;
-        if (isDimension() != that.isDimension()) return false;
-        if (isRecommendedVariable() != that.isRecommendedVariable()) return false;
-        if (!equals(getDefaultScale(), that.getDefaultScale())) return false;
-        if (!equals(getFacetingBehaviorType(), that.getFacetingBehaviorType())) return false;
-        if (getPHI() != null ? !getPHI().equals(that.getPHI()) : that.getPHI() != null) return false;
-        if (isExcludeFromShifting() != that.isExcludeFromShifting()) return false;
-
-        if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
-        if (!getConditionalFormats().equals(that.getConditionalFormats()))
-        {
-            return false;
-        }
-        if (!getScale().equals(that.getScale())) return false;
-
-        if (!equals(getPrincipalConceptCode(),that.getPrincipalConceptCode())) return false;
-        if (!equals(getSourceOntology(),that.getSourceOntology())) return false;
-        if (!equals(getConceptSubtree(), that.getConceptSubtree())) return false;
-        if (!equals(getConceptImportColumn(),that.getConceptImportColumn())) return false;
-        if (!equals(getConceptLabelColumn(),that.getConceptLabelColumn())) return false;
-        if (!equals(getDerivationDataScope(),that.getDerivationDataScope())) return false;
-        if (getRedactedText() != null ? !getRedactedText().equals(that.getRedactedText()) : that.getRedactedText() != null) return false;
-        if (isScannable() != that.isScannable()) return false;
-        if (!equals(getValueExpression(),that.getValueExpression())) return false;
-
-        return true;
-    }
-
-    public int hashCode()
-    {
-        int result;
-        result = (propertyId.getInteger() != null ? propertyId.getInteger().hashCode() : 0);
-        result = 31 * result + (propertyURI.getString() != null ? propertyURI.getString().hashCode() : 0);
-        result = 31 * result + (name.getString() != null ? name.getString().hashCode() : 0);
-        result = 31 * result + (description.getString() != null ? description.getString().hashCode() : 0);
-        result = 31 * result + (container.getString() != null ? container.getString().hashCode() : 0);
-        result = 31 * result + (rangeURI.getString() != null ? rangeURI.getString().hashCode() : 0);
-        result = 31 * result + (conceptURI.getString() != null ? conceptURI.getString().hashCode() : 0);
-        result = 31 * result + (label.getString() != null ? label.getString().hashCode() : 0);
-        result = 31 * result + (format.getString() != null ? format.getString().hashCode() : 0);
-        result = 31 * result + (required.getBoolean() != null ? required.getBoolean().hashCode() : 0);
-        result = 31 * result + (hidden.getBoolean() != null ? hidden.getBoolean().hashCode() : 0);
-        result = 31 * result + (mvEnabled.getBoolean() != null ? mvEnabled.getBoolean().hashCode() : 0);
-        result = 31 * result + (lookupContainer.getString() != null ? lookupContainer.getString().hashCode() : 0);
-        result = 31 * result + (lookupSchema.getString() != null ? lookupSchema.getString().hashCode() : 0);
-        result = 31 * result + (lookupQuery.getString() != null ? lookupQuery.getString().hashCode() : 0);
-        result = 31 * result + (defaultValueType != null ? defaultValueType.hashCode() : 0);
-        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
-        result = 31 * result + (defaultDisplayValue != null ? defaultDisplayValue.hashCode() : 0);
-        result = 31 * result + (url != null ? url.hashCode() : 0);
-        result = 31 * result + (importAliases != null ? importAliases.hashCode() : 0);
-        result = 31 * result + (shownInDetailsView.getBoolean() != null ? shownInDetailsView.getBoolean().hashCode() : 0);
-        result = 31 * result + (shownInInsertView.getBoolean() != null ? shownInInsertView.getBoolean().hashCode() : 0);
-        result = 31 * result + (shownInUpdateView.getBoolean() != null ? shownInUpdateView.getBoolean().hashCode() : 0);
-        result = 31 * result + (dimension.getBoolean() != null ? dimension.getBoolean().hashCode() : 0);
-        result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
-        result = 31 * result + (recommendedVariable.getBoolean() != null ? recommendedVariable.getBoolean().hashCode() : 0);
-        result = 31 * result + (defaultScale.getString() != null ? defaultScale.getString().hashCode() : 0);
-        result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
-        result = 31 * result + (phi.getString() != null ? phi.hashCode() : 0);
-        result = 31 * result + (isExcludeFromShifting.getBoolean() != null ? isExcludeFromShifting.getBoolean().hashCode() : 0);
-        result = 31 * result + (scale.getInteger() != null ? scale.getInteger().hashCode() : 0);
-        result = 31 * result + sourceOntology.hashCode();
-        result = 31 * result + conceptSubtree.hashCode();
-        result = 31 * result + conceptImportColumn.hashCode();
-        result = 31 * result + conceptLabelColumn.hashCode();
-        result = 31 * result + principalConceptCode.hashCode();
-        result = 31 * result + redactedText.hashCode();
-        result = 31 * result + derivationDataScope.hashCode();
-        result = 31 * result + (scannable.getBoolean() != null ? scannable.getBoolean().hashCode() : 0);
-        result = 31 * result + valueExpression.hashCode();
-
-        for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
-        {
-            result = 31 * result + gwtPropertyValidator.hashCode();
-        }
-        return result;
-    }
-
-    public List<GWTPropertyValidator> getPropertyValidators()
-    {
-        return validators;
-    }
-
-    public void setPropertyValidators(List<GWTPropertyValidator> validators)
-    {
-        this.validators = validators;
-    }
-
-    public List<GWTConditionalFormat> getConditionalFormats()
-    {
-        return conditionalFormats;
-    }
-
-    public void setConditionalFormats(List<GWTConditionalFormat> conditionalFormats)
-    {
-        this.conditionalFormats = conditionalFormats;
-    }
-
     public String getImportAliases()
     {
         return importAliases.toString();
@@ -787,12 +649,10 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public String getLookupDescription()
     {
-        if (getLookupQuery() != null && getLookupQuery().length() > 0 &&
-                getLookupSchema() != null && getLookupSchema().length() > 0)
-        {
-            return getLookupSchema() + "." + getLookupQuery();
-        }
-        return "(none)";
+        if (StringUtils.isEmpty(getLookupSchema()) || StringUtils.isEmpty(getLookupQuery()))
+            return "(none)";
+
+        return getLookupSchema() + "." + getLookupQuery();
     }
 
     @Override
@@ -806,36 +666,4 @@ public class GWTPropertyDescriptor implements IsSerializable
         return "http://cpas.fhcrc.org/exp/xml#fileLink".equals(getRangeURI()) ||
                "http://www.labkey.org/exp/xml#attachment".equals(getRangeURI());
     }
-
-
-    // for communicating with the type editor, not persisted
-//    public void setEditable(boolean b)
-//    {
-//        isEditable = b;
-//    }
-//
-//    public boolean isEditable()
-//    {
-//        return isEditable;
-//    }
-
-    public void setTypeEditable(boolean b)
-    {
-        isTypeEditable = b;
-    }
-
-    public boolean isTypeEditable()
-    {
-        return isTypeEditable;
-    }
-
-//    public void setNameEditable(boolean b)
-//    {
-//        isNameEditable = b;
-//    }
-//
-//    public boolean isNameEditable()
-//    {
-//        return isNameEditable;
-//    }
 }
