@@ -22,7 +22,7 @@ import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.DefaultDataTransformer;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
@@ -550,7 +550,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             String[] originalFiles = getOriginalFiles(key);
             if (originalFiles.length == 1)
             {
-                replacements.put(DefaultDataTransformer.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles[0].replaceAll("\\\\", "/")));
+                replacements.put(DataTransformService.ORIGINAL_SOURCE_PATH, Matcher.quoteReplacement(originalFiles[0].replaceAll("\\\\", "/")));
             }
         }
 
@@ -601,7 +601,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
         }
 
-        DefaultDataTransformer.addStandardParameters(null, container, scriptFile, apiKey, replacements);
+        DataTransformService.get().addStandardParameters(null, container, scriptFile, apiKey, replacements);
 
         return replacements;
     }

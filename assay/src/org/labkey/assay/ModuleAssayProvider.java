@@ -34,6 +34,8 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.transform.AnalysisScript;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
@@ -73,7 +75,6 @@ import org.labkey.study.assay.xml.ProviderType;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -663,10 +664,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     @NotNull
     @Override
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    public List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
         // Start with the standard set
-        List<File> result = new ArrayList<>(super.getValidationAndAnalysisScripts(protocol, scope));
+        List<AnalysisScript> result = new ArrayList<>(super.getValidationAndAnalysisScripts(protocol, scope));
 
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
@@ -678,7 +679,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 final LabKeyScriptEngineManager manager = LabKeyScriptEngineManager.get();
 
                 Collection<? extends Resource> scripts = scriptDir.list();
-                List<File> moduleScriptFiles = new ArrayList<>(scripts.size());
+                List<AnalysisScript> moduleScriptFiles = new ArrayList<>(scripts.size());
                 for (Resource r : scripts)
                 {
                     if (r instanceof FileResource)
@@ -687,7 +688,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
                         FileResource fileResource = (FileResource) r;
                         if (manager.getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline) != null)
                         {
-                            moduleScriptFiles.add(fileResource.getFile());
+                            // only allow insert execution for module scripts
+                            moduleScriptFiles.add(new AnalysisScript(fileResource.getFile(), Set.of(DataTransformService.TransformOperation.INSERT)));
                         }
                         else
                         {
@@ -702,10 +704,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 }
 
                 // Put the scripts in the order specified by the config.xml file
-                List<File> sortedModuleScripts = new ArrayList<>();
+                List<AnalysisScript> sortedModuleScripts = new ArrayList<>();
                 for (ScriptMetadata scriptMetadata : _scriptMetadata)
                 {
-                    File matchingScript = findAndRemove(moduleScriptFiles, scriptMetadata.getFileName());
+                    AnalysisScript matchingScript = findAndRemove(moduleScriptFiles, scriptMetadata.getFileName());
                     if (matchingScript != null)
                     {
                         sortedModuleScripts.add(matchingScript);
@@ -714,7 +716,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 result.addAll(sortedModuleScripts);
 
                 // Add any remaining module-provided files in alphabetical order
-                moduleScriptFiles.sort(Comparator.comparing(File::getName, String.CASE_INSENSITIVE_ORDER));
+                moduleScriptFiles.sort(Comparator.comparing(s -> s.getScript().getName(), String.CASE_INSENSITIVE_ORDER));
                 result.addAll(moduleScriptFiles);
             }
         }
@@ -722,14 +724,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     /** Finds a script from the list of available files, and removes it from the list */
-    private File findAndRemove(List<File> scriptFiles, String fileName)
+    private AnalysisScript findAndRemove(List<AnalysisScript> scripts, String fileName)
     {
-        for (File scriptFile : scriptFiles)
+        for (AnalysisScript script : scripts)
         {
-            if (scriptFile.getName().equalsIgnoreCase(fileName))
+            if (script.getScript().getName().equalsIgnoreCase(fileName))
             {
-                scriptFiles.remove(scriptFile);
-                return scriptFile;
+                scripts.remove(script);
+                return script;
             }
         }
         // Only warn the first time we notice that there's a script that's in the config.xml file but not on disk

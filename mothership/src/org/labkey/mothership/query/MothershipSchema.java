@@ -356,7 +356,7 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
         result.getMutableColumnOrThrow("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
-        String path = MothershipManager.get().getIssuesContainer(getContainer());
+        String path = MothershipManager.get().getIssuesContainer();
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
         result.getMutableColumnOrThrow("BugNumber").setURL(StringExpressionFactory.createURL(issueURL));
