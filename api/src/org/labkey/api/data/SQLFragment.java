@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
@@ -29,6 +30,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -471,9 +474,16 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == I)
             return appendNull();
-        getStringBuilder().append((int)I);
+        getStringBuilder().append(I.intValue());
         return this;
     }
+
+    public SQLFragment appendValue(int i)
+    {
+        getStringBuilder().append(i);
+        return this;
+    }
+
 
     public SQLFragment appendValue(Long L)
     {
@@ -483,11 +493,52 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    public SQLFragment appendValue(long l)
+    {
+        getStringBuilder().append(l);
+        return this;
+    }
+
     public SQLFragment appendValue(Float F)
     {
         if (null == F)
             return appendNull();
-        getStringBuilder().append((float)F);
+        return appendValue(F.floatValue());
+    }
+
+    public SQLFragment appendValue(float f)
+    {
+        if (Float.isFinite(f))
+        {
+            getStringBuilder().append(f);
+        }
+        else
+        {
+            getStringBuilder().append("?");
+            add(f);
+        }
+        return this;
+    }
+
+    public SQLFragment appendValue(Double D)
+    {
+        if (null == D)
+            return appendNull();
+        else
+            return appendValue(D.doubleValue());
+    }
+
+    public SQLFragment appendValue(double d)
+    {
+        if (Double.isFinite(d))
+        {
+            getStringBuilder().append(d);
+        }
+        else
+        {
+            getStringBuilder().append("?");
+            add(d);
+        }
         return this;
     }
 
@@ -495,8 +546,24 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == N)
             return appendNull();
-        // Do we know that default java toString() for all numbers creates a valid SQL literal?
-        getStringBuilder().append(String.valueOf(N));
+
+        if (N instanceof Quantity q)
+            N = q.value();
+
+        if (N instanceof BigDecimal || N instanceof BigInteger || N instanceof Long)
+        {
+            getStringBuilder().append(String.valueOf(N));
+        }
+        else if (Double.isFinite(N.doubleValue()))
+        {
+            // Do we know that default java toString() for all numbers creates a valid SQL literal?
+            getStringBuilder().append(String.valueOf(N));
+        }
+        else
+        {
+            getStringBuilder().append(" ? ");
+            add(N);
+        }
         return this;
     }
 
@@ -1217,10 +1284,9 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     /* REMOVE THIS - These methods are going away, but this allows us to merge w/o doing 100 modules at the same time */
-    @Deprecated public SQLFragment append(@NotNull Container c) {return appendValue(c);}
+//    @Deprecated public SQLFragment append(@NotNull Container c) {return appendValue(c);}
     @Deprecated public SQLFragment append(Integer i) {return appendValue(i);}
-    @Deprecated public SQLFragment append(java.util.Date date) {return appendValue(date);}
-//    @Deprecated public SQLFragment append(Object o) {return append(String.valueOf(o));}
+//    @Deprecated public SQLFragment append(java.util.Date date) {return appendValue(date);}
     @Deprecated public SQLFragment appendStringLiteral(CharSequence s) {return appendValue(s);}
     /* END OF REMOVE THIS */
 }

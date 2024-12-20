@@ -20,7 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.ontology.KindOfQuantity;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
@@ -245,6 +247,36 @@ public interface ColumnRenderProperties extends ImportAliasable
     {
         return null;
     }
+
+    default KindOfQuantity getKindOfQuantity()
+    {
+        var unit = getDisplayUnit();
+        if (null == unit)
+            return null;
+        return unit.getKindOfQuantity();
+    }
+
+    default Unit getDisplayUnit()
+    {
+        if (!getJdbcType().isNumeric())
+            return null;
+        String name = getName();
+        var index = name.lastIndexOf("__");
+        if (index < 0)
+            return null;
+        var unitPart = name.substring(index+2);
+        try
+        {
+            return Unit.valueOf(unitPart);
+        }
+        catch (IllegalArgumentException x)
+        {
+            // pass
+        }
+        return null;
+    }
+
+
     /* End properties loaded by OntologyService */
 
 

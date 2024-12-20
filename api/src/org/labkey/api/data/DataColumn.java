@@ -564,7 +564,7 @@ public class DataColumn extends DisplayColumn
         }
         else
         {
-            String formatted = formatValue(ctx, value, getTextExpressionCompiled(ctx), getFormat());
+            String formatted = formatValue(ctx, value, getTextExpressionCompiled(ctx), getFormat(), getDisplayUnit());
 
             if (getRequiresHtmlFiltering())
                 formatted = PageFlowUtil.filter(formatted);
@@ -598,7 +598,7 @@ public class DataColumn extends DisplayColumn
         if (value instanceof Collection)
         {
             // CONSIDER: stringify values in collection?
-            return ((Collection)value).contains(entryName);
+            return ((Collection<?>)value).contains(entryName);
         }
         return null != entryName && entryName.equals(valueStr);
     }
@@ -915,7 +915,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.size() == 0)
+        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.isEmpty())
             return "";
 
         String regionName = ctx.getCurrentRegion().getName();
@@ -940,7 +940,10 @@ public class DataColumn extends DisplayColumn
     {
         if (_caption == null)
             return null;
-        return _caption.eval(ctx);
+        var title = _caption.eval(ctx);
+        if (null != _displayColumn && null != _displayColumn.getDisplayUnit())
+            title += " (" + _displayColumn.getDisplayUnit() + ")";
+        return title;
     }
 
     @Override

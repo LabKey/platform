@@ -34,6 +34,8 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -420,21 +422,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 if (null != str)
                 {
-                    propType = _dynaClass.getTruePropType(propName);
-                    if (propType != null)
+                    Object val;
+                    if (null != defaultUnit)
                     {
-                        Object val = ConvertUtils.convert(str, propType);
-                        values.put(propName, val);
+                        val = Quantity.convert(str, defaultUnit);
                     }
                     else
                     {
-                        values.put(propName, str);
+                        propType = _dynaClass.getTruePropType(propName);
+                        if (propType != null)
+                            val = ConvertUtils.convert(str, propType);
+                        else
+                            val = str;
                     }
+                    values.put(propName, val);
                 }
                 else if (_validateRequired && null != _tinfo)
                 {
-                    ColumnInfo col = getColumnByFormFieldName(propName);
-
                     if (null == col || !col.isRequired())
                     {
                         values.put(propName, null);
@@ -471,7 +475,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 boolean skipError = false;
 
                 // Attempt to resolve lookups by display value
-                ColumnInfo col = getColumnByFormFieldName(propName);
                 if (col != null && col.getFk() != null && col.getFk().allowImportByAlternateKey())
                 {
                     ForeignKey fk = col.getFk();

@@ -27,6 +27,8 @@ import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.ontology.Concept;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
@@ -318,7 +320,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract Object getValue(RenderContext ctx);
 
-    public abstract Class getValueClass();
+    public abstract Class<?> getValueClass();
 
     public Object getJsonValue(RenderContext ctx)
     {
@@ -397,7 +399,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (null != formatString)
         {
-            Class valueClass = getDisplayValueClass();
+            Class<?> valueClass = getDisplayValueClass();
 
             try
             {
@@ -471,14 +473,14 @@ public abstract class DisplayColumn extends RenderColumn
     public HtmlString getFormattedHtml(RenderContext ctx)
     {
         Format format = getFormat();
-        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format));
+        Unit unit = getDisplayUnit();
+        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format, unit));
     }
 
     /**
      * Format the display value as text <i>only</i> if there is a text expression or format configured for
      * the display column (which includes any project date and number format settings),
      * otherwise return null.
-     *
      * <b>No html encoding should be performed</b>
      * @see #getFormattedHtml(RenderContext)
      */
@@ -516,7 +518,7 @@ public abstract class DisplayColumn extends RenderColumn
      * any html encoding.
      */
     @NotNull
-    protected final String formatValue(RenderContext ctx, Object value, StringExpression expr, Format format)
+    protected final String formatValue(RenderContext ctx, final Object value, StringExpression expr, @Nullable Format format, @Nullable Unit displayUnit)
     {
         if (null == value)
             return "";
@@ -525,22 +527,47 @@ public abstract class DisplayColumn extends RenderColumn
         {
             return expr.eval(ctx);
         }
-        else if (null != format)
+
+        @NotNull String formattedString;
+        if (null != format)
         {
             try
             {
-                return format.format(value);
+                if (null != displayUnit && value instanceof Number number)
+                {
+                    Quantity q = (value instanceof Quantity) ?
+                            (Quantity)value :
+                            displayUnit.getKindOfQuantity().toQuantity(number);
+                    formattedString = q.format(displayUnit, format);
+                }
+                else
+                {
+                    formattedString = format.format(value);
+                }
             }
             catch (IllegalArgumentException e)
             {
                 LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
-                return ConvertUtils.convert(value);
+                formattedString = ConvertUtils.convert(value);
             }
         }
         else if (value instanceof String)
-            return (String)value;
+        {
+            formattedString = (String) value;
+        }
+        else
+        {
+            formattedString = ConvertUtils.convert(value);
+        }
 
-        return ConvertUtils.convert(value);
+        return formattedString;
+    }
+
+
+    Unit getDisplayUnit()
+    {
+        ColumnInfo col = getDisplayColumnInfo();
+        return null != col ? col.getDisplayUnit() : null;
     }
 
 
@@ -552,7 +579,8 @@ public abstract class DisplayColumn extends RenderColumn
         {
             format = getFormat();
         }
-        return formatValue(ctx, getExportCompatibleValue(ctx), getTextExpressionCompiled(ctx), format);
+        Unit unit = getDisplayUnit();
+        return formatValue(ctx, getExportCompatibleValue(ctx), getTextExpressionCompiled(ctx), format, unit);
     }
 
     public Object getExcelCompatibleValue(RenderContext ctx)
@@ -560,7 +588,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getExportCompatibleValue(ctx);
     }
 
-    public Object getExportCompatibleValue(RenderContext ctx)
+    public Object  getExportCompatibleValue(RenderContext ctx)
     {
         Object value = getDisplayValue(ctx);
         if (null == value)
@@ -579,7 +607,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     /**
      * Returns the JSON type name for the column's display value,
-     * which might be different than its value (e.g., lookup column)
+     * which might be different from its value (e.g., lookup column)
      * @return JSON type name
      */
     public String getDisplayJsonTypeName()
@@ -596,7 +624,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getJsonTypeName(getValueClass());
     }
 
-    public static String getJsonTypeName(Class valueClass)
+    public static String getJsonTypeName(Class<?> valueClass)
     {
         if (String.class.isAssignableFrom(valueClass))
             return "string";
@@ -618,20 +646,19 @@ public abstract class DisplayColumn extends RenderColumn
         return "string";
     }
 
-    public static Class getClassFromJsonTypeName(String typeName)
+    public static Class<?> getClassFromJsonTypeName(String typeName)
     {
         if (typeName == null)
             return String.class;
 
-        switch (typeName)
+        return switch (typeName)
         {
-            case "boolean":  return Boolean.class;
-            case "int":      return Integer.class;
-            case "float":    return Float.class;
-            case "date":     return Date.class;
-            case "string":
-            default:         return String.class;
-        }
+            case "boolean" -> Boolean.class;
+            case "int" -> Integer.class;
+            case "float" -> Float.class;
+            case "date" -> Date.class;
+            default -> String.class;
+        };
     }
 
 
@@ -641,7 +668,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getValue(ctx);
     }
 
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         return getValueClass();
     }
@@ -770,7 +797,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             if (!getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
             {
-                boolean suffix = tooltip.length() > 0;
+                boolean suffix = !tooltip.isEmpty();
                 if (suffix)
                 {
                     tooltip.append(" (");
@@ -792,18 +819,18 @@ public abstract class DisplayColumn extends RenderColumn
                     if (null != concept)
                         conceptDisplay = concept.getLabel() + " (" + conceptDisplay + ")";
                 }
-                tooltip.append("\nConcept Annotation: " + conceptDisplay);
+                tooltip.append("\nConcept Annotation: ").append(conceptDisplay);
             }
 
             if (isPhiProtected())
             {
-                if (tooltip.length() > 0)
+                if (!tooltip.isEmpty())
                     tooltip.append("\n");
                 tooltip.append("(PHI protected data removed)");
             }
         }
 
-        if (tooltip.length() > 0)
+        if (!tooltip.isEmpty())
         {
             out.write(" title=\"");
             out.write(PageFlowUtil.filter(tooltip.toString()));
@@ -823,7 +850,7 @@ public abstract class DisplayColumn extends RenderColumn
             style += ";width:" + getWidth() + "px;";
 
         out.write("<div ");
-        if (!"".equals(style))
+        if (!style.isEmpty())
         {
             out.write("style=\"");
             out.write(style);
@@ -844,7 +871,7 @@ public abstract class DisplayColumn extends RenderColumn
             // 31304: click target should fill the entire cell
             out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
             out.write("<ul class=\"dropdown-menu\"");
-            if (tooltip.length() > 0) // 36050
+            if (!tooltip.isEmpty()) // 36050
                 out.write(" title=\"\"");
             out.write(">");
             PopupMenuView.renderTree(navTree, out);
@@ -894,11 +921,7 @@ public abstract class DisplayColumn extends RenderColumn
                 ActionURL url = ctx.getSortFilterURLHelper();
                 SimpleFilter filter = new SimpleFilter(url, rgn.getName());
 
-                filteredColSet = new HashSet<>();
-                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
-                {
-                    filteredColSet.add(fieldKey);
-                }
+                filteredColSet = new HashSet<>(filter.getWhereParamFieldKeys());
                 ctx.put(rgn.getName() + ".filteredCols", filteredColSet);
             }
 
@@ -1115,13 +1138,15 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
-    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    /** Always return a non-null string to make it easy to concatenate values */
+    @NotNull
     public String getDisplayClass(RenderContext ctx)
     {
         return _displayClass != null ? _displayClass : "";
     }
 
-    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    /** Always return a non-null string to make it easy to concatenate values */
+    @NotNull
     public String getCssStyle(RenderContext ctx)
     {
         String style = "";
@@ -1283,7 +1308,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
     {
-        out.write(new Input.InputBuilder()
+        out.write(new Input.InputBuilder<>()
             .name(getInputPrefix() + formFieldName)
             .type("hidden")
             .value(null != value ? value.toString() : null)
