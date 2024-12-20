@@ -1784,16 +1784,4 @@ public class PlateController extends SpringActionController
             return null;
         }
     }
-
-    // Dummy action that is used in ExpMaterialTable's IsPlated column's URL. The resulting URL is mapped via
-    // IS_PLATED_MAPPER in ui-components.
-    @RequiresPermission(ReadPermission.class)
-    public static class IsPlatedAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object form, BindException errors) throws Exception
-        {
-            return success();
-        }
-    }
 }

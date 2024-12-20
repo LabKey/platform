@@ -770,10 +770,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
         UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
-        String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
         SQLFragment sql;
         if (plateUserSchema != null)
         {
+            String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
                     .append("SELECT 1 FROM ")
                     .append(plateUserSchema.getTable("Well"), "well")
@@ -793,7 +793,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         col.setDescription("Whether the sample that has been plated, if plating is supported.");
         col.setUserEditable(false);
         col.setReadOnly(true);
-        col.setHidden(true);
         col.setShownInDetailsView(false);
         col.setShownInInsertView(false);
         col.setShownInUpdateView(false);
