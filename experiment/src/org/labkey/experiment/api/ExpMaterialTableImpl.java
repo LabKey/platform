@@ -797,7 +797,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         col.setShownInDetailsView(false);
         col.setShownInInsertView(false);
         col.setShownInUpdateView(false);
-        col.setURL(DetailsURL.fromString("plate-isPlated.api?sampleId=${" + Column.RowId.name() + "}"));
+        if (plateUserSchema != null)
+           col.setURL(DetailsURL.fromString("plate-isPlated.api?sampleId=${" + Column.RowId.name() + "}"));
         addColumn(col);
 
         addVocabularyDomains();
