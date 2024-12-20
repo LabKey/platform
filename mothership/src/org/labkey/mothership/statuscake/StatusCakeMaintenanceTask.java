@@ -143,6 +143,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
         List<Map<String, Object>> serverRows = new ArrayList<>();
         List<Map<String, Object>> historyRows = new ArrayList<>();
 
+        // Limit to data from 2022 and later
         LocalDateTime since = LocalDateTime.of(2022, 1, 1, 0, 0, 0);
 
         int limit = 100;
@@ -241,7 +242,6 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
 
         int limit = 100;
 
-        // Limit to data from 2022 and later
         ClassicHttpRequest httpGet = ClassicRequestBuilder.get("https://api.statuscake.com/v1/uptime/" + server.getId() + "/periods?limit=" + limit + "&after=" + (instant.toEpochMilli() / 1000))
                 .build();
         httpGet.setHeader("Authorization", "Bearer " + statusCakeAPIKey);
