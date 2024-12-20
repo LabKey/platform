@@ -769,6 +769,38 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
+        UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
+        String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
+        SQLFragment sql;
+        if (plateUserSchema != null)
+        {
+            SQLFragment existsSubquery = new SQLFragment()
+                    .append("SELECT 1 FROM ")
+                    .append(plateUserSchema.getTable("Well"), "well")
+                    .append(" WHERE well.sampleid = ").append(rowIdField);
+
+            sql = new SQLFragment()
+                    .append("CASE WHEN EXISTS (")
+                    .append(existsSubquery)
+                    .append(") THEN ")
+                    .append(rowIdField).append("|| ':Plated'")
+                    .append(" ELSE ").append(rowIdField).append("|| ':Not Plated'")
+                    .append(" END");
+        }
+        else
+        {
+            sql = new SQLFragment("SELECT NULL");
+        }
+        var col = new ExprColumn(this, Column.IsPlated.name(), sql, JdbcType.VARCHAR);
+        col.setDescription("The record of the sample that has been plated, when plating is supported.");
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setHidden(true);
+        col.setShownInDetailsView(false);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
+        addColumn(col);
+
         addVocabularyDomains();
 
         addColumn(Column.Properties);
