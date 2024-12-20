@@ -163,7 +163,7 @@ public class SimpleFilter implements Filter
             return _paramVals;
         }
 
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             int fromIndex = appendFilterValueText(sb, formatter);
             replaceParamValues(sb, fromIndex);
@@ -458,7 +458,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             String sep = "";
             for (FilterClause clause : _clauses)
@@ -661,7 +661,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append(formatter.format(getFieldKey()));
 
@@ -848,7 +848,7 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append(formatter.format(getFieldKey()));
             sb.append(" ").append(isNegated() ? "DOES NOT CONTAIN ANY OF " : "CONTAINS ONE OF ");

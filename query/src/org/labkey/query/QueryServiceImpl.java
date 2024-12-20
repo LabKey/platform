@@ -489,7 +489,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
         {
             sb.append(getParamVals()[0]);
         }

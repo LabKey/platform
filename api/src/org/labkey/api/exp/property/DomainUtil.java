@@ -677,17 +677,19 @@ public class DomainUtil
         return gwtProp;
     }
 
-
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
         return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
     }
 
-
     public static Domain createDomain(
-            String kindName, GWTDomain domain, Map<String, Object> arguments,
-            Container container, User user, @Nullable String domainName,
-            @Nullable TemplateInfo templateInfo
+        String kindName,
+        GWTDomain domain,
+        Map<String, Object> arguments,
+        Container container,
+        User user,
+        @Nullable String domainName,
+        @Nullable TemplateInfo templateInfo
     ) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
