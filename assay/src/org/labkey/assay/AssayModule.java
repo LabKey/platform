@@ -102,8 +102,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
-import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
+import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
+import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_ID_REPLACEMENT;
 
 public class AssayModule extends SpringModule
 {

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.DefaultDataTransformer;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -79,9 +79,9 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
             PipelineJob.PIPELINE_TASK_INFO_PARAM,
             PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM,
             // The following replacements aren't used yet, but are reserved for future use.
-            DefaultDataTransformer.RUN_INFO_REPLACEMENT,
-            DefaultDataTransformer.SRC_DIR_REPLACEMENT,
-            DefaultDataTransformer.R_SESSIONID_REPLACEMENT
+            DataTransformService.RUN_INFO_REPLACEMENT,
+            DataTransformService.SRC_DIR_REPLACEMENT,
+            DataTransformService.R_SESSIONID_REPLACEMENT
         );
 
     protected Map<String, JobParamToCommandArgs> _params;
