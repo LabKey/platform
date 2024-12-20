@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.XmlBeans;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
@@ -275,7 +276,7 @@ public class ModuleLoader implements MemTrackerListener
         return getInstance()._servletContext;
     }
 
-    /** Do basic module loading, shared between the web server and remote pipeline deployments */
+    /** Do basic module loading, remote pipeline deployments only */
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
         List<Map.Entry<File,File>> moduleDirs = explodedModuleDirs.stream()
@@ -284,6 +285,7 @@ public class ModuleLoader implements MemTrackerListener
         return doInitWithSourceModule(moduleDirs);
     }
 
+    /** Shared between the web server and remote pipeline deployments */
     public List<Module> doInitWithSourceModule(List<Map.Entry<File,File>> explodedModuleDirs)
     {
         _log.debug("ModuleLoader init");
@@ -329,13 +331,16 @@ public class ModuleLoader implements MemTrackerListener
 
         public static ExplodedModuleService newInstance(Object obj)
         {
-            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) &&
-                    !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()) &&
-                    !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName()))
+            if
+            (
+                !"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) &&
+                !"org.labkey.embedded.LabKeySpringBootClassLoader".equals(obj.getClass().getName())
+            )
                 return null;
+
             return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(),
-                    new Class[] {ExplodedModuleService.class},
-                    new _Proxy(obj));
+                new Class[] {ExplodedModuleService.class},
+                new _Proxy(obj));
         }
 
         private _Proxy(Object obj)
@@ -346,7 +351,7 @@ public class ModuleLoader implements MemTrackerListener
                 if (methodNames.contains(method.getName()))
                     _methods.put(method.getName(), method);
             });
-            methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment.  Could not find method: " + name); });
+            methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment. Could not find method: " + name); });
         }
 
         @Override
@@ -403,7 +408,7 @@ public class ModuleLoader implements MemTrackerListener
 
             // This should have been verified way before we get here, but just to be safe
             if (null != moduleExisting && !equalsIgnoreCase(moduleCreated.getName(), moduleExisting.getName()))
-                throw new IllegalStateException("Module name should not have changed.  Found '" + moduleCreated.getName() + "' and '" + moduleExisting.getName() + "'");
+                throw new IllegalStateException("Module name should not have changed. Found '" + moduleCreated.getName() + "' and '" + moduleExisting.getName() + "'");
 
             _moduleContextMap.put(context.getName(), context);
 
@@ -454,7 +459,7 @@ public class ModuleLoader implements MemTrackerListener
             }
             catch (Throwable x)
             {
-                _log.error("Failure starting module: " + moduleCreated.getName(), x);
+                _log.error("Failure starting module: {}", moduleCreated.getName(), x);
                 throw UnexpectedException.wrap(x);
             }
         }
@@ -508,18 +513,6 @@ public class ModuleLoader implements MemTrackerListener
         {
             explodedModuleDirs.addAll(service.getExplodedModules());
             ServiceRegistry.get().registerService(ExplodedModuleService.class, service);
-        }
-
-        // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
-        File webinfModulesDir = FileUtil.appendPath(webapp, Path.parse("WEB-INF/modules"));
-        if (!webinfModulesDir.isDirectory() && null == service)
-            throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
-        File[] webInfModules = webinfModulesDir.listFiles(File::isDirectory);
-        if (null != webInfModules)
-        {
-            Arrays.stream(webInfModules)
-                .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
-                .forEach(explodedModuleDirs::add);
         }
 
         doInitWithSourceModule(explodedModuleDirs);
@@ -584,7 +577,7 @@ public class ModuleLoader implements MemTrackerListener
             // Likely empty if running in dev mode... no need to log or do other work
             if (!labkeyModules.isEmpty())
             {
-                _log.info("Checking " + StringUtilsLabKey.pluralize(labkeyModules.size(), "LabKey-managed module") + " to ensure " + (labkeyModules.size() > 1? "they're" : "it's") + " recent enough to upgrade");
+                _log.info("Checking {} to ensure {} recent enough to upgrade", StringUtilsLabKey.pluralize(labkeyModules.size(), "LabKey-managed module"), labkeyModules.size() > 1 ? "they're" : "it's");
 
                 // Module contexts with non-null schema versions
                 Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
@@ -611,9 +604,12 @@ public class ModuleLoader implements MemTrackerListener
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
-        _log.info("Starting LabKey Server " + AppProps.getInstance().getReleaseVersion());
-        _log.info("Server installation GUID: " + AppProps.getInstance().getServerGUID() + ", server session GUID: " + AppProps.getInstance().getServerSessionGUID());
-        _log.info("Deploying to context path " + AppProps.getInstance().getContextPath());
+        _log.info("Starting LabKey Server {}", AppProps.getInstance().getReleaseVersion());
+        _log.info("Server installation GUID: {}, server session GUID: {}", AppProps.getInstance().getServerGUID(), AppProps.getInstance().getServerSessionGUID());
+        _log.info("Deploying to context path {}", AppProps.getInstance().getContextPath());
+
+        // Temporary logging to help track down issues we're having with upgrading XMLBeans from v5.2.0. TODO: Remove after upgrade
+        _log.info("XMLBeans version: {}", XmlBeans.getVersion());
 
         synchronized (_modulesLock)
         {
@@ -721,17 +717,17 @@ public class ModuleLoader implements MemTrackerListener
         }
 
         if (!modulesRequiringUpgrade.isEmpty())
-            _log.info("Modules requiring upgrade: " + modulesRequiringUpgrade);
+            _log.info("Modules requiring upgrade: {}", modulesRequiringUpgrade);
 
         if (!additionalSchemasRequiringUpgrade.isEmpty())
-            _log.info((modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas") + " requiring upgrade: " + additionalSchemasRequiringUpgrade);
+            _log.info("{} requiring upgrade: {}", modulesRequiringUpgrade.isEmpty() ? "Schemas" : "Additional schemas", additionalSchemasRequiringUpgrade);
 
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
         startNonCoreUpgradeAndStartup(execution, lockFile);
 
-        _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
+        _log.info("LabKey Server startup is complete; {}", execution.getLogMessage());
     }
 
     // Check for multiple modules claiming the same schema. Inspired by Issue 47547.
@@ -747,7 +743,7 @@ public class ModuleLoader implements MemTrackerListener
                 {
                     String previousModule = schemaToModule.get(schema);
                     if (previousModule != null)
-                        _log.error("Schema " + schema + " is claimed by more than one module: " + previousModule + " and " + ctx.getName());
+                        _log.error("Schema {} is claimed by more than one module: {} and {}", schema, previousModule, ctx.getName());
                     else
                         schemaToModule.put(schema, ctx.getName());
                 }
@@ -762,10 +758,14 @@ public class ModuleLoader implements MemTrackerListener
      */
     private boolean isFromLabKeyRepository(Module module)
     {
-        return StringUtils.startsWithAny(module.getVcsUrl(), "https://github.com/LabKey/", "https://github.com/FDA-MyStudies/");
+        return StringUtils.startsWithAny(module.getVcsUrl(), "https://github.com/LabKey/");
     }
 
-    private static final Map<String, String> _moduleRenames = Map.of("MobileAppStudy", "Response" /* Renamed in 21.3 */);
+    /**
+     * If a module is renamed, add <old name>, <new name> to the map below and the server will throw with a clear
+     * message if a module with the old name is present at startup.
+     */
+    private static final Map<String, String> _moduleRenames = Map.of();
 
     private void checkForRenamedModules()
     {
@@ -865,7 +865,7 @@ public class ModuleLoader implements MemTrackerListener
 
         /*
          * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
-         * as they may have not initialized themselves yet.  However, we did not enforce that
+         * as they may have not initialized themselves yet. However, we did not enforce that
          * so this cross-module behavior may have crept in.
          *
          * To help mitigate this a little, we remove modules that do not support this DB type
@@ -934,13 +934,13 @@ public class ModuleLoader implements MemTrackerListener
 
         if (treatAsError)
         {
-            _log.error("Unable to initialize module " + name, t);
+            _log.error("Unable to initialize module {}", name, t);
             //noinspection ThrowableResultOfMethodCallIgnored
             _moduleFailures.put(name, t);
         }
         else
         {
-            _log.warn("Unable to initialize module " + name + " due to: " + t.getMessage());
+            _log.warn("Unable to initialize module {} due to: {}", name, t.getMessage());
         }
 
         synchronized (_modulesLock)
@@ -1055,15 +1055,15 @@ public class ModuleLoader implements MemTrackerListener
                     {
                         List<String> report = checkLabKeyModuleInfo(module);
                         if (report != null)
-                            _log.warn("Missing expected info on module '" + module.getName() + "': " + StringUtils.join(report, ", "));
+                            _log.warn("Missing expected info on module '{}': {}", module.getName(), StringUtils.join(report, ", "));
                     }
                 }
                 else
-                    _log.error("No module class was found for the module '" + moduleDir.getName() + "'");
+                    _log.error("No module class was found for the module '{}'", moduleDir.getName());
             }
             catch (Throwable t)
             {
-                _log.error("Unable to instantiate module " + moduleDir, t);
+                _log.error("Unable to instantiate module {}", moduleDir, t);
                 //noinspection ThrowableResultOfMethodCallIgnored
                 _moduleFailures.put(moduleDir.getName(), t);
             }
@@ -1101,8 +1101,7 @@ public class ModuleLoader implements MemTrackerListener
 
         if (!missingModules.isEmpty())
         {
-            _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): " +
-                    String.join(", ", missingModules));
+            _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): {}", String.join(", ", missingModules));
         }
 
         for (String e : excludeSet)
@@ -1131,7 +1130,7 @@ public class ModuleLoader implements MemTrackerListener
             }
             catch (IOException e)
             {
-                _log.error("Error reading module properties file '" + modulePropsFile.getAbsolutePath() + "'", e);
+                _log.error("Error reading module properties file '{}'", modulePropsFile.getAbsolutePath(), e);
             }
         }
 
@@ -1198,11 +1197,11 @@ public class ModuleLoader implements MemTrackerListener
         }
         catch (NoSuchBeanDefinitionException x)
         {
-            _log.error("module configuration does not specify moduleBean: " + moduleXml);
+            _log.error("module configuration does not specify moduleBean: {}", moduleXml);
         }
         catch (RuntimeException x)
         {
-            _log.error("error reading module configuration: " + moduleXml.getPath(), x);
+            _log.error("error reading module configuration: {}", moduleXml.getPath(), x);
         }
         return null;
     }
@@ -1281,9 +1280,8 @@ public class ModuleLoader implements MemTrackerListener
     }
 
     /**
-     * Sets the current Java version, if it's supported. Otherwise, ConfigurationException is thrown and server fails to start.
-     *
-     * Warnings for deprecated Java versions are handled in CoreWarningProvider.
+     * Sets the current Java version, if it's supported. Otherwise, ConfigurationException is thrown and server fails
+     * to start. Warnings for deprecated Java versions are handled in CoreWarningProvider.
      *
      * @throws ConfigurationException if Java version is not supported
      */
@@ -1292,7 +1290,7 @@ public class ModuleLoader implements MemTrackerListener
         _javaVersion = JavaVersion.get();
 
         if (!_javaVersion.isTested())
-            _log.warn("LabKey Server has not been tested against Java runtime version " + JavaVersion.getJavaVersionDescription() + ".");
+            _log.warn("LabKey Server has not been tested against Java runtime version {}.", JavaVersion.getJavaVersionDescription());
     }
 
     public JavaVersion getJavaVersion()
@@ -1346,11 +1344,11 @@ public class ModuleLoader implements MemTrackerListener
 
         if (coreContext.isNewInstall())
         {
-            _log.debug("Initializing core module to " + coreModule.getFormattedSchemaVersion());
+            _log.debug("Initializing core module to {}", coreModule.getFormattedSchemaVersion());
         }
         else
         {
-            _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedSchemaVersion());
+            _log.debug("Upgrading core module from {} to {}", ModuleContext.formatVersion(coreContext.getInstalledVersion()), coreModule.getFormattedSchemaVersion());
         }
 
         synchronized (_modulesLock)
@@ -1405,7 +1403,7 @@ public class ModuleLoader implements MemTrackerListener
 
                 if (!scripts.isEmpty())
                 {
-                    _log.info("Upgrading the \"labkey\" schema in \"" + scope.getDisplayName() + "\" to " + to);
+                    _log.info("Upgrading the \"labkey\" schema in \"{}\" to {}", scope.getDisplayName(), to);
                     getUpgradeScriptRunner().runScripts(coreModule, scripts);
                 }
 
@@ -1631,7 +1629,7 @@ public class ModuleLoader implements MemTrackerListener
                     }
                     catch (Throwable t)
                     {
-                        _log.error("Error starting background threads for module \"" + module.getName() + "\"", t);
+                        _log.error("Error starting background threads for module \"{}\"", module.getName(), t);
                     }
                 }
             }
@@ -1666,11 +1664,11 @@ public class ModuleLoader implements MemTrackerListener
             catch (Throwable x)
             {
                 setStartupFailure(x);
-                _log.error("Failure starting module: " + m.getName(), x);
+                _log.error("Failure starting module: {}", m.getName(), x);
             }
         }
 
-        // Run any deferred upgrades, after all of the modules are in the Running state so that we
+        // Run any deferred upgrades, after all the modules are in the Running state so that we
         // know they've registered their listeners
         for (Module m : modules)
         {
@@ -1683,7 +1681,7 @@ public class ModuleLoader implements MemTrackerListener
             catch (Throwable x)
             {
                 setStartupFailure(x);
-                _log.error("Failure starting module: " + m.getName(), x);
+                _log.error("Failure starting module: {}", m.getName(), x);
             }
         }
 
@@ -2348,7 +2346,7 @@ public class ModuleLoader implements MemTrackerListener
                 .map(entry -> entry.getScope() + "." + entry.getName() + ": " + entry.getValue()).toList();
 
             if (!unknown.isEmpty())
-                _log.info("Unknown startup propert" + (unknown.size() == 1 ? "y: " : "ies: ") + unknown);
+                _log.info("Unknown startup propert{}: {}", unknown.size() == 1 ? "y" : "ies", unknown);
 
             // Failing this check indicates a coding issue, so execute it only when assertions are on
             assert checkPropertyScopeMapping();
@@ -2430,7 +2428,7 @@ public class ModuleLoader implements MemTrackerListener
         FileLike newinstall = propsDir.resolveChild("newinstall");
         if (newinstall.isFile())
         {
-            _log.debug("'newinstall' file detected: " + newinstall.toNioPathForRead());
+            _log.debug("'newinstall' file detected: {}", newinstall.toNioPathForRead());
 
             _newInstall = true;
 
@@ -2456,7 +2454,7 @@ public class ModuleLoader implements MemTrackerListener
 
             for (FileLike propFile : sortedPropFiles)
             {
-                _log.debug("loading propsFile: " + propFile.toNioPathForRead());
+                _log.debug("loading propsFile: {}", propFile.toNioPathForRead());
 
                 try (InputStream in = propFile.openInputStream())
                 {
@@ -2467,7 +2465,7 @@ public class ModuleLoader implements MemTrackerListener
                     {
                         if (entry.getKey() instanceof String && entry.getValue() instanceof String)
                         {
-                            _log.trace("property '" + entry.getKey() + "' resolved to value: '" + entry.getValue() + "'");
+                            _log.trace("property '{}' resolved to value: '{}'", entry.getKey(), entry.getValue());
 
                             addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
                         }
@@ -2475,7 +2473,7 @@ public class ModuleLoader implements MemTrackerListener
                 }
                 catch (Exception e)
                 {
-                    _log.error("Error parsing startup config properties file '" + propFile.toNioPathForRead() + "'", e);
+                    _log.error("Error parsing startup config properties file '{}'", propFile.toNioPathForRead(), e);
                 }
             }
         }

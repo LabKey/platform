@@ -174,7 +174,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         clickButton("Submit", "Dataset: " + ALIAS_DATASET);
 
         // Configure new dataset as the alias dataset
-        goToManageAlternateIds();
+        goToManageParticipants();
         _ext4Helper.selectComboBoxItem("Dataset Containing Aliases", ALIAS_DATASET);
         _ext4Helper.selectComboBoxItem("Alias Column", ALIAS_COLUMN);
         _ext4Helper.selectComboBoxItem("Source Column", SOURCE_COLUMN);
@@ -201,7 +201,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         return BrowserType.CHROME;
     }
 
-    private void goToManageAlternateIds()
+    private void goToManageParticipants()
     {
         goToManageStudy();
         clickAndWait(Locator.linkContainingText("Manage Participants"));
@@ -209,7 +209,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
 
     private void goToMergeParticipants()
     {
-        goToManageAlternateIds();
-        clickButton("Change or Merge " + SUBJECT_COLUMN);
+        goToManageParticipants();
+        clickButton("Change or Merge " + SUBJECT_NOUN + " IDs");
     }
 }

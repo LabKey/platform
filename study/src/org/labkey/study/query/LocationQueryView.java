@@ -82,10 +82,6 @@ public class LocationQueryView extends QueryView
 
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
         bar.add(createExportButton(recordSelectorColumns));
-
-        ActionButton b = createPrintButton();
-        if (null != b)
-            bar.add(createPrintButton());
     }
 
     @Override

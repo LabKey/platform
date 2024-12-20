@@ -25,6 +25,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
@@ -403,8 +404,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
+    protected @Nullable Domain getResultsDomainIfExists(ExpProtocol protocol)
+    {
+        return getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+    }
+
     @Override
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
+    public void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+    }
+
+    @Override
+    public void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
     }
 
@@ -1338,7 +1349,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException
+    public void setSaveScriptFiles(ExpProtocol protocol, boolean save)
     {
         setBooleanProperty(protocol, SAVE_SCRIPT_FILES_PROPERTY_SUFFIX, save);
     }
@@ -1442,12 +1453,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ObjectProperty prop = protocol.getObjectProperties().get(createPropertyURI(protocol, propertySuffix));
 
-        if (prop != null)
-        {
-            Object o = prop.value();
-            if (o instanceof Boolean)
-                return (Boolean)o;
-        }
+        if (prop != null && prop.value() instanceof Boolean b)
+            return b;
+
         return null;
     }
 
@@ -1734,6 +1742,41 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
         return supportsPlateMetadata(protocol) && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol)
+    {
+        Domain resultsDomain = getResultsDomainIfExists(protocol);
+        if (resultsDomain == null)
+            return Collections.emptyList();
+
+        return getFilterCriteria(protocol, resultsDomain);
+    }
+
+    protected @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean hasFilterCriteria(ExpProtocol protocol)
+    {
+        Domain resultsDomain = getResultsDomainIfExists(protocol);
+        if (resultsDomain == null)
+            return false;
+
+        return hasFilterCriteria(protocol, resultsDomain);
+    }
+
+    protected boolean hasFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
+    {
+        return false;
+    }
+
+    @Override
+    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
+    {
     }
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}

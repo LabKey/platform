@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.data.CompareType;
@@ -15,9 +14,9 @@ import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.data.triggers.TriggerFactory;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
@@ -37,19 +36,15 @@ import java.util.Set;
 
 public class AssayPlateTriggerFactory implements TriggerFactory
 {
+    private final AssayProvider _provider;
     private final ExpProtocol _protocol;
-    private DomainProperty _qcStateProp;
+    private final DomainProperty _qcStateProp;
 
-    public AssayPlateTriggerFactory(ExpProtocol protocol)
+    public AssayPlateTriggerFactory(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
     {
+        _provider = provider;
         _protocol = protocol;
-
-        if (_protocol != null)
-        {
-            AssayProvider provider = AssayService.get().getProvider(_protocol);
-            if (provider != null)
-                _qcStateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(provider.getResultsDomain(_protocol));
-        }
+        _qcStateProp = AssayPlateMetadataServiceImpl.getAssayStateProp(provider.getResultsDomain(_protocol));
     }
 
     @Override
@@ -57,7 +52,8 @@ public class AssayPlateTriggerFactory implements TriggerFactory
     {
         return List.of(
             new ReplicateStatsTrigger(),
-            new DataStateTrigger()
+            new DataStateTrigger(),
+            new AutomaticHitSelectionTrigger()
         );
     }
 
@@ -74,7 +70,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (oldRow != null)
             {
                 // check if the change is to a replicate well row
-                Object replicateLsid = oldRow.get(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                Object replicateLsid = oldRow.get(AssayResultDomainKind.Column.ReplicateLsid.name());
                 if (replicateLsid != null)
                     _replicateLsid.put(String.valueOf(replicateLsid), isUpdate);
             }
@@ -104,7 +100,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (_replicateLsid.isEmpty() || errors.hasErrors())
                 return;
 
-            var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME), _replicateLsid.keySet(), CompareType.IN);
+            var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.Column.ReplicateLsid.name()), _replicateLsid.keySet(), CompareType.IN);
 
             try (TableResultSet rs = new TableSelector(table, filter, null).getResultSet())
             {
@@ -112,7 +108,7 @@ public class AssayPlateTriggerFactory implements TriggerFactory
 
                 while (rs.next())
                 {
-                    var lsid = rs.getString(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME);
+                    var lsid = rs.getString(AssayResultDomainKind.Column.ReplicateLsid.name());
                     replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(rs.getRowMap());
                     _replicateLsid.remove(lsid);
                 }
@@ -130,7 +126,11 @@ public class AssayPlateTriggerFactory implements TriggerFactory
 
                 AssayPlateMetadataService.get().updateReplicateStats(c, user, _protocol, replicates);
             }
-            catch (ExperimentException | SQLException e)
+            catch (ValidationException ve)
+            {
+                errors.addRowError(ve);
+            }
+            catch (SQLException e)
             {
                 throw UnexpectedException.wrap(e);
             }
@@ -146,8 +146,19 @@ public class AssayPlateTriggerFactory implements TriggerFactory
         Set<Integer> _excludedRows = new HashSet<>();
 
         @Override
-        public void beforeUpdate(TableInfo table, Container c, User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+        public void beforeUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        ) throws ValidationException
         {
+            if (errors.hasErrors())
+                return;
+
             if (newRow != null && _qcStateProp != null)
             {
                 DataState state = AssayPlateMetadataServiceImpl.validateRowDataStates(c, newRow, _qcStateProp);
@@ -166,6 +177,80 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             // clear out hit selections for exclusions which don't allow the operation
             if (!_excludedRows.isEmpty())
                 PlateManager.get().deleteHits(_protocol.getRowId(), _excludedRows);
+        }
+    }
+
+    private class AutomaticHitSelectionTrigger implements Trigger
+    {
+        private Set<Integer> dataIds = null;
+        private boolean enabled = false;
+
+        @Override
+        public void init(
+            TableInfo table,
+            Container c,
+            User user,
+            TableInfo.TriggerType event,
+            BatchValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            if (errors.hasErrors())
+                return;
+
+            if (_provider.hasFilterCriteria(_protocol))
+            {
+                enabled = true;
+                dataIds = new HashSet<>();
+            }
+        }
+
+        @Override
+        public void afterUpdate(
+            TableInfo table,
+            Container c,
+            User user,
+            @Nullable Map<String, Object> newRow,
+            @Nullable Map<String, Object> oldRow,
+            ValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            if (!enabled || errors.hasErrors() || oldRow == null)
+                return;
+
+            dataIds.add(((Number) oldRow.get("DataId")).intValue());
+        }
+
+        @Override
+        public void complete(
+            TableInfo table,
+            Container c,
+            User user,
+            TableInfo.TriggerType event,
+            BatchValidationException errors,
+            Map<String, Object> extraContext
+        )
+        {
+            if (!enabled || errors.hasErrors())
+                return;
+
+            List<Integer> runIds = new ArrayList<>();
+            for (var expDataId : dataIds)
+            {
+                var data = ExperimentService.get().getExpData(expDataId);
+                if (data != null)
+                    runIds.add(data.getRunId());
+            }
+
+            try
+            {
+                AssayPlateMetadataService.get().applyHitSelectionCriteria(c, user, _protocol, table, runIds);
+            }
+            catch (ValidationException e)
+            {
+                errors.addRowError(e);
+            }
         }
     }
 }

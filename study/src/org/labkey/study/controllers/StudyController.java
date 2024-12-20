@@ -288,7 +288,6 @@ import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -6745,13 +6744,13 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ManageAlternateIdsAction extends SimpleViewAction<Object>
+    public class ManageParticipantsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
             ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudyRedirectIfNull());
-            return new JspView<>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
+            return new JspView<>("/org/labkey/study/view/manageParticipants.jsp", changeAlternateIdsForm);
         }
 
         @Override
@@ -6759,8 +6758,8 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("alternateIDs");
             _addManageStudy(root);
-            String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
-            root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
+            String pluralNoun = getStudyRedirectIfNull().getSubjectNounPlural();
+            root.addChild("Manage " + pluralNoun, new ActionURL(ManageParticipantsAction.class, getContainer()));
         }
     }
 
@@ -6776,14 +6775,19 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _addManageStudy(root);
+            // Add Manage Participants nav trail
+            ManageParticipantsAction manageParticipantsAction = new ManageParticipantsAction();
+            manageParticipantsAction.setViewContext(getViewContext());
+            manageParticipantsAction.setPageConfig(new PageConfig(getViewContext().getRequest()));
+            manageParticipantsAction.addNavTrail(root);
+
             String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
-            root.addChild("Merge " + subjectColumnName + "s");
+            root.addChild("Change or Merge " + subjectColumnName + "s");
           }
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class SubjectListAction extends SimpleViewAction
+    public static class SubjectListAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -7448,8 +7452,7 @@ public class StudyController extends BaseStudyController
         @Override
         protected ActionURL getSuccessURL(IdForm form)
         {
-            ActionURL actionURL = new ActionURL(ManageAlternateIdsAction.class, getContainer());
-            return actionURL;
+            return new ActionURL(ManageParticipantsAction.class, getContainer());
         }
     }
 

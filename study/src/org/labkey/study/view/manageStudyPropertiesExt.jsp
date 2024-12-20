@@ -557,6 +557,7 @@ function renderFormPanel(data, editable){
             dock: 'bottom',
             ui: 'footer',
             style : 'background-color: transparent;',
+            height: 31,
             items: buttons
         }],
         renderTo : 'formDiv',
