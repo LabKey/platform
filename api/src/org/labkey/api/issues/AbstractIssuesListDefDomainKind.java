@@ -173,12 +173,6 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public String getStorageSchemaName()
     {
         return IssuesSchema.ISSUE_DEF_SCHEMA_NAME;

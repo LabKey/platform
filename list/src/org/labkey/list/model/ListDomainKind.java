@@ -17,6 +17,7 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
@@ -26,7 +27,6 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -328,12 +328,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public TableInfo getTableInfo(User user, Container container, String name, @Nullable ContainerFilter cf)
     {
         return new ListQuerySchema(user, container).createTable(name, cf);
@@ -465,8 +459,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings)
     {
         ValidationException exception;
 
