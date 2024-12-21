@@ -29,6 +29,12 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     public static final String NAME = "TestSecondary";
 
     @Override
+    public Class<TestSecondaryConfiguration> getConfigurationClass()
+    {
+        return TestSecondaryConfiguration.class;
+    }
+
+    @Override
     public TestSecondaryConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
         return new TestSecondaryConfiguration(this, cs.getStandardSettings(), cs.getProperties());
