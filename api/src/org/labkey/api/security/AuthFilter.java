@@ -126,7 +126,8 @@ public class AuthFilter implements Filter
         }
 
         // No startup failure, so check for SSL redirection
-        if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())
+        boolean sslRequired = AppProps.getInstance().isSSLRequired();
+        if (!req.getScheme().equalsIgnoreCase("https") && sslRequired)
         {
             // We can't redirect posts (we'll lose the post body), so return an error code
             if ("post".equalsIgnoreCase(req.getMethod()))
@@ -162,6 +163,11 @@ public class AuthFilter implements Filter
             resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
             resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
             return;
+        }
+
+        if (sslRequired)
+        {
+            resp.setHeader("Strict-Transport-Security", "max-age=31536000");
         }
 
         // allow CSRFUtil early access to req/resp if it wants to write cookies
