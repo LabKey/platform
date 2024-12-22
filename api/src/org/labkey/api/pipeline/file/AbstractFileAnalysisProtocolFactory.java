@@ -19,6 +19,7 @@ import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -195,9 +196,9 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return PipelineJobService.get().createParamParser();
     }
 
-    public abstract T createProtocolInstance(String name, String description, String xml);
+    public abstract T createProtocolInstance(String name, String description, String xml, Container container);
 
-    protected T createProtocolInstance(ParamParser parser)
+    protected T createProtocolInstance(ParamParser parser, Container container)
     {
         // Remove the pipeline specific parameters.
         String name = parser.removeInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM);
@@ -205,7 +206,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         String folder = parser.removeInputParameter(PipelineJob.PIPELINE_LOAD_FOLDER_PARAM);
         String email = parser.removeInputParameter(PipelineJob.PIPELINE_EMAIL_ADDRESS_PARAM);
 
-        T instance = createProtocolInstance(name, description, parser.getXML());
+        T instance = createProtocolInstance(name, description, parser.getXML(), container);
 
         instance.setEmail(email);
 
@@ -215,7 +216,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     @Override
     public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
-        T instance = loadInstance(getProtocolFile(root, name, archived));
+        T instance = loadInstance(getProtocolFile(root, name, archived), root.getContainer());
 
         // Don't allow the XML to override the name passed in.  This
         // can be extremely confusing.
@@ -223,15 +224,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return instance;
     }
 
-    @Override
-    @Deprecated //Prefer Path version
-    public T loadInstance(File file) throws IOException
-    {
-        return loadInstance(file.toPath());
-    }
-
-
-    public T loadInstance(Path file) throws IOException
+    public T loadInstance(Path file, Container container) throws IOException
     {
         ParamParser parser = createParamParser();
         try (InputStream is = Files.newInputStream(file))
@@ -252,7 +245,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
                 }
             }
 
-            return createProtocolInstance(parser);
+            return createProtocolInstance(parser, container);
         }
     }
 
@@ -362,7 +355,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             AbstractFileAnalysisProtocol<?> result;
             if (NetworkDrive.exists(protocolFile))
             {
-                result = loadInstance(protocolFile);
+                result = loadInstance(protocolFile, root.getContainer());
 
                 // Don't allow the instance file to override the protocol name.
                 result.setName(protocolName);

@@ -682,72 +682,6 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         map.save();
     }
 
-
-    @Override
-    public String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user)
-    {
-        try
-        {
-            Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
-            String lastSequenceDbSetting = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
-            if (lastSequenceDbSetting != null)
-                return props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName());
-        }
-        catch (Exception e)
-        {
-            LOG.error("Error", e);
-        }
-        return "";
-    }
-
-    @Override
-    public void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
-                                              String sequenceDbPath,String sequenceDb)
-    {
-        if (user.isGuest())
-            return;
-        if (sequenceDbPath == null || sequenceDbPath.equals("/"))
-            sequenceDbPath = "";
-        String fullPath = sequenceDbPath + sequenceDb;
-        WritablePropertyMap map = PropertyManager.getWritableProperties(user, container,
-                PipelineServiceImpl.KEY_PREFERENCES, true);
-        map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
-        map.save();
-    }
-
-    @Nullable
-    @Override
-    public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user)
-    {
-        Map<String, String> props = PropertyManager.getProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES);
-        String dbPaths = props.get(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
-
-        if (null != dbPaths)
-            return parseArray(dbPaths);
-
-        return null;
-    }
-
-    @Override
-    public void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user,
-                                                   List<String> sequenceDbPathsList)
-    {
-        if (user.isGuest())
-            return;
-        String sequenceDbPathsString = list2String(sequenceDbPathsList);
-        WritablePropertyMap map = PropertyManager.getWritableProperties(user, container,
-                PipelineServiceImpl.KEY_PREFERENCES, true);
-        if (sequenceDbPathsString == null || sequenceDbPathsString.isEmpty() || sequenceDbPathsString.length() >= 2000)
-        {
-            map.remove(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName());
-        }
-        else
-        {
-            map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName(), sequenceDbPathsString);
-        }
-        map.save();
-    }
-
     @Override
     public PipelineStatusFile getStatusFile(File logFile)
     {
@@ -1070,7 +1004,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             protocol = PipelineJobService.get().getProtocolFactory(taskPipeline).createProtocolInstance(
                     form.getProtocolName(),
                     form.getProtocolDescription(),
-                    xml);
+                    xml,
+                    context.getContainer());
 
             protocol.setEmail(context.getUser().getEmail());
             protocol.validate(root);

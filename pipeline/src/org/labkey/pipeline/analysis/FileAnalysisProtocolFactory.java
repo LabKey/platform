@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
@@ -62,7 +63,7 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
     }
 
     @Override
-    public FileAnalysisProtocol createProtocolInstance(String name, String description, String xml)
+    public FileAnalysisProtocol createProtocolInstance(String name, String description, String xml, Container container)
     {
         FileAnalysisProtocol protocol = new FileAnalysisProtocol(name, description, xml);
         protocol.setFactory(this);

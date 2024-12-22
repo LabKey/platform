@@ -189,17 +189,6 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     // TODO: This should be on PipelineProtocolFactory
     void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container,
                                      User user, String protocolName);
-
-    String getLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user);
-
-    void rememberLastSequenceDbSetting(PipelineProtocolFactory factory, Container container, User user,
-                                       String sequenceDbPath, String sequenceDb);
-
-    List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user);
-
-    void rememberLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container,
-                                            User user, List<String> sequenceDbPaths);
-
     boolean hasSiteDefaultRoot(Container container);
 
     TableInfo getJobsTable(User user, Container container);
