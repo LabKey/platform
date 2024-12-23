@@ -332,7 +332,7 @@ public class FileUtil
         return null;
     }
 
-    private static @Nullable String validateFileName(String s)
+    public static @Nullable String validateFileName(String s)
     {
         return StringUtilsLabKey.validateLegalNames(s, restrictedPrintable, "Filename");
     }

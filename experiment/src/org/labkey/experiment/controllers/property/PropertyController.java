@@ -53,6 +53,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -148,6 +149,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
+import static org.labkey.api.assay.AssayFileWriter.ensureUploadDirectory;
 import static org.labkey.api.query.AbstractQueryUpdateService.saveFile;
 import static org.labkey.api.query.QueryDefinition.DEFAULT_METADATA_TEXT;
 
@@ -603,7 +605,7 @@ public class PropertyController extends SpringActionController
             return rowFiles;
         }
 
-        private List<Pair<String, String>> getUploadedTemplates(DomainTemplateForm form, DomainKind kind, Domain domain) throws ValidationException, QueryUpdateServiceException
+        private List<Pair<String, String>> getUploadedTemplates(DomainTemplateForm form, DomainKind kind) throws ValidationException, QueryUpdateServiceException, ExperimentException
         {
             Map<Integer, Object> rowFiles = getRowFiles();
             List<String> templateLabels = form.getTemplateLabels();
@@ -616,6 +618,8 @@ public class PropertyController extends SpringActionController
             for (int rowIndex = 0; rowIndex < form.getTemplateLabels().size(); rowIndex++)
             {
                 String templateLabel = templateLabels.get(rowIndex);
+                if (StringUtils.isBlank(templateLabel.trim()))
+                    throw new IllegalArgumentException("Template name cannot be blank.");
                 String templateUrl = templateUrls.get(rowIndex);
                 Object file = rowFiles.get(rowIndex);
                 if (StringUtils.isEmpty(templateUrl) && file == null)
@@ -623,9 +627,22 @@ public class PropertyController extends SpringActionController
 
                 if (file instanceof MultipartFile || file instanceof SpringAttachmentFile)
                 {
-                    Object savedFile = saveFile(getUser(), getContainer(), "template file", file, "_templates");
+                    String fileName;
+                    if (file instanceof MultipartFile f)
+                        fileName = f.getName();
+                    else
+                    {
+                        SpringAttachmentFile f = (SpringAttachmentFile) file;
+                        fileName = f.getFilename();
+                    }
+                    String fileNameValidation = FileUtil.validateFileName(fileName);
+                    if (!StringUtils.isEmpty(fileNameValidation))
+                        throw new IllegalArgumentException(fileNameValidation);
 
-                    //Object savedFile = saveFile(getUser(), getContainer(), "template file", file, kind.getDomainFileDirectory() + "/_templates/" + domain.getName());
+                    FileLike uploadDir = ensureUploadDirectory(getContainer(), kind.getDomainFileDirectory());
+                    uploadDir = uploadDir.resolveChild("_templates");
+                    Object savedFile = saveFile(getUser(), getContainer(), "template file", file, uploadDir);
+
                     if (savedFile instanceof File ioFile)
                         templateUrl = ioFile.getPath();
                     else if (savedFile instanceof FileLike fl)
@@ -640,7 +657,7 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public Object execute(DomainTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException
+        public Object execute(DomainTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException, ExperimentException
         {
             User user = getUser();
             Container container = getContainer();
@@ -652,7 +669,7 @@ public class PropertyController extends SpringActionController
             if (!kind.canEditDefinition(user, domain))
                 throw new UnauthorizedException("You don't have permission to update import templates for this domain.");
 
-            List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, kind, domain);
+            List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, kind);
 
             QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
             if (!(querySchema instanceof UserSchema schema))
@@ -687,7 +704,7 @@ public class PropertyController extends SpringActionController
                     metadata = metadata.substring(0, startInd) + metadata.substring(endInd + "</importTemplates>".length());
 
                 // insert new templates
-                if (updatedTemplates.size() > 0)
+                if (!updatedTemplates.isEmpty())
                 {
                     StringBuilder newTemplateBuilder = new StringBuilder("\n\t\t<importTemplates>\n");
                     for (Pair<String, String> template_ : updatedTemplates)
