@@ -30,8 +30,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.qc.DefaultTransformResult;
-import org.labkey.api.qc.TransformResult;
+import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
@@ -39,7 +39,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;

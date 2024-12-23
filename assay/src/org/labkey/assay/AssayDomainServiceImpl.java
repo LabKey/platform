@@ -33,6 +33,8 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.assay.transform.AnalysisScript;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -282,12 +284,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             result.setAvailableDetectionMethods(dmProvider.getAvailableDetectionMethods());
         }
 
-        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
+        List<AnalysisScript> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
         if (!typeScripts.isEmpty())
         {
             List<String> scriptNames = new ArrayList<>();
-            for (File script : typeScripts)
-                scriptNames.add(script.getAbsolutePath());
+            for (AnalysisScript script : typeScripts)
+                scriptNames.add(script.getScriptPath());
 
             result.setModuleTransformScripts(scriptNames);
         }
@@ -299,12 +301,13 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         result.setPlateMetadata(provider.isPlateMetadataEnabled(protocol));
 
         // data transform scripts
-        List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
+        List<AnalysisScript> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
         List<String> transformScriptStrings = new ArrayList<>();
-        for (File transformScript : transformScripts)
+        for (AnalysisScript transformScript : transformScripts)
         {
-            transformScriptStrings.add(transformScript.getAbsolutePath());
+            // TODO, add allowable operations once we have UI that controls those options
+            transformScriptStrings.add(transformScript.getScriptPath());
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
@@ -525,15 +528,17 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
 
                 // data transform scripts
+                List<AnalysisScript> transformScripts = new ArrayList<>();
                 List<String> submittedScripts = assay.getProtocolTransformScripts();
                 if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
                     throw new ValidationException("You must be a platform developer or site admin to configure assay transformation scripts.");
-
-                List<File> transformScripts = new ArrayList<>();
-                for (String script : submittedScripts)
+                for (String script : assay.getProtocolTransformScripts())
                 {
                     if (!StringUtils.isBlank(script))
-                        transformScripts.add(new File(script));
+                    {
+                        // TODO : handle analysis script operations once UI is created
+                        transformScripts.add(new AnalysisScript(new File(script), Set.of(DataTransformService.TransformOperation.INSERT)));
+                    }
                 }
 
                 if (provider instanceof DetectionMethodAssayProvider dmProvider && assay.getSelectedDetectionMethod() != null)

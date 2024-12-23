@@ -98,6 +98,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         addTextColumn("LicenseURL").setHidden(true);
         addTextColumn("VcsRevision");
         addTextColumn("VcsURL");
+        addTextColumn("SourcePath");
         addTextColumn("Dependencies");
         addTextColumn("SupportedDatabases");
 
@@ -200,6 +201,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             appendStringLiteral(h, cte,",",module.getLicenseUrl());
             appendStringLiteral(h, cte,",",module.getVcsRevision());
             appendStringLiteral(h, cte,",",module.getVcsUrl());
+            appendStringLiteral(h, cte,",",module.getSourcePath());
             appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
             appendStringLiteral(h, cte,",",module.getSupportedDatabasesSet().toString());
             cte.append(")");
@@ -216,6 +218,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(",Organization, OrganizationURL");
         cte.append(",License, LicenseURL");
         cte.append(",VcsRevision, VcsURL");
+        cte.append(",SourcePath");
         cte.append(",Dependencies, SupportedDatabases");
         cte.append(")\n");
 

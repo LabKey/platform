@@ -24,7 +24,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
-import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
