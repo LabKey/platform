@@ -659,8 +659,6 @@ public class PropertyController extends SpringActionController
 
                     templateUrl = fcs.getWebDavUrl(savedFilePath, getContainer(), FileContentService.PathType.serverRelative).toString();
                 }
-                else
-                    throw new IllegalArgumentException("Invalid file");
 
                 uploadedTemplates.add(Pair.of(templateLabel, templateUrl));
             }
