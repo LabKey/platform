@@ -294,12 +294,6 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> names = new HashSet<>();
