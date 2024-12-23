@@ -256,9 +256,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 
     public static boolean filePathExist(String path, Container container, User user)
     {
+        String davPath = path;
+        if (FileUtil.isUrlEncoded(davPath))
+            davPath = FileUtil.decodeURL(davPath);
         var resolver = WebdavService.get().getResolver();
         // Resolve path under webdav root
-        Path parsed = Path.parse(StringUtils.trim(path));
+        Path parsed = Path.parse(StringUtils.trim(davPath));
         WebdavResource resource = resolver.lookup(parsed);
         if ((null == resource || !resource.exists()) && !parsed.startsWith(new Path("_webdav")))
             resource = resolver.lookup(new Path("_webdav").append(parsed));

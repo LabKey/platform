@@ -70,6 +70,7 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -134,6 +135,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -607,6 +609,10 @@ public class PropertyController extends SpringActionController
 
         private List<Pair<String, String>> getUploadedTemplates(DomainTemplateForm form, DomainKind kind) throws ValidationException, QueryUpdateServiceException, ExperimentException
         {
+            FileContentService fcs = FileContentService.get();
+            if (fcs == null)
+                throw new IllegalStateException("Unable to load file service");
+
             Map<Integer, Object> rowFiles = getRowFiles();
             List<String> templateLabels = form.getTemplateLabels();
             Set<String> labels = new HashSet<>(templateLabels);
@@ -642,14 +648,19 @@ public class PropertyController extends SpringActionController
                     FileLike uploadDir = ensureUploadDirectory(getContainer(), kind.getDomainFileDirectory());
                     uploadDir = uploadDir.resolveChild("_templates");
                     Object savedFile = saveFile(getUser(), getContainer(), "template file", file, uploadDir);
+                    Path savedFilePath;
 
                     if (savedFile instanceof File ioFile)
-                        templateUrl = ioFile.getPath();
+                        savedFilePath = ioFile.toPath();
                     else if (savedFile instanceof FileLike fl)
-                        templateUrl = fl.toNioPathForRead().toString();
+                        savedFilePath = fl.toNioPathForRead();
                     else
                         throw UnexpectedException.wrap(null,"Unable to upload template file.");
+
+                    templateUrl = fcs.getWebDavUrl(savedFilePath, getContainer(), FileContentService.PathType.serverRelative).toString();
                 }
+                else
+                    throw new IllegalArgumentException("Invalid file");
 
                 uploadedTemplates.add(Pair.of(templateLabel, templateUrl));
             }

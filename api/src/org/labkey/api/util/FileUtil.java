@@ -1282,9 +1282,17 @@ quickScan:
         return res.toString();
     }
 
+    private static final String[] ENCODED = {"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"};
+    private static final String[] DECODED = {"%", "%#", "&", "@", "~", "{", "}", "[", "]", "+", " "};
+
+    static public String decodeURL(String str)
+    {
+        return StringUtils.replaceEach(str, ENCODED, DECODED);
+    }
+
     public static boolean isUrlEncoded(String str)
     {
-        return StringUtils.indexOfAny(str, new String[]{"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"}) > -1;
+        return StringUtils.indexOfAny(str, ENCODED) > -1;
     }
 
     static boolean startsWith(String s, char ch)
