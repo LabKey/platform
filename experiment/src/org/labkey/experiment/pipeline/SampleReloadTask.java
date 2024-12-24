@@ -118,7 +118,10 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             if (sampleType != null)
                 log.info("Sample Type matching the 'name' capture group was resolved : " + sampleName);
             else
-                log.info("Sample Type matching the 'name' capture group was not resolved : " + sampleName);
+            {
+                log.error("Sample Type matching the 'name' capture group was not resolved : " + sampleName);
+                return new RecordedActionSet();
+            }
         }
         else if (params.containsKey(SAMPLE_ID_KEY))
         {
@@ -127,7 +130,10 @@ public class SampleReloadTask extends PipelineJob.Task<SampleReloadTask.Factory>
             if (sampleType != null)
                 log.info("Sample Type matching the 'id' capture group was resolved : " + sampleType.getName());
             else
-                log.info("Sample Type matching the 'id' capture group was not resolved : " + params.get(SAMPLE_ID_KEY));
+            {
+                log.error("Sample Type matching the 'id' capture group was not resolved : " + params.get(SAMPLE_ID_KEY));
+                return new RecordedActionSet();
+            }
         }
 
         if (sampleType == null)
