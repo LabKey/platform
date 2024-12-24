@@ -202,8 +202,8 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         if (domain.getStorageTableName() != null)
         {
             String table = domain.getStorageTableName();
-            allRowsSQL.append("SELECT * FROM " + getStorageSchemaName() + "." + table);
-            nonBlankRowsSQL.append("SELECT * FROM " + getStorageSchemaName() + "." + table + " x WHERE ");
+            allRowsSQL.append("SELECT * FROM ").append(getStorageSchemaName()).append(".").append(table);
+            nonBlankRowsSQL.append("SELECT * FROM ").append(getStorageSchemaName()).append(".").append(table).append(" x WHERE ");
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
             // Issue 17183 - Postgres uses lower case column names when quoting is required
             nonBlankRowsSQL.append("x.");

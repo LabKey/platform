@@ -118,85 +118,93 @@ public interface AuthenticationProvider
         return "Description of this " + name + " configuration. Providing a description is required to update an existing configuration and strongly recommended when creating a new configuration.";
     }
 
-    // Retrieves all the startup properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+    interface ConfigurableAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider
     {
-        assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("Description") || c.name().equals("Enabled")).count() == 2 :
-            type.getName() + " does not define required Description and Enabled constants!";
+        Class<AC> getConfigurationClass();
 
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
+        // Translates a single ConfigurationSettings into the appropriate AuthenticationConfiguration
+        AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs);
+
+        // Retrieves all the startup properties in the specified categories, populates them into a form, and saves the form
+        default <FORM extends SaveConfigurationForm, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<T> type)
         {
-            @Override
-            public void handle(Map<T, StartupPropertyEntry> properties)
+            assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("Description") || c.name().equals("Enabled")).count() == 2 :
+                type.getName() + " does not define required Description and Enabled constants!";
+
+            ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(category, type)
             {
-                if (!properties.isEmpty())
+                @Override
+                public void handle(Map<T, StartupPropertyEntry> properties)
                 {
-                    Map<String, String> map = properties.entrySet().stream()
-                        .collect(Collectors.toMap(e-> e.getKey().getPropertyName(), e->e.getValue().getValue()));
-
-                    ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
-                    FORM form = factory.fromMap(map);
-
-                    // If description is provided in the startup properties file and an existing configuration for this provider
-                    // matches that description then update the existing configuration. If not, create a new configuration. #39474
-                    final String description;
-
-                    if (null != form.getDescription())
+                    if (!properties.isEmpty())
                     {
-                        description = form.getDescription();
-                    }
-                    else
-                    {
-                        description = getName() + " Configuration";
-                        form.setDescription(description);
-                        LOG.info("No description property was provided for " + getName() + " configuration; using generic description \"" + description + "\".");
-                    }
+                        Map<String, String> map = properties.entrySet().stream()
+                            .collect(Collectors.toMap(e-> e.getKey().getPropertyName(), e->e.getValue().getValue()));
 
-                    List<String> existingDescriptions = AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
-                        .map(AuthenticationConfiguration::getDescription)
-                        .toList();
+                        ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
+                        FORM form = factory.fromMap(map);
 
-                    if (!existingDescriptions.isEmpty())
-                        LOG.info("Descriptions of existing " + getName() + " configurations: " + existingDescriptions);
+                        // If description is provided in the startup properties file and an existing configuration for this provider
+                        // matches that description then update the existing configuration. If not, create a new configuration. #39474
+                        final String description;
 
-                    AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
-                        .filter(ac -> ac.getDescription().equals(description))
-                        .map(AuthenticationConfiguration::getRowId)
-                        .findFirst()
-                        .ifPresentOrElse(rowId ->
+                        if (null != form.getDescription())
                         {
-                            form.setRowId(rowId);
-                            LOG.info("Updating existing " + getName() + " configuration with description \"" + description + "\"");
-                        }, () ->
-                            LOG.info("Did not find an existing " + getName() + " configuration with description \"" + description + "\". Creating a new configuration using the specified properties."));
+                            description = form.getDescription();
+                        }
+                        else
+                        {
+                            description = getName() + " Configuration";
+                            form.setDescription(description);
+                            LOG.info("No description property was provided for {} configuration; using generic description \"{}\".", getName(), description);
+                        }
 
-                    AuthenticationConfiguration<?> configuration = SaveConfigurationAction.saveForm(form, null);
-                    configuration.handleStartupProperties(map);
+                        List<String> existingDescriptions = AuthenticationConfigurationCache.getConfigurations(getConfigurationClass()).stream()
+                            .map(AuthenticationConfiguration::getDescription)
+                            .toList();
+
+                        if (!existingDescriptions.isEmpty())
+                            LOG.info("Descriptions of existing {} configurations: {}", getName(), existingDescriptions);
+
+                        AuthenticationConfigurationCache.getConfigurations(getConfigurationClass()).stream()
+                            .filter(ac -> ac.getDescription().equals(description))
+                            .map(AuthenticationConfiguration::getRowId)
+                            .findFirst()
+                            .ifPresentOrElse(rowId ->
+                            {
+                                form.setRowId(rowId);
+                                LOG.info("Updating existing {} configuration with description \"{}\"", getName(), description);
+                            }, () ->
+                                LOG.info("Did not find an existing {} configuration with description \"{}\". Creating a new configuration using the specified properties.", getName(), description));
+
+                        AuthenticationConfiguration<?> configuration = SaveConfigurationAction.saveForm(form, null);
+                        configuration.handleStartupProperties(map);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
-    interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
+    interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<? extends PrimaryAuthenticationProvider<?>>> extends ConfigurableAuthenticationProvider<AC>
     {
     }
 
-    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }
 
-    interface SSOAuthenticationProvider<SSO extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<SSO>, AuthenticationConfigurationFactory<SSO>
+    interface SSOAuthenticationProvider<SSO extends SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider<SSO>>> extends PrimaryAuthenticationProvider<SSO>
     {
         @Override
-        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+        default <FORM extends SaveConfigurationForm, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<T> type)
         {
             // SSO authentication provider StartupProperty enums must define AutoRedirect, HeaderLogo, and LoginPageLogo constants
             assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals("AutoRedirect") || c.name().equals("HeaderLogo") || c.name().equals("LoginPageLogo")).count() == 3 :
                 type.getName() + " does not define required AutoRedirect, HeaderLogo, and LoginPageLogo constants!";
 
-            PrimaryAuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
+            PrimaryAuthenticationProvider.super.saveStartupProperties(category, formClass, type);
         }
 
         static String getStartupLogoDescription(String type, String name)
@@ -207,7 +215,7 @@ public interface AuthenticationProvider
         }
     }
 
-    interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider
+    interface RequestAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>
     {
         @NotNull AuthenticationResponse authenticate(@NotNull HttpServletRequest request);
     }
@@ -228,7 +236,7 @@ public interface AuthenticationProvider
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<SAC>
+    interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
     {
         String REQUIRED_FOR = "requiredFor";
 
@@ -249,13 +257,21 @@ public interface AuthenticationProvider
         }
 
         @Override
-        default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<AC> configurationClass, Class<T> type)
+        default <FORM extends SaveConfigurationForm, T extends Enum<T> & StartupProperty> void saveStartupProperties(String category, Class<FORM> formClass, Class<T> type)
         {
             // Secondary authentication provider StartupProperty enums must define RequiredFor constant
             assert Arrays.stream(type.getEnumConstants()).filter(c -> c.name().equals(REQUIRED_FOR)).count() == 1 :
                 type.getName() + " does not define requiredFor constant!";
 
-            AuthenticationProvider.super.saveStartupProperties(category, formClass, configurationClass, type);
+            ConfigurableAuthenticationProvider.super.saveStartupProperties(category, formClass, type);
+        }
+
+        @Override
+        default boolean allowInsert()
+        {
+            // For all current secondary providers, it makes no sense to have more than one configuration, so prevent
+            // insert if there's already a configuration in place.
+            return AuthenticationConfigurationCache.getConfigurations(getConfigurationClass()).isEmpty();
         }
     }
 
@@ -270,11 +286,6 @@ public interface AuthenticationProvider
          */
         long getUserDelay(String id) throws LoginDisabledException;
 
-        /**
-         * @param request
-         * @param id
-         * @param addCount
-         */
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
         void resetUserDelay(String id);

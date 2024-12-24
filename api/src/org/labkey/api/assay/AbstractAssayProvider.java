@@ -20,12 +20,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.assay.transform.AnalysisScript;
+import org.labkey.api.assay.transform.DataExchangeHandler;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -79,7 +83,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
@@ -1243,16 +1246,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private static final String SCRIPT_PATH_DELIMITER = "|";
 
     @Override
-    public ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException
+    public ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
-
         ValidationException validationErrors = new ValidationException();
-        StringBuilder sb = new StringBuilder();
-        String separator = "";
-        for (File scriptFile : scripts)
+
+        for (AnalysisScript script : scripts)
         {
+            File scriptFile = script.getScript().toNioPathForRead().toFile();
             String ext = FileUtil.getExtension(scriptFile);
             if (scriptFile.isFile() && ext != null)
             {
@@ -1274,10 +1276,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                         validationErrors.addErrors(ParamReplacementSvc.get().validateDeprecatedReplacements(scriptText, scriptFile.getName()));
                     }
-
-                    sb.append(separator);
-                    sb.append(scriptFile.getAbsolutePath());
-                    separator = SCRIPT_PATH_DELIMITER;
                 }
                 else
                 {
@@ -1294,20 +1292,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (validationErrors.getErrors().stream().anyMatch(e -> SEVERITY.ERROR == e.getSeverity()))
             return validationErrors;
 
-        if (sb.length() > 0)
+        JSONArray json = AnalysisScript.toJson(scripts);
+        if (json != null)
         {
             ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
-                    propertyURI, sb.toString());
+                    propertyURI, json.toString());
             props.put(propertyURI, prop);
         }
         else
         {
             props.remove(propertyURI);
         }
-
-        // Be sure to strip out any validation scripts that were stored with the legacy propertyURI. We merge and save
-        // them as a single list in the TRANSFORM 
-        props.remove(ScriptType.VALIDATION.getPropertyURI(protocol));
         protocol.setObjectProperties(props);
 
         return validationErrors;
@@ -1316,7 +1311,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     /** For migrating legacy assay designs that have separate transform and validation script properties */
     private enum ScriptType
     {
-        VALIDATION("ValidationScript"),
         TRANSFORM("TransformScript");
 
         private final String _uriSuffix;
@@ -1334,26 +1328,21 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     @NotNull
     @Override
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    public List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
-        List<File> result = new ArrayList<>();
+        List<AnalysisScript> result = new ArrayList<>();
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
             ObjectProperty transformScripts = protocol.getObjectProperties().get(ScriptType.TRANSFORM.getPropertyURI(protocol));
             if (transformScripts != null)
             {
+                List<AnalysisScript> scripts = AnalysisScript.fromJson(transformScripts.getStringValue());
+                if (scripts != null)
+                    return scripts;
+
+                // try the legacy serialization
                 for (String scriptPath : transformScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMITER))
-                {
-                    result.add(new File(scriptPath));
-                }
-            }
-            ObjectProperty validationScripts = protocol.getObjectProperties().get(ScriptType.VALIDATION.getPropertyURI(protocol));
-            if (validationScripts != null)
-            {
-                for (String scriptPath : validationScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMITER))
-                {
-                    result.add(new File(scriptPath));
-                }
+                    result.add(new AnalysisScript(new File(scriptPath), Set.of(DataTransformService.TransformOperation.INSERT)));
             }
         }
         return result;

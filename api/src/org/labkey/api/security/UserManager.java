@@ -1181,10 +1181,16 @@ public class UserManager
         {
             if (null == (name = StringUtils.trimToNull(name)))
                 continue;
-            User u = null;
-            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException ignored) {}
-            if (null == u)
-                u = getUserByDisplayName(name);
+            // First try by display name. See issue 40987
+            User u = getUserByDisplayName(name);
+            if (u == null)
+            {
+                try
+                {
+                    u = getUser(new ValidEmail(name));
+                }
+                catch (ValidEmail.InvalidEmailException ignored) {}
+            }
             parsed.add(null == u ? name : String.valueOf(u.getUserId()));
         }
         return parsed;

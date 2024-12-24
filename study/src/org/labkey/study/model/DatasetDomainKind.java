@@ -18,6 +18,7 @@ package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.compliance.ComplianceService;
@@ -25,7 +26,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -66,7 +66,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.DatasetFactory;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -83,11 +82,6 @@ import java.util.stream.Collectors;
 
 import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
 
-/**
- * User: matthewb
- * Date: May 4, 2007
- * Time: 1:01:43 PM
- */
 public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomainKindProperties>
 {
     public final static String LSID_PREFIX = "StudyDataset";
@@ -223,7 +217,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public static String generateDomainURI(String name, String id, Container container)
     {
         String objectid = name == null ? "" : name;
-        if (null != objectid && null != id)
+        if (null != id)
         {
             // normalize the object id
             objectid += "-" + id.toLowerCase();
@@ -342,12 +336,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public String getStorageSchemaName()
     {
         return StudySchema.getInstance().getDatasetSchemaName();
-    }
-
-    @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
     }
 
     @Override
@@ -726,8 +714,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
         StudyImpl study = StudyManager.getInstance().getStudy(container);

@@ -6,7 +6,6 @@ import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -80,12 +79,6 @@ public class PlateReplicateStatsDomainKind extends AssayDomainKind
     private DbSchema getSchema()
     {
         return DbSchema.get(getStorageSchemaName(), getSchemaType());
-    }
-
-    @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
     }
 
     @Override
