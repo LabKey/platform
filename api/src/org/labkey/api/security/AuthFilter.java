@@ -125,43 +125,52 @@ public class AuthFilter implements Filter
             }
         }
 
-        // No startup failure, so check for SSL redirection
-        if (!req.getScheme().equalsIgnoreCase("https") && AppProps.getInstance().isSSLRequired())
+        if (AppProps.getInstance().isSSLRequired())
         {
-            // We can't redirect posts (we'll lose the post body), so return an error code
-            if ("post".equalsIgnoreCase(req.getMethod()))
+            // No startup failure, so check for SSL redirection
+            if (!req.getScheme().equalsIgnoreCase("https"))
             {
-                resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Can't POST to an http URL; POSTs to this server require https");
+                // We can't redirect posts (we'll lose the post body), so return an error code
+                if ("post".equalsIgnoreCase(req.getMethod()))
+                {
+                    resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Can't POST to an http URL; POSTs to this server require https");
+                    return;
+                }
+
+                StringBuffer originalURL = req.getRequestURL();
+                if (!StringUtils.isBlank(req.getQueryString()))
+                {
+                    originalURL.append("?");
+                    originalURL.append(req.getQueryString());
+                }
+                URL url = new URL(originalURL.toString());
+                int port = AppProps.getInstance().getSSLPort();
+
+                // Check the SSL configuration if this is the first time doing an SSL redirect. Note: The redirect and check must
+                // happen before ensureFirstRequestHandled() so AppProps gets initialized with the SSL scheme & port. That means
+                // this check can't be handled in a FirstRequestListener.
+                if (!_sslChecked)
+                {
+                    HttpsUtil.checkSslRedirectConfiguration(req, port);
+                    _sslChecked = true;
+                }
+
+                if (port == 443)
+                {
+                    port = -1;
+                }
+                url = new URL("https", url.getHost(), port, url.getFile());
+                // Use 301 redirect instead of a 302 to indicate it's a permanent move
+                resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+                resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
                 return;
             }
-
-            StringBuffer originalURL = req.getRequestURL();
-            if (!StringUtils.isBlank(req.getQueryString()))
+            else if (!AppProps.getInstance().isDevMode())
             {
-                originalURL.append("?");
-                originalURL.append(req.getQueryString());
+                // Issue 51904: Strict-Transport-Security header when HTTPS is required
+                // Avoid setting when in dev mode to make it easier to toggle HTTPS on and off again for local deployments
+                resp.setHeader("Strict-Transport-Security", "max-age=31536000");
             }
-            URL url = new URL(originalURL.toString());
-            int port = AppProps.getInstance().getSSLPort();
-
-            // Check the SSL configuration if this is the first time doing an SSL redirect. Note: The redirect and check must
-            // happen before ensureFirstRequestHandled() so AppProps gets initialized with the SSL scheme & port. That means
-            // this check can't be handled in a FirstRequestListener.
-            if (!_sslChecked)
-            {
-                HttpsUtil.checkSslRedirectConfiguration(req, port);
-                _sslChecked = true;
-            }
-
-            if (port == 443)
-            {
-                port = -1;
-            }
-            url = new URL("https", url.getHost(), port, url.getFile());
-            // Use 301 redirect instead of a 302 to indicate it's a permanent move
-            resp.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-            resp.setHeader("Location", resp.encodeRedirectURL(url.toString()));
-            return;
         }
 
         // allow CSRFUtil early access to req/resp if it wants to write cookies
