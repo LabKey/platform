@@ -818,7 +818,7 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append("Search for \"");
             sb.append(getParamVals()[0]);
@@ -1667,7 +1667,7 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             sb.append("DATE(");
             appendColumnName(sb, formatter);
@@ -2229,7 +2229,7 @@ public abstract class CompareType
         }
 
         @Override
-        protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
+        public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             // Try to resolve the parameter value to a Group or User object
 

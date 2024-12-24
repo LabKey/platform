@@ -26,12 +26,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.mothership.query.MothershipSchema;
+import org.labkey.mothership.statuscake.StatusCakeMaintenanceTask;
 import org.labkey.mothership.view.ExceptionListWebPart;
 
 import java.util.Collection;
@@ -136,5 +138,7 @@ public class MothershipModule extends DefaultModule
                 MothershipManager.get().deleteForUser(user);
             }
         });
+
+        SystemMaintenance.addTask(new StatusCakeMaintenanceTask());
     }
 }

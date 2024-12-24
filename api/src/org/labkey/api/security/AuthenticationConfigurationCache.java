@@ -13,6 +13,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationProvider.ConfigurableAuthenticationProvider;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
@@ -105,14 +106,14 @@ public class AuthenticationConfigurationCache
             if (null == provider)
             {
                 String description = (String)map.get("Description");
-                LOG.warn("A saved authentication configuration requires the \"" + providerName + "\" authentication provider, but that provider is not present in this deployment. Authentication via " + (null != description ? "\"" + description + "\"" : "this mechanism") + " will not be available.");
+                LOG.warn("A saved authentication configuration requires the \"{}\" authentication provider, but that provider is not present in this deployment. Authentication via {} will not be available.", providerName, null != description ? "\"" + description + "\"" : "this mechanism");
                 return null;
             }
 
-            if (!(provider instanceof AuthenticationConfigurationFactory))
-                throw new IllegalStateException("AuthenticationProvider does not implement AuthenticationConfigurationFactory: " + provider.getClass().getName());
+            if (!(provider instanceof ConfigurableAuthenticationProvider<?> configurable))
+                throw new IllegalStateException("AuthenticationProvider does not implement ConfigurableAuthenticationProvider: " + provider.getClass().getName());
 
-            return ((AuthenticationConfigurationFactory<?>)provider).getAuthenticationConfiguration(new ConfigurationSettings(map));
+            return configurable.getAuthenticationConfiguration(new ConfigurationSettings(map));
         }
 
         private void addConfiguration(AuthenticationConfiguration<?> configuration)

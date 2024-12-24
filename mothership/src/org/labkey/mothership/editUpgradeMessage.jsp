@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<UpgradeMessageForm> me = (JspView<UpgradeMessageForm>) HttpView.currentView();
+    JspView<UpgradeMessageForm> me = HttpView.currentView();
     UpgradeMessageForm form = me.getModelBean();
 %>
 
@@ -33,7 +33,7 @@
     <table>
         <tr>
             <td>
-                Current build date:
+                <label for="currentBuildDateInput">Current build date:</label>
             </td>
             <%
                 Date buildDate = DateUtil.getDateOnly(form.getCurrentBuildDate());
@@ -41,39 +41,55 @@
                 String strDate = null != buildDate ? sdf.format(buildDate) : "";
             %>
             <td>
-                <input type="date" size="6" name="currentBuildDate" value="<%= h(strDate) %>"/>
+                <input type="date" size="6" id="currentBuildDateInput" name="currentBuildDate" value="<%= h(strDate) %>"/>
             </td>
         </tr>
         <tr>
             <td>
-                Upgrade message (HTML allowed):
+                <label for="messageInput">Upgrade message (HTML allowed):</label>
             </td>
             <td>
-                <textarea rows="5" cols="50" name="message"><%=h(form.getMessage())%></textarea>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Create issue URL:
-            </td>
-            <td>
-                <input type="text" size="50" name="createIssueURL" value="<%=h(form.getCreateIssueURL())%>"/>
+                <textarea rows="5" cols="50" id="messageInput" name="message"><%=h(form.getMessage())%></textarea>
             </td>
         </tr>
         <tr>
             <td>
-                Issues container path:
+                <label for="createIssueURLInput">Create issue URL:</label>
             </td>
             <td>
-                <input type="text" size="50" name="issuesContainer" value="<%=h(form.getIssuesContainer())%>"/>
+                <input type="text" size="50" id="createIssueURLInput" name="createIssueURL" value="<%=h(form.getCreateIssueURL())%>"/>
             </td>
         </tr>
         <tr>
             <td>
-                Marketing message (HTML allowed):
+                <label for="issuesContainerInput">Issues container path:</label>
             </td>
             <td>
-                <textarea rows="5" cols="50" name="marketingMessage"><%=h(form.getMarketingMessage())%></textarea>
+                <input type="text" size="50" id="issuesContainerInput" name="issuesContainer" value="<%=h(form.getIssuesContainer())%>"/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="marketingMessageInput">Marketing message (HTML allowed):</label>
+            </td>
+            <td>
+                <textarea rows="5" cols="50" id="marketingMessageInput" name="marketingMessage"><%=h(form.getMarketingMessage())%></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="statusCakeApiKeyInput">StatusCake API Key:</label>
+            </td>
+            <td>
+                <input type="text" size="50" id="statusCakeApiKeyInput" name="statusCakeApiKey" <% if(form.getStatusCakeApiKey() != null) { %>placeholder="API key set. Overwrite with new value" <% } %>/>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="uptimeContainerInput">Container with uptime lists:</label>
+            </td>
+            <td>
+                <input type="text" size="50" id="uptimeContainerInput" name="uptimeContainer"  value="<%=h(form.getUptimeContainer())%>"/>
             </td>
         </tr>
         <tr>

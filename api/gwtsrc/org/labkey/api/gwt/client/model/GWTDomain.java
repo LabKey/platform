@@ -18,6 +18,8 @@ package org.labkey.api.gwt.client.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gwt.user.client.rpc.IsSerializable;
+import lombok.Getter;
+import lombok.Setter;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 
@@ -27,58 +29,47 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: matthewb
- * Date: Apr 24, 2007
- * Time: 1:44:49 PM
- */
 public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSerializable
 {
     private String _ts;
-    private int domainId;
-    private String name;
-    private String domainURI;
-    private String domainKindName;
-    private String description;
-    private String container;
-    private boolean allowFileLinkProperties;
-    private boolean allowAttachmentProperties;
-    private boolean allowFlagProperties;
-    private boolean allowTextChoiceProperties;
-    private boolean allowSampleSubjectProperties;
-    private boolean allowTimepointProperties;
-    private boolean allowUniqueConstraintProperties;
-    private boolean allowCalculatedFields;
-    private boolean showDefaultValueSettings;
+    @Getter @Setter private int domainId;
+    @Getter @Setter private String name;
+    @Getter @Setter private String domainURI;
+    @Getter @Setter private String domainKindName;
+    @Getter @Setter private String description;
+    @Getter @Setter private String container;
+    @Getter @Setter private boolean allowFileLinkProperties;
+    @Getter @Setter private boolean allowAttachmentProperties;
+    @Getter @Setter private boolean allowFlagProperties;
+    @Getter @Setter private boolean allowTextChoiceProperties;
+    @Getter @Setter private boolean allowSampleSubjectProperties;
+    @Getter @Setter private boolean allowTimepointProperties;
+    @Getter @Setter private boolean allowUniqueConstraintProperties;
+    @Getter @Setter private boolean allowCalculatedFields;
+    @Getter @Setter private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
-    private List<FieldType> fields = new ArrayList<FieldType>();
+    private List<FieldType> fields = new ArrayList<>();
     private List<FieldType> standardFields = null;
     private List<FieldType> calculatedFields = null;
-    private List<GWTIndex> indices = new ArrayList<GWTIndex>();
+    @Getter @Setter private List<GWTIndex> indices = new ArrayList<>();
     private String defaultValuesURL = null;
-
-    private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
-
-    private Set<String> reservedFieldNames = new HashSet<String>();
+    private Set<String> mandatoryPropertyDescriptorNames = new HashSet<>();
+    private Set<String> reservedFieldNames = new HashSet<>();
     private Set<String> reservedFieldNamePrefixes = new HashSet<>();
-    private Set<String> phiNotAllowedFieldNames = new HashSet<String>();
-
-    private Set<String> excludeFromExportFieldNames = new HashSet<String>();
-    private boolean provisioned = false;
-
-    private List<String> disabledSystemFields;
+    private Set<String> phiNotAllowedFieldNames = new HashSet<>();
+    private Set<String> excludeFromExportFieldNames = new HashSet<>();
+    @Getter @Setter private boolean provisioned = false;
+    @Getter @Setter private List<String> disabledSystemFields;
 
     // schema,query,template are not part of the domain, but it's handy to pass
     // these values to the PropertiedEditor along with the GWTDomain.
     // NOTE queryName is not necessarily == name
-    private String schemaName=null;
-    private String queryName=null;
-
-    private String templateDescription=null; // null if no template
-    private String instructions = null;
-
-    private boolean supportsPhiLevel = false;
+    @Getter @Setter private String schemaName = null;
+    @Getter @Setter private String queryName = null;
+    @Getter @Setter private String templateDescription = null; // null if no template
+    @Getter @Setter private String instructions = null;
+    @Getter @Setter private boolean supportsPhiLevel = false;
 
     public GWTDomain()
     {
@@ -88,7 +79,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public GWTDomain(GWTDomain<FieldType> src)
     {
         _ts = src._ts;
-        this.domainId = src.domainId;    
+        this.domainId = src.domainId;
         this.name = src.name;
         this.domainURI = src.domainURI;
         this.domainKindName = src.domainKindName;
@@ -107,7 +98,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
-        this.provisioned = src.isProvisioned();
+        this.provisioned = src.provisioned;
         this.supportsPhiLevel = src.supportsPhiLevel;
 
         if (src.indices != null)
@@ -158,106 +149,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return _ts;
     }
 
-    public int getDomainId()
-    {
-        return domainId;
-    }
-
-    public void setDomainId(int domainId)
-    {
-        this.domainId = domainId;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getSchemaName()
-    {
-        return this.schemaName;
-    }
-
-    public void setSchemaName(String name)
-    {
-        this.schemaName = name;
-    }
-
-    public String getQueryName()
-    {
-        return this.queryName;
-    }
-
-    public void setQueryName(String name)
-    {
-        this.queryName = name;
-    }
-
-    public String getTemplateDescription()
-    {
-        return templateDescription;
-    }
-
-    public void setTemplateDescription(String templateDescription)
-    {
-        this.templateDescription = templateDescription;
-    }
-
-    public String getInstructions()
-    {
-        return instructions;
-    }
-
-    public void setInstructions(String instructions)
-    {
-        this.instructions = instructions;
-    }
-
-    public String getDomainURI()
-    {
-        return domainURI;
-    }
-
-    public void setDomainURI(String domainURI)
-    {
-        this.domainURI = domainURI;
-    }
-
-    public String getDomainKindName()
-    {
-        return domainKindName;
-    }
-
-    public void setDomainKindName(String domainKindName)
-    {
-        this.domainKindName = domainKindName;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
-    public String getContainer()
-    {
-        return container;
-    }
-
-    public void setContainer(String container)
-    {
-        this.container = container;
-    }
-
     @JsonIgnore
     public List<FieldType> getFields(boolean includeCalculated)
     {
@@ -298,96 +189,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
                 return field;
         }
         return null;
-    }
-
-    public List<GWTIndex> getIndices()
-    {
-        return indices;
-    }
-
-    public void setIndices(List<GWTIndex> indices)
-    {
-        this.indices = indices;
-    }
-
-    public boolean isAllowFileLinkProperties()
-    {
-        return allowFileLinkProperties;
-    }
-
-    public void setAllowFileLinkProperties(boolean allowFileLinkProperties)
-    {
-        this.allowFileLinkProperties = allowFileLinkProperties;
-    }
-
-    public boolean isAllowAttachmentProperties()
-    {
-        return allowAttachmentProperties;
-    }
-
-    public void setAllowAttachmentProperties(boolean allowAttachmentProperties)
-    {
-        this.allowAttachmentProperties = allowAttachmentProperties;
-    }
-
-    public boolean isAllowFlagProperties()
-    {
-        return allowFlagProperties;
-    }
-
-    public void setAllowFlagProperties(boolean allowFlagProperties)
-    {
-        this.allowFlagProperties = allowFlagProperties;
-    }
-
-    public boolean isAllowTextChoiceProperties()
-    {
-        return allowTextChoiceProperties;
-    }
-
-    public void setAllowTextChoiceProperties(boolean allowTextChoiceProperties)
-    {
-        this.allowTextChoiceProperties = allowTextChoiceProperties;
-    }
-
-    public boolean isAllowSampleSubjectProperties()
-    {
-        return allowSampleSubjectProperties;
-    }
-
-    public void setAllowSampleSubjectProperties(boolean allowSampleSubjectProperties)
-    {
-        this.allowSampleSubjectProperties = allowSampleSubjectProperties;
-    }
-
-    public boolean isAllowTimepointProperties()
-    {
-        return allowTimepointProperties;
-    }
-
-    public void setAllowTimepointProperties(boolean allowTimepointProperties)
-    {
-        this.allowTimepointProperties = allowTimepointProperties;
-    }
-
-    public boolean isAllowUniqueConstraintProperties()
-    {
-        return allowUniqueConstraintProperties;
-    }
-
-    public void setAllowUniqueConstraintProperties(boolean allowUniqueConstraintProperties)
-    {
-        this.allowUniqueConstraintProperties = allowUniqueConstraintProperties;
-    }
-
-    public boolean isAllowCalculatedFields()
-    {
-        return allowCalculatedFields;
-    }
-
-    public void setAllowCalculatedFields(boolean allowCalculatedFields)
-    {
-        this.allowCalculatedFields = allowCalculatedFields;
     }
 
     /**
@@ -504,16 +305,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         }
     }
 
-    public boolean isShowDefaultValueSettings()
-    {
-        return showDefaultValueSettings;
-    }
-
-    public void setShowDefaultValueSettings(boolean showDefaultValueSettings)
-    {
-        this.showDefaultValueSettings = showDefaultValueSettings;
-    }
-
     public DefaultValueType getDefaultDefaultValueType()
     {
         return defaultDefaultValueType;
@@ -530,16 +321,6 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultValueOptions = defaultOptions;
     }
 
-    public List<String> getDisabledSystemFields()
-    {
-        return disabledSystemFields;
-    }
-
-    public void setDisabledSystemFields(List<String> disabledSystemFields)
-    {
-        this.disabledSystemFields = disabledSystemFields;
-    }
-
     public String getDefaultValuesURL()
     {
         if (defaultValuesURL == null)
@@ -550,29 +331,5 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setDefaultValuesURL(String defaultValuesURL)
     {
         this.defaultValuesURL = defaultValuesURL;
-    }
-
-    /**
-     * Flag indicating domain is provisioned
-     * @return
-     */
-    public boolean isProvisioned()
-    {
-        return provisioned;
-    }
-
-    public void setProvisioned(boolean value)
-    {
-        this.provisioned = value;
-    }
-
-    public boolean isSupportsPhiLevel()
-    {
-        return supportsPhiLevel;
-    }
-
-    public void setSupportsPhiLevel(boolean supportsPhiLevel)
-    {
-        this.supportsPhiLevel = supportsPhiLevel;
     }
 }

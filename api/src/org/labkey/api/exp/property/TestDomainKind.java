@@ -40,11 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * User: tgaluhn
- * Date: 1/30/2017
- *
  * For the StorageProvisioner integration tests, when the Study module is not present.
- *
  */
 public class TestDomainKind extends DomainKind<JSONObject>
 {
@@ -197,12 +193,6 @@ public class TestDomainKind extends DomainKind<JSONObject>
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
     {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
     }
 
     @Override

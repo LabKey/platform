@@ -24,10 +24,6 @@ import org.labkey.api.util.Pair;
 
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Jan 27, 2012
- */
 public class AssayRunDomainKind extends AssayDomainKind
 {
     public AssayRunDomainKind()
@@ -69,6 +65,7 @@ public class AssayRunDomainKind extends AssayDomainKind
                 if (provider.isPlateMetadataEnabled(protocol))
                 {
                     mandatoryNames.add(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+                    mandatoryNames.add(AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME);
                 }
             }
         }

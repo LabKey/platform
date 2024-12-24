@@ -19,7 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.ApiModule;
-import org.labkey.api.assay.DefaultDataTransformer;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.module.ModuleLoader;
@@ -345,7 +345,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
 
             Map<String, String> paramMap = new HashMap<>();
-            DefaultDataTransformer.addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
+            DataTransformService.get().addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
             if (engine instanceof RserveScriptEngine)

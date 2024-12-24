@@ -59,6 +59,12 @@ import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEG
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
     @Override
+    public Class<DbLoginConfiguration> getConfigurationClass()
+    {
+        return DbLoginConfiguration.class;
+    }
+
+    @Override
     public DbLoginConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings ignored)
     {
         Map<String, Object> properties = Map.of(
