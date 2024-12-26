@@ -2954,7 +2954,7 @@ public class DavController extends SpringActionController
                 }
             }
 
-            checkAllowedFileName(resource.getName());
+            checkAllowedFileName(resource.getName(), false);
 
             try (InputStream is = new ReadAheadInputStream(getRequest().getInputStream()))
             {
@@ -3075,6 +3075,11 @@ public class DavController extends SpringActionController
                 }
             };
 
+            String notAllowedMsg = FileUtil.isAllowedFileName(name, true);
+            if (StringUtils.isNotBlank(notAllowedMsg))
+            {
+                throw new DavException(WebdavStatus.SC_NOT_ACCEPTABLE, notAllowedMsg);
+            }
             AntiVirusService avs = AntiVirusService.get();
 
             // if no virus checker, use input stream as is (POST requests are already scanned)
@@ -3161,7 +3166,7 @@ public class DavController extends SpringActionController
             WebdavResource resource = getResource();
             if (resource == null)
                 return notFound();
-            checkAllowedFileName(resource.getName());
+            checkAllowedFileName(resource.getName(), !resource.isCollection());
 
             boolean exists = resource.exists();
             boolean overwrite = getOverwriteParameter(true);
@@ -3830,7 +3835,7 @@ public class DavController extends SpringActionController
             WebdavResource dest = resolvePath(destinationPath);
             if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
-            checkAllowedFileName(dest.getName());
+            checkAllowedFileName(dest.getName(), !dest.isCollection());
 
             boolean overwrite = getOverwriteParameter(false);
             boolean exists = dest.exists();
@@ -5036,6 +5041,7 @@ public class DavController extends SpringActionController
                     getResponse().setPublicStatic(alwaysCache ? 365 : 35);
                 }
             }
+            getResponse().setHeader("Access-Control-Allow-Origin", "*");
         }
         else
         {
@@ -5372,7 +5378,7 @@ public class DavController extends SpringActionController
                 methodsAllowed.append(", GET, HEAD, COPY");
             if (delete)
                 methodsAllowed.append(", DELETE");
-            if (delete && read)
+            if (delete && read && resource.canRename(user,false))
                 methodsAllowed.append(", MOVE");
             if (_locking)
                 methodsAllowed.append(", LOCK, UNLOCK");
@@ -6009,7 +6015,7 @@ public class DavController extends SpringActionController
             throw new DavException(WebdavStatus.SC_NOT_FOUND);
         }
 
-        checkAllowedFileName(destination.getName());
+        checkAllowedFileName(destination.getName(), !destination.isCollection());
         WebdavStatus successStatus = destination.exists() ? WebdavStatus.SC_NO_CONTENT : WebdavStatus.SC_CREATED;
 
         if (null != resource.getFile() && null != destination.getFile())
@@ -6738,18 +6744,13 @@ public class DavController extends SpringActionController
         }
     }
 
-
-    void checkAllowedFileName(String s) throws DavException
+    void checkAllowedFileName(String s, boolean checkExtension) throws DavException
     {
-        if (!AppProps.getInstance().isInvalidFilenameUploadBlocked())
-            return;
-
-        String msg = FileUtil.isAllowedFileName(s);
+        String msg = FileUtil.isAllowedFileName(s, checkExtension);
         if (null == msg)
             return;
         throw new DavException(WebdavStatus.SC_BAD_REQUEST, msg);
     }
-
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert

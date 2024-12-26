@@ -24,10 +24,8 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A {@link org.labkey.api.data.ColumnInfo} that is part of a lookup target. This implementation knows
@@ -133,7 +131,7 @@ public class LookupColumn extends BaseColumnInfo
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxLength();
+        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxLength() - 3; // Leave room for "$" and possible suffixes
         if (alias.length() > maxLength)
             alias = AliasManager.truncate(foreignKey.getAlias(),maxLength/2) + "$" + AliasManager.truncate(lookupColumn.getAlias(),maxLength/2);
         setAlias(alias);
@@ -282,7 +280,7 @@ public class LookupColumn extends BaseColumnInfo
     {
         String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
 
-        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxLength());
+        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
         return alias;
     }
 

@@ -142,8 +142,9 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
-import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.BaseServerProperties;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -358,6 +359,7 @@ public class ApiModule extends CodeOnlyModule
             Aggregate.TestCase.class,
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
+            BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,

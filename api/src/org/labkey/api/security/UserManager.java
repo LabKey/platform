@@ -19,7 +19,6 @@ package org.labkey.api.security;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
-import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +30,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.collections.ConcurrentSetValuedMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -88,18 +86,18 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
-import static org.labkey.api.security.SecurityManager.USER_ID_KEY;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.APPLICATION_ADMIN_EMAIL;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.SITE_ADMIN_EMAIL;
 
@@ -524,18 +522,17 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
-    private static final MultiValuedMap<Integer, HttpSession> _activeSessions = new ConcurrentSetValuedMap<>();
+    public record SessionInformation(HttpSession session, User user) {}
 
-    public static void ensureSessionTracked(HttpSession s)
+    private static final Map<String, SessionInformation> _activeSessions = new ConcurrentHashMap<>();
+
+    public static void ensureSessionTracked(User user, HttpSession s)
     {
-        if (s != null)
+        if (s != null && !user.isGuest())
         {
-            Integer userId = (Integer)s.getAttribute(USER_ID_KEY);
-            if (null != userId && getGuestUser().getUserId() != userId)
-            {
-                if (_activeSessions.put(userId, s))
-                    LOG.debug("Tracking a new session. {} active.", StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
-            }
+            User sessionOwner = user.isImpersonated() ? user.getImpersonatingUser() : user;
+            if (_activeSessions.put(s.getId(), new SessionInformation(s, sessionOwner)) == null)
+                LOG.debug("Tracking a new session {} for user {}. {} active.", s.getId(), sessionOwner.getEmail(), StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
         }
     }
 
@@ -551,20 +548,20 @@ public class UserManager
         public void sessionDestroyed(HttpSessionEvent event)
         {
             // Issue 44761 - track session duration for authenticated users
-            User user = SecurityManager.getSessionUser(event.getSession());
-            if (user != null)
+            HttpSession session = event.getSession();
+            SessionInformation info = _activeSessions.remove(session.getId());
+            LOG.debug("Session {} for user {} has been destroyed", session.getId(), null != info ? info.user() : null);
+            if (info != null)
             {
-                _activeSessions.removeMapping(user.getUserId(), event.getSession());
-
-                long duration = TimeUnit.MILLISECONDS.toMinutes(event.getSession().getLastAccessedTime() - event.getSession().getCreationTime());
-                LOG.debug("Destroyed session for {}. Adding session duration of {} minutes to tally. {} active.", user.getEmail(), duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
+                long duration = TimeUnit.MILLISECONDS.toMinutes(session.getLastAccessedTime() - session.getCreationTime());
                 _sessionCount.incrementAndGet();
                 _totalSessionDuration.addAndGet(duration);
+                LOG.debug("Removed session {} for user {} from active sessions. Adding session duration of {} minutes to tally. {} active.", session.getId(), info.user, duration, StringUtilsLabKey.pluralize(getActiveUserSessionCount(), "session"));
             }
         }
     }
 
-    public static void terminateAllSessionsForUser(@Nullable User user)
+    public static void terminateAllSessionsForUser(User user)
     {
         handleSessionsForUser(user, new SessionHandler()
         {
@@ -578,37 +575,36 @@ public class UserManager
             @Override
             public void complete(int count)
             {
-                //noinspection DataFlowIssue
-                LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), user.getEmail());
+                LOG.debug("Invalidated {} for user {}.", StringUtilsLabKey.pluralize(count, "session"), user);
             }
         });
     }
 
     public interface SessionHandler
     {
-        // Return true to increment the count passed to complete() after handleSession() has been invoked for each active session
+        // Called for every active session associated with the user. Return true to increment the count passed to
+        // complete() after handleSession() has been invoked for each active session.
         boolean handleSession(HttpSession session);
-        // Called after all sessions have been passed to handleSession(), only if user is non-null and was logged in.
-        // Useful for coalescing logging, for example.
+        // Called after all sessions have been passed to handleSession(). Useful for coalescing logging, for example.
         void complete(int count);
     }
 
     public static void handleSessionsForUser(@Nullable User user, SessionHandler handler)
     {
-        if (user != null && !user.isGuest())
-        {
-            MutableInt count = new MutableInt();
+        MutableInt count = new MutableInt();
 
-            // The SessionHandler may directly or indirectly mutate this user's session set, so enumerate a copy to avoid
-            // concurrent modification exceptions.
-            Set<HttpSession> sessions = new HashSet<>(_activeSessions.get(user.getUserId()));
-            sessions.forEach(session -> {
-                if (handler.handleSession(session))
-                    count.increment();
-            });
+        Set<SessionInformation> infos = _activeSessions.values().stream()
+            .filter(info -> info.user().equals(user))
+            .collect(Collectors.toSet());
+        LOG.debug("Handling the following sessions for user {}: [{}]", user, infos.stream()
+            .map(info -> info.session().getId())
+            .collect(Collectors.joining(", ")));
+        infos.forEach(info -> {
+            if (handler.handleSession(info.session()))
+                count.increment();
+        });
 
-            handler.complete(count.intValue());
-        }
+        handler.complete(count.intValue());
     }
 
     public static int getActiveUserSessionCount()
@@ -938,7 +934,7 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
             LoginManager.deleteLoginsRow(deletUser, null);
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
-            executor.execute("DELETE FROM " + CORE.getTableAPIKeys() + " WHERE CreatedBy=?", userId);
+            ApiKeyManager.get().deleteKeys(new SimpleFilter(FieldKey.fromParts("CreatedBy"), userId));
 
             OntologyManager.deleteOntologyObject(deletUser.getEntityId(), ContainerManager.getSharedContainer(), true);
 

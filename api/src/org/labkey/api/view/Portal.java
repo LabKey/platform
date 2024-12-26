@@ -64,6 +64,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
@@ -199,7 +200,18 @@ public class Portal implements ModuleChangeListener
         return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
     }
 
-    public static final String WEBPART_PROP_LegacyPageAdded = "legacyPageAdded";
+    /** Issue 51727 - metrics to track web part usage */
+    public static UsageMetricsProvider getMetricsProvider()
+    {
+        return () ->
+        {
+            SQLFragment sql = new SQLFragment("SELECT Name, COUNT(*) AS C FROM ").
+                    append(getTableInfoPortalWebParts(), "pwp").
+                    append(" GROUP BY Name");
+
+            return Map.of("webPartCounts", new SqlSelector(getSchema(), sql).getValueMap());
+        };
+    }
 
     /** Bean object for persisting web part configurations in the core.portalwebparts table
      * NOTE: implements Factory<> so this can be used as a builder for immutable object
@@ -830,7 +842,7 @@ public class Portal implements ModuleChangeListener
 
         try
         {
-            insertPortalPage(portalPageTable, c, pageId, index, null);
+            insertPortalPage(portalPageTable, c, pageId, index);
         }
         catch (RuntimeSQLException | DataIntegrityViolationException x)
         {
@@ -951,13 +963,11 @@ public class Portal implements ModuleChangeListener
         }
     }
 
-    private static void insertPortalPage(TableInfo portalTable, Container c, String pageId, int index, @Nullable String caption)
+    private static void insertPortalPage(TableInfo portalTable, Container c, String pageId, int index)
     {
         PortalPage p = new PortalPage();
         p.setPageId(pageId);
         p.setIndex(index);
-        if (null != caption)
-            p.setCaption(caption);
         insertPortalPage(portalTable, c, p);
     }
 
@@ -1702,10 +1712,9 @@ public class Portal implements ModuleChangeListener
         }
         catch(Throwable t)
         {
-            WebPartView errorView;
             int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             String message = "An unexpected error occurred";
-            errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
+            WebPartView<?> errorView = ExceptionUtil.getErrorWebPartView(status, message, t, portalCtx.getRequest());
             errorView.setTitle(webPart.getName());
             errorView.setWebPart(webPart);
             return errorView;
@@ -1826,9 +1835,8 @@ public class Portal implements ModuleChangeListener
         RuntimeSQLException s = null;
         if (x instanceof RuntimeSQLException)
             s = (RuntimeSQLException)x;
-        else if (x instanceof DataIntegrityViolationException)
+        else if (x instanceof DataIntegrityViolationException d)
         {
-            DataIntegrityViolationException d = (DataIntegrityViolationException)x;
             if (d.getCause() instanceof RuntimeSQLException)
                 s = (RuntimeSQLException)d.getCause();
         }

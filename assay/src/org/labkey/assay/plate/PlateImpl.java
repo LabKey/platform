@@ -147,11 +147,13 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         plate.setLsid(bean.getLsid());
         plate.setName(bean.getName());
         plate.setBarcode(bean.getBarcode());
-        plate.setTemplate(bean.getTemplate());
+        if (bean.getTemplate() != null)
+            plate.setTemplate(bean.getTemplate());
         plate.setDataFileId(bean.getDataFileId());
         plate.setAssayType(bean.getAssayType());
         plate.setPlateId(bean.getPlateId());
-        plate.setArchived(bean.getArchived());
+        if (bean.getArchived() != null)
+            plate.setArchived(bean.getArchived());
         plate.setDescription(bean.getDescription());
 
         // entity fields

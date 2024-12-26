@@ -25,10 +25,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.LoginManager;
@@ -61,6 +63,8 @@ public class DbLoginManager implements DbLoginService
 
     private static final Logger LOG = LogHelper.getLogger(DbLoginManager.class, "Database login information");
 
+    static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
+
     public static DbLoginConfiguration getConfiguration()
     {
         Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
@@ -80,8 +84,6 @@ public class DbLoginManager implements DbLoginService
     {
         return getConfiguration().getExpiration();
     }
-
-    static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
     @Override
     public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, User affectedUser, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
@@ -107,12 +109,22 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public boolean handleSession(HttpSession session)
                 {
+                    LOG.debug("Checking if session {} used database authentication", session.getId());
                     PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(session);
 
                     if (configuration instanceof DbLoginConfiguration)
                     {
-                        session.invalidate();
-                        return true;
+                        Map<String, Object> map = AuthenticationManager.getAuthenticationProperties(session);
+                        Integer apiKeyRowId = (Integer)map.get(ApiKeyManager.API_KEY_ROW_ID);
+
+                        // Don't invalidate API key authentications
+                        LOG.debug("Checking if session {} was authenticated via username/password (not an API key)", session.getId());
+                        if (apiKeyRowId == null)
+                        {
+                            LOG.debug("Attempting to invalidate session {}", session.getId());
+                            session.invalidate();
+                            return true;
+                        }
                     }
 
                     return false;
@@ -121,7 +133,7 @@ public class DbLoginManager implements DbLoginService
                 @Override
                 public void complete(int count)
                 {
-                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser.getEmail());
+                    LOG.debug("Invalidated {} for {}.", StringUtilsLabKey.pluralize(count, "session"), affectedUser);
                 }
             });
         }
@@ -144,20 +156,21 @@ public class DbLoginManager implements DbLoginService
         }
 
         // The affected user's sessions were all terminated above. If the request's session doesn't exist or is a guest
-        // session then log the user in using the just-entered credentials. An admin resetting a password won't be
-        // affected. This check should be equivalent to currentUser.equals(user).
-        if (SecurityManager.getSessionUser(request.getSession()) == null)
+        // session then log the user in using the just-entered credentials. An admin resetting a password or changing a
+        // password while impersonating won't be affected.
+        if (SecurityManager.getSessionOwner(request.getSession()) == null)
         {
-            AuthenticationManager.PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, affectedUser.getEmail(), password, returnUrlHelper, true);
+            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, affectedUser.getEmail(), password, returnUrlHelper, true);
 
             if (result.getStatus() == Success)
             {
                 // This user has passed primary authentication
                 AuthenticationManager.setPrimaryAuthenticationResult(request, result);
+                return AuthenticationManager.handleAuthentication(request, c);
             }
         }
 
-        return AuthenticationManager.handleAuthentication(request, c);
+        return new AuthenticationResult(returnUrlHelper);
     }
 
     public enum Key implements StartupProperty

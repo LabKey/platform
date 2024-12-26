@@ -29,7 +29,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -449,6 +448,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -1503,6 +1503,55 @@ public class AdminController extends SpringActionController
         public HtmlString getSiteSettingsHelpLink(String fragment)
         {
             return new HelpTopic("configAdmin", fragment).getSimpleLinkHtml("more info...");
+        }
+    }
+
+    public static class SetRibbonMessageForm
+    {
+        private Boolean _show = null;
+        private String _message = null;
+
+        public Boolean isShow()
+        {
+            return _show;
+        }
+
+        public void setShow(Boolean show)
+        {
+            _show = show;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class SetRibbonMessageAction extends MutatingApiAction<SetRibbonMessageForm>
+    {
+        @Override
+        public Object execute(SetRibbonMessageForm form, BindException errors) throws Exception
+        {
+            if (form.isShow() != null || form.getMessage() != null)
+            {
+                WriteableAppProps props = AppProps.getWriteableInstance();
+
+                if (form.isShow() != null)
+                    props.setShowRibbonMessage(form.isShow());
+
+                if (form.getMessage() != null)
+                    props.setRibbonMessage(form.getMessage());
+
+                props.save(getViewContext().getUser());
+            }
+
+            return null;
         }
     }
 
@@ -6282,7 +6331,7 @@ public class AdminController extends SpringActionController
                 if (StringUtils.equalsIgnoreCase(absolutePath, form.getFolderRootPath()))
                 {
                     if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
-                        throw new UnauthorizedException("Only site admins change change file roots");
+                        throw new UnauthorizedException("Only site admins can change file roots");
                 }
             }
         }
@@ -10757,10 +10806,10 @@ public class AdminController extends SpringActionController
             form.setExistingHostsList(form.getTypeEnum().getHosts());
 
             JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
-            newView.setTitle(String.format("Register New External %1$s Host", form.getTypeEnum().name()));
+            newView.setTitle("Register New " + form.getTypeEnum().getTitle());
             newView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
-            existingView.setTitle(String.format("Existing External %1$s Hosts", form.getTypeEnum().name()));
+            existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
             return new VBox(newView, existingView);
@@ -10817,30 +10866,12 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(_type.getHelpTopic());
-            addAdminNavTrail(root, String.format("External %1$s Host Admin", _type.name()), getClass());
+            addAdminNavTrail(root, String.format("%1$s Admin", _type.getTitle()), getClass());
         }
     }
 
-    private static class AuthorityValidator extends UrlValidator
-    {
-        public AuthorityValidator(long options)
-        {
-            super(options);
-        }
-
-        @Override
-        public boolean isValidAuthority(String authority)
-        {
-            String base = authority.startsWith("*.") ? authority.substring(2) : authority;
-            return super.isValidAuthority(base);
-        }
-    };
-
     public static class ExternalHostsForm
     {
-        @JsonIgnore
-        private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
-
         private String _newExternalHost;
         private String _existingExternalHost;
         private boolean _delete;
@@ -10947,7 +10978,7 @@ public class AdminController extends SpringActionController
         public Set<String> validateNewExternalHost(BindException errors)
         {
             String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
-            validateHostFormat(newExternalHost, errors);
+            getTypeEnum().validateHostFormat(newExternalHost, errors);
             if (errors.hasErrors())
                 return null;
 
@@ -10966,7 +10997,7 @@ public class AdminController extends SpringActionController
             {
                 for (String host : hosts)
                 {
-                    validateHostFormat(host, errors);
+                    getTypeEnum().validateHostFormat(host, errors);
                     if (errors.hasErrors())
                         continue;
 
@@ -10975,19 +11006,6 @@ public class AdminController extends SpringActionController
             }
 
             return hostSet;
-        }
-
-        @JsonIgnore
-        private void validateHostFormat(String externalHost, BindException errors)
-        {
-            if (StringUtils.isEmpty(externalHost))
-            {
-                errors.addError(new LabKeyError("External host name must not be blank."));
-            }
-            else if (!AUTHORITY_VALIDATOR.isValidAuthority(externalHost))
-            {
-                errors.addError(new LabKeyError(String.format("External host name %1$s is not formatted correctly", externalHost)));
-            }
         }
 
         /**
@@ -11266,12 +11284,12 @@ public class AdminController extends SpringActionController
     public static class MenuBarAction extends ProjectSettingsViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HttpView<?> getTabView()
         {
             if (getContainer().isRoot())
                 return HtmlView.err("Menu bar must be configured for each project separately.");
 
-            WebPartView v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
+            WebPartView<?> v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
             v.setView("menubar", new VBox());
             Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, false, true, true, false);
 

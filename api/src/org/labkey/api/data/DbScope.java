@@ -370,6 +370,18 @@ public class DbScope
             _driverClass = initializeDriver();
             _url = _dsPropertyReader.getUrl();
 
+            if (_dialect.isPostgreSQL())
+            {
+                // Starting with 17.x, PostgreSQL won't connect to a database name longer than 63 chars, but it fails
+                // with a misleading message, so we proactively look for this and throw. Issue #51676.
+                String name = _dialect.getDatabaseName(_url);
+
+                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect we
+                // don't know what database version is there.
+                if (name.length() > _dialect.getIdentifierMaxLength())
+                    throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
+            }
+
             // Validate that data source is using a supported connection pool
             validateConnectionPool();
 
@@ -1157,6 +1169,9 @@ public class DbScope
         {
             log(() -> 1 == _refCount ? "Releasing connection [1]: " + conn.toString() : "Attempting to decrease count of connection [" + _refCount + "]: " + conn.toString());
 
+            if (_conn == null)
+                throw new ConnectionAlreadyReleaseException("Connection has already been nulled out, but was passed: " + conn);
+
             if (_conn != conn)
                 throw new IllegalStateException("Incorrect Connection: " + conn + " vs. " + _conn);
 
@@ -1171,6 +1186,19 @@ public class DbScope
             }
 
             return 0 == _refCount;
+        }
+    }
+
+    /**
+     * Special case for when the connection being closed doesn't match the expected
+     * connection for this thread, to help scenarios that are prone to race conditions
+     * (like killing pipeline jobs) ignore it.
+     */
+    public static class ConnectionAlreadyReleaseException extends IllegalStateException
+    {
+        public ConnectionAlreadyReleaseException(String s)
+        {
+            super(s);
         }
     }
 
@@ -1729,20 +1757,6 @@ public class DbScope
         // Attempt a connection three times before giving up
         for (int i = 0; i < 3; i++)
         {
-            if (i > 0)
-            {
-                LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
-
-                try
-                {
-                    Thread.sleep(10000);  // Wait 10 seconds before trying again
-                }
-                catch (InterruptedException e)
-                {
-                    LOG.warn("ensureDataBase", e);
-                }
-            }
-
             // Create non-pooled connection... don't want to pool a failed connection
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
@@ -1767,6 +1781,20 @@ public class DbScope
                     LOG.warn("Connection to \"{}\" at {} failed with the following error:", ds.getDsName(), ds.getUrl());
                     LOG.warn("Message: {} SQLState: {} ErrorCode: {}", e.getMessage(), e.getSQLState(), e.getErrorCode(), e);
                     lastException = e;
+
+                    if (i < 2)
+                    {
+                        LOG.warn("Retrying connection to \"{}\" at {} in 10 seconds", ds.getDsName(), ds.getUrl());
+
+                        try
+                        {
+                            Thread.sleep(10000);  // Wait 10 seconds before trying again
+                        }
+                        catch (InterruptedException ie)
+                        {
+                            LOG.warn("ensureDataBase", ie);
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -2080,7 +2108,6 @@ public class DbScope
      */
     public static void closeAllConnectionsForCurrentThread()
     {
-        Thread thread = getEffectiveThread();
         for (DbScope scope : getInitializedDbScopes())
         {
             TransactionImpl t = scope.getCurrentTransactionImpl();
@@ -2097,7 +2124,11 @@ public class DbScope
                 {
                     LOG.warn("Forcing close of still-pending transaction object. Current stack is ", new Throwable());
                     LOG.warn("Forcing close of still-pending transaction object started at ", t._creation);
-                    t.close(thread);
+                    t.close();
+                }
+                catch (ConnectionAlreadyReleaseException ignored)
+                {
+                    // The code in another thread has already released the connection
                 }
                 catch (Exception x)
                 {
@@ -2566,11 +2597,6 @@ public class DbScope
 
         @Override
         public void close()
-        {
-            close(getEffectiveThread());
-        }
-
-        public void close(Thread thread)
         {
             if (_closesToIgnore == 0)
             {

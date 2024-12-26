@@ -133,6 +133,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
@@ -1606,7 +1607,7 @@ public class LoginController extends SpringActionController
             NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
             SetPasswordBean bean = new SetPasswordBean(
-                    form, getEmailForForm(form), _unrecoverableError, getMessage(form),
+                    form, getEmailForForm(form), _unrecoverableError, getSuccessMessageSupplier(form),
                     nonPasswordInputs, passwordInputs, getClass(), isCancellable(form),
                     buttonText, getTitle()
             );
@@ -1675,7 +1676,7 @@ public class LoginController extends SpringActionController
         }
 
         protected abstract void verify(SetPasswordForm form, Errors errors);
-        protected abstract String getMessage(SetPasswordForm form);
+        protected abstract Supplier<String> getSuccessMessageSupplier(SetPasswordForm form);
         protected abstract NamedObjectList getPasswordInputs(SetPasswordForm form);
         protected boolean clearVerification()
         {
@@ -1709,9 +1710,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return "Your email address (" + _user.getEmail() + ") has been verified! Create an account password below.";
+            return () -> "Your email address (" + _user.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -1751,6 +1752,9 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getSuccessView(SetPasswordForm form)
         {
+            if (null == _successUrl)
+                _successUrl = AppProps.getInstance().getHomePageActionURL();
+
             // Issue 33599: allow the returnUrl for this action to redirect to an absolute URL (ex. labkey.org back to accounts.trial.labkey.host)
             return HttpView.redirect(_successUrl, true);
         }
@@ -1763,12 +1767,12 @@ public class LoginController extends SpringActionController
         User user = LoginManager.verify(verification);
         boolean isVerified = user != null;
 
-        LoginController.checkVerificationErrors(isVerified, user, errors);
+        LoginController.checkVerificationErrors(isVerified, user, verification, errors);
 
         return isVerified && !errors.hasErrors() ? user : null;
     }
 
-    public static void checkVerificationErrors(boolean isVerified, User user, Errors errors)
+    public static void checkVerificationErrors(boolean isVerified, User user, String verification, Errors errors)
     {
         if (isVerified)
         {
@@ -1780,10 +1784,13 @@ public class LoginController extends SpringActionController
         }
         else
         {
-            // Verification string wasn't found. User might have already verified, they don't have a login (should be
-            // using LDAP or SSO), or the link got mangled. Don't provide any guidance since that could reveal
-            // information about existing users.
-            errors.reject("setPassword", "Verification failed. Make sure you've copied the entire link into your browser's address bar.");
+            // Verification failed. Inspect the verification token to provide a bit of guidance.
+            if (null == verification)
+                errors.reject("setPassword", "Verification failed. The verification parameter is missing. Make sure you've copied the entire link into your browser's address bar.");
+            else if (verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
+                errors.reject("setPassword", "Verification failed. The verification parameter is shorter than expected. Make sure you've copied the entire link into your browser's address bar.");
+            else
+                errors.reject("setPassword", "Verification failed. You may have already verified.");
         }
     }
 
@@ -1808,9 +1815,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return "Welcome! We see that this is your first time logging in. This wizard will guide you through " +
+            return () -> "Welcome! We see that this is your first time logging in. This wizard will guide you through " +
                     "creating a Site Administrator account that has full control over this server, installing the modules " +
                     "required to use LabKey Server, and setting some basic configuration.";
         }
@@ -1964,9 +1971,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        protected String getMessage(SetPasswordForm form)
+        protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return form.getMessage();
+            return () -> form.getMessage();
         }
 
         @Override
@@ -2041,7 +2048,7 @@ public class LoginController extends SpringActionController
         public final String email;
         public final SetPasswordForm form;
         public final boolean unrecoverableError;
-        public final String message;
+        public final Supplier<String> successMessageSupplier;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
         public final Class<? extends AbstractSetPasswordAction> action;
@@ -2051,14 +2058,14 @@ public class LoginController extends SpringActionController
 
         // TODO switch to builder pattern
         private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError,
-                                String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
+                                Supplier<String> successMessageSupplier, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
                                 Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable,
                                 String buttonText, String title)
         {
             this.form = form;
             this.email = emailForForm;
             this.unrecoverableError = unrecoverableError;
-            this.message = message;
+            this.successMessageSupplier = successMessageSupplier;
             this.nonPasswordInputs = nonPasswordInputs;
             this.passwordInputs = passwordInputs;
             this.action = clazz;

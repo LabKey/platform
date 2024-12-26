@@ -460,7 +460,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         String propertyURI = xProp.getPropertyURI();
         // Deal with legacy property URIs that don't have % in the name part properly encoded
         propertyURI = Lsid.fixupPropertyURI(propertyURI);
-        if (context != null  && propertyURI != null && propertyURI.indexOf("${") != -1)
+        if (context != null  && propertyURI != null && propertyURI.contains("${"))
         {
             propertyURI = LsidUtils.resolveLsidFromTemplate(propertyURI, context);
         }
@@ -473,7 +473,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (xProp.isSetOntologyURI())
         {
             String uri = xProp.getOntologyURI().trim();
-            if (context != null && uri.indexOf("${") != -1)
+            if (context != null && uri.contains("${"))
             {
                 uri = LsidUtils.resolveLsidFromTemplate(xProp.getOntologyURI(), context);
             }
@@ -549,7 +549,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         {
             String defaultValue = xProp.getDefaultValue();
             PropertyType type = prop.getPropertyDescriptor().getPropertyType();
-            if (defaultValue != null && defaultValue.length() > 0)
+            if (defaultValue != null && !defaultValue.isEmpty())
             {
                 try
                 {
@@ -630,7 +630,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                         List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(container, pd)
                                 .stream()
                                 .filter(d -> d.getDomainKind() instanceof VocabularyDomainKind)
-                                .collect(Collectors.toList());
+                                .toList();
 
                         if (!vocabDomains.isEmpty())
                         {
@@ -670,8 +670,36 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                                 x.put("avg", m.get("avg") != null ? m.get("avg") : 0);
                                 return x;
                             })
-                )
+                ),
+                "propertyCountsByRange", stripUriPrefixes(new SqlSelector(schema,
+                        new SQLFragment("SELECT CASE WHEN RangeURI IS NULL THEN 'null' ELSE RangeURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY RangeURI")
+                ).getValueMap()),
+                "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
+                        new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
+                ).getValueMap())
         );
+    }
+
+    /**
+     * @return a map where the URI keys have been stripped of everything before the hash or xsd: prefix.
+     * http://www.labkey.org/exp/xml#attachment -> attachment
+     * xsd:int -> int
+     */
+    private Map<String, Integer> stripUriPrefixes(@NotNull Map<String, Object> valueMap)
+    {
+        Map<String, Integer> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : valueMap.entrySet())
+        {
+            String key = entry.getKey();
+            int value = ((Number)entry.getValue()).intValue();
+            if (key.contains("#"))
+            {
+                key = key.split("#")[1];
+            }
+            key = key.replace("xsd:", "");
+            result.compute(key, (k, v) -> v == null ? value : v.intValue() + value);
+        }
+        return result;
     }
 
     @Override

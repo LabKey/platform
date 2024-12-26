@@ -24,6 +24,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ApiKeyManager;
+import org.labkey.api.security.ApiKeyManager.ApiKeyAuthentication;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -107,19 +108,22 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         // Check for API key first
         if (API_KEY.equals(id))
         {
-            User user = ApiKeyManager.get().authenticateFromApiKey(password);
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(password);
             final AuthenticationResponse ret;
 
-            if (user != null)
+            if (auth != null)
             {
                 // API keys are exempt from secondary authentication, Issue 48764
-                ret = AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), UserManager.UserAuditEvent.API_KEY, false);
+                ret = AuthenticationResponse.success(configuration, auth.getUser()).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
+                    .setRequireSecondary(false)
+                    .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
+
                 // Update core.ApiKeys.LastUsed (throttled)
                 API_KEY_LAST_USED_THROTTLE.execute(password);
             }
             else
             {
-                ret = AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
+                ret = AuthenticationResponse.failure(configuration, FailureReason.badApiKey);
             }
 
             return ret;
@@ -135,7 +139,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 user = UserManager.getUser(email);
                 hash = LoginManager.getPasswordHash(user);
                 if (null == hash)
-                    return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
+                    return AuthenticationResponse.failure(configuration, FailureReason.userDoesNotExist);
             }
             catch (InvalidEmailException e)
             {
@@ -150,7 +154,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             }
 
             if (!LoginManager.matchPassword(password, hash))
-                return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
+                return AuthenticationResponse.failure(configuration, FailureReason.badPassword);
 
             if (user.isActive())
             {
@@ -174,7 +178,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 }
             }
 
-            return AuthenticationResponse.createSuccessResponse(configuration, user);
+            return AuthenticationResponse.success(configuration, user);
         }
     }
 
@@ -245,6 +249,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        return AuthenticationResponse.createFailureResponse(configuration, failureReason, redirectURL);
+        return AuthenticationResponse.failure(configuration, failureReason).setRedirectURL(redirectURL);
     }
 }
