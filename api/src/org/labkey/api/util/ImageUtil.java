@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.hc.core5.http.ParseException;
@@ -53,6 +54,10 @@ import java.util.logging.Level;
 public class ImageUtil
 {
     private static Logger LOG = LogManager.getLogger(ImageUtil.class);
+    public static final String FILE_SESSION_PARAM = "fileCacheKey";
+    public static final String DELETE_FILE_PARAM = "deleteFile";
+    public static final String CACHE_FILE_PARAM = "cacheFile";
+    public static final String ATTACHMENT_PARAM = "attachment";
 
     static
     {
@@ -248,6 +253,35 @@ public class ImageUtil
         }
     }
 
+    /**
+     * Retrieves a file cached in the session
+     */
+    @Nullable
+    public static File getFileFromSession(HttpServletRequest request, String key)
+    {
+        Object o = request.getSession().getAttribute(key);
+        if (o instanceof File file && file.exists())
+            return file;
+
+        return null;
+    }
+
+    /**
+     * Adds a file to the request session and returns the generated session attribute key.
+     */
+    @Nullable
+    public static String setFileInSession(HttpServletRequest request, File file)
+    {
+        if (file != null && file.exists())
+        {
+            String key = "temp:" + GUID.makeGUID();
+            request.getSession(true).setAttribute(key, file);
+
+            return key;
+        }
+        return null;
+    }
+
     // LabKey user agent is used to resolve image resources (or others if required in the future) using the
     // same session as the incoming request.  Right now this occurs when we are generating a thumbnail for a Knitr
     // R report
@@ -262,7 +296,7 @@ public class ImageUtil
         }
 
         @Override
-        public org.xhtmlrenderer.resource.ImageResource getImageResource(java.lang.String uri)
+        public ImageResource getImageResource(String uri)
         {
             ImageResource ir;
             String uriResolved = resolveURI(uri);
@@ -276,10 +310,11 @@ public class ImageUtil
                 try
                 {
                     URLHelper helper = new URLHelper(uriResolved);
-                    String sessionKey = helper.getParameter("sessionKey");
-                    String deleteFile = helper.getParameter("deleteFile");
-                    File file = (File) _context.getRequest().getSession().getAttribute(sessionKey);
-                    if (file != null && file.exists())
+                    String sessionKey = helper.getParameter(FILE_SESSION_PARAM);
+                    String deleteFile = helper.getParameter(DELETE_FILE_PARAM);
+
+                    File file = getFileFromSession(_context.getRequest(), sessionKey);
+                    if (file != null)
                     {
                         try
                         {

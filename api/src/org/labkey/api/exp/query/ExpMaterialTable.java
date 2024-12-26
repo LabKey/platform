@@ -60,6 +60,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceProtocolLSID,
         StoredAmount,
         Units,
+        IsPlated,
     }
 
     default void setSupportTableRules(boolean supportTableRules)
