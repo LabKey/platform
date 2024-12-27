@@ -82,6 +82,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
@@ -569,6 +570,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setSchemaName(schemaName)
                                 .setQueryName(queryName)
                                 .setRenamedColumns(getRenamedColumns())
+                                .setLineageImportAliases(getLineageImportAliases())
                                 .setInsertOption(_insertOption)
                                 .setAuditBehaviorType(behaviorType)
                                 .setAuditUserComment(_auditUserComment)
@@ -642,10 +644,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void configureLoader(DataLoader loader) throws IOException
     {
-        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns());
+        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), null);
     }
 
-    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames) throws IOException
     {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
@@ -675,7 +677,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
                     name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
                     name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/") ||
-                    name.equalsIgnoreCase("Name") /* Issue 50710: Treat "Name" column as a string value for sample or data class import */)
+                    name.equalsIgnoreCase("Name") || /* Issue 50710: Treat "Name" column as a string value for sample or data class import */
+                    (lineageAliasNames != null && lineageAliasNames.contains(name)) )
                 {
                     col.clazz = String.class;
                     col.converter = TabLoader.noopConverter;
@@ -691,6 +694,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     protected Map<String, String> getRenamedColumns()
+    {
+        return null;
+    }
+
+    protected Set<String> getLineageImportAliases() throws IOException
     {
         return null;
     }

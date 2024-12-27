@@ -2602,8 +2602,10 @@ public class ExpDataIterators
             {
                 try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
                 {
+                    ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(typeData.container, _user, typeData.tableInfo.getName());
+                    Set<String> aliasNames = new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
                     // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                    configureLoader(loader, typeData.tableInfo, null, true);
+                    configureLoader(loader, typeData.tableInfo, null, true, aliasNames);
                     updateService.loadRows(_user, typeData.container, loader, _context, null);
                 }
                 catch (SQLException | IOException e)

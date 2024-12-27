@@ -4123,6 +4123,18 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected @Nullable Set<String> getLineageImportAliases() throws IOException
+        {
+            boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
+            if (!crossTypeImport)
+            {
+                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
+                return new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
+            }
+            return null;
+        }
+
+        @Override
         protected int importData(
             DataLoader dl,
             FileStream file,
@@ -4188,6 +4200,12 @@ public class ExperimentController extends SpringActionController
             }
             return json;
         }
+
+        @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
+        }
     }
 
     public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -4242,6 +4260,13 @@ public class ExperimentController extends SpringActionController
                 renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
             }
             return renameColumns;
+        }
+
+        @Override
+        protected Set<String> getLineageImportAliases() throws IOException
+        {
+            ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), _form.getQueryName());
+            return new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
         }
 
         protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment) throws IOException
@@ -4335,6 +4360,12 @@ public class ExperimentController extends SpringActionController
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
+        }
+
+        @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
         }
 
     }
