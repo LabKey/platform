@@ -1268,7 +1268,7 @@ quickScan:
     }
 
     private static final String[] ENCODED = {"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"};
-    private static final String[] DECODED = {"%", "%#", "&", "@", "~", "{", "}", "[", "]", "+", " "};
+    private static final String[] DECODED = {"%", "#", "&", "@", "~", "{", "}", "[", "]", "+", " "};
 
     static public String decodeURL(String str)
     {
