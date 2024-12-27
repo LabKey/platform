@@ -1264,22 +1264,7 @@ quickScan:
 
         // str is unencoded; we need certain special chars encoded for it to become a URL
         // % & # @ ~ {} []
-        StringBuilder res = new StringBuilder();
-        for (int i = 0; i < str.length(); i++) {
-            if ('%' == str.charAt(i)) res.append("%25");
-            else if ('#' == str.charAt(i)) res.append("%23");
-            else if ('&' == str.charAt(i)) res.append("%26");
-            else if ('@' == str.charAt(i)) res.append("%40");
-            else if ('~' == str.charAt(i)) res.append("%7E");
-            else if ('{' == str.charAt(i)) res.append("%7B");
-            else if ('}' == str.charAt(i)) res.append("%7D");
-            else if ('[' == str.charAt(i)) res.append("%5B");
-            else if (']' == str.charAt(i)) res.append("%5D");
-            else if ('+' == str.charAt(i)) res.append("%2B");
-            else if (' ' == str.charAt(i)) res.append("%20");   // space also
-            else res.append(str.charAt(i));
-        }
-        return res.toString();
+        return StringUtils.replaceEach(str, DECODED, ENCODED);
     }
 
     private static final String[] ENCODED = {"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"};
