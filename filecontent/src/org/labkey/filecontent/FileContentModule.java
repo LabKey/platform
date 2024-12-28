@@ -66,7 +66,7 @@ public class FileContentModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.000;
+        return 25.000;
     }
 
     @Override
