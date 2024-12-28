@@ -707,7 +707,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
     {
-        validateSampleTypeName(c, u, name);
+        validateSampleTypeName(c, u, name, false);
 
         if (properties == null || properties.isEmpty())
             throw new ApiUsageException("At least one property is required");
@@ -966,7 +966,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
-    private void validateSampleTypeName(Container container, User user, String name)
+    private void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
     {
         if (name == null || StringUtils.isBlank(name))
             throw new ApiUsageException("Sample Type name is required.");
@@ -976,8 +976,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (name.length() > nameMax)
             throw new ApiUsageException("Sample Type name may not exceed " + nameMax + " characters.");
 
-        if (getSampleType(container, user, name) != null)
-            throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
+        if (!skipExistingCheck)
+        {
+            if (getSampleType(container, user, name) != null)
+                throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
+        }
 
         // Issue 51321: check reserved sample type name: First
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
@@ -996,7 +999,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         boolean hasNameChange = false;
         if (!oldSampleTypeName.equals(newName))
         {
-            validateSampleTypeName(container, user, newName);
+            validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
         }

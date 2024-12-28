@@ -7812,7 +7812,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     ) throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
-        validateDataClassName(c, u, name);
+        validateDataClassName(c, u, name, false);
         validateDataClassOptions(c, u, options);
 
         Lsid lsid = getDataClassLsid(c);
@@ -7934,7 +7934,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             newName = StringUtils.trimToNull(options.getName());
             if (!oldDataClassName.equals(newName))
             {
-                validateDataClassName(c, u, newName);
+                validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
                 hasNameChange = true;
                 dataClass.setName(newName);
             }
@@ -8001,7 +8001,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name) throws IllegalArgumentException
+    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
@@ -8011,9 +8011,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (name.length() > nameMax)
             throw new ApiUsageException("DataClass name may not exceed " + nameMax + " characters.");
 
-        ExpDataClass existing = getDataClass(c, u, name);
-        if (existing != null)
-            throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
+        if (!skipExisting)
+        {
+            ExpDataClass existing = getDataClass(c, u, name);
+            if (existing != null)
+                throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
+        }
 
         // Issue 51321: check reserved data class name: First, All
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
