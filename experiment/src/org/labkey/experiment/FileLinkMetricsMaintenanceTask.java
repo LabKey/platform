@@ -44,13 +44,6 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
     }
 
     @Override
-    public boolean isEnabledByDefault()
-    {
-        return false;
-    }
-
-
-    @Override
     public void run(Logger log)
     {
         try
@@ -90,31 +83,4 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
         }
     }
 
-    private enum StartupProperties implements StartupProperty
-    {
-        EnableFileLinkMetricsTask
-                {
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Enable the system maintenance task to calculate metrics for valid and missing files for File fields.";
-                    }
-                }
-    }
-
-    public static void populateStartupProperties()
-    {
-        // Looking for startup.properties value of FileLinkMetrics.EnableFileLinkMetricsTask = true
-        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>(STARTUP_SCOPE, StartupProperties.class)
-        {
-            @Override
-            public void handle(Map<StartupProperties, StartupPropertyEntry> map)
-            {
-                StartupPropertyEntry entry = map.get(StartupProperties.EnableFileLinkMetricsTask);
-                if (null != entry && Boolean.valueOf(entry.getValue()))
-                    SystemMaintenance.enableTask(FileLinkMetricsMaintenanceTask.NAME);
-            }
-        });
-
-    }
 }
