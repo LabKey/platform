@@ -39,6 +39,14 @@ import java.util.Map;
 
 public interface QueryDefinition
 {
+    String DEFAULT_METADATA_TEXT =
+            "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
+                    "  <table tableName=\"%s\" tableDbType=\"NOT_IN_DB\">\n" +
+                    "    <columns>\n" +
+                    "    </columns>\n" +
+                    "  </table>\n" +
+                    "</tables>\n";
+
     String getName();
     void setName(String name);
     String getTitle();

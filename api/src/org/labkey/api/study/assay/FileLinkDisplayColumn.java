@@ -31,16 +31,22 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -246,6 +252,39 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     protected String getFileName(RenderContext ctx, Object value)
     {
         return getFileName(ctx, value, false);
+    }
+
+    public static boolean filePathExist(String path, Container container, User user)
+    {
+        String davPath = path;
+        if (FileUtil.isUrlEncoded(davPath))
+            davPath = FileUtil.decodeURL(davPath);
+        var resolver = WebdavService.get().getResolver();
+        // Resolve path under webdav root
+        Path parsed = Path.parse(StringUtils.trim(davPath));
+        WebdavResource resource = resolver.lookup(parsed);
+        if ((null == resource || !resource.exists()) && !parsed.startsWith(new Path("_webdav")))
+            resource = resolver.lookup(new Path("_webdav").append(parsed));
+        if (resource != null && resource.isFile() && resource.canRead(user, true))
+        {
+            return true;
+        }
+        else
+        {
+            // Resolve file under pipeline root
+            PipeRoot root = PipelineService.get().findPipelineRoot(container);
+            if (root != null)
+            {
+                // Attempt absolute path first, then relative path from pipeline root
+                File f = new File(path);
+                if (!root.isUnderRoot(f))
+                    f = root.resolvePath(path);
+
+                return (NetworkDrive.exists(f) && root.isUnderRoot(f) && root.hasPermission(container, user, ReadPermission.class));
+            }
+        }
+
+        return false;
     }
 
     @Override
