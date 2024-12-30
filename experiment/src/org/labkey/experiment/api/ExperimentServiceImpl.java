@@ -9048,7 +9048,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<String, Map<String, Object>> metrics = new HashMap<>();
         metrics.put("nameexpression", getNameExpressionMetrics());
         metrics.put("parentalias", getParentAliasMetrics());
+        metrics.put("importTemplates", getImportTemplatesMetrics());
         return metrics;
+    }
+
+    private Map<String, Object> getImportTemplatesMetrics()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT schema, metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
+        Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
+        Map<String, Long> counts = new HashMap<>();
+        final String sectionStart = "<importtemplates>";
+        for (Map<String, Object> result : results)
+        {
+            String schema = (String) result.get("schema");
+            String metadata = (String) result.get("metadata");
+            metadata = metadata.toLowerCase();
+            if (schema.toLowerCase().startsWith("assay.general."))
+                schema = "assay";
+            if (schema.equals("assay") || schema.equals("exp.data") || schema.equals("samples"))
+            {
+                if (!metadata.contains(sectionStart))
+                    continue;
+                long count = counts.get(schema) == null ? 0L : counts.get(schema);
+                counts.put(schema, ++count);
+            }
+        }
+        return Map.of("SampleType", counts.getOrDefault("samples", 0L),
+                "DataClass", counts.getOrDefault("exp.data", 0L),
+                "AssayDesign", counts.getOrDefault("assay", 0L));
     }
 
     private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)

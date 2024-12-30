@@ -82,6 +82,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     private static final Logger LOG = LogHelper.getLogger(DataClassDomainKind.class, "Data class domain kind changes");
     public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
+    public static final String DATACLASS_FILE_DIRECTORY = "dataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
@@ -490,5 +491,11 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public boolean supportsNamingPattern()
     {
         return true;
+    }
+
+    @Override
+    public String getDomainFileDirectory()
+    {
+        return DATACLASS_FILE_DIRECTORY;
     }
 }

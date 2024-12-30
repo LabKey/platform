@@ -596,7 +596,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     }
 
     @Nullable
-    private static TableType getTableType(String name, TablesDocument doc)
+    public static TableType getTableType(String name, TablesDocument doc)
     {
         if (doc != null && doc.getTables() != null)
         {
@@ -949,7 +949,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     }
 
     @Nullable
-    private static TablesDocument parseDocument(String xml) throws XmlException
+    public static TablesDocument parseDocument(String xml) throws XmlException
     {
         if (xml == null)
         {

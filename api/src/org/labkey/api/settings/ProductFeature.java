@@ -11,6 +11,7 @@ public enum ProductFeature
     BiologicsRegistry("biologics"),
     CalculatedFields("core"),
     ChartBuilding("core"),
+    CustomImportTemplates("core"),
     DataChangeCommentRequirement("core"),
     ELN("labbook"),
     FreezerManagement("inventory"),

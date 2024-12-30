@@ -255,7 +255,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 resp.put("importMessage", tinfo.getImportMessage());
 
             JSONArray templates = new JSONArray();
-            List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
+            List<Pair<String, String>> it = tinfo.getValidatedImportTemplates(getViewContext());
             if (null != it && !it.isEmpty())
             {
                 for (Pair<String, String> pair : it)

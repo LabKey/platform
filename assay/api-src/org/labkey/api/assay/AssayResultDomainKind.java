@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.labkey.api.assay.AssayFileWriter.DIR_NAME;
 import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
@@ -175,5 +176,11 @@ public class AssayResultDomainKind extends AssayDomainKind
             return;
 
         pair.first.removeFilterCriteriaForProperty(pd);
+    }
+
+    @Override
+    public String getDomainFileDirectory()
+    {
+        return DIR_NAME;
     }
 }
