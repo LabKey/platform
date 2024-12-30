@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +39,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -74,7 +74,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -673,10 +672,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             for (ColumnDescriptor col : cols)
             {
                 String name = col.name.toLowerCase();
-                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/") ||
+                if (ExperimentService.isInputOutputColumn(col.name) ||
                     name.equalsIgnoreCase("Name") || /* Issue 50710: Treat "Name" column as a string value for sample or data class import */
                     (lineageAliasNames != null && lineageAliasNames.contains(name)) )
                 {
