@@ -578,8 +578,6 @@ public class ExperimentModule extends SpringModule
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
 
-        FileLinkMetricsMaintenanceTask.populateStartupProperties();
-
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
