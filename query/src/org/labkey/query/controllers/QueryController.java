@@ -8365,9 +8365,7 @@ public class QueryController extends SpringActionController
             }
             if (!updatedTemplates.equals(existingCustomTemplates))
             {
-                QueryDef queryDef = null;
-                if (queryDef == null)
-                    queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
+                QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
                 TablesDocument doc = null;
                 TableType xmlTable = null;
                 TableType.ImportTemplates xmlImportTemplates = null;
