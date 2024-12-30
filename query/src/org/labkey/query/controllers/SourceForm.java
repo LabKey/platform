@@ -30,6 +30,7 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
 import static org.labkey.api.action.BaseViewAction.springBindParameters;
+import static org.labkey.api.query.QueryDefinition.DEFAULT_METADATA_TEXT;
 
 public class SourceForm extends ViewForm implements HasBindParameters
 {
@@ -88,14 +89,6 @@ public class SourceForm extends ViewForm implements HasBindParameters
     {
         ff_redirect = QueryAction.valueOf(action);
     }
-
-    private static String DEFAULT_METADATA_TEXT =
-            "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-            "  <table tableName=\"%s\" tableDbType=\"NOT_IN_DB\">\n" +
-            "    <columns>\n" +
-            "    </columns>\n" +
-            "  </table>\n" +
-            "</tables>\n";
 
     public String getDefaultMetadataText()
     {
