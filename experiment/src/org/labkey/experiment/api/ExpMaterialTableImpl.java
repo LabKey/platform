@@ -788,7 +788,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         else
         {
-            sql = new SQLFragment("SELECT NULL");
+            sql = new SQLFragment("(SELECT NULL)");
         }
         var col = new ExprColumn(this, Column.IsPlated.name(), sql, JdbcType.VARCHAR);
         col.setDescription("Whether the sample that has been plated, if plating is supported.");
