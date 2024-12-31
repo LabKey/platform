@@ -19,6 +19,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.query.AbstractQueryUpdateService.createTransactionAuditEvent;
 
@@ -52,6 +53,7 @@ public class QueryImportPipelineJob extends PipelineJob
         String _schemaName;
         String _queryName;
         Map<String, String> _renamedColumns;
+        Set<String> _lineageImportAliases;
 
         QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
         AuditBehaviorType _auditBehaviorType = null;
@@ -97,6 +99,8 @@ public class QueryImportPipelineJob extends PipelineJob
         {
             return _renamedColumns;
         }
+
+        public Set<String> getLineageImportAliases() { return _lineageImportAliases; }
 
         public QueryUpdateService.InsertOption getInsertOption()
         {
@@ -171,6 +175,12 @@ public class QueryImportPipelineJob extends PipelineJob
         public QueryImportAsyncContextBuilder setRenamedColumns(Map<String, String> renamedColumns)
         {
             _renamedColumns = renamedColumns;
+            return this;
+        }
+
+        public QueryImportAsyncContextBuilder setLineageImportAliases(Set<String> lineageImportAliases)
+        {
+            _lineageImportAliases = lineageImportAliases;
             return this;
         }
 
@@ -271,7 +281,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
             loader = DataLoader.get().createLoader(_importContextBuilder.getPrimaryFile(), _importContextBuilder.getFileContentType(), _importContextBuilder.isHasColumnHeaders(), null, null);
 
-            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns());
+            AbstractQueryImportAction.configureLoader(loader, target, _importContextBuilder.getRenamedColumns(), _importContextBuilder.allowLineageColumns(), _importContextBuilder.getLineageImportAliases());
 
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
 
