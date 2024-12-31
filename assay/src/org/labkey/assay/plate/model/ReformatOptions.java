@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
+import org.labkey.assay.plate.PlateManager;
 
 import java.util.List;
 
@@ -146,10 +147,12 @@ public class ReformatOptions
     }
 
     private ReformatOperation _operation;
+    private List<PlateManager.PlateData> _plates;
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
     private Boolean _previewData = true;
+    private String _sampleSelectionKey;
     private TargetPlateSet _targetPlateSet;
     private TargetPlateSource _targetPlateSource;
 
@@ -162,6 +165,16 @@ public class ReformatOptions
     {
         _operation = operation;
         return this;
+    }
+
+    public List<PlateManager.PlateData> getPlates()
+    {
+        return _plates;
+    }
+
+    public void setPlates(List<PlateManager.PlateData> plates)
+    {
+        _plates = plates;
     }
 
     public List<Integer> getPlateRowIds()
@@ -205,6 +218,17 @@ public class ReformatOptions
     public void setPreviewData(Boolean previewData)
     {
         _previewData = previewData;
+    }
+
+    public String getSampleSelectionKey()
+    {
+        return _sampleSelectionKey;
+    }
+
+    public ReformatOptions setSampleSelectionKey(String sampleSelectionKey)
+    {
+        _sampleSelectionKey = sampleSelectionKey;
+        return this;
     }
 
     public TargetPlateSet getTargetPlateSet()

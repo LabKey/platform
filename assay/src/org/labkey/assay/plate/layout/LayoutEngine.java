@@ -5,9 +5,10 @@ import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.assay.plate.data.WellData;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.model.ReformatOptions;
 
+import java.util.Collection;
 import java.util.List;
 
 public class LayoutEngine
@@ -15,24 +16,23 @@ public class LayoutEngine
     private final List<? extends PlateType> _allPlateTypes;
     private final LayoutOperation _operation;
     private final ReformatOptions _options;
-    private final List<Plate> _sourcePlates;
+    private Collection<Integer> _sampleIds;
+    private List<Plate> _sourcePlates;
+    private List<PlateManager.PlateData> _targetPlateData;
     private PlateType _targetPlateType;
     private Plate _targetTemplate;
-    private List<WellData> _targetTemplateWellData;
 
-    public LayoutEngine(ReformatOptions options, List<Plate> sourcePlates, List<? extends PlateType> allPlateTypes)
+    public LayoutEngine(ReformatOptions options, List<? extends PlateType> allPlateTypes)
     {
         _operation = layoutOperationFactory(options);
         _options = options;
-        _sourcePlates = sourcePlates;
         _allPlateTypes = allPlateTypes;
     }
 
     public List<WellLayout> run(Container container, User user) throws ValidationException
     {
-        if (_sourcePlates.isEmpty())
+        if (_operation.requiresSourcePlates() && _sourcePlates.isEmpty())
             throw new ValidationException("Invalid configuration. Source plates are required to run the layout engine.");
-
         if (_operation.requiresTargetPlateType() && _targetPlateType == null)
             throw new ValidationException("A target plate type is required for this operation.");
         if (_operation.requiresTargetTemplate() && _targetTemplate == null)
@@ -40,13 +40,15 @@ public class LayoutEngine
 
         LayoutOperation.ExecutionContext context = new LayoutOperation.ExecutionContext(
             _options,
-            _sourcePlates,
+            _allPlateTypes,
             _targetPlateType,
+            _sourcePlates,
             _targetTemplate,
-            _targetTemplateWellData
+            _targetPlateData,
+            _sampleIds
         );
 
-        _operation.init(container, user, context, _allPlateTypes);
+        _operation.init(container, user, context);
 
         return _operation.execute(context);
     }
@@ -71,14 +73,28 @@ public class LayoutEngine
         };
     }
 
+    public void setSampleIds(Collection<Integer> sampleIds)
+    {
+        _sampleIds = sampleIds;
+    }
+
+    public void setSourcePlates(List<Plate> sourcePlates)
+    {
+        _sourcePlates = sourcePlates;
+    }
+
+    public void setTargetPlateData(List<PlateManager.PlateData> targetPlateData)
+    {
+        _targetPlateData = targetPlateData;
+    }
+
     public void setTargetPlateType(PlateType targetPlateType)
     {
         _targetPlateType = targetPlateType;
     }
 
-    public void setTargetTemplate(Plate targetTemplate, List<WellData> targetTemplateWellData)
+    public void setTargetTemplate(Plate targetTemplate)
     {
         _targetTemplate = targetTemplate;
-        _targetTemplateWellData = targetTemplateWellData;
     }
 }

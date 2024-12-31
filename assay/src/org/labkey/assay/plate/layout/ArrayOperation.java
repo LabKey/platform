@@ -12,6 +12,7 @@ import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.data.WellData;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ public class ArrayOperation implements LayoutOperation
 
     private final Layout _layout;
     private Map<Integer, WellLayout.Well> _sampleWells;
+    private List<WellData> _targetTemplateWellData;
 
     public ArrayOperation(@NotNull Layout layout)
     {
@@ -43,15 +45,18 @@ public class ArrayOperation implements LayoutOperation
             return emptyList();
 
         if (Layout.Column.equals(_layout) || Layout.Row.equals(_layout))
-            return executeRowColumnLayout(context.targetPlateType());
+            return executeRowColumnLayout(context);
         else if (Layout.Template.equals(_layout))
-            return executeTemplateLayout(context.targetTemplate(), context.targetTemplateWellData());
+            return executeTemplateLayout(context.targetTemplate(), _targetTemplateWellData);
 
         throw new UnsupportedOperationException(String.format("The layout \"%s\" is not supported.", _layout));
     }
 
-    private List<WellLayout> executeRowColumnLayout(PlateType targetPlateType)
+    private List<WellLayout> executeRowColumnLayout(ExecutionContext context)
     {
+        PlateType targetPlateType = context.targetPlateType();
+        List<PlateManager.PlateData> plateData = context.plateData();
+
         List<WellLayout> layouts = new ArrayList<>();
         WellLayout target = null;
         boolean isColumnLayout = Layout.Column.equals(_layout);
@@ -65,10 +70,32 @@ public class ArrayOperation implements LayoutOperation
         for (Map.Entry<Integer, WellLayout.Well> entry : _sampleWells.entrySet())
         {
             if (target == null)
-                target = new WellLayout(targetPlateType, true, null);
+            {
+                if (plateData != null && plateData.size() > layouts.size())
+                {
+                    PlateManager.PlateData targetPlateData = plateData.get(layouts.size() - 1);
+                    if (targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
+                    {
+                        PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());
+                        if (targetPlateDataType != null)
+                        {
+                            target = new WellLayout(targetPlateDataType, true, null);
+                            targetCols = targetPlateDataType.getColumns();
+                            targetRows = targetPlateDataType.getRows();
+                        }
+                    }
+                }
+
+                if (target == null)
+                {
+                    target = new WellLayout(targetPlateType, true, null);
+                    targetCols = targetPlateType.getColumns();
+                    targetRows = targetPlateType.getRows();
+                }
+            }
 
             WellLayout.Well sourceWell = entry.getValue();
-            target.setWell(targetRowIdx, targetColIdx, sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx());
+            target.setWell(targetRowIdx, targetColIdx, sourceWell.sourcePlateId(), sourceWell.sourceRowIdx(), sourceWell.sourceColIdx(), sourceWell.sourceSampleId());
 
             if (isColumnLayout)
             {
@@ -186,12 +213,33 @@ public class ArrayOperation implements LayoutOperation
     }
 
     @Override
-    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes)
+    public void init(Container container, User user, ExecutionContext context) throws ValidationException
     {
-        _sampleWells = getSampleWellsFromSourcePlates(container, user, context.sourcePlates());
+        if (!context.sourcePlates().isEmpty())
+            _sampleWells = generateSampleWellsFromSourcePlates(container, user, context.sourcePlates());
+        else if (context.sampleIds() != null && !context.sampleIds().isEmpty())
+            _sampleWells = generateSampleWellsFromSampleIds(context.sampleIds());
+        else
+            throw new ValidationException("Invalid configuration. Either source plates or source samples must be provided.");
+
+        if (context.targetTemplate() != null)
+            _targetTemplateWellData = PlateManager.get().getWellData(container, user, context.targetTemplate().getRowId(), false, false);
     }
 
-    private Map<Integer, WellLayout.Well> getSampleWellsFromSourcePlates(Container container, User user, @NotNull List<Plate> sourcePlates)
+    private Map<Integer, WellLayout.Well> generateSampleWellsFromSampleIds(Collection<Integer> sampleIds)
+    {
+        LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
+
+        for (Integer sampleId : sampleIds)
+        {
+            if (!sampleWells.containsKey(sampleId))
+                sampleWells.put(sampleId, new WellLayout.Well(-1, -1, -1, -1, -1, sampleId));
+        }
+
+        return sampleWells;
+    }
+
+    private Map<Integer, WellLayout.Well> generateSampleWellsFromSourcePlates(Container container, User user, @NotNull List<Plate> sourcePlates)
     {
         LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
 
@@ -211,6 +259,12 @@ public class ArrayOperation implements LayoutOperation
         }
 
         return sampleWells;
+    }
+
+    @Override
+    public boolean requiresSourcePlates()
+    {
+        return false;
     }
 
     @Override

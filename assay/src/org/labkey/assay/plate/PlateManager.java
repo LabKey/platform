@@ -4058,22 +4058,16 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         PlateSetImpl targetPlateSet = getReformatTargetPlateSet(container, options);
         Pair<PlateSet, List<Plate>> source = getReformatSourcePlates(container, options);
+        Pair<PlateType, Plate> targetPlateSource = getReformatTargetPlateSource(container, options);
         PlateSetImpl sourcePlateSet = (PlateSetImpl) source.first;
         List<Plate> sourcePlates = source.second;
 
-        Pair<PlateType, Plate> targetPlateSource = getReformatTargetPlateSource(container, options);
-        PlateType targetPlateType = targetPlateSource.first;
-        Plate targetTemplate = targetPlateSource.second;
-
-        LayoutEngine engine = new LayoutEngine(options, sourcePlates, getPlateTypes());
-
-        if (targetPlateType != null)
-            engine.setTargetPlateType(targetPlateType);
-        else if (targetTemplate != null)
-        {
-            List<WellData> targetTemplateWellData = getWellData(container, user, targetTemplate.getRowId(), false, false);
-            engine.setTargetTemplate(targetTemplate, targetTemplateWellData);
-        }
+        LayoutEngine engine = new LayoutEngine(options, getPlateTypes());
+        engine.setSourcePlates(sourcePlates);
+        engine.setSampleIds(getSelectedSampleIds(options));
+        engine.setTargetPlateData(options.getPlates());
+        engine.setTargetPlateType(targetPlateSource.first);
+        engine.setTargetTemplate(targetPlateSource.second);
 
         List<WellLayout> wellLayouts = engine.run(container, user);
         int availablePlateCount = targetPlateSet.availablePlateCount();
@@ -4259,6 +4253,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException(String.format("Plate set \"%s\" is not in the %s folder.", sourcePlateSet.getName(), container.getPath()));
 
         return Pair.of(sourcePlateSet, sourcePlates);
+    }
+
+    private Collection<Integer> getSelectedSampleIds(ReformatOptions options) throws ValidationException
+    {
+        String selectionKey = StringUtils.trimToNull(options.getSampleSelectionKey());
+        if (selectionKey == null)
+            return Collections.emptyList();
+
+        List<Integer> sampleIds = getSelection(selectionKey).stream().toList();
+        if (sampleIds.isEmpty())
+            throw new ValidationException("Empty sample selection.");
+
+        return sampleIds;
     }
 
     private @NotNull Pair<List<PlateData>, Integer> hydratePlateDataFromWellLayout(
