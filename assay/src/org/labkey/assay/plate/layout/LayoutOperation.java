@@ -13,6 +13,7 @@ import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface LayoutOperation
 {
@@ -42,6 +43,8 @@ public interface LayoutOperation
         return false;
     }
 
+    record WellDataCacheKey(int plateRowId, boolean includeSamples, boolean includeMetadata) {}
+
     record ExecutionContext(
         Container container,
         User user,
@@ -51,7 +54,8 @@ public interface LayoutOperation
         List<Plate> sourcePlates,
         Plate targetTemplate,
         List<PlateManager.PlateData> plateData,
-        Collection<Integer> sampleIds
+        Collection<Integer> sampleIds,
+        Map<WellDataCacheKey, List<WellData>> wellDataCache
     )
     {
         public @Nullable PlateType resolvePlateType(Integer plateTypeRowId)
@@ -64,7 +68,7 @@ public interface LayoutOperation
 
         public @NotNull List<WellData> getWellData(int plateRowId, boolean includeSamples, boolean includeMetadata)
         {
-            return PlateManager.get().getWellData(container, user, plateRowId, includeSamples, includeMetadata);
+            return wellDataCache.computeIfAbsent(new WellDataCacheKey(plateRowId, includeSamples, includeMetadata), (k) -> PlateManager.get().getWellData(container, user, k.plateRowId, k.includeSamples, k.includeMetadata));
         }
     }
 }

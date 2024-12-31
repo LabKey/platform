@@ -4340,6 +4340,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 d.setPosition(p.getDescription());
                 d.setType(WellGroup.Type.SAMPLE);
                 d.setSampleId(well.sourceSampleId());
+                platedSampleIds.add(well.sourceSampleId());
 
                 targetWellData.add(d.getData());
             }

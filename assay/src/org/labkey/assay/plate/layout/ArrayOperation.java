@@ -237,7 +237,7 @@ public class ArrayOperation implements LayoutOperation
     public void init(Container container, User user, ExecutionContext context) throws ValidationException
     {
         if (!context.sourcePlates().isEmpty())
-            _sampleWells = generateSampleWellsFromSourcePlates(container, user, context.sourcePlates());
+            _sampleWells = generateSampleWellsFromSourcePlates(context);
         else if (context.sampleIds() != null && !context.sampleIds().isEmpty())
             _sampleWells = generateSampleWellsFromSampleIds(context.sampleIds());
         else
@@ -257,16 +257,15 @@ public class ArrayOperation implements LayoutOperation
         return sampleWells;
     }
 
-    private Map<Integer, WellLayout.Well> generateSampleWellsFromSourcePlates(Container container, User user, @NotNull List<Plate> sourcePlates)
+    private Map<Integer, WellLayout.Well> generateSampleWellsFromSourcePlates(ExecutionContext context)
     {
         LinkedHashMap<Integer, WellLayout.Well> sampleWells = new LinkedHashMap<>();
 
-        for (Plate sourcePlate : sourcePlates)
+        for (Plate sourcePlate : context.sourcePlates())
         {
             int sourceRowId = sourcePlate.getRowId();
-            List<WellData> sourceWellData = PlateManager.get().getWellData(container, user, sourceRowId, true, false);
 
-            for (WellData wellData : sourceWellData)
+            for (WellData wellData : context.getWellData(sourceRowId, true, false))
             {
                 Integer wellSampleId = wellData.getSampleId();
                 if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && (wellData.isSample() || wellData.isReplicate()))
@@ -289,12 +288,6 @@ public class ArrayOperation implements LayoutOperation
     public boolean requiresSourcePlates()
     {
         return false;
-    }
-
-    @Override
-    public boolean requiresTargetPlateType()
-    {
-        return Layout.Column.equals(_layout) || Layout.Row.equals(_layout);
     }
 
     @Override

@@ -16,7 +16,6 @@
 package org.labkey.assay;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -37,7 +36,6 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
-import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
@@ -76,10 +74,8 @@ import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetExport;
-import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
-import org.labkey.assay.plate.layout.ArrayOperation;
 import org.labkey.assay.plate.model.CreatePlateSetOptions;
 import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.view.AssayGWTView;

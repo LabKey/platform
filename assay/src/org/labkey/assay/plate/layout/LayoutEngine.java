@@ -9,6 +9,7 @@ import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 public class LayoutEngine
@@ -47,7 +48,8 @@ public class LayoutEngine
             _sourcePlates,
             _targetTemplate,
             _targetPlateData,
-            _sampleIds
+            _sampleIds,
+            new HashMap<>()
         );
 
         _operation.init(container, user, context);
