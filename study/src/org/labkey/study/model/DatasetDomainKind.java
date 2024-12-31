@@ -66,7 +66,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.DatasetFactory;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -829,5 +828,18 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public boolean supportsPhiLevel()
     {
         return ComplianceService.get().isComplianceSupported();
+    }
+
+    public static boolean isQueryDataset(Container container, String queryName)
+    {
+        StudyService ss = StudyService.get();
+        if (ss == null)
+            return false;
+
+        Dataset dt = ss.getDataset(container, ss.getDatasetIdByName(container, queryName));
+        if (dt == null)
+            return false;
+
+        return dt.isQueryDataset();
     }
 }
