@@ -1399,9 +1399,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             _multiContainer = multiContainer;     /* true: don't preapply the container filter, let wrapper tableinfo handle it */
             Study study = StudyManager.getInstance().getStudy(_container);
 
-            if (def.getSourceQueryName() != null && def.getSourceQuerySchema() != null && def.getSourceQueryContainer() != null)
+            if (def.isQueryDataset())
             {
-                _storage = new QueryDataset(getName(), def.getSourceQueryContainer(), def.getSourceQuerySchema(), def.getSourceQueryName());
+                _storage = new QueryDataset(getName(), def);
             }
             else
             {

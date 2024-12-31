@@ -3,7 +3,6 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -25,16 +24,16 @@ public class QueryDataset extends VirtualTable<UserSchema>
 {
     private final QuerySchemaTableInfo _inner;
 
-    public QueryDataset(@NotNull String name, @NotNull Container sourceContainer, @NotNull String sourceSchema, @NotNull String sourceQuery)
+    public QueryDataset(@NotNull String name, @NotNull DatasetDefinition def)
     {
         super(StudySchema.getInstance().getSchema(), name, null);
-        UserSchema us = QueryService.get().getUserSchema(new LimitedUser(User.guest, ProjectAdminRole.class), sourceContainer, sourceSchema);
+        UserSchema us = QueryService.get().getUserSchema(new LimitedUser(User.guest, ProjectAdminRole.class), def.getSourceQueryContainer(), def.getSourceQuerySchema());
         if (us == null)
         {
             throw new IllegalArgumentException("QueryDataset requires a valid schema");
         }
 
-        TableInfo ti = us.getTable(sourceQuery);
+        TableInfo ti = us.getTable(def.getSourceQueryName());
         if (ti == null)
         {
             throw new IllegalArgumentException("QueryDataset requires a valid query");
