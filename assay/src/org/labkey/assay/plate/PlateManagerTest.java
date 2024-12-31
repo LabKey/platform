@@ -1029,7 +1029,7 @@ public final class PlateManagerTest
             defaultOptions().setPlateRowIds(List.of(1234)).setPlateSelectionKey("1234")
         );
         assertReformatThrows(
-            "Either \"plateRowIds\" or \"plateSelectionKey\" must be specified.",
+            "Either \"plateRowIds\" or \"plateSelectionKey\" must be specified for this operation.",
             defaultOptions().setPlateRowIds(null).setPlateSelectionKey(" ")
         );
         assertReformatThrows("No source plates are specified.", defaultOptions().setPlateSelectionKey("1234"));

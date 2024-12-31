@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.layout;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
@@ -7,6 +8,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
@@ -41,6 +43,8 @@ public interface LayoutOperation
     }
 
     record ExecutionContext(
+        Container container,
+        User user,
         ReformatOptions options,
         List<? extends PlateType> allPlateTypes,
         PlateType targetPlateType,
@@ -56,6 +60,11 @@ public interface LayoutOperation
                 return null;
 
             return allPlateTypes.stream().filter(plateType -> plateType.getRowId().equals(plateTypeRowId)).findFirst().orElse(null);
+        }
+
+        public @NotNull List<WellData> getWellData(int plateRowId, boolean includeSamples, boolean includeMetadata)
+        {
+            return PlateManager.get().getWellData(container, user, plateRowId, includeSamples, includeMetadata);
         }
     }
 }

@@ -39,6 +39,8 @@ public class LayoutEngine
             throw new ValidationException("A target plate template is required for this operation.");
 
         LayoutOperation.ExecutionContext context = new LayoutOperation.ExecutionContext(
+            container,
+            user,
             _options,
             _allPlateTypes,
             _targetPlateType,
