@@ -79,6 +79,8 @@ import org.labkey.assay.plate.PlateSetExport;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.layout.ArrayOperation;
+import org.labkey.assay.plate.model.CreatePlateSetOptions;
 import org.labkey.assay.plate.model.ReformatOptions;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
@@ -956,160 +958,23 @@ public class PlateController extends SpringActionController
         }
     }
 
-    public static class CreatePlateSetForm
-    {
-        private String _description;
-        private String _name;
-        private List<PlateManager.PlateData> _plates = new ArrayList<>();
-        private Integer _parentPlateSetId;
-        private String _selectionKey;
-        private Boolean _template;
-        private PlateSetType _type;
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public List<PlateManager.PlateData> getPlates()
-        {
-            return _plates;
-        }
-
-        public void setPlates(List<PlateManager.PlateData> plates)
-        {
-            _plates = plates;
-        }
-
-        public Integer getParentPlateSetId()
-        {
-            return _parentPlateSetId;
-        }
-
-        public void setParentPlateSetId(Integer parentPlateSetId)
-        {
-            _parentPlateSetId = parentPlateSetId;
-        }
-
-        public PlateSetType getType()
-        {
-            return _type;
-        }
-
-        public void setType(PlateSetType type)
-        {
-            _type = type;
-        }
-
-        public String getSelectionKey()
-        {
-            return _selectionKey;
-        }
-
-        public void setSelectionKey(String selectionKey)
-        {
-            _selectionKey = selectionKey;
-        }
-
-        public boolean isReplateCase()
-        {
-            return _parentPlateSetId != null && _selectionKey == null && _plates.isEmpty();
-        }
-
-        public boolean isRearrayCase()
-        {
-            return _selectionKey != null && !_plates.isEmpty();
-        }
-
-        public boolean isEmptyCase()
-        {
-            return _plates.isEmpty() && _selectionKey == null;
-        }
-
-        public boolean isDefaultCase()
-        {
-            return !_plates.isEmpty() && _selectionKey == null;
-        }
-
-        public Boolean getTemplate()
-        {
-            return _template;
-        }
-
-        public void setTemplate(Boolean template)
-        {
-            _template = template;
-        }
-    }
-
     @RequiresPermission(InsertPermission.class)
-    public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
+    public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetOptions>
     {
         @Override
-        public void validateForm(CreatePlateSetForm form, Errors errors)
-        {
-            if (!form.isReplateCase() && !form.isRearrayCase() && !form.isEmptyCase() && !form.isDefaultCase())
-                errors.reject(ERROR_GENERIC, "Invalid parameters.");
-        }
-
-        @Override
-        public Object execute(CreatePlateSetForm form, BindException errors) throws Exception
+        public Object execute(CreatePlateSetOptions options, BindException errors) throws Exception
         {
             try
             {
-                PlateSetImpl plateSet = new PlateSetImpl();
-                plateSet.setDescription(form.getDescription());
-                plateSet.setName(form.getName());
-                plateSet.setType(form.getType());
-                if (form.getTemplate() != null)
-                    plateSet.setTemplate(form.getTemplate());
-
-                if (form.isReplateCase())
-                {
-                    plateSet = (PlateSetImpl) PlateManager.get().replatePlateSet(getContainer(), getUser(), plateSet, form.getParentPlateSetId());
-                }
-                else
-                {
-                    List<PlateManager.PlateData> plates = form.getPlates();
-                    if (form.isRearrayCase())
-                    {
-                        String selectionKey = StringUtils.trimToNull(form.getSelectionKey());
-                        if (selectionKey == null)
-                        {
-                            errors.reject(ERROR_REQUIRED, "Specifying a \"selectionKey\" is required for this configuration.");
-                            return null;
-                        }
-
-                        plates = PlateManager.get().reArrayFromSelection(getContainer(), getUser(), plates, selectionKey);
-                    }
-                    else
-                    {
-                        plates = PlateManager.get().preparePlateData(getContainer(), getUser(), plates);
-                    }
-
-                    plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, plates, form.getParentPlateSetId());
-                }
-
+                PlateSet plateSet = PlateManager.get().createOrAddToPlateSet(getContainer(), getUser(), options);
                 return success(plateSet);
             }
             catch (Exception e)
             {
-                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate set. An error has occurred.");
+                String message = "Failed to create plate set.";
+                if (e.getMessage() != null)
+                    message += " " + e.getMessage();
+                errors.reject(ERROR_GENERIC, message);
             }
 
             return null;
