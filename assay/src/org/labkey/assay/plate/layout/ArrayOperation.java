@@ -1,6 +1,7 @@
 package org.labkey.assay.plate.layout;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.WellGroup;
@@ -46,13 +47,20 @@ public class ArrayOperation implements LayoutOperation
         for (Map.Entry<Integer, WellLayout.Well> entry : _sampleWells.entrySet())
             sampleIds.add(entry.getKey());
 
+        // Plate all samples
         while (sampleIndex < sampleIds.size())
         {
             WellLayout wellLayout = getNextWellLayout(context, layouts.size());
             Pair<Integer, WellLayout> result;
 
             if (wellLayout.getTargetTemplateId() != null)
+            {
                 result = executeTemplateLayout(context, wellLayout, sampleIds, groupSampleMap, sampleIndex);
+
+                // The counter did not advance for this well layout meaning we did not plate any additional samples.
+                if (result.first == sampleIndex)
+                    throw new ValidationException(String.format("There are %d selected samples and only %d unique sample regions are available in \"%s\".", sampleIds.size(), sampleIndex, context.targetTemplate().getName()));
+            }
             else
                 result = executeRowColumnLayout(wellLayout, sampleIds, sampleIndex);
 
@@ -60,31 +68,30 @@ public class ArrayOperation implements LayoutOperation
             sampleIndex = result.first;
         }
 
-        // TODO: Does this need to generate additional plates or can that be done at hydration station?
+        // Layout any further plates that have been requested (if any)
+        List<PlateManager.PlateData> plateData = context.plateData();
+        if (plateData != null && plateData.size() > layouts.size())
+        {
+            while (layouts.size() < plateData.size())
+            {
+                WellLayout wellLayout = getNextWellLayout(context, layouts.size());
+
+                if (wellLayout.getTargetTemplateId() != null)
+                {
+                    Pair<Integer, WellLayout> result = executeTemplateLayout(context, wellLayout, sampleIds, groupSampleMap, sampleIndex);
+                    layouts.add(result.second);
+                }
+                else
+                    layouts.add(wellLayout);
+            }
+        }
 
         return layouts;
     }
 
     private @NotNull WellLayout getNextWellLayout(ExecutionContext context, int numLayouts)
     {
-        WellLayout layout = null;
-        List<PlateManager.PlateData> plateData = context.plateData();
-
-        if (plateData != null && plateData.size() > numLayouts)
-        {
-            PlateManager.PlateData targetPlateData = plateData.get(numLayouts - 1);
-            if (targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
-            {
-                PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());
-                if (targetPlateDataType != null)
-                {
-                    if (targetPlateData.templateId() != null)
-                        layout = new WellLayout(targetPlateDataType, false, targetPlateData.templateId());
-                    else
-                        layout = new WellLayout(targetPlateDataType, true, null);
-                }
-            }
-        }
+        WellLayout layout = getPlateDataWellLayout(context, Math.max(0, numLayouts - 1));
 
         if (layout == null)
         {
@@ -95,6 +102,29 @@ public class ArrayOperation implements LayoutOperation
         }
 
         return layout;
+    }
+
+    private @Nullable WellLayout getPlateDataWellLayout(ExecutionContext context, int plateIndex)
+    {
+        List<PlateManager.PlateData> plateData = context.plateData();
+
+        if (plateData != null && plateData.size() > plateIndex)
+        {
+            PlateManager.PlateData targetPlateData = plateData.get(plateIndex);
+            if (targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
+            {
+                PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());
+                if (targetPlateDataType != null)
+                {
+                    if (targetPlateData.templateId() != null)
+                        return new WellLayout(targetPlateDataType, false, targetPlateData.templateId());
+                    else
+                        return new WellLayout(targetPlateDataType, true, null);
+                }
+            }
+        }
+
+        return null;
     }
 
     private Pair<Integer, WellLayout> executeRowColumnLayout(WellLayout target, List<Integer> sampleIds, int sampleIndex)
@@ -148,10 +178,8 @@ public class ArrayOperation implements LayoutOperation
         List<Integer> sampleIds,
         Map<Pair<WellGroup.Type, String>, Integer> groupSampleMap,
         int sampleIndex
-    ) throws ValidationException
+    )
     {
-        int startIndex = sampleIndex;
-
         for (WellData wellData : context.getWellData(target.getTargetTemplateId(), false, false))
         {
             boolean isSampleWell = wellData.isSample();
@@ -202,10 +230,6 @@ public class ArrayOperation implements LayoutOperation
             }
         }
 
-        // The counter did not advance for this well layout meaning we did not plate any additional samples.
-        if (startIndex == sampleIndex)
-            throw new ValidationException(String.format("There are %d selected samples and only %d unique sample regions are available in \"%s\".", sampleIds.size(), sampleIndex, context.targetTemplate().getName()));
-
         return Pair.of(sampleIndex, target);
     }
 
@@ -253,6 +277,12 @@ public class ArrayOperation implements LayoutOperation
         }
 
         return sampleWells;
+    }
+
+    @Override
+    public boolean produceEmptyPlates()
+    {
+        return true;
     }
 
     @Override
