@@ -9055,7 +9055,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private Map<String, Object> getImportTemplatesMetrics()
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
-        SQLFragment sql = new SQLFragment("SELECT schema, metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
+        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
         Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
         Map<String, Long> counts = new HashMap<>();
         final String sectionStart = "<importtemplates>";
