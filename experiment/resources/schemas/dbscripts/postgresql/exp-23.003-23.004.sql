@@ -1,4 +1,0 @@
-ALTER TABLE exp.Material ADD COLUMN StoredAmount DOUBLE PRECISION;
-ALTER TABLE exp.Material ADD COLUMN Units VARCHAR(20);
-
-
