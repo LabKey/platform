@@ -1523,11 +1523,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 index++;
             }
             // add all columns up until the first calculated column
-            for (ColumnInfo column : originalColumns.values())
+            if (index > 0)
             {
-                addColumn((BaseColumnInfo) column);
-                if (column.getFieldKey().equals(getDefaultVisibleColumns().get(index - 1)))
-                    break;
+                for (ColumnInfo column : originalColumns.values())
+                {
+                    addColumn((BaseColumnInfo) column);
+                    if (column.getFieldKey().equals(getDefaultVisibleColumns().get(index - 1)))
+                        break;
+                }
             }
             // add the calculated columns in the order they were defined
             for (FieldKey calculatedFieldKey : calculatedFieldKeys)
