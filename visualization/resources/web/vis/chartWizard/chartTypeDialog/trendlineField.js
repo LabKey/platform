@@ -24,9 +24,11 @@ Ext4.define('LABKEY.vis.TrendlineField', {
     getTrendlineTypeStore: function() {
         if (!this.trendlineTypeStore) {
             const data = [];
-            for (let value in this.options) {
-                const option = LABKEY.vis.GenericChartHelper.TRENDLINE_OPTIONS[this.options[value]];
-                data.push([option.value, option.label, option.showMin, option.showMax, option.schemaPrefix]);
+            for (let i = 0; i < this.options.length; i++) {
+                const option = LABKEY.vis.GenericChartHelper.TRENDLINE_OPTIONS[this.options[i]];
+                if (option) {
+                    data.push([option.value, option.label, option.showMin, option.showMax, option.schemaPrefix]);
+                }
             }
 
             this.trendlineTypeStore = Ext4.create('Ext.data.ArrayStore', {
