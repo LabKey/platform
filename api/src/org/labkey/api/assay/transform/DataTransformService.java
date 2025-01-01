@@ -90,8 +90,8 @@ public class DataTransformService
 
         for (AnalysisScript analysisScript : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL))
         {
-            if (!analysisScript.canExecute(operation))
-                continue;
+            //if (!analysisScript.canExecute(operation))
+            //    continue;
 
             // read the contents of the script file
             File scriptFile = analysisScript.getScript().toNioPathForRead().toFile();
@@ -134,7 +134,7 @@ public class DataTransformService
 
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
-                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
+                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(operation, context, run, scriptDir, runProperties, batchProperties);
                         FileLike runInfo = files.getKey();
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
@@ -151,7 +151,7 @@ public class DataTransformService
 
                         Object output = engine.eval(script);
 
-                        FileLike rewrittenScriptFile = null;
+                        FileLike rewrittenScriptFile;
                         if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
                         {
                             var rewrittenScriptFileObject = bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
