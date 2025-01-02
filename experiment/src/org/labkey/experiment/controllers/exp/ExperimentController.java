@@ -4126,12 +4126,25 @@ public class ExperimentController extends SpringActionController
         protected @Nullable Set<String> getLineageImportAliases() throws IOException
         {
             boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
-            if (!crossTypeImport)
+            // Issue 51894: We need to stop conversion to numbers for alias fields for all type
+            // If there are aliases defined for one type that are number fields in another type, this will prevent
+            // conversion to numbers during the initial partitioning, but the conversion will happen when the partition
+            // file is loaded.
+            if (crossTypeImport)
+            {
+                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
+                Set<String> aliases = new CaseInsensitiveHashSet();
+                for (ExpSampleTypeImpl sampleType : sampleTypes)
+                {
+                    aliases.addAll(sampleType.getImportAliases().keySet());
+                }
+                return aliases;
+            }
+            else
             {
                 ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
                 return new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
             }
-            return null;
         }
 
         @Override
