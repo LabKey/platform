@@ -4071,7 +4071,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         engine.setTargetPlateType(targetPlateSource.first);
         engine.setTargetTemplate(targetPlateSource.second);
         engine.setSampleIds(getSelectedSampleIds(options));
-        engine.setTargetPlateData(options.getPlates());
+        engine.setTargetPlateData(getReformatTargetPlateData(options, targetPlateSet));
 
         // Execute plate layout
         List<WellLayout> wellLayouts = engine.run(container, user);
@@ -4119,9 +4119,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return new ReformatResult(null, plateRowIds.size(), plateSetRowId, plateSetName, plateRowIds, platedSampleCount);
     }
 
-    private @Nullable Integer getReformatParentPlateSetId(@NotNull PlateSet sourcePlateSet)
+    private @Nullable Integer getReformatParentPlateSetId(PlateSet sourcePlateSet)
     {
-        if (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone())
+        if (sourcePlateSet != null && (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone()))
             return sourcePlateSet.getRowId();
         return null;
     }
@@ -4263,6 +4263,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException(String.format("Plate set \"%s\" is not in the %s folder.", sourcePlateSet.getName(), container.getPath()));
 
         return Pair.of(sourcePlateSet, sourcePlates);
+    }
+
+    private @NotNull List<PlateData> getReformatTargetPlateData(ReformatOptions options, @NotNull PlateSetImpl targetPlateSet) throws ValidationException
+    {
+        List<PlateData> plateData = options.getPlates();
+        if (plateData == null || plateData.isEmpty())
+            return emptyList();
+
+        if (targetPlateSet.isPrimary() && plateData.stream().anyMatch(data -> data.templateId != null))
+            throw new ValidationException(String.format("Plate templates are not supported for %s plate sets.", PlateSetType.primary.name()));
+
+        return plateData;
     }
 
     private Collection<Integer> getSelectedSampleIds(ReformatOptions options) throws ValidationException

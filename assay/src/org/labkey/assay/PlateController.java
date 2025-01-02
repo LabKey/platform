@@ -63,6 +63,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HtmlView;
@@ -99,7 +100,7 @@ import java.util.Set;
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
-    private static final Logger _log = LogManager.getLogger(PlateController.class);
+    private static final Logger LOG = LogHelper.getLogger(PlateController.class, "Controller for plate related actions");
 
     public PlateController()
     {
@@ -1636,6 +1637,10 @@ public class PlateController extends SpringActionController
             }
             catch (Exception e)
             {
+                if (e instanceof ValidationException ve)
+                    LOG.debug("Request failed due to a validation exception", ve);
+                else
+                    LOG.error("Request failed due to an exception", e);
                 String message = "Failed to reformat plates.";
                 if (e.getMessage() != null)
                     message += " " + e.getMessage();
