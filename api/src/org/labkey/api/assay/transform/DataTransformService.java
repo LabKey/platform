@@ -166,7 +166,7 @@ public class DataTransformService
                         }
 
                         // process any output from the transformation script
-                        result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result, files.getValue());
+                        result = dataHandler.processTransformationOutput(operation, context, runInfo, run, rewrittenScriptFile, result, files.getValue());
 
                         // Propagate any transformed batch properties on to the next script
                         if (result.getBatchProperties() != null && !result.getBatchProperties().isEmpty())

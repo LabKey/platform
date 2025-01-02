@@ -71,6 +71,7 @@ public interface DataExchangeHandler
     ) throws Exception;
 
     TransformResult processTransformationOutput(
+            DataTransformService.TransformOperation operation,
             AssayRunUploadContext<? extends AssayProvider> context,
             FileLike runInfo,
             @Nullable ExpRun run,

@@ -119,7 +119,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     {
         try
         {
-            // transform scripts need to see all values in the row (not just the changed values)
             List<Map<String, Object>> rowsForTransform = resolveRows(container, user, rows);
             AssayTransformContext context = new AssayTransformContext(container, user, rowsForTransform, _schema.getProtocol(), _schema.getProvider());
             TransformResult result = DataTransformService.get().transformAndValidate(context, null, DataTransformService.TransformOperation.UPDATE);
@@ -202,7 +201,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     }
 
     /**
-     * Merge existing values with the rows being updated prior to handing off to any potential
+     * Merge existing values with the rows being updated prior to handing off to any
      * transform scripts. This is necessary because a transform script will need to see all
      * values for each row (not just the changed values).
      */
