@@ -132,6 +132,7 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -1523,14 +1524,14 @@ public class ReportsController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String sessionKey = (String) getViewContext().get("sessionKey");
-            String deleteFile = (String) getViewContext().get("deleteFile");
-            String attachment = (String) getViewContext().get("attachment");
-            String cacheFile = (String) getViewContext().get("cacheFile");
+            String sessionKey = (String) getViewContext().get(ImageUtil.FILE_SESSION_PARAM);
+            String deleteFile = (String) getViewContext().get(ImageUtil.DELETE_FILE_PARAM);
+            String attachment = (String) getViewContext().get(ImageUtil.ATTACHMENT_PARAM);
+            String cacheFile = (String) getViewContext().get(ImageUtil.CACHE_FILE_PARAM);
             if (sessionKey != null)
             {
-                File file = (File) getViewContext().getRequest().getSession().getAttribute(sessionKey);
-                if (file != null && file.isFile())
+                File file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
+                if (file != null)
                 {
                     Map<String, String> responseHeaders = Collections.emptyMap();
                     if (BooleanUtils.toBoolean(cacheFile))

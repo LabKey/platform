@@ -32,6 +32,12 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     public static final String NAME = "TestSSO";
 
     @Override
+    public Class<TestSsoConfiguration> getConfigurationClass()
+    {
+        return TestSsoConfiguration.class;
+    }
+
+    @Override
     public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
         return new TestSsoConfiguration(this, cs.getStandardSettings(), cs.getProperties());

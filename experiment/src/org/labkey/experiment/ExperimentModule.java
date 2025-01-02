@@ -182,7 +182,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.006;
+        return 25.000;
     }
 
     @Nullable
@@ -577,8 +577,6 @@ public class ExperimentModule extends SpringModule
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
-
-        FileLinkMetricsMaintenanceTask.populateStartupProperties();
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)

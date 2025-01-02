@@ -18,7 +18,6 @@ package org.labkey.api.assay;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -35,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.labkey.api.assay.AssayFileWriter.DIR_NAME;
 import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
 import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
 import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
@@ -119,12 +119,6 @@ public class AssayResultDomainKind extends AssayDomainKind
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> result = getAssayReservedPropertyNames();
@@ -182,5 +176,11 @@ public class AssayResultDomainKind extends AssayDomainKind
             return;
 
         pair.first.removeFilterCriteriaForProperty(pd);
+    }
+
+    @Override
+    public String getDomainFileDirectory()
+    {
+        return DIR_NAME;
     }
 }

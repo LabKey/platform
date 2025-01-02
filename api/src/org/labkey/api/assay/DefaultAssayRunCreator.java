@@ -448,12 +448,30 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
+            cleanPrimaryFile(context);
+
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
             else
                 throw new ExperimentException(e);
         }
         catch (BatchValidationException e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    private void cleanPrimaryFile(AssayRunUploadContext<ProviderType> context) throws ExperimentException
+    {
+        try
+        {
+            // Issue 51300: don't keep the primary file if the new run failed to save
+            boolean isReRun = context.getReRunId() != null;
+            FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            if (!isReRun && primaryFile != null && primaryFile.exists())
+                primaryFile.delete();
+        }
+        catch (IOException e)
         {
             throw new ExperimentException(e);
         }

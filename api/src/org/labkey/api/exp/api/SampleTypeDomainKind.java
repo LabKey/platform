@@ -84,6 +84,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     private static final Logger logger;
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
+    public static final String SAMPLETYPE_FILE_DIRECTORY = "sampletype";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
@@ -676,5 +677,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     public boolean supportsNamingPattern()
     {
         return true;
+    }
+
+    @Override
+    public String getDomainFileDirectory()
+    {
+        return SAMPLETYPE_FILE_DIRECTORY;
     }
 }

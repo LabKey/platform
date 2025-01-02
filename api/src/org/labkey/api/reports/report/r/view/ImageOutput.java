@@ -18,16 +18,15 @@ package org.labkey.api.reports.report.r.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -133,10 +132,9 @@ public class ImageOutput extends AbstractParamReplacement
 
                 if (imgFile != null)
                 {
-                    String key = "temp:" + GUID.makeGUID();
-                    getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
+                    String key = ImageUtil.setFileInSession(getViewContext().getRequest(), imgFile);
                     ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
-                    url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteFile), "cacheFile", "true"));
+                    url.addParameters(PageFlowUtil.map(ImageUtil.FILE_SESSION_PARAM, key, ImageUtil.DELETE_FILE_PARAM, Boolean.toString(_deleteFile), ImageUtil.CACHE_FILE_PARAM, "true"));
                     imgUrl = url.getLocalURIString();
                 }
             }
