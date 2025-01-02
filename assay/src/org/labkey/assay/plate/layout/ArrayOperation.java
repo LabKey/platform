@@ -91,7 +91,7 @@ public class ArrayOperation implements LayoutOperation
 
     private @NotNull WellLayout getNextWellLayout(ExecutionContext context, int numLayouts)
     {
-        WellLayout layout = getPlateDataWellLayout(context, Math.max(0, numLayouts - 1));
+        WellLayout layout = getPlateDataWellLayout(context, Math.max(0, numLayouts));
 
         if (layout == null)
         {
