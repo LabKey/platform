@@ -15,21 +15,20 @@
  */
 
 CREATE SCHEMA audit;
-GO
 
 CREATE TABLE audit.AuditLog
 (
-    RowId BIGINT IDENTITY(1,1) NOT NULL,
-    Key1 NVARCHAR(1000) NULL,
-    Key2 NVARCHAR(1000) NULL,
-    Key3 NVARCHAR(1000) NULL,
+    RowId BIGSERIAL,
+    Key1 VARCHAR(1000) NULL,
+    Key2 VARCHAR(1000) NULL,
+    Key3 VARCHAR(1000) NULL,
     IntKey1 INT NULL,
     IntKey2 INT NULL,
     IntKey3 INT NULL,
-    Comment NVARCHAR(500),
-    EventType NVARCHAR(64),
+    Comment VARCHAR(500),
+    EventType VARCHAR(64),
     CreatedBy USERID NOT NULL,
-    Created DATETIME,
+    Created TIMESTAMP,
     ContainerId ENTITYID NOT NULL,
     EntityId ENTITYID NULL,
     Lsid LSIDtype,
@@ -41,9 +40,5 @@ CREATE TABLE audit.AuditLog
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 
 CREATE INDEX IX_AuditLog_IntKey1 ON audit.AuditLog(IntKey1);
-ALTER TABLE audit.AuditLog DROP CONSTRAINT PK_AuditLog;
-CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created DESC);
--- NONCLUSTERED
-ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);
-
-GO
+CREATE INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created);
+CLUSTER audit.AuditLog USING IX_AuditLog_EventType_Created;
