@@ -55,6 +55,7 @@ public class DataTransformService
     public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
     public static final String CONTAINER_PATH = "containerPath";
     public static final String ORIGINAL_SOURCE_PATH = "OriginalSourcePath";
+    public static final String TRANSFORM_OPERATION = "transformOperation";
 
     public enum TransformOperation
     {
@@ -144,6 +145,7 @@ public class DataTransformService
 
                         // Issue 51543: Resolve windows path to run properties
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
+                        paramMap.put(TRANSFORM_OPERATION, operation.name());
 
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
