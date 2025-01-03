@@ -3254,9 +3254,29 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
 
-        for (var duplicate : duplicates)
+        if (!duplicates.isEmpty())
         {
-            errors.addRowError(new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", duplicate.get("SampleName"), duplicate.get("PlateSetName"))));
+            Map<String, Set<String>> duplicateMap = new HashMap<>();
+
+            for (var duplicate : duplicates)
+            {
+                var plateSetName = (String) duplicate.get("PlateSetName");
+                duplicateMap.computeIfAbsent(plateSetName, (n) -> new HashSet<>()).add((String) duplicate.get("SampleName"));
+            }
+
+            for (var entry : duplicateMap.entrySet())
+            {
+                var plateSetName = entry.getKey();
+                var sampleNames = entry.getValue();
+
+                ValidationException ve;
+                if (sampleNames.size() == 1)
+                    ve = new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", sampleNames.stream().findFirst().get(), plateSetName));
+                else
+                    ve = new ValidationException(String.format("There are %d samples recorded in more than one well in Primary Plate Set \"%s\".", sampleNames.size(), plateSetName));
+
+                errors.addRowError(ve);
+            }
         }
     }
 
