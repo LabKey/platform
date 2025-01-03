@@ -1685,11 +1685,11 @@ public final class PlateManagerTest
         }
     }
     
-    private @NotNull Set<Integer> getSamples(List<PlateManager.PlateData> plateData)
+    private @NotNull Set<Integer> getSamples(List<PlateManager.PreviewPlateData> plateData)
     {
         Set<Integer> sampleIds = new HashSet<>();
 
-        for (PlateManager.PlateData data : plateData)
+        for (PlateManager.PreviewPlateData data : plateData)
         {
             for (Map<String, Object> well : data.data())
             {

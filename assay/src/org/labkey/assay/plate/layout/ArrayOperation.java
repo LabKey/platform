@@ -51,6 +51,9 @@ public class ArrayOperation implements LayoutOperation
         while (sampleIndex < sampleIds.size())
         {
             WellLayout wellLayout = getNextWellLayout(context, layouts.size());
+            if (wellLayout == null)
+                throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex, sampleIds.size()));
+
             Pair<Integer, WellLayout> result;
 
             if (wellLayout.getTargetTemplateId() != null)
@@ -74,7 +77,9 @@ public class ArrayOperation implements LayoutOperation
         {
             while (layouts.size() < plateData.size())
             {
-                WellLayout wellLayout = getNextWellLayout(context, layouts.size());
+                WellLayout wellLayout = getPlateDataWellLayout(context, layouts.size());
+                if (wellLayout == null)
+                    throw new ValidationException(String.format("Failed to resolve plate at index %d.", layouts.size()));
 
                 if (wellLayout.getTargetTemplateId() != null)
                 {
@@ -89,17 +94,15 @@ public class ArrayOperation implements LayoutOperation
         return layouts;
     }
 
-    private @NotNull WellLayout getNextWellLayout(ExecutionContext context, int numLayouts)
+    private @Nullable WellLayout getNextWellLayout(ExecutionContext context, int numLayouts)
     {
-        WellLayout layout = getPlateDataWellLayout(context, Math.max(0, numLayouts));
-
-        if (layout == null)
-        {
-            if (context.targetTemplate() != null)
-                layout = new WellLayout(context.targetTemplate().getPlateType(), false, context.targetTemplate().getRowId());
-            else
-                layout = new WellLayout(context.targetPlateType(), true, null);
-        }
+        WellLayout layout;
+        if (context.plateData() != null && !context.plateData().isEmpty())
+            layout = getPlateDataWellLayout(context, numLayouts);
+        else if (context.targetTemplate() != null)
+            layout = new WellLayout(context.targetTemplate().getPlateType(), false, context.targetTemplate().getRowId());
+        else
+            layout = new WellLayout(context.targetPlateType(), true, null);
 
         return layout;
     }

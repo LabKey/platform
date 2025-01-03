@@ -4023,8 +4023,26 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record PreviewPlateData(
+        String name,
+        Integer plateType,
+        Integer templateId,
+        String barcode,
+        List<Map<String, Object>> data,
+        Integer wellCount,
+        Integer wellsEmpty,
+        Integer wellsFilled,
+        Integer sampleCount
+    ) {
+        static PreviewPlateData create(PlateData plateData, Integer wellCount, Integer wellsEmpty, Integer wellsFilled, Integer sampleCount)
+        {
+            return new PreviewPlateData(plateData.name, plateData.plateType, plateData.templateId, plateData.barcode, plateData.data, wellCount, wellsEmpty, wellsFilled, sampleCount);
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ReformatResult(
-        List<PlateData> previewData,
+        List<PreviewPlateData> previewData,
         Integer plateCount,
         Integer plateSetRowId,
         String plateSetName,
@@ -4059,7 +4077,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             throw new ValidationException("An \"operation\" must be specified.");
 
         // Initialize / validate engine configuration
-        LayoutEngine engine = new LayoutEngine(options, getPlateTypes());
+        List<? extends PlateType> allPlateTypes = getPlateTypes();
+        LayoutEngine engine = new LayoutEngine(options, allPlateTypes);
 
         PlateSetImpl targetPlateSet = getReformatTargetPlateSet(container, options);
         Pair<PlateSet, List<Plate>> source = getReformatSourcePlates(container, options, engine.getOperation());
@@ -4092,7 +4111,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Integer platedSampleCount = hydratedResults.second;
 
         if (options.isPreview())
-            return new ReformatResult(options.isPreviewData() ? plateData : null, plateData.size(), null, null, null, platedSampleCount);
+        {
+            List<PreviewPlateData> previewData = getPreviewData(options, plateData, allPlateTypes);
+            return new ReformatResult(previewData, plateData.size(), null, null, null, platedSampleCount);
+        }
 
         if (plateData.isEmpty())
             throw new ValidationException("This operation as configured does not create any plates.");
@@ -4117,6 +4139,51 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
         return new ReformatResult(null, plateRowIds.size(), plateSetRowId, plateSetName, plateRowIds, platedSampleCount);
+    }
+
+    private @Nullable List<PreviewPlateData> getPreviewData(ReformatOptions options, List<PlateData> plateData, List<? extends PlateType> allPlateTypes)
+    {
+        if (!options.isPreviewData())
+            return null;
+
+        List<PreviewPlateData> previewData = new ArrayList<>();
+        Map<Integer, PlateType> plateTypes = new HashMap<>();
+
+        for (PlateType type : allPlateTypes)
+            plateTypes.put(type.getRowId(), type);
+
+        for (PlateData plate : plateData)
+        {
+            Integer wellCount = null;
+            Integer wellsEmpty = null;
+            Integer wellsFilled = null;
+            Integer sampleCount = null;
+
+            if (plate.plateType != null && plateTypes.containsKey(plate.plateType) && plate.data != null)
+            {
+                PlateType type = plateTypes.get(plate.plateType);
+                wellCount = type.getWellCount();
+                wellsFilled = 0;
+                Set<Integer> sampleIds = new HashSet<>();
+
+                for (Map<String, Object> row : plate.data)
+                {
+                    Integer sampleId = (Integer) row.get("SampleID");
+                    if (sampleId != null)
+                    {
+                        wellsFilled++;
+                        sampleIds.add(sampleId);
+                    }
+                }
+
+                sampleCount = sampleIds.size();
+                wellsEmpty = wellCount - wellsFilled;
+            }
+
+            previewData.add(PreviewPlateData.create(plate, wellCount, wellsEmpty, wellsFilled, sampleCount));
+        }
+
+        return previewData;
     }
 
     private @Nullable Integer getReformatParentPlateSetId(PlateSet sourcePlateSet)

@@ -103,6 +103,8 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Properties,
         RowId,
         Template,
+        WellCount,
+        WellsEmpty,
         WellsFilled;
 
         public FieldKey fieldKey()
@@ -138,7 +140,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.addColumns();
         addColumn(createPropertiesColumn());
-        addWellsFilledColumn();
+        addWellCountColumns();
     }
 
     @Override
@@ -185,15 +187,39 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return col;
     }
 
-    private void addWellsFilledColumn()
+    private void addWellCountColumns()
     {
-        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
-                .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
-                .append(" AND sampleId IS NOT NULL)");
-        ExprColumn countCol = new ExprColumn(this, Column.WellsFilled.name(), sql, JdbcType.INTEGER);
-        countCol.setDescription("The number of wells that have samples for this plate.");
-        addColumn(countCol);
+        // WellCount
+        {
+            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellCount FROM ")
+                    .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId)");
+            ExprColumn totalWellCount = new ExprColumn(this, Column.WellCount.name(), sql, JdbcType.INTEGER);
+            totalWellCount.setDescription("The total number of wells for this plate.");
+            addColumn(totalWellCount);
+        }
+
+        // WellsFilled
+        {
+            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
+                    .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                    .append(" AND sampleId IS NOT NULL)");
+            ExprColumn wellsFilled = new ExprColumn(this, Column.WellsFilled.name(), sql, JdbcType.INTEGER);
+            wellsFilled.setDescription("The number of wells that have samples for this plate.");
+            addColumn(wellsFilled);
+        }
+
+        // WellsEmpty
+        {
+            SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsEmpty FROM ")
+                    .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                    .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                    .append(" AND sampleId IS NULL)");
+            ExprColumn wellsEmpty = new ExprColumn(this, Column.WellsEmpty.name(), sql, JdbcType.INTEGER);
+            wellsEmpty.setDescription("The number of wells that do not have samples for this plate.");
+            addColumn(wellsEmpty);
+        }
     }
 
     @Override
