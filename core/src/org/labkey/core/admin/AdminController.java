@@ -3366,6 +3366,28 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class ResetSystemMaintenanceAction extends FormHandlerAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            SystemMaintenance.clearProperties();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new AdminUrlsImpl().getAdminConsoleURL();
+        }
+    }
+
     public static class SystemMaintenanceForm
     {
         private String _taskName;

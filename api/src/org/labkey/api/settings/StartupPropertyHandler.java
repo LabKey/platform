@@ -2,9 +2,12 @@ package org.labkey.api.settings;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.DOM;
 
 import java.util.Collection;
 import java.util.Map;
+
+import static org.labkey.api.util.DOM.STRONG;
 
 public abstract class StartupPropertyHandler<T extends StartupProperty>
 {
@@ -22,6 +25,12 @@ public abstract class StartupPropertyHandler<T extends StartupProperty>
     public String getScope()
     {
         return _scope;
+    }
+
+    // Override to provide more detailed scope-wide guidance on the Startup Properties page
+    public DOM.Renderable getScopeDescription()
+    {
+        return STRONG(getScope());
     }
 
     public String getStartupPropertyClassName()
