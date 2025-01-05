@@ -1,6 +1,5 @@
 package org.labkey.assay.plate.layout;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateType;
@@ -13,7 +12,6 @@ import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public interface LayoutOperation
 {
@@ -43,7 +41,10 @@ public interface LayoutOperation
         return false;
     }
 
-    record WellDataCacheKey(int plateRowId, boolean includeSamples, boolean includeMetadata) {}
+    default boolean supportsFillExistingWells()
+    {
+        return false;
+    }
 
     record ExecutionContext(
         Container container,
@@ -53,9 +54,10 @@ public interface LayoutOperation
         PlateType targetPlateType,
         List<Plate> sourcePlates,
         Plate targetTemplate,
-        List<PlateManager.PlateData> plateData,
+        List<Plate> targetPlates,
+        List<PlateManager.PlateData> targetPlateData,
         Collection<Integer> sampleIds,
-        Map<WellDataCacheKey, List<WellData>> wellDataCache
+        WellData.Cache wellDataCache
     )
     {
         public @Nullable PlateType resolvePlateType(Integer plateTypeRowId)
@@ -64,11 +66,6 @@ public interface LayoutOperation
                 return null;
 
             return allPlateTypes.stream().filter(plateType -> plateType.getRowId().equals(plateTypeRowId)).findFirst().orElse(null);
-        }
-
-        public @NotNull List<WellData> getWellData(int plateRowId, boolean includeSamples, boolean includeMetadata)
-        {
-            return wellDataCache.computeIfAbsent(new WellDataCacheKey(plateRowId, includeSamples, includeMetadata), (k) -> PlateManager.get().getWellData(container, user, k.plateRowId, k.includeSamples, k.includeMetadata));
         }
     }
 }

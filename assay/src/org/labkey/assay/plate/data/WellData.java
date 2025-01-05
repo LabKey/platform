@@ -2,9 +2,14 @@ package org.labkey.assay.plate.data;
 
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.WellTable;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class WellData
@@ -26,7 +31,14 @@ public class WellData
 
     public Map<String, Object> getData()
     {
+        return getData(false);
+    }
+
+    public Map<String, Object> getData(boolean includeWellId)
+    {
         Map<String, Object> data = new CaseInsensitiveHashMap<>();
+        if (includeWellId && _rowId != null)
+            data.put(WellTable.Column.RowId.name(), _rowId);
         if (_position != null)
             data.put(WellTable.WELL_LOCATION, _position);
         if (_sampleId != null)
@@ -149,5 +161,29 @@ public class WellData
     public void setWellGroup(String wellGroup)
     {
         _wellGroup = wellGroup;
+    }
+
+    record CacheKey(int plateRowId, boolean includeSamples, boolean includeMetadata) {}
+
+    public static class Cache
+    {
+        private final Map<CacheKey, List<WellData>> cache;
+        private final Container container;
+        private final User user;
+
+        public Cache(Container container, User user)
+        {
+            cache = new HashMap<>();
+            this.container = container;
+            this.user = user;
+        }
+
+        public List<WellData> getData(int plateRowId, boolean includeSamples, boolean includeMetadata)
+        {
+            return cache.computeIfAbsent(
+                new CacheKey(plateRowId, includeSamples, includeMetadata),
+                (k) -> PlateManager.get().getWellData(container, user, k.plateRowId, k.includeSamples, k.includeMetadata)
+            );
+        }
     }
 }

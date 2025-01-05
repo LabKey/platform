@@ -146,6 +146,7 @@ public class ReformatOptions
         }
     }
 
+    private Boolean _fillExistingWells = false;
     private ReformatOperation _operation;
     private List<PlateManager.PlateData> _plates;
     private List<Integer> _plateRowIds;
@@ -155,6 +156,17 @@ public class ReformatOptions
     private String _sampleSelectionKey;
     private TargetPlateSet _targetPlateSet;
     private TargetPlateSource _targetPlateSource;
+
+    public Boolean isFillExistingWells()
+    {
+        return _fillExistingWells;
+    }
+
+    public ReformatOptions setFillExistingWells(Boolean fillExistingWells)
+    {
+        _fillExistingWells = fillExistingWells;
+        return this;
+    }
 
     public ReformatOperation getOperation()
     {

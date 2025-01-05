@@ -6,6 +6,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.data.WellData;
 import org.labkey.assay.plate.model.ReformatOptions;
 
 import java.util.Collection;
@@ -19,6 +20,7 @@ public class LayoutEngine
     private final ReformatOptions _options;
     private Collection<Integer> _sampleIds;
     private List<Plate> _sourcePlates;
+    private List<Plate> _targetPlates;
     private List<PlateManager.PlateData> _targetPlateData;
     private PlateType _targetPlateType;
     private Plate _targetTemplate;
@@ -30,7 +32,7 @@ public class LayoutEngine
         _allPlateTypes = allPlateTypes;
     }
 
-    public List<WellLayout> run(Container container, User user) throws ValidationException
+    public List<WellLayout> run(Container container, User user, WellData.Cache wellDataCache) throws ValidationException
     {
         if (_operation.requiresSourcePlates() && _sourcePlates.isEmpty())
             throw new ValidationException("Invalid configuration. Source plates are required to run the layout engine.");
@@ -38,6 +40,8 @@ public class LayoutEngine
             throw new ValidationException("A target plate type is required for this operation.");
         if (_operation.requiresTargetTemplate() && _targetTemplate == null)
             throw new ValidationException("A target plate template is required for this operation.");
+        if (_options.isFillExistingWells() && !_operation.supportsFillExistingWells())
+            throw new ValidationException("Filling existing wells is not supported for this operation.");
 
         LayoutOperation.ExecutionContext context = new LayoutOperation.ExecutionContext(
             container,
@@ -47,9 +51,10 @@ public class LayoutEngine
             _targetPlateType,
             _sourcePlates,
             _targetTemplate,
+            _targetPlates,
             _targetPlateData,
             _sampleIds,
-            new HashMap<>()
+            wellDataCache
         );
 
         _operation.init(container, user, context);
@@ -85,6 +90,11 @@ public class LayoutEngine
     public void setSourcePlates(List<Plate> sourcePlates)
     {
         _sourcePlates = sourcePlates;
+    }
+
+    public void setTargetPlates(List<Plate> targetPlates)
+    {
+        _targetPlates = targetPlates;
     }
 
     public void setTargetPlateData(List<PlateManager.PlateData> targetPlateData)
