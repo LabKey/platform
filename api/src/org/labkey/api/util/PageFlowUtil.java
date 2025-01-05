@@ -1218,6 +1218,7 @@ public class PageFlowUtil
 
 
     // Fetch the contents of a text file, and return it in a String.
+    @NotNull
     public static String getFileContentsAsString(File aFile)
     {
         try
@@ -1245,6 +1246,7 @@ public class PageFlowUtil
 
 
     /** Fetch the contents of a BufferedReader and return in a String. Closes the reader after consuming it */
+    @NotNull
 	public static String getReaderContentsAsString(BufferedReader reader)
 	{
 		StringBuilder contents = new StringBuilder();

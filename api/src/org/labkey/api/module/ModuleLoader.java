@@ -81,6 +81,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StartupListener;
@@ -159,6 +160,9 @@ public class ModuleLoader implements MemTrackerListener
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
+
+    /** Used to separate lines in the lock file and also to detect if there were any modules listed as needing upgrades */
+    private static final String LOCK_FILE_DELIMITER = "\n";
 
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
@@ -600,7 +604,7 @@ public class ModuleLoader implements MemTrackerListener
             }
         }
 
-        boolean coreRequiredUpgrade = upgradeCoreModule();
+        boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
@@ -672,6 +676,7 @@ public class ModuleLoader implements MemTrackerListener
                     {
                         context.setModuleState(ModuleState.InstallRequired);
                         modulesRequiringUpgrade.add(context.getName());
+                        addModuleToLockFile(context.getName(), lockFile);
                     }
                     else
                     {
@@ -728,6 +733,18 @@ public class ModuleLoader implements MemTrackerListener
         startNonCoreUpgradeAndStartup(execution, lockFile);
 
         _log.info("LabKey Server startup is complete; {}", execution.getLogMessage());
+    }
+
+    private void addModuleToLockFile(String name, File lockFile)
+    {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(lockFile, true), StringUtilsLabKey.DEFAULT_CHARSET)))
+        {
+            writer.write(LOCK_FILE_DELIMITER + "Upgrade needed for " + name + " module");
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Failed to add module " + name + " to lock file", e);
+        }
     }
 
     // Check for multiple modules claiming the same schema. Inspired by Issue 47547.
@@ -789,26 +806,35 @@ public class ModuleLoader implements MemTrackerListener
         File result = FileUtil.appendName(modulesDir.getParentFile(), "labkeyUpgradeLockFile");
         if (result.exists())
         {
-            String sternLockFileMessage = "Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists. " +
-                    "A startup/upgrade attempt has left the server in an indeterminate state. " +
-                    "Review the logs carefully to determine the outcome of the previous upgrade attempt(s) before this " +
-                    "lock file prevented restart. Proceed with extreme caution as the database may not be properly " +
-                    "upgraded. More guidance at " + new HelpTopic("troubleshootingAdmin", "lock").getHelpTopicHref(HelpTopic.Referrer.log);
-
-            if (AppProps.getInstance().isDevMode())
+            String lockFileContent = PageFlowUtil.getFileContentsAsString(result).trim();
+            if (lockFileContent.contains(LOCK_FILE_DELIMITER))
             {
-                _log.warn(sternLockFileMessage);
-                _log.warn("Bravely continuing because this server is running in Dev mode.");
+                String sternLockFileMessage = "Lock file " + FileUtil.getAbsoluteCaseSensitiveFile(result) + " already exists. " +
+                        "A startup/upgrade attempt has left the server in an indeterminate state. " +
+                        "Review the logs carefully to determine the outcome of the previous upgrade attempt(s) before this " +
+                        "lock file prevented restart. Proceed with extreme caution as the database has not been properly " +
+                        "upgraded. More guidance at " +
+                        new HelpTopic("troubleshootingAdmin", "lock").getHelpTopicHref(HelpTopic.Referrer.log) +
+                        "\nDetails from lock file:\n" + lockFileContent;
+
+                if (AppProps.getInstance().isDevMode())
+                {
+                    _log.warn(sternLockFileMessage);
+                    _log.warn("Bravely continuing because this server is running in Dev mode.");
+                }
+                else
+                {
+                    throw new ConfigurationException(sternLockFileMessage);
+                }
             }
             else
             {
-                throw new ConfigurationException(sternLockFileMessage);
+                _log.info("Ignoring existing upgrade lock file {} because it did not contain any modules needing upgrades", result);
             }
         }
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(result), StringUtilsLabKey.DEFAULT_CHARSET)))
         {
             writer.write("LabKey instance beginning initialization at " + DateUtil.formatIsoDateShortTime(new Date()));
-
         }
         catch (IOException e)
         {
@@ -1320,7 +1346,7 @@ public class ModuleLoader implements MemTrackerListener
      * login, check permissions, or initialize any of the other modules.
      * @return true if core module required upgrading, otherwise false
      */
-    private boolean upgradeCoreModule() throws ServletException
+    private boolean upgradeCoreModule(File lockFile) throws ServletException
     {
         Module coreModule = getCoreModule();
         if (coreModule == null)
@@ -1341,6 +1367,7 @@ public class ModuleLoader implements MemTrackerListener
         // Does the core module need to be upgraded?
         if (!coreContext.needsUpgrade(coreModule.getSchemaVersion()))
             return false;
+        addModuleToLockFile(coreContext.getName(), lockFile);
 
         if (coreContext.isNewInstall())
         {
