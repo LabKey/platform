@@ -7,7 +7,7 @@ public interface StartupProperty
     // As a convenience for enum implementations, where getPropertyName() simply returns Enum.name()
     default String name()
     {
-        throw new IllegalStateException("Must override getStartupProp()");
+        throw new IllegalStateException("Must override getPropertyName()");
     }
 
     // Implementations can override this to use an alternative property name (not name()) or to filter out specific
