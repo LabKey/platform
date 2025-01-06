@@ -17,15 +17,12 @@
 package org.labkey.audit;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.audit.query.AuditQuerySchema;
-import org.labkey.audit.query.AuditUpgradeCode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -92,11 +89,5 @@ public class AuditModule extends DefaultModule
     public Set<String> getProvisionedSchemaNames()
     {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
-    }
-
-    @Override
-    public @Nullable UpgradeCode getUpgradeCode()
-    {
-        return new AuditUpgradeCode();
     }
 }

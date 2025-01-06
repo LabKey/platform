@@ -1,1 +1,0 @@
-ALTER TABLE study.study ADD COLUMN FailForUndefinedTimepoints BOOLEAN NOT NULL DEFAULT FALSE;

@@ -143,8 +143,8 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
-import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.BaseServerProperties;
+import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
@@ -176,6 +176,7 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -255,8 +256,10 @@ public class ApiModule extends CodeOnlyModule
         AuthenticationManager.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
-        // Handle optional feature startup properties as late as possible; we want all optional features to be registered first
+        // Handle optional feature and system maintenance startup properties as late as possible; we want all optional
+        // features and system maintenance tasks to be registered first
         ContextListener.addStartupListener(new OptionalFeatureStartupListener());
+        ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
     }
 

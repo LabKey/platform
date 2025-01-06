@@ -19,7 +19,6 @@ package org.labkey.study;
 import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +33,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
@@ -768,14 +766,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         return ret;
     }
-
-
-    @Override
-    public @Nullable UpgradeCode getUpgradeCode()
-    {
-        return new StudyManager.StudyUpgradeCode();
-    }
-
 
     public static class TestCase extends Assert
     {
