@@ -830,6 +830,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return ComplianceService.get().isComplianceSupported();
     }
 
+    // Query datasets don't have a domain kind, so check here if the dataset is a query dataset
     @Override
     public boolean isProvisioned(Container container, String name)
     {
