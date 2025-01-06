@@ -664,7 +664,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
         }
 
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Issue 40302: Unable to use samples or data class with integer-like names as material or data input
         // treat lineage columns as string values
         if (loader != null && allowLineageColumns)
         {
