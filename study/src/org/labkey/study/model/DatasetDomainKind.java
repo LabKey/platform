@@ -830,6 +830,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return ComplianceService.get().isComplianceSupported();
     }
 
+    @Override
+    public boolean isProvisioned(Container container, String name)
+    {
+        return super.isProvisioned(container, name) && !isQueryDataset(container, name);
+    }
+
     public static boolean isQueryDataset(Container container, String queryName)
     {
         StudyService ss = StudyService.get();

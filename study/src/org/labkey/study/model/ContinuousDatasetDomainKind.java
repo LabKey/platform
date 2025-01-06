@@ -15,7 +15,6 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
@@ -62,11 +61,5 @@ public class ContinuousDatasetDomainKind extends DatasetDomainKind
         fields.addAll(DatasetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
 
         return Collections.unmodifiableSet(fields);
-    }
-
-    @Override
-    public boolean isProvisioned(Container container, String name)
-    {
-        return !isQueryDataset(container, name);
     }
 }
