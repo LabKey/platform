@@ -23,6 +23,10 @@ public class DatasetFactory
                 default -> throw new IllegalStateException("Unknown publish source type " + source);
             }
         }
+        else if (dsd.getSourceQueryName() != null)
+        {
+            return new QueryDatasetTable(schema, cf, dsd);
+        }
         else
             return new DatasetTableImpl(schema, cf, dsd);
     }

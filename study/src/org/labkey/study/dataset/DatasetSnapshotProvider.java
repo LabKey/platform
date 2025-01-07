@@ -71,6 +71,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantCategoryListener;
@@ -906,5 +907,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 QueryService.get().clearEnvironment();
             }
         }
+    }
+
+    @Override
+    public boolean isQueryDataset(Container container, String queryName)
+    {
+        return DatasetDomainKind.isQueryDataset(container, queryName);
     }
 }
