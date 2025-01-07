@@ -49,7 +49,6 @@ public class ArrayOperation implements LayoutOperation
 
         List<WellLayout> targetLayouts = new ArrayList<>();
 
-        // TODO: Document how this is handled.
         // We look back at plates when populating existing which effectively means we inherit grouped samples and plate
         // them on subsequent new plates so that the rules are upheld. This may not be what users are expecting.
         // Does this need to be a choice? It's difficult to grasp.
@@ -62,13 +61,15 @@ public class ArrayOperation implements LayoutOperation
             }
         }
 
-        // Remove samples that are already plated in this plate set?
+        // TODO: Remove samples that are already plated in this plate set?
         // sampleIds.removeAll(groupSampleMap.values());
+
+        List<PlateManager.PlateData> targetPlateData = new ArrayList<>(context.targetPlateData());
 
         // Plate all samples
         while (sampleIndex < sampleIds.size())
         {
-            WellLayout wellLayout = getNextWellLayout(context, targetLayouts, layouts.size());
+            WellLayout wellLayout = getNextWellLayout(context, targetLayouts, targetPlateData);
             if (wellLayout == null)
                 throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex, sampleIds.size()));
 
@@ -98,15 +99,12 @@ public class ArrayOperation implements LayoutOperation
         }
 
         // Layout any further plates that have been requested (if any)
-        List<PlateManager.PlateData> plateData = context.targetPlateData();
-        if (plateData != null && plateData.size() > layouts.size())
+        while (!targetPlateData.isEmpty())
         {
-            while (layouts.size() < plateData.size())
-            {
-                WellLayout wellLayout = getPlateDataWellLayout(context, layouts.size());
-                if (wellLayout == null)
-                    throw new ValidationException(String.format("Failed to resolve plate at index %d.", layouts.size()));
+            WellLayout wellLayout = getPlateDataWellLayout(context, targetPlateData);
 
+            if (wellLayout != null)
+            {
                 if (wellLayout.getTargetTemplateId() != null)
                 {
                     Pair<Integer, WellLayout> result = executeTemplateLayout(context, wellLayout, sampleIds, groupSampleMap, sampleIndex);
@@ -120,14 +118,18 @@ public class ArrayOperation implements LayoutOperation
         return layouts;
     }
 
-    private @Nullable WellLayout getNextWellLayout(ExecutionContext context, List<WellLayout> targetLayouts, int numLayouts)
+    private @Nullable WellLayout getNextWellLayout(
+        ExecutionContext context,
+        List<WellLayout> targetLayouts,
+        List<PlateManager.PlateData> targetPlateData
+    )
     {
         WellLayout layout;
         if (!targetLayouts.isEmpty())
             return targetLayouts.remove(0);
 
-        if (context.targetPlateData() != null && !context.targetPlateData().isEmpty())
-            layout = getPlateDataWellLayout(context, numLayouts);
+        if (targetPlateData != null && !targetPlateData.isEmpty())
+            layout = getPlateDataWellLayout(context, targetPlateData);
         else if (context.targetTemplate() != null)
             layout = new WellLayout(context.targetTemplate().getPlateType(), false, context.targetTemplate().getRowId(), null);
         else
@@ -136,23 +138,21 @@ public class ArrayOperation implements LayoutOperation
         return layout;
     }
 
-    private @Nullable WellLayout getPlateDataWellLayout(ExecutionContext context, int plateIndex)
+    private @Nullable WellLayout getPlateDataWellLayout(ExecutionContext context, @NotNull List<PlateManager.PlateData> plateData)
     {
-        List<PlateManager.PlateData> plateData = context.targetPlateData();
+        if (plateData.isEmpty())
+            return null;
 
-        if (plateData != null && plateData.size() > plateIndex)
+        PlateManager.PlateData targetPlateData = plateData.remove(0);
+        if (targetPlateData != null && targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
         {
-            PlateManager.PlateData targetPlateData = plateData.get(plateIndex);
-            if (targetPlateData.plateType() != null && targetPlateData.plateType() > 0)
+            PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());
+            if (targetPlateDataType != null)
             {
-                PlateType targetPlateDataType = context.resolvePlateType(targetPlateData.plateType());
-                if (targetPlateDataType != null)
-                {
-                    if (targetPlateData.templateId() != null)
-                        return new WellLayout(targetPlateDataType, false, targetPlateData.templateId(), null);
-                    else
-                        return new WellLayout(targetPlateDataType, true, null, null);
-                }
+                if (targetPlateData.templateId() != null)
+                    return new WellLayout(targetPlateDataType, false, targetPlateData.templateId(), null);
+                else
+                    return new WellLayout(targetPlateDataType, true, null, null);
             }
         }
 

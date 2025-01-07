@@ -4132,12 +4132,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<WellLayout> wellLayouts = engine.run(container, user, wellDataCache);
 
         int availablePlateCount = targetPlateSet.availablePlateCount();
-        if (availablePlateCount < wellLayouts.size())
+        long newPlateCount = wellLayouts.stream().filter(layout -> layout.getTargetPlateId() == null).count();
+        if (availablePlateCount < newPlateCount)
         {
             throw new ValidationException(String.format(
                 "This plate set has space for %d more plates. This operation will generate %d plates.",
                 availablePlateCount,
-                wellLayouts.size()
+                newPlateCount
             ));
         }
 
