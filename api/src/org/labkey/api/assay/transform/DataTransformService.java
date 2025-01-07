@@ -91,8 +91,8 @@ public class DataTransformService
 
         for (AnalysisScript analysisScript : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL))
         {
-            //if (!analysisScript.canExecute(operation))
-            //    continue;
+            if (!analysisScript.canExecute(operation))
+                continue;
 
             // read the contents of the script file
             File scriptFile = analysisScript.getScript().toNioPathForRead().toFile();
