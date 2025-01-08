@@ -480,7 +480,8 @@ public class ModuleLoader implements MemTrackerListener
         @Override
         public String toString()
         {
-            return moduleName + " (from schema " + ModuleContext.formatVersion(installedVersion) + ")";
+            return moduleName + " (from schema version " + ModuleContext.formatVersion(installedVersion) + ")";
+
         }
     }
 
