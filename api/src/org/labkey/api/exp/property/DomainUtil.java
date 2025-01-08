@@ -121,9 +121,8 @@ public class DomainUtil
     {
         if (defaultValue == null || (defaultValue instanceof String && StringUtils.isBlank((String)defaultValue)))
             return "[none]";
-        if (defaultValue instanceof Date)
+        if (defaultValue instanceof Date defaultDate)
         {
-            Date defaultDate = (Date) defaultValue;
             if (property.getFormat() != null)
                 return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
@@ -143,7 +142,7 @@ public class DomainUtil
             }
             catch (Exception e)
             {
-                LogManager.getLogger(DomainUtil.class).debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
+                LOG.debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
                 // And then fall through below to return defaultValue.toString();
             }
         }
@@ -447,7 +446,8 @@ public class DomainUtil
             gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
-            gwtDomain.setSupportsPhiLevel(kind.supportsPhiLevel());
+            gwtDomain.setPhiLevelEnabled(kind.supportsPhiLevel(dd));
+            gwtDomain.setPhiLevelDisabledReason(kind.getPhiLevelUnsupportedReason(dd));
         }
         return gwtDomain;
     }

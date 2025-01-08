@@ -21,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -479,12 +478,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public boolean allowCalculatedFields()
     {
         return true;
-    }
-
-    @Override
-    public boolean supportsPhiLevel()
-    {
-        return ComplianceService.get().isComplianceSupported();
     }
 
     @Override

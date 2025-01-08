@@ -41,6 +41,8 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
 
     private boolean fileAttachmentIndex = false;
 
+    private boolean multiFolder = false;
+
     public ListDomainKindProperties()
     {
     }
@@ -70,6 +72,7 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
         eachItemBodySetting = copyFrom.eachItemBodySetting;
         eachItemBodyTemplate = copyFrom.eachItemBodyTemplate;
         fileAttachmentIndex = copyFrom.fileAttachmentIndex;
+        multiFolder = copyFrom.multiFolder;
     }
 
     public int getListId()
@@ -310,5 +313,15 @@ public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
     public void setFileAttachmentIndex(boolean fileAttachmentIndex)
     {
         this.fileAttachmentIndex = fileAttachmentIndex;
+    }
+
+    public boolean isMultiFolder()
+    {
+        return multiFolder;
+    }
+
+    public void setMultiFolder(boolean multiFolder)
+    {
+        this.multiFolder = multiFolder;
     }
 }

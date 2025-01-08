@@ -373,7 +373,6 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
                             hideRequired: true,
                             isDragDisabled: true,
                             hideValidators: true,
-                            phiLevelDisabled: true,
                             hideAddFieldsButton: true,
                             hideTextOptions: true,
                             disableMvEnabled: true,

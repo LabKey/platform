@@ -77,11 +77,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-* User: adam
-* Date: Aug 25, 2009
-* Time: 10:11:16 AM
-*/
 public class ListWriter
 {
     static final String SCHEMA_FILENAME = "lists.xml";
@@ -176,10 +171,10 @@ public class ListWriter
                 if (!columns.isEmpty())
                 {
                     List<DisplayColumn> displayColumns = columns
-                            .stream()
-                            .filter(Objects::nonNull)
-                            .map(ListExportDataColumn::new)
-                            .collect(Collectors.toCollection(LinkedList::new));
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(ListExportDataColumn::new)
+                        .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
@@ -266,6 +261,7 @@ public class ListWriter
         if (null != def.getCategory()) settings.setCategory(def.getCategory().toString());
 
         if (def.getFileAttachmentIndex()) settings.setFileAttachmentIndex(def.getFileAttachmentIndex());
+        if (def.getMultiFolder()) settings.setMultiFolder(def.getMultiFolder());
     }
 
     private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir, PHI exportPhiLevel) throws SQLException, IOException

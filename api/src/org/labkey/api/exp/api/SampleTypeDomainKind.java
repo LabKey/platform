@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -61,7 +60,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -665,12 +663,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         }
 
         return false;
-    }
-
-    @Override
-    public boolean supportsPhiLevel()
-    {
-        return ComplianceService.get().isComplianceSupported();
     }
 
     @Override

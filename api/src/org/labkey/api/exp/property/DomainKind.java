@@ -406,9 +406,14 @@ abstract public class DomainKind<T> implements Handler<String>
         return true;
     }
 
-    public boolean supportsPhiLevel()
+    public boolean supportsPhiLevel(Domain domain)
     {
         return false;
+    }
+
+    public String getPhiLevelUnsupportedReason(Domain domain)
+    {
+        return "This table type does not support PHI annotations";
     }
 
     public boolean supportsNamingPattern()

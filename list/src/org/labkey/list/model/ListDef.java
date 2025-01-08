@@ -61,6 +61,8 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
 
     protected boolean _fileAttachmentIndex = false;
 
+    protected boolean _multiFolder = false;
+
     public int getListId()
     {
         return _listId;
@@ -204,6 +206,11 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _fileAttachmentIndex;
     }
 
+    public boolean isMultiFolder()
+    {
+        return _multiFolder;
+    }
+
     public boolean isVisible(@Nullable User user)
     {
         // any user can see public picklists and lists that aren't picklists
@@ -244,6 +251,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         to._eachItemBodySetting = _eachItemBodySetting;
         to._eachItemBodyTemplate = _eachItemBodyTemplate;
         to._fileAttachmentIndex = _fileAttachmentIndex;
+        to._multiFolder = _multiFolder;
     }
 
     @Override
@@ -276,6 +284,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         if (!Objects.equals(_entireListBodyTemplate, listDef._entireListBodyTemplate)) return false;
         if (!Objects.equals(_eachItemTitleTemplate, listDef._eachItemTitleTemplate)) return false;
         if (_eachItemBodySetting != listDef._eachItemBodySetting) return false;
+        if (_multiFolder != listDef._multiFolder) return false;
         return Objects.equals(_eachItemBodyTemplate, listDef._eachItemBodyTemplate);
     }
 
@@ -306,6 +315,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         result = 31 * result + (_eachItemBodySetting != null ? _eachItemBodySetting.hashCode() : 0);
         result = 31 * result + (_eachItemBodyTemplate != null ? _eachItemBodyTemplate.hashCode() : 0);
         result = 31 * result + (_fileAttachmentIndex ? 1 : 0);
+        result = 31 * result + (_multiFolder ? 1 : 0);
         return result;
     }
 
@@ -452,6 +462,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         {
             _fileAttachmentIndex = index;
         }
+        public void setMultiFolder(boolean multiFolder) { _multiFolder = multiFolder; }
     }
 
     static

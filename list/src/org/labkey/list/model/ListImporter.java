@@ -76,11 +76,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/*
-* User: adam
-* Date: Aug 27, 2009
-* Time: 2:12:01 PM
-*/
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
@@ -391,7 +386,7 @@ public class ListImporter
         {
             log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
-        if (fileTypeMap.size() > 0)
+        if (!fileTypeMap.isEmpty())
         {
             log.info("The following files were not imported because the server could not find a list with matching name: ");
             for (String s : fileTypeMap.keySet())
@@ -444,6 +439,8 @@ public class ListImporter
             list.setFileAttachmentIndex(listSettingsXml.getFileAttachmentIndex());
             if (listSettingsXml.getCategory() != null)
                 list.setCategory(ListDefinition.Category.valueOf(listSettingsXml.getCategory()));
+
+            list.setMultiFolder(listSettingsXml.getMultiFolder());
 
             // These settings have been ignored for years. Code remnants were removed for 23.7, Issue 48182.
             // TODO: Remove these XSD elements and warnings in 25.7 or before.

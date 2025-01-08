@@ -639,6 +639,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         metadataTableJSON.setSchemaName(schemaName);
         metadataTableJSON.setQueryName(tableName);
         metadataTableJSON.setName(tableName);
+        metadataTableJSON.setPhiLevelDisabledReason("Query metadata properties do not support PHI annotations");
 
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         if (schema == null)

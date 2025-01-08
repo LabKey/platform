@@ -1,8 +1,6 @@
 package org.labkey.api.settings;
 
 import org.apache.logging.log4j.Logger;
-import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.UsageReportingLevel;

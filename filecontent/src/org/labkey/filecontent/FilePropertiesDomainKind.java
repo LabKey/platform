@@ -34,11 +34,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: May 4, 2010
- * Time: 4:24:36 PM
- */
 public class FilePropertiesDomainKind extends BaseAbstractDomainKind
 {
     private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
@@ -125,7 +120,7 @@ public class FilePropertiesDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public boolean supportsPhiLevel()
+    public boolean supportsPhiLevel(Domain domain)
     {
         return ComplianceService.get().isComplianceSupported();
     }
