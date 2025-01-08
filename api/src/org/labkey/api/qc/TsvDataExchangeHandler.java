@@ -574,12 +574,14 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     private void processWarningsOutput(
             DefaultTransformResult result,
+            @Nullable Map<String, String> transformedProps,
             RunInfo info,
             @Nullable String errorFile,
             @Nullable File transformedFile,
             List<File> files) throws ValidationException
     {
-        String maxSeverity = info.getWarningSevLevel();
+        String warningSevLevel = info.getWarningSevLevel();
+        String maxSeverity = transformedProps != null ? transformedProps.get(Props.maximumSeverity.name()) : null;
 
         // Look for error file and get contents
         String warning = null;
@@ -601,7 +603,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         // Display warnings case
-        if (null != info.getWarningSevLevel() && info.getWarningSevLevel().equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
+        if (null != warningSevLevel && warningSevLevel.equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
         {
             // Running in background does not support warnings
             if (info.isBackgroundUpload())
@@ -953,6 +955,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 File transformedRunProps = null;
                 File transformedFile = null;
                 List<File> runDataUploadedFiles = new ArrayList<>();
+                Map<String, String> transformedProps = null;
                 String transErrorFile = null;
 
                 for (Map<String, Object> row : maps)
@@ -1100,7 +1103,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
                 if (transformedRunProps != null && transformedRunProps.exists())
                 {
-                    Map<String, String> transformedProps = new CaseInsensitiveHashMap<>();
+                    transformedProps = new CaseInsensitiveHashMap<>();
                     for (Map<String, Object> row : parseRunInfo(transformedRunProps))
                     {
                         String name = row.get("name") == null ? null : String.valueOf(row.get("name"));
@@ -1163,7 +1166,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 tempOutputFiles.removeAll(_filesToIgnore);
 
                 if (operation == DataTransformService.TransformOperation.INSERT)
-                    processWarningsOutput(result, info, transErrorFile, transformedFile, tempOutputFiles);
+                    processWarningsOutput(result, transformedProps, info, transErrorFile, transformedFile, tempOutputFiles);
             }
             catch (ValidationException e)
             {
