@@ -89,6 +89,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
@@ -746,13 +747,17 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                                     }
                                     catch(IOException e)
                                     {
-                                        throw new RuntimeException(e);
+                                        throw UnexpectedException.wrap(e);
                                     }
                                 });
                             }
                         }
                         catch (SQLException | IOException e)
                         {
+                            if (errors == null)
+                            {
+                                throw UnexpectedException.wrap(e);
+                            }
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                         }
                     }
