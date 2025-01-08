@@ -996,6 +996,17 @@ public class NameGenerator
         return null;
     }
 
+    private PropertyType getPropertyType(ColumnInfo col)
+    {
+        PropertyType pt = col.getPropertyType();
+        if (pt == null)
+            pt = PropertyType.getFromJdbcType(col.getJdbcType(), false);
+        if (pt == null && col.getJdbcType() == JdbcType.GUID)
+            pt = PropertyType.STRING;
+
+        return pt;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any parent input tokens
@@ -1120,11 +1131,7 @@ public class NameGenerator
                                     ColumnInfo col = _parentTable.getColumn(fieldName);
                                     isColPresent = col != null;
                                     if (isColPresent)
-                                    {
-                                        pt = col.getPropertyType();
-                                        if (pt == null)
-                                            pt = PropertyType.getFromJdbcType(col.getJdbcType());
-                                    }
+                                        pt = getPropertyType(col);
                                 }
                                 if (!isColPresent && !domainFields.isEmpty())
                                 {
@@ -1295,9 +1302,7 @@ public class NameGenerator
                         if (lookupCol != null)
                         {
                             lookupExist = true;
-                            pt = lookupCol.getPropertyType();
-                            if (pt == null)
-                                pt = PropertyType.getFromJdbcType(lookupCol.getJdbcType());
+                            pt = getPropertyType(lookupCol);
                         }
 
                     }
@@ -2125,6 +2130,8 @@ public class NameGenerator
             if (extraProps != null)
                 ctx.putAll(extraProps);
             ctx.putAll(rowMap);
+            if (!ctx.containsKey("container"))
+                ctx.put("container", _container.getName());
 
             // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
             if (_parentTable != null)
