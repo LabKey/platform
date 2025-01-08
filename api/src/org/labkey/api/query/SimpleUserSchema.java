@@ -194,6 +194,7 @@ public class SimpleUserSchema extends UserSchema
     public static class SimpleTable<SchemaType extends UserSchema> extends FilteredTable<SchemaType> implements UpdateableTableInfo
     {
         protected ColumnInfo _objectUriCol;
+        protected ColumnInfo _objectIdCol;
         protected Domain _domain;
         protected boolean _readOnly;
 
@@ -370,6 +371,14 @@ public class SimpleUserSchema extends UserSchema
                         wrap.setShownInDetailsView(false);
                         wrap.setHidden(true);
                     }
+                    if (null == _objectIdCol && colName.equalsIgnoreCase("objectId") && isObjectIdLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
+                    {
+                        _objectIdCol = wrap;
+                        wrap.setShownInInsertView(false);
+                        wrap.setShownInUpdateView(false);
+                        wrap.setShownInDetailsView(false);
+                        wrap.setHidden(true);
+                    }
                 }
             }
         }
@@ -384,7 +393,16 @@ public class SimpleUserSchema extends UserSchema
                 for (DomainProperty dp : domain.getProperties())
                 {
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
-                    PropertyColumn propColumn = new PropertyColumn(pd, _objectUriCol, getContainer(), _userSchema.getUser(), true);
+                    PropertyColumn propColumn;
+                    if (null != _objectIdCol)
+                    {
+                        propColumn = new PropertyColumn(pd, _objectIdCol, getContainer(), _userSchema.getUser(), true);
+                        propColumn.setParentIsObjectId(true);
+                    }
+                    else
+                    {
+                        propColumn = new PropertyColumn(pd, _objectUriCol, getContainer(), _userSchema.getUser(), true);
+                    }
                     if (getColumn(propColumn.getName()) == null)
                     {
                         addColumn(propColumn);
@@ -411,6 +429,13 @@ public class SimpleUserSchema extends UserSchema
         private boolean isObjectUriLookup(String pkColName, String tableName, String schemaName)
         {
             return "ObjectURI".equalsIgnoreCase(pkColName) &&
+                    "Object".equalsIgnoreCase(tableName) &&
+                    "exp".equalsIgnoreCase(schemaName);
+        }
+
+        private boolean isObjectIdLookup(String pkColName, String tableName, String schemaName)
+        {
+            return "ObjectId".equalsIgnoreCase(pkColName) &&
                     "Object".equalsIgnoreCase(tableName) &&
                     "exp".equalsIgnoreCase(schemaName);
         }
