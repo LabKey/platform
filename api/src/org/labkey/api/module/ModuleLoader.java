@@ -780,11 +780,11 @@ public class ModuleLoader implements MemTrackerListener
     /**
      * Does this module live in a repository that's managed by LabKey Corporation?
      * @param module a Module
-     * @return true if the module's VCS URL is non-null and starts with one of the GitHub organizations that LabKey manages
+     * @return true if the module's VCS URL is non-null and includes "github.com:LabKey/"
      */
     private boolean isFromLabKeyRepository(Module module)
     {
-        return StringUtils.startsWithAny(module.getVcsUrl(), "https://github.com/LabKey/");
+        return StringUtils.containsAny(module.getVcsUrl(), "github.com:LabKey/");
     }
 
     /**
