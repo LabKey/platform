@@ -67,10 +67,17 @@ public class ArrayOperation implements LayoutOperation
         }
 
         List<PlateManager.PlateData> targetPlateData = new ArrayList<>(context.targetPlateData());
+        boolean hasTargetPlateData = !targetPlateData.isEmpty();
+        int initialSampleCount = sampleIds.size();
 
         // Plate all samples
         while (sampleIndex < sampleIds.size())
         {
+            // If target plates are specified, then require that those plate configurations are enough to plate all
+            // the samples. Otherwise, when target plates are not specified, generate additional plates.
+            if (hasTargetPlateData && targetPlateData.isEmpty())
+                throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex + 1, initialSampleCount));
+
             WellLayout wellLayout = getNextWellLayout(context, targetLayouts, targetPlateData);
             if (wellLayout == null)
                 throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex, sampleIds.size()));
@@ -85,16 +92,21 @@ public class ArrayOperation implements LayoutOperation
                 if (result.first == sampleIndex)
                     continue;
             }
-            else if (wellLayout.getTargetTemplateId() != null)
-            {
-                result = executeTemplateLayout(context, wellLayout, sampleIds, groupSampleMap, sampleWells, sampleIndex);
-
-                // The counter did not advance for this well layout meaning we did not plate any additional samples.
-                if (result.first == sampleIndex)
-                    throw new ValidationException(String.format("There are %d selected samples and only %d unique sample regions are available in template \"%s\".", sampleIds.size(), sampleIndex, context.targetTemplate().getName()));
-            }
             else
-                result = executeRowColumnLayout(wellLayout, sampleWells, sampleIds, sampleIndex);
+            {
+                if (wellLayout.getTargetTemplateId() != null)
+                {
+                    result = executeTemplateLayout(context, wellLayout, sampleIds, groupSampleMap, sampleWells, sampleIndex);
+
+                    // The counter did not advance for this well layout meaning we did not plate any additional samples.
+                    if (result.first == sampleIndex)
+                        throw new ValidationException(String.format("There are %d selected samples and only %d unique sample regions are available in template \"%s\".", sampleIds.size(), sampleIndex, context.targetTemplate().getName()));
+                }
+                else
+                {
+                    result = executeRowColumnLayout(wellLayout, sampleWells, sampleIds, sampleIndex);
+                }
+            }
 
             layouts.add(result.second);
             sampleIndex = result.first;
