@@ -146,6 +146,8 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -170,6 +172,7 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
@@ -385,7 +388,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             TableInfo wellTable = getWellTable(container, user);
             TableInfo metadataTable = getPlateMetadataTable(container, user);
-            Set<FieldKey> metadataFields = Collections.emptySet();
+            Set<FieldKey> metadataFields = emptySet();
             if (metadataTable != null)
                 metadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
 
@@ -504,17 +507,98 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (se != null)
             count += (int) se.getRowCount();
 
-        count += getRunIdsUsingPlateInResults(c, user, plate).size();
+        count += getRunCountUsingPlateInResults(c, user, plate);
 
         return count;
     }
 
-    private @NotNull List<Integer> getRunIdsUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    /**
+     * @return A map of plate rowId to total number of runs across all plate-based assay runs in the
+     * container/user scope for the specified plates.
+     */
+    public Map<Integer, Long> getPlateRunCounts(@NotNull Container c, @NotNull User user, @NotNull Collection<Plate> plates)
+    {
+        if (plates.isEmpty())
+            return emptyMap();
+
+        Map<Integer, Long> resultMap = new HashMap<>();
+        for (Plate plate : plates)
+        {
+            if (plate.getRowId() != null)
+                resultMap.put(plate.getRowId(), 0L);
+        }
+
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (provider == null)
+            return resultMap;
+
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
+                .stream().filter(provider::isPlateMetadataEnabled).toList();
+
+        // get the runIds for each protocol, query against its assay results table
+        List<SQLFragment> fragments = new ArrayList<>();
+        TableInfo runTable = ExperimentService.get().getTinfoExperimentRun();
+        TableInfo dataTable = ExperimentService.get().getTinfoData();
+        Set<Integer> plateRowIds = resultMap.keySet();
+
+        for (ExpProtocol protocol : protocols)
+        {
+            AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+            if (assayDataTable != null)
+            {
+                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
+                if (dataIdCol != null)
+                {
+                    SQLFragment dataTableSql = assayDataTable.getFromSQL("AD", Set.of(FieldKey.fromParts("DataId"), FieldKey.fromParts("Plate")));
+                    SQLFragment sql = new SQLFragment("SELECT AD.Plate, COUNT(DISTINCT D.RunId) AS RunCount\n")
+                            .append(" FROM ").append(dataTable, "D\n")
+                            .append(" INNER JOIN ").append(runTable, "R").append(" ON D.RunId = R.RowId\n")
+                            .append(" INNER JOIN ").append(dataTableSql).append(" ON AD.DataId = D.RowId\n")
+                            .append(" WHERE R.ReplacedByRunId IS NULL AND AD.Plate").appendInClause(plateRowIds, dataTable.getSqlDialect()).append("\n")
+                            .append(" GROUP BY AD.Plate\n");
+                    fragments.add(sql);
+                }
+            }
+        }
+
+        if (fragments.isEmpty())
+            return resultMap;
+
+        SQLFragment sql = new SQLFragment();
+        String union = null;
+        for (SQLFragment fragment : fragments)
+        {
+            if (union == null)
+                union = "UNION\n";
+            else
+                sql.append(union);
+            sql.append(fragment);
+        }
+
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+            {
+                Integer plateRowId = rs.getInt("Plate");
+                Long runCount = rs.getLong("RunCount");
+                resultMap.put(plateRowId, resultMap.get(plateRowId) + runCount);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+
+        return resultMap;
+    }
+
+    private int getRunCountUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         // first, get the list of GPAT protocols in the container
         AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
         if (provider == null)
-            return emptyList();
+            return 0;
 
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
@@ -535,7 +619,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             .append(" WHERE AD.Plate = ?")
                             .add(plate.getRowId());
 
-                    SQLFragment sql = new SQLFragment("SELECT DISTINCT D.RunId FROM\n")
+                    SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT D.RunId) AS RunCount FROM\n")
                             .append(ExperimentService.get().getTinfoData(), "D")
                             .append(" INNER JOIN ")
                             .append(ExperimentService.get().getTinfoExperimentRun(), "R")
@@ -548,20 +632,22 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         if (fragments.isEmpty())
-            return emptyList();
+            return 0;
 
-        SQLFragment sql = new SQLFragment();
+        SQLFragment unionSql = new SQLFragment();
         String union = null;
         for (SQLFragment fragment : fragments)
         {
             if (union == null)
                 union = "UNION\n";
             else
-                sql.append(union);
-            sql.append(fragment);
+                unionSql.append(union);
+            unionSql.append(fragment);
         }
 
-        return new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
+        SQLFragment sql = new SQLFragment("SELECT SUM(RunCount) AS RunCountSum FROM (").append(unionSql).append(")");
+
+        return ((BigDecimal) new SqlSelector(ExperimentService.get().getSchema(), sql).getMap().get("RunCountSum")).intValueExact();
     }
 
     private @Nullable SqlSelector selectRunUsingPlateTemplate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
@@ -1730,7 +1816,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
         else
         {
-            wellMetadataFields = Collections.emptySet();
+            wellMetadataFields = emptySet();
             sourceMetaData = emptyMap();
         }
 
@@ -4079,7 +4165,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Integer plateSetRowId,
         String plateSetName,
         List<Integer> plateRowIds,
-        Integer platedSampleCount
+        Integer platedSampleCount,
+        Integer selectedSampleCount
     ) {}
 
     /**
@@ -4123,7 +4210,12 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Pair<PlateType, Plate> targetPlateSource = getReformatTargetPlateSource(container, options);
         engine.setTargetPlateType(targetPlateSource.first);
         engine.setTargetTemplate(targetPlateSource.second);
-        engine.setSampleIds(getSelectedSampleIds(options));
+
+        // Resolve selected sample configuration (if any)
+        Pair<Collection<Integer>, Integer> sampleSelection = resolveSelectedSamples(options.getSampleSelectionKey(), targetPlateSet);
+        engine.setSampleIds(sampleSelection.first);
+        Integer selectedSampleCount = sampleSelection.second;
+
         engine.setTargetPlates(getReformatTargetPlates(targetPlateSet));
         engine.setTargetPlateData(getReformatTargetPlateData(options, targetPlateSet));
 
@@ -4151,7 +4243,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (options.isPreview())
         {
             List<PreviewPlateData> previewData = getPreviewData(options, existingPlates, plateData, allPlateTypes);
-            return new ReformatResult(previewData, plateData.size(), existingPlates.size(), null, null, null, hydratedResults.platedSampleCount());
+            return new ReformatResult(previewData, plateData.size(), existingPlates.size(), null, null, null, hydratedResults.platedSampleCount(), selectedSampleCount);
         }
 
         if (plateData.isEmpty() && existingPlates.isEmpty())
@@ -4195,7 +4287,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         List<Integer> plateRowIds = newPlates.stream().map(Plate::getRowId).toList();
-        return new ReformatResult(null, plateRowIds.size(), existingPlates.size(), plateSetRowId, plateSetName, plateRowIds, hydratedResults.platedSampleCount());
+        return new ReformatResult(null, plateRowIds.size(), existingPlates.size(), plateSetRowId, plateSetName, plateRowIds, hydratedResults.platedSampleCount(), selectedSampleCount);
     }
 
     private @Nullable List<PreviewPlateData> getPreviewData(
@@ -4460,17 +4552,40 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateData;
     }
 
-    private Collection<Integer> getSelectedSampleIds(ReformatOptions options) throws ValidationException
+    public @NotNull Pair<Collection<Integer>, Integer> resolveSelectedSamples(String sampleSelectionKey, @NotNull PlateSetImpl targetPlateSet) throws ValidationException
     {
-        String selectionKey = StringUtils.trimToNull(options.getSampleSelectionKey());
+        String selectionKey = StringUtils.trimToNull(sampleSelectionKey);
         if (selectionKey == null)
-            return Collections.emptyList();
+            return Pair.of(emptyList(), null);
 
-        List<Integer> sampleIds = getSelection(selectionKey).stream().toList();
+        Collection<Integer> sampleIds = getSelection(selectionKey).stream().toList();
         if (sampleIds.isEmpty())
             throw new ValidationException("Empty sample selection.");
 
-        return sampleIds;
+        int selectedSampleCount = sampleIds.size();
+
+        if (targetPlateSet.isPrimary() && !targetPlateSet.isNew())
+        {
+            AssayDbSchema schema = AssayDbSchema.getInstance();
+
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT W.SampleId FROM ").append(schema.getTableInfoWell(), "W")
+                    .append(" INNER JOIN ").append(schema.getTableInfoPlate(), "P").append(" ON P.RowId = W.PlateId")
+                    .append(" INNER JOIN ").append(schema.getTableInfoPlateSet(), "PS").append(" ON PS.RowID = P.PlateSet")
+                    .append(" WHERE PS.RowId = ?").add(targetPlateSet.getRowId())
+                    .append(" AND W.SampleID ").appendInClause(sampleIds, schema.getScope().getSqlDialect());
+
+            List<Integer> overlap = new SqlSelector(schema.getSchema(), sql).getArrayList(Integer.class);
+            if (!overlap.isEmpty())
+            {
+                sampleIds = new ArrayList<>(sampleIds);
+                sampleIds.removeAll(overlap);
+
+                if (sampleIds.isEmpty())
+                    throw new ValidationException(String.format("All %d selected samples are already plated in plate set \"%s\".", selectedSampleCount, targetPlateSet.getName()));
+            }
+        }
+
+        return Pair.of(sampleIds, selectedSampleCount);
     }
 
     private PlateData hydrateFromExistingPlate(HydrateContext context, WellLayout wellLayout, @NotNull Plate existingPlate)
