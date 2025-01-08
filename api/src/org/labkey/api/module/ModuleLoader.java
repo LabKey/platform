@@ -475,6 +475,15 @@ public class ModuleLoader implements MemTrackerListener
         }
     }
 
+    private record UpgradeInfo(String moduleName, double installedVersion)
+    {
+        @Override
+        public String toString()
+        {
+            return moduleName + " (from schema " + ModuleContext.formatVersion(installedVersion) + ")";
+        }
+    }
+
     /** Full web-server initialization */
     private void doInit(Execution execution) throws ServletException
     {
@@ -646,7 +655,7 @@ public class ModuleLoader implements MemTrackerListener
         upgradeLabKeySchemaInExternalDataSources();
 
         ModuleContext coreCtx;
-        List<String> modulesRequiringUpgrade = new LinkedList<>();
+        List<UpgradeInfo> modulesRequiringUpgrade = new LinkedList<>();
         List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
         List<String> downgradedModules = new LinkedList<>();
 
@@ -675,7 +684,7 @@ public class ModuleLoader implements MemTrackerListener
                     if (context.needsUpgrade(module.getSchemaVersion()))
                     {
                         context.setModuleState(ModuleState.InstallRequired);
-                        modulesRequiringUpgrade.add(context.getName());
+                        modulesRequiringUpgrade.add(new UpgradeInfo(context.getName(), context.getInstalledVersion()));
                         addModuleToLockFile(context.getName(), lockFile);
                     }
                     else
