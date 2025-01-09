@@ -99,7 +99,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         // handle transform scripts
-        rows = transform(container, user, rows, oldKeys);
+        rows = transform(container, user, rows);
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
         _assaySampleLookupContext.syncLineage(container, user, errors);
@@ -113,8 +113,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     private List<Map<String, Object>> transform(
             Container container,
             User user,
-            List<Map<String, Object>> rows,
-            List<Map<String, Object>> oldKeys
+            List<Map<String, Object>> rows
     ) throws BatchValidationException, InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         try
