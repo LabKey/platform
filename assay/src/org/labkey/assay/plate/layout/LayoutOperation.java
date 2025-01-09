@@ -46,6 +46,11 @@ public interface LayoutOperation
         return false;
     }
 
+    default boolean supportsFillPlatesOnly()
+    {
+        return false;
+    }
+
     record ExecutionContext(
         Container container,
         User user,

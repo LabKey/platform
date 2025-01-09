@@ -147,6 +147,7 @@ public class ReformatOptions
     }
 
     private Boolean _fillExistingWells = false;
+    private Boolean _fillPlatesOnly = false;
     private ReformatOperation _operation;
     private List<PlateManager.PlateData> _plates;
     private List<Integer> _plateRowIds;
@@ -166,6 +167,16 @@ public class ReformatOptions
     {
         _fillExistingWells = fillExistingWells;
         return this;
+    }
+
+    public Boolean isFillPlatesOnly()
+    {
+        return _fillPlatesOnly;
+    }
+
+    public void setFillPlatesOnly(Boolean fillPlatesOnly)
+    {
+        _fillPlatesOnly = fillPlatesOnly;
     }
 
     public ReformatOperation getOperation()

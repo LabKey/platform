@@ -42,6 +42,8 @@ public class LayoutEngine
             throw new ValidationException("A target plate template is required for this operation.");
         if (_options.isFillExistingWells() && !_operation.supportsFillExistingWells())
             throw new ValidationException("Filling existing wells is not supported for this operation.");
+        if (_options.isFillPlatesOnly() && !_operation.supportsFillPlatesOnly())
+            throw new ValidationException("Filling plates only is not supported for this operation.");
 
         LayoutOperation.ExecutionContext context = new LayoutOperation.ExecutionContext(
             container,

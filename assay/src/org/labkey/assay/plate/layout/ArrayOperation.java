@@ -67,20 +67,20 @@ public class ArrayOperation implements LayoutOperation
         }
 
         List<PlateManager.PlateData> targetPlateData = new ArrayList<>(context.targetPlateData());
-        boolean hasTargetPlateData = !targetPlateData.isEmpty();
+        boolean isFillPlatesOnly = context.options().isFillPlatesOnly();
         int initialSampleCount = sampleIds.size();
 
         // Plate all samples
         while (sampleIndex < sampleIds.size())
         {
-            // If target plates are specified, then require that those plate configurations are enough to plate all
-            // the samples. Otherwise, when target plates are not specified, generate additional plates.
-            if (hasTargetPlateData && targetPlateData.isEmpty())
-                throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex + 1, initialSampleCount));
+            // If isFillPlatesOnly is true, then require that those target plate configurations are enough to plate all
+            // the samples. Otherwise, generate additional plates.
+            if (isFillPlatesOnly && targetPlateData.isEmpty() && targetLayouts.isEmpty())
+                throw new ValidationException(String.format("%s%d of %d samples could be plated with this configuration.", sampleIndex == 0 ? "" : "Only ", sampleIndex, initialSampleCount));
 
             WellLayout wellLayout = getNextWellLayout(context, targetLayouts, targetPlateData);
             if (wellLayout == null)
-                throw new ValidationException(String.format("Only %d of %d samples could be plated with this configuration.", sampleIndex, sampleIds.size()));
+                throw new ValidationException(String.format("%s%d of %d samples could be plated with this configuration.", sampleIndex == 0 ? "" : "Only ", sampleIndex, sampleIds.size()));
 
             Pair<Integer, WellLayout> result;
 
@@ -458,6 +458,12 @@ public class ArrayOperation implements LayoutOperation
 
     @Override
     public boolean supportsFillExistingWells()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportsFillPlatesOnly()
     {
         return true;
     }
