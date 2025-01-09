@@ -554,6 +554,9 @@ public class StudyController extends BaseStudyController
             if (null == def)
                 throw new NotFoundException("No dataset found for datasetId " + form.getDatasetId() + ".");
 
+            if (def.isQueryDataset())
+                throw new UnsupportedOperationException("Query dataset definition cannot be edited. Update the source query to change definition.");
+
             if (!def.canUpdateDefinition(getUser()))
             {
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
@@ -4935,6 +4938,7 @@ public class StudyController extends BaseStudyController
     {
         private int _snapshotDatasetId = -1;
         private String _action;
+        private Boolean _queryDataset;
 
         public static final String EDIT_DATASET = "editDataset";
         public static final String CREATE_SNAPSHOT = "createSnapshot";
@@ -4948,6 +4952,16 @@ public class StudyController extends BaseStudyController
         public void setSnapshotDatasetId(int snapshotDatasetId)
         {
             _snapshotDatasetId = snapshotDatasetId;
+        }
+
+        public Boolean getQueryDataset()
+        {
+            return _queryDataset;
+        }
+
+        public void setQueryDataset(Boolean queryDataset)
+        {
+            _queryDataset = queryDataset;
         }
 
         public String getAction()
@@ -4975,6 +4989,9 @@ public class StudyController extends BaseStudyController
             Study study = StudyManager.getInstance().getStudy(getContainer());
             if (null == study)
                 throw new NotFoundException("No study in this folder");
+
+            if (form.getQueryDataset() != null && study.getTimepointType() != TimepointType.CONTINUOUS)
+                errors.reject("snapshotQuery.error", "Query based snapshot is only available for continuous studies");
 
             String name = StringUtils.trimToNull(form.getSnapshotName());
 
@@ -5073,11 +5090,24 @@ public class StudyController extends BaseStudyController
                         }
                     }
                 }
-                DatasetDefinition def = StudyPublishManager.getInstance().createDataset(getUser(), new DatasetDefinition.Builder(form.getSnapshotName())
+
+                DatasetDefinition.Builder builder = new DatasetDefinition.Builder(form.getSnapshotName())
                         .setStudy(study)
                         .setKeyPropertyName(additionalKey)
                         .setDemographicData(isDemographicData)
-                        .setUseTimeKeyField(useTimeKeyField));
+                        .setUseTimeKeyField(useTimeKeyField);
+
+
+                if (Boolean.TRUE.equals(form.getQueryDataset()))
+                {
+                    builder.setSourceQueryName(form.getQueryName())
+                            .setSourceQuerySchema(form.getSchemaName())
+                            .setSourceQueryContainer(getContainer())
+                            .setKeyPropertyName("Key");
+                }
+
+                DatasetDefinition def = StudyPublishManager.getInstance().createDataset(getUser(), builder);
+
                 form.setSnapshotDatasetId(def.getDatasetId());
                 if (keyManagementType != KeyManagementType.None)
                 {
@@ -5098,7 +5128,15 @@ public class StudyController extends BaseStudyController
                 }
 
                 // def may not be provisioned yet, create before we start adding properties
-                def.provisionTable();
+                if (def.isQueryDataset())
+                {
+                    def.provisionQueryDataset();
+                }
+                else
+                {
+                    def.provisionTable();
+                }
+
                 Domain d = def.getDomain();
 
                 for (ColumnInfo col : columnsToProvision)
@@ -5137,9 +5175,17 @@ public class StudyController extends BaseStudyController
                 }
                 else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
                 {
-                    createDataset(form, errors);
+                    Dataset def = createDataset(form, errors);
                     if (!errors.hasErrors())
-                        _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errors);
+                        if (Boolean.TRUE.equals(form.getQueryDataset()))
+                        {
+                            _successURL = new ActionURL(StudyController.DatasetAction.class, getContainer()).
+                                    addParameter(Dataset.DATASET_KEY, def.getDatasetId());
+                        }
+                        else
+                        {
+                            _successURL = QuerySnapshotService.get(form.getSchemaName()).createSnapshot(form, errors);
+                        }
                 }
                 else if (StudySnapshotForm.CANCEL.equals(form.getAction()))
                 {

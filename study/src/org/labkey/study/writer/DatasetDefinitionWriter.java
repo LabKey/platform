@@ -67,6 +67,9 @@ public class DatasetDefinitionWriter implements InternalStudyWriter
 
         for (DatasetDefinition def : datasets)
         {
+            if (def.isQueryDataset())
+                continue;
+
             DatasetsDocument.Datasets.Datasets2.Dataset datasetXml = datasets2Xml.addNewDataset();
             datasetXml.setName(def.getName());
             datasetXml.setId(def.getDatasetId());
