@@ -120,6 +120,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
+import static org.labkey.api.assay.AssayRunUploadContext.ReImportOption.MERGE_DATA;
 import static org.labkey.api.exp.OntologyManager.NO_OP_ROW_CALLBACK;
 import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
 
@@ -237,8 +238,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         Container container = context.getContainer();
         User user = context.getUser();
 
-        Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-        DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, ((AssayUploadXarContext)context).getContext(), data, provider,
+        AssayRunUploadContext<?> runUploadContext = ((AssayUploadXarContext)context).getContext();
+        Integer plateSetId = AssayPlateMetadataService.get().getPlateSetId(runUploadContext, provider, protocol);
+        DataIteratorBuilder dataRows = AssayPlateMetadataService.get().parsePlateData(container, user, runUploadContext, data, provider,
                 protocol, plateSetId, dataFile, settings);
 
         // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
@@ -249,21 +251,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             dataRows = AssayPlateMetadataService.get().mergePlateMetadata(container, user, plateSetId, dataRows, provider, protocol);
 
         return dataRows;
-    }
-
-    @Nullable
-    private Integer getPlateSetValueFromRunProps(XarContext context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
-    {
-        Domain runDomain = provider.getRunDomain(protocol);
-        DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-        if (propertyPlateSet == null)
-        {
-            throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
-        }
-
-        Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
-        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
-        return plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
     }
 
     /**
@@ -610,7 +597,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data, protocol, provider);
         if (provider.isPlateMetadataEnabled(protocol))
+        {
+            if (context.getReRunId() != null)
+            {
+                // check if we are merging the re-imported data
+                if (context.getReImportOption() == MERGE_DATA)
+                {
+                    DataIteratorBuilder mergedData = AssayPlateMetadataService.get().mergeReRunData(container, user, context, fileData, provider, protocol, data);
+                    fileData = DataIteratorUtil.wrapMap(mergedData.getDataIterator(new DataIteratorContext()), false);
+                }
+            }
+
             importHelper = AssayPlateMetadataService.get().getImportHelper(container, user, run, data, protocol, provider, context);
+        }
 
         if (tableInfo instanceof UpdateableTableInfo uti)
         {
