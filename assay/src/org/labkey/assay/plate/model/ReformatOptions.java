@@ -174,9 +174,10 @@ public class ReformatOptions
         return _fillPlatesOnly;
     }
 
-    public void setFillPlatesOnly(Boolean fillPlatesOnly)
+    public ReformatOptions setFillPlatesOnly(Boolean fillPlatesOnly)
     {
         _fillPlatesOnly = fillPlatesOnly;
+        return this;
     }
 
     public ReformatOperation getOperation()
@@ -195,9 +196,10 @@ public class ReformatOptions
         return _plates;
     }
 
-    public void setPlates(List<PlateManager.PlateData> plates)
+    public ReformatOptions setPlates(List<PlateManager.PlateData> plates)
     {
         _plates = plates;
+        return this;
     }
 
     public List<Integer> getPlateRowIds()
