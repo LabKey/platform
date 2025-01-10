@@ -475,6 +475,16 @@ public class ModuleLoader implements MemTrackerListener
         }
     }
 
+    private record UpgradeInfo(String moduleName, double installedVersion)
+    {
+        @Override
+        public String toString()
+        {
+            return moduleName + " (from schema version " + ModuleContext.formatVersion(installedVersion) + ")";
+
+        }
+    }
+
     /** Full web-server initialization */
     private void doInit(Execution execution) throws ServletException
     {
@@ -646,7 +656,7 @@ public class ModuleLoader implements MemTrackerListener
         upgradeLabKeySchemaInExternalDataSources();
 
         ModuleContext coreCtx;
-        List<String> modulesRequiringUpgrade = new LinkedList<>();
+        List<UpgradeInfo> modulesRequiringUpgrade = new LinkedList<>();
         List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
         List<String> downgradedModules = new LinkedList<>();
 
@@ -675,7 +685,7 @@ public class ModuleLoader implements MemTrackerListener
                     if (context.needsUpgrade(module.getSchemaVersion()))
                     {
                         context.setModuleState(ModuleState.InstallRequired);
-                        modulesRequiringUpgrade.add(context.getName());
+                        modulesRequiringUpgrade.add(new UpgradeInfo(context.getName(), context.getInstalledVersion()));
                         addModuleToLockFile(context.getName(), lockFile);
                     }
                     else
@@ -771,11 +781,11 @@ public class ModuleLoader implements MemTrackerListener
     /**
      * Does this module live in a repository that's managed by LabKey Corporation?
      * @param module a Module
-     * @return true if the module's VCS URL is non-null and starts with one of the GitHub organizations that LabKey manages
+     * @return true if the module's VCS URL is non-null and includes "github.com:LabKey/"
      */
     private boolean isFromLabKeyRepository(Module module)
     {
-        return StringUtils.startsWithAny(module.getVcsUrl(), "https://github.com/LabKey/");
+        return StringUtils.containsAny(module.getVcsUrl(), "github.com:LabKey/");
     }
 
     /**

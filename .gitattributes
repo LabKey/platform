@@ -274,7 +274,6 @@ api/src/org/labkey/api/assay/AssayWarningsDisplayColumn.java -text
 api/src/org/labkey/api/assay/AssayWellExclusionService.java -text
 api/src/org/labkey/api/assay/bulkPropertiesInput.jsp -text
 api/src/org/labkey/api/assay/DefaultAssayRunCreator.java -text
-api/src/org/labkey/api/assay/DefaultDataTransformer.java -text
 api/src/org/labkey/api/assay/fileUpload.jsp -text
 api/src/org/labkey/api/assay/FileUploadDataCollector.java -text
 api/src/org/labkey/api/assay/pipeline/AssayRunAsyncContext.java -text
@@ -932,12 +931,7 @@ api/src/org/labkey/api/pipeline/WorkDirFactory.java -text
 api/src/org/labkey/api/pipeline/XMLBeanTaskFactoryFactory.java -text
 api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/premium/AntiVirusService.java -text
-api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataLoaderSettings.java -text
-api/src/org/labkey/api/qc/DataTransformer.java -text
-api/src/org/labkey/api/qc/DefaultTransformResult.java -text
-api/src/org/labkey/api/qc/TransformDataHandler.java -text
-api/src/org/labkey/api/qc/TransformResult.java -text
 api/src/org/labkey/api/qc/TsvDataExchangeHandler.java -text
 api/src/org/labkey/api/qc/TsvDataSerializer.java -text
 api/src/org/labkey/api/qc/ValidationDataHandler.java -text
@@ -1248,7 +1242,6 @@ api/src/org/labkey/api/security/SecurityUrls.java -text
 api/src/org/labkey/api/security/SessionApiKeyManager.java -text
 api/src/org/labkey/api/security/SessionKeyManager.java -text
 api/src/org/labkey/api/security/SessionReplacingRequest.java -text
-api/src/org/labkey/api/security/TokenAuthenticationManager.java -text
 api/src/org/labkey/api/security/UserCache.java -text
 api/src/org/labkey/api/security/UserManager.java -text
 api/src/org/labkey/api/security/UserPrincipal.java -text
@@ -2836,7 +2829,6 @@ study/src/org/labkey/study/query/VisitUpdateService.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
 study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
-study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
 study/src/org/labkey/study/reports/QueryAssayProgressSource.java -text
@@ -2881,7 +2873,6 @@ study/src/org/labkey/study/view/dataspace_studyfilter.jsp -text
 study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
-study/src/org/labkey/study/view/externalReportDesigner.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/importVisitMap.jsp -text
@@ -3013,7 +3004,6 @@ study/test/src/org/labkey/test/tests/study/StudySimpleExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyVisitManagementTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyVisitTagTest.java -text
-study/test/src/org/labkey/test/tests/study/VaccineProtocolTest.java -text
 study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text

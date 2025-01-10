@@ -55,6 +55,7 @@ public class DataTransformService
     public static final String BASE_SERVER_URL_REPLACEMENT = "baseServerURL";
     public static final String CONTAINER_PATH = "containerPath";
     public static final String ORIGINAL_SOURCE_PATH = "OriginalSourcePath";
+    public static final String TRANSFORM_OPERATION = "transformOperation";
 
     public enum TransformOperation
     {
@@ -134,7 +135,7 @@ public class DataTransformService
 
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
-                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
+                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(operation, context, run, scriptDir, runProperties, batchProperties);
                         FileLike runInfo = files.getKey();
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
@@ -144,6 +145,7 @@ public class DataTransformService
 
                         // Issue 51543: Resolve windows path to run properties
                         paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
+                        paramMap.put(TRANSFORM_OPERATION, operation.name());
 
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
@@ -151,7 +153,7 @@ public class DataTransformService
 
                         Object output = engine.eval(script);
 
-                        FileLike rewrittenScriptFile = null;
+                        FileLike rewrittenScriptFile;
                         if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
                         {
                             var rewrittenScriptFileObject = bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
@@ -166,7 +168,7 @@ public class DataTransformService
                         }
 
                         // process any output from the transformation script
-                        result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result, files.getValue());
+                        result = dataHandler.processTransformationOutput(operation, context, runInfo, run, rewrittenScriptFile, result, files.getValue());
 
                         // Propagate any transformed batch properties on to the next script
                         if (result.getBatchProperties() != null && !result.getBatchProperties().isEmpty())
