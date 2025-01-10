@@ -4,8 +4,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.BaseSecondaryAuthenticationConfiguration;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
-import java.net.URISyntaxException;
 import java.util.Map;
 
 public class TestSecondaryConfiguration extends BaseSecondaryAuthenticationConfiguration<TestSecondaryProvider>
@@ -18,13 +18,6 @@ public class TestSecondaryConfiguration extends BaseSecondaryAuthenticationConfi
     @Override
     public URLHelper getRedirectURL(User candidate, Container c)
     {
-        try
-        {
-            return new URLHelper(TestSecondaryController.getTestSecondaryURL(c, getRowId()).getURIString());
-        }
-        catch (URISyntaxException e)
-        {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
+        return TestSecondaryController.getTestSecondaryURL(c, getRowId());
     }
 }
