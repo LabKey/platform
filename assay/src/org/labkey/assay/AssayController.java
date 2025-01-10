@@ -63,6 +63,8 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.assay.transform.DataExchangeHandler;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -95,7 +97,6 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -912,7 +913,7 @@ public class AssayController extends SpringActionController
                 FileLike tempDir = getTempFolder();
 
                 try {
-                    handler.createSampleData(protocol, getViewContext(), tempDir);
+                    handler.createSampleData(DataTransformService.TransformOperation.INSERT, protocol, getViewContext(), tempDir);
                     File[] files = tempDir.toNioPathForRead().toFile().listFiles();
 
                     if (files.length > 0)

@@ -17,8 +17,10 @@
 package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.DomainProperty;
@@ -43,7 +45,14 @@ import java.util.Set;
 public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
 {
     @Override
-    public Pair<FileLike, Set<FileLike>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, FileLike scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
+    public Pair<FileLike, Set<FileLike>> createTransformationRunInfo(
+            DataTransformService.TransformOperation operation,
+            AssayRunUploadContext<? extends AssayProvider> context,
+            @Nullable ExpRun run,
+            FileLike scriptDir,
+            Map<DomainProperty, String> runProperties,
+            Map<DomainProperty, String> batchProperties
+    ) throws Exception
     {
         DilutionRunUploadForm<DilutionAssayProvider> form = (DilutionRunUploadForm)context;
 
@@ -57,11 +66,16 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
 
         addSampleProperties(SAMPLE_DATA_PROP_NAME, GROUP_COLUMN_NAME, props, template, WellGroup.Type.SPECIMEN);
 
-        return super.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
+        return super.createTransformationRunInfo(operation, context, run, scriptDir, runProperties, batchProperties);
     }
 
     @Override
-    public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, FileLike scriptDir) throws Exception
+    public void createSampleData(
+            DataTransformService.TransformOperation operation,
+            @NotNull ExpProtocol protocol,
+            ViewContext viewContext,
+            FileLike scriptDir
+    ) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider instanceof AbstractPlateBasedAssayProvider)
@@ -74,6 +88,6 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
 
             addSampleProperties(SAMPLE_DATA_PROP_NAME, GROUP_COLUMN_NAME, specimens, template, WellGroup.Type.SPECIMEN);
         }
-        super.createSampleData(protocol, viewContext, scriptDir);
+        super.createSampleData(operation, protocol, viewContext, scriptDir);
     }
 }

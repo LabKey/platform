@@ -16,6 +16,7 @@
 package org.labkey.api.assay.transform;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.TSVWriter;
@@ -37,15 +38,47 @@ import java.util.Set;
 
 /**
  * Used to process input and output data between the server and externally executed qc and analysis scripts.
- * User: Karl Lum
- * Date: Jan 7, 2009
  */
 public interface DataExchangeHandler
 {
-    Pair<FileLike, Set<FileLike>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, FileLike scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
-    void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, FileLike scriptDir) throws Exception;
+    /**
+     * Create and serialize the run properties information that is made available to transform scripts.
+     * The file contains a variety of information based on the transform operation being specified.
+     *
+     * @param operation The transform operation being performed
+     * @param context Contains information about the import or update context
+     * @param scriptDir The folder that the transform script will be run in.
+     * @return The map of the run properties file to the set of other data files associated with the operation
+     * being performed.
+     */
+    Pair<FileLike, Set<FileLike>> createTransformationRunInfo(
+            DataTransformService.TransformOperation operation,
+            AssayRunUploadContext<? extends AssayProvider> context,
+            @Nullable ExpRun run,
+            FileLike scriptDir,
+            Map<DomainProperty, String> runProperties,
+            Map<DomainProperty, String> batchProperties
+    ) throws Exception;
 
-    TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, FileLike runInfo, ExpRun run, FileLike scriptFile, TransformResult mergeResult, Set<FileLike> inputDataFiles) throws ValidationException;
+    /**
+     * Creates a test version of the run properties file for download
+     */
+    void createSampleData(
+            DataTransformService.TransformOperation operation,
+            @NotNull ExpProtocol protocol,
+            ViewContext viewContext,
+            FileLike scriptDir
+    ) throws Exception;
+
+    TransformResult processTransformationOutput(
+            DataTransformService.TransformOperation operation,
+            AssayRunUploadContext<? extends AssayProvider> context,
+            FileLike runInfo,
+            @Nullable ExpRun run,
+            FileLike scriptFile,
+            TransformResult mergeResult,
+            Set<FileLike> inputDataFiles
+    ) throws ValidationException;
 
     DataSerializer getDataSerializer();
     

@@ -7,6 +7,7 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -62,6 +63,34 @@ public interface AssayPlateMetadataService
         User user,
         Integer plateSetId,
         DataIteratorBuilder rows,
+        AssayProvider provider,
+        ExpProtocol protocol
+    ) throws ExperimentException;
+
+    /**
+     * Takes the current incoming data and combines it with any data uploaded in the previous run (re-run ID). Data
+     * can be combined for plates within a plate set, but only on a per plate boundary. If there is data for plates
+     * in both sets of data, the most recent data will take precedence.
+     *
+     * @param results The incoming data rows
+     * @return The new, combined data
+     */
+    DataIteratorBuilder mergeReRunData(
+        Container container,
+        User user,
+        @NotNull AssayRunUploadContext<?> context,
+        DataIterator results,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        ExpData data
+    ) throws ExperimentException;
+
+    /**
+     * Returns the plate set ID for the current run context.
+     */
+    @Nullable
+    Integer getPlateSetId(
+        AssayRunUploadContext<?> context,
         AssayProvider provider,
         ExpProtocol protocol
     ) throws ExperimentException;
