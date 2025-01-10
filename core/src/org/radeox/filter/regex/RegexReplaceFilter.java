@@ -42,43 +42,52 @@ import org.radeox.regex.Matcher;
  * @version $Id: RegexReplaceFilter.java,v 1.8 2004/04/15 13:56:14 stephan Exp $
  */
 
-public class RegexReplaceFilter extends RegexFilter {
-  private static final Logger log = LogManager.getLogger(RegexReplaceFilter.class);
+public class RegexReplaceFilter extends RegexFilter
+{
+    private static final Logger log = LogManager.getLogger(RegexReplaceFilter.class);
 
-  public RegexReplaceFilter() {
-    super();
-  }
-
-  public RegexReplaceFilter(String regex, String substitute) {
-    super(regex, substitute);
-  }
-
-  public RegexReplaceFilter(String regex, String substitute, boolean multiline) {
-    super(regex, substitute, multiline);
-  }
-
-  @Override
-  public String filter(String input, FilterContext context) {
-    String result = input;
-    int size = Math.min(pattern.size(), substitute.size());
-    Pattern p;
-    String s;
-    for (int i = 0; i < size; i++) {
-      p = pattern.get(i);
-      s = substitute.get(i);
-      try {
-        Matcher matcher = Matcher.create(result, p);
-        result = matcher.substitute(s);
-
-        // Util.substitute(matcher, p, new Perl5Substitution(s, interps), result, limit);
-      } catch (Exception e) {
-        //log.warn("<span class=\"error\">Exception</span>: " + this + ": " + e);
-        log.warn("Exception for: " + this + " in " + context.getRenderContext(), e);
-     } catch (Error err) {
-        //log.warn("<span class=\"error\">Error</span>: " + this + ": " + err);
-        log.warn("Error for: " + this + " in " + context.getRenderContext(), err);
-      }
+    public RegexReplaceFilter()
+    {
+        super();
     }
-    return result;
-  }
+
+    public RegexReplaceFilter(String regex, String substitute)
+    {
+        super(regex, substitute);
+    }
+
+    public RegexReplaceFilter(String regex, String substitute, boolean multiline)
+    {
+        super(regex, substitute, multiline);
+    }
+
+    @Override
+    public String filter(String input, FilterContext context)
+    {
+        String result = input;
+        int size = Math.min(pattern.size(), substitute.size());
+        Pattern p;
+        String s;
+        for (int i = 0; i < size; i++)
+        {
+            p = pattern.get(i);
+            s = substitute.get(i);
+            try
+            {
+                Matcher matcher = Matcher.create(result, p);
+                result = matcher.substitute(s);
+            }
+            catch (StackOverflowError err)
+            {
+                // Issue 51961 - Radeox uses regexes that are prone to stack overflows. Not great, but OK to generally
+                // ignore as the resulting formatting is fine for our purposes
+                log.debug("StackOverflowError for: {} in {} with regex {}", this, context.getRenderContext(), p.getRegex(), err);
+            }
+            catch (Exception | Error e)
+            {
+                log.warn("Problem rendering wiki: {} in {} with regex {}", this, context.getRenderContext(), p.getRegex(), e);
+            }
+        }
+        return result;
+    }
 }
