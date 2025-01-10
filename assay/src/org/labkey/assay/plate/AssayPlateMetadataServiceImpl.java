@@ -54,6 +54,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.MathStat;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -225,6 +226,24 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         });
     }
 
+    private List<Plate> getPlatesForPlateSet(
+        Container container,
+        User user,
+        Integer plateSetId,
+        ExpProtocol protocol
+    ) throws ExperimentException
+    {
+        // get the ordered list of plates for the plate set
+        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
+        PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
+        if (plateSet == null)
+            throw new ExperimentException("Plate set " + plateSetId + " not found.");
+        if (plateSet.isTemplate())
+            throw new ExperimentException(String.format("Plate set \"%s\" is a template plate set. Template plate sets do not support associating assay data.", plateSet.getName()));
+
+        return PlateManager.get().getPlatesForPlateSet(plateSet);
+    }
+
     @Override
     public DataIteratorBuilder parsePlateData(
         Container container,
@@ -239,33 +258,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     ) throws ExperimentException
     {
         // get the ordered list of plates for the plate set
-        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
-        PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
-        if (plateSet == null)
-            throw new ExperimentException("Plate set " + plateSetId + " not found.");
-        if (plateSet.isTemplate())
-            throw new ExperimentException(String.format("Plate set \"%s\" is a template plate set. Template plate sets do not support associating assay data.", plateSet.getName()));
-
-        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
+        List<Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
         if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
+        PlateSet plateSet = plates.get(0).getPlateSet();
 
         List<Map<String, Object>> rows = _parsePlateData(container, user, data, provider, protocol, plateSet, plates, dataFile, settings);
 
-        if (context.getReRunId() != null)
+        if (context.getReRunId() != null && context.getReImportOption() != MERGE_DATA)
         {
-            // check if we are merging the re-imported data
-            if (context.getReImportOption() == MERGE_DATA)
-                rows = mergeReRunData(container, user, context, rows, plates, provider, protocol, data, dataFile);
-            else
-            {
-                // remove hit selections from the replaced run
-                ExpRun prevRun = ExperimentService.get().getExpRun(context.getReRunId());
-                if (prevRun != null)
-                    PlateManager.get().deleteHits(FieldKey.fromParts("RunId"), List.of(prevRun));
-            }
+            // remove hit selections if we are replacing a run
+            ExpRun prevRun = ExperimentService.get().getExpRun(context.getReRunId());
+            if (prevRun != null)
+                PlateManager.get().deleteHits(FieldKey.fromParts("RunId"), List.of(prevRun));
         }
-
         return MapDataIterator.of(rows);
     }
 
@@ -311,29 +317,37 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
     }
 
-    /**
-     * Takes the current incoming data and combines it with any data uploaded in the previous run (re-run ID). Data
-     * can be combined for plates within a plate set, but only on a per plate boundary. If there is data for plates
-     * in both sets of data, the most recent data will take precedence.
-     *
-     * @param rows     The incoming data rows
-     * @param plates   The list of plates in this plate set
-     * @param data     The ExpData object for this run
-     * @param dataFile The current uploaded file
-     * @return The new, combined data
-     */
-    private List<Map<String, Object>> mergeReRunData(
-        Container container,
-        User user,
-        @NotNull AssayRunUploadContext<?> context,
-        List<Map<String, Object>> rows,
-        List<Plate> plates,
-        AssayProvider provider,
-        ExpProtocol protocol,
-        ExpData data,
-        FileLike dataFile
+    @Override
+    public @Nullable Integer getPlateSetId(AssayRunUploadContext<?> context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
+    {
+        Domain runDomain = provider.getRunDomain(protocol);
+        DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+        if (propertyPlateSet == null)
+        {
+            throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
+        }
+
+        Map<DomainProperty, String> runProps = context.getRunProperties();
+        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
+        return plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+    }
+
+    @Override
+    public DataIteratorBuilder mergeReRunData(
+            Container container,
+            User user,
+            @NotNull AssayRunUploadContext<?> context,
+            DataIterator resultData,
+            AssayProvider provider,
+            ExpProtocol protocol,
+            ExpData data
     ) throws ExperimentException
     {
+        Integer plateSetId = getPlateSetId(context, provider, protocol);
+        List<Plate> plates = getPlatesForPlateSet(container, user, plateSetId, protocol);
+        if (plates.isEmpty())
+            throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
+
         ExpRun run = ExperimentService.get().getExpRun(context.getReRunId());
         if (run == null)
             throw new ExperimentException(String.format("Unable to resolve the replaced run with ID : %d", context.getReRunId()));
@@ -346,6 +360,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             plateMap.put(p.getPlateId(), p);
         }
 
+        List<Map<String, Object>> rows = resultData.stream().toList();
         Set<Object> incomingPlates = new HashSet<>();       // incoming plates may be either row IDs or plate IDs
         for (var row : rows)
         {
@@ -363,7 +378,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         // The plate identifier is either a row ID or plate ID on incoming data, need to match that when merging existing data.
         FieldKey plateFieldKey = FieldKey.fromParts(AssayResultDomainKind.Column.Plate.name());
         // Note that in the case where there is a transform script on the assay design, the LK data parsing might not have
-        // found any rows and we might be deferring to the transform script to do that parsing. This block of code should
+        // found any rows, and we might be deferring to the transform script to do that parsing. This block of code should
         // be able to proceed in that case by just passing through all run results to the transform script for the run being replaced.
         if (!rows.isEmpty())
         {
@@ -418,6 +433,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             try (DbScope.Transaction tx = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
+                FileLike dataFile = data.getFileLike();
+
                 // replace the contents of the uploaded data file with the new combined data
                 FileLike dir = dataFile.getParent() != null ? dataFile.getParent() : AssayFileWriter.ensureUploadDirectory(container);
                 String newName = FileUtil.getBaseName(dataFile.toNioPathForRead().toFile()) + ".tsv";
@@ -468,7 +485,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (!prevPlateRowIDs.isEmpty())
             rows = newRows;
 
-        return rows;
+        return MapDataIterator.of(rows);
     }
 
     /**

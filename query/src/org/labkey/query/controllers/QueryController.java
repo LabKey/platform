@@ -8413,13 +8413,10 @@ public class QueryController extends SpringActionController
                     xmlTable.setTableDbType("NOT_IN_DB");
                 }
 
-                xmlImportTemplates = xmlTable.getImportTemplates();
-                if (xmlImportTemplates == null)
-                    xmlImportTemplates = xmlTable.addNewImportTemplates();
-
                 // remove existing templates
-                for (int i = 0; i < xmlImportTemplates.getTemplateArray().length; i++)
-                    xmlImportTemplates.removeTemplate(i);
+                if (xmlTable.isSetImportTemplates())
+                    xmlTable.unsetImportTemplates();
+                xmlImportTemplates = xmlTable.addNewImportTemplates();
 
                 // set new templates
                 if (!updatedTemplates.isEmpty())
