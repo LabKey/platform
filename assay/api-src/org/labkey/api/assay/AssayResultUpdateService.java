@@ -99,7 +99,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         // handle transform scripts
-        rows = transform(container, user, rows);
+        rows = transform(container, user, rows, oldKeys);
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
         _assaySampleLookupContext.syncLineage(container, user, errors);
@@ -113,12 +113,13 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     private List<Map<String, Object>> transform(
             Container container,
             User user,
-            List<Map<String, Object>> rows
+            List<Map<String, Object>> rows,
+            List<Map<String, Object>> oldKeys
     ) throws BatchValidationException, InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         try
         {
-            List<Map<String, Object>> rowsForTransform = resolveRows(container, user, rows);
+            List<Map<String, Object>> rowsForTransform = resolveRows(container, user, rows, oldKeys);
             AssayTransformContext context = new AssayTransformContext(container, user, rowsForTransform, _schema.getProtocol(), _schema.getProvider());
             TransformResult result = DataTransformService.get().transformAndValidate(context, null, DataTransformService.TransformOperation.UPDATE);
             Map<ExpData, DataIteratorBuilder> transformedData = result.getTransformedData();
@@ -207,15 +208,19 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     private List<Map<String, Object>> resolveRows(
             Container container,
             User user,
-            List<Map<String, Object>> rows
+            List<Map<String, Object>> rows,
+            List<Map<String, Object>> oldKeys
     ) throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
     {
         Map<String, ColumnInfo> columnInfoMap = new CaseInsensitiveHashMap<>();
         getQueryTable().getColumns().forEach(ci -> columnInfoMap.put(ci.getName(), ci));
 
-        for (Map<String, Object> row : rows)
+        for (int i=0; i < rows.size(); i++)
         {
-            var oldRow = getRow(user, container, row);
+            Map<String, Object> row = rows.get(i);
+            Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
+
+            var oldRow = getRow(user, container, oldKey);
             if (oldRow == null)
                 throw new ValidationException("Unable to find existing row");
 
