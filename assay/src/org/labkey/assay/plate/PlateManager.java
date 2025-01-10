@@ -828,6 +828,15 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         );
     }
 
+    public @NotNull PlateSet requirePlateSet(Container container, ContainerFilter cf, int plateSetRowId, @Nullable String errorPrefix) throws ValidationException
+    {
+        return (PlateSet) require(
+            getPlateSet(cf, plateSetRowId),
+            String.format("Plate set with rowId (%d) is not available in %s.", plateSetRowId, container.getPath()),
+            errorPrefix
+        );
+    }
+
     private @NotNull PlateSet requirePlateSet(@NotNull Plate plate, @Nullable String errorPrefix) throws ValidationException
     {
         return (PlateSet) require(
@@ -2809,15 +2818,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         PlateSetImpl targetPlateSet = getTargetPlateSet(container, options);
         List<PlateManager.PlateData> plates = options.getPlates();
+        String selectionKey = options.getSelectionKey();
 
-        if (options.getSelectionKey() != null)
+        if (targetPlateSet.isNew() && options.getParentPlateSetId() != null && selectionKey == null && plates.isEmpty())
         {
-            String selectionKey = StringUtils.trimToNull(options.getSelectionKey());
-            if (selectionKey == null)
+            // Re-plate into a new plate set. In this specific configuration we support copying the
+            // parent plate set plates into a new plate set.
+            return replatePlateSet(container, user, targetPlateSet, options.getParentPlateSetId());
+        }
+
+        if (selectionKey != null)
+        {
+            String selectionKey_ = StringUtils.trimToNull(selectionKey);
+            if (selectionKey_ == null)
                 throw new ValidationException("Invalid selection key.");
 
             // Re-array samples onto plates
-            plates = reArrayFromSelection(container, user, plates, selectionKey, options.getOperation());
+            plates = reArrayFromSelection(container, user, plates, selectionKey_, options.getOperation());
         }
         else
         {
@@ -2833,6 +2850,30 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         addPlatesToPlateSet(container, user, targetPlateSet.getRowId(), targetPlateSet.isTemplate(), plates);
 
         return getPlateSet(container, targetPlateSet.getRowId());
+    }
+
+    private PlateSet replatePlateSet(
+        Container container,
+        User user,
+        @NotNull PlateSetImpl targetPlateSet,
+        Integer sourcePlateSetRowId
+    ) throws Exception
+    {
+        PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, "Failed to create plate set.");
+
+        Integer parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, null, parentId);
+
+            for (Plate plate : parentPlateSet.getPlates())
+                copyPlate(container, user, plate.getRowId(), false, newPlateSet.getRowId(), null, null, true);
+
+            tx.commit();
+
+            return getPlateSet(container, newPlateSet.getRowId());
+        }
     }
 
     private void savePlateSetHeritage(Integer plateSetId, PlateSetType plateSetType, @Nullable PlateSetImpl parentPlateSet)
@@ -4255,7 +4296,10 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (targetPlateSet.isNew())
         {
-            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, plateData, getReformatParentPlateSetId(sourcePlateSet));
+            PlateSet parentPlateSet = resolveParentPlateSet(container, user, options, sourcePlateSet);
+            Integer parentPlateSetId = parentPlateSet != null ? parentPlateSet.getRowId() : null;
+
+            PlateSet newPlateSet = createPlateSet(container, user, targetPlateSet, plateData, parentPlateSetId);
             plateSetRowId = newPlateSet.getRowId();
             plateSetName = newPlateSet.getName();
             newPlates = newPlateSet.getPlates();
@@ -4386,10 +4430,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return previewData;
     }
 
-    private @Nullable Integer getReformatParentPlateSetId(PlateSet sourcePlateSet)
+    private @Nullable PlateSet resolveParentPlateSet(
+        Container container,
+        User user,
+        ReformatOptions options,
+        @Nullable PlateSet sourcePlateSet
+    ) throws ValidationException
     {
-        if (sourcePlateSet != null && (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone()))
-            return sourcePlateSet.getRowId();
+        if (options.getTargetPlateSet() != null && options.getTargetPlateSet().getParentPlateSetId() != null)
+        {
+            // If a parent rowId is specified, then require that it resolves in this container scope
+            PlateSet parentPlateSet = requirePlateSet(container, getPlateLookupContainerFilter(container, user), options.getTargetPlateSet().getParentPlateSetId(), null);
+            if (parentPlateSet.isPrimary() || !parentPlateSet.isStandalone())
+                return parentPlateSet;
+        }
+        else if (sourcePlateSet != null && (sourcePlateSet.isPrimary() || !sourcePlateSet.isStandalone()))
+            return sourcePlateSet;
+
         return null;
     }
 
