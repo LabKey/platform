@@ -2130,7 +2130,7 @@ public class NameGenerator
             if (extraProps != null)
                 ctx.putAll(extraProps);
             ctx.putAll(rowMap);
-            if (!ctx.containsKey("container"))
+            if (!ctx.containsKey("container") && _container != null)
                 ctx.put("container", _container.getName());
 
             // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
