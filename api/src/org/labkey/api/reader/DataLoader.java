@@ -282,6 +282,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      **/
     public abstract String[][] getFirstNLines(int n) throws IOException;
 
+    public Object getCommentLineCount() throws IOException
+    {
+        return 0;
+    }
+
     /**
      * Look at first <code>scanAheadLineCount</code> lines of the file and infer col names, data types.
      * Most useful if maps are being returned, otherwise use inferColumnInfo(reader, clazz) to
