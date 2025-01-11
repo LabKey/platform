@@ -477,11 +477,15 @@ public class ModuleLoader implements MemTrackerListener
 
     private record UpgradeInfo(String moduleName, double installedVersion)
     {
+        private UpgradeInfo(ModuleContext context)
+        {
+            this(context.getName(), context.getInstalledVersion());
+        }
+
         @Override
         public String toString()
         {
             return moduleName + " (from schema version " + ModuleContext.formatVersion(installedVersion) + ")";
-
         }
     }
 
@@ -582,35 +586,31 @@ public class ModuleLoader implements MemTrackerListener
         {
             // Refuse to start up if any LabKey-managed module has a schema version that's too old. Issue 46922.
 
-            // Modules that are designated as "managed" and reside in LabKey-managed repositories
+            // Collect all modules that are designated as "managed"
             var labkeyModules = _modules.stream()
                 .filter(Module::shouldManageVersion)
-                .filter(this::isFromLabKeyRepository) // Do the check only for modules in LabKey repositories, Issue 47369
                 .toList();
 
-            // Likely empty if running in dev mode... no need to log or do other work
-            if (!labkeyModules.isEmpty())
+            _log.info("Checking {} to ensure {} recent enough to upgrade", StringUtilsLabKey.pluralize(labkeyModules.size(), "LabKey-managed module"), labkeyModules.size() > 1 ? "they're" : "it's");
+
+            // Module contexts with non-null schema versions
+            Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
+                .filter(ctx -> ctx.getSchemaVersion() != null)
+                .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
+
+            // List of "<name> (<installedSchemaVersion>)" of LabKey-managed modules with schemas where the installed
+            // version is less than "earliest upgrade version"
+            var tooOld = labkeyModules.stream()
+                .map(m -> moduleContextMap.get(m.getName()))
+                .filter(Objects::nonNull)
+                .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
+                .map(UpgradeInfo::new)
+                .toList();
+
+            if (!tooOld.isEmpty())
             {
-                _log.info("Checking {} to ensure {} recent enough to upgrade", StringUtilsLabKey.pluralize(labkeyModules.size(), "LabKey-managed module"), labkeyModules.size() > 1 ? "they're" : "it's");
-
-                // Module contexts with non-null schema versions
-                Map<String, ModuleContext> moduleContextMap = getAllModuleContexts().stream()
-                    .filter(ctx -> ctx.getSchemaVersion() != null)
-                    .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
-
-                // Names of LabKey-managed modules with schemas where the installed version is less than "earliest upgrade version"
-                var tooOld = labkeyModules.stream()
-                    .map(m -> moduleContextMap.get(m.getName()))
-                    .filter(Objects::nonNull)
-                    .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                    .map(ModuleContext::getName)
-                    .toList();
-
-                if (!tooOld.isEmpty())
-                {
-                    String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
-                    throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + " This version of LabKey Server supports upgrading modules from schema version " + Constants.getEarliestUpgradeVersion() + " and greater.");
-                }
+                String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
+                throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + ". This version of LabKey Server supports upgrading modules from schema version " + ModuleContext.formatVersion(Constants.getEarliestUpgradeVersion()) + " and greater.");
             }
         }
 
@@ -685,7 +685,7 @@ public class ModuleLoader implements MemTrackerListener
                     if (context.needsUpgrade(module.getSchemaVersion()))
                     {
                         context.setModuleState(ModuleState.InstallRequired);
-                        modulesRequiringUpgrade.add(new UpgradeInfo(context.getName(), context.getInstalledVersion()));
+                        modulesRequiringUpgrade.add(new UpgradeInfo(context));
                         addModuleToLockFile(context.getName(), lockFile);
                     }
                     else
@@ -776,16 +776,6 @@ public class ModuleLoader implements MemTrackerListener
                 }
             }
         }
-    }
-
-    /**
-     * Does this module live in a repository that's managed by LabKey Corporation?
-     * @param module a Module
-     * @return true if the module's VCS URL is non-null and includes "github.com:LabKey/"
-     */
-    private boolean isFromLabKeyRepository(Module module)
-    {
-        return StringUtils.containsAny(module.getVcsUrl(), "github.com:LabKey/");
     }
 
     /**
