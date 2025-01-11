@@ -477,11 +477,15 @@ public class ModuleLoader implements MemTrackerListener
 
     private record UpgradeInfo(String moduleName, double installedVersion)
     {
+        private UpgradeInfo(ModuleContext context)
+        {
+            this(context.getName(), context.getInstalledVersion());
+        }
+
         @Override
         public String toString()
         {
             return moduleName + " (from schema version " + ModuleContext.formatVersion(installedVersion) + ")";
-
         }
     }
 
@@ -600,7 +604,7 @@ public class ModuleLoader implements MemTrackerListener
                 .map(m -> moduleContextMap.get(m.getName()))
                 .filter(Objects::nonNull)
                 .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                .map(ctx -> ctx.getName() + " (" + ModuleContext.formatVersion(ctx.getInstalledVersion()) + ")")
+                .map(UpgradeInfo::new)
                 .toList();
 
             if (!tooOld.isEmpty())
@@ -681,7 +685,7 @@ public class ModuleLoader implements MemTrackerListener
                     if (context.needsUpgrade(module.getSchemaVersion()))
                     {
                         context.setModuleState(ModuleState.InstallRequired);
-                        modulesRequiringUpgrade.add(new UpgradeInfo(context.getName(), context.getInstalledVersion()));
+                        modulesRequiringUpgrade.add(new UpgradeInfo(context));
                         addModuleToLockFile(context.getName(), lockFile);
                     }
                     else
