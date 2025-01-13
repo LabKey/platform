@@ -19,7 +19,8 @@ public class DropColumnsDataIterator extends WrapperDataIterator
         super(di);
         int inputColumnCount = di.getColumnCount();
         indexMap = new int[inputColumnCount+1];
-        for (int inIndex = 0; inIndex <= inputColumnCount; inIndex++)
+        indexMap[0] = 0;    // just pass through virtual _rowNumber column
+        for (int inIndex = 1; inIndex <= inputColumnCount; inIndex++)
         {
             String name = di.getColumnInfo(inIndex).getName();
             if (!drop.contains(name))
