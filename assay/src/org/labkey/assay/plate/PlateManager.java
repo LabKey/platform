@@ -2859,7 +2859,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Integer sourcePlateSetRowId
     ) throws Exception
     {
-        PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, "Failed to create plate set.");
+        PlateSetImpl parentPlateSet = (PlateSetImpl) requirePlateSet(container, sourcePlateSetRowId, null);
 
         Integer parentId = parentPlateSet.isStandalone() ? null : parentPlateSet.getRowId();
 
