@@ -431,7 +431,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             String[] headers = lineFields[_skipLines - 1];
             for (int f = 0; f < nCols; f++)
                 // Issue 51933: the trim() method does not trim off any non-breaking spaces, so we'll do a replacement using the larger regex class of invisible characters
-                colDescs[f].name = (f >= headers.length || StringUtils.isBlank(headers[f])) ? getDefaultColumnName(f) : headers[f].replaceAll("[\\p{Z}]+", " ").trim();
+                colDescs[f].name = (f >= headers.length || StringUtils.isBlank(headers[f])) ? getDefaultColumnName(f) : headers[f].replaceAll("[\\p{Z}\\t\\n\\r]+", " ").trim();
         }
         else
         {
