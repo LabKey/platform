@@ -2072,7 +2072,8 @@ public class SpecimenImporter extends SpecimenTableManager
         for (var c : importColumns)
             c.getImportAliases().forEach(n -> map.put(n, c));
         for (var c : importColumns)
-            map.put(c.getPrimaryTsvColumnName(), c);
+            if (StringUtils.isNotBlank(c.getPrimaryTsvColumnName()))
+                map.put(c.getPrimaryTsvColumnName(), c);
         return map;
     }
 
@@ -2110,7 +2111,10 @@ public class SpecimenImporter extends SpecimenTableManager
         for (int i=1 ; i<=in.getColumnCount() ; i++)
         {
             ImportableColumn c = importMap.get(in.getColumnInfo(i).getName());
-            names.add(c == null ? null : c.getPrimaryTsvColumnName());
+            String alias = c == null ? null : c.getPrimaryTsvColumnName();
+            if (StringUtils.isBlank(alias))
+                alias = null;
+            names.add(alias);
         }
         return AliasDataIterator.wrap(in, context, names);
     }
