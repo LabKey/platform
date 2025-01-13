@@ -3372,36 +3372,41 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .append(" WHERE PS.Type = ?").add("primary").append(" AND W.RowId ").appendInClause(wellRowIds, dialect);
 
         // From the set of primary plate sets determine if any sample exists in more than one well within the entire plate set
-        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, M.Name AS SampleName FROM ")
+        SQLFragment nonUniqueSamplesPerPrimaryPlateSetSQL = new SQLFragment("SELECT PS.Name AS PlateSetName, W.SampleId FROM ")
                 .append(wellTable, "W")
                 .append(" INNER JOIN ").append(plateTable, "P").append(" ON P.RowId = W.PlateId")
                 .append(" INNER JOIN ").append(plateSetTable, "PS").append(" ON PS.RowId = P.PlateSet")
-                .append(" LEFT JOIN ").append(ExperimentService.get().getTinfoMaterial(), "M").append(" ON M.RowId = W.SampleId")
                 .append(" WHERE W.SampleId IS NOT NULL AND PS.RowId IN (").append(primaryPlateSetsFromWellRowIdsSQL).append(")")
-                .append(" GROUP BY PS.RowId, M.Name, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
+                .append(" GROUP BY PS.RowId, W.SampleId, PS.Name HAVING COUNT(W.SampleId) > 1");
 
         var duplicates = new SqlSelector(dbSchema.getSchema(), nonUniqueSamplesPerPrimaryPlateSetSQL).getMapCollection();
 
         if (!duplicates.isEmpty())
         {
-            Map<String, Set<String>> duplicateMap = new HashMap<>();
+            Map<String, Set<Integer>> duplicateMap = new HashMap<>();
 
             for (var duplicate : duplicates)
             {
                 var plateSetName = (String) duplicate.get("PlateSetName");
-                duplicateMap.computeIfAbsent(plateSetName, (n) -> new HashSet<>()).add((String) duplicate.get("SampleName"));
+                duplicateMap.computeIfAbsent(plateSetName, (n) -> new HashSet<>()).add((Integer) duplicate.get("SampleId"));
             }
 
             for (var entry : duplicateMap.entrySet())
             {
                 var plateSetName = entry.getKey();
-                var sampleNames = entry.getValue();
+                var sampleIds = entry.getValue();
 
                 ValidationException ve;
-                if (sampleNames.size() == 1)
-                    ve = new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", sampleNames.stream().findFirst().get(), plateSetName));
+                if (sampleIds.size() == 1)
+                {
+                    var sampleRowId = sampleIds.stream().findFirst().get();
+                    var expMaterial = ExperimentService.get().getExpMaterial(sampleRowId);
+                    var sampleName = expMaterial == null ? "unknown" : expMaterial.getName();
+
+                    ve = new ValidationException(String.format("Sample \"%s\" is recorded in more than one well in Primary Plate Set \"%s\".", sampleName, plateSetName));
+                }
                 else
-                    ve = new ValidationException(String.format("There are %d samples recorded in more than one well in Primary Plate Set \"%s\".", sampleNames.size(), plateSetName));
+                    ve = new ValidationException(String.format("There are %d samples recorded in more than one well in Primary Plate Set \"%s\".", sampleIds.size(), plateSetName));
 
                 errors.addRowError(ve);
             }
