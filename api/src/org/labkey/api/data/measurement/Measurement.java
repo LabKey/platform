@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
 
 public class Measurement
 {
+    public static final int DEFAULT_PRECISION_SCALE = 6;
+
     private static final String NUMBER_REGEX = "[+\\-]?\\d+(?:\\.\\d+)?(?:[Ee][+\\-]\\d+)?";
     private static final Pattern AMOUNT_AND_UNITS_PATTERN = Pattern.compile("\\s*(?<amount>" + NUMBER_REGEX + ")?\\s*(?<units>\\S*)\\s*");
     private Unit _units;
@@ -21,9 +23,21 @@ public class Measurement
 
     public enum Kind
     {
-        Mass,
-        Volume,
-        Count
+        Mass(12),
+        Volume(9),
+        Count(2);
+
+        private final int _precisionScale;
+
+        Kind(int precisionScale)
+        {
+            _precisionScale = precisionScale;
+        }
+
+        public int getPrecisionScale()
+        {
+            return _precisionScale;
+        }
     }
 
     public enum Unit
@@ -120,7 +134,7 @@ public class Measurement
             if (converted == null)
                 return null;
 
-            return Precision.round(converted, 6);
+            return Precision.round(converted, targetUnit == null ? DEFAULT_PRECISION_SCALE : targetUnit.getKind().getPrecisionScale());
         }
 
         public Double convertAmount(@Nullable Double amount, @Nullable Measurement.Unit targetUnit)

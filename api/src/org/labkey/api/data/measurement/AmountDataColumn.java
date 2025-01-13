@@ -14,6 +14,7 @@ import org.labkey.api.util.HtmlString;
 
 import java.util.Set;
 
+import static org.labkey.api.data.measurement.Measurement.DEFAULT_PRECISION_SCALE;
 import static org.labkey.api.data.measurement.UnitsDataColumn.DEFAULT_UNITS_FIELD_PROPERTY_NAME;
 import static org.labkey.api.data.measurement.UnitsDataColumn.UNITS_FIELD_PROPERTY_NAME;
 import static org.labkey.api.data.measurement.UnitsDataColumn.getFieldKey;
@@ -87,7 +88,10 @@ public class AmountDataColumn extends DataColumn
             return null;
 
         if (ctx.get(_unitsField) == null)
-            return Precision.round(storedAmount, 6);
+        {
+            int scale = sampleTypeUnit == null ? DEFAULT_PRECISION_SCALE : sampleTypeUnit.getKind().getPrecisionScale();
+            return Precision.round(storedAmount, scale);
+        }
 
         try
         {
