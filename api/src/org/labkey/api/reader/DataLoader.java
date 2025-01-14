@@ -336,7 +336,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     if (f < lineFields[0].length)
                     {
                         String name = lineFields[0][f];
-                        name = name.replaceAll("[\\t\\n\\r]+"," ");
+                        name = name.replaceAll("[\\p{Z}\\t\\n\\r]+"," ").trim();
                         if (_columnInfoMap.containsKey(name))
                         {
                             //preferentially use this class if it matches
