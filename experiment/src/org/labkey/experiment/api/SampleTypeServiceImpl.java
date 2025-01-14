@@ -1555,9 +1555,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Double totalVolume = 0.0;
-        Double totalAvailableVolume = 0.0;
-        Measurement.Kind unitKind = null;
+        double totalVolume = 0.0;
+        double totalAvailableVolume = 0.0;
 
         for (AliquotAmountUnitResult volumeUnit : volumeUnits)
         {
@@ -1571,8 +1570,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 try
                 {
                     unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : Measurement.Unit.valueOf(aliquotUnit);
-                    if (unitKind == null)
-                        unitKind = unit != null ? unit.getKind() : null;
                 }
                 catch (IllegalArgumentException ignore)
                 {
@@ -1599,7 +1596,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-        int scale = unitKind == null ? Measurement.DEFAULT_PRECISION_SCALE : unitKind.getPrecisionScale();
+        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
         totalVolume = Precision.round(totalVolume, scale);
         totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 

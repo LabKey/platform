@@ -89,7 +89,7 @@ public class AmountDataColumn extends DataColumn
 
         if (ctx.get(_unitsField) == null)
         {
-            int scale = sampleTypeUnit == null ? DEFAULT_PRECISION_SCALE : sampleTypeUnit.getKind().getPrecisionScale();
+            int scale = sampleTypeUnit == null ? DEFAULT_PRECISION_SCALE : sampleTypeUnit.getPrecisionScale();
             return Precision.round(storedAmount, scale);
         }
 
