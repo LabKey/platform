@@ -1047,6 +1047,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
 
+    void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user);
+
     String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);

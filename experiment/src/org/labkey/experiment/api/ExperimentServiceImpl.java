@@ -201,10 +201,12 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -7903,6 +7905,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (options != null && options.getExcludedContainerIds() != null && !options.getExcludedContainerIds().isEmpty())
                 ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), impl.getRowId(), u);
+            else
+                ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(DataTypeForExclusion.DataClass, impl.getRowId(), c, u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
@@ -8841,6 +8845,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
     }
+
+    @Override
+    public void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user)
+    {
+        var isAdmin = user.hasApplicationAdminPermission() || container.hasPermission(user, AdminPermission.class);
+
+        if (!isAdmin)
+        {
+            // get the full container list for this project
+            Set<String> folderIds = ContainerManager.getAllChildren(container.getProject(), new LimitedUser(user, ProjectAdminRole.class))
+                    .stream()
+                    .map(Container::getId)
+                    .collect(toSet());
+            // get the set of containers this user has permission to see
+            Set<String> userFolderIds = ContainerManager.getAllChildren(container.getProject(), user)
+                    .stream()
+                    .map(Container::getId)
+                    .collect(toSet());
+            // exclude the containers this user does not have permission to
+            if (folderIds.removeAll(userFolderIds))
+            {
+                ExperimentService.get().ensureDataTypeContainerExclusions(dataType, folderIds, dataTypeId, user);
+            }
+
+        }
+    }
+
 
     private void addAuditEventForDataTypeContainerUpdate(DataTypeForExclusion type, String containerId, User user)
     {
