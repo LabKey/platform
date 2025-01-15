@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
 
 public class Measurement
 {
+    public static final int DEFAULT_PRECISION_SCALE = 6;
+
     private static final String NUMBER_REGEX = "[+\\-]?\\d+(?:\\.\\d+)?(?:[Ee][+\\-]\\d+)?";
     private static final Pattern AMOUNT_AND_UNITS_PATTERN = Pattern.compile("\\s*(?<amount>" + NUMBER_REGEX + ")?\\s*(?<units>\\S*)\\s*");
     private Unit _units;
@@ -23,35 +25,37 @@ public class Measurement
     {
         Mass,
         Volume,
-        Count
+        Count;
     }
 
     public enum Unit
     {
-        g("grams", Kind.Mass, 1),
-        mg("milligrams", Kind.Mass, 0.001),
-        kg("kilograms", Kind.Mass, 1000),
-        mL("milliliters", Kind.Volume, 1),
-        uL("microliters", Kind.Volume, 0.001, "μL"),
-        L("liters", Kind.Volume, 1000),
-        kL("kiloliters", Kind.Volume, 100000),
-        unit("units", Kind.Count, 1);
+        g("grams", Kind.Mass, 1, 9),
+        mg("milligrams", Kind.Mass, 0.001, 6),
+        kg("kilograms", Kind.Mass, 1000, 12),
+        mL("milliliters", Kind.Volume, 1, 6),
+        uL("microliters", Kind.Volume, 0.001, 3, "μL"),
+        L("liters", Kind.Volume, 1000, 9),
+        kL("kiloliters", Kind.Volume, 100000, 12),
+        unit("units", Kind.Count, 1, 2);
 
         private final String _longLabel;
         private final Kind _kind;
         private final double _ratio;
         private final String _alternateName;
+        private final int _precisionScale;
 
-        Unit(String longLabel, Kind kind, double ratio)
+        Unit(String longLabel, Kind kind, double ratio, int precisionScale)
         {
-           this(longLabel, kind, ratio, null);
+           this(longLabel, kind, ratio, precisionScale, null);
         }
 
-        Unit(String longLabel, Kind kind, double ratio, String alternateName)
+        Unit(String longLabel, Kind kind, double ratio, int precisionScale, String alternateName)
         {
             _longLabel = longLabel;
             _kind = kind;
             _ratio = ratio;
+            _precisionScale = precisionScale;
             _alternateName = alternateName;
         }
 
@@ -73,6 +77,11 @@ public class Measurement
         public String getAlternateName()
         {
             return _alternateName;
+        }
+
+        public int getPrecisionScale()
+        {
+            return _precisionScale;
         }
 
         public boolean isCompatible(Unit otherUnit)
@@ -120,7 +129,7 @@ public class Measurement
             if (converted == null)
                 return null;
 
-            return Precision.round(converted, 6);
+            return Precision.round(converted, targetUnit == null ? DEFAULT_PRECISION_SCALE : targetUnit.getPrecisionScale());
         }
 
         public Double convertAmount(@Nullable Double amount, @Nullable Measurement.Unit targetUnit)
@@ -155,6 +164,7 @@ public class Measurement
                 return false;
 
             return unitA.getKind() == unitB.getKind();
+
         }
 
         public static class TestCase extends Assert

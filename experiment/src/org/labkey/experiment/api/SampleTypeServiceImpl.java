@@ -1555,8 +1555,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Double totalVolume = 0.0;
-        Double totalAvailableVolume = 0.0;
+        double totalVolume = 0.0;
+        double totalAvailableVolume = 0.0;
 
         for (AliquotAmountUnitResult volumeUnit : volumeUnits)
         {
@@ -1596,9 +1596,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-
-        totalVolume = Precision.round(totalVolume, 6);
-        totalAvailableVolume = Precision.round(totalAvailableVolume, 6);
+        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
+        totalVolume = Precision.round(totalVolume, scale);
+        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
         if (Double.compare(totalVolume, 0.0) == 0)
             totalDisplayUnit = null;

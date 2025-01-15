@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -26,6 +27,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.model.QueryDataset" %>
+<%@ page import="org.labkey.study.query.DatasetQueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -93,12 +96,20 @@
                 </table>
             </td>
         </tr>
+        <% if (AppProps.getInstance().isOptionalFeatureEnabled(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS)) { %>
+            <tr><td class="labkey-form-label">Query Backed Dataset:</td>
+                <td>
+                    <% addHandler("queryDataset", "click", "onQueryDatasetChange();"); %>
+                    <input type=checkbox id="queryDataset" name="queryDataset">
+                </td>
+            </tr>
+        <% } %>
     </table>
     <br/>
         <%
             if (!bean.isEdit())
             {
-                out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
+                out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'").id("editDataset"));
             }
 
             out.println(button(bean.isEdit() ? "Save" : "Create Snapshot").submit(true));
@@ -129,6 +140,33 @@
     {
         if (manualUpdate.checked)
             updateDelay.value = "0";
+    }
+
+    function onQueryDatasetChange()
+    {
+        const checked = document.getElementById('queryDataset').checked;
+        const manualUpdate = document.getElementById('manualUpdate');
+        const updateType = document.getElementById('updateType');
+        const updateDelay = document.getElementById('updateDelay');
+        const editDataset = document.getElementById('editDataset');
+
+        manualUpdate.disabled = checked;
+        updateType.disabled = checked;
+        if (updateDelay)
+            updateDelay.disabled = checked;
+
+        if (editDataset) {
+            if (checked) {
+                editDataset.style.color = 'gray';
+                editDataset.style.borderColor = 'gray';
+                editDataset.style.pointerEvents = 'none';
+            }
+            else {
+                editDataset.style.color = '';
+                editDataset.style.borderColor = '';
+                editDataset.style.pointerEvents = '';
+            }
+        }
     }
 
 </script>

@@ -342,7 +342,8 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         outputRow.put("global_unique_specimen_id", barcode);
         String ptid = removeNonNullValue(outputRow, "participantid");
         outputRow.put("ptid", ptid);
-        outputRow.put("tube_type", outputRow.get("vesseldomaintype"));  // specimenevent
+        // NOTE: SpecimenImporter.AliasDataIterator seems to map tubetype and type_type to the same column
+        // Including both leads to AliasDataIterator outputting two colums named "tube_type"
         outputRow.put("tubetype", outputRow.get("vesseldomaintype"));   // missing specimen
         // Fix up the visit number
         String visit = removeNonNullValue(outputRow, "visitname");

@@ -576,7 +576,7 @@ public class DomainImpl implements Domain
             List<DomainProperty> propsAdded = new ArrayList<>();
 
             DomainKind<?> kind = getDomainKind();
-            boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
+            boolean hasProvisioner = null != kind && kind.isProvisioned(getContainer(), getName());
 
             // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
             if (hasProvisioner && isShouldDeleteAllData())
