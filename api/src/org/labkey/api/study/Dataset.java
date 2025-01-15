@@ -313,6 +313,8 @@ public interface Dataset extends StudyEntity
 
     void save(User user) throws SQLException;
 
+    boolean isQueryDataset();
+
     @Override
     boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
 
