@@ -37,6 +37,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
+import org.commonmark.node.*;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
@@ -141,14 +144,23 @@ public class MarkdownServiceImpl implements MarkdownService
         }
     }
 
-    @Override
-    public String toHtml(String mdText) throws NoSuchMethodException, ScriptException
-    {
-        return toHtml(mdText, Map.of());
-    }
+    // From the docs: "Both the Parser and HtmlRenderer are designed so that you can configure them once using the
+    // builders and then use them multiple times/from multiple threads."
+    // See https://github.com/commonmark/commonmark-java?tab=readme-ov-file#thread-safety
+    private final Parser _parser = Parser.builder().build();
+    private final HtmlRenderer _renderer = HtmlRenderer.builder().build();
 
     @Override
-    public String toHtml(String mdText, Map<Options,Boolean> options) throws NoSuchMethodException, ScriptException
+    public String toHtml(String mdText)
+    {
+        if (null == mdText)
+            mdText = "";
+
+        Node document = _parser.parse(mdText);
+        return _renderer.render(document);
+    }
+
+    public String toHtmlOld(String mdText, Map<Options,Boolean> options) throws NoSuchMethodException, ScriptException
     {
         // make sure that the source text has the carriage returns escaped and the whole thing encoded
         // otherwise it wont parse right as a js string if it hits a cr or a quote.

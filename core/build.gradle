@@ -34,6 +34,19 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.commonmark:commonmark:0.24.0",
+            "commonmark-java",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "org.graalvm.polyglot:js-community:${graalVersion}",
             "GraalJS",
             "GraalJS",
