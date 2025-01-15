@@ -383,7 +383,11 @@ public class OntologyManager
                     throw new CancellationException();
 
                 assert before.start();
-                String lsid = helper.beforeImportObject(map);
+
+                Map<String, Object> modifiableMap = new HashMap<>(map);
+                String lsid = helper.beforeImportObject(modifiableMap);
+                map = Collections.unmodifiableMap(modifiableMap);
+
                 if (lsid == null)
                 {
                     throw new IllegalStateException("No LSID available");
