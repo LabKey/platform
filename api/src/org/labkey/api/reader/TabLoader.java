@@ -15,11 +15,12 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,17 +33,17 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.PrintWriters;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,7 +73,7 @@ public class TabLoader extends DataLoader
 
     private boolean _includeComments = false;
 
-    private static final Logger _log = LogManager.getLogger(TabLoader.class);
+    private static final Logger _log = LogHelper.getLogger(TabLoader.class, "Reading and parsing errors");
 
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
@@ -82,11 +83,11 @@ public class TabLoader extends DataLoader
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
-        /** A DataLoader created with this constructor does NOT close the reader */
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
+            return new TabLoader(is, hasColumnHeaders, mvIndicatorContainer);
         }
 
         @NotNull @Override
@@ -103,11 +104,11 @@ public class TabLoader extends DataLoader
             return loader;
         }
 
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
-        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
+            TabLoader loader = new TabLoader(is, hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
             return loader;
         }
@@ -133,8 +134,8 @@ public class TabLoader extends DataLoader
             return loader;
         }
 
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
-        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
@@ -231,14 +232,20 @@ public class TabLoader extends DataLoader
         setScrollable(true);
     }
 
+    /** A TabLoader created with this constructor does NOT close the InputStream */
+    public TabLoader(InputStream is, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
+    {
+        this(Readers.getBOMDetectingUnbufferedReader(is), hasColumnHeaders, mvIndicatorContainer);
+    }
+    
     /** A TabLoader created with this constructor does NOT close the reader */
     public TabLoader(Reader reader, Boolean hasColumnHeaders)
     {
         this(reader, hasColumnHeaders, null);
     }
-    
+
     /** A TabLoader created with this constructor does NOT close the reader */
-    public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
+    private TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         this(reader, hasColumnHeaders, mvIndicatorContainer, false);
     }
@@ -274,7 +281,6 @@ public class TabLoader extends DataLoader
         setScrollable(false);
     }
 
-
     private TabLoader(ReaderFactory factory, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
@@ -285,8 +291,7 @@ public class TabLoader extends DataLoader
             setHasColumnHeaders(hasColumnHeaders);
     }
 
-
-    protected TabBufferedReader getReader() throws IOException
+    private TabBufferedReader getReader() throws IOException
     {
         if (null == _reader)
             _reader = _readerFactory.getReader();
@@ -378,7 +383,7 @@ public class TabLoader extends DataLoader
                 if (line == null)
                     return null;
             }
-            while ((skipComments && line.length() > 0 && line.charAt(0) == COMMENT_CHAR) || (skipBlankLines && null == StringUtils.trimToNull(line)));
+            while ((skipComments && !line.isEmpty() && line.charAt(0) == COMMENT_CHAR) || (skipBlankLines && null == StringUtils.trimToNull(line)));
             return line;
         }
         catch (Exception e)
@@ -550,7 +555,6 @@ public class TabLoader extends DataLoader
         return iter;
     }
 
-
     public void parseAsCSV()
     {
         setDelimiterCharacter(',');
@@ -615,7 +619,7 @@ public class TabLoader extends DataLoader
                 if (null == s)
                     break;
 
-                if (s.length() == 0 || s.charAt(0) == COMMENT_CHAR)
+                if (s.isEmpty() || s.charAt(0) == COMMENT_CHAR)
                 {
                     _commentLines++;
 
@@ -624,7 +628,7 @@ public class TabLoader extends DataLoader
                     {
                         String key = s.substring(1, eq).trim();
                         String value = s.substring(eq + 1).trim();
-                        if (key.length() > 0 || value.length() > 0)
+                        if (!key.isEmpty() || !value.isEmpty())
                             _comments.put(key, value);
                     }
                 }
@@ -669,7 +673,6 @@ public class TabLoader extends DataLoader
             reader.resetReadAhead();
         }
     }
-
 
     public class TabLoaderIterator extends AbstractDataLoaderIterator
     {
@@ -1186,7 +1189,7 @@ public class TabLoader extends DataLoader
 
             final List<Map<String, Object>> rows;
 
-            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new StringBufferInputStream(mysqlData), false, null))
+            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(IOUtils.toInputStream(mysqlData, StringUtilsLabKey.DEFAULT_CHARSET), false, null))
             {
                 loader.setColumns(new ColumnDescriptor[]{new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"), new ColumnDescriptor("reagent_ascession"), new ColumnDescriptor("workspace_id")});
                 loader.setDelimiters("~@~", "~@@~");
@@ -1229,28 +1232,90 @@ public class TabLoader extends DataLoader
             */
 
             String[] expectedHashes = new String[] {
-                    "zC1fuRsYCgYT3sjZd1xzsg==",
-                    "Lmpv0AW+Zf1YFawCcE3/Vg==",
-                    "itsVDD4jsZKoBNpQJM94CA==",
-                    "OTj8Q9T5Y8XPuApt+rCi6g==",
-                    "qwAF7kX9pLOV0uuspUcVdg==",
-                    "RrFphIaMdtv9DBBwkPgKkA==",
-                    "RsoWq6d2hJPBfyHDpWnpVQ=="
+                "zC1fuRsYCgYT3sjZd1xzsg==",
+                "Lmpv0AW+Zf1YFawCcE3/Vg==",
+                "itsVDD4jsZKoBNpQJM94CA==",
+                "OTj8Q9T5Y8XPuApt+rCi6g==",
+                "qwAF7kX9pLOV0uuspUcVdg==",
+                "RrFphIaMdtv9DBBwkPgKkA==",
+                "RsoWq6d2hJPBfyHDpWnpVQ=="
             };
-            TabLoader tl = new TabLoader(tsvData);
-            DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
-            for (int i=0 ; it.hasNext() ; i++)
-                assertEquals(expectedHashes[i], it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvData))
+            {
+                var it = tl.iterator(true);
+                for (int i = 0; it.hasNext(); i++)
+                    assertEquals(expectedHashes[i], it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
 
             HashSet<String> set1 = new HashSet<>();
-            DataLoaderIterator it1 = (DataLoaderIterator)new TabLoader(tsvData).iterator(true);
-            while (it1.hasNext())
-                set1.add((String)it1.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvData))
+            {
+                var it = tl.iterator(true);
+                while (it.hasNext())
+                    set1.add((String)it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
+
             HashSet<String> set2 = new HashSet<>();
-            DataLoaderIterator it2 = (DataLoaderIterator)new TabLoader(tsvDataReordered).iterator(true);
-            while (it2.hasNext())
-                set2.add((String)it2.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvDataReordered))
+            {
+                var it = tl.iterator(true);
+                while (it.hasNext())
+                    set2.add((String) it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
+
             assert(set1.equals(set2));
+        }
+
+        @Test
+        public void testBoms() throws IOException
+        {
+            String csvSource = """
+                KeyValue☃,A☺,B☂,C♡
+                101,A2,B2,C2
+                102,A3,B3,C3
+                103,A4,B4,C4
+                104,A5,B5,C5
+                105,A6,B6,C6
+                106,A7,B7,C7
+                107,A8,B8,C8
+                108,A9,B9,C9
+                109,A10,B10,C10
+                110,A11,B11,C11""";
+
+            String tsvSource = csvSource.replace(',', '\t');
+
+            for (ByteOrderMark bom : new ByteOrderMark[]{ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE})
+            {
+                try (InputStream is = new ByteArrayInputStream(ArrayUtils.addAll(bom.getBytes(), csvSource.getBytes(bom.getCharsetName()))))
+                {
+                    testLoad(new CsvFactory(), is);
+                }
+
+                try (InputStream is = new ByteArrayInputStream(ArrayUtils.addAll(bom.getBytes(), tsvSource.getBytes(bom.getCharsetName()))))
+                {
+                    testLoad(new TsvFactory(), is);
+                }
+            }
+        }
+
+        private void testLoad(DataLoaderFactory factory, InputStream is) throws IOException
+        {
+            DataLoader loader = factory.createLoader(is, true);
+            String[][] rows = loader.getFirstNLines(10);
+            String[] headers = rows[0];
+            Assert.assertEquals("KeyValue☃", headers[0]);
+            Assert.assertEquals("A☺", headers[1]);
+            Assert.assertEquals("B☂", headers[2]);
+            Assert.assertEquals("C♡", headers[3]);
+
+            for (int i = 1; i < rows.length; i++)
+            {
+                String[] values = rows[i];
+                Assert.assertEquals(String.valueOf(100 + i), values[0]);
+                Assert.assertEquals("A" + (i + 1), values[1]);
+                Assert.assertEquals("B" + (i + 1), values[2]);
+                Assert.assertEquals("C" + (i + 1), values[3]);
+            }
         }
     }
 
