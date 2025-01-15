@@ -81,7 +81,7 @@ public class TabLoader extends DataLoader
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
-        /** A DataLoader created with this constructor does NOT close the InputStream */
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released.  */
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
