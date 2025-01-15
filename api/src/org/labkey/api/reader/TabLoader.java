@@ -19,7 +19,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,17 +31,17 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.writer.PrintWriters;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,7 +71,7 @@ public class TabLoader extends DataLoader
 
     private boolean _includeComments = false;
 
-    private static final Logger _log = LogManager.getLogger(TabLoader.class);
+    private static final Logger _log = LogHelper.getLogger(TabLoader.class, "Reading and parsing errors");
 
     public static class TsvFactory extends AbstractDataLoaderFactory
     {
@@ -82,11 +81,11 @@ public class TabLoader extends DataLoader
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
-        /** A DataLoader created with this constructor does NOT close the reader */
+        /** A DataLoader created with this constructor does NOT close the InputStream */
         @NotNull @Override
-        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer)
+        public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
+            return new TabLoader(is, hasColumnHeaders, mvIndicatorContainer);
         }
 
         @NotNull @Override
@@ -103,11 +102,11 @@ public class TabLoader extends DataLoader
             return loader;
         }
 
+        /** A TabLoader created with this constructor does NOT close the InputStream */
         @NotNull @Override
-        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
+            TabLoader loader = new TabLoader(is, hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
             return loader;
         }
@@ -231,14 +230,20 @@ public class TabLoader extends DataLoader
         setScrollable(true);
     }
 
+    /** A TabLoader created with this constructor does NOT close the InputStream */
+    public TabLoader(InputStream is, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer) throws IOException
+    {
+        this(Readers.getBOMDetectingUnbufferedReader(is), hasColumnHeaders, mvIndicatorContainer);
+    }
+    
     /** A TabLoader created with this constructor does NOT close the reader */
     public TabLoader(Reader reader, Boolean hasColumnHeaders)
     {
         this(reader, hasColumnHeaders, null);
     }
-    
+
     /** A TabLoader created with this constructor does NOT close the reader */
-    public TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
+    private TabLoader(Reader reader, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         this(reader, hasColumnHeaders, mvIndicatorContainer, false);
     }
@@ -274,7 +279,6 @@ public class TabLoader extends DataLoader
         setScrollable(false);
     }
 
-
     private TabLoader(ReaderFactory factory, Boolean hasColumnHeaders, @Nullable Container mvIndicatorContainer)
     {
         super(mvIndicatorContainer);
@@ -285,8 +289,7 @@ public class TabLoader extends DataLoader
             setHasColumnHeaders(hasColumnHeaders);
     }
 
-
-    protected TabBufferedReader getReader() throws IOException
+    private TabBufferedReader getReader() throws IOException
     {
         if (null == _reader)
             _reader = _readerFactory.getReader();
@@ -378,7 +381,7 @@ public class TabLoader extends DataLoader
                 if (line == null)
                     return null;
             }
-            while ((skipComments && line.length() > 0 && line.charAt(0) == COMMENT_CHAR) || (skipBlankLines && null == StringUtils.trimToNull(line)));
+            while ((skipComments && !line.isEmpty() && line.charAt(0) == COMMENT_CHAR) || (skipBlankLines && null == StringUtils.trimToNull(line)));
             return line;
         }
         catch (Exception e)
@@ -615,7 +618,7 @@ public class TabLoader extends DataLoader
                 if (null == s)
                     break;
 
-                if (s.length() == 0 || s.charAt(0) == COMMENT_CHAR)
+                if (s.isEmpty() || s.charAt(0) == COMMENT_CHAR)
                 {
                     _commentLines++;
 
@@ -624,7 +627,7 @@ public class TabLoader extends DataLoader
                     {
                         String key = s.substring(1, eq).trim();
                         String value = s.substring(eq + 1).trim();
-                        if (key.length() > 0 || value.length() > 0)
+                        if (!key.isEmpty() || !value.isEmpty())
                             _comments.put(key, value);
                     }
                 }
@@ -1186,7 +1189,7 @@ public class TabLoader extends DataLoader
 
             final List<Map<String, Object>> rows;
 
-            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new StringBufferInputStream(mysqlData), false, null))
+            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new ByteArrayInputStream(mysqlData.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)), false, null))
             {
                 loader.setColumns(new ColumnDescriptor[]{new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"), new ColumnDescriptor("reagent_ascession"), new ColumnDescriptor("workspace_id")});
                 loader.setDelimiters("~@~", "~@@~");
@@ -1237,19 +1240,29 @@ public class TabLoader extends DataLoader
                     "RrFphIaMdtv9DBBwkPgKkA==",
                     "RsoWq6d2hJPBfyHDpWnpVQ=="
             };
-            TabLoader tl = new TabLoader(tsvData);
-            DataLoaderIterator it = (DataLoaderIterator)tl.iterator(true);
-            for (int i=0 ; it.hasNext() ; i++)
-                assertEquals(expectedHashes[i], it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvData))
+            {
+                var it = tl.iterator(true);
+                for (int i = 0; it.hasNext(); i++)
+                    assertEquals(expectedHashes[i], it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
 
             HashSet<String> set1 = new HashSet<>();
-            DataLoaderIterator it1 = (DataLoaderIterator)new TabLoader(tsvData).iterator(true);
-            while (it1.hasNext())
-                set1.add((String)it1.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvData))
+            {
+                var it = tl.iterator(true);
+                while (it.hasNext())
+                    set1.add((String)it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
+
             HashSet<String> set2 = new HashSet<>();
-            DataLoaderIterator it2 = (DataLoaderIterator)new TabLoader(tsvDataReordered).iterator(true);
-            while (it2.hasNext())
-                set2.add((String)it2.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            try (TabLoader tl = new TabLoader(tsvDataReordered))
+            {
+                var it = tl.iterator(true);
+                while (it.hasNext())
+                    set2.add((String) it.next().get(HashDataIterator.HASH_COLUMN_NAME));
+            }
+
             assert(set1.equals(set2));
         }
     }
