@@ -35,37 +35,8 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AuditConfigurable;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConnectionWrapper;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DatabaseTableType;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ExceptionFramework;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.Transient;
-import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -203,6 +174,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     private String _type = Dataset.TYPE_STANDARD;
     private DataSharing _datasharing = DataSharing.NONE;
     private boolean _useTimeKeyField = false;
+    private String _sourceQueryName;
+    private String _sourceQuerySchema;
+    private Container _sourceQueryContainer;
 
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
@@ -771,24 +745,41 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            _domain = null;
-            if (null == getTypeURI())
-            {
-                DatasetDefinition d = createMutable();
-                d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
-                d.save(null);
-            }
-            ensureDomain();
+            ensureDomainDef();
             loadStorageTableInfo();
             StudyManager.getInstance().uncache(this);
             t.commit();
         }
     }
 
+    public void provisionQueryDataset()
+    {
+        try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
+        {
+            ensureDomainDef();
+            StudyManager.getInstance().uncache(this);
+            t.commit();
+        }
+    }
+
+    private void ensureDomainDef()
+    {
+        _domain = null;
+        if (null == getTypeURI())
+        {
+            DatasetDefinition d = createMutable();
+            d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
+            d.save(null);
+        }
+        ensureDomain();
+    }
 
     @Transient
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
+        if (isQueryDataset())
+            return null;
+
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
@@ -1227,6 +1218,41 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         _keyPropertyName = keyPropertyName;
     }
 
+    @Override
+    public boolean isQueryDataset()
+    {
+        return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainer != null;
+    }
+
+    public String getSourceQueryName()
+    {
+        return _sourceQueryName;
+    }
+
+    public void setSourceQueryName(String sourceQueryName)
+    {
+        _sourceQueryName = sourceQueryName;
+    }
+
+    public String getSourceQuerySchema()
+    {
+        return _sourceQuerySchema;
+    }
+
+    public void setSourceQuerySchema(String sourceQuerySchema)
+    {
+        _sourceQuerySchema = sourceQuerySchema;
+    }
+
+    public Container getSourceQueryContainer()
+    {
+        return _sourceQueryContainer;
+    }
+
+    public void setSourceQueryContainer(Container sourceQueryContainer)
+    {
+        _sourceQueryContainer = sourceQueryContainer;
+    }
 
     @Override
     public void save(User user)
@@ -1373,7 +1399,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             _multiContainer = multiContainer;     /* true: don't preapply the container filter, let wrapper tableinfo handle it */
             Study study = StudyManager.getInstance().getStudy(_container);
 
-            _storage = def.getStorageTableInfo();
+            if (def.isQueryDataset())
+            {
+                _storage = new QueryDataset(getName(), def);
+            }
+            else
+            {
+                _storage = def.getStorageTableInfo();
+            }
             _template = getTemplateTableInfo();
 
             // ParticipantId
@@ -2819,6 +2852,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         private Boolean _useTimeKeyField = false;
         private Integer _datasetId;
         private StudyImpl _study;
+        private String _sourceQueryName;
+        private String _sourceQuerySchema;
+        private Container _sourceQueryContainer;
 
         public Builder(String name)
         {
@@ -2937,6 +2973,39 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return _study;
         }
 
+        public String getSourceQueryName()
+        {
+            return _sourceQueryName;
+        }
+
+        public Builder setSourceQueryName(String sourceQueryName)
+        {
+            _sourceQueryName = sourceQueryName;
+            return this;
+        }
+
+        public String getSourceQuerySchema()
+        {
+            return _sourceQuerySchema;
+        }
+
+        public Builder setSourceQuerySchema(String sourceQuerySchema)
+        {
+            _sourceQuerySchema = sourceQuerySchema;
+            return this;
+        }
+
+        public Container getSourceQueryContainer()
+        {
+            return _sourceQueryContainer;
+        }
+
+        public Builder setSourceQueryContainer(Container sourceQueryContainer)
+        {
+            _sourceQueryContainer = sourceQueryContainer;
+            return this;
+        }
+
         @Override
         public DatasetDefinition build()
         {
@@ -2962,6 +3031,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             if (_datasharing != null)
                 dsd.setDataSharing(_datasharing);
+
+            if (_sourceQueryName != null)
+                dsd.setSourceQueryName(_sourceQueryName);
+
+            if (_sourceQuerySchema != null)
+                dsd.setSourceQuerySchema(_sourceQuerySchema);
+
+            if (_sourceQueryContainer != null)
+                dsd.setSourceQueryContainer(_sourceQueryContainer);
 
             return dsd;
         }
