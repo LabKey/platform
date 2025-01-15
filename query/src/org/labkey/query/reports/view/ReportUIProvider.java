@@ -187,7 +187,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
         if (context.hasPermission(AdminPermission.class))
         {
             QuerySnapshotService.Provider provider = QuerySnapshotService.get(settings.getSchemaName());
-            if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
+            if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName())
+                && !provider.isQueryDataset(context.getContainer(), settings.getQueryName()))
                 designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", null,
                         provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(QuerySnapshotService.TYPE)));
         }
