@@ -1,7 +1,7 @@
 <view xmlns="http://labkey.org/data/xml/view" title="Import Data">
-    <permissionClasses>
+    <requiresPermissions>
         <permissionClass name="org.labkey.api.security.permissions.InsertPermission"/>
-    </permissionClasses>
+    </requiresPermissions>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
         <dependency path="/extWidgets/ImportWizard.js"/>

@@ -206,6 +206,10 @@ abstract public class DomainKind<T> implements Handler<String>
      */
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();
+    public boolean isProvisioned(Container container, String name)
+    {
+        return getStorageSchemaName() != null;
+    }
     abstract public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain);
 
     /**
