@@ -134,8 +134,8 @@ public class TabLoader extends DataLoader
             return loader;
         }
 
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
-        // A TabLoader created with this constructor does NOT close the reader
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
             TabLoader loader = super.createLoader(is, hasColumnHeaders, mvIndicatorContainer);
@@ -555,7 +555,6 @@ public class TabLoader extends DataLoader
         return iter;
     }
 
-
     public void parseAsCSV()
     {
         setDelimiterCharacter(',');
@@ -674,7 +673,6 @@ public class TabLoader extends DataLoader
             reader.resetReadAhead();
         }
     }
-
 
     public class TabLoaderIterator extends AbstractDataLoaderIterator
     {
@@ -1191,7 +1189,7 @@ public class TabLoader extends DataLoader
 
             final List<Map<String, Object>> rows;
 
-            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(new ByteArrayInputStream(mysqlData.getBytes(StringUtilsLabKey.DEFAULT_CHARSET)), false, null))
+            try (TabLoader loader = (TabLoader)new TabLoader.MysqlFactory().createLoader(IOUtils.toInputStream(mysqlData, StringUtilsLabKey.DEFAULT_CHARSET), false, null))
             {
                 loader.setColumns(new ColumnDescriptor[]{new ColumnDescriptor("analyte_id"), new ColumnDescriptor("description"), new ColumnDescriptor("name"), new ColumnDescriptor("reagent_ascession"), new ColumnDescriptor("workspace_id")});
                 loader.setDelimiters("~@~", "~@@~");
@@ -1234,13 +1232,13 @@ public class TabLoader extends DataLoader
             */
 
             String[] expectedHashes = new String[] {
-                    "zC1fuRsYCgYT3sjZd1xzsg==",
-                    "Lmpv0AW+Zf1YFawCcE3/Vg==",
-                    "itsVDD4jsZKoBNpQJM94CA==",
-                    "OTj8Q9T5Y8XPuApt+rCi6g==",
-                    "qwAF7kX9pLOV0uuspUcVdg==",
-                    "RrFphIaMdtv9DBBwkPgKkA==",
-                    "RsoWq6d2hJPBfyHDpWnpVQ=="
+                "zC1fuRsYCgYT3sjZd1xzsg==",
+                "Lmpv0AW+Zf1YFawCcE3/Vg==",
+                "itsVDD4jsZKoBNpQJM94CA==",
+                "OTj8Q9T5Y8XPuApt+rCi6g==",
+                "qwAF7kX9pLOV0uuspUcVdg==",
+                "RrFphIaMdtv9DBBwkPgKkA==",
+                "RsoWq6d2hJPBfyHDpWnpVQ=="
             };
             try (TabLoader tl = new TabLoader(tsvData))
             {
