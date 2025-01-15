@@ -18,6 +18,11 @@ package org.labkey.core.wiki;
 import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.StackKeyedObjectPool;
 import org.apache.logging.log4j.Logger;
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.json.JSONObject;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
@@ -36,10 +41,8 @@ import javax.script.ScriptException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Map;
-import org.commonmark.node.*;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
@@ -126,29 +129,22 @@ public class MarkdownServiceImpl implements MarkdownService
         public void passivateObject(Map<Options, Boolean> key, MarkdownInvocable obj) {}
     }
 
+    // From the commonmark-java docs: "Both the Parser and HtmlRenderer are designed so that you can configure them
+    // once using the builders and then use them multiple times/from multiple threads." So that's what we're doing.
+    // See https://github.com/commonmark/commonmark-java?tab=readme-ov-file#thread-safety
+    private final Parser _parser;
+    private final HtmlRenderer _renderer;
 
     public MarkdownServiceImpl()
     {
-        try
-        {
-            // fail fast if we can't successfully create engine
-            toHtml("");
-        }
-        catch (ConfigurationException x)
-        {
-            throw x;
-        }
-        catch (Exception x)
-        {
-            throw new ConfigurationException("Could not initialize Markdownservice", x);
-        }
+        List<Extension> extensions = List.of(StrikethroughExtension.create());
+        _parser = Parser.builder()
+            .extensions(extensions)
+            .build();
+        _renderer = HtmlRenderer.builder()
+            .extensions(extensions)
+            .build();
     }
-
-    // From the docs: "Both the Parser and HtmlRenderer are designed so that you can configure them once using the
-    // builders and then use them multiple times/from multiple threads."
-    // See https://github.com/commonmark/commonmark-java?tab=readme-ov-file#thread-safety
-    private final Parser _parser = Parser.builder().build();
-    private final HtmlRenderer _renderer = HtmlRenderer.builder().build();
 
     @Override
     public String toHtml(String mdText)
