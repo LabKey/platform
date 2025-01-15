@@ -18,6 +18,7 @@ public class WellData
     private String _lsid;
     private Map<String, Object> _metadata;
     private String _position;
+    private String _replicateGroup;
     private Integer _row;
     private Integer _rowId;
     private Integer _sampleId;
@@ -111,6 +112,16 @@ public class WellData
     public void setPosition(String position)
     {
         _position = position;
+    }
+
+    public String getReplicateGroup()
+    {
+        return _replicateGroup;
+    }
+
+    public void setReplicateGroup(String replicateGroup)
+    {
+        _replicateGroup = replicateGroup;
     }
 
     public Integer getRow()
