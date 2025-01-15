@@ -1,5 +1,5 @@
 <view xmlns="http://labkey.org/data/xml/view" title="Query Row Counts" frame="none">
-    <permissionClasses>
+    <requiresPermissions>
         <permissionClass name="org.labkey.api.security.permissions.ReadPermission"/>
-    </permissionClasses>
+    </requiresPermissions>
 </view>
