@@ -15,8 +15,10 @@
  */
 package org.labkey.api.reader;
 
+import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.Logger;
@@ -81,7 +83,7 @@ public class TabLoader extends DataLoader
             return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
 
-        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released.  */
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
@@ -102,7 +104,7 @@ public class TabLoader extends DataLoader
             return loader;
         }
 
-        /** A TabLoader created with this constructor does NOT close the InputStream */
+        /** This constructor does NOT close the InputStream. Call close(), in a try-with-resources, if appropriate, to ensure resources are released. */
         @NotNull @Override
         public TabLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
@@ -1264,6 +1266,58 @@ public class TabLoader extends DataLoader
             }
 
             assert(set1.equals(set2));
+        }
+
+        @Test
+        public void testBoms() throws IOException
+        {
+            String csvSource = """
+                KeyValue☃,A☺,B☂,C♡
+                101,A2,B2,C2
+                102,A3,B3,C3
+                103,A4,B4,C4
+                104,A5,B5,C5
+                105,A6,B6,C6
+                106,A7,B7,C7
+                107,A8,B8,C8
+                108,A9,B9,C9
+                109,A10,B10,C10
+                110,A11,B11,C11""";
+
+            String tsvSource = csvSource.replace(',', '\t');
+
+            for (ByteOrderMark bom : new ByteOrderMark[]{ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE})
+            {
+                try (InputStream is = new ByteArrayInputStream(ArrayUtils.addAll(bom.getBytes(), csvSource.getBytes(bom.getCharsetName()))))
+                {
+                    testLoad(new CsvFactory(), is);
+                }
+
+                try (InputStream is = new ByteArrayInputStream(ArrayUtils.addAll(bom.getBytes(), tsvSource.getBytes(bom.getCharsetName()))))
+                {
+                    testLoad(new TsvFactory(), is);
+                }
+            }
+        }
+
+        private void testLoad(DataLoaderFactory factory, InputStream is) throws IOException
+        {
+            DataLoader loader = factory.createLoader(is, true);
+            String[][] rows = loader.getFirstNLines(10);
+            String[] headers = rows[0];
+            Assert.assertEquals("KeyValue☃", headers[0]);
+            Assert.assertEquals("A☺", headers[1]);
+            Assert.assertEquals("B☂", headers[2]);
+            Assert.assertEquals("C♡", headers[3]);
+
+            for (int i = 1; i < rows.length; i++)
+            {
+                String[] values = rows[i];
+                Assert.assertEquals(String.valueOf(100 + i), values[0]);
+                Assert.assertEquals("A" + (i + 1), values[1]);
+                Assert.assertEquals("B" + (i + 1), values[2]);
+                Assert.assertEquals("C" + (i + 1), values[3]);
+            }
         }
     }
 
