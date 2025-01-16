@@ -4253,7 +4253,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         List<Plate> sourcePlates = source.second;
         engine.setSourcePlates(sourcePlates);
 
-        Pair<PlateType, Plate> targetPlateSource = getReformatTargetPlateSource(container, options);
+        Pair<PlateType, Plate> targetPlateSource = getReformatTargetPlateSource(container, user, options);
         engine.setTargetPlateType(targetPlateSource.first);
         engine.setTargetTemplate(targetPlateSource.second);
 
@@ -4535,7 +4535,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         return plateSet;
     }
 
-    private @NotNull Pair<PlateType, Plate> getReformatTargetPlateSource(Container container, ReformatOptions options) throws ValidationException
+    private @NotNull Pair<PlateType, Plate> getReformatTargetPlateSource(
+        Container container,
+        User user,
+        ReformatOptions options
+    ) throws ValidationException
     {
         PlateType targetPlateType = null;
         Plate targetTemplate = null;
@@ -4552,11 +4556,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 targetPlateType = requirePlateType(plateSource.getRowId(), null);
             else if (ReformatOptions.TargetPlateSource.SourceType.template.equals(plateSource.getSourceType()))
             {
-                targetTemplate = requirePlate(container, plateSource.getRowId(), null);
+                targetTemplate = getPlate(getPlateLookupContainerFilter(container, user), plateSource.getRowId());
+                if (targetTemplate == null)
+                    throw new ValidationException(String.format("Unable to plate template with rowId (%d).", plateSource.getRowId()));
                 if (!targetTemplate.isTemplate())
-                    throw new ValidationException("Plate \"%s\" is not a valid template.", targetTemplate.getName());
+                    throw new ValidationException(String.format("Plate \"%s\" is not a valid template.", targetTemplate.getName()));
                 if (targetTemplate.isArchived())
-                    throw new ValidationException("Template \"%s\" is archived and cannot be used for reformatting.", targetTemplate.getName());
+                    throw new ValidationException(String.format("Template \"%s\" is archived and cannot be used for reformatting.", targetTemplate.getName()));
             }
             else
                 throw new ValidationException("A valid \"type\" must be specified for \"targetPlateSource\".");
