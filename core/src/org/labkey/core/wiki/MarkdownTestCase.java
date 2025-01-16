@@ -193,9 +193,9 @@ class MarkdownTestCase extends Assert
         String expectedHtmlText = """
                 <div class="lk-markdown-container"><hr />
                 <ul>
-                <li><strong><a href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image
+                <li><strong><a href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image<br>
                 resize in browser.</li>
-                <li><strong><a href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly
+                <li><strong><a href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly<br>
                 i18n with plurals support and easy syntax.</li>
                 </ul>
                 <p>You will like those projects!</p>

@@ -52,6 +52,7 @@ public class MarkdownServiceImpl implements MarkdownService
             .extensions(extensions)
             .build();
         _renderer = HtmlRenderer.builder()
+            .softbreak("<br>\n")
             .extensions(extensions)
             .build();
     }
