@@ -707,7 +707,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                               @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
     {
-        validateSampleTypeName(c, u, name);
+        validateSampleTypeName(c, u, name, false);
 
         if (properties == null || properties.isEmpty())
             throw new ApiUsageException("At least one property is required");
@@ -883,8 +883,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.SampleType, st.getRowId(), c, u);
                     if (excludedDashboardContainerIds != null && !excludedDashboardContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
@@ -966,7 +970,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
-    private void validateSampleTypeName(Container container, User user, String name)
+    private void validateSampleTypeName(Container container, User user, String name, boolean skipExistingCheck)
     {
         if (name == null || StringUtils.isBlank(name))
             throw new ApiUsageException("Sample Type name is required.");
@@ -976,8 +980,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (name.length() > nameMax)
             throw new ApiUsageException("Sample Type name may not exceed " + nameMax + " characters.");
 
-        if (getSampleType(container, user, name) != null)
-            throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
+        if (!skipExistingCheck)
+        {
+            if (getSampleType(container, user, name) != null)
+                throw new ApiUsageException("A Sample Type with name '" + name + "' already exists.");
+        }
 
         // Issue 51321: check reserved sample type name: First
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
@@ -996,7 +1003,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         boolean hasNameChange = false;
         if (!oldSampleTypeName.equals(newName))
         {
-            validateSampleTypeName(container, user, newName);
+            validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
         }
@@ -1552,8 +1559,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Double totalVolume = 0.0;
-        Double totalAvailableVolume = 0.0;
+        double totalVolume = 0.0;
+        double totalAvailableVolume = 0.0;
 
         for (AliquotAmountUnitResult volumeUnit : volumeUnits)
         {
@@ -1593,9 +1600,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-
-        totalVolume = Precision.round(totalVolume, 6);
-        totalAvailableVolume = Precision.round(totalAvailableVolume, 6);
+        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
+        totalVolume = Precision.round(totalVolume, scale);
+        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
         if (Double.compare(totalVolume, 0.0) == 0)
             totalDisplayUnit = null;

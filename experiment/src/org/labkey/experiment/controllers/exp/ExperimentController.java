@@ -4123,6 +4123,31 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        protected @Nullable Set<String> getLineageImportAliases() throws IOException
+        {
+            boolean crossTypeImport = getOptionParamValue(AbstractQueryImportAction.Params.crossTypeImport);
+            // Issue 51894: We need to stop conversion to numbers for alias fields for all type
+            // If there are aliases defined for one type that are number fields in another type, this will prevent
+            // conversion to numbers during the initial partitioning, but the conversion will happen when the partition
+            // file is loaded.
+            if (crossTypeImport)
+            {
+                List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(getContainer(), getUser(), true);
+                Set<String> aliases = new CaseInsensitiveHashSet();
+                for (ExpSampleTypeImpl sampleType : sampleTypes)
+                {
+                    aliases.addAll(sampleType.getImportAliases().keySet());
+                }
+                return aliases;
+            }
+            else
+            {
+                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), _form.getQueryName());
+                return new CaseInsensitiveHashSet(sampleType.getImportAliases().keySet());
+            }
+        }
+
+        @Override
         protected int importData(
             DataLoader dl,
             FileStream file,
@@ -4188,6 +4213,12 @@ public class ExperimentController extends SpringActionController
             }
             return json;
         }
+
+        @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
+        }
     }
 
     public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -4242,6 +4273,13 @@ public class ExperimentController extends SpringActionController
                 renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
             }
             return renameColumns;
+        }
+
+        @Override
+        protected Set<String> getLineageImportAliases() throws IOException
+        {
+            ExpDataClass dataClass = ExperimentServiceImpl.get().getDataClass(getContainer(), getUser(), _form.getQueryName());
+            return new CaseInsensitiveHashSet(dataClass.getImportAliases().keySet());
         }
 
         protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment) throws IOException
@@ -4335,6 +4373,12 @@ public class ExperimentController extends SpringActionController
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
+        }
+
+        @Override
+        protected void configureLoader(DataLoader loader) throws IOException
+        {
+            configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases());
         }
 
     }

@@ -2,7 +2,6 @@ package org.labkey.api.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +22,7 @@ import org.labkey.api.security.permissions.RequireSecondaryAuthenticationPermiss
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -39,7 +38,7 @@ import static org.labkey.api.security.SsoSaveConfigurationAction.logLogoAction;
 
 public interface AuthenticationConfiguration<AP extends AuthenticationProvider> extends AttachmentParent
 {
-    Logger LOG = LogManager.getLogger(AuthenticationConfiguration.class);
+    Logger LOG = LogHelper.getLogger(AuthenticationConfiguration.class, "Authentication configuration loading and saving issues");
 
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationConfiguration>> ALL_CONFIGURATION_INTERFACES = Arrays.asList(
@@ -203,7 +202,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
         @Override
         AP getAuthenticationProvider();
 
-        ActionURL getRedirectURL(User candidate, Container c);
+        URLHelper getRedirectURL(User candidate, Container c);
 
         boolean isRequired(User user);
 

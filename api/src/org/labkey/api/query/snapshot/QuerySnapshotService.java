@@ -118,6 +118,8 @@ public class QuerySnapshotService
         List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception;
 
         TableInfo getTableInfoQuerySnapshotDef();
+
+        boolean isQueryDataset(Container container, String queryName);
     }
 
     public interface AutoUpdateable

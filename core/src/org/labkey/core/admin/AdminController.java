@@ -1514,6 +1514,55 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class SetRibbonMessageForm
+    {
+        private Boolean _show = null;
+        private String _message = null;
+
+        public Boolean isShow()
+        {
+            return _show;
+        }
+
+        public void setShow(Boolean show)
+        {
+            _show = show;
+        }
+
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class SetRibbonMessageAction extends MutatingApiAction<SetRibbonMessageForm>
+    {
+        @Override
+        public Object execute(SetRibbonMessageForm form, BindException errors) throws Exception
+        {
+            if (form.isShow() != null || form.getMessage() != null)
+            {
+                WriteableAppProps props = AppProps.getWriteableInstance();
+
+                if (form.isShow() != null)
+                    props.setShowRibbonMessage(form.isShow());
+
+                if (form.getMessage() != null)
+                    props.setRibbonMessage(form.getMessage());
+
+                props.save(getViewContext().getUser());
+            }
+
+            return null;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class ConfigureSiteValidationAction extends SimpleViewAction<Object>
     {
@@ -3314,6 +3363,28 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Configure System Maintenance", this.getClass());
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class ResetSystemMaintenanceAction extends FormHandlerAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            SystemMaintenance.clearProperties();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return new AdminUrlsImpl().getAdminConsoleURL();
         }
     }
 

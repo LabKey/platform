@@ -16,17 +16,22 @@
 
 package org.labkey.api.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.transform.AnalysisScript;
+import org.labkey.api.assay.transform.DataExchangeHandler;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -40,11 +45,10 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -55,7 +59,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -100,7 +103,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getResultsDomain(ExpProtocol protocol);
 
-    void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update);
+    void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
+    void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
 
     AssayRunCreator getRunCreator();
 
@@ -236,12 +240,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    // TODO File->FileLike
-    ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<File> scripts) throws ExperimentException;
+    ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException;
 
     @NotNull
-    // TODO File->FileLike
-    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
+    List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
     boolean isSaveScriptFiles(ExpProtocol protocol);
@@ -273,6 +275,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     boolean supportsPlateMetadata(ExpProtocol protocol);
     void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
     boolean isPlateMetadataEnabled(ExpProtocol protocol);
+
+    @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol);
+    boolean hasFilterCriteria(ExpProtocol protocol);
+    void removeFilterCriteriaForProperty(PropertyDescriptor pd);
 
     /**
      * @return the data type that this run creates for its analyzed results

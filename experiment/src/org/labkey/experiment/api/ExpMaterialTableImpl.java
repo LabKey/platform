@@ -110,6 +110,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
 
@@ -768,6 +769,37 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+
+        UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
+        SQLFragment sql;
+        if (plateUserSchema != null)
+        {
+            String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
+            SQLFragment existsSubquery = new SQLFragment()
+                    .append("SELECT 1 FROM ")
+                    .append(plateUserSchema.getTable("Well"), "well")
+                    .append(" WHERE well.sampleid = ").append(rowIdField);
+
+            sql = new SQLFragment()
+                    .append("CASE WHEN EXISTS (")
+                    .append(existsSubquery)
+                    .append(") THEN 'Plated' ELSE 'Not Plated'")
+                    .append(" END");
+        }
+        else
+        {
+            sql = new SQLFragment("(SELECT NULL)");
+        }
+        var col = new ExprColumn(this, Column.IsPlated.name(), sql, JdbcType.VARCHAR);
+        col.setDescription("Whether the sample that has been plated, if plating is supported.");
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setShownInDetailsView(false);
+        col.setShownInInsertView(false);
+        col.setShownInUpdateView(false);
+        if (plateUserSchema != null)
+           col.setURL(DetailsURL.fromString("plate-isPlated.api?sampleId=${" + Column.RowId.name() + "}"));
+        addColumn(col);
 
         addVocabularyDomains();
 
@@ -1545,7 +1577,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         try
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliases(), sampleTypeObjectId)
-                    .setFileLinkDirectory("sampletype");
+                    .setFileLinkDirectory(SAMPLETYPE_FILE_DIRECTORY);
             SearchService searchService = SearchService.get();
             ExperimentServiceImpl experimentServiceImpl = ExperimentServiceImpl.get();
 

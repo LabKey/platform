@@ -18,6 +18,7 @@ package org.labkey.assay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -41,17 +42,24 @@ import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
@@ -61,16 +69,19 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTFilterCriteria;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -78,19 +89,24 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,13 +114,10 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 
-/**
- * User: brittp
- * Date: Jul 11, 2007
- * Time: 9:59:39 AM
- */
 public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
+    private static final Logger LOG = LogHelper.getLogger(TsvAssayProvider.class, "General Assay Provider");
+
     public static final String NAME = "General";
     public static final String PLATE_TEMPLATE_PROPERTY_NAME = "PlateTemplate";
     public static final String PLATE_TEMPLATE_PROPERTY_CAPTION = "Plate Template";
@@ -375,7 +388,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
     {
-        return type== ExpProtocol.AssayDomainTypes.Result;
+        return ExpProtocol.AssayDomainTypes.Result.equals(type);
     }
 
     @Override
@@ -393,9 +406,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
+    public void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
     {
-        super.changeDomain(user, protocol, orig, update);
+        super.beforeDomainChange(user, protocol, orig, update);
 
         if (hasDomainNameChanged(protocol, orig))
         {
@@ -425,6 +438,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(plateSet);
                 }
 
+                if (!existingFields.contains(AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor criteriaColumn = new GWTPropertyDescriptor(AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    criteriaColumn.setShownInInsertView(false);
+                    criteriaColumn.setShownInUpdateView(false);
+
+                    newFields.add(criteriaColumn);
+                }
+
                 if (!newFields.isEmpty())
                 {
                     newFields.addAll(update.getFields());
@@ -432,14 +454,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 }
             }
 
-            Domain resultsDomain = getResultsDomain(protocol);
-            if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
+            if (isResultsDomain(update))
             {
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
 
-                if (!existingFields.contains(AssayResultDomainKind.PLATE_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.Plate.name()))
                 {
-                    GWTPropertyDescriptor plate = new GWTPropertyDescriptor(AssayResultDomainKind.PLATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    GWTPropertyDescriptor plate = new GWTPropertyDescriptor(AssayResultDomainKind.Column.Plate.name(), PropertyType.INTEGER.getTypeUri());
                     plate.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plate.setLookupQuery(PlateTable.NAME);
                     plate.setLookupContainer(null);
@@ -451,18 +472,18 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(plate);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.WellLocation.name()))
                 {
-                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.Column.WellLocation.name(), PropertyType.STRING.getTypeUri());
                     wellLocation.setImportAliases("Well,\"Well Location\"");
                     wellLocation.setShownInUpdateView(false);
 
                     newFields.add(wellLocation);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.WellLsid.name()))
                 {
-                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.Column.WellLsid.name(), PropertyType.STRING.getTypeUri());
                     wellLsid.setShownInInsertView(false);
                     wellLsid.setShownInUpdateView(false);
                     wellLsid.setHidden(true);
@@ -470,9 +491,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(wellLsid);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.ReplicateLsid.name()))
                 {
-                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.REPLICATE_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor replicateLsid = new GWTPropertyDescriptor(AssayResultDomainKind.Column.ReplicateLsid.name(), PropertyType.STRING.getTypeUri());
                     replicateLsid.setShownInInsertView(false);
                     replicateLsid.setShownInUpdateView(false);
                     replicateLsid.setHidden(true);
@@ -480,9 +501,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.add(replicateLsid);
                 }
 
-                if (!existingFields.contains(AssayResultDomainKind.STATE_COLUMN_NAME))
+                if (!existingFields.contains(AssayResultDomainKind.Column.State.name()))
                 {
-                    GWTPropertyDescriptor qcState = new GWTPropertyDescriptor(AssayResultDomainKind.STATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    GWTPropertyDescriptor qcState = new GWTPropertyDescriptor(AssayResultDomainKind.Column.State.name(), PropertyType.INTEGER.getTypeUri());
                     qcState.setLabel("QC State");
                     qcState.setImportAliases("QCState,\"QC State\"");
                     qcState.setLookupSchema(CoreSchema.getInstance().getSchemaName());
@@ -499,17 +520,25 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
-
-                try
-                {
-                    // update fields in the replicate stats table to match any changes to measures in the results domain
-                    AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, update, resultsDomain);
-                }
-                catch (ExperimentException e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
             }
+        }
+    }
+
+    @Override
+    public void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+        super.afterDomainChange(user, protocol, orig, update);
+
+        if (isResultsDomain(update))
+        {
+            if (isPlateMetadataEnabled(protocol))
+            {
+                // Update fields in the replicate stats table to match any changes to measures in the results domain
+                AssayPlateMetadataService.get().updateReplicateStatsDomain(user, protocol, orig, update);
+            }
+
+            // Filter criteria are only available to result domains
+            updateFilterCriteria(user, protocol, orig, update);
         }
     }
 
@@ -543,6 +572,206 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public boolean supportsSampleLookupsAsMaterialInputs()
     {
         return true;
+    }
+
+    @Override
+    protected @NotNull List<FilterCriteria> getFilterCriteria(ExpProtocol protocol, Domain domain)
+    {
+        return new ArrayList<>(getFilterCriteriaMap(protocol, domain).values());
+    }
+
+    private @NotNull Map<Integer, FilterCriteria> getFilterCriteriaMap(ExpProtocol protocol, Domain domain)
+    {
+        var criteria = new LinkedHashMap<Integer, FilterCriteria>();
+        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
+
+        Domain replicateStatsDomain = null;
+        boolean isReplicateStatsResolved = false;
+
+        try (Results results = new TableSelector(AssayDbSchema.getInstance().getTableInfoFilterCriteria(), filter, new Sort(FieldKey.fromParts("RowId"))).getResults())
+        {
+            while (results.next())
+            {
+                var propertyId = results.getInt("PropertyId");
+                var rowId = results.getInt("RowId");
+
+                var property = domain.getProperty(propertyId);
+
+                // Lookup on the replicate stats domain
+                if (property == null)
+                {
+                    if (!isReplicateStatsResolved)
+                    {
+                        isReplicateStatsResolved = true;
+                        replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+                    }
+
+                    if (replicateStatsDomain != null)
+                        property = replicateStatsDomain.getProperty(propertyId);
+                }
+
+                if (property == null)
+                {
+                    LOG.warn("Failed to resolve filter criteria property for propertyId ({}). See rowId ({}).", propertyId, rowId);
+                    continue;
+                }
+
+                var criterion = new FilterCriteria(
+                    results.getString("Operation"),
+                    results.getString("Value"),
+                    property.getPropertyId(),
+                    property.getName(),
+                    results.getInt("ReferencePropertyId"),
+                    results.getInt("DomainId")
+                );
+
+                criteria.put(rowId, criterion);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return criteria;
+    }
+
+    @Override
+    protected boolean hasFilterCriteria(ExpProtocol protocol, Domain domain)
+    {
+        var filter = new SimpleFilter(FieldKey.fromParts("DomainId"), domain.getTypeId());
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoFilterCriteria(), Collections.singleton("RowId"), filter, null).exists();
+    }
+
+    private @NotNull GWTDomain<GWTPropertyDescriptor> getSavedDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException
+    {
+        GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(user, update.getDomainURI(), protocol.getContainer());
+        if (savedDomain == null)
+            throw new ValidationException(String.format("Failed to resolve saved domain for domain URI \"%s\" in %s.", update.getDomainURI(), protocol.getContainer().getPath()));
+
+        return savedDomain;
+    }
+
+    private void updateFilterCriteria(
+        User user,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update
+    ) throws ValidationException
+    {
+        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
+
+        Domain replicateStatsDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(protocol);
+        GWTDomain<GWTPropertyDescriptor> savedDomain = null;
+
+        Set<FilterCriteria> newCriteria = new LinkedHashSet<>();
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
+            List<GWTFilterCriteria> filterCriteria = prop.getFilterCriteria();
+            if (filterCriteria == null || filterCriteria.isEmpty())
+                continue;
+
+            int referencePropertyId = prop.getPropertyId();
+            if (referencePropertyId <= 0)
+            {
+                if (savedDomain == null)
+                    savedDomain = getSavedDomain(user, protocol, update);
+
+                for (GWTPropertyDescriptor savedProp : savedDomain.getFields(true))
+                {
+                    if (savedProp.getPropertyURI().equals(prop.getPropertyURI()))
+                    {
+                        referencePropertyId = savedProp.getPropertyId();
+                        break;
+                    }
+                }
+
+                if (referencePropertyId <= 0)
+                    throw new ValidationException(String.format("Failed to resolve \"referencePropertyId\" for field \"%s\"", prop.getName()));
+            }
+
+            int domainId = update.getDomainId();
+            if (domainId == 0)
+            {
+                if (savedDomain == null)
+                    savedDomain = getSavedDomain(user, protocol, update);
+
+                domainId = savedDomain.getDomainId();
+            }
+
+            newCriteria.addAll(FilterCriteria.fromGWTFilterCriteria(filterCriteria, referencePropertyId, prop.getName(), domainId, replicateStatsDomain));
+        }
+
+        Map<Integer, FilterCriteria> keyedCriteria = getFilterCriteriaMap(protocol, getResultsDomain(protocol));
+        Set<FilterCriteria> oldCriteria = new HashSet<>(keyedCriteria.values());
+        Set<FilterCriteria> toAdd = new LinkedHashSet<>(newCriteria);
+        Set<Integer> toRemove = new HashSet<>();
+
+        for (var criterion : newCriteria)
+        {
+            if (oldCriteria.contains(criterion))
+                toAdd.remove(criterion);
+        }
+
+        for (var criterion : oldCriteria)
+        {
+            if (!newCriteria.contains(criterion))
+            {
+                for (var entry : keyedCriteria.entrySet())
+                {
+                    if (entry.getValue().equals(criterion))
+                        toRemove.add(entry.getKey());
+                }
+            }
+        }
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return;
+
+        var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
+
+        if (!toRemove.isEmpty())
+        {
+            var sql = new SQLFragment("DELETE FROM ").append(table)
+                    .append(" WHERE RowId ").appendInClause(toRemove, table.getSqlDialect());
+            new SqlExecutor(table.getSchema()).execute(sql);
+        }
+
+        if (!toAdd.isEmpty())
+        {
+            List<List<?>> criteriaToInsert = new ArrayList<>();
+            for (var criterion : toAdd)
+                criteriaToInsert.add(Arrays.asList(criterion.propertyId(), criterion.referencePropertyId(), criterion.domainId(), criterion.operation(), criterion.value()));
+
+            String sql = "INSERT INTO " + table + " (propertyId, referencePropertyId, domainId, operation, value) VALUES (?, ?, ?, ?, ?)";
+
+            try
+            {
+                Table.batchExecute(table.getSchema(), sql, criteriaToInsert);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+    }
+
+    @Override
+    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
+    {
+        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
+
+        var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
+        var sql = new SQLFragment("DELETE FROM ").append(table)
+                .append(" WHERE (PropertyId = ? OR ReferencePropertyId = ?)")
+                .addAll(pd.getPropertyId(), pd.getPropertyId());
+
+        new SqlExecutor(table.getSchema()).execute(sql);
+    }
+
+    private static boolean isResultsDomain(GWTDomain<?> domain)
+    {
+        return domain != null && domain.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".");
     }
 
     public static class TestCase extends Assert
@@ -671,7 +900,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         @Test
         public void testReshowDataCollectorList()
         {
-            // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacment
+            // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacement
             _context.checking(new Expectations(){{
                 allowing(_session).getAttribute(PipelineDataCollector.class.getName());
                 will(returnValue(new HashMap()));

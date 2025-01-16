@@ -111,6 +111,7 @@
             <xs:enumeration value="Available"/>
             <xs:enumeration value="Consumed"/>
             <xs:enumeration value="Locked"/>
+            <xs:enumeration value="Excluded"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

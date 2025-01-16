@@ -332,22 +332,9 @@ public class FileUtil
         return null;
     }
 
-    private static @Nullable String validateFileName(String s)
+    public static @Nullable String validateFileName(String s)
     {
-        if (StringUtils.isBlank(s))
-            return "Filename must not be blank";
-        if (!ViewServlet.validChars(s))
-            return "Filename must contain only valid unicode characters.";
-        if (StringUtils.containsAny(s, restrictedPrintable))
-            return "Filename may not contain any of these characters: " + restrictedPrintable;
-        if (StringUtils.containsAny(s, "\t\n\r"))
-            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-        if (StringUtils.contains("-$", s.charAt(0)))
-            return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
-            return "Filename may not contain space followed by dash.";
-
-        return null;
+        return StringUtilsLabKey.validateLegalNames(s, restrictedPrintable, "Filename");
     }
 
     private static String checkExtension(String filename, AppProps appProps)
@@ -1277,27 +1264,20 @@ quickScan:
 
         // str is unencoded; we need certain special chars encoded for it to become a URL
         // % & # @ ~ {} []
-        StringBuilder res = new StringBuilder();
-        for (int i = 0; i < str.length(); i++) {
-            if ('%' == str.charAt(i)) res.append("%25");
-            else if ('#' == str.charAt(i)) res.append("%23");
-            else if ('&' == str.charAt(i)) res.append("%26");
-            else if ('@' == str.charAt(i)) res.append("%40");
-            else if ('~' == str.charAt(i)) res.append("%7E");
-            else if ('{' == str.charAt(i)) res.append("%7B");
-            else if ('}' == str.charAt(i)) res.append("%7D");
-            else if ('[' == str.charAt(i)) res.append("%5B");
-            else if (']' == str.charAt(i)) res.append("%5D");
-            else if ('+' == str.charAt(i)) res.append("%2B");
-            else if (' ' == str.charAt(i)) res.append("%20");   // space also
-            else res.append(str.charAt(i));
-        }
-        return res.toString();
+        return StringUtils.replaceEach(str, DECODED, ENCODED);
+    }
+
+    private static final String[] ENCODED = {"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"};
+    private static final String[] DECODED = {"%", "#", "&", "@", "~", "{", "}", "[", "]", "+", " "};
+
+    static public String decodeURL(String str)
+    {
+        return StringUtils.replaceEach(str, ENCODED, DECODED);
     }
 
     public static boolean isUrlEncoded(String str)
     {
-        return StringUtils.indexOfAny(str, new String[]{"%25", "%23", "%26", "%40", "%7E", "%7B", "%7D", "%5B", "%5D", "%2B", "%20"}) > -1;
+        return StringUtils.indexOfAny(str, ENCODED) > -1;
     }
 
     static boolean startsWith(String s, char ch)

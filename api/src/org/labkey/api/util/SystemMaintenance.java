@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.StartupProperty;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -45,8 +47,6 @@ import java.util.stream.Collectors;
 
 /**
  * Manages scheduling and queuing system maintenance tasks.
- * User: adam
- * Date: Sep 29, 2006
  */
 public class SystemMaintenance
 {
@@ -140,6 +140,8 @@ public class SystemMaintenance
     {
         if (task.getName().contains(","))
             throw new IllegalStateException("System maintenance task " + task.getClass().getSimpleName() + " has a comma in its name (" + task.getName() + ")");
+        if (ModuleLoader.getInstance().isStartupComplete())
+            throw new IllegalStateException("System maintenance task " + task.getClass().getSimpleName() + " was added after startup was complete");
         TASKS.add(task);
     }
 
@@ -170,6 +172,7 @@ public class SystemMaintenance
         return new SystemMaintenanceProperties(props);
     }
 
+    // For all tasks that can be disabled, set the enabledTasks to enabled and set the rest to disabled
     public static void setProperties(Set<String> enabledTasks, String time)
     {
         WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
@@ -188,25 +191,31 @@ public class SystemMaintenance
         setTimer();
     }
 
-    public static void enableTask(String taskToEnable)
+    // Enable all tasksToEnable, disable all tasksToDisable, and don't modify the enabled property for all other tasks
+    public static void ensureTaskProperties(Set<String> tasksToEnable, Set<String> tasksToDisable)
     {
         WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
         String disabled = writableProps.get(DISABLED_TASKS_PROPERTY_NAME);
         String enabled = writableProps.get(ENABLED_TASKS_PROPERTY_NAME);
 
-        Set<String> disabledTasks = new HashSet<>();
-        Set<String> enabledTasks = new HashSet<>();
-        if (disabled != null)
-            disabledTasks.addAll(Arrays.asList(disabled.split(",")));
-        if (enabled != null)
-            enabledTasks.addAll(Arrays.asList(enabled.split(",")));
+        Set<String> disabledTasks = StringUtils.isEmpty(disabled) ? new HashSet<>() : new HashSet<>(Arrays.asList(disabled.split(",")));
+        Set<String> enabledTasks = StringUtils.isEmpty(enabled) ? new HashSet<>() : new HashSet<>(Arrays.asList(enabled.split(",")));
 
-        disabledTasks.remove(taskToEnable);
-        enabledTasks.add(taskToEnable);
+        disabledTasks.removeAll(tasksToEnable);
+        disabledTasks.addAll(tasksToDisable);
+        enabledTasks.removeAll(tasksToDisable);
+        enabledTasks.addAll(tasksToEnable);
 
         writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabledTasks, ","));
         writableProps.put(ENABLED_TASKS_PROPERTY_NAME, StringUtils.join(enabledTasks, ","));
 
+        writableProps.save();
+    }
+
+    public static void clearProperties()
+    {
+        WritablePropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+        writableProps.clear();
         writableProps.save();
     }
 
@@ -251,9 +260,10 @@ public class SystemMaintenance
     /**
      * A specific piece of maintenance to be run as part of the overall {@link MaintenancePipelineJob}.
      */
-    public interface MaintenanceTask
+    public interface MaintenanceTask extends StartupProperty
     {
         /** Description used in logging and UI */
+        @Override
         String getDescription();
 
         /**
@@ -300,6 +310,16 @@ public class SystemMaintenance
         default boolean isRecurring()
         {
             return true;
+        }
+
+        /**
+         * For StartupProperty implementation
+         */
+        @Override
+        @NotNull
+        default String getPropertyName()
+        {
+            return getName();
         }
     }
 }

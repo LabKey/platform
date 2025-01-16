@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.util.GUID;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
@@ -64,10 +64,12 @@ public abstract class DownloadOutputView extends ROutputView
         {
             File newFile = moveToTemp(file, "RReportPdf");
             // file hasn't been saved yet
-            String key = "temp:" + GUID.makeGUID();
-            getViewContext().getRequest().getSession(true).setAttribute(key, newFile);
+            String key = ImageUtil.setFileInSession(getViewContext().getRequest(), newFile);
             downloadUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer()).
-                    addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", "false", "attachment", "true")).getLocalURIString();
+                    addParameters(PageFlowUtil.map(
+                            ImageUtil.FILE_SESSION_PARAM, key,
+                            ImageUtil.DELETE_FILE_PARAM, "false",
+                            ImageUtil.ATTACHMENT_PARAM, "true")).getLocalURIString();
         }
         return downloadUrl;
     }

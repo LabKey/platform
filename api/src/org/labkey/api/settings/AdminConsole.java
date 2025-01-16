@@ -232,5 +232,4 @@ public class AdminConsole
             return getFlag();
         }
     }
-
 }

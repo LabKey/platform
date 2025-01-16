@@ -79,6 +79,16 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
         _data = in;
         _log = log;
         setDebugName("log(" + in.getDebugName() + ")");
+
+        StringBuilder sb = new StringBuilder();
+        Formatter formatter = new Formatter(sb);
+        String debugName = _data.getDebugName() + " : " + _data.getClass().getName();
+        sb.append("INIT ").append(debugName).append("\n");
+        for (int i = 0; i <= _data.getColumnCount(); i++)
+        {
+            appendFormattedNameValue(formatter, _data.getColumnInfo(i).getName(), "-");
+        }
+        _log.trace(sb.toString());
     }
 
     @Override

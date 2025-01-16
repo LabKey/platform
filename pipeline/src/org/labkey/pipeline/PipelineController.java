@@ -1522,7 +1522,7 @@ public class PipelineController extends SpringActionController
                 }
                 else
                 {
-                    errors.reject(ERROR_MSG, "Form with id " + rowId + " could not be found");
+                    throw new NotFoundException("Pipeline trigger with id " + rowId + " could not be found");
                 }
             }
 

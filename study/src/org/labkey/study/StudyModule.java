@@ -19,7 +19,6 @@ package org.labkey.study;
 import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +33,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
@@ -54,6 +52,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
@@ -133,30 +132,12 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.CohortDomainKind;
-import org.labkey.study.model.ContinuousDatasetDomainKind;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DateDatasetDomainKind;
-import org.labkey.study.model.GroupSecurityType;
-import org.labkey.study.model.ImportHelperServiceImpl;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.ParticipantGroupServiceImpl;
-import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.ProtocolDocumentType;
-import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.StudyDomainKind;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyLsidHandler;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
-import org.labkey.study.model.VisitDatasetDomainKind;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQueryView;
+import org.labkey.study.query.QueryDatasetQueryChangeListener;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -224,7 +205,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 24.000;
+        return 25.001;
     }
 
     @Override
@@ -286,6 +267,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         // Register so all administrators get this permission
         RoleManager.registerPermission(new ManageStudyPermission());
+
+        QueryService.get().addQueryListener(new QueryDatasetQueryChangeListener());
     }
 
     @Override
@@ -416,6 +399,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Restore Assay Progress Report",
             "This option and all support for assay progress reports will be removed in LabKey Server v25.4.",
             false, false, FeatureType.Deprecated));
+
+        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
+                "Allow query based dataset snapshots",
+                "Allow unprovisioned, query-based dataset snapshots to be created.",
+                false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
@@ -768,14 +756,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         return ret;
     }
-
-
-    @Override
-    public @Nullable UpgradeCode getUpgradeCode()
-    {
-        return new StudyManager.StudyUpgradeCode();
-    }
-
 
     public static class TestCase extends Assert
     {

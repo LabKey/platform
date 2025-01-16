@@ -6,6 +6,8 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -17,6 +19,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataLoaderSettings;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.vfs.FileLike;
@@ -27,6 +30,7 @@ import java.util.Map;
 public interface AssayPlateMetadataService
 {
     String PLATE_SET_COLUMN_NAME = "PlateSet";
+    String HIT_SELECTION_CRITERIA_COLUMN_NAME = "HitSelectionCriteria";
 
     static void setInstance(AssayPlateMetadataService serviceImpl)
     {
@@ -46,6 +50,9 @@ public interface AssayPlateMetadataService
         return ServiceRegistry.get().getService(AssayPlateMetadataService.class);
     }
 
+    Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull ExpProtocol protocol, List<String> columnNames);
+    Map<String, List<GWTPropertyDescriptor>> previewFilterCriteriaColumns(@NotNull Container container, String protocolName, List<String> columnNames);
+
     /**
      * Merges the results data with the plate metadata to produce a single row map
      *
@@ -56,6 +63,34 @@ public interface AssayPlateMetadataService
         User user,
         Integer plateSetId,
         DataIteratorBuilder rows,
+        AssayProvider provider,
+        ExpProtocol protocol
+    ) throws ExperimentException;
+
+    /**
+     * Takes the current incoming data and combines it with any data uploaded in the previous run (re-run ID). Data
+     * can be combined for plates within a plate set, but only on a per plate boundary. If there is data for plates
+     * in both sets of data, the most recent data will take precedence.
+     *
+     * @param results The incoming data rows
+     * @return The new, combined data
+     */
+    DataIteratorBuilder mergeReRunData(
+        Container container,
+        User user,
+        @NotNull AssayRunUploadContext<?> context,
+        DataIterator results,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        ExpData data
+    ) throws ExperimentException;
+
+    /**
+     * Returns the plate set ID for the current run context.
+     */
+    @Nullable
+    Integer getPlateSetId(
+        AssayRunUploadContext<?> context,
         AssayProvider provider,
         ExpProtocol protocol
     ) throws ExperimentException;
@@ -104,9 +139,9 @@ public interface AssayPlateMetadataService
     void updateReplicateStatsDomain(
         User user,
         ExpProtocol protocol,
-        GWTDomain<GWTPropertyDescriptor> update,
-        Domain resultsDomain
-    ) throws ExperimentException;
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update
+    ) throws ValidationException;
 
     /**
      * Computes and inserts replicate statistics into the protocol schema table.
@@ -120,19 +155,27 @@ public interface AssayPlateMetadataService
         ExpProtocol protocol,
         @NotNull ExpRun run,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException;
+    ) throws ValidationException;
 
     void updateReplicateStats(
         Container container,
         User user,
         ExpProtocol protocol,
         Map<Lsid, List<Map<String, Object>>> replicateRows
-    ) throws ExperimentException;
+    ) throws ValidationException;
 
     void deleteReplicateStats(
         Container container,
         User user,
         ExpProtocol protocol,
         List<Map<String, Object>> keys
-    ) throws ExperimentException;
+    ) throws ValidationException;
+
+    void applyHitSelectionCriteria(
+        Container container,
+        User user,
+        ExpProtocol protocol,
+        TableInfo resultsTable,
+        List<Integer> runIds
+    ) throws ValidationException;
 }

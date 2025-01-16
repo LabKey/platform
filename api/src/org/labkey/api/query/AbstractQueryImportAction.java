@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +39,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -74,7 +74,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -82,6 +81,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 import static org.labkey.api.query.AbstractQueryUpdateService.addTransactionAuditEvent;
@@ -569,6 +569,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setSchemaName(schemaName)
                                 .setQueryName(queryName)
                                 .setRenamedColumns(getRenamedColumns())
+                                .setLineageImportAliases(getLineageImportAliases())
                                 .setInsertOption(_insertOption)
                                 .setAuditBehaviorType(behaviorType)
                                 .setAuditUserComment(_auditUserComment)
@@ -642,10 +643,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void configureLoader(DataLoader loader) throws IOException
     {
-        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns());
+        configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), null);
     }
 
-    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns) throws IOException
+    public static void configureLoader(DataLoader loader, @Nullable TableInfo target, @Nullable Map<String, String> renamedColumns, boolean allowLineageColumns, @Nullable Set<String> lineageAliasNames) throws IOException
     {
         //apply known columns so loader can do better type conversion
         if (loader != null && target != null)
@@ -663,7 +664,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
         }
 
-        // Issue 40302: Unable to use samples or data class with integer like names as material or data input
+        // Issue 40302: Unable to use samples or data class with integer-like names as material or data input
         // treat lineage columns as string values
         if (loader != null && allowLineageColumns)
         {
@@ -671,11 +672,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             for (ColumnDescriptor col : cols)
             {
                 String name = col.name.toLowerCase();
-                if (name.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpMaterial.MATERIAL_OUTPUT_CHILD.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_INPUT_PARENT.toLowerCase() + "/") ||
-                    name.startsWith(ExpData.DATA_OUTPUT_CHILD.toLowerCase() + "/") ||
-                    name.equalsIgnoreCase("Name") /* Issue 50710: Treat "Name" column as a string value for sample or data class import */)
+                if (ExperimentService.isInputOutputColumn(col.name) ||
+                    name.equalsIgnoreCase("Name") || /* Issue 50710: Treat "Name" column as a string value for sample or data class import */
+                    (lineageAliasNames != null && lineageAliasNames.contains(name)) )
                 {
                     col.clazz = String.class;
                     col.converter = TabLoader.noopConverter;
@@ -691,6 +690,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     protected Map<String, String> getRenamedColumns()
+    {
+        return null;
+    }
+
+    protected Set<String> getLineageImportAliases() throws IOException
     {
         return null;
     }

@@ -160,13 +160,20 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
     protected String getExpNameExpressionPreview(String schemaName, String queryName, User user)
     {
-        String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, getContainer(), user);
-        Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
-        if (domain != null && domain.getDomainKind() != null)
+        try
         {
-            List<String> previews = domain.getDomainKind().getDomainNamePreviews(schemaName, queryName, getContainer(), user);
-            if (previews != null && !previews.isEmpty())
-               return previews.get(0);
+            String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, getContainer(), user);
+            Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+            if (domain != null && domain.getDomainKind() != null)
+            {
+                List<String> previews = domain.getDomainKind().getDomainNamePreviews(schemaName, queryName, getContainer(), user);
+                if (previews != null && !previews.isEmpty())
+                    return previews.get(0);
+            }
+        }
+        catch (Exception ignore)
+        {
+            return null;
         }
 
         return null;

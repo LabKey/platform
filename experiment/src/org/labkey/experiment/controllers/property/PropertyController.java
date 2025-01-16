@@ -1124,7 +1124,7 @@ public class PropertyController extends SpringActionController
                     throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
                 }
 
-                return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
+                return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.isCheckCommentLineCount(), form.getDomainKindName());
             }
             finally
             {
@@ -1132,7 +1132,7 @@ public class PropertyController extends SpringActionController
             }
         }
 
-        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, String domainKindName) throws IOException
+        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude, boolean checkCommentLineCount, String domainKindName) throws IOException
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1163,6 +1163,10 @@ public class PropertyController extends SpringActionController
                 {
                     response.put("data", loader.getFirstNLines(numLinesToInclude));
                 }
+                if (checkCommentLineCount)
+                {
+                    response.put("commentLineCount", loader.getCommentLineCount());
+                }
             }
 
             response.put("fields", fields);
@@ -1178,6 +1182,7 @@ public class PropertyController extends SpringActionController
         private Object _file;
         private String _domainKindName;
         private boolean _guessFormatAsTSV;
+        private boolean _checkCommentLineCount;
 
         public Integer getNumLinesToInclude()
         {
@@ -1217,6 +1222,16 @@ public class PropertyController extends SpringActionController
         public void setGuessFormatAsTSV(boolean guessFormatAsTSV)
         {
             _guessFormatAsTSV = guessFormatAsTSV;
+        }
+
+        public boolean isCheckCommentLineCount()
+        {
+            return _checkCommentLineCount;
+        }
+
+        public void setCheckCommentLineCount(boolean checkCommentLineCount)
+        {
+            _checkCommentLineCount = checkCommentLineCount;
         }
     }
 
@@ -1474,6 +1489,13 @@ public class PropertyController extends SpringActionController
 
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
+
+        if (original.getName() != null && update.getName() != null && !original.getName().equals(update.getName()))
+        {
+            String domainNameError = DomainUtil.validateDomainName(update.getName(), kind.getKindName(), kind.supportsNamingPattern());
+            if (domainNameError != null)
+                throw new IllegalArgumentException(domainNameError);
+        }
 
         if (JSONObject.class == kind.getTypeClass())
         {

@@ -158,7 +158,7 @@ public class SqlScriptExecutor
         public void execute()
         {
             // Null schema allowed for testing
-            if (_sql.length() > 0 && null != _schema)
+            if (!_sql.isEmpty() && null != _schema)
             {
                 new SqlExecutor(_schema.getScope(), _conn).execute(SQLFragment.unsafe(_sql));
             }

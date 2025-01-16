@@ -445,6 +445,29 @@ public class NameGenerator
 
     }
 
+    public static String validateFieldKeyConflict(String fieldKey)
+    {
+        String fieldKeyLc = fieldKey.toLowerCase();
+
+        Set<String> formatNames = new HashSet<>(SubstitutionFormat.getFormatNames());
+        formatNames.add(SubstitutionValue.withCounter.name());
+        for (String formatName : formatNames)
+        {
+            String lcFormatName = ":" + formatName.toLowerCase();
+            int matchInd = fieldKeyLc.indexOf(lcFormatName);
+            if (matchInd > -1)
+                return "'" + fieldKey.substring(matchInd, matchInd + lcFormatName.length()) + "' is a reserved pattern.";
+        }
+
+        for (SubstitutionValue subValue : SubstitutionValue.values())
+        {
+            if (subValue.getKey().equalsIgnoreCase(fieldKey))
+                return "'" + fieldKey + "' is a reserved name.";
+        }
+
+        return null;
+    }
+
     static Pair<List<String>, List<String>> getReservedFieldValidationResults(String nameExpression)
     {
         // For each substitution format, find its location in the string
@@ -724,7 +747,7 @@ public class NameGenerator
 
     public static boolean isParentInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
     {
-        return isParentInputToken(token, importAliases, false) || isParentInputWithDataType(token.toString().split("/"), currentDataTypeName, false, container, user);
+        return isParentInputToken(token, importAliases, false) || isParentInputWithDataType(token.toString().split("/", 2), currentDataTypeName, false, container, user);
     }
 
     public static boolean isParentLookup(List<String> fieldParts, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
@@ -800,7 +823,7 @@ public class NameGenerator
                 return false;
             inputToken = inputToken.substring(1); // remove leading ~
         }
-        String dataType = parts[1];
+        String dataType = QueryKey.decodePart(parts[1]); // If data type contains special characters
 
         boolean isInput = INPUT_PARENT.equalsIgnoreCase(inputToken);
         boolean isData = ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(inputToken);
@@ -824,8 +847,20 @@ public class NameGenerator
         return ExperimentService.get().getDataClass(container, user, dataType) != null;
     }
 
+    static String getEncodedDataTypeInExpression(String expression)
+    {
+        return expression.replaceAll("/", "\\$S");
+    }
+
+    static String getDecodedDataTypeInExpression(String expression)
+    {
+        return QueryKey.decodePart(expression);
+    }
+
     private Object getParentLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, @Nullable NameExpressionAncestorPartOption ancestorPartOption, String lookupField, User user, Map<String, String> dataClassNames, Map<String, String> sampleTypeNames)
     {
+        if (inputDataType != null)
+            inputDataType = getDecodedDataTypeInExpression(inputDataType);
         String inputPrefixLc = inputPrefix.toLowerCase();
         boolean isMaterial = inputPrefixLc.startsWith("materialinputs") || inputPrefixLc.startsWith("inputs");
         boolean isData = inputPrefixLc.startsWith("datainputs") || inputPrefixLc.startsWith("inputs");
@@ -961,6 +996,17 @@ public class NameGenerator
         return null;
     }
 
+    private PropertyType getPropertyType(ColumnInfo col)
+    {
+        PropertyType pt = col.getPropertyType();
+        if (pt == null)
+            pt = PropertyType.getFromJdbcType(col.getJdbcType(), false);
+        if (pt == null && col.getJdbcType() == JdbcType.GUID)
+            pt = PropertyType.STRING;
+
+        return pt;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any parent input tokens
@@ -1040,13 +1086,14 @@ public class NameGenerator
                         hasDateBasedSampleCounterFormat = true;
                 }
 
-                String sTok = QueryKey.decodePart(token.toString()).toLowerCase();
+                String sTok = QueryKey.decodePart(token.toString());
                 if (isParentInput(sTok, importAliases, _currentDataTypeName, _container, user))
                 {
                     isParentPart = true;
                     hasParentInputs = true;
                 }
 
+                String sTokLc = sTok.toLowerCase();
                 if (token instanceof FieldKey fkTok)
                 {
                     int previousErrorCount = _syntaxErrors.size();
@@ -1084,11 +1131,7 @@ public class NameGenerator
                                     ColumnInfo col = _parentTable.getColumn(fieldName);
                                     isColPresent = col != null;
                                     if (isColPresent)
-                                    {
-                                        pt = col.getPropertyType();
-                                        if (pt == null)
-                                            pt = PropertyType.getFromJdbcType(col.getJdbcType());
-                                    }
+                                        pt = getPropertyType(col);
                                 }
                                 if (!isColPresent && !domainFields.isEmpty())
                                 {
@@ -1131,7 +1174,7 @@ public class NameGenerator
                             if (!isAncestorSearch)
                                 parentLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                            String[] inputParts = dataTypeToken.split("/");
+                            String[] inputParts = dataTypeToken.split("/", 2);
                             lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, inputParts[0], inputParts[1], ancestorPartOption, lookupField, user, dataClassNames, sampleTypeNames);
                         }
                         else if (!isParentAlias && fieldParts.size() <= 3)
@@ -1188,8 +1231,8 @@ public class NameGenerator
 
                     if (isParentPart)
                     {
-                        boolean isInput = sTok.startsWith(INPUT_PARENT.toLowerCase());
-                        boolean isMaterial = sTok.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase());
+                        boolean isInput = sTokLc.startsWith(INPUT_PARENT.toLowerCase());
+                        boolean isMaterial = sTokLc.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT.toLowerCase());
                         Object preview = isInput ? SubstitutionValue.Inputs.getPreviewValue() : (isMaterial ? SubstitutionValue.MaterialInputs.getPreviewValue() : SubstitutionValue.DataInputs.getPreviewValue());
                         previewCtx.put(fkTok.toString(), preview);
                     }
@@ -1259,9 +1302,7 @@ public class NameGenerator
                         if (lookupCol != null)
                         {
                             lookupExist = true;
-                            pt = lookupCol.getPropertyType();
-                            if (pt == null)
-                                pt = PropertyType.getFromJdbcType(lookupCol.getJdbcType());
+                            pt = getPropertyType(lookupCol);
                         }
 
                     }
@@ -1358,7 +1399,7 @@ public class NameGenerator
             {
                 if (fieldParts.size() == 1)
                     fieldParts.add("Name");
-                String[] inputs = importAliases.get(alias.substring(1)).split("/");
+                String[] inputs = importAliases.get(alias.substring(1)).split("/", 2);
                 isMaterialStr = inputs[0];
                 typeStr = inputs[1];
             }
@@ -1884,10 +1925,13 @@ public class NameGenerator
         {
             String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
             String inputCol = inputType + "/" + parentTypeName;
+            String inputColEncoded = inputType + "/" + getEncodedDataTypeInExpression(parentTypeName);
 
-            List<String> fieldNames = new ArrayList<>();
+            Set<String> fieldNames = new HashSet<>();
             if (_expParentLookupFields.containsKey(inputCol))
                 fieldNames.addAll(_expParentLookupFields.get(inputCol));
+            if (_expParentLookupFields.containsKey(inputColEncoded))
+                fieldNames.addAll(_expParentLookupFields.get(inputColEncoded));
             if (_expParentLookupFields.containsKey(inputType))
                 fieldNames.addAll(_expParentLookupFields.get(inputType));
             if (_expParentLookupFields.containsKey(INPUT_PARENT))
@@ -1916,6 +1960,8 @@ public class NameGenerator
                 inputLookupValues.computeIfAbsent(inputType + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
                 // add to <Type>Inputs/<TypeName>/<LookupField>
                 inputLookupValues.computeIfAbsent(inputCol + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                if (!inputColEncoded.equalsIgnoreCase(inputCol))
+                    inputLookupValues.computeIfAbsent(inputColEncoded + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
             }
         }
 
@@ -2007,7 +2053,7 @@ public class NameGenerator
 
         }
 
-        private void addParentLookupContext(String parentTypeName,
+        private void addParentLookupContext(String parentTypeName/* already decoded */,
                                             String parentName,
                                             boolean isMaterialParent,
                                             @Nullable Map<String, String> parentImportAliases,
@@ -2020,11 +2066,14 @@ public class NameGenerator
 
             if (!hasTypeLookup)
             {
+                String parentTypeNameEncoded = getEncodedDataTypeInExpression(parentTypeName);
                 if (isMaterialParent)
                 {
                     if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
                         hasTypeLookup = true;
                     else if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
+                        hasTypeLookup = true;
+                    else if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeNameEncoded))
                         hasTypeLookup = true;
                 }
                 else
@@ -2032,6 +2081,8 @@ public class NameGenerator
                     if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
                         hasTypeLookup = true;
                     else if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
+                        hasTypeLookup = true;
+                    else if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeNameEncoded))
                         hasTypeLookup = true;
                 }
             }
@@ -2079,6 +2130,8 @@ public class NameGenerator
             if (extraProps != null)
                 ctx.putAll(extraProps);
             ctx.putAll(rowMap);
+            if (!ctx.containsKey("container") && _container != null)
+                ctx.put("container", _container.getName());
 
             // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
             if (_parentTable != null)
@@ -2148,24 +2201,10 @@ public class NameGenerator
                     if (value == null)
                         continue;
 
-                    String[] parts = colName.split("/", 2);
-
-                    if (parts.length == 2)
-                    {
-                        if (_expressionSummary.hasParentInputs)
-                            addInputs(parts, colName, value, inputs, parentImportAliases);
-                        if (_expressionSummary.hasParentLookup)
-                            addParentLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
-                    }
-                    else if (parentImportAliases != null && parentImportAliases.containsKey(colName))
-                    {
-                        String colNameForAlias = parentImportAliases.get(colName);
-                        parts = colNameForAlias.split("/", 2);
-                        if (_expressionSummary.hasParentInputs)
-                            addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
-                        if (_expressionSummary.hasParentLookup)
-                            addParentLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
-                    }
+                    if (_expressionSummary.hasParentInputs)
+                        addInputs(colName, value, inputs, parentImportAliases);
+                    if (_expressionSummary.hasParentLookup)
+                        addParentLookupInput(colName, value, parentImportAliases, inputLookupValues);
                 }
 
                 // if a single input or lookup is found, return the object, not the list
@@ -2254,18 +2293,24 @@ public class NameGenerator
             return ctx;
         }
 
-        private void addParentLookupInput(String[] parts,
-                                          String colName,
+        private void addParentLookupInput(String colName,
                                           Object value,
                                           @Nullable Map<String, String> parentImportAliases,
                                           Map<String, ArrayList<Object>> inputLookupValues)
         {
-            boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
-            boolean isDataParent = parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
-            if (isMaterialParent || isDataParent)
+            String[] parts = colName.split("/", 2);
+            if (parentImportAliases != null && parentImportAliases.containsKey(colName))
+                parts = parentImportAliases.get(colName).split("/", 2);
+
+            if (parts.length == 2)
             {
-                for (String parent : parentNames(value, colName))
-                    addParentLookupContext(QueryKey.decodePart(parts[1]), parent, isMaterialParent, parentImportAliases, inputLookupValues);
+                boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
+                boolean isDataParent = parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
+                if (isMaterialParent || isDataParent)
+                {
+                    for (String parent : parentNames(value, colName))
+                        addParentLookupContext(QueryKey.decodePart(parts[1]), parent, isMaterialParent, parentImportAliases, inputLookupValues);
+                }
             }
         }
 
@@ -2274,12 +2319,15 @@ public class NameGenerator
             return NameGenerator.parentNames(value, parentColName).collect(Collectors.toList());
         }
 
-        private void addInputs(String[] parts,
-                               String colName,
+        private void addInputs(String colName,
                                Object value,
                                Map<String, Set<String>> inputs,
                                @Nullable Map<String, String> parentImportAliases)
         {
+            String[] parts = colName.split("/", 2);
+            if (parts.length == 1 && parentImportAliases != null && parentImportAliases.containsKey(colName))
+                parts = parentImportAliases.get(colName).split("/", 2);
+
             if (parts.length == 2)
             {
                 String inputsCategory = null;
@@ -2289,21 +2337,32 @@ public class NameGenerator
                     inputsCategory = ExpMaterial.MATERIAL_INPUT_PARENT;
                 if (inputsCategory != null)
                 {
+                    String dataType = parts[1];
+                    String decodedDataType = QueryKey.decodePart(dataType); // data might come in as encoded or decoded
                     Collection<String> parents = parentNames(value, colName);
                     inputs.get(INPUT_PARENT).addAll(parents);
-                    inputs.computeIfAbsent(INPUT_PARENT + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
                     inputs.get(inputsCategory).addAll(parents);
+
+                    Set<String> dataTypeAltNames = new HashSet<>();
+                    dataTypeAltNames.add(decodedDataType);
+                    dataTypeAltNames.add(getEncodedDataTypeInExpression(decodedDataType));
+                    for (String dataTypeAltName : dataTypeAltNames)
+                    {
+                        inputs.computeIfAbsent(INPUT_PARENT + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
+                        if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
+                            inputs.computeIfAbsent(parts[0] + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents);
+                    }
+
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
                     if (parentImportAliases != null)
                     {
+                        if (parentImportAliases.containsKey(colName))
+                            inputs.computeIfAbsent(colName,  (s) -> new LinkedHashSet<>()).addAll(parents);
                         Optional<Map.Entry<String, String>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(colName)).findFirst();
                         aliasEntry.ifPresent(entry -> {
                             inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
                         });
                     }
-
-                    if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
-                        inputs.computeIfAbsent(parts[0] + "/" + parts[1],  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
             }
         }

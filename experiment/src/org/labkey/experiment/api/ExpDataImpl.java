@@ -633,7 +633,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         ExpDataClass dc = getDataClass(null);
         if (dc != null)
             dataClassName = dc.getName();
-        return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId()));
+        // why not just data:rowId?
+        return "data:" + new Path(getContainer().getId(), dataClassName, Integer.toString(getRowId())).encode();
     }
 
     @Override

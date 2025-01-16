@@ -19,7 +19,7 @@ GO
 
 CREATE TABLE audit.AuditLog
 (
-    RowId INT IDENTITY(1,1) NOT NULL,
+    RowId BIGINT IDENTITY(1,1) NOT NULL,
     Key1 NVARCHAR(1000) NULL,
     Key2 NVARCHAR(1000) NULL,
     Key3 NVARCHAR(1000) NULL,
@@ -47,5 +47,3 @@ CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType
 ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);
 
 GO
-
-EXEC core.executeJavaUpgradeCode 'updateRowIdToBigInt';

@@ -2602,13 +2602,18 @@ public class ExpDataIterators
             {
                 try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
                 {
+                    Set<String> aliasNames;
+                    if (_isSamples)
+                        aliasNames = new CaseInsensitiveHashSet(((ExpSampleType) typeData.dataType).getImportAliases().keySet());
+                    else
+                        aliasNames = new CaseInsensitiveHashSet(((ExpDataClass) typeData.dataType).getImportAliases().keySet());
                     // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                    configureLoader(loader, typeData.tableInfo, null, true);
+                    configureLoader(loader, typeData.tableInfo, null, true, aliasNames);
                     updateService.loadRows(_user, typeData.container, loader, _context, null);
                 }
                 catch (SQLException | IOException e)
                 {
-                    String msg = "Problem importing data for sample type '" + typeData.dataType.getName() + "'. ";
+                    String msg = "Problem importing data for type '" + typeData.dataType.getName() + "'. ";
                     LOG.error(msg, e);
                     _context.getErrors().addRowError(new ValidationException(msg));
                 }
@@ -2962,7 +2967,7 @@ public class ExpDataIterators
                 header.add(name);
             }
 
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + dataClass.getName() + ".tsv");
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv");
 
             List<String> dataRows = new ArrayList<String>();
             dataRows.add(StringUtils.join(header, "\t"));
@@ -2980,7 +2985,7 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
                 return null;
             }
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + sampleType.getName() + ".tsv");
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(sampleType.getName()) + ".tsv");
             Set<String> validFields = new CaseInsensitiveHashSet();
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))

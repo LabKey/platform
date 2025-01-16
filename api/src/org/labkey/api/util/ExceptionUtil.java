@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -87,6 +86,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -308,7 +308,7 @@ public class ExceptionUtil
             {
                 String message = "Exception detected";
                 if (null != errorCode)
-                    message += " and logged to mothership with error code: " + errorCode;
+                    message += " and logged to mothership with error code " + errorCode;
                 LOG.error(message, ex);
                 String decorations = getExtendedMessage(ex);
 
@@ -496,7 +496,7 @@ public class ExceptionUtil
             String message = "Client exception detected";
             if (null != errorCode)
             {
-                message += " and logged to mothership with error code: ";
+                message += " and logged to mothership with error code " + errorCode + " ";
             }
             LOG.error(message + "\n" +
                     requestURL + "\n" +
@@ -931,7 +931,7 @@ public class ExceptionUtil
                 ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
 
                 if (responseStatusMessage != null || message != null)
-                    errorResponse.put("exception", StringUtils.defaultString(message, responseStatusMessage));
+                    errorResponse.put("exception", Objects.toString(message, responseStatusMessage));
 
                 ApiResponseWriter writer = responseFormat.createWriter(response, null, null);
 

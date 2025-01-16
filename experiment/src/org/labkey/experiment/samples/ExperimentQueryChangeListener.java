@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
@@ -88,19 +89,18 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
             String newQueryName = queryNameChangeMap.get(oldQueryName);
 
             String searchStr = "\"" + prefix + oldQueryName + "\"";
-            String searchStrRegex = "\"" + prefix.replace("\\/", "\\\\/") + oldQueryName + "\"";
             String replaceStr = "\"" + prefix.replace("\\/", "\\\\/") + newQueryName + "\"";
 
             for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
-                String updatedAlias = sampleType.getImportAliasJson().replaceAll("(?i)" + searchStrRegex, replaceStr);
+                String updatedAlias = sampleType.getImportAliasJson().replaceAll("(?i)" + Pattern.quote(searchStr), replaceStr);
                 sampleType.setImportAliasMapJson(updatedAlias);
                 sampleType.save(sampleType.getModifiedBy());
             }
 
             for (ExpDataClassImpl dataClass : getRenamedDataClasses(container, searchStr))
             {
-                String updatedAlias = dataClass.getImportAliasJson().replaceAll("(?i)" + searchStrRegex, replaceStr);
+                String updatedAlias = dataClass.getImportAliasJson().replaceAll("(?i)" + Pattern.quote(searchStr), replaceStr);
                 dataClass.setImportAliasMapJson(updatedAlias);
                 dataClass.save(dataClass.getModifiedBy());
             }

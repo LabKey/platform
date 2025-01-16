@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
-import org.labkey.api.assay.DefaultDataTransformer;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -102,8 +102,8 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
                     inputDataMap.put(file, new Pair<>(DATASET_ID_KEY, params.get(DATASET_ID_KEY)));
                 else if (params.containsKey(DATASET_NAME_KEY))
                     inputDataMap.put(file, new Pair<>(DATASET_NAME_KEY, params.get(DATASET_NAME_KEY)));
-                else if (params.containsKey(DefaultDataTransformer.ORIGINAL_SOURCE_PATH))
-                    inputDataMap.put(file, new Pair<>(DefaultDataTransformer.ORIGINAL_SOURCE_PATH, params.get(DefaultDataTransformer.ORIGINAL_SOURCE_PATH)));
+                else if (params.containsKey(DataTransformService.ORIGINAL_SOURCE_PATH))
+                    inputDataMap.put(file, new Pair<>(DataTransformService.ORIGINAL_SOURCE_PATH, params.get(DataTransformService.ORIGINAL_SOURCE_PATH)));
             }
             List<String> readerErrors = new ArrayList<>();
             StudyImpl study = getStudy();

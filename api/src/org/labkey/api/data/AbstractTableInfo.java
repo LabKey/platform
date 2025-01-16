@@ -61,6 +61,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.sql.LabKeySql;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTrackable;
@@ -1522,11 +1523,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 index++;
             }
             // add all columns up until the first calculated column
-            for (ColumnInfo column : originalColumns.values())
+            if (index > 0)
             {
-                addColumn((BaseColumnInfo) column);
-                if (column.getFieldKey().equals(getDefaultVisibleColumns().get(index - 1)))
-                    break;
+                for (ColumnInfo column : originalColumns.values())
+                {
+                    addColumn((BaseColumnInfo) column);
+                    if (column.getFieldKey().equals(getDefaultVisibleColumns().get(index - 1)))
+                        break;
+                }
             }
             // add the calculated columns in the order they were defined
             for (FieldKey calculatedFieldKey : calculatedFieldKeys)
@@ -2051,6 +2055,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             templates.add(Pair.of("Download Template", url.toString()));
         }
 
+        return templates;
+    }
+
+    @Override
+    public List<Pair<String, String>> getValidatedImportTemplates(ViewContext ctx)
+    {
+        List<Pair<String, String>> templates = new ArrayList<>();
+        List<Pair<String, String>> allTemplates = getImportTemplates(ctx);
+        for (Pair<String, String> template : allTemplates)
+        {
+            if (template.second.toLowerCase().contains("exportexceltemplate"))
+                templates.add(template);
+            else
+            {
+                boolean fileExist = FileLinkDisplayColumn.filePathExist(template.second, ctx.getContainer(), ctx.getUser());
+                templates.add(new Pair<>(template.first, template.second + (fileExist ? "" : " (unavailable)")));
+            }
+        }
         return templates;
     }
 

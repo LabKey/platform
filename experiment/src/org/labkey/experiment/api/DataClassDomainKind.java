@@ -57,7 +57,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -77,14 +76,13 @@ import java.util.stream.Collectors;
 
 /**
  * DomainKind implementation for data classes, allowing customizable fields to be attached to the based set of columns.
- * User: kevink
- * Date: 9/15/15
  */
 public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
     private static final Logger LOG = LogHelper.getLogger(DataClassDomainKind.class, "Data class domain kind changes");
     public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
+    public static final String DATACLASS_FILE_DIRECTORY = "dataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
@@ -103,7 +101,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
 
         RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
-        RESERVED_NAMES.addAll(Arrays.asList(ExpDataClassDataTable.Column.values()).stream().map(ExpDataClassDataTable.Column::name).collect(Collectors.toList()));
+        RESERVED_NAMES.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList());
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add("RunId"); // Issue 50461
 
@@ -252,12 +250,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public String getStorageSchemaName()
     {
         return PROVISIONED_SCHEMA_NAME;
@@ -350,7 +342,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         }
 
         Map<String, String> aliasMap = options.getImportAliasesMap();
-        if (aliasMap != null && aliasMap.size() > 0)
+        if (aliasMap != null && !aliasMap.isEmpty())
         {
             ExpDataClass dataClass = options.getRowId() >= 0 ? ExperimentService.get().getDataClass(options.getRowId()) : null;
             Domain stDomain = dataClass != null ? dataClass.getDomain() : null;
@@ -493,5 +485,17 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public boolean supportsPhiLevel()
     {
         return ComplianceService.get().isComplianceSupported();
+    }
+
+    @Override
+    public boolean supportsNamingPattern()
+    {
+        return true;
+    }
+
+    @Override
+    public String getDomainFileDirectory()
+    {
+        return DATACLASS_FILE_DIRECTORY;
     }
 }

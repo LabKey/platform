@@ -16,7 +16,6 @@
 package org.labkey.study.query.studydesign;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -162,12 +161,6 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     }
 
     @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
         Set<String> names = new HashSet<>();
@@ -198,17 +191,5 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
         Lsid lsid = new Lsid(domainURI);
 
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(getNamespacePrefix()) ? Handler.Priority.MEDIUM : null;
-    }
-
-    @Override
-    public Set<String> getNonProvisionedTableNames()
-    {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
     }
 }

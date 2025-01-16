@@ -59,7 +59,7 @@ abstract public class DomainKind<T> implements Handler<String>
 
     /**
      * Return a class of DomainKind's bean which carries domain specific properties.
-     * This class will used when marshalling/unmarshalling via Jackson during Create and Save/Update Domain
+     * This class will be used when marshalling/unmarshalling via Jackson during Create and Save/Update Domain
      * @return Class of DomainKind's bean with domain specific properties
      */
     abstract public Class<? extends T> getTypeClass();
@@ -206,6 +206,10 @@ abstract public class DomainKind<T> implements Handler<String>
      */
     abstract public DbScope getScope();
     abstract public String getStorageSchemaName();
+    public boolean isProvisioned(Container container, String name)
+    {
+        return getStorageSchemaName() != null;
+    }
     abstract public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain);
 
     /**
@@ -409,5 +413,15 @@ abstract public class DomainKind<T> implements Handler<String>
     public boolean supportsPhiLevel()
     {
         return false;
+    }
+
+    public boolean supportsNamingPattern()
+    {
+        return false;
+    }
+
+    public String getDomainFileDirectory()
+    {
+        return getKindName();
     }
 }

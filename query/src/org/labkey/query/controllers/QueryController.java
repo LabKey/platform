@@ -16,6 +16,7 @@
 
 package org.labkey.query.controllers;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
@@ -68,12 +69,15 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ProvenanceRecordingParams;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
@@ -117,6 +121,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -146,6 +151,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -184,6 +190,7 @@ import org.labkey.query.xml.TestCaseType;
 import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -196,9 +203,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -207,7 +211,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -233,7 +237,9 @@ import java.util.zip.GZIPOutputStream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
+import static org.labkey.api.assay.AssayFileWriter.ensureUploadDirectory;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
+import static org.labkey.api.query.AbstractQueryUpdateService.saveFile;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.FONT;
@@ -243,6 +249,8 @@ import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.query.MetadataTableJSON.getTableType;
+import static org.labkey.query.MetadataTableJSON.parseDocument;
 
 @SuppressWarnings("DefaultAnnotationParam")
 
@@ -1368,7 +1376,7 @@ public class QueryController extends SpringActionController
 
                         if (!getUser().isTrustedBrowserDev())
                         {
-                            ensureNoJavaScript(metadataText);
+                            JavaScriptFragment.ensureXMLMetadataNoJavaScript(metadataText);
                         }
 
                         queryDef.setMetadataXml(metadataText);
@@ -1426,63 +1434,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        private static final Set<String> DISALLOWED_SCRIPT_ELEMENTS = Collections.unmodifiableSet(new CaseInsensitiveHashSet("onClick", "onRender", "includeScript"));
-        private static final String CLASS_NAME_ELEMENT = "className";
-
-        private static void ensureNoJavaScript(String metadataText)
-        {
-            try
-            {
-                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
-
-                // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
-                // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag
-                StringBuilder className = null;
-
-                while (reader.hasNext())
-                {
-                    reader.next();
-                    if (reader.isStartElement())
-                    {
-                        String localPath = reader.getName().getLocalPart();
-                        // These three elements directly include JavaScript or pointers to script files
-                        if (DISALLOWED_SCRIPT_ELEMENTS.contains(localPath))
-                        {
-                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
-                        }
-                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath))
-                        {
-                            className = new StringBuilder();
-                        }
-                    }
-
-                    if (reader.isCharacters() && className != null)
-                    {
-                        // Accumulate the content of the <className>
-                        className.append(reader.getText());
-                    }
-
-                    if (reader.isEndElement())
-                    {
-                        String localPath = reader.getName().getLocalPart();
-                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath) && className != null)
-                        {
-                            if (className.toString().contains(JavaScriptDisplayColumn.class.getName()))
-                            {
-                                throw new UnauthorizedException("For permissions to use JavaScriptDisplayColumn, contact your system administrator");
-                            }
-                            className = null;
-                        }
-                    }
-                }
-            }
-            catch (XMLStreamException ignored)
-            {
-                // Let other XML validation and error feedback handle malformed XML
-            }
-        }
-    }
+     }
 
 
     // Trusted analysts who are editors can create and modify queries
@@ -8216,6 +8168,289 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class QueryImportTemplateForm
+    {
+        private String schemaName;
+        private String queryName;
+        private List<String> templateLabels;
+        private List<String> templateUrls;
+
+        public void setQueryName(String queryName)
+        {
+            this.queryName = queryName;
+        }
+
+        public List<String> getTemplateLabels()
+        {
+            return templateLabels == null ? Collections.emptyList() : templateLabels;
+        }
+
+        public void setTemplateLabels(List<String> templateLabels)
+        {
+            this.templateLabels = templateLabels;
+        }
+
+        public List<String> getTemplateUrls()
+        {
+            return templateUrls == null ? Collections.emptyList() : templateUrls;
+        }
+
+        public void setTemplateUrls(List<String> templateUrls)
+        {
+            this.templateUrls = templateUrls;
+        }
+
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return queryName;
+        }
+
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
+    public class UpdateQueryImportTemplateAction extends MutatingApiAction<QueryImportTemplateForm>
+    {
+        private DomainKind _kind;
+        private UserSchema _schema;
+        private TableInfo _tInfo;
+        private QueryDefinition _queryDef;
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public void validateForm(QueryImportTemplateForm form, Errors errors)
+        {
+            User user = getUser();
+            Container container = getContainer();
+            String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
+            _kind = PropertyService.get().getDomainKind(domainURI);
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain == null)
+                throw new IllegalArgumentException("Domain '" + domainURI + "' not found.");
+
+            if (!_kind.canEditDefinition(user, domain))
+                throw new UnauthorizedException("You don't have permission to update import templates for this domain.");
+
+            QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
+            if (!(querySchema instanceof UserSchema _schema))
+                throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'.");
+            QuerySettings settings = _schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
+            _queryDef = settings.getQueryDef(_schema);
+            if (null == _queryDef)
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'.");
+            if (!_queryDef.isMetadataEditable())
+                throw new UnsupportedOperationException("Query metadata is not editable.");
+            _tInfo = _queryDef.getTable(_schema, new ArrayList<>(), true, true);
+            if (_tInfo == null)
+                throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'.");
+
+        }
+
+        private Map<Integer, Object> getRowFiles()
+        {
+            Map<Integer, Object> rowFiles = new HashMap<>();
+            if (getFileMap() != null)
+            {
+                for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
+                {
+                    // allow for the fileMap key to include the row index for defining which row to attach this file to
+                    // ex: "templateFile::0", "templateFile::1"
+                    String fieldKey = fileEntry.getKey();
+                    int delimIndex = fieldKey.lastIndexOf("::");
+                    if (delimIndex > -1)
+                    {
+                        Integer fieldRowIndex = Integer.parseInt(fieldKey.substring(delimIndex + 2));
+                        SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
+                        rowFiles.put(fieldRowIndex, file.isEmpty() ? null : file);
+                    }
+                }
+            }
+            return rowFiles;
+        }
+
+        private List<Pair<String, String>> getUploadedTemplates(QueryImportTemplateForm form, DomainKind kind) throws ValidationException, QueryUpdateServiceException, ExperimentException
+        {
+            FileContentService fcs = FileContentService.get();
+            if (fcs == null)
+                throw new IllegalStateException("Unable to load file service.");
+
+            User user = getUser();
+            Container container = getContainer();
+
+            Map<Integer, Object> rowFiles = getRowFiles();
+            List<String> templateLabels = form.getTemplateLabels();
+            Set<String> labels = new HashSet<>(templateLabels);
+            if (labels.size() < templateLabels.size())
+                throw new IllegalArgumentException("Duplicate template name is not allowed.");
+
+            List<String> templateUrls = form.getTemplateUrls();
+            List<Pair<String, String>> uploadedTemplates = new ArrayList<>();
+            for (int rowIndex = 0; rowIndex < form.getTemplateLabels().size(); rowIndex++)
+            {
+                String templateLabel = templateLabels.get(rowIndex);
+                if (StringUtils.isBlank(templateLabel.trim()))
+                    throw new IllegalArgumentException("Template name cannot be blank.");
+                String templateUrl = templateUrls.get(rowIndex);
+                Object file = rowFiles.get(rowIndex);
+                if (StringUtils.isEmpty(templateUrl) && file == null)
+                    throw new IllegalArgumentException("Template file is not provided.");
+
+                if (file instanceof MultipartFile || file instanceof SpringAttachmentFile)
+                {
+                    String fileName;
+                    if (file instanceof MultipartFile f)
+                        fileName = f.getName();
+                    else
+                    {
+                        SpringAttachmentFile f = (SpringAttachmentFile) file;
+                        fileName = f.getFilename();
+                    }
+                    String fileNameValidation = FileUtil.validateFileName(fileName);
+                    if (!StringUtils.isEmpty(fileNameValidation))
+                        throw new IllegalArgumentException(fileNameValidation);
+
+                    FileLike uploadDir = ensureUploadDirectory(container, kind.getDomainFileDirectory());
+                    uploadDir = uploadDir.resolveChild("_templates");
+                    Object savedFile = saveFile(user, container, "template file", file, uploadDir);
+                    Path savedFilePath;
+
+                    if (savedFile instanceof File ioFile)
+                        savedFilePath = ioFile.toPath();
+                    else if (savedFile instanceof FileLike fl)
+                        savedFilePath = fl.toNioPathForRead();
+                    else
+                        throw UnexpectedException.wrap(null,"Unable to upload template file.");
+
+                    templateUrl = fcs.getWebDavUrl(savedFilePath, container, FileContentService.PathType.serverRelative).toString();
+                }
+
+                uploadedTemplates.add(Pair.of(templateLabel, templateUrl));
+            }
+            return uploadedTemplates;
+        }
+
+        @Override
+        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException, ExperimentException, MetadataUnavailableException
+        {
+            User user = getUser();
+            Container container = getContainer();
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
+
+            List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, _kind);
+
+            List<Pair<String, String>> existingTemplates = _tInfo.getImportTemplates(getViewContext());
+            List<Pair<String, String>> existingCustomTemplates = new ArrayList<>();
+            for (Pair<String, String> template_ : existingTemplates)
+            {
+                if (!template_.second.toLowerCase().contains("exportexceltemplate"))
+                    existingCustomTemplates.add(template_);
+            }
+            if (!updatedTemplates.equals(existingCustomTemplates))
+            {
+                QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
+                TablesDocument doc = null;
+                TableType xmlTable = null;
+                TableType.ImportTemplates xmlImportTemplates = null;
+
+                if (queryDef != null)
+                {
+                    try
+                    {
+                        doc = parseDocument(queryDef.getMetaData());
+                    }
+                    catch (XmlException e)
+                    {
+                        throw new MetadataUnavailableException(e.getMessage());
+                    }
+                    xmlTable = getTableType(form.getQueryName(), doc);
+                    // when there is a queryDef but xmlTable is null it means the xmlMetaData contains tableName which does not
+                    // match with actual queryName then reconstruct the xml table metadata : See Issue 43523
+                    if (xmlTable == null)
+                    {
+                        doc = null;
+                    }
+                }
+                else
+                {
+                    queryDef = new QueryDef();
+                    queryDef.setSchema(schemaName);
+                    queryDef.setContainer(container.getId());
+                    queryDef.setName(queryName);
+                }
+
+                if (doc == null)
+                {
+                    doc = TablesDocument.Factory.newInstance();
+                }
+
+                if (xmlTable == null)
+                {
+                    TablesType tables = doc.addNewTables();
+                    xmlTable = tables.addNewTable();
+                    xmlTable.setTableName(queryName);
+                }
+
+                if (xmlTable.getTableDbType() == null)
+                {
+                    xmlTable.setTableDbType("NOT_IN_DB");
+                }
+
+                // remove existing templates
+                if (xmlTable.isSetImportTemplates())
+                    xmlTable.unsetImportTemplates();
+                xmlImportTemplates = xmlTable.addNewImportTemplates();
+
+                // set new templates
+                if (!updatedTemplates.isEmpty())
+                {
+                    for (Pair<String, String> template_ : updatedTemplates)
+                    {
+                        ImportTemplateType importTemplateType = xmlImportTemplates.addNewTemplate();
+                        importTemplateType.setLabel(template_.first);
+                        importTemplateType.setUrl(template_.second);
+                    }
+                }
+
+                XmlOptions xmlOptions = new XmlOptions();
+                xmlOptions.setSavePrettyPrint();
+                // Don't use an explicit namespace, making the XML much more readable
+                xmlOptions.setUseDefaultNamespace();
+                queryDef.setMetaData(doc.xmlText(xmlOptions));
+                if (queryDef.getQueryDefId() == 0)
+                {
+                    QueryManager.get().insert(user, queryDef);
+                }
+                else
+                {
+                    QueryManager.get().update(user, queryDef);
+                }
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            return resp;
+        }
+    }
+
+    
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override

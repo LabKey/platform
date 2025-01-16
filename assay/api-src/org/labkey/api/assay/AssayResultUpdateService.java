@@ -15,22 +15,35 @@
  */
 package org.labkey.api.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
+import org.labkey.api.assay.transform.DataTransformService;
+import org.labkey.api.assay.transform.DefaultTransformResult;
+import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -42,10 +55,17 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.vfs.FileLike;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +75,7 @@ import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConf
 public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
     private final AssaySampleLookupContext _assaySampleLookupContext;
+    private final AssayProtocolSchema _schema;
 
     public AssayResultUpdateService(AssayProtocolSchema schema, FilteredTable table)
     {
@@ -63,6 +84,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             throw new IllegalArgumentException("Expected AssayResultTable");
 
         _assaySampleLookupContext = new AssaySampleLookupContext();
+        _schema = schema;
     }
 
     @Override
@@ -76,6 +98,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> extraScriptContext
     ) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
+        // handle transform scripts
+        rows = transform(container, user, rows, oldKeys);
         var result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
 
         _assaySampleLookupContext.syncLineage(container, user, errors);
@@ -84,6 +108,133 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             throw errors;
 
         return result;
+    }
+
+    private List<Map<String, Object>> transform(
+            Container container,
+            User user,
+            List<Map<String, Object>> rows,
+            List<Map<String, Object>> oldKeys
+    ) throws BatchValidationException, InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        try
+        {
+            List<Map<String, Object>> rowsForTransform = resolveRows(container, user, rows, oldKeys);
+            AssayTransformContext context = new AssayTransformContext(container, user, rowsForTransform, _schema.getProtocol(), _schema.getProvider());
+            TransformResult result = DataTransformService.get().transformAndValidate(context, null, DataTransformService.TransformOperation.UPDATE);
+            Map<ExpData, DataIteratorBuilder> transformedData = result.getTransformedData();
+
+            if (!transformedData.isEmpty())
+            {
+                ColumnInfo keyCol = null;
+                for (ColumnInfo colInfo : getDbTable().getPkColumns())
+                {
+                    if (rows.get(0).containsKey(colInfo.getName()))
+                    {
+                        keyCol = colInfo;
+                        break;
+                    }
+                }
+
+                if (keyCol == null)
+                    throw new BatchValidationException((new ValidationException(String.format("The data does not contain a key field value for table : %s.", getQueryTable().getName()))));
+
+                // merge any existing data with transformed rows
+                Map<Object, Map<String, Object>> newData = new LinkedHashMap<>();
+                for (Map<String, Object> row : rows)
+                {
+                    if (row.containsKey(keyCol.getName()))
+                        newData.put(row.get(keyCol.getName()), new HashMap<>(row));
+                    else
+                        throw new BatchValidationException(new ValidationException(String.format("Unable to find the key value : %s for a row being updated.", keyCol.getName())));
+                }
+
+                boolean dataTypeHandled = false;
+                for (Map.Entry<ExpData, DataIteratorBuilder> entry : transformedData.entrySet())
+                {
+                    ExpData data = entry.getKey();
+
+                    // match the transformed data by data types
+                    if (data.getDataType().equals(context.getProvider().getDataType()))
+                    {
+                        boolean mergeData = false;
+                        if (dataTypeHandled)
+                            throw new BatchValidationException(new ValidationException(String.format("There was more than one transformed file found for the data type : %s.", context.getProvider().getDataType())));
+                        dataTypeHandled = true;
+
+                        try (var it = DataIteratorUtil.wrapMap(entry.getValue().getDataIterator(new DataIteratorContext()), false))
+                        {
+                            while (it.next())
+                            {
+                                // merge with original updated rows
+                                Map<String, Object> row = it.getMap();
+                                Object key = row.get(keyCol.getName());
+                                if (key != null)
+                                {
+                                    if (newData.containsKey(key))
+                                        mergeData = true;
+                                    newData.put(key, new HashMap<>(row));
+                                }
+                                else
+                                    throw new BatchValidationException(new ValidationException(String.format("Unable to find the key value : %s for a transformed data row.", keyCol.getName())));
+                            }
+
+                            if (mergeData)
+                            {
+                                // replace with merged data
+                                rows = new ArrayList<>(newData.values());
+                            }
+                        }
+                    }
+                }
+            }
+            return rows;
+        }
+        catch (ValidationException ve)
+        {
+            throw new BatchValidationException(ve);
+        }
+        catch (IOException ioe)
+        {
+            throw new BatchValidationException(new ValidationException(ioe.getMessage()));
+        }
+    }
+
+    /**
+     * Merge existing values with the rows being updated prior to handing off to any
+     * transform scripts. This is necessary because a transform script will need to see all
+     * values for each row (not just the changed values).
+     */
+    private List<Map<String, Object>> resolveRows(
+            Container container,
+            User user,
+            List<Map<String, Object>> rows,
+            List<Map<String, Object>> oldKeys
+    ) throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
+    {
+        Map<String, ColumnInfo> columnInfoMap = new CaseInsensitiveHashMap<>();
+        getQueryTable().getColumns().forEach(ci -> columnInfoMap.put(ci.getName(), ci));
+
+        for (int i=0; i < rows.size(); i++)
+        {
+            Map<String, Object> row = rows.get(i);
+            Map<String, Object> oldKey = oldKeys == null ? row : oldKeys.get(i);
+
+            var oldRow = getRow(user, container, oldKey);
+            if (oldRow == null)
+                throw new ValidationException("Unable to find existing row");
+
+            for (Map.Entry<String, Object> entry : oldRow.entrySet())
+            {
+                ColumnInfo col = columnInfoMap.get(entry.getKey());
+                if (col != null && !row.containsKey(entry.getKey()))
+                {
+                    // use column names for existing row values
+                    row.put(col.getName(), entry.getValue());
+                }
+            }
+        }
+        return rows;
     }
 
     @Override
@@ -245,5 +396,140 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         sb.append(" to ");
         sb.append(newValue == null ? "blank" : "'" + newValue + "'");
         sb.append(".");
+    }
+
+    /**
+     * Context used during data transforms for update operations
+     */
+    private static class AssayTransformContext implements AssayRunUploadContext<AssayProvider>
+    {
+        private final Container _container;
+        private final User _user;
+        private final ExpProtocol _protocol;
+        private final AssayProvider _provider;
+        private TransformResult _transformResult;
+        private final DataIteratorBuilder _data;
+
+        public AssayTransformContext(Container container, User user, List<Map<String, Object>> rows, ExpProtocol protocol, AssayProvider provider)
+        {
+            _container = container;
+            _user = user;
+            _protocol = protocol;
+            _provider = provider;
+            _data = MapDataIterator.of(rows);
+        }
+
+        @Override
+        public @NotNull ExpProtocol getProtocol()
+        {
+            return _protocol;
+        }
+
+        @Override
+        public Map<DomainProperty, String> getRunProperties()
+        {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public Map<DomainProperty, String> getBatchProperties()
+        {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public String getComments()
+        {
+            return null;
+        }
+
+        @Override
+        public String getName()
+        {
+            return null;
+        }
+
+        @Override
+        public User getUser()
+        {
+            return _user;
+        }
+
+        @Override
+        public @NotNull Container getContainer()
+        {
+            return _container;
+        }
+
+        @Override
+        public @Nullable HttpServletRequest getRequest()
+        {
+            return null;
+        }
+
+        @Override
+        public ActionURL getActionURL()
+        {
+            return null;
+        }
+
+        @Override
+        public @NotNull Map<String, FileLike> getUploadedData()
+        {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public @Nullable DataIteratorBuilder getRawData()
+        {
+            return _data;
+        }
+
+        @Override
+        public @NotNull Map<?, String> getInputDatas()
+        {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public AssayProvider getProvider()
+        {
+            return _provider;
+        }
+
+        @Override
+        public String getTargetStudy()
+        {
+            return null;
+        }
+
+        @Override
+        public TransformResult getTransformResult()
+        {
+            return _transformResult != null ? _transformResult : DefaultTransformResult.createEmptyResult();
+        }
+
+        @Override
+        public void setTransformResult(TransformResult result)
+        {
+            _transformResult = result;
+        }
+
+        @Override
+        public Integer getReRunId()
+        {
+            return null;
+        }
+
+        @Override
+        public void uploadComplete(ExpRun run) throws ExperimentException
+        {
+        }
+
+        @Override
+        public @Nullable Logger getLogger()
+        {
+            return null;
+        }
     }
 }

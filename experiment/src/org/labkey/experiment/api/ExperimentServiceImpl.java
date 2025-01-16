@@ -201,10 +201,12 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -7812,7 +7814,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     ) throws ExperimentException
     {
         name = StringUtils.trimToNull(name);
-        validateDataClassName(c, u, name);
+        validateDataClassName(c, u, name, false);
         validateDataClassOptions(c, u, options);
 
         Lsid lsid = getDataClassLsid(c);
@@ -7903,6 +7905,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (options != null && options.getExcludedContainerIds() != null && !options.getExcludedContainerIds().isEmpty())
                 ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), impl.getRowId(), u);
+            else
+                ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(DataTypeForExclusion.DataClass, impl.getRowId(), c, u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
@@ -7934,7 +7938,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             newName = StringUtils.trimToNull(options.getName());
             if (!oldDataClassName.equals(newName))
             {
-                validateDataClassName(c, u, newName);
+                validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
                 hasNameChange = true;
                 dataClass.setName(newName);
             }
@@ -8001,7 +8005,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return errors;
     }
 
-    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name) throws IllegalArgumentException
+    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name, boolean skipExisting) throws IllegalArgumentException
     {
         if (name == null)
             throw new ApiUsageException("DataClass name is required.");
@@ -8011,9 +8015,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (name.length() > nameMax)
             throw new ApiUsageException("DataClass name may not exceed " + nameMax + " characters.");
 
-        ExpDataClass existing = getDataClass(c, u, name);
-        if (existing != null)
-            throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
+        if (!skipExisting)
+        {
+            ExpDataClass existing = getDataClass(c, u, name);
+            if (existing != null)
+                throw new ApiUsageException("DataClass '" + existing.getName() + "' already exists.");
+        }
 
         // Issue 51321: check reserved data class name: First, All
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
@@ -8839,6 +8846,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    @Override
+    public void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user)
+    {
+        var isAdmin = user.hasApplicationAdminPermission() || container.hasPermission(user, AdminPermission.class);
+
+        if (!isAdmin)
+        {
+            // get the full container list for this project
+            Set<String> folderIds = ContainerManager.getAllChildren(container.getProject(), new LimitedUser(user, ProjectAdminRole.class))
+                    .stream()
+                    .map(Container::getId)
+                    .collect(toSet());
+            // get the set of containers this user has permission to see
+            Set<String> userFolderIds = ContainerManager.getAllChildren(container.getProject(), user)
+                    .stream()
+                    .map(Container::getId)
+                    .collect(toSet());
+            // exclude the containers this user does not have permission to
+            if (folderIds.removeAll(userFolderIds))
+            {
+                ExperimentService.get().ensureDataTypeContainerExclusions(dataType, folderIds, dataTypeId, user);
+            }
+
+        }
+    }
+
+
     private void addAuditEventForDataTypeContainerUpdate(DataTypeForExclusion type, String containerId, User user)
     {
         Container container = ContainerManager.getForId(containerId);
@@ -9045,7 +9079,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Map<String, Map<String, Object>> metrics = new HashMap<>();
         metrics.put("nameexpression", getNameExpressionMetrics());
         metrics.put("parentalias", getParentAliasMetrics());
+        metrics.put("importTemplates", getImportTemplatesMetrics());
         return metrics;
+    }
+
+    private Map<String, Object> getImportTemplatesMetrics()
+    {
+        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT \"schema\", metadata FROM query.querydef WHERE metadata LIKE '%<template%'");
+        Map<String, Object>[] results = new SqlSelector(dbSchema, sql).getMapArray();
+        Map<String, Long> counts = new HashMap<>();
+        final String sectionStart = "<importtemplates>";
+        for (Map<String, Object> result : results)
+        {
+            String schema = (String) result.get("schema");
+            String metadata = (String) result.get("metadata");
+            metadata = metadata.toLowerCase();
+            if (schema.toLowerCase().startsWith("assay.general."))
+                schema = "assay";
+            if (schema.equals("assay") || schema.equals("exp.data") || schema.equals("samples"))
+            {
+                if (!metadata.contains(sectionStart))
+                    continue;
+                long count = counts.get(schema) == null ? 0L : counts.get(schema);
+                counts.put(schema, ++count);
+            }
+        }
+        return Map.of("SampleType", counts.getOrDefault("samples", 0L),
+                "DataClass", counts.getOrDefault("exp.data", 0L),
+                "AssayDesign", counts.getOrDefault("assay", 0L));
     }
 
     private Pair<Long, Long> getParentAliasMetrics(TableInfo tableInfo, String aliasField)

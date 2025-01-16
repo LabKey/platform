@@ -28,10 +28,13 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.assay.transform.AnalysisScript;
+import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -45,7 +48,6 @@ import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
@@ -120,21 +122,28 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
         if (provider == null)
-        {
             throw new NotFoundException("Could not find assay provider " + providerName);
-        }
+
         Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template = provider.getAssayTemplate(getUser(), getContainer());
         return getAssayTemplate(provider, template, false);
     }
 
-    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    private List<GWTDomain<GWTPropertyDescriptor>> getDomains(
+        AssayProvider provider,
+        ExpProtocol protocol,
+        List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos,
+        boolean copy
+    )
     {
-        ExpProtocol protocol = template.getKey();
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
-        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : template.getValue())
+        String resultsDomainPrefix = ":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + ".";
+        List<FilterCriteria> allFilterCriteria = null;
+
+        for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain);
+            boolean isResultsDomain = gwtDomain.getDomainURI().contains(resultsDomainPrefix);
 
             // If assay is new default value options and default may not have been available in getDomainDescriptor, so try again with provider.
             if (provider.allowDefaultValues(domain) && (gwtDomain.getDefaultValueOptions() == null || gwtDomain.getDefaultValueOptions().length == 0))
@@ -143,27 +152,23 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             if (copy)
                 gwtDomain.setDomainId(0);
 
-            gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
+            gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(protocol, domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDomainKindName("Assay");
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
             gwtDomain.setProvisioned(domain.isProvisioned());
-            gwtDomains.add(gwtDomain);
-
-            DomainKind<?> kind = domain.getDomainKind();
 
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
-            List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
-            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(domain));
+            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(domain.getDomainKind().getMandatoryPropertyNames(domain));
 
-            for (DomainProperty prop : properties)
+            for (DomainProperty prop : domain.getProperties())
             {
                 GWTPropertyDescriptor gwtProp = getPropertyDescriptor(prop, copy);
                 if (gwtProp.getDefaultValueType() == null)
                 {
-                    // we want to explicitly set these "special" properties NOT to remember the user's last entered
+                    // Explicitly set these "special" properties NOT to remember the user's last entered
                     // value if it hasn't been set before:
                     if (AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME.equals(prop.getName()) ||
                         AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(prop.getName()) ||
@@ -175,7 +180,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     else
                         gwtProp.setDefaultValueType(gwtDomain.getDefaultDefaultValueType());
                 }
-                gwtProps.add(gwtProp);
+
                 Object defaultValue = defaultValues.get(prop);
                 if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(gwtProp.getName()) && defaultValue instanceof String)
                 {
@@ -189,29 +194,60 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 gwtProp.setDefaultValue(ConvertUtils.convert(defaultValue));
                 if (provider.isMandatoryDomainProperty(domain, prop.getName()))
                     mandatoryPropertyDescriptors.add(prop.getName());
+
+                if (isResultsDomain)
+                {
+                    if (allFilterCriteria == null)
+                        allFilterCriteria = provider.getFilterCriteria(protocol);
+
+                    List<FilterCriteria> fieldFilterCriteria = allFilterCriteria.stream()
+                            .filter(criterion -> prop.getPropertyId() == criterion.referencePropertyId())
+                            .toList();
+
+                    gwtProp.setFilterCriteria(FilterCriteria.toGWTFilterCriteria(fieldFilterCriteria));
+                }
+
+                gwtProps.add(gwtProp);
             }
+
             gwtProps.addAll(gwtDomain.getCalculatedFields());
             gwtDomain.setFields(gwtProps);
             gwtDomain.setMandatoryFieldNames(mandatoryPropertyDescriptors);
+
+            if (isResultsDomain)
+                gwtDomain.setAllowFlagProperties(provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result));
+
+            gwtDomains.add(gwtDomain);
         }
+
+        return gwtDomains;
+    }
+
+    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    {
+        ExpProtocol protocol = template.getKey();
 
         GWTProtocol result = new GWTProtocol();
         result.setProtocolId(protocol.getRowId() > 0 ? protocol.getRowId() : null);
-        result.setDomains(gwtDomains);
+        result.setDomains(getDomains(provider, protocol, template.getValue(), copy));
         result.setName(protocol.getName());
         result.setProviderName(provider.getName());
         result.setDescription(protocol.getDescription());
         result.setStatus(protocol.getStatus() != null ? protocol.getStatus().name() : ExpProtocol.Status.Active.name());
-        Map<String, String> gwtProtocolParams = new HashMap<>();
-        for (ProtocolParameter property : protocol.getProtocolParameters().values())
+
+        // Configure protocol parameters
         {
-            if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
+            Map<String, String> gwtProtocolParams = new HashMap<>();
+            for (ProtocolParameter property : protocol.getProtocolParameters().values())
             {
-                throw new IllegalStateException("Did not expect non-string protocol parameter " + property.getOntologyEntryURI() + " (" + property.getValueType() + ")");
+                if (property.getXmlBeanValueType() != SimpleTypeNames.STRING)
+                    throw new IllegalStateException("Did not expect non-string protocol parameter " + property.getOntologyEntryURI() + " (" + property.getValueType() + ")");
+
+                gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
             }
-            gwtProtocolParams.put(property.getOntologyEntryURI(), property.getStringValue());
+            result.setProtocolParameters(gwtProtocolParams);
         }
-        result.setProtocolParameters(gwtProtocolParams);
+
         if (provider instanceof PlateBasedAssayProvider plateProvider)
         {
             Plate plateTemplate = plateProvider.getPlate(getContainer(), protocol);
@@ -239,6 +275,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             }
             result.setSelectedMetadataInputFormat(plateProvider.getMetadataInputFormat(protocol).name());
         }
+
         if (provider instanceof DetectionMethodAssayProvider dmProvider)
         {
             String method = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
@@ -247,12 +284,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             result.setAvailableDetectionMethods(dmProvider.getAvailableDetectionMethods());
         }
 
-        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
+        List<AnalysisScript> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
         if (!typeScripts.isEmpty())
         {
             List<String> scriptNames = new ArrayList<>();
-            for (File script : typeScripts)
-                scriptNames.add(script.getAbsolutePath());
+            for (AnalysisScript script : typeScripts)
+                scriptNames.add(script.getScriptPath());
 
             result.setModuleTransformScripts(scriptNames);
         }
@@ -264,12 +301,13 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         result.setPlateMetadata(provider.isPlateMetadataEnabled(protocol));
 
         // data transform scripts
-        List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
+        List<AnalysisScript> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
         List<String> transformScriptStrings = new ArrayList<>();
-        for (File transformScript : transformScripts)
+        for (AnalysisScript transformScript : transformScripts)
         {
-            transformScriptStrings.add(transformScript.getAbsolutePath());
+            // TODO, add allowable operations once we have UI that controls those options
+            transformScriptStrings.add(transformScript.getScriptPath());
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
@@ -296,13 +334,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
-
         result.setAllowPlateMetadata(provider.supportsPlateMetadata(protocol));
-
-        boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
-        for (GWTDomain<?> gwtDomain : result.getDomains())
-            if (gwtDomain.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + "."))
-                gwtDomain.setAllowFlagProperties(supportsFlag);
 
         return result;
     }
@@ -392,6 +424,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
                         throw new ValidationException("Assay protocol already exists for this name.");
 
+                    String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                    if (nameError != null)
+                        throw new ValidationException(nameError);
+
                     XarContext context = new XarContext("Domains", getContainer(), getUser());
                     context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
 
@@ -412,23 +448,20 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         else
                         {
                             GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                            updateDomainDescriptor(domain, protocol, previous, assayProvider, false);
+                            updateDomainDescriptor(assayProvider, protocol, previous, domain, false);
                             domainURIs.add(domain.getDomainURI());
                         }
-
                     }
+
                     setPropertyDomainURIs(protocol, domainURIs, assayProvider);
                 }
                 else
                 {
                     protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
-
                     if (protocol == null)
-                    {
                         throw new ValidationException("Assay design has been deleted");
-                    }
 
-                    //ensure that the user has edit perms in this container
+                    // ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())
                         throw new ValidationException("You do not have sufficient permissions to update this Assay");
 
@@ -437,6 +470,12 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                                 "This assay was created in folder " + protocol.getContainer().getPath());
                     oldAssayName = protocol.getName();
                     hasNameChange = !assay.getName().equals(oldAssayName);
+                    if (hasNameChange)
+                    {
+                        String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
+                        if (nameError != null)
+                            throw new ValidationException(nameError);
+                    }
                     protocol.setName(assay.getName());
                     protocol.setProtocolDescription(assay.getDescription());
                     if (assay.getStatus() != null)
@@ -478,11 +517,10 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (provider instanceof PlateBasedAssayProvider plateProvider && assay.getSelectedPlateTemplate() != null)
                 {
                     Plate plate = PlateManager.get().getPlateByName(getContainer(), assay.getSelectedPlateTemplate());
-                    if (plate != null)
-                        plateProvider.setPlate(getContainer(), protocol, plate);
-                    else
+                    if (plate == null)
                         throw new ValidationException("The selected plate could not be found.  Perhaps it was deleted by another user?");
 
+                    plateProvider.setPlate(getContainer(), protocol, plate);
                     String selectedFormat = assay.getSelectedMetadataInputFormat();
                     SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
                     if (inputFormat != null)
@@ -490,7 +528,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
 
                 // data transform scripts
-                List<File> transformScripts = new ArrayList<>();
+                List<AnalysisScript> transformScripts = new ArrayList<>();
                 List<String> submittedScripts = assay.getProtocolTransformScripts();
                 if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
                     throw new ValidationException("You must be a platform developer or site admin to configure assay transformation scripts.");
@@ -498,17 +536,18 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 {
                     if (!StringUtils.isBlank(script))
                     {
-                        transformScripts.add(new File(script));
+                        // TODO : handle analysis script operations once UI is created
+                        transformScripts.add(new AnalysisScript(new File(script), Set.of(DataTransformService.TransformOperation.INSERT)));
                     }
                 }
 
                 if (provider instanceof DetectionMethodAssayProvider dmProvider && assay.getSelectedDetectionMethod() != null)
                 {
                     String detectionMethod = assay.getSelectedDetectionMethod();
-                    if (detectionMethod != null)
-                        dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
-                    else
+                    if (detectionMethod == null)
                         throw new ValidationException("The selected detection method could not be found.");
+
+                    dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
                 }
 
                 ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
@@ -543,23 +582,15 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 }
 
                 if (autoLinkTargetContainerId != null)
-                {
                     props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
-                }
                 else
-                {
                     props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
-                }
 
                 String autoLinkCategory = assay.getAutoLinkCategory();
                 if (autoLinkCategory != null)
-                {
                     props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
-                }
                 else
-                {
                     props.remove(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
-                }
 
                 protocol.setObjectProperties(props);
 
@@ -568,7 +599,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
                     GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    updateDomainDescriptor(domain, protocol, previous, provider, hasNameChange);
+                    updateDomainDescriptor(provider, protocol, previous, domain, hasNameChange);
                     boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
 
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
@@ -577,6 +608,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
                     ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
+                else
+                    ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.AssayDesign, protocol.getRowId(), getContainer(), getUser());
 
                 QueryService.get().updateLastModified();
                 transaction.commit();
@@ -596,31 +629,33 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
     }
 
     private void updateDomainDescriptor(
-        GWTDomain<GWTPropertyDescriptor> domain,
-        ExpProtocol protocol,
-        GWTDomain<GWTPropertyDescriptor> previous,
         AssayProvider provider,
+        ExpProtocol protocol,
+        GWTDomain<GWTPropertyDescriptor> original,
+        GWTDomain<GWTPropertyDescriptor> update,
         boolean hasNameChange
     ) throws ValidationException
     {
-        for (GWTPropertyDescriptor prop : domain.getFields())
+        for (GWTPropertyDescriptor prop : update.getFields())
         {
             if (prop.getLookupQuery() != null)
-            {
                 prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
-            }
         }
-        provider.changeDomain(getUser(), protocol, previous, domain);
 
         String auditComment = null;
         if (hasNameChange)
-        {
-            auditComment = "The name of the assay domain '" + previous.getName() + "' was changed to '" + domain.getName() + "'.";
-        }
+            auditComment = "The name of the assay domain '" + original.getName() + "' was changed to '" + update.getName() + "'.";
 
-        ValidationException domainErrors = DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);
-        if (domainErrors.hasErrors())
-            throw domainErrors;
+        // Before update
+        provider.beforeDomainChange(getUser(), protocol, original, update);
+
+        // Update
+        ValidationException validationErrors = DomainUtil.updateDomainDescriptor(original, update, getContainer(), getUser(), hasNameChange, auditComment);
+        if (validationErrors.hasErrors())
+            throw validationErrors;
+
+        // After update
+        provider.afterDomainChange(getUser(), protocol, original, update);
     }
 
     private boolean canUpdateProtocols()

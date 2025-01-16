@@ -71,6 +71,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantCategoryListener;
@@ -862,6 +863,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 Map<Container, List<QuerySnapshotDefinition>> snapshotMap = new HashMap<>();
                 for (SnapshotDependency.SourceDataType sourceData : _sourceDataTypes)
                 {
+                    // getDependencies() can execute LabKey SQL.  Make sure environment is set up here.
+                    // Also see 51200.
+                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, sourceData.getContainer());
                     for (QuerySnapshotDefinition snapshotDef : getDependencies(sourceData))
                     {
                         QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, snapshotDef.getContainer());
@@ -901,5 +905,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 QueryService.get().clearEnvironment();
             }
         }
+    }
+
+    @Override
+    public boolean isQueryDataset(Container container, String queryName)
+    {
+        return DatasetDomainKind.isQueryDataset(container, queryName);
     }
 }

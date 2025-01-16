@@ -401,6 +401,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      */
     List<Pair<String, String>> getImportTemplates(ViewContext ctx);
 
+    default List<Pair<String, String>> getValidatedImportTemplates(ViewContext ctx)
+    {
+        return getImportTemplates(ctx);
+    }
+
     /**
      * Returns a list of the raw import templates (without substituting the container).  This is intended to be
      * used by FilteredTable or other instances that need to copy the raw values from a parent table.  In general,

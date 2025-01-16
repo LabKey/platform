@@ -19,7 +19,6 @@ package org.labkey.study.controllers.reports;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -33,7 +32,6 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -68,10 +66,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -100,7 +98,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -152,15 +149,15 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String sessionKey = (String) getViewContext().get("sessionKey");
+            String sessionKey = (String) getViewContext().get(ImageUtil.FILE_SESSION_PARAM);
             if (null == sessionKey)
             {
                 //TODO: Return a GIF that says not found??
                 return null;
             }
 
-            File file = (File) getViewContext().getRequest().getSession().getAttribute(sessionKey);
-            if (file.exists())
+            File file = ImageUtil.getFileFromSession(getViewContext().getRequest(), sessionKey);
+            if (file != null)
             {
                 PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), false);
                 file.delete();

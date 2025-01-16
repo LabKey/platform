@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.view.ViewServlet;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,26 @@ public class StringUtilsLabKey
 
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
+
+
+
+    public static @Nullable String validateLegalNames(String s, @NotNull String illegalCharset, String type)
+    {
+        if (StringUtils.isBlank(s))
+            return type + " must not be blank.";
+        if (!ViewServlet.validChars(s))
+            return type + " must contain only valid unicode characters.";
+        if (StringUtils.containsAny(s, illegalCharset))
+            return type + " may not contain any of these characters: " + illegalCharset;
+        if (StringUtils.containsAny(s, "\t\n\r"))
+            return type + " may not contain 'tab', 'new line', or 'return' characters.";
+        if (StringUtils.contains("-$", s.charAt(0)))
+            return type + " may not begin with any of these characters: -$";
+        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)", s))
+            return type + " may not contain space followed by dash.";
+
+        return null;
+    }
 
     public static void append(StringBuilder sb, @Nullable Identifiable identifiable)
     {
@@ -465,6 +486,23 @@ public class StringUtilsLabKey
             combined = combined.substring(0, lastCommaSpace + (list.size() > 2 ? 1 : 0)) + " " + conjunction + combined.substring(lastCommaSpace + 1);
         }
         return combined;
+    }
+
+    /**
+     * @return the indefinite article to use with the passed in noun. Returns "a" for words starting with most
+     * consonants, "an" for words starting with a vowel, and "a(n)" for words starting with "h". This isn't perfect
+     * since it's not distinguishing voiced vs. unvoiced "h", acronyms that are spelled out, and other pronunciation
+     * quirks.
+     */
+    public static String getArticleForNoun(String noun)
+    {
+        char firstChar = noun.charAt(0);
+        return switch (firstChar)
+        {
+            case 'h', 'H' -> "a(n)";
+            case 'a', 'e', 'i', 'o', 'u' -> "an";
+            default -> "a";
+        };
     }
 
     public static class TestCase extends Assert

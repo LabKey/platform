@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="org.labkey.core.admin.AdminController.SystemMaintenanceAction" %>
 <%@ page import="java.util.ArrayList" %>
@@ -146,6 +147,7 @@
             <tr>
                 <td style="padding-top: 10px;">
                     <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : HtmlString.EMPTY_STRING %>
+                    <%= hasAdminOpsPerms ? button("Reset to Defaults").href(AdminController.ResetSystemMaintenanceAction.class, getContainer()).usePost() : HtmlString.EMPTY_STRING %>
                     <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminUrlsImpl().getAdminConsoleURL()) %>
                 </td>
             </tr>

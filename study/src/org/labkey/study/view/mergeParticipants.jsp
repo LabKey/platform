@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -36,7 +37,7 @@
 <%
     Container c = getContainer();
     StudyImpl s = StudyManager.getInstance().getStudy(c);
-    String subjectNounSingular = s.getSubjectNounSingular();
+    String subjectNounSingular = s.getSubjectNounSingular().toLowerCase();
     String subjectNounColumnName = s.getSubjectColumnName();
     Integer aliasDatasetId = s.getParticipantAliasDatasetId();
     String aliasDatasetName = null;
@@ -57,9 +58,10 @@
 %>
 <div style="max-width: 1000px">
     <p>
-        If a(n) <%= h(subjectNounSingular) %>  in your study has been loaded with an incorrect <%= h(subjectNounColumnName) %>,
-        you can change the identifier. If you change the <%= h(subjectNounColumnName) %> to one that is already in the study,
-        data will be merged into a single <%= h(subjectNounSingular) %>.
+        If <%=h(StringUtilsLabKey.getArticleForNoun(subjectNounSingular))%> <%=h(subjectNounSingular)%> in your study
+        has been loaded with an incorrect <%= h(subjectNounColumnName) %>, you can change the identifier. If you change
+        the <%= h(subjectNounColumnName) %> to one that already exists in the study, the data associated with the
+        incorrect <%= h(subjectNounColumnName) %> will be merged to the existing <%= h(subjectNounColumnName) %>.
     </p>
 </div>
 <div id="mergeParticipantsPanel-div"></div>

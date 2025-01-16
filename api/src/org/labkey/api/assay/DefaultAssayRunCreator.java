@@ -27,6 +27,9 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
+import org.labkey.api.assay.transform.DataTransformService;
+import org.labkey.api.assay.transform.TransformDataHandler;
+import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -64,9 +67,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.qc.DataTransformer;
-import org.labkey.api.qc.TransformDataHandler;
-import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
@@ -113,8 +113,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public TransformResult transform(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
-        DataTransformer<ProviderType> transformer = new DefaultDataTransformer<>();
-        return transformer.transformAndValidate(context, run);
+        return DataTransformService.get().transformAndValidate(context, run, DataTransformService.TransformOperation.INSERT);
     }
 
     @Override
@@ -449,12 +448,30 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             AssayResultsFileWriter<?> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
             resultsFileWriter.cleanupPostedFiles(context.getContainer(), false);
 
+            cleanPrimaryFile(context);
+
             if (e instanceof ExperimentException)
                 throw (ExperimentException)e;
             else
                 throw new ExperimentException(e);
         }
         catch (BatchValidationException e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    private void cleanPrimaryFile(AssayRunUploadContext<ProviderType> context) throws ExperimentException
+    {
+        try
+        {
+            // Issue 51300: don't keep the primary file if the new run failed to save
+            boolean isReRun = context.getReRunId() != null;
+            FileLike primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            if (!isReRun && primaryFile != null && primaryFile.exists())
+                primaryFile.delete();
+        }
+        catch (IOException e)
         {
             throw new ExperimentException(e);
         }

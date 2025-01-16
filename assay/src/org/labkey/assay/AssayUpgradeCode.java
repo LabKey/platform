@@ -6,16 +6,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
-import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -30,7 +26,6 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -38,11 +33,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -50,11 +42,7 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.SiteAdminRole;
-import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
@@ -74,160 +62,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.data.Table.CREATED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.CREATED_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_BY_COLUMN_NAME;
-import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
+import static org.labkey.api.assay.plate.AssayPlateMetadataService.HIT_SELECTION_CRITERIA_COLUMN_NAME;
 import static org.labkey.assay.plate.PlateMetadataDomainKind.Column;
 
 public class AssayUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = LogManager.getLogger(AssayUpgradeCode.class);
-
-    // Invoked by assay-23.000-23.001.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public static void addAssayDataCreatedColumns(final ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-        {
-            Set<ExpProtocol> protocols = new HashSet<>();
-            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
-            {
-                if (container != null)
-                    protocols.addAll(AssayService.get().getAssayProtocols(container));
-            }
-
-            Map<Container, List<Pair<ExpProtocol, Domain>>> protocolsByContainer = new HashMap<>();
-            for (ExpProtocol protocol : protocols)
-            {
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                if (provider == null)
-                    continue;
-
-                Domain resultsDomain = provider.getResultsDomain(protocol);
-                if (null == resultsDomain || null == resultsDomain.getStorageTableName() || null == resultsDomain.getTypeURI())
-                    continue;
-
-                Lsid domainLsid = new Lsid(resultsDomain.getTypeURI());
-                if (!ExpProtocol.ASSAY_DOMAIN_DATA.equals(domainLsid.getNamespacePrefix()))
-                    continue;
-
-                Container container = protocol.getContainer();
-                protocolsByContainer.computeIfAbsent(container, s -> new ArrayList<>());
-                protocolsByContainer.get(container).add(new Pair<>(protocol, resultsDomain));
-            }
-
-            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), SiteAdminRole.class);
-            for (Container container : protocolsByContainer.keySet())
-            {
-                List<Pair<ExpProtocol, Domain>> protocolDomains = protocolsByContainer.get(container);
-                _log.info("Start adding result created/modified columns for " + protocolDomains.size() + " assay design(s) in " + container.getPath());
-
-                for (Pair<ExpProtocol, Domain> protocolDomain : protocolDomains)
-                    _addAssayResultColumns(protocolDomain.first, protocolDomain.second);
-
-                _log.info("Finished adding result created/modified columns for " + protocolDomains.size() + " assay design(s) in " + container.getPath());
-            }
-
-            transaction.commit();
-        }
-    }
-
-    private static void _addAssayResultColumns(ExpProtocol protocol, Domain resultsDomain)
-    {
-        AssayResultDomainKind kind = null;
-        try
-        {
-            kind = (AssayResultDomainKind) resultsDomain.getDomainKind();
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
-        }
-        if (null == kind || null == kind.getStorageSchemaName())
-        {
-            _log.warn("Unable to get result domain kind for " + protocol.getName());
-            return;
-        }
-
-        DbSchema schema = kind.getSchema();
-        SchemaTableInfo provisionedTable = schema.getTable(resultsDomain.getStorageTableName());
-        if (provisionedTable == null)
-            throw new IllegalStateException(protocol.getName() + " has no provisioned result table.");
-
-        _ensureColumn(CREATED_COLUMN_NAME, resultsDomain, protocol, provisionedTable, kind);
-        _ensureColumn(CREATED_BY_COLUMN_NAME, resultsDomain, protocol, provisionedTable, kind);
-        _ensureColumn(MODIFIED_COLUMN_NAME, resultsDomain, protocol, provisionedTable, kind);
-        _ensureColumn(MODIFIED_BY_COLUMN_NAME, resultsDomain, protocol, provisionedTable, kind);
-    }
-
-    private static void _ensureColumn(String colName, Domain domain, ExpProtocol protocol, SchemaTableInfo provisionedTable, AssayResultDomainKind kind)
-    {
-        ColumnInfo col = provisionedTable.getColumn(colName);
-        if (col != null)
-            _log.error("Column '" + colName + "' is already defined in result table for '" + protocol.getName() + "'.");
-
-        PropertyStorageSpec colProp = kind.getBaseProperties(domain).stream().filter(p -> colName.equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
-        StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(colProp), true);
-        _log.info("Added '" + colName + "' column to '" + protocol.getName() + " provisioned result table.");
-    }
-
-    /**
-     * Called from assay-23.002-23.003.sql
-     * <p>
-     * Switch from storing the protocol plate template by name to the plate lsid.
-     */
-    @DeferredUpgrade
-    @SuppressWarnings({"UnusedDeclaration"})
-    public static void updateProtocolPlateTemplate(ModuleContext ctx)
-    {
-        if (ctx.isNewInstall())
-            return;
-
-        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction tx = scope.ensureTransaction())
-        {
-            Set<ExpProtocol> protocols = new HashSet<>();
-            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
-            {
-                if (container != null)
-                    protocols.addAll(AssayService.get().getAssayProtocols(container));
-            }
-
-            for (ExpProtocol protocol : protocols)
-            {
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-                if (provider != null)
-                {
-                    if (provider instanceof PlateBasedAssayProvider plateProvider)
-                    {
-                        Plate plate = getPlate(protocol);
-                        if (plate != null)
-                        {
-                            // get a mutable version of the protocol
-                            ExpProtocol mutableProtocol = ExperimentService.get().getExpProtocol(protocol.getRowId());
-                            _log.info("Adjusting plate template storage for assay: " + mutableProtocol.getName());
-                            plateProvider.setPlate(mutableProtocol.getContainer(), mutableProtocol, plate);
-                            mutableProtocol.save(User.getAdminServiceUser());
-                        }
-                    }
-                }
-            }
-            tx.commit();
-        }
-    }
-
-    @Nullable
-    private static Plate getPlate(ExpProtocol protocol)
-    {
-        // resolve plate by the legacy deprecated plate name method
-        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + AbstractPlateBasedAssayProvider.PLATE_TEMPLATE_SUFFIX);
-        return prop != null ? PlateManager.get().getPlateByName(protocol.getContainer(), prop.getStringValue()) : null;
-    }
 
     /**
      * Called from assay-24.000-24.001.sql
@@ -830,10 +670,10 @@ public class AssayUpgradeCode implements UpgradeCode
                     {
                         // ensure the QC state column exists in the result domain
                         Domain resultDomain = provider.getResultsDomain(protocol);
-                        if (resultDomain.getPropertyByName(AssayResultDomainKind.STATE_COLUMN_NAME) == null)
+                        if (resultDomain.getPropertyByName(AssayResultDomainKind.Column.State.name()) == null)
                         {
-                            _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.STATE_COLUMN_NAME, protocol.getName()));
-                            DomainProperty dp = resultDomain.addProperty(new PropertyStorageSpec(AssayResultDomainKind.STATE_COLUMN_NAME, JdbcType.INTEGER));
+                            _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.Column.State.name(), protocol.getName()));
+                            DomainProperty dp = resultDomain.addProperty(new PropertyStorageSpec(AssayResultDomainKind.Column.State.name(), JdbcType.INTEGER));
                             dp.setLabel("QC State");
                             dp.setImportAliasSet(Set.of("QCState", "QC State"));
                             dp.setLookup(new Lookup(null, SchemaKey.fromParts(CoreSchema.getInstance().getSchemaName()), CoreSchema.DATA_STATES_TABLE_NAME));
@@ -845,6 +685,48 @@ public class AssayUpgradeCode implements UpgradeCode
                     }
                 }
             }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.015-24.016.sql, in order to support hit selection criteria for plate enabled assays.
+     * The upgrade creates the run domain hit selection criteria field.
+     */
+    @DeferredUpgrade
+    public static void initializeHitSelectionCriteria(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            Set<ExpProtocol> protocols = new HashSet<>();
+            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+            {
+                if (isBiologicsFolder(container))
+                    protocols.addAll(AssayService.get().getAssayProtocols(container));
+            }
+
+            for (ExpProtocol protocol : protocols)
+            {
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                if (provider != null && provider.isPlateMetadataEnabled(protocol))
+                {
+                    // ensure the QC state column exists in the result domain
+                    Domain runDomain = provider.getRunDomain(protocol);
+                    if (runDomain != null && runDomain.getPropertyByName(HIT_SELECTION_CRITERIA_COLUMN_NAME) == null)
+                    {
+                        _log.info("Adding the \"{}\" field to the run domain for assay : {}", HIT_SELECTION_CRITERIA_COLUMN_NAME, protocol.getName());
+                        DomainProperty dp = runDomain.addProperty(new PropertyStorageSpec(HIT_SELECTION_CRITERIA_COLUMN_NAME, JdbcType.VARCHAR));
+                        dp.setShownInInsertView(false);
+                        dp.setShownInUpdateView(false);
+
+                        runDomain.save(User.getAdminServiceUser());
+                    }
+                }
+            }
+
             tx.commit();
         }
     }

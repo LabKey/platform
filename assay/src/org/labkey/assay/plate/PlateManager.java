@@ -374,7 +374,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         @Nullable PlateSet plateSet
     ) throws Exception
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         Set<PlateCustomField> customFields = new LinkedHashSet<>(getDefaultFieldsForPlateSet(plate, plateSet));
 
@@ -1323,7 +1323,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // Called by the Plate Query Update Service prior to deleting a plate
     public void beforePlateDelete(Container container, Integer plateId)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         Plate plate = PlateCache.getPlate(container, plateId);
         List<String> lsids = new ArrayList<>();
@@ -1362,7 +1362,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void beforePlateSetsDelete(Collection<Integer> plateSetIds, Container container)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         if (plateSetIds.isEmpty())
             return;
@@ -1695,7 +1695,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void copyWellData(User user, @NotNull Plate source, @NotNull Plate copy, boolean copySample) throws Exception
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         var container = source.getContainer();
         var wellTable = getWellTable(container, user);
@@ -2740,7 +2740,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private void savePlateSetHeritage(Integer plateSetId, PlateSetType plateSetType, @Nullable PlateSetImpl parentPlateSet)
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         // Configure rootPlateSetId
         Integer rootPlateSetId = null;
@@ -3110,9 +3110,20 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public void deleteHits(int protocolId, Collection<Integer> resultIds)
     {
+        if (resultIds == null || resultIds.isEmpty())
+            return;
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolId"), protocolId);
         filter.addCondition(FieldKey.fromParts("ResultId"), resultIds, CompareType.IN);
         deleteHits(filter);
+    }
+
+    public void deleteHitsForRuns(Collection<Integer> runIds)
+    {
+        if (runIds == null || runIds.isEmpty())
+            return;
+
+        deleteHits(new SimpleFilter(FieldKey.fromParts("RunId"), runIds, CompareType.IN));
     }
 
     private void deleteReplicateStats(ExpProtocol protocol, User user, SimpleFilter filter)
@@ -3239,10 +3250,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void requireActiveTransaction()
+    private boolean requireActiveTransaction()
     {
-        if (!AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive())
-            throw new IllegalStateException("This method must be called from within a transaction");
+        return AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
     }
 
     Pair<Integer, List<Map<String, Object>>> getWellSampleData(
@@ -3656,7 +3666,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         Map<Integer, Map<Integer, WellGroupChange>> wellGroupChanges
     ) throws ValidationException
     {
-        requireActiveTransaction();
+        assert requireActiveTransaction();
 
         if (wellGroupChanges.isEmpty())
             return;
