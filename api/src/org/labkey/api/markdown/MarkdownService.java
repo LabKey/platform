@@ -15,6 +15,7 @@
  */
 package org.labkey.api.markdown;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,7 +60,7 @@ public interface MarkdownService
         {
             MarkdownService markdownService = MarkdownService.get();
             String testMdText = "# This is a H1 header";
-            String expectedHtmlText = "<div class=\"lk-markdown-container\"><h1>This is a H1 header</h1>\n</div>";
+            String expectedHtmlText = "<div class=\"lk-markdown-container\"><h1 id=\"this-is-a-h1-header\">This is a H1 header</h1>\n</div>";
             String htmlText = markdownService.toHtml(testMdText);
             assertEquals("The MarkdownService failed to correctly translate markdown of heading 1 text to html.", expectedHtmlText, htmlText);
         }
@@ -86,12 +87,12 @@ public interface MarkdownService
             MarkdownService markdownService = MarkdownService.get();
 
             String testMdText = "<h2>header</h2>";
-            String expectedHtmlText = "<div class=\"lk-markdown-container\"><h2>header</h2></div>";
+            String expectedHtmlText = "<div class=\"lk-markdown-container\"><h2>header</h2>\n</div>";
             String htmlText = markdownService.toHtml(testMdText);
             assertEquals("The MarkdownService failed to correctly translate markdown with html tags.", expectedHtmlText, htmlText);
 
             testMdText = "<script>alert()</script>";
-            expectedHtmlText = "<div class=\"lk-markdown-container\"><script>alert()</script></div>";
+            expectedHtmlText = "<div class=\"lk-markdown-container\"><script>alert()</script>\n</div>";
             htmlText = markdownService.toHtml(testMdText);
             assertEquals("The MarkdownService failed to correctly translate markdown with html tags.", expectedHtmlText, htmlText);
         }
@@ -233,38 +234,38 @@ public interface MarkdownService
                     Autoconverted link https://github.com/nodeca/pica (enable linkify to see)
                     """;
             String expectedHtmlText = """
-                    <div class="lk-markdown-container"><hr>
+                    <div class="lk-markdown-container"><hr />
                     <ul>
-                    <li><strong><a href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image<br>
+                    <li><strong><a href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image
                     resize in browser.</li>
-                    <li><strong><a href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly<br>
+                    <li><strong><a href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly
                     i18n with plurals support and easy syntax.</li>
                     </ul>
                     <p>You will like those projects!</p>
-                    <hr>
-                    <h1>h1 Heading</h1>
-                    <h2>h2 Heading</h2>
-                    <h3>h3 Heading</h3>
-                    <h4>h4 Heading</h4>
-                    <h5>h5 Heading</h5>
-                    <h6>h6 Heading</h6>
-                    <h2>Horizontal Rules</h2>
-                    <hr>
-                    <hr>
-                    <hr>
-                    <h2>Typographic replacements</h2>
+                    <hr />
+                    <h1 id="h1-heading">h1 Heading</h1>
+                    <h2 id="h2-heading">h2 Heading</h2>
+                    <h3 id="h3-heading">h3 Heading</h3>
+                    <h4 id="h4-heading">h4 Heading</h4>
+                    <h5 id="h5-heading">h5 Heading</h5>
+                    <h6 id="h6-heading">h6 Heading</h6>
+                    <h2 id="horizontal-rules">Horizontal Rules</h2>
+                    <hr />
+                    <hr />
+                    <hr />
+                    <h2 id="typographic-replacements">Typographic replacements</h2>
                     <p>Enable typographer option to see result.</p>
                     <p>(c) (C) (r) (R) (tm) (TM) (p) (P) +-</p>
                     <p>test.. test... test..... test?..... test!....</p>
                     <p>!!!!!! ???? ,,  -- ---</p>
                     <p>&quot;Smartypants, double quotes&quot; and 'single quotes'</p>
-                    <h2>Emphasis</h2>
+                    <h2 id="emphasis">Emphasis</h2>
                     <p><strong>This is bold text</strong></p>
                     <p><strong>This is bold text</strong></p>
                     <p><em>This is italic text</em></p>
                     <p><em>This is italic text</em></p>
-                    <p><s>Strikethrough</s></p>
-                    <h2>Blockquotes</h2>
+                    <p><del>Strikethrough</del></p>
+                    <h2 id="blockquotes">Blockquotes</h2>
                     <blockquote>
                     <p>Blockquotes can also be nested...</p>
                     <blockquote>
@@ -274,7 +275,7 @@ public interface MarkdownService
                     </blockquote>
                     </blockquote>
                     </blockquote>
-                    <h2>Lists</h2>
+                    <h2 id="lists">Lists</h2>
                     <p>Unordered</p>
                     <ul>
                     <li>Create a list by starting a line with <code>+</code>, <code>-</code>, or <code>*</code></li>
@@ -318,7 +319,7 @@ public interface MarkdownService
                     <li>foo</li>
                     <li>bar</li>
                     </ol>
-                    <h2>Code</h2>
+                    <h2 id="code">Code</h2>
                     <p>Inline <code>code</code></p>
                     <p>Indented code</p>
                     <pre><code>// Some comments
@@ -326,7 +327,7 @@ public interface MarkdownService
                     line 2 of code
                     line 3 of code
                     </code></pre>
-                    <h2>Tables</h2>
+                    <h2 id="tables">Tables</h2>
                     <table>
                     <thead>
                     <tr>
@@ -353,32 +354,32 @@ public interface MarkdownService
                     <table>
                     <thead>
                     <tr>
-                    <th style="text-align:right">Option</th>
-                    <th style="text-align:right">Description</th>
+                    <th align="right">Option</th>
+                    <th align="right">Description</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr>
-                    <td style="text-align:right">data</td>
-                    <td style="text-align:right">path to data files to supply the data that will be passed into templates.</td>
+                    <td align="right">data</td>
+                    <td align="right">path to data files to supply the data that will be passed into templates.</td>
                     </tr>
                     <tr>
-                    <td style="text-align:right">engine</td>
-                    <td style="text-align:right">engine to be used for processing templates. Handlebars is the default.</td>
+                    <td align="right">engine</td>
+                    <td align="right">engine to be used for processing templates. Handlebars is the default.</td>
                     </tr>
                     <tr>
-                    <td style="text-align:right">ext</td>
-                    <td style="text-align:right">extension to be used for dest files.</td>
+                    <td align="right">ext</td>
+                    <td align="right">extension to be used for dest files.</td>
                     </tr>
                     </tbody>
                     </table>
-                    <h2>Links</h2>
+                    <h2 id="links">Links</h2>
                     <p><a href="http://dev.nodeca.com">link text</a></p>
                     <p><a href="http://nodeca.github.io/pica/demo/" title="title text!">link with title</a></p>
                     <p>Autoconverted link <a href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a> (enable linkify to see)</p>
                     </div>""";
             String htmlText = markdownService.toHtml(testMdText);
-            assertTrue("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText.equals(htmlText));
+            assertEquals("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText, htmlText);
         }
     }
 }

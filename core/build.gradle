@@ -47,6 +47,32 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.commonmark:commonmark-ext-autolink:${commonmarkVersion}",
+            "commonmark-ext-autolink",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Autolink extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-heading-anchor:${commonmarkVersion}",
+            "commonmark-ext-heading-anchor",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Heading anchor extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "org.commonmark:commonmark-ext-gfm-strikethrough:${commonmarkVersion}",
             "commonmark-ext-gfm-strikethrough",
             "commonmark",
@@ -54,6 +80,19 @@ dependencies {
             ExternalDependency.BSD_2_LICENSE_NAME,
             "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
             "Strikethrough extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-gfm-tables:${commonmarkVersion}",
+            "commonmark-ext-gfm-tables",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Tables extension for Markdown renderer"
         )
     )
 

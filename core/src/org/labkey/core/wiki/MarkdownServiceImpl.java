@@ -19,7 +19,10 @@ import org.apache.commons.pool.KeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.StackKeyedObjectPool;
 import org.apache.logging.log4j.Logger;
 import org.commonmark.Extension;
+import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.ext.heading.anchor.HeadingAnchorExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -137,7 +140,12 @@ public class MarkdownServiceImpl implements MarkdownService
 
     public MarkdownServiceImpl()
     {
-        List<Extension> extensions = List.of(StrikethroughExtension.create());
+        List<Extension> extensions = List.of(
+            AutolinkExtension.create(),
+            HeadingAnchorExtension.create(),
+            StrikethroughExtension.create(),
+            TablesExtension.create()
+        );
         _parser = Parser.builder()
             .extensions(extensions)
             .build();
@@ -153,7 +161,10 @@ public class MarkdownServiceImpl implements MarkdownService
             mdText = "";
 
         Node document = _parser.parse(mdText);
-        return _renderer.render(document);
+        String html = _renderer.render(document);
+
+        // #32468 include selector so we can have markdown-specific styling namespace
+        return "<div class=\"lk-markdown-container\">" + html + "</div>";
     }
 
     public String toHtmlOld(String mdText, Map<Options,Boolean> options) throws NoSuchMethodException, ScriptException
