@@ -303,7 +303,7 @@ public class ExcelLoader extends DataLoader
     }
 
 
-    private Sheet getSheet() throws IOException
+    public Sheet getSheet() throws IOException
     {
         try
         {
