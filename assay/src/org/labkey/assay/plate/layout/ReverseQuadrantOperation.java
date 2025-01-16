@@ -64,12 +64,12 @@ public class ReverseQuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(Container container, User user, ExecutionContext context) throws ValidationException
     {
         if (context.sourcePlates().size() != 1)
             throw new ValidationException("The reverse quadrant operation requires a single source plate.");
 
-        _targetPlateType = getTargetPlateType(context.sourcePlates().get(0).getPlateType(), allPlateTypes);
+        _targetPlateType = getTargetPlateType(context.sourcePlates().get(0).getPlateType(), context.allPlateTypes());
     }
 
     private @NotNull PlateType getTargetPlateType(@NotNull PlateType sourcePlateType, List<? extends PlateType> allPlateTypes) throws ValidationException
