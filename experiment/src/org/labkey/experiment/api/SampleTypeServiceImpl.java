@@ -883,8 +883,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.SampleType, st.getRowId(), c, u);
                     if (excludedDashboardContainerIds != null && !excludedDashboardContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
