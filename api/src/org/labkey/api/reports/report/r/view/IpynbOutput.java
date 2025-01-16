@@ -34,7 +34,6 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -383,7 +382,7 @@ public class IpynbOutput extends HtmlOutput
         }
 
 
-        private void renderMarkdownSource(HtmlStringBuilder sb, JSONObject cell) throws NoSuchMethodException, ScriptException
+        private void renderMarkdownSource(HtmlStringBuilder sb, JSONObject cell)
         {
             String source = getSource(cell);
             if (null != source)

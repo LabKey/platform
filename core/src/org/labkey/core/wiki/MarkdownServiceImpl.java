@@ -15,9 +15,6 @@
  */
 package org.labkey.core.wiki;
 
-import org.apache.commons.pool.KeyedPoolableObjectFactory;
-import org.apache.commons.pool.impl.StackKeyedObjectPool;
-import org.apache.logging.log4j.Logger;
 import org.commonmark.Extension;
 import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
@@ -26,112 +23,12 @@ import org.commonmark.ext.heading.anchor.HeadingAnchorExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.json.JSONObject;
 import org.labkey.api.markdown.MarkdownService;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.reports.LabKeyScriptEngineManager;
-import org.labkey.api.resource.Resource;
-import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.logging.LogHelper;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Map;
 
 public class MarkdownServiceImpl implements MarkdownService
 {
-    private static final Logger LOG = LogHelper.getLogger(MarkdownServiceImpl.class, "Translates Markdown to HTML");
-
-    /**
-     * The JS-based rendering engine is expensive to create so use a simple pool that reuses them. Always creates
-     * a new instance if the pool doesn't have one available. Caps the max number in the pool at 5.
-     */
-    private final StackKeyedObjectPool<Map<Options, Boolean>, MarkdownInvocable> POOL = new StackKeyedObjectPool<>(new PoolFactory(), 5, 0);
-
-    private static class PoolFactory implements KeyedPoolableObjectFactory<Map<Options, Boolean>, MarkdownInvocable>
-    {
-        public static final String POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY = "polyglot.engine.WarnInterpreterOnly";
-
-        static
-        {
-            // Issue 47679 - suppress stdout logging from GraalJS about compilation mode, due to significant difficulties
-            // in getting the VM configured to use compilation mode
-            if (System.getProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY) == null)
-            {
-                System.setProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY, "false");
-            }
-        }
-
-        @Override
-        public MarkdownInvocable makeObject(Map<Options, Boolean> options) throws Exception
-        {
-            LOG.debug("Initializing new ScriptEngine");
-            LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-            if (null == svc)
-                throw new ConfigurationException("LabKeyScriptEngineManager service not found.");
-
-            ScriptEngine engine = svc.getEngineByName("graal.js");
-            if (null == engine)
-                throw new ConfigurationException("Graal.js engine not found");
-
-            Module module = ModuleLoader.getInstance().getCoreModule();
-            Path path = Path.parse("scripts/").append("markdown-it.js");
-            Resource r = module.getModuleResource(path);
-            if (null == r || !r.isFile())
-                throw new ConfigurationException("markdown-it.js not found");
-
-            try (var is = new BufferedInputStream(r.getInputStream(), 1024 * 20))
-            {
-                engine.eval(new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET));
-            }
-            catch (IOException x)
-            {
-                throw new ConfigurationException("Could not open markdown-it.js", x);
-            }
-            JSONObject json = new JSONObject(Map.of("breaks",true,"linkify",true, "html", false));
-            options.forEach((key, value) -> json.put(key.toString(), value));
-            engine.eval("var md = new markdownit(" + json + ")");
-            Object mdCompiled = engine.eval("md");
-            Invocable invocable = (Invocable) engine;
-            invocable.invokeMethod(mdCompiled, "render", "# call render method here to ensure that the script engine compiles this method before use by app");
-
-            return new MarkdownInvocable(invocable, mdCompiled);
-        }
-
-        @Override
-        public void destroyObject(Map<Options, Boolean> key, MarkdownInvocable obj)
-        {
-        }
-
-        @Override
-        public boolean validateObject(Map<Options, Boolean> key, MarkdownInvocable obj)
-        {
-            // In case of memory leaks within the JS engine and/or Markdown renderer, toss after 100 renderings
-            // so it can be garbage collected
-            boolean valid = obj.getUses() < 100;
-            if (!valid)
-            {
-                LOG.debug("MarkDown ScriptEngine has reached its end of life and will be discarded");
-            }
-            return valid;
-        }
-
-        @Override
-        public void activateObject(Map<Options, Boolean> key, MarkdownInvocable obj) {}
-
-        @Override
-        public void passivateObject(Map<Options, Boolean> key, MarkdownInvocable obj) {}
-    }
-
     // From the commonmark-java docs: "Both the Parser and HtmlRenderer are designed so that you can configure them
     // once using the builders and then use them multiple times/from multiple threads." So that's what we're doing.
     // See https://github.com/commonmark/commonmark-java?tab=readme-ov-file#thread-safety
@@ -140,6 +37,8 @@ public class MarkdownServiceImpl implements MarkdownService
 
     public MarkdownServiceImpl()
     {
+        // Base commonmark-java plus Autolink, Strikethrough, and Tables extensions get us to parity with our old
+        // markdown-it.js implementation. The Heading Anchor extension adds an important docs-requested feature.
         List<Extension> extensions = List.of(
             AutolinkExtension.create(),
             HeadingAnchorExtension.create(),
@@ -165,77 +64,5 @@ public class MarkdownServiceImpl implements MarkdownService
 
         // #32468 include selector so we can have markdown-specific styling namespace
         return "<div class=\"lk-markdown-container\">" + html + "</div>";
-    }
-
-    public String toHtmlOld(String mdText, Map<Options,Boolean> options) throws NoSuchMethodException, ScriptException
-    {
-        // make sure that the source text has the carriage returns escaped and the whole thing encoded
-        // otherwise it wont parse right as a js string if it hits a cr or a quote.
-        //        mdText = mdText.replace("\n", "\\n");
-        //        mdText = PageFlowUtil.filter(mdText);
-        //        Object testResult = engine.eval("md.render('" + mdText + "')");
-
-        // Better yet, avoid js injection by using the invokeMethod syntax that takes a java String as a param
-
-        // markdownit won't accept null as input param
-        if (null == mdText)
-            mdText = "";
-
-        MarkdownInvocable mi = null;
-        try
-        {
-            mi = POOL.borrowObject(options);
-            Object html = mi.invoke(mdText);
-            if (null == html)
-                return null;
-            // #32468 include selector so we can have markdown-specific styling namespace
-            return "<div class=\"lk-markdown-container\">" + html + "</div>";
-        }
-        catch (NoSuchMethodException | ScriptException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-        finally
-        {
-            if (mi != null)
-            {
-                try
-                {
-                    POOL.returnObject(options, mi);
-                }
-                catch (Exception e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
-            }
-        }
-    }
-
-    private static class MarkdownInvocable
-    {
-        private final Invocable _invocable;
-        private final Object _mdCompiled;
-        int _uses = 0;
-
-        public MarkdownInvocable(Invocable invocable, Object mdCompiled)
-        {
-            _invocable = invocable;
-            _mdCompiled = mdCompiled;
-        }
-
-        Object invoke(String mdText) throws NoSuchMethodException, ScriptException
-        {
-            _uses++;
-            return _invocable.invokeMethod(_mdCompiled, "render", mdText);
-        }
-
-        public int getUses()
-        {
-            return _uses;
-        }
     }
 }

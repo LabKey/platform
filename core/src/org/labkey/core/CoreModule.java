@@ -296,6 +296,7 @@ import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.webdav.WebdavServlet;
 import org.labkey.core.wiki.MarkdownServiceImpl;
+import org.labkey.core.wiki.MarkdownTestCase;
 import org.labkey.core.wiki.RadeoxRenderer;
 import org.labkey.core.wiki.WikiRenderingServiceImpl;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -1370,6 +1371,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LoggerController.TestCase.class,
             LoggingTestCase.class,
             LoginController.TestCase.class,
+            MarkdownTestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
             ModuleStaticResolverImpl.TestCase.class,
