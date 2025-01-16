@@ -20,6 +20,7 @@ import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.ext.heading.anchor.HeadingAnchorExtension;
+import org.commonmark.ext.image.attributes.ImageAttributesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -37,11 +38,13 @@ public class MarkdownServiceImpl implements MarkdownService
 
     public MarkdownServiceImpl()
     {
-        // Base commonmark-java plus Autolink, Strikethrough, and Tables extensions get us to parity with our old
-        // markdown-it.js implementation. The Heading Anchor extension adds an important docs-requested feature.
+        // Base commonmark-java plus Autolink, Strikethrough, and Tables extensions get us close to parity with our old
+        // markdown-it.js implementation. The Heading Anchor and Image Attributes extensions were requested by
+        // the docs team.
         List<Extension> extensions = List.of(
             AutolinkExtension.create(),
             HeadingAnchorExtension.create(),
+            ImageAttributesExtension.create(),
             StrikethroughExtension.create(),
             TablesExtension.create()
         );
