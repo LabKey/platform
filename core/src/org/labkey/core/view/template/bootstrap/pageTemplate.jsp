@@ -25,19 +25,22 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
+    ViewContext context = getViewContext();
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
 
-    if ("1".equals(url.getParameter("_noindex")))
-        model.setNoIndex();
-    if ("1".equals(url.getParameter("_nofollow")))
-        model.setNoFollow();
+    boolean isExplicitNoIndex = "1".equals(url.getParameter("_noindex"));
+    if (isExplicitNoIndex)
+        model.setRobotsNone();
+    boolean isRobot = context.isRobot();
+    boolean isNoIndex = model.hasMetaNoIndex();
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,6 +75,11 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
+    if (isRobot && isNoIndex)   // using isNoIndex could be too aggressive, but using isExplicitNoIndex seems fair
+    {
+        %></body></html><%
+        return;
+    }
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
 %>

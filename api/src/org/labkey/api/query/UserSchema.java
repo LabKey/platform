@@ -894,4 +894,14 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         @NotNull Set<Role> getContextualRoles();
     }
+
+    /* Many tables should be indexed via controller provided views e.g. issues, announcements, wiki.
+     * We do not want crawlers to index data in these tables via query-executeQuery for instance.
+     *
+     * Code should check TableInfo for this, but TableInfo.allowRobotsIndex() can defer to Userschema.allowRobotsIndex()
+     */
+    public boolean allowRobotsIndex()
+    {
+        return true;
+    }
 }

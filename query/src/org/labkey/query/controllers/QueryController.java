@@ -1515,14 +1515,16 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            _form = form;
-            QueryView queryView = null;
-
-            if (!errors.hasErrors())
-                queryView = form.getQueryView();
-
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, true);
+
+            QueryView queryView = Objects.requireNonNull(form.getQueryView());
+
+            var t = queryView.getTable();
+            if (null != t && !t.allowRobotsIndex())
+            {
+                getPageConfig().setRobotsNone();
+            }
 
             if (isPrint())
             {
@@ -1530,9 +1532,11 @@ public class QueryController extends SpringActionController
                 getPageConfig().setTemplate(PageConfig.Template.Print);
                 getPageConfig().setShowPrintDialog(true);
             }
+
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             setHelpTopic("customSQL");
+            _form = form;
             _queryView = queryView;
             return queryView;
         }

@@ -316,6 +316,9 @@ public class ProjectController extends SpringActionController
         @Override
         public ModelAndView getView(PageForm form, BindException errors)
         {
+            if (PageFlowUtil.checkPortalPageForNonDefaultParams(getViewContext().getRequest()))
+                getPageConfig().setNoIndex();
+
             Container c = getContainer();
             if (null == c)
             {

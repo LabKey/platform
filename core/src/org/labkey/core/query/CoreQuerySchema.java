@@ -787,4 +787,10 @@ public class CoreQuerySchema extends UserSchema
             });
         }
     }
+
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return false;
+    }
 }

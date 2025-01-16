@@ -213,4 +213,10 @@ public class AnnouncementSchema extends UserSchema
         Module module = ModuleLoader.getInstance().getModule(AnnouncementModule.NAME);
         return !getContainer().getActiveModules().contains(module);
     }
+
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return false;
+    }
 }

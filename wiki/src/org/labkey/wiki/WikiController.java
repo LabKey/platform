@@ -119,6 +119,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DataRegion.LAST_FILTER_PARAM;
+import static org.labkey.api.util.PageFlowUtil.checkPortalPageForNonDefaultParams;
 
 public class WikiController extends SpringActionController
 {
@@ -1124,13 +1125,8 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
-            // Don't index page with non default parameters (e.g. targeting webparts in the page)
-            for (var e = getViewContext().getRequest().getParameterNames() ; e.hasMoreElements() ; )
-            {
-                String p = e.nextElement();
-                if (p.contains(".") && !LAST_FILTER_PARAM.equals(p))
-                    getPageConfig().setNoIndex();
-            }
+            if (PageFlowUtil.checkPortalPageForNonDefaultParams(getViewContext().getRequest()))
+                getPageConfig().setNoIndex();
 
             String name = null != form.getName() ? form.getName().trim() : null;
             //if there's no name parameter, find default page and reload with parameter.
