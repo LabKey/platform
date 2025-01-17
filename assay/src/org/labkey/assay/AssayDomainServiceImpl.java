@@ -608,6 +608,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
                     ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
+                else
+                    ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.AssayDesign, protocol.getRowId(), getContainer(), getUser());
 
                 QueryService.get().updateLastModified();
                 transaction.commit();

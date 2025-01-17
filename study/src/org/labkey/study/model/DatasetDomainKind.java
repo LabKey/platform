@@ -823,4 +823,24 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         return ComplianceService.get().isComplianceSupported();
     }
+
+    // Query datasets don't have a domain kind, so check here if the dataset is a query dataset
+    @Override
+    public boolean isProvisioned(Container container, String name)
+    {
+        return super.isProvisioned(container, name) && !isQueryDataset(container, name);
+    }
+
+    public static boolean isQueryDataset(Container container, String queryName)
+    {
+        StudyService ss = StudyService.get();
+        if (ss == null)
+            return false;
+
+        Dataset dt = ss.getDataset(container, ss.getDatasetIdByName(container, queryName));
+        if (dt == null)
+            return false;
+
+        return dt.isQueryDataset();
+    }
 }

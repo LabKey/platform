@@ -786,7 +786,7 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
-        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst", "scanLast", "scanCount", "totalIntensity", "description" };
+        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst\u00A0 \u00A0 ", "scanLast", "scanCount", "totalIntensity", "description" };
         String[] line1Xlsx = new String[] { "2006-01-02 00:00:00", "96", "1543.3400999999999", "858.32460000000003", "false", "1714.6346000000001", "2029.6295", "2", "1", "0.19630893999999999", "26.471083", "12.982442000000001", "4", "92", "100", "9", "20248.761999999999", "description" };
         String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description"
         };
