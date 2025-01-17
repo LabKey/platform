@@ -17,7 +17,10 @@ package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -25,19 +28,30 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UserManagementPermission;
 
+/**
+ * All users can view and delete from the "filtered to current user" version of this table. CoreQuerySchema shows
+ * the unfiltered version only to those with UserManagementPermission (i.e., site and application admins).
+ * ApiKeysUpdateService ensures that only the high-level admins can delete others' API keys.
+ */
 public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
 {
-    public ApiKeysTableInfo(@NotNull CoreQuerySchema schema)
+    public ApiKeysTableInfo(@NotNull CoreQuerySchema schema, boolean filterToCurrentUser)
     {
         super(schema.getDbSchema().getTable(CoreQuerySchema.API_KEYS_TABLE_NAME), schema);
         addWrapColumn(getRealTable().getColumn("RowId")).setHidden(true);
-        addWrapColumn(getRealTable().getColumn("CreatedBy"));
+        MutableColumnInfo createdBy = addWrapColumn(getRealTable().getColumn("CreatedBy"));
         addWrapColumn(getRealTable().getColumn("Created"));
         addWrapColumn(getRealTable().getColumn("Expiration"));
         addWrapColumn(getRealTable().getColumn("LastUsed"));
         addWrapColumn(getRealTable().getColumn("Description"));
+
+        if (filterToCurrentUser)
+        {
+            setTitle("User API Keys");
+            createdBy.setHidden(true);
+            addCondition(new SimpleFilter(FieldKey.fromParts("CreatedBy"), schema.getUser().getUserId(), CompareType.EQUAL));
+        }
     }
 
     @Override
@@ -47,17 +61,22 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> perm)
     {
-        // We only allow delete on this table. No need for permission check, since we already know user has
-        // UserManagementPermission at the root.
-        assert((User)user).hasRootPermission(UserManagementPermission.class);
-        return perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class);
+        if (principal instanceof User user)
+        {
+            if (user.isImpersonated())
+                return false;
+
+            // We allow only read and delete on this table.
+            return perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class);
+        }
+        return false;
     }
 
     @Override
     public @Nullable QueryUpdateService getUpdateService()
     {
-        return new DefaultQueryUpdateService(this, getRealTable());
+        return new ApiKeysUpdateService(this, getRealTable());
     }
 }
