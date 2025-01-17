@@ -296,6 +296,7 @@ import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.webdav.WebdavServlet;
 import org.labkey.core.wiki.MarkdownServiceImpl;
+import org.labkey.core.wiki.MarkdownTestCase;
 import org.labkey.core.wiki.RadeoxRenderer;
 import org.labkey.core.wiki.WikiRenderingServiceImpl;
 import org.labkey.core.workbook.WorkbookFolderType;
@@ -1206,26 +1207,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
-
-        try
-        {
-            MarkdownService.setInstance(new MarkdownServiceImpl());
-        }
-        catch (RuntimeException | Error e)
-        {
-            if (AppProps.getInstance().isDevMode())
-            {
-                // Be tolerant of inability to render Markdown in dev mode, as
-                // redeploying the webapp without bouncing Tomcat causes problems
-                // with Graal's JNI registration. See issue 50315
-                LOG.error("Error registering MarkdownServiceImpl", e);
-            }
-            else
-            {
-                // In production mode, treat this as a fatal error
-                throw e;
-            }
-        }
+        MarkdownService.setInstance(new MarkdownServiceImpl());
 
         // initialize email preference service and listeners
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
@@ -1236,8 +1218,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerAllowedConnectionSources()
     {
         ContentSecurityPolicyFilter.registerAllowedConnectionSource(
-                ExternalServerType.getExternalSourceHostsKey(),
-                ExternalServerType.Source.getHosts().toArray(new String[0]));
+            ExternalServerType.getExternalSourceHostsKey(),
+            ExternalServerType.Source.getHosts().toArray(new String[0])
+        );
 
         LOG.debug("Registered [{}] as an allowed connection source", () -> String.join(", ", AppProps.getInstance().getExternalSourceHosts()));
     }
@@ -1248,7 +1231,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ModuleLoader.getInstance().getModules().stream()
             .map(FileSqlScriptProvider::new)
             .flatMap(p -> p.getSchemas().stream()
-                    .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
+                .filter(schema-> SchemaUpdateType.Before.getScript(p, schema) != null || SchemaUpdateType.After.getScript(p, schema) != null)
             )
             .filter(schema -> TableXmlUtils.compareXmlToMetaData(schema, false, false, true).hasViewProblem())
             .findAny()
@@ -1388,6 +1371,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LoggerController.TestCase.class,
             LoggingTestCase.class,
             LoginController.TestCase.class,
+            MarkdownTestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
             ModuleStaticResolverImpl.TestCase.class,
