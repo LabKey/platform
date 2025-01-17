@@ -36,7 +36,7 @@
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
 
-    boolean isExplicitNoIndex = "1".equals(url.getParameter("_noindex"));
+    boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter("_noindex"));
     if (isExplicitNoIndex)
         model.setRobotsNone();
     boolean isRobot = context.isRobot();
