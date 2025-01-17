@@ -351,7 +351,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override
-        protected String getHoverContent(RenderContext ctx)
+        public String getHoverContent(RenderContext ctx)
         {
             Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
             if (study != null && ctx.get(getColumnInfo().getAlias()) != null)

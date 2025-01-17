@@ -371,7 +371,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    protected String getHoverContent(RenderContext ctx)
+    public String getHoverContent(RenderContext ctx)
     {
         return _column.getHoverContent(ctx);
     }
