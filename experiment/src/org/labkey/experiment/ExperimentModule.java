@@ -617,16 +617,8 @@ public class ExperimentModule extends SpringModule
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
                     assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
-                    if (schema.getSqlDialect().isPostgreSQL())
-                    {
-                        assayMetrics.put("protocolsWithTransformScriptRunOnEditCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%' || '\"UPDATE\"' || '%'").getObject(Long.class));
-                        assayMetrics.put("protocolsWithTransformScriptRunOnImportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%' || '\"INSERT\"' || '%'").getObject(Long.class));
-                    }
-                    if (schema.getSqlDialect().isSqlServer())
-                    {
-                        assayMetrics.put("protocolsWithTransformScriptRunOnEditCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%' + '\"UPDATE\"' + '%'").getObject(Long.class));
-                        assayMetrics.put("protocolsWithTransformScriptRunOnImportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE '%' + '\"INSERT\"' + '%'").getObject(Long.class));
-                    }
+                    assayMetrics.put("protocolsWithTransformScriptRunOnEditCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE " + schema.getSqlDialect().concatenate("'%'", "'\"UPDATE\"'", "'%'")).getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptRunOnImportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active' AND OP.stringvalue LIKE " + schema.getSqlDialect().concatenate("'%'", "'\"INSERT\"'", "'%'")).getObject(Long.class));
 
                     assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
                     SQLFragment runsWithPlateSQL = new SQLFragment("""
