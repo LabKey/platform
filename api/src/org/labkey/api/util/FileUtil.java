@@ -37,7 +37,6 @@ import org.labkey.api.security.Crypt;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
