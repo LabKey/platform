@@ -188,7 +188,9 @@ class MarkdownTestCase extends Assert
                 
                 [link with title](http://nodeca.github.io/pica/demo/ "title text!")
                 
-                Autoconverted link https://github.com/nodeca/pica (enable linkify to see)
+                Autoconverted link https://github.com/nodeca/pica
+                
+                Autoconverted email address markdown@labkey.test
                 """;
         String expectedHtmlText = """
                 <div class="lk-markdown-container"><hr />
@@ -333,7 +335,8 @@ class MarkdownTestCase extends Assert
                 <h2 id="links">Links</h2>
                 <p><a href="http://dev.nodeca.com">link text</a></p>
                 <p><a href="http://nodeca.github.io/pica/demo/" title="title text!">link with title</a></p>
-                <p>Autoconverted link <a href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a> (enable linkify to see)</p>
+                <p>Autoconverted link <a href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a></p>
+                <p>Autoconverted email address <a href="mailto:markdown@labkey.test">markdown@labkey.test</a></p>
                 </div>""";
         String htmlText = markdownService.toHtml(testMdText);
         assertEquals("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText, htmlText);
