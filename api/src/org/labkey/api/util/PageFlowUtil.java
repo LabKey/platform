@@ -2471,7 +2471,7 @@ public class PageFlowUtil
 
 
     /* This a robot taming check.  We don't want to index portal-like pages e.g. project-begin.view and wiki-page.view (embedded webparts)
-     * with dataregion filters.  These pages have low search value ROI.
+     * with dataregion filters.  These pages have low search value ROI and robots can get obsessed with all the combinations of parameters
      */
     public static boolean checkPortalPageForNonDefaultParams(HttpServletRequest req)
     {
