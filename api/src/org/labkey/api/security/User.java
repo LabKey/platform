@@ -39,6 +39,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -606,6 +608,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
                 if (ComplianceService.get().isComplianceSupported() && ComplianceService.get().getFolderSettings(container, getAdminServiceUser()).isPhiRolesRequired())
                     maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);
                 props.put("maxAllowedPhi", maxAllowedPhi);
+
+                if (container.hasPermission(user, SeeGroupDetailsPermission.class) || container.hasPermission(user, SampleWorkflowJobPermission.class))
+                    props.put("groups", user.getGroups().stream().toList());
             }
         }
 

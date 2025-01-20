@@ -400,6 +400,15 @@
       <column columnName="UseTimeKeyField">
         <description>Whether to use the time portion of the date field as a key field</description>
       </column>
+      <column columnName="SourceQueryName">
+        <description>Query name of a query backed dataset.</description>
+      </column>
+      <column columnName="SourceQuerySchema">
+        <description>Schema name of a query backed dataset.</description>
+      </column>
+      <column columnName="SourceQueryContainer">
+        <description>Container of a query backed dataset.</description>
+      </column>
     </columns>
   </table>
   <table tableName="SampleRequest" tableDbType="TABLE">

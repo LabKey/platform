@@ -96,7 +96,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
@@ -493,7 +492,6 @@ public class ApiModule extends CodeOnlyModule
             LabKeyCollectors.TestCase.class,
             LookAndFeelFolderPropertiesTest.class,
             MapLoader.MapLoaderTestCase.class,
-            MarkdownService.TestCase.class,
             MaterialInputRoleComparator.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,

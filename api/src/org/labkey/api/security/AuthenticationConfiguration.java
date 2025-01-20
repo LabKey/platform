@@ -23,7 +23,6 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
@@ -203,7 +202,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
         @Override
         AP getAuthenticationProvider();
 
-        ActionURL getRedirectURL(User candidate, Container c);
+        URLHelper getRedirectURL(User candidate, Container c);
 
         boolean isRequired(User user);
 

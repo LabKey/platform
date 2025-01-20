@@ -34,26 +34,78 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.graalvm.polyglot:js-community:${graalVersion}",
-            "GraalJS",
-            "GraalJS",
-            "https://github.com/graalvm/graaljs",
-            "Universal Permissive License",
-            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
-            "Server-side JavaScript evaluation"
+            "org.commonmark:commonmark:${commonmarkVersion}",
+            "commonmark-java",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Markdown renderer"
         )
     )
 
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.graalvm.js:js-scriptengine:${graalVersion}",
-            "GraalJS",
-            "GraalJS",
-            "https://github.com/graalvm/graaljs",
-            "Universal Permissive License",
-            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
-            "Server-side JavaScript evaluation"
+            "org.commonmark:commonmark-ext-autolink:${commonmarkVersion}",
+            "commonmark-ext-autolink",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Autolink extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-heading-anchor:${commonmarkVersion}",
+            "commonmark-ext-heading-anchor",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Heading anchor extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-image-attributes:${commonmarkVersion}",
+            "commonmark-ext-image-attributes",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Image attributes extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-gfm-strikethrough:${commonmarkVersion}",
+            "commonmark-ext-gfm-strikethrough",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Strikethrough extension for Markdown renderer"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.commonmark:commonmark-ext-gfm-tables:${commonmarkVersion}",
+            "commonmark-ext-gfm-tables",
+            "commonmark",
+            "https://github.com/commonmark/commonmark-java",
+            ExternalDependency.BSD_2_LICENSE_NAME,
+            "https://github.com/commonmark/commonmark-java/blob/main/LICENSE.txt",
+            "Tables extension for Markdown renderer"
         )
     )
 }

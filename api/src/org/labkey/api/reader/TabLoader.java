@@ -641,6 +641,35 @@ public class TabLoader extends DataLoader
     }
 
     @Override
+    public Object getCommentLineCount() throws IOException
+    {
+        TabBufferedReader reader = getReader();
+        reader.setReadAhead();
+        int commentLineCount = 0;
+        try
+        {
+            while (true)
+            {
+                String s = reader.readLine();
+
+                if (null == s)
+                    break;
+
+                if (!s.isEmpty() && s.charAt(0) == COMMENT_CHAR)
+                {
+                    commentLineCount++;
+                }
+            }
+        }
+        finally
+        {
+            reader.resetReadAhead();
+        }
+
+        return commentLineCount;
+    }
+
+    @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
         TabBufferedReader reader = getReader();

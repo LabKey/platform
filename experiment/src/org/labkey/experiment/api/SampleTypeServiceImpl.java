@@ -883,8 +883,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.SampleType, st.getRowId(), c, u);
                     if (excludedDashboardContainerIds != null && !excludedDashboardContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
+                    else
+                        ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
@@ -1555,8 +1559,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Double totalVolume = 0.0;
-        Double totalAvailableVolume = 0.0;
+        double totalVolume = 0.0;
+        double totalAvailableVolume = 0.0;
 
         for (AliquotAmountUnitResult volumeUnit : volumeUnits)
         {
@@ -1596,9 +1600,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
         }
-
-        totalVolume = Precision.round(totalVolume, 6);
-        totalAvailableVolume = Precision.round(totalAvailableVolume, 6);
+        int scale = totalDisplayUnit == null ? Measurement.DEFAULT_PRECISION_SCALE : totalDisplayUnit.getPrecisionScale();
+        totalVolume = Precision.round(totalVolume, scale);
+        totalAvailableVolume = Precision.round(totalAvailableVolume, scale);
 
         if (Double.compare(totalVolume, 0.0) == 0)
             totalDisplayUnit = null;
