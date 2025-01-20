@@ -503,7 +503,7 @@ public class PropertyController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
-    public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
+    public static class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
         //Keeping both request and response object mappers to avoid serialization/deserialization issues
         //as not sure if request object mapper is needed

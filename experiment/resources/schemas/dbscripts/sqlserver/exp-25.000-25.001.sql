@@ -1,0 +1,1 @@
+ALTER TABLE exp.List ADD MultiFolder BIT NOT NULL DEFAULT 0;

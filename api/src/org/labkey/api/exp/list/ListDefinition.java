@@ -378,4 +378,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     boolean getFileAttachmentIndex();
     void setFileAttachmentIndex(boolean index);
+
+    boolean getMultiFolder();
+    void setMultiFolder(boolean multiFolder);
 }

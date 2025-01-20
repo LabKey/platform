@@ -91,6 +91,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -121,9 +122,8 @@ public class DomainUtil
     {
         if (defaultValue == null || (defaultValue instanceof String && StringUtils.isBlank((String)defaultValue)))
             return "[none]";
-        if (defaultValue instanceof Date)
+        if (defaultValue instanceof Date defaultDate)
         {
-            Date defaultDate = (Date) defaultValue;
             if (property.getFormat() != null)
                 return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
@@ -143,7 +143,7 @@ public class DomainUtil
             }
             catch (Exception e)
             {
-                LogManager.getLogger(DomainUtil.class).debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
+                LOG.debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
                 // And then fall through below to return defaultValue.toString();
             }
         }
@@ -215,10 +215,7 @@ public class DomainUtil
             tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
         }
 
-        if (tableNames.contains(p.getLookupQuery()))
-            return true;
-
-        return false;
+        return tableNames.contains(p.getLookupQuery());
     }
 
     @Nullable
@@ -447,7 +444,8 @@ public class DomainUtil
             gwtDomain.setAllowCalculatedFields(kind.allowCalculatedFields());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
-            gwtDomain.setSupportsPhiLevel(kind.supportsPhiLevel());
+            gwtDomain.setPhiLevelEnabled(kind.supportsPhiLevel(dd));
+            gwtDomain.setPhiLevelDisabledReason(kind.getPhiLevelUnsupportedReason(dd));
         }
         return gwtDomain;
     }
@@ -878,17 +876,27 @@ public class DomainUtil
             if (!StringUtils.isEmpty(pd.getPropertyURI()))
                 propertyUrisInUse.add(pd.getPropertyURI());
 
+        boolean supportsPhi = kind.supportsPhiLevel(d);
+        List<String> badPhiFields = new LinkedList<>();
+
         // now add properties
         for (GWTPropertyDescriptor pd : update.getFields())
         {
             addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
+            if (!supportsPhi && !PHI.NotPHI.name().equals(pd.getPHI()))
+                badPhiFields.add(pd.getName());
         }
+
+        if (!badPhiFields.isEmpty())
+            validationException.addError(new SimpleValidationError(kind.getPhiLevelUnsupportedReason(d) + " but the " +
+                StringUtilsLabKey.joinWithConjunction(badPhiFields, "and") + " field" +
+                (badPhiFields.size() == 1 ? " has" : "s have") + " a PHI level set"));
 
         try
         {
             if (validationException.getErrors().isEmpty())
             {
-                // Reorder the properties based on what we got from GWT
+                // Reorder the properties based on what the client sent
                 Map<String, DomainProperty> dps = new HashMap<>();
                 for (DomainProperty dp : d.getProperties())
                 {
@@ -1199,7 +1207,7 @@ public class DomainUtil
 
             if (v.getExtraProperties() != null && v.getExtraProperties().containsKey("valueUpdates"))
             {
-                if (v.getExtraProperties().get("valueUpdates").size() > 0)
+                if (!v.getExtraProperties().get("valueUpdates").isEmpty())
                     valueUpdates.add(v.getExtraProperties().get("valueUpdates"));
             }
         }
@@ -1296,7 +1304,6 @@ public class DomainUtil
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static void _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
         if (pv != null && gpv != null)
@@ -1343,7 +1350,7 @@ public class DomainUtil
 
             String name = field.getName();
 
-            if (null == name || name.trim().length() == 0)
+            if (null == name || name.trim().isEmpty())
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;

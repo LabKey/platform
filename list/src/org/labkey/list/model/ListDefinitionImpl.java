@@ -366,6 +366,17 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setFileAttachmentIndex(fileAttachmentIndex);
     }
 
+    @Override
+    public boolean getMultiFolder()
+    {
+        return _def.isMultiFolder();
+    }
+
+    @Override
+    public void setMultiFolder(boolean multiFolder)
+    {
+        edit().setMultiFolder(multiFolder);
+    }
 
     @Override
     public void save(User user) throws Exception

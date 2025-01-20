@@ -198,8 +198,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     /**
      * Returns the List's primary key as a field to get special treatment elsewhere, despite being property driven.
-     * @param domain
-     * @return
      */
     @Override
     public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)
@@ -322,9 +320,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     private static StringBuilder getBaseURI(String listName, String type, Container c)
     {
         return new StringBuilder("urn:lsid:")
-                .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
-                .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
-                .append(PageFlowUtil.encode(listName));
+            .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
+            .append(":").append(type).append(".Folder-").append(c.getRowId()).append(":")
+            .append(PageFlowUtil.encode(listName));
     }
 
     @Override
@@ -650,6 +648,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
         updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
         updatedListProps.setFileAttachmentIndex(newListProps.isFileAttachmentIndex());
+        updatedListProps.setMultiFolder(newListProps.isMultiFolder());
 
         return updatedListProps;
     }
@@ -733,14 +732,25 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return type.equals(getDefaultKeyType().getPropertyType());
     }
 
-    public void ensureBaseProperties(Domain d)
+    @Override
+    public boolean supportsPhiLevel(Domain domain)
     {
-        var props = getBaseProperties(d);
+        boolean phiLevelEnabled = false;
+
+        if (ComplianceService.get().isComplianceSupported())
+        {
+            ListDefinition list = ListService.get().getList(domain);
+            if (list != null)
+                phiLevelEnabled = !list.getMultiFolder();
+        }
+
+        return phiLevelEnabled;
     }
 
     @Override
-    public boolean supportsPhiLevel()
+    public String getPhiLevelUnsupportedReason(Domain domain)
     {
-        return ComplianceService.get().isComplianceSupported();
+        ListDefinition list = ListService.get().getList(domain);
+        return list != null && list.getMultiFolder() ? "Multi-folder lists do not support PHI annotations" : super.getPhiLevelUnsupportedReason(domain);
     }
 }

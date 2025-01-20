@@ -69,7 +69,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     @Getter @Setter private String queryName = null;
     @Getter @Setter private String templateDescription = null; // null if no template
     @Getter @Setter private String instructions = null;
-    @Getter @Setter private boolean supportsPhiLevel = false;
+    @Getter @Setter private boolean phiLevelEnabled = false;
+    @Getter @Setter private String phiLevelDisabledReason = null;
 
     public GWTDomain()
     {
@@ -99,7 +100,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
         this.provisioned = src.provisioned;
-        this.supportsPhiLevel = src.supportsPhiLevel;
+        this.phiLevelEnabled = src.phiLevelEnabled;
+        this.phiLevelDisabledReason = src.phiLevelDisabledReason;
 
         if (src.indices != null)
         {

@@ -248,6 +248,7 @@
           <column columnName="EachItemBodySetting" />
           <column columnName="EachItemBodyTemplate"/>
           <column columnName="FileAttachmentIndex"/>
+          <column columnName="MultiFolder"/>
       </columns>
   </table>
   <table tableName="Material" tableDbType="TABLE">

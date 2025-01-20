@@ -182,7 +182,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.000;
+        return 25.001;
     }
 
     @Nullable
@@ -824,7 +824,7 @@ public class ExperimentModule extends SpringModule
         Collection<String> list = new LinkedList<>();
         int runGroupCount = ExperimentService.get().getExperiments(c, null, false, true).size();
         if (runGroupCount > 0)
-            list.add("" + runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
+            list.add(runGroupCount + " Run Group" + (runGroupCount > 1 ? "s" : ""));
 
         User user = HttpView.currentContext().getUser();
 
