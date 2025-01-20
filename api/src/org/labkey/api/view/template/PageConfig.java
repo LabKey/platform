@@ -405,7 +405,9 @@ public class PageConfig
         addMetaTag("robots", "nofollow");
     }
 
+    /** Call if we want to try getting robots/crawlers to ignore the page */
     public void setRobotsNone()
+
     {
         setNoIndex();
         setNoFollow();
