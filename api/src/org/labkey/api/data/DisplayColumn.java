@@ -1105,7 +1105,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write("</td>");
     }
 
-    public String getHoverContent(RenderContext ctx)
+    protected String getHoverContent(RenderContext ctx)
     {
         return null;
     }

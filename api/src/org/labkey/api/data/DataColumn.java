@@ -466,7 +466,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public String getHoverContent(RenderContext ctx)
+    protected String getHoverContent(RenderContext ctx)
     {
         ConditionalFormat format = findApplicableFormat(ctx);
         if (format == null)

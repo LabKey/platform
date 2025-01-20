@@ -185,9 +185,6 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             String style = dc.getCssStyle(ctx);
             if (!StringUtils.isEmpty(style))
                 colMap.put(ColMapEntry.style, style);
-            String hoverContent = dc.getHoverContent(ctx);
-            if (!StringUtils.isEmpty(hoverContent))
-                colMap.put(ColMapEntry.hoverContent, hoverContent);
         }
 
         return colMap;
