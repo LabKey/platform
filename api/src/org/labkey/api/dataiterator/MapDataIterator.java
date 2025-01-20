@@ -25,7 +25,9 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,7 +88,10 @@ public interface MapDataIterator extends DataIterator
                 _findMap.put(in.getColumnInfo(i).getName(),i);
             }
             if (null != duplicates)
-                LOGGER.warn("Data has duplicate columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
+            {
+                var ex = new IllegalStateException("Data has duplicate columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
+                ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), ex, true);
+            }
         }
 
         @Override
