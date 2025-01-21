@@ -3582,16 +3582,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         for (WellData wellData : wellDataList)
         {
-            boolean isSampleWell = wellData.isSample();
-            boolean isReplicateWell = wellData.isReplicate();
-            boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
-
-            Pair<WellGroup.Type, String> groupKey = null;
-            if (isSampleOrReplicate && wellData.getWellGroup() != null)
-            {
-                WellGroup.Type type = isSampleWell ? WellGroup.Type.SAMPLE : WellGroup.Type.REPLICATE;
-                groupKey = Pair.of(type, wellData.getWellGroup());
-            }
+            boolean isSampleOrReplicate = wellData.isSampleOrReplicate();
+            Pair<WellGroup.Type, String> groupKey = wellData.getGroupKey();
 
             if (counter >= sampleIds.size())
             {
@@ -4091,7 +4083,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private long getReplicateGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
     {
         String labkeySql = String.format("""
-            SELECT DISTINCT Type, WellGroup
+            SELECT DISTINCT ReplicateGroup
             FROM plate.Well WHERE PlateId.PlateSet.RowId = %s AND ReplicateGroup IS NOT NULL
         """, plateSetRowId);
 
@@ -4109,7 +4101,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             WellTable.Column.PlateId.name(),
             WellTable.Column.Position.name(),
             WellTable.Column.Row.name(),
-            WellTable.Column.RowId.name()
+            WellTable.Column.RowId.name(),
+            WellTable.Column.WellGroup.name()
         );
 
         columnNames.removeAll(excludedColumns);
@@ -4704,6 +4697,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     {
                         d.setPosition(p.getDescription());
                         d.setWellGroup(wellData.getWellGroup());
+                        d.setReplicateGroup(wellData.getReplicateGroup());
                         d.setType(wellData.getType());
                     }
                     else
@@ -4756,6 +4750,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         {
                             d.setMetadata(wellData.getMetadata());
                             d.setWellGroup(wellData.getWellGroup());
+                            d.setReplicateGroup(wellData.getReplicateGroup());
                             d.setType(wellData.getType());
                         }
 

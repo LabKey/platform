@@ -1,9 +1,11 @@
 package org.labkey.assay.plate.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.WellTable;
 
@@ -66,12 +68,17 @@ public class WellData
 
     public boolean isReplicate()
     {
-        return WellGroup.Type.REPLICATE.equals(getType());
+        return _replicateGroup != null;
     }
 
     public boolean isSample()
     {
         return WellGroup.Type.SAMPLE.equals(getType());
+    }
+
+    public boolean isSampleOrReplicate()
+    {
+        return isSample() || isReplicate();
     }
 
     public Integer getCol()
@@ -82,6 +89,19 @@ public class WellData
     public void setCol(Integer col)
     {
         _col = col;
+    }
+
+    public @Nullable Pair<WellGroup.Type, String> getGroupKey()
+    {
+        if (isSample() || isReplicate())
+        {
+            if (isReplicate())
+                return Pair.of(WellGroup.Type.REPLICATE, _replicateGroup);
+            else if (_wellGroup != null)
+                return Pair.of(WellGroup.Type.SAMPLE, _wellGroup);
+        }
+
+        return null;
     }
 
     public String getLsid()
