@@ -50,6 +50,8 @@ public class WellData
             data.put(WellTable.Column.Type.name(), _type.name());
         if (_wellGroup != null)
             data.put(WellTable.Column.WellGroup.name(), _wellGroup);
+        if (_replicateGroup != null)
+            data.put(WellTable.Column.ReplicateGroup.name(), _replicateGroup);
 
         for (var entry : getMetadata().entrySet())
         {
@@ -95,10 +97,11 @@ public class WellData
     {
         if (isSample() || isReplicate())
         {
+            if (_wellGroup != null)
+                return Pair.of(WellGroup.Type.SAMPLE, _wellGroup);
+
             if (isReplicate())
                 return Pair.of(WellGroup.Type.REPLICATE, _replicateGroup);
-            else if (_wellGroup != null)
-                return Pair.of(WellGroup.Type.SAMPLE, _wellGroup);
         }
 
         return null;

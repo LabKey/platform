@@ -364,14 +364,10 @@ public class ArrayOperation implements LayoutOperation
             if (sampleId == null)
                 continue;
 
-            boolean isSampleWell = wellData.isSample();
-            boolean isReplicateWell = wellData.isReplicate();
-            boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
-
-            if (isSampleOrReplicate && wellData.getWellGroup() != null)
+            Pair<WellGroup.Type, String> groupKey = wellData.getGroupKey();
+            if (groupKey != null)
             {
-                WellGroup.Type type = isSampleWell ? WellGroup.Type.SAMPLE : WellGroup.Type.REPLICATE;
-                groupSampleMap.put(Pair.of(type, wellData.getWellGroup()), sampleId);
+                groupSampleMap.put(groupKey, sampleId);
                 sampleWells.putIfAbsent(sampleId, new WellLayout.Well(-1, -1, plate.getRowId(), wellData.getRow(), wellData.getCol(), sampleId));
             }
         }
@@ -412,7 +408,7 @@ public class ArrayOperation implements LayoutOperation
             for (WellData wellData : context.wellDataCache().getData(sourceRowId, true, false))
             {
                 Integer wellSampleId = wellData.getSampleId();
-                if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && (wellData.isSample() || wellData.isReplicate()))
+                if (wellSampleId != null && !sampleWells.containsKey(wellSampleId) && wellData.isSampleOrReplicate())
                 {
                     sampleWells.put(wellSampleId, new WellLayout.Well(-1, -1, sourceRowId, wellData.getRow(), wellData.getCol(), null));
                 }

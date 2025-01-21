@@ -4798,6 +4798,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             d.setMetadata(wellData.getMetadata());
             d.setWellGroup(wellData.getWellGroup());
+            d.setReplicateGroup(wellData.getReplicateGroup());
             d.setType(wellData.getType());
 
             targetWellData.add(d.getData());
