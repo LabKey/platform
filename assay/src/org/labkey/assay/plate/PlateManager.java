@@ -645,7 +645,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             unionSql.append(fragment);
         }
 
-        SQLFragment sql = new SQLFragment("SELECT SUM(RunCount) AS RunCountSum FROM (").append(unionSql).append(")");
+        SQLFragment sql = new SQLFragment("SELECT SUM(RunCount) AS RunCountSum FROM (").append(unionSql).append(") AS RunCountTable");
 
         return ((BigDecimal) new SqlSelector(ExperimentService.get().getSchema(), sql).getMap().get("RunCountSum")).intValueExact();
     }
