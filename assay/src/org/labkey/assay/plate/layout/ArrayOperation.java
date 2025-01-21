@@ -308,16 +308,8 @@ public class ArrayOperation implements LayoutOperation
     {
         for (WellData wellData : context.wellDataCache().getData(target.getTargetTemplateId(), false, false))
         {
-            boolean isSampleWell = wellData.isSample();
-            boolean isReplicateWell = wellData.isReplicate();
-            boolean isSampleOrReplicate = isSampleWell || isReplicateWell;
-
-            Pair<WellGroup.Type, String> groupKey = null;
-            if (isSampleOrReplicate && wellData.getWellGroup() != null)
-            {
-                WellGroup.Type type = isSampleWell ? WellGroup.Type.SAMPLE : WellGroup.Type.REPLICATE;
-                groupKey = Pair.of(type, wellData.getWellGroup());
-            }
+            boolean isSampleOrReplicate = wellData.isSampleOrReplicate();
+            Pair<WellGroup.Type, String> groupKey = wellData.getGroupKey();
 
             if (sampleIndex >= sampleIds.size())
             {
