@@ -55,7 +55,6 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         value,
         displayValue,
         formattedValue,
-        hoverContent,
         mvValue,
         mvIndicator,
         mvRawValue,
