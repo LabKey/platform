@@ -197,9 +197,8 @@ public class GWTProtocol implements IsSerializable
         return _protocolTransformScripts;
     }
 
-    public void setProtocolTransformScripts(List<Map<String, Object>> protocolTransformScripts)
+    private void handleMapTransformScripts(List<Map<String, Object>> protocolTransformScripts)
     {
-        _protocolTransformScripts = new ArrayList<>(protocolTransformScripts.size());
         for (Map<String, Object> map : protocolTransformScripts)
         {
             _protocolTransformScripts.add(Map.of(
@@ -207,6 +206,34 @@ public class GWTProtocol implements IsSerializable
                     "runOnEdit", map.get("runOnEdit"),
                     "runOnImport", map.get("runOnImport")
             ));
+        }
+    }
+
+    private void handleStringTransformScripts(List<String> protocolTransformScripts)
+    {
+        List<Map<String, Object>> transformedScripts = new ArrayList<>(protocolTransformScripts.size());
+        for (String script : protocolTransformScripts)
+        {
+            transformedScripts.add(Map.of(
+                    "scriptPath", script.trim(),
+                    "runOnEdit", false,
+                    "runOnImport", true
+            ));
+        }
+        handleMapTransformScripts(transformedScripts);
+    }
+
+    public void setProtocolTransformScripts(List<?> protocolTransformScripts)
+    {
+        if (!protocolTransformScripts.isEmpty()) {
+            Object first = protocolTransformScripts.get(0);
+            if (first instanceof Map) {
+                handleMapTransformScripts((List<Map<String, Object>>) protocolTransformScripts);
+            } else if (first instanceof String) {
+                handleStringTransformScripts((List<String>) protocolTransformScripts);
+            } else {
+                throw new IllegalArgumentException("Unsupported type: " + first.getClass().getName());
+            }
         }
     }
 
