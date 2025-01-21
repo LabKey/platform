@@ -53,7 +53,7 @@ public class GWTProtocol implements IsSerializable
     /** Scripts defined in the module itself, associated with the assay provider */
     private List<String> _moduleTransformScripts = new ArrayList<String>();
     /** Scripts defined in the assay definition */
-    private List<String> _protocolTransformScripts = new ArrayList<String>();
+    private List<Map<String, Object>> _protocolTransformScripts = new ArrayList<>();
 
     private List<String> _availableDetectionMethods;
     private String _selectedDetectionMethod;
@@ -192,17 +192,21 @@ public class GWTProtocol implements IsSerializable
         _allowTransformationScript = allowTransformationScript;
     }
 
-    public List<String> getProtocolTransformScripts()
+    public List<Map<String, Object>> getProtocolTransformScripts()
     {
         return _protocolTransformScripts;
     }
 
-    public void setProtocolTransformScripts(List<String> protocolTransformScripts)
+    public void setProtocolTransformScripts(List<Map<String, Object>> protocolTransformScripts)
     {
-        _protocolTransformScripts = new ArrayList<String>(protocolTransformScripts.size());
-        for (String script : protocolTransformScripts)
+        _protocolTransformScripts = new ArrayList<>(protocolTransformScripts.size());
+        for (Map<String, Object> map : protocolTransformScripts)
         {
-            _protocolTransformScripts.add(script.trim());
+            _protocolTransformScripts.add(Map.of(
+                    "scriptPath", ((String) map.get("scriptPath")).trim(),
+                    "runOnEdit", map.get("runOnEdit"),
+                    "runOnImport", map.get("runOnImport")
+            ));
         }
     }
 

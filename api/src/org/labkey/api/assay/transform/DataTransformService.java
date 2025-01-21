@@ -18,6 +18,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -98,6 +99,11 @@ public class DataTransformService
             File scriptFile = analysisScript.getScript().toNioPathForRead().toFile();
             if (scriptFile.exists())
             {
+                if (operation == TransformOperation.UPDATE)
+                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
+                if (operation == TransformOperation.INSERT)
+                    SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForInsert");
+
                 // TODO: don't bother slurping the contents of binary scripts
                 StringBuilder sb = new StringBuilder();
                 try (BufferedReader br = Readers.getReader(scriptFile))
