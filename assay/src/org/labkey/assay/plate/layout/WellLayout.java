@@ -10,20 +10,27 @@ public class WellLayout
 
     private final PlateType _plateType;
     private final boolean _sampleOnly;
+    private final Integer _targetPlateId;
     private final Integer _targetTemplateId;
     private final Well[] _wells;
 
     public WellLayout(@NotNull PlateType plateType)
     {
-        this(plateType, false, null);
+        this(plateType, false, null, null);
     }
 
-    public WellLayout(@NotNull PlateType plateType, boolean sampleOnly, @Nullable Integer targetTemplateId)
+    public WellLayout(@NotNull PlateType plateType, boolean sampleOnly, @Nullable Integer targetTemplateId, @Nullable Integer targetPlateId)
     {
         _plateType = plateType;
         _sampleOnly = sampleOnly;
+        _targetPlateId = targetPlateId;
         _targetTemplateId = targetTemplateId;
         _wells = new Well[plateType.getWellCount()];
+    }
+
+    public @Nullable Integer getTargetPlateId()
+    {
+        return _targetPlateId;
     }
 
     public @Nullable Integer getTargetTemplateId()

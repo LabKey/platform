@@ -34,12 +34,10 @@ import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.script.ScriptException;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -384,13 +382,13 @@ public class IpynbOutput extends HtmlOutput
         }
 
 
-        private void renderMarkdownSource(HtmlStringBuilder sb, JSONObject cell) throws NoSuchMethodException, ScriptException
+        private void renderMarkdownSource(HtmlStringBuilder sb, JSONObject cell)
         {
             String source = getSource(cell);
             if (null != source)
             {
                 sb.unsafeAppend("<div class=\"ipynb-markdown\">");
-                sb.unsafeAppend(MarkdownService.get().toHtml(source, Map.of(MarkdownService.Options.html,true)));
+                sb.unsafeAppend(MarkdownService.get().toHtml(source));
                 sb.unsafeAppend("</div>");
             }
         }

@@ -63,10 +63,10 @@ public class QuadrantOperation implements LayoutOperation
     }
 
     @Override
-    public void init(Container container, User user, ExecutionContext context, List<? extends PlateType> allPlateTypes) throws ValidationException
+    public void init(Container container, User user, ExecutionContext context) throws ValidationException
     {
         _sourcePlateType = getSourcePlateType(context.sourcePlates());
-        _targetPlateType = getTargetPlateType(_sourcePlateType, allPlateTypes);
+        _targetPlateType = getTargetPlateType(_sourcePlateType, context.allPlateTypes());
     }
 
     private @NotNull PlateType getSourcePlateType(@NotNull List<Plate> sourcePlates) throws ValidationException

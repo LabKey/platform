@@ -37,6 +37,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -547,12 +548,12 @@ public final class PlateManagerTest
     }
 
     @Test
-    public void testGetWellSampleData()
+    public void testGetWellSampleData() throws Exception
     {
         // Act
         List<Integer> sampleIds = List.of(0, 3, 5, 8, 10, 11, 12, 13, 15, 17, 19);
-        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 0);
-        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledPartial = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 6);
+        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledFull = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 0, null);
+        Pair<Integer, List<Map<String, Object>>> wellSampleDataFilledPartial = PlateManager.get().getWellSampleData(container, sampleIds, 2, 3, 6, null);
 
         // Assert
         assertEquals(wellSampleDataFilledFull.first, 6, 0);
@@ -575,10 +576,10 @@ public final class PlateManagerTest
         // Act
         try
         {
-            PlateManager.get().getWellSampleData(container, Collections.emptyList(), 2, 3, 0);
+            PlateManager.get().getWellSampleData(container, Collections.emptyList(), 2, 3, 0, null);
         }
         // Assert
-        catch (IllegalArgumentException e)
+        catch (ValidationException e)
         {
             assertEquals("Expected validation exception", "No samples are in the current selection.", e.getMessage());
         }
@@ -976,7 +977,7 @@ public final class PlateManagerTest
     {
         return new ReformatOptions()
             .setOperation(ReformatOptions.ReformatOperation.stamp)
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(EMPTY_PLATE_SET_ID));
+            .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(EMPTY_PLATE_SET_ID));
     }
 
     @Test
@@ -988,19 +989,19 @@ public final class PlateManagerTest
         assertReformatThrows("A \"targetPlateSet\" must be specified.", defaultOptions().setTargetPlateSet(null));
         assertReformatThrows(
             "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet())
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet())
         );
         assertReformatThrows(
             "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(null))
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(null))
         );
         assertReformatThrows(
             "Either a \"rowId\" or a \"type\" must be specified for \"targetPlateSet\".",
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(0))
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(0))
         );
         assertReformatThrows(
             "Either a \"rowId\" or a \"type\" can be specified for \"targetPlateSet\" but not both.",
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(1).setType(PlateSetType.assay))
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(1).setType(PlateSetType.assay))
         );
 
         PlateSet archivedPlateSet = PlateManager.get().getPlateSet(container, ARCHIVED_PLATE_SET_ID);
@@ -1008,7 +1009,7 @@ public final class PlateManagerTest
 
         assertReformatThrows(
             String.format("Plate Set \"%s\" is archived and cannot be modified.", archivedPlateSet.getName()),
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(ARCHIVED_PLATE_SET_ID))
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(ARCHIVED_PLATE_SET_ID))
         );
 
         PlateSet fullPlateSet = PlateManager.get().getPlateSet(container, FULL_PLATE_SET_ID);
@@ -1016,7 +1017,7 @@ public final class PlateManagerTest
 
         assertReformatThrows(
             String.format("Plate Set \"%s\" is full and cannot include additional plates.", fullPlateSet.getName()),
-            defaultOptions().setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(FULL_PLATE_SET_ID))
+            defaultOptions().setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(FULL_PLATE_SET_ID))
         );
     }
 
@@ -1028,7 +1029,7 @@ public final class PlateManagerTest
             defaultOptions().setPlateRowIds(List.of(1234)).setPlateSelectionKey("1234")
         );
         assertReformatThrows(
-            "Either \"plateRowIds\" or \"plateSelectionKey\" must be specified.",
+            "Either \"plateRowIds\" or \"plateSelectionKey\" must be specified for this operation.",
             defaultOptions().setPlateRowIds(null).setPlateSelectionKey(" ")
         );
         assertReformatThrows("No source plates are specified.", defaultOptions().setPlateSelectionKey("1234"));
@@ -1074,8 +1075,8 @@ public final class PlateManagerTest
         var options = new ReformatOptions()
                 .setOperation(ReformatOptions.ReformatOperation.quadrant)
                 .setPlateRowIds(List.of(sourcePlate1.getRowId(), sourcePlate2.getRowId(), sourcePlate3.getRowId()))
-                .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setType(PlateSetType.assay))
-                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_384_WELLS))
+                .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setType(PlateSetType.assay))
+                .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_384_WELLS))
                 .setPreview(true);
 
         // Act (preview)
@@ -1155,8 +1156,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
             .setOperation(ReformatOptions.ReformatOperation.reverseQuadrant)
             .setPlateRowIds(List.of(sourcePlate.getRowId()))
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-            .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_96_WELLS))
+            .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(targetPlateSetId))
+            .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_96_WELLS))
             .setPreview(true);
 
         // Act (preview)
@@ -1234,8 +1235,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
                 .setOperation(ReformatOptions.ReformatOperation.columnCompression)
                 .setPlateRowIds(List.of(sourcePlate.getRowId()))
-                .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
+                .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(targetPlateSetId))
+                .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_12_WELLS))
                 .setPreview(true);
 
         // Act (preview)
@@ -1315,8 +1316,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
                 .setOperation(ReformatOptions.ReformatOperation.rowCompression)
                 .setPlateRowIds(List.of(sourcePlate.getRowId()))
-                .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(targetPlateSetId))
-                .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
+                .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(targetPlateSetId))
+                .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_12_WELLS))
                 .setPreview(true);
 
         // Act (preview)
@@ -1434,8 +1435,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
             .setOperation(ReformatOptions.ReformatOperation.arrayByColumn)
             .setPlateRowIds(context.sourcePlates.stream().map(Plate::getRowId).toList())
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(context.targetPlateSetId))
-            .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
+            .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(context.targetPlateSetId))
+            .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_12_WELLS))
             .setPreview(true);
 
         // Act (preview)
@@ -1500,8 +1501,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
             .setOperation(ReformatOptions.ReformatOperation.arrayByRow)
             .setPlateRowIds(context.sourcePlates.stream().map(Plate::getRowId).toList())
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(context.targetPlateSetId))
-            .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(PLATE_TYPE_12_WELLS))
+            .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(context.targetPlateSetId))
+            .setTargetPlateSource(new ReformatOptions.TargetPlateSource(PLATE_TYPE_12_WELLS))
             .setPreview(true);
 
         // Act (preview)
@@ -1585,8 +1586,8 @@ public final class PlateManagerTest
         ReformatOptions options = new ReformatOptions()
             .setOperation(ReformatOptions.ReformatOperation.arrayFromTemplate)
             .setPlateRowIds(context.sourcePlates.stream().map(Plate::getRowId).toList())
-            .setTargetPlateSet(new ReformatOptions.ReformatPlateSet().setRowId(context.targetPlateSetId))
-            .setTargetPlateSource(new ReformatOptions.ReformatPlateSource(template))
+            .setTargetPlateSet(new ReformatOptions.TargetPlateSet().setRowId(context.targetPlateSetId))
+            .setTargetPlateSource(new ReformatOptions.TargetPlateSource(template))
             .setPreview(true);
 
         // Act (preview)
@@ -1684,11 +1685,11 @@ public final class PlateManagerTest
         }
     }
     
-    private @NotNull Set<Integer> getSamples(List<PlateManager.PlateData> plateData)
+    private @NotNull Set<Integer> getSamples(List<PlateManager.PreviewPlateData> plateData)
     {
         Set<Integer> sampleIds = new HashSet<>();
 
-        for (PlateManager.PlateData data : plateData)
+        for (PlateManager.PreviewPlateData data : plateData)
         {
             for (Map<String, Object> well : data.data())
             {

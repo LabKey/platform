@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
+import org.labkey.assay.plate.PlateManager;
 
 import java.util.List;
 
@@ -21,12 +22,13 @@ public class ReformatOptions
         stamp
     }
 
-    public static class ReformatPlateSet
+    public static class TargetPlateSet
     {
         private Integer _rowId;
         private String _description;
         private String _name;
         private Integer _parentPlateSetId;
+        private Boolean _template;
         private PlateSetType _type;
 
         public Integer getRowId()
@@ -34,7 +36,7 @@ public class ReformatOptions
             return _rowId;
         }
 
-        public ReformatPlateSet setRowId(Integer rowId)
+        public TargetPlateSet setRowId(Integer rowId)
         {
             _rowId = rowId;
             return this;
@@ -45,7 +47,7 @@ public class ReformatOptions
             return _description;
         }
 
-        public ReformatPlateSet setDescription(String description)
+        public TargetPlateSet setDescription(String description)
         {
             _description = description;
             return this;
@@ -56,7 +58,7 @@ public class ReformatOptions
             return _name;
         }
 
-        public ReformatPlateSet setName(String name)
+        public TargetPlateSet setName(String name)
         {
             _name = name;
             return this;
@@ -67,7 +69,7 @@ public class ReformatOptions
             return _type;
         }
 
-        public ReformatPlateSet setType(PlateSetType type)
+        public TargetPlateSet setType(PlateSetType type)
         {
             _type = type;
             return this;
@@ -78,14 +80,25 @@ public class ReformatOptions
             return _parentPlateSetId;
         }
 
-        public ReformatPlateSet setParentPlateSetId(Integer parentPlateSetId)
+        public TargetPlateSet setParentPlateSetId(Integer parentPlateSetId)
         {
             _parentPlateSetId = parentPlateSetId;
             return this;
         }
+
+        public Boolean isTemplate()
+        {
+            return _template;
+        }
+
+        public TargetPlateSet setTemplate(Boolean template)
+        {
+            _template = template;
+            return this;
+        }
     }
 
-    public static class ReformatPlateSource
+    public static class TargetPlateSource
     {
         public enum SourceType
         {
@@ -96,17 +109,17 @@ public class ReformatOptions
         private Integer _rowId;
         private SourceType _sourceType;
 
-        public ReformatPlateSource()
+        public TargetPlateSource()
         {
         }
 
-        public ReformatPlateSource(@NotNull PlateType plateType)
+        public TargetPlateSource(@NotNull PlateType plateType)
         {
             _sourceType = SourceType.type;
             _rowId = plateType.getRowId();
         }
 
-        public ReformatPlateSource(@NotNull Plate template)
+        public TargetPlateSource(@NotNull Plate template)
         {
             _sourceType = SourceType.template;
             _rowId = template.getRowId();
@@ -133,13 +146,39 @@ public class ReformatOptions
         }
     }
 
+    private Boolean _fillExistingWells = false;
+    private Boolean _fillPlatesOnly = false;
     private ReformatOperation _operation;
+    private List<PlateManager.PlateData> _plates;
     private List<Integer> _plateRowIds;
     private String _plateSelectionKey;
     private Boolean _preview = false;
     private Boolean _previewData = true;
-    private ReformatPlateSet _targetPlateSet;
-    private ReformatPlateSource _targetPlateSource;
+    private String _sampleSelectionKey;
+    private TargetPlateSet _targetPlateSet;
+    private TargetPlateSource _targetPlateSource;
+
+    public Boolean isFillExistingWells()
+    {
+        return _fillExistingWells;
+    }
+
+    public ReformatOptions setFillExistingWells(Boolean fillExistingWells)
+    {
+        _fillExistingWells = fillExistingWells;
+        return this;
+    }
+
+    public Boolean isFillPlatesOnly()
+    {
+        return _fillPlatesOnly;
+    }
+
+    public ReformatOptions setFillPlatesOnly(Boolean fillPlatesOnly)
+    {
+        _fillPlatesOnly = fillPlatesOnly;
+        return this;
+    }
 
     public ReformatOperation getOperation()
     {
@@ -149,6 +188,17 @@ public class ReformatOptions
     public ReformatOptions setOperation(ReformatOperation operation)
     {
         _operation = operation;
+        return this;
+    }
+
+    public List<PlateManager.PlateData> getPlates()
+    {
+        return _plates;
+    }
+
+    public ReformatOptions setPlates(List<PlateManager.PlateData> plates)
+    {
+        _plates = plates;
         return this;
     }
 
@@ -195,23 +245,34 @@ public class ReformatOptions
         _previewData = previewData;
     }
 
-    public ReformatPlateSet getTargetPlateSet()
+    public String getSampleSelectionKey()
+    {
+        return _sampleSelectionKey;
+    }
+
+    public ReformatOptions setSampleSelectionKey(String sampleSelectionKey)
+    {
+        _sampleSelectionKey = sampleSelectionKey;
+        return this;
+    }
+
+    public TargetPlateSet getTargetPlateSet()
     {
         return _targetPlateSet;
     }
 
-    public ReformatOptions setTargetPlateSet(ReformatPlateSet targetPlateSet)
+    public ReformatOptions setTargetPlateSet(TargetPlateSet targetPlateSet)
     {
         _targetPlateSet = targetPlateSet;
         return this;
     }
 
-    public ReformatPlateSource getTargetPlateSource()
+    public TargetPlateSource getTargetPlateSource()
     {
         return _targetPlateSource;
     }
 
-    public ReformatOptions setTargetPlateSource(ReformatPlateSource targetPlateSource)
+    public ReformatOptions setTargetPlateSource(TargetPlateSource targetPlateSource)
     {
         _targetPlateSource = targetPlateSource;
         return this;

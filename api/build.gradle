@@ -761,7 +761,7 @@ dependencies {
             "Polling Watch Service",
             "imca",
             "https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html",
-            "BSD 2-Clause license",
+            ExternalDependency.BSD_2_LICENSE_NAME,
             "https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt",
             "Provide polling file watcher for cifs file systems",
         )

@@ -21,7 +21,6 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.wiki.FormattedHtml;
 
-import javax.script.ScriptException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -39,17 +38,7 @@ public class MarkdownRenderer extends HtmlRenderer
         MarkdownService markdownService = MarkdownService.get();
         if (null != markdownService)
         {
-            try
-            {
-                return super.format(markdownService.toHtml(text));
-            }
-            catch( NoSuchMethodException | ScriptException e)
-            {
-                // if the translation from markdown to html doesnt work then show an error message in the view of the html
-                StringBuilder errorMsg = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while converting markdown to HTML</b></div><br>The error message was: ");
-                errorMsg.append(e.getMessage());
-                return super.format(errorMsg.toString());
-            }
+            return super.format(markdownService.toHtml(text));
         }
         else
         {
