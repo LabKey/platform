@@ -70,7 +70,7 @@ public class ResultsImpl implements Results, DataIterator
             _fieldMap = new LinkedHashMap<>(count * 2);
             _fieldIndexMap = new HashMap<>(count * 2);
             _columnInfoList = new ArrayList<>(count+1);
-            _columnInfoList.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+            _columnInfoList.add(new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER));
 
             for (int i = 1; i <= count; i++)
             {
@@ -95,7 +95,7 @@ public class ResultsImpl implements Results, DataIterator
         _fieldMap = new LinkedHashMap<>(cols.size() * 2);
         _fieldIndexMap = new HashMap<>(cols.size() * 2);
         _columnInfoList = new ArrayList<>(cols.size()+1);
-        _columnInfoList.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _columnInfoList.add(new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER));
 
         for (ColumnInfo col : cols)
         {
@@ -123,7 +123,7 @@ public class ResultsImpl implements Results, DataIterator
         _fieldMap = null == fieldMap ? Collections.emptyMap() : fieldMap;
         _fieldIndexMap = new HashMap<>(_fieldMap.size() * 2);
         _columnInfoList = new ArrayList<>(fieldMap.size()+1);
-        _columnInfoList.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _columnInfoList.add(new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER));
 
         FieldKey fk = null;
         try

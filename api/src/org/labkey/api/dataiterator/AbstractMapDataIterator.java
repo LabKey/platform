@@ -135,6 +135,7 @@ public abstract class AbstractMapDataIterator extends AbstractDataIterator imple
                     set.addAll(row.keySet());
                 colNames = set;
             }
+            colNames.remove(ROWNUMBER_COLUMNNAME);
             for (String name : colNames)
                 _cols.add(new BaseColumnInfo(name, JdbcType.OTHER));
             _rows = initRows(rows);
