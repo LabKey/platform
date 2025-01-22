@@ -29,9 +29,6 @@ import java.util.Map;
 /**
  * A collection of ValidationExceptions, one for each row.
  * Each ValidationException may in turn have multiple field or global errors.
- *
- * User: kevink
- * Date: Mar 9, 2011
  */
 public class BatchValidationException extends Exception
 {
