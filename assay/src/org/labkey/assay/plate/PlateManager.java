@@ -448,7 +448,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public List<FieldKey> getMetadataColumns(@NotNull PlateSet plateSet, Container c, User user, ContainerFilter cf)
     {
-        Set<FieldKey> includedMetadataCols = new HashSet<>();
+        // Using a LinkedHashSet to retain plate ordering of custom fields
+        Set<FieldKey> includedMetadataCols = new LinkedHashSet<>();
         for (Plate plate : plateSet.getPlates())
         {
             QueryView plateQueryView = getPlateQueryView(c, user, cf, plate, false);
@@ -469,7 +470,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
         }
 
-        return includedMetadataCols.stream().sorted(Comparator.comparing(k -> k.getName().toLowerCase())).toList();
+        return List.copyOf(includedMetadataCols);
     }
 
     @NotNull
@@ -2531,7 +2532,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         order.put(WellTable.Column.WellGroup.fieldKey(), 1);
         order.put(WellTable.Column.ReplicateGroup.fieldKey(), 2);
         order.put(WellTable.Column.SampleID.fieldKey(), 3);
-        Comparator<PlateCustomField> nameComparator = Comparator.comparing(PlateCustomField::getName, Comparator.nullsLast(String::compareTo));
+        Comparator<PlateCustomField> nameComparator = Comparator.comparing((k) -> k.getName().toLowerCase(), Comparator.nullsLast(String::compareTo));
 
         fields.sort((f1, f2) -> {
             if (f1.isBuiltIn() && f2.isBuiltIn())
