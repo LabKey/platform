@@ -157,6 +157,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setLabel("Sample Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setShownInUpdateView(true);
         column.setDescription("Identifies the sample group to which the well belongs.");
         addColumn(column);
     }
@@ -167,6 +168,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setLabel("Replicate Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setShownInUpdateView(true);
         column.setDescription("Identifies the replicate group to which the well belongs.");
         addColumn(column);
     }
@@ -213,6 +215,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setShownInUpdateView(true);
         column.setDescription("Specifies the type of well.");
         addColumn(column);
     }
