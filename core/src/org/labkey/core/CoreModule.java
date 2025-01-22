@@ -1116,6 +1116,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Data Region Async Total Rows",
             "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
             false);
+        OptionalFeatureService.get().setFeatureEnabled(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS, true, User.getAdminServiceUser());
 
         AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
