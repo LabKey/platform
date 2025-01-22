@@ -1593,6 +1593,13 @@ if (!LABKEY.DataRegions) {
 
     var _initPaging = function() {
         if (this.showPagination) {
+            // Issue 51036: load totalRows count async for DataRegions
+            if (this.showPaginationCountAsync && !this.skipTotalRowCount && this.loadingTotalRows === undefined) {
+                var params = _getAsyncParams(this, _getParameters(this), false);
+                var jsonData = _getAsyncBody(this, params);
+                _loadAsyncTotalRowCount(this, params, jsonData);
+            }
+
             var ct = _getBarSelector(this).find('.labkey-pagination');
 
             if (ct && ct.length) {

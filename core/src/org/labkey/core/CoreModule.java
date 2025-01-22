@@ -1112,6 +1112,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
             false);
+        AdminConsole.addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
+            "Data Region Async Total Rows",
+            "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
+            false);
 
         AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
