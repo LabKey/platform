@@ -1935,13 +1935,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             // Copy the plate
             PlateImpl newPlate = new PlateImpl(container, name, null, sourcePlate.getAssayType(), sourcePlate.getPlateType());
-            newPlate.setCustomFields(sourcePlate.getCustomFields());
-            newPlate.setDescription(description);
+            List<PlateCustomField> newFields = new ArrayList<>(sourcePlate.getCustomFields());
 
             if (copyAsTemplate)
+            {
                 newPlate.setTemplate(true);
+                newFields.removeIf((f) -> WellTable.Column.SampleID.fieldKey().equals(f.getFieldKey()));
+            }
             else
                 newPlate.setPlateSet(destinationPlateSet);
+
+            newPlate.setCustomFields(newFields);
+            newPlate.setDescription(description);
 
             copyProperties(sourcePlate, newPlate);
             copyWellGroups(sourcePlate, newPlate);
