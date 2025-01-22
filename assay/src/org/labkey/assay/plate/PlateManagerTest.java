@@ -434,8 +434,8 @@ public final class PlateManagerTest
         // remove amount and amountUnits metadata fields
         fields = PlateManager.get().removeFields(container, user, plateId, List.of(fields.get(0), fields.get(1)));
         assertEquals("Unexpected number of custom fields", 9, fields.size());
-        assertEquals("Expected Concentration custom field", "Concentration", fields.get(3).getName());
-        assertEquals("Expected ConcentrationUnits custom field", "ConcentrationUnits", fields.get(4).getName());
+        assertEquals("Expected Concentration custom field", "Concentration", fields.get(4).getName());
+        assertEquals("Expected ConcentrationUnits custom field", "ConcentrationUnits", fields.get(5).getName());
 
         // select wells
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -604,14 +604,14 @@ public final class PlateManagerTest
         List<Object[]> result = PlateManager.get().getInstrumentInstructions(plateSet.getRowId(), includedMetadataCols, container, user);
 
         // Assert
-        Object[] valuesRow1 = new Object[]{"myPlate", plate.getBarcode(), "A1", 96, sample1.getName(), "B1234", "2.25", null, "SAMPLE", null};
+        Object[] valuesRow1 = new Object[]{"myPlate", plate.getBarcode(), "A1", 96, sample1.getName(), "SAMPLE", null, null, "B1234", "2.25"};
         assertArrayEquals(valuesRow1, result.get(0));
 
-        Object[] valuesRow2 = new Object[]{"myPlate", plate.getBarcode(), "A2", 96, sample2.getName(), "B5678", "1.25", null, "SAMPLE", null};
+        Object[] valuesRow2 = new Object[]{"myPlate", plate.getBarcode(), "A2", 96, sample2.getName(), "SAMPLE", null, null, "B5678", "1.25"};
         assertArrayEquals(valuesRow2, result.get(1));
     }
 
-    private void assertWorklistThrows(String message, Integer sourceRowId, Integer destinationRowId, List<FieldKey> sourceIncludedMetadataCols, List<FieldKey> destinationIncludedMetadataCols) throws Exception
+    private void assertWorklistThrows(String message, Integer sourceRowId, Integer destinationRowId, List<FieldKey> sourceIncludedMetadataCols, List<FieldKey> destinationIncludedMetadataCols)
     {
         try
         {
@@ -655,13 +655,13 @@ public final class PlateManagerTest
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert
-        Object[] valuesRow1 = new Object[]{"myPlate1-1", plateSource.getBarcode(), "A1", 96, sample1.getName(), "B1234", "2.25", null, "SAMPLE", null, "myPlate2-1", plateDestination.getBarcode(), "A2", 96, null, "SAMPLE", null};
+        Object[] valuesRow1 = new Object[]{"myPlate1-1", plateSource.getBarcode(), "A1", 96, sample1.getName(), "SAMPLE", null, null, "B1234", "2.25", "myPlate2-1", plateDestination.getBarcode(), "A2", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow1, plateDataRows.get(0));
 
-        Object[] valuesRow2 = new Object[]{"myPlate1-1", plateSource.getBarcode(),"A2", 96, sample2.getName(), "B5678", "1.25", null, "SAMPLE", null, "myPlate2-1", plateDestination.getBarcode(), "A1", 96, null, "SAMPLE", null};
+        Object[] valuesRow2 = new Object[]{"myPlate1-1", plateSource.getBarcode(),"A2", 96, sample2.getName(), "SAMPLE", null, null, "B5678", "1.25", "myPlate2-1", plateDestination.getBarcode(), "A1", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow2, plateDataRows.get(1));
 
-        Object[] valuesRow3 = new Object[]{"myPlate1-1", plateSource.getBarcode(),"A2", 96, sample2.getName(), "B5678", "1.25", null, "SAMPLE", null, "myPlate2-1", plateDestination.getBarcode(), "A3", 96, null, "SAMPLE", null};
+        Object[] valuesRow3 = new Object[]{"myPlate1-1", plateSource.getBarcode(),"A2", 96, sample2.getName(), "SAMPLE", null, null, "B5678", "1.25", "myPlate2-1", plateDestination.getBarcode(), "A3", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow3, plateDataRows.get(2));
     }
 
@@ -690,10 +690,10 @@ public final class PlateManagerTest
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert
-        Object[] valuesRow1 = new Object[]{"myPlate1-2", plateSource.getBarcode(), "A1", 96, sample1.getName(), "B1234", "2.25", null, "SAMPLE", null, null, null, null, null, null, null, null};
+        Object[] valuesRow1 = new Object[]{"myPlate1-2", plateSource.getBarcode(), "A1", 96, sample1.getName(), "SAMPLE", null, null, "B1234", "2.25", null, null, null, null, null, null, null};
         assertArrayEquals(valuesRow1, plateDataRows.get(0));
 
-        Object[] valuesRow2 = new Object[]{"myPlate1-2", plateSource.getBarcode(),"A2", 96, sample2.getName(), "B5678", "1.25", null, "SAMPLE", null, "myPlate2-2", plateDestination.getBarcode(), "A1", 96, null, "SAMPLE", null};
+        Object[] valuesRow2 = new Object[]{"myPlate1-2", plateSource.getBarcode(),"A2", 96, sample2.getName(), "SAMPLE", null, null, "B5678", "1.25", "myPlate2-2", plateDestination.getBarcode(), "A1", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow2, plateDataRows.get(1));
     }
 
@@ -752,13 +752,13 @@ public final class PlateManagerTest
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert
-        Object[] valuesRow1 = new Object[]{"myPlate1-4", plateSource.getBarcode(), "A1", 96, sample.getName(), "B1234", "2.25", null, "SAMPLE", null, "myPlate2-4", plateDestination.getBarcode(), "A2", 96, null, "SAMPLE", null};
+        Object[] valuesRow1 = new Object[]{"myPlate1-4", plateSource.getBarcode(), "A1", 96, sample.getName(), "SAMPLE", null, null, "B1234", "2.25", "myPlate2-4", plateDestination.getBarcode(), "A2", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow1, plateDataRows.get(0));
 
-        Object[] valuesRow2 = new Object[]{"myPlate1-4", plateSource.getBarcode(),"A2", 96, sample.getName(), "B5678", "1.25", null, "SAMPLE", null, "myPlate2-4", plateDestination.getBarcode(), "A3", 96, null, "SAMPLE", null};
+        Object[] valuesRow2 = new Object[]{"myPlate1-4", plateSource.getBarcode(),"A2", 96, sample.getName(), "SAMPLE", null, null, "B5678", "1.25", "myPlate2-4", plateDestination.getBarcode(), "A3", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow2, plateDataRows.get(1));
 
-        Object[] valuesRow3 = new Object[]{"myPlate1-4", plateSource.getBarcode(),"A3", 96, sample.getName(), "B910", "1.0", null, "SAMPLE", null, "myPlate2-4", plateDestination.getBarcode(), "A4", 96, null, "SAMPLE", null};
+        Object[] valuesRow3 = new Object[]{"myPlate1-4", plateSource.getBarcode(),"A3", 96, sample.getName(), "SAMPLE", null, null, "B910", "1.0", "myPlate2-4", plateDestination.getBarcode(), "A4", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow3, plateDataRows.get(2));
     }
 
@@ -787,13 +787,13 @@ public final class PlateManagerTest
         List<Object[]> plateDataRows = PlateManager.get().getWorklist(plateSource.getPlateSet().getRowId(), plateDestination.getPlateSet().getRowId(), sourceIncludedMetadataCols, destinationIncludedMetadataCols, container, user);
 
         // Assert
-        Object[] valuesRow1 = new Object[]{"myPlate1-5", plateSource.getBarcode(), "A1", 96, sample.getName(), "B1234", "2.25", null, "SAMPLE", null, "myPlate2-5", plateDestination.getBarcode(), "A2", 96, null, "SAMPLE", null};
+        Object[] valuesRow1 = new Object[]{"myPlate1-5", plateSource.getBarcode(), "A1", 96, sample.getName(), "SAMPLE", null, null, "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A2", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow1, plateDataRows.get(0));
 
-        Object[] valuesRow2 = new Object[]{"myPlate1-5", plateSource.getBarcode(),"A1", 96, sample.getName(), "B1234", "2.25", null, "SAMPLE", null, "myPlate2-5", plateDestination.getBarcode(), "A3", 96, null, "SAMPLE", null};
+        Object[] valuesRow2 = new Object[]{"myPlate1-5", plateSource.getBarcode(),"A1", 96, sample.getName(), "SAMPLE", null, null, "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A3", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow2, plateDataRows.get(1));
 
-        Object[] valuesRow3 = new Object[]{"myPlate1-5", plateSource.getBarcode(),"A1", 96, sample.getName(), "B1234", "2.25", null, "SAMPLE", null, "myPlate2-5", plateDestination.getBarcode(), "A4", 96, null, "SAMPLE", null};
+        Object[] valuesRow3 = new Object[]{"myPlate1-5", plateSource.getBarcode(),"A1", 96, sample.getName(), "SAMPLE", null, null, "B1234", "2.25", "myPlate2-5", plateDestination.getBarcode(), "A4", 96, "SAMPLE", null, null};
         assertArrayEquals(valuesRow3, plateDataRows.get(2));
     }
 
