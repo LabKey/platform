@@ -1224,6 +1224,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         return _sourceQueryName != null && _sourceQuerySchema != null && _sourceQueryContainer != null;
     }
 
+    public boolean isQuerySnapshot()
+    {
+        return QueryService.get().isQuerySnapshot(getContainer(), StudySchema.getInstance().getSchemaName(), getName());
+    }
+
     public String getSourceQueryName()
     {
         return _sourceQueryName;

@@ -74,6 +74,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
@@ -265,7 +266,7 @@ public abstract class VisitManager
     @SuppressWarnings("UnusedDeclaration")
     boolean dump(Map<VisitMapKey, VisitStatistics> map, Set<VisitStatistic> set)
     {
-        VisitStatistic[] statsToDisplay = set.toArray(new VisitStatistic[set.size()]);
+        VisitStatistic[] statsToDisplay = set.toArray(new VisitStatistic[0]);
         for (Map.Entry<VisitMapKey,VisitStatistics> e : map.entrySet())
         {
             VisitMapKey key = e.getKey();
@@ -603,37 +604,55 @@ public abstract class VisitManager
     protected void updateStartDates()
     {
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
-        //See if there are any demographic datasets that contain a start date
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        for (DatasetDefinition dataset : getStudy().getDatasets())
+        // Find the first demographic dataset that contain a StartDate column (if any)
+        StartDateInfo startDateInfo = getStartDateInfo(getStudy());
+        if (null != startDateInfo)
         {
-            if (dataset.isDemographicData())
-            {
-                TableInfo tInfo = dataset.getStorageTableInfo();
-                if (null == tInfo) continue;
-                //TODO: Use Property URI & Make sure this is set properly
-                ColumnInfo col = tInfo.getColumn("StartDate");
-                if (null != col)
-                {
-                    Container c = dataset.getContainer();
-                    String subselect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
-                            " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
-                            " AND " + tableParticipant + ".Container = ?)");
-                    String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subselect + " WHERE (" +
-                            tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subselect +
-                            ") AND Container = ?";
-                    new SqlExecutor(schema).execute(sql, c, c, c);
-                    break;
-                }
-            }
+            TableInfo tInfo = startDateInfo.storageTableInfo();
+            ColumnInfo col = startDateInfo.startDateColumn();
+            Container c = startDateInfo.dataset().getContainer();
+            String subSelect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
+                    " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
+                    " AND " + tableParticipant + ".Container = ?)");
+            String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subSelect + " WHERE (" +
+                    tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subSelect +
+                    ") AND Container = ?";
+            new SqlExecutor(schema).execute(sql, c, c, c);
         }
-        //No demographic data, so just set to study start date.
+
+        // For participants without a demographic StartDate, just set to study start date.
         String sqlUpdateStartDates = "UPDATE " + tableParticipant + " SET StartDate = ? WHERE Container = ? AND StartDate IS NULL";
         Parameter.TypedValue startDateParam = new Parameter.TypedValue(getStudy().getStartDate(), JdbcType.TIMESTAMP);
 
         new SqlExecutor(schema).execute(sqlUpdateStartDates, startDateParam, getStudy().getContainer());
         StudyManager.getInstance().clearParticipantCache(getStudy().getContainer());
+    }
+
+    public record StartDateInfo(DatasetDefinition dataset, TableInfo storageTableInfo, ColumnInfo startDateColumn){}
+
+    // The first non-query and non-query-snapshot demographics dataset with a "StartDate" column is the start-date dataset
+    //TODO: Use Property URI & Make sure "StartDate" is set properly
+    public static @Nullable StartDateInfo getStartDateInfo(StudyImpl study)
+    {
+        return study.getDatasets().stream()
+            .filter(DatasetDefinition::isDemographicData)
+            .filter(dataset -> !dataset.isQueryDataset())
+            .filter(dataset -> !dataset.isQuerySnapshot())
+            .map(dataset -> {
+                TableInfo ti = dataset.getStorageTableInfo();
+                if (ti != null)
+                {
+                    ColumnInfo column = ti.getColumn("StartDate");
+                    if (column != null)
+                        return new StartDateInfo(dataset, ti, column);
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
     }
 
     protected static TableInfo getSpecimenTable(StudyImpl study, User user)
