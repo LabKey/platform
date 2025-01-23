@@ -34,10 +34,6 @@ public class AnalysisScript
             if (op != null)
                 _operations.add(DataTransformService.TransformOperation.valueOf(op));
         }
-
-        // default to insert only
-        if (_operations.isEmpty())
-            _operations.add(DataTransformService.TransformOperation.INSERT);
     }
 
     public FileLike getScript()

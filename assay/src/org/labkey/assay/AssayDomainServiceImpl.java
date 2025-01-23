@@ -303,11 +303,14 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         // data transform scripts
         List<AnalysisScript> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
-        List<String> transformScriptStrings = new ArrayList<>();
+        List<Map<String, Object>> transformScriptStrings = new ArrayList<>();
         for (AnalysisScript transformScript : transformScripts)
         {
-            // TODO, add allowable operations once we have UI that controls those options
-            transformScriptStrings.add(transformScript.getScriptPath());
+            transformScriptStrings.add(Map.of(
+                    "scriptPath", transformScript.getScriptPath(),
+                    "runOnEdit", transformScript.canExecute(DataTransformService.TransformOperation.UPDATE),
+                    "runOnImport", transformScript.canExecute(DataTransformService.TransformOperation.INSERT)
+            ));
         }
         result.setProtocolTransformScripts(transformScriptStrings);
 
@@ -529,15 +532,21 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 // data transform scripts
                 List<AnalysisScript> transformScripts = new ArrayList<>();
-                List<String> submittedScripts = assay.getProtocolTransformScripts();
+                List<Map<String, Object>> submittedScripts = assay.getProtocolTransformScripts();
                 if (!submittedScripts.isEmpty() && !canUpdateTransformationScript())
                     throw new ValidationException("You must be a platform developer or site admin to configure assay transformation scripts.");
-                for (String script : assay.getProtocolTransformScripts())
+                for (Map<String, Object> map : assay.getProtocolTransformScripts())
                 {
+                    String script = (String) map.get("scriptPath");
                     if (!StringUtils.isBlank(script))
                     {
-                        // TODO : handle analysis script operations once UI is created
-                        transformScripts.add(new AnalysisScript(new File(script), Set.of(DataTransformService.TransformOperation.INSERT)));
+                        Set<DataTransformService.TransformOperation> transformOperations = new HashSet<>();
+                        if ((Boolean) map.get("runOnImport"))
+                            transformOperations.add(DataTransformService.TransformOperation.INSERT);
+                        if ((Boolean) map.get("runOnEdit"))
+                            transformOperations.add(DataTransformService.TransformOperation.UPDATE);
+
+                        transformScripts.add(new AnalysisScript(new File(script), transformOperations));
                     }
                 }
 

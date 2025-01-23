@@ -136,11 +136,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     };
 
+    private void outputColumnsAdd(ColumnInfo c, Supplier s)
+    {
+        _outputColumns.add(new Pair<>(c,s));
+    }
+
+
     public SimpleTranslator(DataIterator source, DataIteratorContext context)
     {
         super(context);
         _data = source;
-        _outputColumns.add(new Pair<>(new BaseColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
+        outputColumnsAdd(new BaseColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0));
     }
 
     protected DataIterator getInput()
@@ -1158,13 +1164,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 throw new RuntimeException(x);
             }
         };
-        _outputColumns.add(new Pair<>(col, s));
+        outputColumnsAdd(col, s);
         return _outputColumns.size()-1;
     }
 
     public int addColumn(ColumnInfo col, Supplier call)
     {
-        _outputColumns.add(new Pair<>(col, call));
+        outputColumnsAdd(col, call);
         return _outputColumns.size()-1;
     }
 
@@ -1553,7 +1559,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
-                _outputColumns.add(new Pair<>(new BaseColumnInfo(name, e.type), c));
+                outputColumnsAdd(new BaseColumnInfo(name, e.type), c);
                 return _outputColumns.size()-1;
             }
         }
