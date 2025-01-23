@@ -3184,7 +3184,7 @@ public class ExpDataIterators
                 "Modified",
                 "ModifiedBy",
                 "Created",
-                "_rowNumber",
+                ROWNUMBER_COLUMNNAME,
                 RowId.name(),
                 "genId",
                 AliquotedFromLSID.name(),
