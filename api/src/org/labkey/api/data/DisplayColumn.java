@@ -336,6 +336,9 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected String getInputPrefix()
     {
+        if (!_inputPrefix.isEmpty())
+            throw new IllegalStateException("Input prefix is set to an unexpected value: " + _inputPrefix);
+
         return _inputPrefix;
     }
 
