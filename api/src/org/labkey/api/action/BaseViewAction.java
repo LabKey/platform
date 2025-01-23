@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
 import org.springframework.beans.BeanUtils;
@@ -205,8 +206,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             _debug = true;
         }
 
-        if (hasStringValue("_print") ||
-            hasStringValue("_print.x"))
+        if (hasStringValue(ActionURL.Param._print.name()))
         {
             _print = true;
         }

@@ -58,7 +58,7 @@ public abstract class BaseStudyController extends SpringActionController
         PageConfig page = super.defaultPageConfig();
         String template = getViewContext().getRequest().getHeader("template");
         if (null == template)
-            template = getViewContext().getRequest().getParameter("_template");
+            template = getViewContext().getRequest().getParameter(ActionURL.Param._template.name());
         if ("custom".equals(template))
             page.setTemplate(PageConfig.Template.Custom);
         return page;

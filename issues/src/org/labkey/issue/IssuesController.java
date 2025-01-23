@@ -219,7 +219,7 @@ public class IssuesController extends SpringActionController
         ActionURL url = new ActionURL(DetailsAction.class, c);
 
         if (print)
-            url.addParameter("_print", "1");
+            url.addParameter(ActionURL.Param._print, "1");
 
         if (null != issueId)
             url.addParameter("issueId", issueId.toString());
@@ -1963,7 +1963,7 @@ public class IssuesController extends SpringActionController
             {
                 String status = ctx.getActionURL().getParameter("status");
                 ActionURL statusResearchURL = ctx.cloneActionURL().deleteParameter("status");
-                statusResearchURL.replaceParameter("_dc", (int)Math.round(1000 * Math.random()));
+                statusResearchURL.replaceParameter(ActionURL.Param._dc, (int)Math.round(1000 * Math.random()));
 
                 StringBuilder html = new StringBuilder("<table width=100% cellpadding=\"0\" cellspacing=\"0\"><tr>\n");
                 html.append("<td class=\"labkey-search-filter\">&nbsp;");

@@ -424,12 +424,18 @@ public class PageConfig
     }
 
 
-    Set<String> ignoreParameters = Set.of("_dc", "_template", "_print", "_debug", "_docid", "_test",
-            DataRegion.LAST_FILTER_PARAM,
+    Set<String> ignoreParameters = Set.of(
+            ActionURL.Param._dc.name(),
+            ActionURL.Param._docid.name(),
+            ActionURL.Param._template.name(),
+            ActionURL.Param._noindex.name(),
+            ActionURL.Param._print.name(),
             ActionURL.Param.returnUrl.name(),
             ActionURL.Param.redirectUrl.name(),
             ActionURL.Param.cancelUrl.name(),
-            ActionURL.Param.successUrl.name());
+            ActionURL.Param.successUrl.name(),
+            "_debug", "_test"
+            );
 
     @Nullable
     private String getCanonicalLink(URLHelper current)

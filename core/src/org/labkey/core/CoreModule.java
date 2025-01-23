@@ -289,6 +289,7 @@ import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
+import org.labkey.core.view.template.bootstrap.PageTemplate;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
@@ -505,6 +506,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
                 "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+        AdminConsole.addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
+                "Short-circuit robots",
+                "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
+                false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

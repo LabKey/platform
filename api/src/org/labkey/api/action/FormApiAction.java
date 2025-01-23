@@ -17,6 +17,7 @@ package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.HttpUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -62,8 +63,7 @@ public abstract class FormApiAction<FORM> extends BaseApiAction<FORM> implements
 
         ModelAndView v;
 
-        if (null != StringUtils.trimToNull((String) getProperty("_print")) ||
-            null != StringUtils.trimToNull((String) getProperty("_print.x")))
+        if (null != StringUtils.trimToNull((String) getProperty(ActionURL.Param._print.name())))
             v = getPrintView(form, errors);
         else
             v = getView(form, errors);

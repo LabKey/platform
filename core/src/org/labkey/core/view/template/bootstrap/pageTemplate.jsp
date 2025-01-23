@@ -26,6 +26,8 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="static org.labkey.core.view.template.bootstrap.PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -36,7 +38,7 @@
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
 
-    boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter("_noindex"));
+    boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
     if (isExplicitNoIndex)
         model.setRobotsNone();
     boolean isRobot = context.isRobot();
@@ -75,7 +77,7 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
-    if (isRobot && isNoIndex)   // using isNoIndex could be too aggressive, but using isExplicitNoIndex seems fair
+    if (isRobot && isNoIndex && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
     {
         %></body></html><%
         return;

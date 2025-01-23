@@ -1175,7 +1175,7 @@ public class WikiController extends SpringActionController
 
             if (isSource())
             {
-                if ("none".equals(getViewContext().getRequest().getParameter("_template")))
+                if ("none".equals(getViewContext().getRequest().getParameter(ActionURL.Param._template.name())))
                 {
                     getPageConfig().setTemplate(Template.None);
                     HtmlView html = HtmlView.unsafe(_wikiversion.getBody());

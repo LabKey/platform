@@ -198,7 +198,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 var context = HttpView.currentContext();
                 URLHelper url = new URLHelper(href);
                 if (null != context && context.isRobot())
-                    url.addParameter("_noindex", "1");
+                    url.addParameter(ActionURL.Param._noindex.name(), "1");
                 dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
                 if (!dataQuery.isEmpty())
                     dataQuery = "?" + dataQuery;
