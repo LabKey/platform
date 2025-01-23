@@ -17,6 +17,7 @@ import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -421,7 +422,7 @@ public class ToolsController extends SpringActionController
                         Files.walkFileTree(root, new SimpleFileVisitor<>()
                         {
                             @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            public @NotNull FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs)
                             {
                                 String filePath = file.toString();
                                 if (filePath.endsWith(".java"))

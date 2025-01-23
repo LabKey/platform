@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.JavaScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -149,6 +150,8 @@ public class ContentSecurityPolicyFilter implements Filter
             if ("policy".equalsIgnoreCase(paramName))
             {
                 String s = paramValue.trim();
+                JavaScanner scanner = new JavaScanner(s);
+                s = scanner.stripComments().toString();
                 s = s.replace( '\n', ' ' );
                 s = s.replace( '\r', ' ' );
                 s = s.replace( '\t', ' ' );

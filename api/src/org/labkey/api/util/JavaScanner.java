@@ -1,12 +1,11 @@
-package org.labkey.devtools;
+package org.labkey.api.util;
 
-import org.labkey.api.util.BaseScanner;
 import org.labkey.api.view.NotFoundException;
 
 public class JavaScanner extends BaseScanner
 {
     private static final String ESCAPED_BACKSLASH = "\\\\";   // Backslash + backslash
-    protected static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
+    public static final String TEXT_BLOCK_DELIMITER = "\"\"\"";
 
     public JavaScanner(String text)
     {
