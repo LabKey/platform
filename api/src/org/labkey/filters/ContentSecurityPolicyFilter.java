@@ -149,9 +149,9 @@ public class ContentSecurityPolicyFilter implements Filter
             String paramValue = filterConfig.getInitParameter(paramName);
             if ("policy".equalsIgnoreCase(paramName))
             {
-                String s = paramValue.trim();
-                JavaScanner scanner = new JavaScanner(s);
-                s = scanner.stripComments().toString();
+                // We use Java-style block comments to document our policies; strip them since CSP syntax doesn't allow them.
+                JavaScanner scanner = new JavaScanner(paramValue.trim());
+                String s = scanner.stripComments().toString();
                 s = s.replace( '\n', ' ' );
                 s = s.replace( '\r', ' ' );
                 s = s.replace( '\t', ' ' );
