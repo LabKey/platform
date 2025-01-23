@@ -3669,7 +3669,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     private List<FieldKey> getPlateExportFieldKeys(Plate plate, boolean isMapView)
     {
-        List<FieldKey> fieldKeys = new ArrayList<>(List.of(FieldKey.fromParts("SampleId", "Name")));
+        List<FieldKey> fieldKeys = new ArrayList<>();
+        fieldKeys.add(FieldKey.fromParts(WellTable.Column.SampleID.name(), "Name"));
 
         if (isMapView)
         {
@@ -3681,14 +3682,23 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             // For non-map export view we always want "position" first
             fieldKeys.add(0, WellTable.Column.Position.fieldKey());
         }
-        Set<String> excludedColumns = new HashSet<>(Arrays.asList("SampleID", "Type", "WellGroup"));
-        List<PlateCustomField> customFields = isMapView
-                ? plate.getCustomFields().stream().filter(field -> !excludedColumns.contains(field.getFieldKey() == null ? null : field.getFieldKey().getName())).toList()
-                : plate.getCustomFields();
-        for (PlateCustomField customField : customFields)
+
+        List<PlateCustomField> customFields = plate.getCustomFields();
+
+        if (isMapView)
         {
-            fieldKeys.add(FieldKey.fromParts(customField.getName()));
+            Set<FieldKey> excludedColumns = Set.of(
+                WellTable.Column.SampleID.fieldKey(),
+                WellTable.Column.Type.fieldKey(),
+                WellTable.Column.WellGroup.fieldKey(),
+                WellTable.Column.ReplicateGroup.fieldKey()
+            );
+
+            customFields = customFields.stream().filter(field -> field.getFieldKey() == null || !excludedColumns.contains(field.getFieldKey())).toList();
         }
+
+        for (PlateCustomField customField : customFields)
+            fieldKeys.add(FieldKey.fromParts(customField.getName()));
 
         return fieldKeys;
     }
