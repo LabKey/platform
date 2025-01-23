@@ -39,7 +39,7 @@ public abstract class TSVWriter extends TextWriter
     protected char _chDelimiter = '\t';
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
-    protected String _escapeChar = "\\\\";
+    protected char _escapeChar = '\\';
 
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
