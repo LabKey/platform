@@ -71,6 +71,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
@@ -2373,6 +2374,9 @@ public class ExpDataIterators
             if (!isMergeOrUpdate)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
+            boolean canUpdateNames = svc.getAllowUserSpecificNamesValue(_container);
+
             if (isSample)
             {
                 if (isMergeOrUpdate)
@@ -2380,6 +2384,8 @@ public class ExpDataIterators
                     if (isUpdateUsingLsid)
                     {
                         keyColumns.add(ExpDataTable.Column.LSID.toString());
+                        if (!canUpdateNames)
+                            dontUpdate.add("name");
                     }
                     else
                     {
@@ -2401,6 +2407,8 @@ public class ExpDataIterators
                 if (isUpdateUsingLsid)
                 {
                     keyColumns.add(ExpDataTable.Column.LSID.toString());
+                    if (!canUpdateNames)
+                        dontUpdate.add("name");
                 }
                 else
                 {
