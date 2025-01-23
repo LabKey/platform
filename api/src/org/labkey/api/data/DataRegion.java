@@ -829,7 +829,7 @@ public class DataRegion extends DisplayElement
     }
 
     @NotNull
-    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx, boolean showPaginationCount) throws IOException
     {
         if (_aggregateResults == null)
         {
@@ -837,7 +837,7 @@ public class DataRegion extends DisplayElement
             assert results != null;
             _complete = results.isComplete();
 
-            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && showPaginationCount;
             countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
             List<Aggregate> baseAggregates = getSummaryStatsAggregates(ctx.getBaseSummaryStatsProviders());
@@ -1383,7 +1383,7 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
-        if (AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
         {
             // Issue 51036: load totalRows count async for DataRegions
             dataRegionJSON.put("showPaginationCount", false);
@@ -1551,10 +1551,10 @@ public class DataRegion extends DisplayElement
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         // Issue 51036: load totalRows count async for DataRegions
-        if (AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
-            setShowPaginationCount(false);
+        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
 
-        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx);
+        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);
 
         if (!aggregateResults.isEmpty())
         {

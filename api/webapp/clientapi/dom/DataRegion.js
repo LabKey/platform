@@ -1594,7 +1594,7 @@ if (!LABKEY.DataRegions) {
     var _initPaging = function() {
         if (this.showPagination) {
             // Issue 51036: load totalRows count async for DataRegions
-            if (this.showPaginationCountAsync && !this.skipTotalRowCount && this.loadingTotalRows === undefined) {
+            if (!this.complete && this.showPaginationCountAsync && !this.skipTotalRowCount && this.loadingTotalRows === undefined) {
                 var params = _getAsyncParams(this, _getParameters(this), false);
                 var jsonData = _getAsyncBody(this, params);
                 _loadAsyncTotalRowCount(this, params, jsonData);
@@ -3711,7 +3711,7 @@ if (!LABKEY.DataRegions) {
             scope: region
         });
 
-        if (region.async && region.showPaginationCountAsync && !region.skipTotalRowCount) {
+        if (region.async && !region.complete && region.showPaginationCountAsync && !region.skipTotalRowCount) {
             _loadAsyncTotalRowCount(region, params, jsonData);
         }
         region.skipTotalRowCount = false;
