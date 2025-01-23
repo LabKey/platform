@@ -40,7 +40,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
         super(context);
 
         _class = cls;
-        _cols.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _cols.add(new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER));
         _readMethods.add(null);
         K bean = rows.isEmpty() ? null : rows.get(0);
 

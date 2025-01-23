@@ -1001,7 +1001,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         public ColumnInfo getColumnInfo(int i)
         {
             if (i == 0)
-                return new BaseColumnInfo("_rowNumber", JdbcType.INTEGER);
+                return new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER);
             ColumnDescriptor d = _columns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)

@@ -51,7 +51,7 @@ class StringTestIterator extends AbstractDataIterator implements ScrollableDataI
     public ColumnInfo getColumnInfo(int i)
     {
         if (i==0)
-            return new BaseColumnInfo("_rownumber", JdbcType.INTEGER);
+            return new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER);
         return new BaseColumnInfo(columns.get(i-1),JdbcType.VARCHAR);
     }
 
