@@ -82,7 +82,6 @@ public abstract class DisplayColumn extends RenderColumn
     private StringExpression _textExpression = null;
     private StringExpression _textExpressionCompiled = null;
     protected String _gridHeaderClass = "labkey-col-header-filter";
-    private String _inputPrefix = "";
     private String _description = null;
     protected boolean _requiresHtmlFiltering = true;
     private String _displayClass;
@@ -332,19 +331,6 @@ public abstract class DisplayColumn extends RenderColumn
             return getColumnInfo().getPropertyName();
         else
             return super.getName();
-    }
-
-    protected String getInputPrefix()
-    {
-        if (!_inputPrefix.isEmpty())
-            throw new IllegalStateException("Input prefix is set to an unexpected value: " + _inputPrefix);
-
-        return _inputPrefix;
-    }
-
-    protected void setInputPrefix(String inputPrefix)
-    {
-        _inputPrefix = inputPrefix;
     }
 
     /** If width is null, no width will be requested in the HTML table */
@@ -599,7 +585,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getJsonTypeName(getValueClass());
     }
 
-    public static String getJsonTypeName(Class valueClass)
+    public static String getJsonTypeName(Class<?> valueClass)
     {
         if (String.class.isAssignableFrom(valueClass))
             return "string";
@@ -626,17 +612,15 @@ public abstract class DisplayColumn extends RenderColumn
         if (typeName == null)
             return String.class;
 
-        switch (typeName)
+        return switch (typeName)
         {
-            case "boolean":  return Boolean.class;
-            case "int":      return Integer.class;
-            case "float":    return Float.class;
-            case "date":     return Date.class;
-            case "string":
-            default:         return String.class;
-        }
+            case "boolean" -> Boolean.class;
+            case "int" -> Integer.class;
+            case "float" -> Float.class;
+            case "date" -> Date.class;
+            default -> String.class;
+        };
     }
-
 
     /** The value to display. Not HTML or otherwise encoded. */
     public Object getDisplayValue(RenderContext ctx)
@@ -773,7 +757,7 @@ public abstract class DisplayColumn extends RenderColumn
         {
             if (!getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
             {
-                boolean suffix = tooltip.length() > 0;
+                boolean suffix = !tooltip.isEmpty();
                 if (suffix)
                 {
                     tooltip.append(" (");
@@ -795,18 +779,18 @@ public abstract class DisplayColumn extends RenderColumn
                     if (null != concept)
                         conceptDisplay = concept.getLabel() + " (" + conceptDisplay + ")";
                 }
-                tooltip.append("\nConcept Annotation: " + conceptDisplay);
+                tooltip.append("\nConcept Annotation: ").append(conceptDisplay);
             }
 
             if (isPhiProtected())
             {
-                if (tooltip.length() > 0)
+                if (!tooltip.isEmpty())
                     tooltip.append("\n");
                 tooltip.append("(PHI protected data removed)");
             }
         }
 
-        if (tooltip.length() > 0)
+        if (!tooltip.isEmpty())
         {
             out.write(" title=\"");
             out.write(PageFlowUtil.filter(tooltip.toString()));
@@ -826,7 +810,7 @@ public abstract class DisplayColumn extends RenderColumn
             style += ";width:" + getWidth() + "px;";
 
         out.write("<div ");
-        if (!"".equals(style))
+        if (!style.isEmpty())
         {
             out.write("style=\"");
             out.write(style);
@@ -847,7 +831,7 @@ public abstract class DisplayColumn extends RenderColumn
             // 31304: click target should fill the entire cell
             out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
             out.write("<ul class=\"dropdown-menu\"");
-            if (tooltip.length() > 0) // 36050
+            if (!tooltip.isEmpty()) // 36050
                 out.write(" title=\"\"");
             out.write(">");
             PopupMenuView.renderTree(navTree, out);
@@ -897,11 +881,7 @@ public abstract class DisplayColumn extends RenderColumn
                 ActionURL url = ctx.getSortFilterURLHelper();
                 SimpleFilter filter = new SimpleFilter(url, rgn.getName());
 
-                filteredColSet = new HashSet<>();
-                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
-                {
-                    filteredColSet.add(fieldKey);
-                }
+                filteredColSet = new HashSet<>(filter.getWhereParamFieldKeys());
                 ctx.put(rgn.getName() + ".filteredCols", filteredColSet);
             }
 
@@ -1118,13 +1098,13 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
-    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    @NotNull /* Always return a non-null string to make it easy to concatenate values */
     public String getDisplayClass(RenderContext ctx)
     {
         return _displayClass != null ? _displayClass : "";
     }
 
-    @NotNull /** Always return a non-null string to make it easy to concatenate values */
+    @NotNull /* Always return a non-null string to make it easy to concatenate values */
     public String getCssStyle(RenderContext ctx)
     {
         String style = "";
@@ -1268,7 +1248,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
     {
         out.write(" name=\"");
-        out.write(PageFlowUtil.filter(getInputPrefix() + formFieldName));
+        out.write(PageFlowUtil.filter(formFieldName));
         out.write("\"");
 
         String setFocusId = (String)ctx.get("setFocusId");
@@ -1287,7 +1267,7 @@ public abstract class DisplayColumn extends RenderColumn
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
     {
         out.write(new Input.InputBuilder()
-            .name(getInputPrefix() + formFieldName)
+            .name(formFieldName)
             .type("hidden")
             .value(null != value ? value.toString() : null)
             .toString());

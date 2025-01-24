@@ -266,7 +266,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
             Input.InputBuilder input = new Input.InputBuilder()
                     .type("file")
-                    .name(getInputPrefix() + formFieldName)
+                    .name(formFieldName)
                     .disabled(isDisabledInput(ctx))
                     .needsWrapping(false);
 
@@ -288,7 +288,6 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /**
      * Enable subclasses to override the warning text
      * @param filename being displayed
-     * @return
      */
     protected String getRemovalWarningText(String filename)
     {
