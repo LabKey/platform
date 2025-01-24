@@ -64,6 +64,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -298,7 +299,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
@@ -4871,7 +4871,11 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     TableInfo ti = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName()).getTable(form.getQueryName());
-                    Set<String> colNames = ti.getColumns().stream().map(column -> column.getName().toLowerCase()).collect(Collectors.toSet());
+                    var colNames = new CaseInsensitiveHashSet();
+                    for (ColumnInfo column : ti.getColumns())
+                    {
+                        colNames.add(column.getName());
+                    }
 
                     List<String> notFound = Arrays.stream(QueryDatasetTable.REQUIRED_COLUMNS)
                             .filter(value -> !colNames.contains(value.toLowerCase()))
