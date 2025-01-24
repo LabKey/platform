@@ -131,6 +131,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,7 +176,7 @@ public class PageFlowUtil
     private static final Logger _log = LogHelper.getLogger(PageFlowUtil.class, "HTML validation and file operation errors");
     private static final String _newline = System.lineSeparator();
 
-    private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
+    private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+)");
 
     /**
      * Default parser class.
@@ -2640,6 +2641,136 @@ public class PageFlowUtil
             assertTrue(html.contains("href=\"http:"));
             assertTrue(html.contains("view</a>"));
         }
+
+
+        @Test
+        public void testFilterSpeed()
+        {
+            final int SRC_LENGTH = 5_000_000;
+            StringBuilder sb = new StringBuilder(SRC_LENGTH);
+            sb.append("http:/x/ httpsx:// ftp:x// mailtox: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+            sb.append(" https://www.labkey.org/ ");
+            while (sb.length() < SRC_LENGTH / 2)
+                sb.append(sb, 0, sb.length());
+            sb.append(sb, 0, SRC_LENGTH - sb.length());
+            String source = sb.toString();
+            sb = null;
+            System.err.println("LENGTH : " + source.length());
+            var start = new Date();
+            System.err.println(start);
+            filter(source, false, true, "\n");
+            var end = new Date();
+            System.err.println("" + end + " " + DateUtil.formatDuration(end.getTime()-start.getTime()));
+            start = end;
+            filterOldAndSlow(source, false, true, "\n");
+            end = new Date();
+            System.err.println("" + end + " " + DateUtil.formatDuration(end.getTime()-start.getTime()));
+        }
+
+
+        static public String filterOldAndSlow(CharSequence s, boolean encodeSpace, boolean encodeLinks, String NL)
+        {
+            if (null == s || s.isEmpty())
+                return "";
+
+            int len = s.length();
+            StringBuilder sb = new StringBuilder(2 * len);
+            boolean newline = false;
+
+            for (int i = 0; i < len; ++i)
+            {
+                char c = s.charAt(i);
+
+                if (!Character.isWhitespace(c))
+                    newline = false;
+                else if ('\r' == c || '\n' == c)
+                    newline = true;
+
+                switch (c)
+                {
+                    case '&':
+                        sb.append("&amp;");
+                        break;
+                    case '"':
+                        sb.append("&quot;");
+                        break;
+                    case '\'':
+                        sb.append("&#039;");    // works for xml and html
+                        break;
+                    case '<':
+                        sb.append("&lt;");
+                        break;
+                    case '>':
+                        sb.append("&gt;");
+                        break;
+                    case '\\':
+                        sb.append("&#92;");
+                        break;
+                    case '\n':
+                        if (encodeSpace)
+                            sb.append(NL);
+                        else
+                            sb.append(c);
+                        break;
+                    case '\r':
+                        break;
+                    case '\t':
+                        if (!encodeSpace)
+                            sb.append(c);
+                        else if (newline)
+                            sb.append("&nbsp;&nbsp;&nbsp;&nbsp;");
+                        else
+                            sb.append("&nbsp; &nbsp; ");
+                        break;
+                    case ' ':
+                        if (encodeSpace && newline)
+                            sb.append("&nbsp;");
+                        else
+                            sb.append(' ');
+                        break;
+                    case 'f':
+                    case 'h':
+                    case 'm':
+                        if (encodeLinks)
+                        {
+                            CharSequence sub = s.subSequence(i, s.length());
+                            if (StringUtilsLabKey.startsWithURL(sub))
+                            {
+                                Matcher m = urlPatternStart.matcher(sub);
+                                if (m.find())
+                                {
+                                    String href = m.group(1);
+                                    if (href.endsWith("."))
+                                        href = href.substring(0, href.length() - 1);
+                                    // for html/xml careful of " and "> and "/>
+                                    int lastQuote = Math.max(href.lastIndexOf("\""), href.lastIndexOf("'"));
+                                    if (lastQuote >= href.length()-3)
+                                        href = href.substring(0, lastQuote);
+                                    String filterHref = filter(href, false, false);
+                                    sb.append("<a href=\"").append(filterHref).append("\">").append(filterHref).append("</a>");
+                                    i += href.length() - 1;
+                                    break;
+                                }
+                            }
+                        }
+                        sb.append(c);
+                        break;
+                    default:
+                        if (c >= ' ')
+                            sb.append(c);
+                        else
+                        {
+                            if (c == 0x08) // backspace (e.g. xtandem output)
+                                break;
+                            sb.append(NONPRINTING_ALTCHAR);
+                        }
+                        break;
+                }
+            }
+
+            return sb.toString();
+        }
+
     }
 
     /** @return true if the UrlProvider exists. */
