@@ -262,6 +262,7 @@ import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.PublishedRecordQueryView;
+import org.labkey.study.query.QueryDatasetTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
@@ -281,6 +282,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -296,6 +298,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
@@ -4859,8 +4862,25 @@ public class StudyController extends BaseStudyController
             if (null == study)
                 throw new NotFoundException("No study in this folder");
 
-            if (form.getQueryDataset() != null && study.getTimepointType() != TimepointType.CONTINUOUS)
-                errors.reject("snapshotQuery.error", "Query based snapshot is only available for continuous studies");
+            if (form.getQueryDataset() != null)
+            {
+                if (study.getTimepointType() != TimepointType.CONTINUOUS)
+                {
+                    errors.reject("snapshotQuery.error", "Query based snapshot is only available for continuous studies");
+                }
+                else
+                {
+                    TableInfo ti = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName()).getTable(form.getQueryName());
+                    Set<String> colNames = ti.getColumns().stream().map(column -> column.getName().toLowerCase()).collect(Collectors.toSet());
+
+                    List<String> notFound = Arrays.stream(QueryDatasetTable.REQUIRED_COLUMNS)
+                            .filter(value -> !colNames.contains(value.toLowerCase()))
+                            .toList();
+
+                    if (!notFound.isEmpty())
+                        errors.reject("snapshotQuery.error", "The source query is missing the following required columns for a query based snapshot: " + String.join(", ", notFound));
+                }
+            }
 
             String name = StringUtils.trimToNull(form.getSnapshotName());
 
