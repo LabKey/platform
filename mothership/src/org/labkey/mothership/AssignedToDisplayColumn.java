@@ -27,10 +27,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-/**
- * User: jeckels
- * Date: Apr 24, 2006
- */
 public class AssignedToDisplayColumn extends DataColumn
 {
     private final Container _container;
@@ -48,7 +44,7 @@ public class AssignedToDisplayColumn extends DataColumn
         List<User> list = MothershipManager.get().getAssignedToList(_container);
 
         out.write("<select name=\"");
-        out.write(PageFlowUtil.filter(getInputPrefix() + getColumnInfo().getPropertyName()));
+        out.write(PageFlowUtil.filter(getColumnInfo().getPropertyName()));
         out.write("\">\n");
         out.write("<option value=\"\"></option>\n");
 

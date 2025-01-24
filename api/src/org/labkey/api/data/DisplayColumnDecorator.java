@@ -227,18 +227,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    protected String getInputPrefix()
-    {
-        return _column.getInputPrefix();
-    }
-
-    @Override
-    protected void setInputPrefix(String inputPrefix)
-    {
-        _column.setInputPrefix(inputPrefix);
-    }
-
-    @Override
     public void setWidth(@Nullable String width)
     {
         _column.setWidth(width);
