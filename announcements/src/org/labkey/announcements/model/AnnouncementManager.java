@@ -522,7 +522,7 @@ public class AnnouncementManager
 
                 body = PageFlowUtil.validateHtml(body, validateErrors, hasDeveloperPermission);
 
-                if (validateErrors.size() > 0)
+                if (!validateErrors.isEmpty())
                     throw new RuntimeValidationException("Invalid HTML markup. " + String.join("\n", validateErrors));
 
                 // side-effect
