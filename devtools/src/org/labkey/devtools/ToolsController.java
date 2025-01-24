@@ -17,7 +17,6 @@ import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.JavaScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;

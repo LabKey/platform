@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.util.JavaScanner;
+import org.labkey.api.util.JavaBlockCommentScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -150,7 +150,7 @@ public class ContentSecurityPolicyFilter implements Filter
             if ("policy".equalsIgnoreCase(paramName))
             {
                 // We use Java-style block comments to document our policies; strip them since CSP syntax doesn't allow them.
-                JavaScanner scanner = new JavaScanner(paramValue.trim());
+                JavaBlockCommentScanner scanner = new JavaBlockCommentScanner(paramValue.trim());
                 String s = scanner.stripComments().toString();
                 s = s.replace( '\n', ' ' );
                 s = s.replace( '\r', ' ' );
