@@ -68,12 +68,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- * User: jgarms
- * Date: Oct 22, 2008
- * Time: 11:26:37 AM
- */
-
 // Abstract class for loading columnar data from file sources: TSVs, Excel files, etc.
 public abstract class DataLoader implements Iterable<Map<String, Object>>, Loader, DataIteratorBuilder, Closeable
 {
