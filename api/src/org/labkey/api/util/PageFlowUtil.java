@@ -220,6 +220,8 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder(2 * len);
         boolean newline = false;
 
+        Matcher urlMatcher = urlPatternStart.matcher(s);
+
         for (int i = 0; i < len; ++i)
         {
             char c = s.charAt(i);
@@ -276,13 +278,12 @@ public class PageFlowUtil
                 case 'm':
                     if (encodeLinks)
                     {
-                        CharSequence sub = s.subSequence(i, s.length());
-                        if (StringUtilsLabKey.startsWithURL(sub))
+                        if (StringUtilsLabKey.startsWithURL(s.subSequence(i, Math.min(s.length(),i+10))))
                         {
-                            Matcher m = urlPatternStart.matcher(sub);
-                            if (m.find())
+                            urlMatcher.region(i, s.length());
+                            if (urlMatcher.lookingAt())
                             {
-                                String href = m.group(1);
+                                String href = urlMatcher.group(1);
                                 if (href.endsWith("."))
                                     href = href.substring(0, href.length() - 1);
                                 // for html/xml careful of " and "> and "/>
