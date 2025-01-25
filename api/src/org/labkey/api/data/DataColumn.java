@@ -103,9 +103,7 @@ public class DataColumn extends DisplayColumn
         {
             _width = _displayColumn.getWidth();
         }
-        StringExpression url = withLookups ?
-                _boundColumn.getEffectiveURL() :
-                _boundColumn.getURL();
+        StringExpression url = withLookups ? _boundColumn.getEffectiveURL() : _boundColumn.getURL();
         if (null != url)
             super.setURLExpression(url);
         setLinkTarget(_boundColumn.getURLTargetWindow());
@@ -129,7 +127,6 @@ public class DataColumn extends DisplayColumn
                 else
                     _inputType = "select";
             }
-
         }
         catch (QueryParseException qpe)
         {
@@ -143,7 +140,6 @@ public class DataColumn extends DisplayColumn
         _caption = StringExpressionFactory.create(_boundColumn.getLabel());
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();
         _textAlign = _displayColumn.getTextAlign();
-
     }
 
 
@@ -282,7 +278,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public boolean isSortable()
     {
-        return _sortFieldKeys != null && _sortFieldKeys.size() > 0;
+        return _sortFieldKeys != null && !_sortFieldKeys.isEmpty();
     }
 
     @Override
@@ -718,9 +714,9 @@ public class DataColumn extends DisplayColumn
     ) throws IOException
     {
         Select.SelectBuilder select = new Select.SelectBuilder()
-                .disabled(disabledInput)
-                .multiple("select.multiple".equalsIgnoreCase(_inputType))
-                .name(getInputPrefix() + formFieldName);
+            .disabled(disabledInput)
+            .multiple("select.multiple".equalsIgnoreCase(_inputType))
+            .name(formFieldName);
 
         List<Option> options = new ArrayList<>();
 
@@ -794,10 +790,10 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         var input = new Input.InputBuilder<>()
-                .type("file")
-                .name(getInputPrefix() + formFieldName)
-                .disabled(disabledInput)
-                .needsWrapping(false);
+            .type("file")
+            .name(formFieldName)
+            .disabled(disabledInput)
+            .needsWrapping(false);
 
         out.write(input.build().toString());
     }
@@ -808,12 +804,12 @@ public class DataColumn extends DisplayColumn
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
 
         var input = new Input.InputBuilder<>()
-                .type("checkbox")
-                .name(getInputPrefix() + formFieldName)
-                .disabled(disabledInput)
-                .value("1")
-                .checked(checked)
-                .needsWrapping(false);
+            .type("checkbox")
+            .name(formFieldName)
+            .disabled(disabledInput)
+            .value("1")
+            .checked(checked)
+            .needsWrapping(false);
 
         out.write(input.build().toString());
 
@@ -838,11 +834,11 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
-                .columns(_inputLength)
-                .rows(_inputRows)
-                .name(getInputPrefix() + formFieldName)
-                .disabled(disabledInput)
-                .value(strVal);
+            .columns(_inputLength)
+            .rows(_inputRows)
+            .name(formFieldName)
+            .disabled(disabledInput)
+            .value(strVal);
 
         out.write(input.build().toString());
 
@@ -855,11 +851,11 @@ public class DataColumn extends DisplayColumn
             throws IOException
     {
         var input = new Input.InputBuilder<>()
-                .name(getInputPrefix() + formFieldName)
-                .disabled(disabledInput)
-                .size(_inputLength)
-                .value(strVal)
-                .needsWrapping(false);
+            .name(formFieldName)
+            .disabled(disabledInput)
+            .size(_inputLength)
+            .value(strVal)
+            .needsWrapping(false);
 
         out.write(input.build().toString());
 
@@ -874,22 +870,22 @@ public class DataColumn extends DisplayColumn
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
         out.write("<div id='" + renderId + "'></div>");
         String initScript =
-                        "Ext4.onReady(function(){\n" +
-                        "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                        "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                        "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                        "            sharedStore     : true,\n" +
-                        "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
-                        "            tagConfig   : {\n" +
-                        "                tag     : 'input',\n" +
-                        "                type    : 'text',\n" +
-                        "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
-                        "                size    : " + _inputLength + ",\n" +
-                        "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
-                        "                autocomplete : 'off'\n" +
-                        "            }\n" +
-                        "        });\n" +
-                        "      });\n"
+            "Ext4.onReady(function(){\n" +
+            "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+            "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+            "            completionUrl   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+            "            sharedStore     : true,\n" +
+            "            sharedStoreId   : " + PageFlowUtil.jsString(autoCompleteURLPrefix) + ",\n" +
+            "            tagConfig   : {\n" +
+            "                tag     : 'input',\n" +
+            "                type    : 'text',\n" +
+            "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
+            "                size    : " + _inputLength + ",\n" +
+            "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
+            "                autocomplete : 'off'\n" +
+            "            }\n" +
+            "        });\n" +
+            "      });\n"
                 ;
         HttpView.currentPageConfig().addDOMContentLoadedHandler(JavaScriptFragment.unsafe(initScript));
     }
@@ -915,7 +911,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.size() == 0)
+        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.isEmpty())
             return "";
 
         String regionName = ctx.getCurrentRegion().getName();

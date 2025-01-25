@@ -802,7 +802,7 @@ public class AnnouncementsController extends SpringActionController
             List<AttachmentFile> files = getAttachmentFileList();
 
             AnnouncementModel insert = form.getBean();
-            if (null == insert.getParent() || 0 == insert.getParent().length())
+            if (null == insert.getParent() || insert.getParent().isEmpty())
                 insert.setParent(form.getParentId());
 
             try

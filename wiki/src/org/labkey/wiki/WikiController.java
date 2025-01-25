@@ -2239,7 +2239,7 @@ public class WikiController extends SpringActionController
 
             //check to ensure that there is not an existing wiki with the same name
             //but different entity id (works for both insert and update case)
-            if (null != name && name.length() > 0)
+            if (null != name && !name.isEmpty())
             {
                 Wiki existingWiki = WikiSelectManager.getWiki(container, name);
                 if (null != existingWiki && (null == form.getEntityId() || !StringUtils.equalsIgnoreCase(existingWiki.getEntityId(), form.getEntityId().toString())))

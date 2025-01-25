@@ -31,9 +31,6 @@ import java.util.Map;
 /**
  * Handles substitution parameters for R reports by mapping symbolic names to
  * files on generation, as well as rendering the results.
- *
- * User: Karl Lum
- * Date: May 5, 2008
  */
 public interface ParamReplacement
 {

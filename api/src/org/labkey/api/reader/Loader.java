@@ -23,8 +23,6 @@ import java.util.Map;
 
 /**
  * A loader of columnar data.
- * User: adam
- * Date: Aug 8, 2010
  */
 public interface Loader
 {

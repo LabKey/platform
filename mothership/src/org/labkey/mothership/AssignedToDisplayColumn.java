@@ -21,15 +21,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-/**
- * User: jeckels
- * Date: Apr 24, 2006
- */
 public class AssignedToDisplayColumn extends DataColumn
 {
     private final Container _container;
@@ -46,10 +43,9 @@ public class AssignedToDisplayColumn extends DataColumn
     {
         List<User> list = MothershipManager.get().getAssignedToList(_container);
 
-        out.write("<select name='");
-        out.write(getInputPrefix());
-        out.write(getColumnInfo().getPropertyName());
-        out.write("'>\n");
+        out.write("<select name=\"");
+        out.write(PageFlowUtil.filter(getColumnInfo().getPropertyName()));
+        out.write("\">\n");
         out.write("<option value=\"\"></option>\n");
 
         for (User member : list)
@@ -57,12 +53,12 @@ public class AssignedToDisplayColumn extends DataColumn
             out.write("<option value=\"");
             out.write(Integer.toString(member.getUserId()));
             out.write("\"");
-            if (value instanceof Integer && ((Integer) value).intValue() == member.getUserId())
+            if (value instanceof Integer i && i.intValue() == member.getUserId())
             {
                 out.write(" selected");
             }
             out.write(">");
-            out.write(member.getDisplayName(ctx.getViewContext().getUser()));
+            out.write(PageFlowUtil.filter(member.getDisplayName(ctx.getViewContext().getUser())));
             out.write("</option>\n");
         }
 
