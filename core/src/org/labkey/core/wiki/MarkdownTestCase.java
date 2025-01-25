@@ -44,14 +44,14 @@ class MarkdownTestCase extends Assert
         MarkdownService markdownService = MarkdownService.get();
 
         String testMdText = "<h2>header</h2>";
-        String expectedHtmlText = "<div class=\"lk-markdown-container\"><h2>header</h2>\n</div>";
+        String expectedHtmlText = "<div class=\"lk-markdown-container\"><p>&lt;h2&gt;header&lt;/h2&gt;</p>\n</div>";
         String htmlText = markdownService.toHtml(testMdText);
-        assertEquals("The MarkdownService failed to correctly translate markdown with html tags.", expectedHtmlText, htmlText);
+        assertEquals("The MarkdownService failed to correctly escape html tags.", expectedHtmlText, htmlText);
 
         testMdText = "<script>alert()</script>";
-        expectedHtmlText = "<div class=\"lk-markdown-container\"><script>alert()</script>\n</div>";
+        expectedHtmlText = "<div class=\"lk-markdown-container\"><p>&lt;script&gt;alert()&lt;/script&gt;</p>\n</div>";
         htmlText = markdownService.toHtml(testMdText);
-        assertEquals("The MarkdownService failed to correctly translate markdown with html tags.", expectedHtmlText, htmlText);
+        assertEquals("The MarkdownService failed to correctly escape script tags.", expectedHtmlText, htmlText);
     }
 
     /**
@@ -195,9 +195,9 @@ class MarkdownTestCase extends Assert
         String expectedHtmlText = """
                 <div class="lk-markdown-container"><hr />
                 <ul>
-                <li><strong><a href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image<br>
+                <li><strong><a rel="nofollow" href="https://nodeca.github.io/pica/demo/">pica</a></strong> - high quality and fast image<br>
                 resize in browser.</li>
-                <li><strong><a href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly<br>
+                <li><strong><a rel="nofollow" href="https://github.com/nodeca/babelfish/">babelfish</a></strong> - developer friendly<br>
                 i18n with plurals support and easy syntax.</li>
                 </ul>
                 <p>You will like those projects!</p>
@@ -333,10 +333,10 @@ class MarkdownTestCase extends Assert
                 </tbody>
                 </table>
                 <h2 id="links">Links</h2>
-                <p><a href="http://dev.nodeca.com">link text</a></p>
-                <p><a href="http://nodeca.github.io/pica/demo/" title="title text!">link with title</a></p>
-                <p>Autoconverted link <a href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a></p>
-                <p>Autoconverted email address <a href="mailto:markdown@labkey.test">markdown@labkey.test</a></p>
+                <p><a rel="nofollow" href="http://dev.nodeca.com">link text</a></p>
+                <p><a rel="nofollow" href="http://nodeca.github.io/pica/demo/" title="title text!">link with title</a></p>
+                <p>Autoconverted link <a rel="nofollow" href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a></p>
+                <p>Autoconverted email address <a rel="nofollow" href="mailto:markdown@labkey.test">markdown@labkey.test</a></p>
                 </div>""";
         String htmlText = markdownService.toHtml(testMdText);
         assertEquals("The MarkdownService failed to correctly translate complex markdown text to html.", expectedHtmlText, htmlText);

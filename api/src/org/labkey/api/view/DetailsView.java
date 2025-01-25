@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class DetailsView extends DataView
 {
-    private Object[] _pk;
+    private final Object[] _pk;
 
     public DetailsView(DataRegion dataRegion, TableViewForm form)
     {
@@ -82,8 +82,7 @@ public class DetailsView extends DataView
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.addAll(super.getClientDependencies());
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>(super.getClientDependencies());
 
         DataRegion dataRegion = getDataRegion();
         if (dataRegion != null)

@@ -117,7 +117,6 @@ public class DataRegion extends DisplayElement
     private ButtonBar _insertButtonBar = new ButtonBar();
     private ButtonBar _updateButtonBar = new ButtonBar();
     private ButtonBar _detailsButtonBar = new ButtonBar();
-    private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private final List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
@@ -280,8 +279,6 @@ public class DataRegion extends DisplayElement
         if (null == col)
             return;
         _displayColumns.add(col);
-        if (null != _inputPrefix)
-            col.setInputPrefix(_inputPrefix);
     }
 
     public void addDisplayColumn(int index, @NotNull DisplayColumn col)
@@ -290,14 +287,6 @@ public class DataRegion extends DisplayElement
         if (null == col)
             return;
         _displayColumns.add(index, col);
-        if (null != _inputPrefix)
-            col.setInputPrefix(_inputPrefix);
-    }
-
-    public void addDisplayColumns(List<DisplayColumn> displayColumns)
-    {
-        for (DisplayColumn displayColumn : displayColumns)
-            addDisplayColumn(displayColumn);
     }
 
     /* We don't want callers to modify this list directly.  However, this is the only way for subclasses to modify the list */
@@ -355,9 +344,6 @@ public class DataRegion extends DisplayElement
          * however, this breaks MS2 which seems to do funny things with nested RenderContexts
          */
         _displayColumns = displayColumns;
-        if (null != _inputPrefix)
-            for (DisplayColumn dc : _displayColumns)
-                dc.setInputPrefix(_inputPrefix);
     }
 
     public void removeColumns(String... columns)
@@ -415,13 +401,6 @@ public class DataRegion extends DisplayElement
                 return;
             }
         }
-    }
-
-    public void setInputPrefix(String inputPrefix)
-    {
-        _inputPrefix = inputPrefix;
-        for (DisplayColumn dc : _displayColumns)
-            dc.setInputPrefix(_inputPrefix);
     }
 
     public void addButtonBarConfig(ButtonBarConfig buttonBarConfig)
