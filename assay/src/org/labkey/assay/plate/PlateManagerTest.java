@@ -1633,13 +1633,27 @@ public final class PlateManagerTest
             }
         }
 
-        // Verify update validation
         var wellA3 = getWellRow(newPlate.getRowId(), "A3");
-        wellA3.put(PlateMetadataFields.barcode.name(), null);
 
-        var errors = updateWells(List.of(wellA3), true);
-        assertTrue(errors.hasErrors());
-        assertEquals(expectedMessage, errors.getMessage());
+        // Verify update validation
+        {
+            wellA3.put(PlateMetadataFields.barcode.name(), null);
+
+            var errors = updateWells(List.of(wellA3), true);
+            assertTrue(errors.hasErrors());
+            assertEquals(expectedMessage, errors.getMessage());
+        }
+
+        // Verify update only changing well metadata
+        {
+            var wellMetadataA3 = new CaseInsensitiveHashMap<>();
+            wellMetadataA3.put("RowId", wellA3.get("RowId"));
+            wellMetadataA3.put(PlateMetadataFields.barcode.name(), null);
+
+            var errors = updateWells(List.of(wellMetadataA3), true);
+            assertTrue(errors.hasErrors());
+            assertEquals(expectedMessage, errors.getMessage());
+        }
     }
 
     @Test

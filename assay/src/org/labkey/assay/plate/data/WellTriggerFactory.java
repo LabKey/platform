@@ -188,8 +188,11 @@ public final class WellTriggerFactory implements TriggerFactory
     {
         private final Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
         private final Set<Integer> modifiedPlates = new HashSet<>();
+        private final Map<Integer, Map<Integer, String>> wellReplicateGroupMap = new HashMap<>();
 
         private void checkForChanges(
+            Container container,
+            User user,
             @Nullable Map<String, Object> newRow,
             @Nullable Map<String, Object> oldRow,
             ValidationException errors,
@@ -236,7 +239,7 @@ public final class WellTriggerFactory implements TriggerFactory
 
             // If the sample, type, or any data on a replicate well has been updated,
             // then mark the plate as modified and subsequently validate the well groups.
-            if (!hasSampleChange && !hasTypeGroupReplicateChange)
+            if (!hasSampleChange && !hasTypeGroupReplicateChange && !hasReplicateChange(container, user, plateRowId, wellRowId))
                 return;
 
             modifiedPlates.add(plateRowId);
@@ -266,6 +269,13 @@ public final class WellTriggerFactory implements TriggerFactory
             }
 
             return value;
+        }
+
+        private boolean hasReplicateChange(Container container, User user, @NotNull Integer plateRowId, @NotNull Integer wellRowId)
+        {
+            var wellMap = wellReplicateGroupMap.computeIfAbsent(plateRowId, (pid) -> getWellReplicateGroups(container, user, pid));
+
+            return wellMap.get(wellRowId) != null;
         }
 
         private boolean hasSampleChange(@Nullable Map<String, Object> row)
@@ -319,7 +329,7 @@ public final class WellTriggerFactory implements TriggerFactory
             if (errors.hasErrors())
                 return;
 
-            checkForChanges(newRow, null, errors, extraContext);
+            checkForChanges(c, user, newRow, null, errors, extraContext);
         }
 
         @Override
@@ -336,7 +346,7 @@ public final class WellTriggerFactory implements TriggerFactory
             if (errors.hasErrors())
                 return;
 
-            checkForChanges(newRow, oldRow, errors, extraContext);
+            checkForChanges(c, user, newRow, oldRow, errors, extraContext);
         }
     }
 
@@ -349,6 +359,18 @@ public final class WellTriggerFactory implements TriggerFactory
         QueryService.get().getSelectBuilder(schema, sql.toDebugString())
                 .buildSqlSelector(null)
                 .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.Type.name())));
+
+        return map;
+    }
+
+    private Map<Integer, String> getWellReplicateGroups(Container container, User user, int plateRowId)
+    {
+        var map = new HashMap<Integer, String>();
+        UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
+        SQLFragment sql = new SQLFragment("SELECT RowId, ReplicateGroup FROM plate.Well WHERE PlateId = ?").add(plateRowId);
+        QueryService.get().getSelectBuilder(schema, sql.toDebugString())
+                .buildSqlSelector(null)
+                .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.ReplicateGroup.name())));
 
         return map;
     }
