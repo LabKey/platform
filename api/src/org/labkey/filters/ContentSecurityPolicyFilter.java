@@ -8,8 +8,11 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.util.JavaBlockCommentScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -148,12 +151,7 @@ public class ContentSecurityPolicyFilter implements Filter
             String paramValue = filterConfig.getInitParameter(paramName);
             if ("policy".equalsIgnoreCase(paramName))
             {
-                String s = paramValue.trim();
-                s = s.replace( '\n', ' ' );
-                s = s.replace( '\r', ' ' );
-                s = s.replace( '\t', ' ' );
-                s = s.replace((char)0x2018, (char)0x027);     // LEFT SINGLE QUOTATION MARK -> APOSTROPHE
-                s = s.replace((char)0x2019, (char)0x027);     // RIGHT SINGLE QUOTATION MARK -> APOSTROPHE
+                String s = filterPolicy(paramValue);
 
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
                 s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
@@ -174,6 +172,21 @@ public class ContentSecurityPolicyFilter implements Filter
                 throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected parameter name: " + paramName);
             }
         }
+    }
+
+    /** Filter out block comments and replace special characters in the provided policy */
+    public static String filterPolicy(String policy)
+    {
+        // We use Java-style block comments to document our policies; strip them since CSP syntax doesn't allow them.
+        JavaBlockCommentScanner scanner = new JavaBlockCommentScanner(policy.trim());
+        String s = scanner.stripComments().toString();
+        s = s.replace( '\n', ' ' );
+        s = s.replace( '\r', ' ' );
+        s = s.replace( '\t', ' ' );
+        s = s.replace((char)0x2018, (char)0x027);     // LEFT SINGLE QUOTATION MARK -> APOSTROPHE
+        s = s.replace((char)0x2019, (char)0x027);     // RIGHT SINGLE QUOTATION MARK -> APOSTROPHE
+
+        return s;
     }
 
     @Override
@@ -231,5 +244,43 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         ALLOWED_CONNECTION_SOURCES.remove(key);
         connectionSrc = getAllowedConnectionsHeader(ALLOWED_CONNECTION_SOURCES.values());
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testPolicyFiltering()
+        {
+            String policy = """
+                    default-src\t'self' https: http: ;
+                    connect-src 'self' http://www.labkey.org /* this is a mistake! */ localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
+                    object-src ‘none’ ;/* Hard to see, but there are curly quotes surrounding "none" on this line */\r
+                    style-src 'self'\rhttps: 'unsafe-inline' ;
+                    img-src 'self'\thttps: data: ;
+                    font-src 'self' http://www.labkey.com http: /* I don't know why we're doing this! */ https: data: ;
+                    script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
+                    base-uri 'self' ; /* what in the world?! */
+                    frame-ancestors 'self' ;  /* This here comment spans
+                        multiple lines
+                        for testing purposes
+                        */
+                    report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;
+                """;
+
+            // Multi-line for readability, but notice that newlines are removed before assignment
+            String expected = """
+                default-src 'self' https: http: ;
+                    connect-src 'self' http://www.labkey.org  localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
+                    object-src 'none' ;
+                     style-src 'self' https: 'unsafe-inline' ;
+                    img-src 'self' https: data: ;
+                    font-src 'self' http://www.labkey.com http:  https: data: ;
+                    script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
+                    base-uri 'self' ;
+                     frame-ancestors 'self' ;
+                      report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;""".replace('\n', ' ');
+
+            Assert.assertEquals(expected, filterPolicy(policy));
+        }
     }
 }
