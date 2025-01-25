@@ -40,6 +40,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.TableNotFoundException;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -74,7 +75,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Timer;
@@ -600,6 +600,7 @@ public abstract class VisitManager
         return f.isEmpty() ? null : f;
     }
 
+    private static final String START_DATE_COLUMN_NAME = "StartDate";
 
     protected void updateStartDates()
     {
@@ -607,12 +608,12 @@ public abstract class VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
 
         // Find the first demographic dataset that contain a StartDate column (if any)
-        StartDateInfo startDateInfo = getStartDateInfo(getStudy());
-        if (null != startDateInfo)
+        DatasetDefinition startDateDataset = getStartDateDataset(getStudy());
+        if (null != startDateDataset)
         {
-            TableInfo tInfo = startDateInfo.storageTableInfo();
-            ColumnInfo col = startDateInfo.startDateColumn();
-            Container c = startDateInfo.dataset().getContainer();
+            TableInfo tInfo = startDateDataset.getStorageTableInfo();
+            ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
+            Container c = startDateDataset.getContainer();
             String subSelect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
                     " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
                     " AND " + tableParticipant + ".Container = ?)");
@@ -630,27 +631,17 @@ public abstract class VisitManager
         StudyManager.getInstance().clearParticipantCache(getStudy().getContainer());
     }
 
-    public record StartDateInfo(DatasetDefinition dataset, TableInfo storageTableInfo, ColumnInfo startDateColumn){}
-
     // The first non-query and non-query-snapshot demographics dataset with a "StartDate" column is the start-date dataset
     //TODO: Use Property URI & Make sure "StartDate" is set properly
-    public static @Nullable StartDateInfo getStartDateInfo(StudyImpl study)
+    public static @Nullable DatasetDefinition getStartDateDataset(StudyImpl study)
     {
         return study.getDatasets().stream()
             .filter(DatasetDefinition::isDemographicData)
-            .filter(dataset -> !dataset.isQueryDataset())
-            .filter(dataset -> !dataset.isQuerySnapshot())
-            .map(dataset -> {
-                TableInfo ti = dataset.getStorageTableInfo();
-                if (ti != null)
-                {
-                    ColumnInfo column = ti.getColumn("StartDate");
-                    if (column != null)
-                        return new StartDateInfo(dataset, ti, column);
-                }
-                return null;
+            .filter(dataset -> !dataset.isQueryDataset() && !dataset.isQuerySnapshot())
+            .filter(dataset -> {
+                Domain domain = dataset.getDomain();
+                return domain != null && domain.getPropertyByName(START_DATE_COLUMN_NAME) != null;
             })
-            .filter(Objects::nonNull)
             .findFirst()
             .orElse(null);
     }

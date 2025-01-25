@@ -64,7 +64,6 @@ import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.visitmanager.VisitManager;
-import org.labkey.study.visitmanager.VisitManager.StartDateInfo;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudyExportContext;
@@ -180,16 +179,15 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // to be included so that visits are correctly calculated
                 if (sourceStudy.getTimepointType() == TimepointType.DATE)
                 {
-                    StartDateInfo info = VisitManager.getStartDateInfo(sourceStudy);
-                    if (info != null)
+                    DatasetDefinition startDateDataset = VisitManager.getStartDateDataset(sourceStudy);
+                    if (startDateDataset != null)
                     {
-                        DatasetDefinition dataset = info.dataset();
-                        datasets.add(dataset);
+                        datasets.add(startDateDataset);
 
                         // also add the visits included in this dataset
                         if (selectedVisits != null)
                         {
-                            for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), dataset.getDatasetId()))
+                            for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), startDateDataset.getDatasetId()))
                                 selectedVisits.add(visit.getId());
                         }
                     }
