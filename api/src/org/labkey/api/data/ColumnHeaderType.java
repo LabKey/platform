@@ -68,7 +68,11 @@ public enum ColumnHeaderType
             if (columnInfo != null)
             {
                 name = columnInfo.getName();
-                org.labkey.api.query.FieldKey fieldKey = org.labkey.api.query.FieldKey.fromString(name);
+                org.labkey.api.query.FieldKey fieldKey;
+                if (columnInfo.isLookup())
+                    fieldKey = org.labkey.api.query.FieldKey.fromString(name);
+                else
+                    fieldKey = org.labkey.api.query.FieldKey.fromParts(name);
 
                 fieldKey = fixMissingValueIndicator(columnInfo, fieldKey);
                 name = fieldKey.toDisplayString();
@@ -90,9 +94,15 @@ public enum ColumnHeaderType
             String name;
             if (columnInfo != null)
             {
+                name = columnInfo.getName();
                 org.labkey.api.query.FieldKey fieldKey = columnInfo.getFieldKey();
                 if (fieldKey == null)
-                    fieldKey = org.labkey.api.query.FieldKey.fromString(columnInfo.getName());
+                {
+                    if (columnInfo.isLookup())
+                        fieldKey = org.labkey.api.query.FieldKey.fromString(name);
+                    else
+                        fieldKey = org.labkey.api.query.FieldKey.fromParts(name);
+                }
 
                 fieldKey = fixMissingValueIndicator(columnInfo, fieldKey);
                 name = fieldKey.toString();
