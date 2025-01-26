@@ -64,7 +64,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -4871,18 +4871,14 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     TableInfo ti = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName()).getTable(form.getQueryName());
-                    var colNames = new CaseInsensitiveHashSet();
-                    for (ColumnInfo column : ti.getColumns())
-                    {
-                        colNames.add(column.getName());
-                    }
+                    Set<String> colNames = ti.getColumns().stream().map(ColumnInfo::getName).collect(LabKeyCollectors.toCaseInsensitiveHashSet());
 
                     List<String> notFound = Arrays.stream(QueryDatasetTable.REQUIRED_COLUMNS)
-                            .filter(value -> !colNames.contains(value.toLowerCase()))
+                            .filter(value -> !colNames.contains(value))
                             .toList();
 
                     if (!notFound.isEmpty())
-                        errors.reject("snapshotQuery.error", "The source query is missing the following required columns for a query based snapshot: " + String.join(", ", notFound));
+                        errors.reject("snapshotQuery.error", "The source query is missing the following required columns for a query backed dataset: " + String.join(", ", notFound));
                 }
             }
 
