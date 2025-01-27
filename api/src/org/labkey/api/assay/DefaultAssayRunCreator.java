@@ -400,6 +400,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, auditMessage, context.getAuditUserComment());
 
                 transaction.addCommitTask(() -> replacedRun.archiveDataFiles(context.getUser()), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> AssayService.get().deindexAssayRuns(List.of(replacedRun)), DbScope.CommitTaskOption.POSTCOMMIT);
             }
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
