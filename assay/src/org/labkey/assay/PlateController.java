@@ -686,6 +686,18 @@ public class PlateController extends SpringActionController
 
             if (form.getData() != null && form.getTemplateId() != null)
                 errors.reject(ERROR_GENERIC, "Either \"data\" or a \"templateId\" can be specified but not both.");
+
+            PlateSet plateSet = PlateManager.get().getPlateSet(getContainer(), form.getPlateSetId());
+
+            if (plateSet == null)
+            {
+                errors.reject(ERROR_GENERIC, String.format("PlateSet with id \"%d\" not found.", form.getPlateSetId()));
+            }
+
+            if (plateSet != null && plateSet.isPrimary() && form.getTemplateId() != null)
+            {
+                errors.reject(ERROR_GENERIC, "Cannot create plate from template for primary plate sets");
+            }
         }
 
         @Override
