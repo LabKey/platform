@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.17.2-fb-alans-issues.1",
+    "@labkey/components": "6.17.2-fb-alans-issues.2",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
