@@ -69,8 +69,10 @@ public enum ColumnHeaderType
             {
                 name = columnInfo.getName();
                 org.labkey.api.query.FieldKey fieldKey;
-                if (columnInfo.isLookup())
+                if (columnInfo.isLookup()) // Issue 52036: FIXME if it is a lookup and the field it looks up to has a slash, what do we do?
+                {
                     fieldKey = org.labkey.api.query.FieldKey.fromString(name);
+                }
                 else
                     fieldKey = org.labkey.api.query.FieldKey.fromParts(name);
 
