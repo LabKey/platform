@@ -955,8 +955,6 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
-
         }
 
         private BatchValidationException getErrors()
