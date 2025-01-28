@@ -301,11 +301,10 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         goToManageViews();
         Locator.linkWithText("Manage Categories").findElement(getDriver()).click();
         _extHelper.waitForExtDialog("Manage Categories");
-        Window categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
+        Window<?> categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
         categoryWindow.clickButton("New Category", 0);
         WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
-        setFormElementJS(newCategoryField, name);
-        fireEvent(newCategoryField, SeleniumEvent.blur);
+        newCategoryField.sendKeys(name);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
         _extHelper.waitForExtDialogToDisappear("Manage Categories");
