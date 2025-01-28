@@ -955,7 +955,7 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-            _tsvWriter.setAdditionalEscapeChars(TSVWriter.BACKSLASH_CHAR_STRING);
+            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
 
         }
 
@@ -2490,7 +2490,7 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-            _tsvWriter.setAdditionalEscapeChars(TSVWriter.BACKSLASH_CHAR_STRING);
+            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
