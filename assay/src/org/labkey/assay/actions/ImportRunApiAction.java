@@ -611,9 +611,19 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 if (name.endsWith("]"))
                 {
                     if (name.startsWith("properties["))
-                        getProperties().put(name.substring("properties[".length(), name.length()-1), pv.getValue());
+                    {
+                        String key = name.substring("properties[".length(), name.length() - 1);
+                        if (key.startsWith("'") && key.endsWith("'"))
+                            key = key.substring(1, key.length()-1);
+                        getProperties().put(key, pv.getValue());
+                    }
                     else if (name.startsWith("batchProperties["))
-                        getBatchProperties().put(name.substring("batchProperties[".length(), name.length()-1), pv.getValue());
+                    {
+                        String key = name.substring("batchProperties[".length(), name.length()-1);
+                        if (key.startsWith("'") && key.endsWith("'"))
+                            key = key.substring(1, key.length()-1);
+                        getBatchProperties().put(key, pv.getValue());
+                    }
                 }
             }
             return springBindParameters(this, "form", m);
