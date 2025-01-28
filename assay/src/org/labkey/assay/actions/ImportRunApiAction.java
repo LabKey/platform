@@ -612,21 +612,30 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 {
                     if (name.startsWith("properties["))
                     {
-                        String key = name.substring("properties[".length(), name.length() - 1);
-                        if (key.startsWith("'") && key.endsWith("'"))
-                            key = key.substring(1, key.length()-1);
+                        String key = parsePropertiesKey(name.substring("properties[".length(), name.length() - 1));
                         getProperties().put(key, pv.getValue());
                     }
                     else if (name.startsWith("batchProperties["))
                     {
-                        String key = name.substring("batchProperties[".length(), name.length()-1);
-                        if (key.startsWith("'") && key.endsWith("'"))
-                            key = key.substring(1, key.length()-1);
+                        String key = parsePropertiesKey(name.substring("batchProperties[".length(), name.length()-1));
                         getBatchProperties().put(key, pv.getValue());
                     }
                 }
             }
             return springBindParameters(this, "form", m);
+        }
+
+        private String parsePropertiesKey(String key)
+        {
+            if (key == null || key.isEmpty())
+                return key;
+
+            // Issue 52119: account for leading/trailing single quotes and decode double quotes
+            if (key.startsWith("'") && key.endsWith("'"))
+                key = key.substring(1, key.length()-1);
+            key = key.replaceAll("%22", "\"");
+
+            return key;
         }
     }
 }
