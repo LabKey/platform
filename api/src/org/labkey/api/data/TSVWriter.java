@@ -39,11 +39,12 @@ public abstract class TSVWriter extends TextWriter
     protected char _chDelimiter = '\t';
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
-    protected char _escapeChar = '\\';
+    public static final String BACKSLASH_CHAR_STRING = "\\";
 
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
     protected boolean _preserveEmptyString = false;
+    private String _additionalEscapeChars = null;
 
     public enum DELIM
     {
@@ -143,6 +144,11 @@ public abstract class TSVWriter extends TextWriter
         _preserveEmptyString = preserveEmptyString;
     }
 
+    public void setAdditionalEscapeChars(String additionalEscapeChars)
+    {
+        _additionalEscapeChars = additionalEscapeChars;
+    }
+
     protected String _escapedCharsString = null;
 
     /**
@@ -201,7 +207,7 @@ public abstract class TSVWriter extends TextWriter
         {
             // NOTE: Excel always includes comma in the list of characters that will be quoted,
             // but we will only quote comma if it is the delimiter character.
-            _escapedCharsString = "\r\n" + _rowSeparator + _chDelimiter + _chQuote + _escapeChar;
+            _escapedCharsString = "\r\n" + _rowSeparator + _chDelimiter + _chQuote;
         }
 
 
@@ -211,6 +217,8 @@ public abstract class TSVWriter extends TextWriter
         char firstCh = value.charAt(0);
         char lastCh = value.charAt(len-1);
         if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))
+            return true;
+        if (StringUtils.containsAny(value, _additionalEscapeChars))
             return true;
         return StringUtils.containsAny(value,_escapedCharsString);
     }
