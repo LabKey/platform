@@ -701,7 +701,7 @@ public class PlateController extends SpringActionController
 
                 if (plateSet != null && plateSet.isPrimary() && form.getTemplateId() != null)
                 {
-                    errors.reject(ERROR_GENERIC, "Cannot add a plate from a template to a primary plate set");
+                    errors.reject(ERROR_GENERIC, "Cannot add a plate from a template to a primary plate set.");
                 }
             }
         }
