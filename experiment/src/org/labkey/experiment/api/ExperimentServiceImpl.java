@@ -4347,8 +4347,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Archive all data files prior to deleting
                 //  ideally this would be transacted as a commit task but we decided against it due to complications
                 run.archiveDataFiles(user);
-
-                deleteRun(run, datasToDelete, user, userComment);
+                // Re-index replaced run if replacing run is deleted
+                if (run.getReplacesRuns() != null)
+                {
+                    transaction.addCommitTask(() ->
+                                    run.getReplacesRuns().forEach(replacedRun ->
+                                            AssayService.get().indexAssayRun(replacedRun.getRowId())
+                                    ),
+                            DbScope.CommitTaskOption.POSTCOMMIT
+                    );
+                }
+                deleteRun(run, datasToDelete, user, userComment); // here, replacesRuns is intact
 
                 for (ExpData data : datasToDelete)
                 {

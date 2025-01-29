@@ -766,6 +766,7 @@ public class AssayManager implements AssayService
                 ).forEach(r -> indexAssayRun(task, r));
     }
 
+    @Override
     public void indexAssayRun(int expRunRowId)
     {
         SearchService ss = SearchService.get();

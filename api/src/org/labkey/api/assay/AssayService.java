@@ -134,6 +134,8 @@ public interface AssayService
     void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol);
     void indexAssays(SearchService.IndexTask task, Container c);
 
+    void indexAssayRun(int expRunRowId);
+
     void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
 
     void deindexAssayRuns(Collection<? extends ExpRun> expRuns);
