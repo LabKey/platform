@@ -301,25 +301,25 @@ public enum JdbcType
 
 
     public final int sqlType;
-    public final Class cls;
+    public final Class<?> cls;
     public final String xtype;
     public final String json;
 
-    private final Class typeCls;
+    private final Class<?> typeCls;
     private final Converter converter;
 
 
-    JdbcType(int type, @NotNull Class cls)
+    JdbcType(int type, @NotNull Class<?> cls)
     {
         this(type, cls, null);
     }
 
-    JdbcType(int type, @NotNull Class cls, @Nullable Class typeCls)
+    JdbcType(int type, @NotNull Class<?> cls, @Nullable Class<?> typeCls)
     {
         this(type, cls, typeCls, "textfield");
     }
 
-    JdbcType(int type, @NotNull Class cls, @Nullable Class typeCls, String xtype)
+    JdbcType(int type, @NotNull Class<?> cls, @Nullable Class<?> typeCls, String xtype)
     {
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
@@ -332,7 +332,7 @@ public enum JdbcType
         this.converter = ConvertUtils.lookup(cls);
     }
 
-    private static final HashMap<Class, JdbcType> classMap = new HashMap<>();
+    private static final HashMap<Class<?>, JdbcType> classMap = new HashMap<>();
     private static final HashMap<Integer, JdbcType> sqlTypeMap = new HashMap<>();
 
     static
@@ -398,7 +398,7 @@ public enum JdbcType
         return null != jt ? jt : OTHER;
     }
 
-    public static JdbcType valueOf(Class cls)
+    public static JdbcType valueOf(Class<?> cls)
     {
         JdbcType t = classMap.get(cls);
         if (null != t)
