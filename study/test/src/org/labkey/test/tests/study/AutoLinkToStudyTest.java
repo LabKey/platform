@@ -38,7 +38,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        AutoLinkToStudyTest initTest = (AutoLinkToStudyTest) getCurrentTest();
+        AutoLinkToStudyTest initTest = getCurrentTest();
         initTest.doSetup();
     }
 
