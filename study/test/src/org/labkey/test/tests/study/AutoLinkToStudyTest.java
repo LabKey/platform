@@ -304,6 +304,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         Window<?> categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
         categoryWindow.clickButton("New Category", 0);
         WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
+        newCategoryField.clear();
         newCategoryField.sendKeys(name);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
