@@ -10,6 +10,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
@@ -30,13 +31,13 @@ public class QueryDataset extends VirtualTable<UserSchema>
         UserSchema us = QueryService.get().getUserSchema(new LimitedUser(User.guest, ProjectAdminRole.class), def.getSourceQueryContainer(), def.getSourceQuerySchema());
         if (us == null)
         {
-            throw new IllegalArgumentException("QueryDataset requires a valid schema");
+            throw new MetadataParseException("QueryDataset requires a valid schema");
         }
 
         TableInfo ti = us.getTable(def.getSourceQueryName());
         if (ti == null)
         {
-            throw new IllegalArgumentException("QueryDataset requires a valid query");
+            throw new MetadataParseException("QueryDataset requires a valid query");
         }
 
         _inner = new QuerySchemaTableInfo(ti);
@@ -95,57 +96,47 @@ public class QueryDataset extends VirtualTable<UserSchema>
             wrapAllColumns(ti.getColumns());
 
             // Key
-            if (getColumn("Key") != null)
+            if (getColumn(DatasetDomainKind._KEY) == null)
             {
-                addColumn(new ExprColumn(this, "_Key", getColumn("Key").getValueSql(ExprColumn.STR_TABLE_ALIAS), JdbcType.VARCHAR));
-            }
-            else
-            {
-                throw new IllegalArgumentException("QueryDataset requires a query with a unique Key column");
+                throw new MetadataParseException("A query dataset requires a source query with a unique _Key column");
             }
 
             // ParticipantId
             if (!ensureParticipantIdCol(ti))
             {
-                throw new IllegalArgumentException("QueryDataset requires a query with a ParticipantId, SubjectId, or Id column");
+                throw new MetadataParseException("A query dataset requires a source query with a ParticipantId, SubjectId, or Id column");
             }
 
             // Date
-            if (getColumn("Date") == null)
+            if (getColumn(DatasetDomainKind.DATE) == null)
             {
-                throw new IllegalArgumentException("QueryDataset requires a query with a Date column");
+                throw new MetadataParseException("A query dataset requires a source query with a Date column");
             }
 
             // QCState
             // could consider looking up the "Completed" state and filling that in automatically if found
-            if (getColumn("QCState") == null)
+            if (getColumn(DatasetDomainKind.QCSTATE) == null)
             {
-                throw new IllegalArgumentException("QueryDataset requires a query with a QCState column");
+                throw new MetadataParseException("A query dataset requires a source query with a QCState column");
             }
 
             // LSID
-            if (getColumn("lsid") == null)
+            if (getColumn(DatasetDomainKind.LSID) == null)
             {
-                throw new IllegalArgumentException("QueryDataset requires a query with a LSID column");
+                throw new MetadataParseException("A query dataset requires a source query with a LSID column");
             }
 
             // SequenceNum
-            if (getColumn("SequenceNum") == null)
+            if (getColumn(DatasetDomainKind.SEQUENCENUM) == null)
             {
-                ExprColumn sequenceNumCol = new ExprColumn(this, "SequenceNum", new SQLFragment(StudyUtils.sequenceNumFromDateSQL("Date")), JdbcType.DECIMAL);
+                ExprColumn sequenceNumCol = new ExprColumn(this, DatasetDomainKind.SEQUENCENUM, new SQLFragment(StudyUtils.sequenceNumFromDateSQL(DatasetDomainKind.DATE)), JdbcType.DECIMAL);
                 addColumn(sequenceNumCol);
             }
 
             // SourceLSID
-            if (getColumn("SourceLSID") == null)
+            if (getColumn(DatasetDomainKind.SOURCELSID) == null)
             {
-                addColumn(new ExprColumn(this, "SourceLSID", new SQLFragment("NULL"), JdbcType.VARCHAR));
-            }
-
-            // SourceLSID
-            if (getColumn("SourceLSID") == null)
-            {
-                addColumn(new ExprColumn(this, "SourceLSID", new SQLFragment("NULL"), JdbcType.VARCHAR));
+                addColumn(new ExprColumn(this, DatasetDomainKind.SOURCELSID, new SQLFragment("NULL"), JdbcType.VARCHAR));
             }
         }
 
@@ -160,7 +151,7 @@ public class QueryDataset extends VirtualTable<UserSchema>
 
         private boolean ensureParticipantIdCol(TableInfo ti)
         {
-            if (getColumn("ParticipantId") != null)
+            if (getColumn(DatasetDomainKind.PARTICIPANTID) != null)
             {
                 return true;
             }
@@ -168,13 +159,13 @@ public class QueryDataset extends VirtualTable<UserSchema>
             if (ti.getColumn("SubjectId") != null)
             {
                 ColumnInfo subjectIdCol = ti.getColumn("SubjectId");
-                addColumn(new ExprColumn(this, "ParticipantId", subjectIdCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), subjectIdCol.getJdbcType()));
+                addColumn(new ExprColumn(this, DatasetDomainKind.PARTICIPANTID, subjectIdCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), subjectIdCol.getJdbcType()));
                 return true;
             }
             else if (ti.getColumn("Id") != null)
             {
                 ColumnInfo idCol = ti.getColumn("Id");
-                addColumn(new ExprColumn(this, "ParticipantId", idCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), idCol.getJdbcType()));
+                addColumn(new ExprColumn(this, DatasetDomainKind.PARTICIPANTID, idCol.getValueSql(ExprColumn.STR_TABLE_ALIAS), idCol.getJdbcType()));
                 return true;
             }
 

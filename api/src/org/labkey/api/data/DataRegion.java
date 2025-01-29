@@ -192,7 +192,7 @@ public class DataRegion extends DisplayElement
      * Messages that are displayed to the user and included in Query API responses.
      * These messages' content should NOT be HTML encoded as the responsibility
      * for encoding is left to the caller.
-     * See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42017
+     * See Issue #42017
      */
     public static class Message
     {
@@ -424,19 +424,6 @@ public class DataRegion extends DisplayElement
         if (null != value)
             _hiddenFormFields.add(Pair.of(name, value));
     }
-
-    public String getHiddenFormFieldValue(String name)
-    {
-        for (Pair<String, Object> hiddenFormField : _hiddenFormFields)
-        {
-            if (name.equals(hiddenFormField.getKey()))
-            {
-                return (String) hiddenFormField.getValue();
-            }
-        }
-        return null;
-    }
-
 
     public
     @NotNull
@@ -1912,7 +1899,6 @@ public class DataRegion extends DisplayElement
 
             out.write("</table>");
 
-            renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
         }
 
@@ -1943,24 +1929,6 @@ public class DataRegion extends DisplayElement
             selector.setNamedParameters(getQueryParameters());
             selector.setMaxRows(getMaxRows()).setOffset(getOffset());
             ctx.setResults(selector.getResults());
-        }
-    }
-
-    private void renderDetailsHiddenFields(Writer out, Map rowMap) throws IOException
-    {
-        if (null != rowMap)
-        {
-            List<ColumnInfo> pkCols = getTable().getPkColumns();
-
-            for (ColumnInfo pkCol : pkCols)
-            {
-                assert null != rowMap.get(pkCol.getAlias());
-                out.write("<input type=\"hidden\" name=\"");
-                out.write(pkCol.getName());
-                out.write("\" value=\"");
-                out.write(PageFlowUtil.filter(rowMap.get(pkCol.getAlias()).toString()));
-                out.write("\">");
-            }
         }
     }
 
