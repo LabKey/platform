@@ -955,7 +955,6 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-
         }
 
         private BatchValidationException getErrors()
@@ -2489,6 +2488,7 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
+            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
