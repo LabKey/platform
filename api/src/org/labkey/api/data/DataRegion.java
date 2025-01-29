@@ -166,6 +166,8 @@ public class DataRegion extends DisplayElement
     private List<Message> _messages;
     private final List<MessageSupplier> _messageSuppliers = new ArrayList<>();
 
+    public static final String EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS = "dataregionAsyncTotalRows";
+
     private static class GroupTable
     {
         private final List<DisplayColumnGroup> _groups = new ArrayList<>();
@@ -806,7 +808,7 @@ public class DataRegion extends DisplayElement
     }
 
     @NotNull
-    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx, boolean showPaginationCount) throws IOException
     {
         if (_aggregateResults == null)
         {
@@ -814,7 +816,7 @@ public class DataRegion extends DisplayElement
             assert results != null;
             _complete = results.isComplete();
 
-            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && showPaginationCount;
             countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
             List<Aggregate> baseAggregates = getSummaryStatsAggregates(ctx.getBaseSummaryStatsProviders());
@@ -1360,6 +1362,12 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
+        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        {
+            // Issue 51036: load totalRows count async for DataRegions
+            dataRegionJSON.put("showPaginationCount", false);
+            dataRegionJSON.put("showPaginationCountAsync", true);
+        }
         dataRegionJSON.put("showRows", getShowRows().toString().toLowerCase());
         dataRegionJSON.put("showRecordSelectors", true);
         dataRegionJSON.put("showSelectMessage", _showSelectMessage);
@@ -1521,7 +1529,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
-        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx);
+        // Issue 51036: load totalRows count async for DataRegions
+        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
+
+        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);
 
         if (!aggregateResults.isEmpty())
         {
