@@ -613,11 +613,13 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     if (name.startsWith("properties["))
                     {
                         String key = parsePropertiesKey(name.substring("properties[".length(), name.length() - 1));
-                        getProperties().put(key, pv.getValue());
+                        if (key != null)
+                            getProperties().put(key, pv.getValue());
                     }
                     else if (name.startsWith("batchProperties["))
                     {
                         String key = parsePropertiesKey(name.substring("batchProperties[".length(), name.length()-1));
+                        if (key != null)
                         getBatchProperties().put(key, pv.getValue());
                     }
                 }
@@ -628,7 +630,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String parsePropertiesKey(String key)
         {
             if (key == null || key.isEmpty())
-                return key;
+                return null;
 
             // Issue 52119: account for leading/trailing single quotes and decode double quotes
             if (key.startsWith("'") && key.endsWith("'"))
