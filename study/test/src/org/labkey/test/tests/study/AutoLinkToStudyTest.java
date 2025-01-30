@@ -19,6 +19,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PermissionsHelper;
 import org.labkey.test.util.StudyHelper;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -306,7 +307,8 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
         actionClear(newCategoryField);
         newCategoryField.sendKeys(name);
-        sleep(500);
+        newCategoryField.sendKeys(Keys.ENTER);
+        sleep(1000);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
         _extHelper.waitForExtDialogToDisappear("Manage Categories");
