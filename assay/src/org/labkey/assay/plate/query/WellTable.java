@@ -7,6 +7,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -78,6 +79,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         Lsid,
         PlateId,
         Position,
+        ReplicateGroup,
         Row,
         RowId,
         SampleID,
@@ -121,13 +123,14 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public void addColumns()
     {
         super.addColumns();
-        addWellGroupColumn();
+        addSampleGroupColumn();
         addPositionColumn();
         addWellMetadataColumns();
         addTypeColumn();
+        addReplicateGroupColumn();
     }
 
-    private void addWellGroupColumn()
+    private SQLFragment wellGroupSql(boolean forReplicateGroup)
     {
         SQLFragment groupSql = new SQLFragment("SELECT WG.Name FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
@@ -137,18 +140,36 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
-                .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .add(TsvPlateLayoutHandler.TYPE);
+                .append(" WHERE P.AssayType = ?")
+                .add(TsvPlateLayoutHandler.TYPE)
+                .append(" AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .append(" AND WG.TypeName ").append(forReplicateGroup ? "=" : "!=").append(" ?")
+                .add(WellGroup.Type.REPLICATE.name());
 
         // The underlying schema allows for multiple well groups per well, however, as a "well group" column
         // we do not support having multiple values. Here we limit the query to return a single result.
-        groupSql = new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
+        return new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
+    }
 
-        var column = new ExprColumn(this, Column.WellGroup.fieldKey(), groupSql, JdbcType.VARCHAR);
-        column.setLabel("Group");
+    private void addSampleGroupColumn()
+    {
+        var column = new ExprColumn(this, Column.WellGroup.fieldKey(), wellGroupSql(false), JdbcType.VARCHAR);
+        column.setLabel("Sample Group");
         column.setUserEditable(true);
         column.setShownInInsertView(true);
-        column.setDescription("Identifies the group to which the well belongs.");
+        column.setShownInUpdateView(true);
+        column.setDescription("Identifies the sample group to which the well belongs.");
+        addColumn(column);
+    }
+
+    private void addReplicateGroupColumn()
+    {
+        var column = new ExprColumn(this, Column.ReplicateGroup.fieldKey(), wellGroupSql(true), JdbcType.VARCHAR);
+        column.setLabel("Replicate Group");
+        column.setUserEditable(true);
+        column.setShownInInsertView(true);
+        column.setShownInUpdateView(true);
+        column.setDescription("Identifies the replicate group to which the well belongs.");
         addColumn(column);
     }
 
@@ -182,8 +203,9 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 .append(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
                 .append(" ON P.RowId = WG.PlateId ")
-                .append(" WHERE P.AssayType = ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .add(TsvPlateLayoutHandler.TYPE);
+                .append(" WHERE P.AssayType = ? AND WG.TypeName != ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
+                .add(TsvPlateLayoutHandler.TYPE)
+                .add(WellGroup.Type.REPLICATE);
 
         // The underlying schema allows for multiple well groups per well, however, as a "well type" column
         // we do not support having multiple values. Here we limit the query to return a single result.
@@ -193,6 +215,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
         column.setUserEditable(true);
         column.setShownInInsertView(true);
+        column.setShownInUpdateView(true);
         column.setDescription("Specifies the type of well.");
         addColumn(column);
     }
