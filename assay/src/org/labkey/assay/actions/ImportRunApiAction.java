@@ -620,7 +620,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     {
                         String key = parsePropertiesKey(name.substring("batchProperties[".length(), name.length()-1));
                         if (key != null)
-                        getBatchProperties().put(key, pv.getValue());
+                            getBatchProperties().put(key, pv.getValue());
                     }
                 }
             }
