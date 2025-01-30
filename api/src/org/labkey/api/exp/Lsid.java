@@ -123,7 +123,7 @@ public class Lsid
      */
 
     @Nullable
-    private static String[] parseLsid(String s)
+    private static String[] parseLsid(@Nullable String s)
     {
         if (s == null)
             return null;
