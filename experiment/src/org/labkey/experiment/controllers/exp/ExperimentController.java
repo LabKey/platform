@@ -3502,10 +3502,12 @@ public class ExperimentController extends SpringActionController
                     notPermittedIds.add(expData.getRowId());
             }
 
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
             response.put("containers", containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass),
+                    "canEditName", svc.getAllowUserSpecificNamesValue(c)
             )).toList());
 
             response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
@@ -3573,10 +3575,13 @@ public class ExperimentController extends SpringActionController
                     notPermittedIds.add(material.getRowId());
             }
 
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
+
             response.put("containers", containers.stream().map(c -> Map.of(
                     "id", c.getEntityId(),
                     "path", (Object) c.getPath(),
-                    "permitted", permClass == null || c.hasPermission(getUser(), permClass)
+                    "permitted", permClass == null || c.hasPermission(getUser(), permClass),
+                    "canEditName", svc.getAllowUserSpecificNamesValue(c)
             )).toList());
 
             response.put("notPermitted", notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());

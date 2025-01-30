@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class WellTriggerFactory implements TriggerFactory
+public final class WellTriggerFactory implements TriggerFactory
 {
     @Override
     public @NotNull Collection<Trigger> createTrigger(@Nullable Container c, TableInfo table, Map<String, Object> extraContext)
@@ -40,7 +40,7 @@ public class WellTriggerFactory implements TriggerFactory
     }
 
     // When no "Type" is given but "SampleId" is populated, provide 'Sample' as the type
-    protected class EnsureSampleWellTypeTrigger implements Trigger
+    private class EnsureSampleWellTypeTrigger implements Trigger
     {
         private final Map<Integer, String> wellTypeMap = new LRUMap<>(PlateSet.MAX_PLATE_SET_WELLS);
 
@@ -121,7 +121,8 @@ public class WellTriggerFactory implements TriggerFactory
         }
     }
 
-    protected class ValidatePrimaryPlateSetUniqueSamplesTrigger implements Trigger
+    @SuppressWarnings("InnerClassMayBeStatic")
+    private class ValidatePrimaryPlateSetUniqueSamplesTrigger implements Trigger
     {
         private final HashSet<Integer> mutatedWellRowIds = new HashSet<>();
 
@@ -182,11 +183,12 @@ public class WellTriggerFactory implements TriggerFactory
         }
     }
 
-    protected class ComputeWellGroupsTrigger implements Trigger
+    @SuppressWarnings("InnerClassMayBeStatic")
+    private class ComputeWellGroupsTrigger implements Trigger
     {
         private final Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
         private final Set<Integer> modifiedPlates = new HashSet<>();
-        private final Map<Integer, Map<Integer, String>> wellTypeMap = new HashMap<>();
+        private final Map<Integer, Map<Integer, String>> wellReplicateGroupMap = new HashMap<>();
 
         private void checkForChanges(
             Container container,
@@ -202,12 +204,18 @@ public class WellTriggerFactory implements TriggerFactory
                 return;
 
             var hasSampleChange = hasSampleChange(newRow);
-            var hasTypeGroupChange = hasTypeGroupChange(newRow);
+            var hasTypeGroupReplicateChange = hasTypeGroupReplicateChange(newRow);
 
             // If this is an insertion (newRow != null && oldRow == null),
-            // then verify further to ignore when type and group are present but are set to null.
-            if (hasTypeGroupChange && oldRow == null)
-                hasTypeGroupChange = newRow.get(WellTable.Column.Type.name()) != null || newRow.get(WellTable.Column.WellGroup.name()) != null;
+            // then verify further to ignore when type, group, and replicateGroup are present but are set to null.
+            if (hasTypeGroupReplicateChange && oldRow == null)
+            {
+                hasTypeGroupReplicateChange = (
+                    newRow.get(WellTable.Column.Type.name()) != null ||
+                    newRow.get(WellTable.Column.WellGroup.name()) != null ||
+                    newRow.get(WellTable.Column.ReplicateGroup.name()) != null
+                );
+            }
 
             var wellRowId = (Integer) newRow.get(WellTable.Column.RowId.name());
             if (wellRowId == null)
@@ -231,42 +239,43 @@ public class WellTriggerFactory implements TriggerFactory
 
             // If the sample, type, or any data on a replicate well has been updated,
             // then mark the plate as modified and subsequently validate the well groups.
-            if (!hasSampleChange && !hasTypeGroupChange && !hasReplicateChange(container, user, plateRowId, wellRowId))
+            if (!hasSampleChange && !hasTypeGroupReplicateChange && !hasReplicateChange(container, user, plateRowId, wellRowId))
                 return;
 
             modifiedPlates.add(plateRowId);
 
-            if (hasTypeGroupChange)
+            if (hasTypeGroupReplicateChange)
             {
-                String type = null;
-                String group = null;
-
                 // If the row does contain the key, then it is treated as an explicit change.
                 // In this case we set the value to the empty string.
-                if (newRow.containsKey(WellTable.Column.Type.name()))
-                {
-                    type = (String) newRow.get(WellTable.Column.Type.name());
-                    if (StringUtils.trimToNull(type) == null)
-                        type = "";
-                }
-                if (newRow.containsKey(WellTable.Column.WellGroup.name()))
-                {
-                    group = (String) newRow.get(WellTable.Column.WellGroup.name());
-                    if (StringUtils.trimToNull(group) == null)
-                        group = "";
-                }
-
-                var change = new PlateManager.WellGroupChange(plateRowId, wellRowId, type, group);
+                var type = getStringValue(WellTable.Column.Type, newRow);
+                var group = getStringValue(WellTable.Column.WellGroup, newRow);
+                var replicateGroup = getStringValue(WellTable.Column.ReplicateGroup, newRow);
+                var change = new PlateManager.WellGroupChange(plateRowId, wellRowId, type, group, replicateGroup);
 
                 wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
             }
         }
 
+        private @Nullable String getStringValue(WellTable.Column column, @NotNull Map<String, Object> row)
+        {
+            String value = null;
+
+            if (row.containsKey(column.name()))
+            {
+                value = (String) row.get(column.name());
+                if (StringUtils.trimToNull(value) == null)
+                    value = "";
+            }
+
+            return value;
+        }
+
         private boolean hasReplicateChange(Container container, User user, @NotNull Integer plateRowId, @NotNull Integer wellRowId)
         {
-            var wellMap = wellTypeMap.computeIfAbsent(plateRowId, (pid) -> getWellTypes(container, user, pid));
+            var wellMap = wellReplicateGroupMap.computeIfAbsent(plateRowId, (pid) -> getWellReplicateGroups(container, user, pid));
 
-            return WellGroup.Type.REPLICATE.name().equals(wellMap.get(wellRowId));
+            return wellMap.get(wellRowId) != null;
         }
 
         private boolean hasSampleChange(@Nullable Map<String, Object> row)
@@ -274,9 +283,13 @@ public class WellTriggerFactory implements TriggerFactory
             return row != null && row.containsKey(WellTable.Column.SampleID.name());
         }
 
-        private boolean hasTypeGroupChange(@Nullable Map<String, Object> row)
+        private boolean hasTypeGroupReplicateChange(@Nullable Map<String, Object> row)
         {
-            return row != null && (row.containsKey(WellTable.Column.Type.name()) || row.containsKey(WellTable.Column.WellGroup.name()));
+            return row != null && (
+                row.containsKey(WellTable.Column.Type.name()) ||
+                row.containsKey(WellTable.Column.WellGroup.name()) ||
+                row.containsKey(WellTable.Column.ReplicateGroup.name())
+            );
         }
 
         @Override
@@ -346,6 +359,18 @@ public class WellTriggerFactory implements TriggerFactory
         QueryService.get().getSelectBuilder(schema, sql.toDebugString())
                 .buildSqlSelector(null)
                 .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.Type.name())));
+
+        return map;
+    }
+
+    private Map<Integer, String> getWellReplicateGroups(Container container, User user, int plateRowId)
+    {
+        var map = new HashMap<Integer, String>();
+        UserSchema schema = QueryService.get().getUserSchema(user, container, "plate");
+        SQLFragment sql = new SQLFragment("SELECT RowId, ReplicateGroup FROM plate.Well WHERE PlateId = ?").add(plateRowId);
+        QueryService.get().getSelectBuilder(schema, sql.toDebugString())
+                .buildSqlSelector(null)
+                .forEach(r -> map.put(r.getInt(WellTable.Column.RowId.name()), r.getString(WellTable.Column.ReplicateGroup.name())));
 
         return map;
     }
