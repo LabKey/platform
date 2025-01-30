@@ -1767,7 +1767,7 @@ public class NameGenerator
 
             if (_newNames.containsKey(name))
             {
-                throw new DuplicateNameException(name, _rowNumber);
+                throw new DuplicateNameException(name, _rowNumber, _parentTable);
             }
             else
             {
@@ -2766,9 +2766,9 @@ public class NameGenerator
     {
         private final String _name;
 
-        DuplicateNameException(String name, int rowNumber)
+        DuplicateNameException(String name, int rowNumber, @Nullable TableInfo tableInfo)
         {
-            super("Duplicate name '" + name + "' on row " + rowNumber, rowNumber);
+            super("Duplicate name '" + name + "' on row " + rowNumber + (tableInfo != null ? " of '" + tableInfo.getName() + "'" : ""), rowNumber);
             _name = name;
         }
 
