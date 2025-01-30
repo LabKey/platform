@@ -1,5 +1,6 @@
 package org.labkey.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +10,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -42,14 +44,19 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
+import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.query.PlateTable;
+import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -366,11 +373,11 @@ public class AssayUpgradeCode implements UpgradeCode
 
         // Determine all containers that have a Plate where Samples are specified in wells
         SQLFragment sql = new SQLFragment("""
-                    SELECT DISTINCT P.Container
-                    FROM assay.Well AS W
-                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                    WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
-                """).add(TsvPlateLayoutHandler.TYPE);
+            SELECT DISTINCT P.Container
+            FROM assay.Well AS W
+            INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+            WHERE P.AssayType = ? AND W.SampleId IS NOT NULL
+        """).add(TsvPlateLayoutHandler.TYPE);
         List<String> containerIds = new SqlSelector(scope, sql).getArrayList(String.class);
 
         for (String containerId : containerIds)
@@ -390,17 +397,16 @@ public class AssayUpgradeCode implements UpgradeCode
 
             _log.info(String.format("Populating plate well types in \"%s\".", container.getPath()));
 
-
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
                 SQLFragment wellSql = new SQLFragment("""
-                            SELECT W.RowId, W.PlateId
-                            FROM assay.Well AS W
-                            INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
-                            WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
-                                SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
-                            )
-                        """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
+                    SELECT W.RowId, W.PlateId
+                    FROM assay.Well AS W
+                    INNER JOIN assay.Plate AS P ON P.RowId = W.PlateId
+                    WHERE P.Container = ? AND P.AssayType = ? AND W.SampleId IS NOT NULL AND W.RowId NOT IN (
+                        SELECT WellId FROM assay.WellGroupPositions AS WGP WHERE WGP.WellId = W.RowId
+                    )
+                """).add(containerId).add(TsvPlateLayoutHandler.TYPE);
 
                 Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges = new HashMap<>();
                 Collection<Map<String, Object>> sampleWellRows = new SqlSelector(scope, wellSql).getMapCollection();
@@ -408,7 +414,7 @@ public class AssayUpgradeCode implements UpgradeCode
                 {
                     Integer plateRowId = (Integer) sampleWellRow.get("PlateId");
                     Integer wellRowId = (Integer) sampleWellRow.get("RowId");
-                    PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null);
+                    PlateManager.WellGroupChange change = new PlateManager.WellGroupChange(plateRowId, wellRowId, WellGroup.Type.SAMPLE.name(), null, null);
 
                     wellGroupChanges.computeIfAbsent(plateRowId, HashMap::new).put(wellRowId, change);
                 }
@@ -420,11 +426,86 @@ public class AssayUpgradeCode implements UpgradeCode
                 }
 
                 _log.info(String.format("Updating \"%d\" well groups across \"%d\" plates in \"%s\".", sampleWellRows.size(), wellGroupChanges.entrySet().size(), container.getPath()));
-                PlateManager.get().computeWellGroups(container, User.getAdminServiceUser(), wellGroupChanges);
+                computeWellGroups(container, User.getAdminServiceUser(), wellGroupChanges);
                 _log.info(String.format("Completed well group update in \"%s\".", container.getPath()));
 
                 tx.commit();
             }
+        }
+    }
+
+    // This is a functional copy of PlateManager.computeWellGroups() prior to the replicates refactor
+    // to represent replicates with the "Replicate Groups" column. When this is removed the methods called on
+    // PlateManager should be once again made private if possible.
+    private static void computeWellGroups(
+        Container container,
+        User user,
+        Map<Integer, Map<Integer, PlateManager.WellGroupChange>> wellGroupChanges
+    ) throws Exception
+    {
+        for (var entry : wellGroupChanges.entrySet())
+        {
+            var plate = (PlateImpl) PlateManager.get().requirePlate(container, entry.getKey(), "Failed to update well groups.");
+            if (!TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(plate.getAssayType()))
+                continue;
+
+            var wellChanges = entry.getValue();
+            Map<Pair<WellGroup.Type, String>, List<Position>> wellGroupings = new HashMap<>();
+
+            for (var wellData : PlateManager.get().getWellData(container, user, plate.getRowId(), false, false))
+            {
+                WellGroup.Type type = wellData.getType();
+                String wellGroup = wellData.getWellGroup();
+
+                Integer wellRowId = wellData.getRowId();
+                var wellChange = wellChanges.get(wellRowId);
+                if (wellChange != null)
+                {
+                    if (wellChange.type() != null)
+                    {
+                        String typeStr = StringUtils.trimToNull(wellChange.type());
+                        if (typeStr != null)
+                            type = WellGroup.Type.valueOf(typeStr);
+                        else
+                            type = null;
+                    }
+                    if (wellChange.group() != null)
+                        wellGroup = StringUtils.trimToNull(wellChange.group());
+                }
+
+                // Type/Group are not set and are not being updated
+                if (type == null && wellGroup == null)
+                    continue;
+
+                var position = plate.getPosition(wellData.getRow(), wellData.getCol());
+
+                // Specifying a group requires that a type is also specified
+                if (type == null)
+                {
+                    throw new ValidationException(String.format(
+                        "Well %s must specify a \"%s\" when a \"%s\" is specified.",
+                        position.getDescription(),
+                        WellTable.Column.Type.name(),
+                        WellTable.Column.WellGroup.name()
+                    ));
+                }
+
+                var wellGroupKey = Pair.of(type, wellGroup);
+                wellGroupings.computeIfAbsent(wellGroupKey, k -> new ArrayList<>()).add(position);
+            }
+
+            // Mark pre-existing well groups on this plate for deletion
+            for (WellGroup existingWellGroup : plate.getWellGroups())
+                plate.markWellGroupForDeletion(existingWellGroup);
+
+            // Create new well groups for this plate
+            for (var wellGrouping : wellGroupings.entrySet())
+            {
+                var typeGroup = wellGrouping.getKey();
+                plate.addWellGroup(typeGroup.second, typeGroup.first, wellGrouping.getValue());
+            }
+
+            PlateManager.get().savePlateImpl(container, user, plate);
         }
     }
 
@@ -729,5 +810,133 @@ public class AssayUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+    /**
+     * Called from assay-25.000-25.001.sql
+     * Migrate replicate well groups to be represented via the "Replicate Group" column.
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public static void migrateReplicateGroups(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+
+        // - For all "Standard" plates that have a "REPLICATE" well group:
+        //   - If the plate does not contain a "SAMPLE" zone, then create one
+        //   - For each "REPLICATE" well group:
+        //     - Get all the wells that are in the group
+        //     - Add those wells to the "SAMPLE" zone. This will be done in the assay.WellGroupPositions table
+
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            long numPlatesWithReplicates;
+            {
+                SQLFragment plateRowIdsSql = new SQLFragment("""
+                    SELECT DISTINCT P.RowId
+                    FROM assay.Plate AS P
+                    INNER JOIN assay.WellGroup AS WG ON WG.PlateId = P.RowId
+                    WHERE P.AssayType = ? AND WG.TypeName = ?
+                """)
+                .add("Standard")   // TsvPlateLayoutHandler.TYPE
+                .add("REPLICATE"); // WellGroup.Type.REPLICATE
+
+                numPlatesWithReplicates = new SqlSelector(scope, plateRowIdsSql).getRowCount();
+            }
+
+            if (numPlatesWithReplicates > 0)
+            {
+                ensureSampleZoneWellGroups(scope);
+
+                // Insert missing well positions into the "SAMPLE" well groups where name is NULL
+                {
+                    SQLFragment sql = new SQLFragment("""
+                        INSERT INTO assay.WellGroupPositions (wellGroupId, wellId)
+                        SELECT sampleWG.RowId AS wellGroupId, replicateWGP.wellId
+                        FROM assay.WellGroup AS replicateWG
+                        INNER JOIN assay.WellGroupPositions AS replicateWGP ON replicateWG.RowId = replicateWGP.wellGroupId
+                        INNER JOIN assay.WellGroup AS sampleWG ON sampleWG.PlateId = replicateWG.PlateId
+                        INNER JOIN assay.Plate AS P ON P.RowId = replicateWG.PlateId
+                        LEFT JOIN assay.WellGroupPositions AS sampleWGP ON sampleWG.RowId = sampleWGP.wellGroupId AND replicateWGP.wellId = sampleWGP.wellId
+                        WHERE P.AssayType = ? AND replicateWG.TypeName = ? AND sampleWG.TypeName = ? AND sampleWG.Name IS NULL AND sampleWGP.wellId IS NULL
+                    """)
+                    .add("Standard")  // TsvPlateLayoutHandler.TYPE
+                    .add("REPLICATE") // WellGroup.Type.REPLICATE;
+                    .add("SAMPLE");   // WellGroup.Type.SAMPLE;
+
+                    new SqlExecutor(scope).execute(sql);
+                }
+            }
+
+            // Display the ReplicateGroup column by default on each plate set where WellGroup is currently displayed
+            {
+                SQLFragment sql = new SQLFragment("""
+                    INSERT INTO assay.PlateSetProperty (PlateSetId, FieldKey)
+                    SELECT DISTINCT PSP.PlateSetId, ? AS FieldKey
+                    FROM assay.PlateSetProperty AS PSP WHERE PSP.FieldKey = ?
+                """)
+                .add("ReplicateGroup") // WellTable.Column.ReplicateGroup
+                .add("WellGroup");     // WellTable.Column.WellGroup
+
+                new SqlExecutor(scope).execute(sql);
+            }
+
+            tx.commit();
+        }
+    }
+
+    private static void ensureSampleZoneWellGroups(DbScope scope) throws Exception
+    {
+        List<List<?>> sampleZoneRowValues = new ArrayList<>();
+
+        // Determine the set of plates that do not yet have a "SAMPLE" well group that does not have a name (a.k.a. "Sample zone").
+        SQLFragment needSampleZoneSql = new SQLFragment("""
+            SELECT DISTINCT P.RowId, P.Container, WG.Template
+            FROM assay.Plate AS P
+            INNER JOIN assay.WellGroup AS WG ON WG.PlateId = P.RowId
+            WHERE P.AssayType = ? AND WG.TypeName = ?
+            AND P.RowId NOT IN (
+                SELECT PP.RowId
+                FROM assay.Plate AS PP
+                INNER JOIN assay.WellGroup AS WGG ON WGG.PlateId = PP.RowId
+                WHERE PP.AssayType = ? AND WGG.TypeName = ? AND WGG.Name IS NULL
+            )
+            ORDER BY P.RowId
+        """)
+        .add("Standard")  // TsvPlateLayoutHandler.TYPE
+        .add("REPLICATE") // WellGroup.Type.REPLICATE;
+        .add("Standard")  // TsvPlateLayoutHandler.TYPE
+        .add("SAMPLE");   // WellGroup.Type.SAMPLE;
+
+        try (ResultSet rs = new SqlSelector(scope, needSampleZoneSql).getResultSet())
+        {
+            Map<String, Container> containers = new HashMap<>();
+            while (rs.next())
+            {
+                int plateRowId = rs.getInt("RowId");
+                String containerId = rs.getString("Container");
+                boolean template = rs.getBoolean("Template");
+
+                Container container = containers.computeIfAbsent(containerId, ContainerManager::getForId);
+                if (container == null)
+                {
+                    // This is never expected to occur due to schema constraint of foreign key assay.WellGroup.Container -> core.Containers
+                    throw new IllegalStateException(String.format("Unable to resolve container with entityId \"%s\" for plate rowId (%d).", containerId, plateRowId));
+                }
+
+                Lsid lsid = PlateManager.get().getLsid(WellGroup.class, container);
+                sampleZoneRowValues.add(List.of(plateRowId, lsid.toString(), container.getEntityId(), template, "SAMPLE")); // WellGroup.Type.SAMPLE;
+            }
+        }
+
+        if (!sampleZoneRowValues.isEmpty())
+        {
+            String insertSql = "INSERT INTO assay.WellGroup (PlateId, LSID, Container, Template, TypeName) VALUES (?, ?, ?, ?, ?)";
+            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, sampleZoneRowValues);
+        }
+
+        _log.info("Inserted {} new \"sample zone\" well groups.", sampleZoneRowValues.size());
     }
 }
