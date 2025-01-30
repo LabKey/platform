@@ -120,14 +120,16 @@ public class ResponseHelper
     {
         response.setHeader("Expires", "");
         response.setHeader("Cache-Control", "public");
-        response.setHeader("Pragma", "");
+        if (null != response.getHeader("Pragma"))
+            response.setHeader("Pragma", "");
     }
 
     public static void setPublicStatic(HttpServletResponse response, Duration duration)
     {
         response.setDateHeader("Expires", HeartBeat.currentTimeMillis() + duration.toMillis());
         response.setHeader("Cache-Control", "public, max-age=" + duration.toSeconds());
-        response.setHeader("Pragma", "");
+        if (null != response.getHeader("Pragma"))
+            response.setHeader("Pragma", "");
     }
 
     public static void setPublicStatic(HttpServletResponse response, int days)

@@ -41,8 +41,13 @@
     boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
     if (isExplicitNoIndex)
         model.setRobotsNone();
-    boolean isRobot = context.isRobot();
-    boolean isNoIndex = model.hasMetaNoIndex();
+
+    // set robots header in addition to <meta> (it is easier to test)
+    if (model.getTemplate() == PageConfig.Template.Print)
+        model.setNoIndex();
+    String robotsTag = model.getMetaTag("robots");
+    if (StringUtils.isNotBlank(robotsTag))
+        response.setHeader("X-Robots-Tag", robotsTag);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,7 +82,7 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
-    if (isRobot && isNoIndex && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
+    if (context.isRobot() && StringUtils.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
     {
         %></body></html><%
         return;

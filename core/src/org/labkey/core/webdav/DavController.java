@@ -4985,6 +4985,7 @@ public class DavController extends SpringActionController
 
 
     static final Path jquery = new Path("internal","jQuery");
+    static final Pattern hashedPattern = Pattern.compile("^(.+\\.)?\\p{XDigit}{20}\\.\\w{2,5}$");
 
     public static boolean alwaysCacheFile(Path p)
     {
@@ -4994,7 +4995,9 @@ public class DavController extends SpringActionController
         if (p.startsWith(jquery))
             return true;
         String name = p.getName();
-        return name.contains(".cache.") || name.endsWith(".ttf") || name.endsWith(".woff") || name.endsWith(".woff2");
+        if (name.contains(".cache.") || name.endsWith(".ttf") || name.endsWith(".woff") || name.endsWith(".woff2"))
+            return true;
+        return hashedPattern.matcher(name).matches();
     }
 
     private static final URI PROJECT_ROOT = AppProps.getInstance().getProjectRoot() == null ? null : new File(AppProps.getInstance().getProjectRoot()).toURI();
@@ -5560,8 +5563,6 @@ public class DavController extends SpringActionController
     }
 
 
-    static Pattern nameVersionExtension = Pattern.compile("(.*)\\{.*}(\\.[^.]*)");
-
     @Nullable WebdavResource resolvePath()
     {
         return resolvePath(false);
@@ -5578,15 +5579,6 @@ public class DavController extends SpringActionController
         Path containerPath = c.getParsedPath();
         if (!path.startsWith(containerPath))
             return null;
-
-        // check for version info in name e.g. stylesheet{47}.css
-        if (isStaticContent(path))
-        {
-            // TODO 12.3  path = ResourceURL.stripVersion(path);
-            Matcher m = nameVersionExtension.matcher(path.getName());
-            if (m.matches())
-                path = path.getParent().append(m.group(1) + m.group(2));
-        }
         return resolvePath(path, reload);
     }
 

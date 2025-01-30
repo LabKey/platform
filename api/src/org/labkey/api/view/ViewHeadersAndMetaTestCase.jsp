@@ -1,0 +1,126 @@
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
+<%@ page import="org.springframework.mock.web.MockHttpServletRequest" %>
+<%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
+<%@ page import="java.io.ByteArrayOutputStream" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.io.PrintWriter" %>
+<%@ page import="java.io.UnsupportedEncodingException" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="static org.junit.Assert.*" %>
+<%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
+<%--
+This tests uses MockRequest to test some expected Headers and Meta tags for various types of requests.
+--%>
+<%!
+    static class MockHeaderResponse extends MockHttpServletResponse
+    {
+        PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream(), true, StringUtilsLabKey.DEFAULT_CHARSET)
+        {
+            @Override
+            public void write(@NotNull char[] buf, int off, int len)
+            {
+            }
+
+            @Override
+            public void write(int c)
+            {
+            }
+
+            @Override
+            public void write(@NotNull String s, int off, int len)
+            {
+            }
+        };
+
+        @Override
+        public @NotNull PrintWriter getWriter() throws UnsupportedEncodingException
+        {
+            return printWriter;
+        }
+    }
+
+    Map<String, String> getHeaders(String uri) throws ServletException, IOException
+    {
+        var res = new MockHeaderResponse();
+        TestContext.get().getRequest().getRequestDispatcher(uri).forward(TestContext.get().getRequest(), res);
+        assertEquals(200, res.getStatus());
+        Map<String, String> headers = new TreeMap<>();
+        res.getHeaderNames().stream().forEach(h -> headers.put(h, res.getHeader(h)));
+        return headers;
+    }
+
+    void assertHeader(Map<String, String> headers, String key)
+    {
+        assertTrue(headers.containsKey(key));
+    }
+
+    void assertNoHeader(Map<String, String> headers, String key)
+    {
+        assertFalse(headers.containsKey(key));
+    }
+
+    void assertHeaderValue(Map<String, String> headers, String key, String value)
+    {
+        assertHeader(headers, key);
+        assertEquals(value, headers.get(key));
+    }
+
+    void assertHeaderContains(Map<String, String> headers, String key, String... values)
+    {
+        assertHeader(headers, key);
+        for (var v : values)
+            assertTrue(headers.get(key).contains(v));
+    }
+
+    @Test
+    public void testCacheHeaders() throws Exception
+    {
+        Map<String, String> headers;
+
+        // regular old module file
+        headers = getHeaders("/_.gif");
+        assertNoHeader(headers, "Cache-Control");
+        assertHeader(headers, "ETag");
+        assertNoHeader(headers, "Expires");
+        assertHeader(headers, "Last-Modified");
+        assertNoHeader(headers, "Pragma");
+
+        // module file with content hash
+        headers = getHeaders("/_.221d8352905f2c38b3cb.gif");   // this file is in webapp just for this test
+        assertHeaderContains(headers, "Cache-Control", "public", "max-age=31536000");
+        assertHeader(headers, "ETag");
+        assertHeader(headers, "Expires");
+        assertHeader(headers, "Last-Modified");
+        assertNoHeader(headers, "Pragma");
+
+        // dynamic view
+        headers = getHeaders("/home/project-begin.view");
+        assertHeaderContains(headers, "Cache-Control", "private", "no-cache", "no-store", "max-age=0", "must-revalidate");
+        assertNoHeader(headers, "ETag");
+        assertHeaderValue(headers, "Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
+        assertNoHeader(headers, "Last-Modified");
+        assertHeaderValue(headers, "Pragma", "no-cache");
+    }
+
+    @Test
+    public void testRobotsHeader() throws Exception
+    {
+        Map<String, String> headers;
+
+        headers = getHeaders("/home/project-begin.view");
+        assertNoHeader(headers, "X-Robots-Tag");
+
+        headers = getHeaders("/home/project-begin.view?query.containerFilterName=AllFolders");
+        assertHeaderContains(headers, "X-Robots-Tag", "noindex");
+
+        headers = getHeaders("/home/project-begin.view?_print=1");
+        assertHeaderContains(headers, "X-Robots-Tag", "noindex");
+    }
+
+
+%>

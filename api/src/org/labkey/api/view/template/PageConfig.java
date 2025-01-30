@@ -53,7 +53,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -157,10 +156,6 @@ public class PageConfig
     private boolean _includePermissions = false;
     private boolean _includeInheritableFormats = false;
 
-    public final Date createTime = new Date();
-    public final Throwable createThrowable = new Throwable();
-
-    /* TODO make private */
     public PageConfig(HttpServletRequest request)
     {
         _request = request;
@@ -171,7 +166,6 @@ public class PageConfig
         _sid = String.format("%04x", UniqueID.getSessionScopedUID(_request));
     }
 
-    /* TODO make private */
     public PageConfig(HttpServletRequest request, String title)
     {
         this(request);
@@ -392,6 +386,12 @@ public class PageConfig
     }
 
 
+    public @Nullable String getMetaTag(String tag)
+    {
+        return StringUtils.join(_meta.get(tag), ", ");
+    }
+
+
     public void setNoIndex()
     {
         _meta.removeMapping("robots", "index");
@@ -411,11 +411,6 @@ public class PageConfig
     {
         setNoIndex();
         setNoFollow();
-    }
-
-    public boolean hasMetaNoIndex()
-    {
-        return _meta.containsMapping("robots", "index");
     }
 
     public void setCanonicalLink(String link)

@@ -281,12 +281,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
         HttpServletRequest request = getViewContext().getRequest();
         if (null != StringUtils.trimToNull(request.getParameter(ActionURL.Param._print.name())))
             page.setTemplate(PageConfig.Template.Print);
-        if (null != StringUtils.trimToNull(request.getParameter(ActionURL.Param._template.name())))
+        String templateName = StringUtils.trimToNull(request.getParameter(ActionURL.Param._template.name()));
+        if (null != templateName)
         {
             try
             {
-                PageConfig.Template template =
-                        PageConfig.Template.valueOf(StringUtils.trimToNull(request.getParameter(ActionURL.Param._template.name())));
+                PageConfig.Template template = PageConfig.Template.valueOf(templateName);
                 page.setTemplate(template);
             }
             catch (IllegalArgumentException ex)

@@ -34,6 +34,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.AbstractPropertyAccessor;
 import org.springframework.beans.BeanUtils;
@@ -206,10 +207,8 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             _debug = true;
         }
 
-        if (hasStringValue(ActionURL.Param._print.name()))
-        {
-            _print = true;
-        }
+        // SpringActionController.defaultPageConfig() has logic for isPrint, don't need to duplicate here
+        _print = PageConfig.Template.Print == HttpView.currentPageConfig().getTemplate();
     }
 
     private boolean hasStringValue(String propertyName)

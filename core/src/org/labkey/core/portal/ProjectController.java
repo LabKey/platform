@@ -96,6 +96,7 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -309,6 +310,21 @@ public class ProjectController extends SpringActionController
         }
     }
 
+
+    /**
+     * NOTE SpringActionController wants to render the outer template.  BeginAction is special and wants
+     * to render the portal template itself.  So we override getTemplate().
+     */
+
+    @Override
+    protected @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
+    {
+        if (action instanceof BeginAction)
+            return null;
+        return super.getTemplate(context, mv, action, page);
+    }
+
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class BeginAction extends SimpleViewAction<PageForm>
@@ -406,7 +422,7 @@ public class ProjectController extends SpringActionController
             if (title != null)
                 page.setTitle(title, appendPath);
 
-            getPageConfig().setTemplate(Template.None);
+            // see getTemplate() override in this controller
             return template;
         }
 
