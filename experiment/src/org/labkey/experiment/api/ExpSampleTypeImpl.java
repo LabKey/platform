@@ -542,7 +542,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         }
         catch (NameGenerator.DuplicateNameException dup)
         {
-            throw new ExperimentException("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber(), dup);
+            throw new ExperimentException(dup.getMessage(), dup);
         }
         catch (NameGenerator.NameGenerationException e)
         {

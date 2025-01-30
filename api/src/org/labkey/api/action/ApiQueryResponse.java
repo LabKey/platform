@@ -164,7 +164,7 @@ public class ApiQueryResponse implements ApiResponse
                 if (!complete && _rowCount == 0)
                 {
                     // Load the aggregates
-                    _dataRegion.getAggregateResults(_ctx);
+                    _dataRegion.getAggregateResults(_ctx, _dataRegion.getShowPaginationCount());
                     if (_dataRegion.getTotalRows() != null)
                     {
                         _rowCount = _dataRegion.getTotalRows();

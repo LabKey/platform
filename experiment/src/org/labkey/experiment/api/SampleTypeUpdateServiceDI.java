@@ -1763,7 +1763,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             catch (NameGenerator.DuplicateNameException dup)
             {
-                addRowError("Duplicate name '" + dup.getName() + "' on row " + dup.getRowNumber());
+                addRowError(dup.getMessage());
             }
             catch (NameGenerator.NameGenerationException e)
             {

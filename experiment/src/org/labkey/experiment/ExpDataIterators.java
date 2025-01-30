@@ -2972,7 +2972,7 @@ public class ExpDataIterators
                 String name = colInfo.getName();
 
                 fieldIndexes.add(i);
-                header.add(name);
+                header.add(_tsvWriter.quoteValue(name));
             }
 
             File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv");
@@ -3022,12 +3022,12 @@ public class ExpDataIterators
                 if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     // no dependencies to register if the names of samples are not being provided in the file.
                     if (_dataIdIndex != -1)
                     {
@@ -3039,12 +3039,12 @@ public class ExpDataIterators
                 else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 else if (lcName.startsWith(INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     if (_dataIdIndex != -1)
                         dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
                 }
