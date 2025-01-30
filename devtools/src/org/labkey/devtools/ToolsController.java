@@ -421,7 +421,7 @@ public class ToolsController extends SpringActionController
                         Files.walkFileTree(root, new SimpleFileVisitor<>()
                         {
                             @Override
-                            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            public @NotNull FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs)
                             {
                                 String filePath = file.toString();
                                 if (filePath.endsWith(".java"))

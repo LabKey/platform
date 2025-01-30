@@ -66,7 +66,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
         sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
         sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
-        sb.append("     name: ").append(PageFlowUtil.jsString(getInputPrefix() + formFieldName)).append("\n");
+        sb.append("     name: ").append(PageFlowUtil.jsString(formFieldName)).append("\n");
         sb.append("     ,value: ").append(PageFlowUtil.jsString(strVal)).append("\n");
         sb.append("     ,disabled: ").append(disabledInput).append("\n");
         sb.append("     ,schemaName: ").append(PageFlowUtil.jsString(fk.getLookupSchemaName())).append("\n");

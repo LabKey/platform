@@ -16,12 +16,6 @@
 
 package org.labkey.api.dataiterator;
 
-/**
- * User: matthewb
- * Date: 2011-05-17
- * Time: 1:47 PM
- */
-
 public interface DataIteratorBuilder
 {
     DataIterator getDataIterator(DataIteratorContext context);
