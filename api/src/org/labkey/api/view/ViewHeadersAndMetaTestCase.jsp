@@ -12,12 +12,25 @@
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.view.ViewServlet" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
+<%@ page import="java.net.URISyntaxException" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 <%--
 This tests uses MockRequest to test some expected Headers and Meta tags for various types of requests.
 --%>
 <%!
-    static class MockHeaderResponse extends MockHttpServletResponse
+    static class _ForwardWrapper extends ViewServlet.ForwardWrapper
+    {
+        _ForwardWrapper(URLHelper url)
+        {
+            super(TestContext.get().getRequest(), url);
+            // NOTE : we can't intercept the "org.apache.tomcat.sendfile.filename" functionality, so don't use it for these tests
+            TestContext.get().getRequest().setAttribute("avoidSendFile", "true");
+        }
+    };
+
+    static class _MockHeaderResponse extends MockHttpServletResponse
     {
         PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream(), true, StringUtilsLabKey.DEFAULT_CHARSET)
         {
@@ -37,6 +50,31 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
             }
         };
 
+        ServletOutputStream servletOutputStream = new ServletOutputStream()
+        {
+            @Override
+            public boolean isReady()
+            {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener)
+            {
+            }
+
+            @Override
+            public void write(int b) throws IOException
+            {
+            }
+        };
+
+        @Override
+        public @NotNull ServletOutputStream getOutputStream()
+        {
+            return servletOutputStream;
+        }
+
         @Override
         public @NotNull PrintWriter getWriter() throws UnsupportedEncodingException
         {
@@ -44,13 +82,15 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
         }
     }
 
-    Map<String, String> getHeaders(String uri) throws ServletException, IOException
+    Map<String, String> getHeaders(String requestUri) throws ServletException, IOException, URISyntaxException
     {
-        var res = new MockHeaderResponse();
-        TestContext.get().getRequest().getRequestDispatcher(uri).forward(TestContext.get().getRequest(), res);
+        URLHelper url = new URLHelper(AppProps.getInstance().getContextPath() + requestUri);
+        var req = new _ForwardWrapper(url);
+        var res = new _MockHeaderResponse();
+        req.getRequestDispatcher(url.getLocalURIString()).forward(TestContext.get().getRequest(), res);
         assertEquals(200, res.getStatus());
         Map<String, String> headers = new TreeMap<>();
-        res.getHeaderNames().stream().forEach(h -> headers.put(h, res.getHeader(h)));
+        res.getHeaderNames().forEach(h -> headers.put(h, res.getHeader(h)));
         return headers;
     }
 

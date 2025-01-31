@@ -5128,7 +5128,8 @@ public class DavController extends SpringActionController
 
                 // Issue 51344 - slow downloads from remote file system. Only for files that aren't part of the
                 // webapp itself, or under the source root (for development machines)
-                boolean avoidSendFile = file != null &&
+                boolean avoidSendFile = null != getRequest().getAttribute("avoidSendFile");
+                avoidSendFile |= file != null &&
                         OptionalFeatureService.get().isFeatureEnabled(FileStream.STAGE_FILE_TRANSFERS) &&
                         !URIUtil.isDescendant(ModuleLoader.getInstance().getWebappDir().toURI(), file.toUri()) &&
                         (PROJECT_ROOT == null || !URIUtil.isDescendant(PROJECT_ROOT, file.toUri()));

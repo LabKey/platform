@@ -231,10 +231,10 @@ public class ViewServlet extends HttpServlet
         module.dispatch(new ForwardWrapper(request, url), response, url);
     }
 
-    static class ForwardWrapper extends HttpServletRequestWrapper
+    public static class ForwardWrapper extends HttpServletRequestWrapper
     {
         final MockHttpServletRequest _mock;
-        ForwardWrapper(HttpServletRequest request, ActionURL url)
+        public ForwardWrapper(HttpServletRequest request, URLHelper url)
         {
             super(request);
             _mock = new MockHttpServletRequest(ViewServlet.getViewServletContext(), "GET", url.getPath());
