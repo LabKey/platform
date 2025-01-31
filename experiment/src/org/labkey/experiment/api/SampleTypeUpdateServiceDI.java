@@ -132,6 +132,7 @@ import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
@@ -147,10 +148,6 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
-import static org.labkey.experiment.api.ExpMaterialTableImpl.ALIQUOT_COUNT_LABEL;
-import static org.labkey.experiment.api.ExpMaterialTableImpl.ALIQUOT_VOLUME_LABEL;
-import static org.labkey.experiment.api.ExpMaterialTableImpl.AVAILABLE_ALIQUOT_COUNT_LABEL;
-import static org.labkey.experiment.api.ExpMaterialTableImpl.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
@@ -182,7 +179,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             AvailableAliquotVolume.toString(), JdbcType.DOUBLE
     );
 
-    private static final Set<String> ALIQUOT_ROLLUP_FIELD_LABELS = Set.of(ALIQUOT_COUNT_LABEL, ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_COUNT_LABEL);
 
     static
     {
@@ -1600,18 +1596,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isAliquotRollupHeader(String name)
         {
-            for (String rollupField : ALIQUOT_ROLLUP_FIELDS.keySet())
-            {
-                if (rollupField.equalsIgnoreCase(name))
-                    return true;
-            }
-            for (String rollupLabel : ALIQUOT_ROLLUP_FIELD_LABELS)
-            {
-                if(rollupLabel.replaceAll("\\s+","").equalsIgnoreCase(name.replaceAll("\\s+","")))
-                    return true;
-            }
-
-            return false;
+            Set<String> rollupFields = new CaseInsensitiveHashSet();
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet());
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
+            return rollupFields.contains(name);
         }
     }
 
