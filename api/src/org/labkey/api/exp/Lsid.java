@@ -123,8 +123,10 @@ public class Lsid
      */
 
     @Nullable
-    private static String[] parseLsid(String s)
+    private static String[] parseLsid(@Nullable String s)
     {
+        if (s == null)
+            return null;
         String[] parts = StringUtils.split(s,':');
         if (parts.length < 5 || parts.length > 6)
             return null;
