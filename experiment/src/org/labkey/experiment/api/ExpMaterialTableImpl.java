@@ -111,6 +111,10 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLETYPE_FILE_DIRECTORY;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.*;
 
@@ -126,6 +130,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         MATERIAL_ALT_MERGE_KEYS = Set.of(Column.MaterialSourceId.name(), Column.Name.name());
         MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
     }
+
+    public static final String ALIQUOT_COUNT_LABEL = "Aliquots Created Count";
+    public static final String ALIQUOT_VOLUME_LABEL = "Aliquot Total Amount";
+    public static final String AVAILABLE_ALIQUOT_COUNT_LABEL = "Available Aliquot Count";
+    public static final String AVAILABLE_ALIQUOT_VOLUME_LABEL = "Available Aliquot Amount";
+
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
@@ -456,26 +466,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case AliquotCount ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotCount"));
-                ret.setLabel("Aliquots Created Count");
+                var ret = wrapColumn(alias, _rootTable.getColumn(AliquotCount.name()));
+                ret.setLabel(ALIQUOT_COUNT_LABEL);
                 return ret;
             }
             case AliquotVolume ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
-                ret.setLabel("Aliquot Total Amount");
+                var ret = wrapColumn(alias, _rootTable.getColumn(AliquotVolume.name()));
+                ret.setLabel(ALIQUOT_VOLUME_LABEL);
                 return ret;
             }
             case AvailableAliquotVolume ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotVolume"));
-                ret.setLabel("Available Aliquot Amount");
+                var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotVolume.name()));
+                ret.setLabel(AVAILABLE_ALIQUOT_VOLUME_LABEL);
                 return ret;
             }
             case AvailableAliquotCount ->
             {
-                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotCount"));
-                ret.setLabel("Available Aliquot Count");
+                var ret = wrapColumn(alias, _rootTable.getColumn(AvailableAliquotCount.name()));
+                ret.setLabel(AVAILABLE_ALIQUOT_COUNT_LABEL);
                 return ret;
             }
             case AliquotUnit ->

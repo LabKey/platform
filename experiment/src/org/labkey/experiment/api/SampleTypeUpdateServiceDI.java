@@ -147,6 +147,10 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
+import static org.labkey.experiment.api.ExpMaterialTableImpl.ALIQUOT_COUNT_LABEL;
+import static org.labkey.experiment.api.ExpMaterialTableImpl.ALIQUOT_VOLUME_LABEL;
+import static org.labkey.experiment.api.ExpMaterialTableImpl.AVAILABLE_ALIQUOT_COUNT_LABEL;
+import static org.labkey.experiment.api.ExpMaterialTableImpl.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
@@ -177,6 +181,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             AliquotVolume.toString(), JdbcType.DOUBLE,
             AvailableAliquotVolume.toString(), JdbcType.DOUBLE
     );
+
+    private static final Set<String> ALIQUOT_ROLLUP_FIELD_LABELS = Set.of(ALIQUOT_COUNT_LABEL, ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_COUNT_LABEL);
 
     static
     {
@@ -1544,7 +1550,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (isExpMaterialColumn(column, name))
                     return true;
             }
-            return false;
+            return isAliquotRollupHeader(name);
         }
 
         private static boolean isExpMaterialColumn(ExpMaterialTable.Column column, String name)
@@ -1590,6 +1596,22 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         public static boolean isUnitsHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.Units, name);
+        }
+
+        private static boolean isAliquotRollupHeader(String name)
+        {
+            for (String rollupField : ALIQUOT_ROLLUP_FIELDS.keySet())
+            {
+                if (rollupField.equalsIgnoreCase(name))
+                    return true;
+            }
+            for (String rollupLabel : ALIQUOT_ROLLUP_FIELD_LABELS)
+            {
+                if(rollupLabel.replaceAll("\\s+","").equalsIgnoreCase(name.replaceAll("\\s+","")))
+                    return true;
+            }
+
+            return false;
         }
     }
 
