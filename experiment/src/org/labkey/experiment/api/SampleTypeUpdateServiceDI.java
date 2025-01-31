@@ -1723,7 +1723,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
                     // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
                     map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)

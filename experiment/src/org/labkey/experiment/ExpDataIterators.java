@@ -1272,7 +1272,7 @@ public class ExpDataIterators
                         }
 
                         if (aliquotParentName != null)
-                            _aliquotParents.put(lsid, aliquotParentName);
+                            _aliquotParents.put(lsid, aliquotParentName.trim());
                     }
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
@@ -1477,7 +1477,7 @@ public class ExpDataIterators
                         }
 
                         if (aliquotParentName != null)
-                            _aliquotParents.put(key, aliquotParentName);
+                            _aliquotParents.put(key, aliquotParentName.trim());
                     }
                 }
 
