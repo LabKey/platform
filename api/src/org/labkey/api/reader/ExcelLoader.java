@@ -671,7 +671,10 @@ public class ExcelLoader extends DataLoader
                 ColumnDescriptor cd = allColumns[columnIndex];
                 if (!cd.load)
                     continue;
-                fields[fieldIndex++] = row.get(columnIndex);
+                Object value = row.get(columnIndex);
+                if (value instanceof String)
+                    value = ((String) value).trim();
+                fields[fieldIndex++] = value;
             }
             return fields;
         }
@@ -723,11 +726,13 @@ public class ExcelLoader extends DataLoader
                             }
                             else if (useColumnFormats && column.clazz.equals(String.class))
                             {
-                                contents = ExcelFactory.getCellStringValue(cell);
+                                contents = ExcelFactory.getCellStringValue(cell).trim();
                             }
                             else
                             {
                                 contents = PropertyType.getFromExcelCell(cell);
+                                if (contents instanceof String)
+                                    contents = ((String) contents).trim();
                             }
                         }
                         else
