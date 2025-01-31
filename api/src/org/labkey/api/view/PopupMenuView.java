@@ -197,12 +197,19 @@ public class PopupMenuView extends HttpView<PopupMenu>
             {
                 var context = HttpView.currentContext();
                 URLHelper url = new URLHelper(href);
+
+                // separate the path (into href) and query/fragment (into dataQuery) portions of URL
+                var fragment = url.getFragment();
+                url.setFragment(null);
                 if (null != context && context.isRobot())
                     url.addParameter(ActionURL.Param._noindex.name(), "1");
                 dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+                url.deleteParameters();
                 if (!dataQuery.isEmpty())
                     dataQuery = "?" + dataQuery;
-                url.deleteParameters();
+                if (StringUtils.isNotEmpty(fragment))
+                    dataQuery += "#" + fragment;
+
                 href = url.toString();
                 HttpView.currentPageConfig().addHandlerForQuerySelector(
                         "A.noFollowNavigate",
