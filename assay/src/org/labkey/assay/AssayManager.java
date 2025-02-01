@@ -708,7 +708,7 @@ public class AssayManager implements AssayService
      */
     private boolean shouldIndexRun(ExpRun expRun)
     {
-        return getProvider(expRun) != null && expRun.getReplacedByRun() == null;
+        return expRun != null && getProvider(expRun) != null && expRun.getReplacedByRun() == null;
     }
 
     public void indexAssayBatch(int expRunRowId)
