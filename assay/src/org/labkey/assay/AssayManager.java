@@ -767,7 +767,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public void indexAssayRun(int expRunRowId, boolean forceIndex)
+    public void indexAssayRun(int expRunRowId)
     {
         SearchService ss = SearchService.get();
         if (ss == null)
@@ -777,7 +777,7 @@ public class AssayManager implements AssayService
         if (expRun == null)
             return;
         
-        if (shouldIndexRun(expRun) || forceIndex)
+        if (shouldIndexRun(expRun))
             indexAssayRun(ss.defaultTask(), ExperimentService.get().getExpRun(expRunRowId));
     }
 

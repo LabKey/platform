@@ -4350,8 +4350,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Re-index replaced run if replacing run is deleted
                 if (run.getReplacesRuns() != null)
                 {
-                    run.getReplacesRuns().forEach(replacedRun ->
-                            AssayService.get().indexAssayRun(replacedRun.getRowId(), true)
+                    List<ExpRunImpl> replacedRuns = run.getReplacesRuns();
+                    transaction.addCommitTask(() ->
+                        replacedRuns.forEach(replacedRun ->
+                                AssayService.get().indexAssayRun(replacedRun.getRowId())
+                        ),
+                        DbScope.CommitTaskOption.POSTCOMMIT
                     );
                 }
                 deleteRun(run, datasToDelete, user, userComment);

@@ -32,6 +32,6 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run)
     {
-        AssayManager.get().indexAssayRun(run.getRowId(), false);
+        AssayManager.get().indexAssayRun(run.getRowId());
     }
 }
