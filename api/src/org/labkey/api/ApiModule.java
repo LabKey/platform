@@ -452,6 +452,7 @@ public class ApiModule extends CodeOnlyModule
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         list.add(new JspTestCase("/org/labkey/vfs/vfsTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/view/ViewHeadersAndMetaTestCase.jsp"));
         return list;
     }
 

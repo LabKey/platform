@@ -53,6 +53,7 @@ import java.util.List;
 
 public class PageTemplate extends JspView<PageConfig>
 {
+    public static String EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS = "PageTemplate#short-circuit-robots";
     private boolean isAppTemplate = false;
 
     protected PageTemplate(String template, PageConfig page)

@@ -56,7 +56,7 @@
     IssueListDef issueDef = bean.getIssueListDef();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueDef.getName());
 
-    ActionURL printLink = context.cloneActionURL().replaceParameter("_print", "1");
+    ActionURL printLink = context.cloneActionURL().replaceParameter(ActionURL.Param._print, "1");
     if (bean.getDataRegionSelectionKey() != null)
         printLink.replaceParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, bean.getDataRegionSelectionKey());
 
@@ -65,7 +65,7 @@
 %>
 <div class="row">
     <div class="col-sm-3" style="margin-bottom: 5px">
-        <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=h(context.cloneActionURL().replaceParameter("_print", "1"))%>">Print</a>
+        <a class="btn btn-default" style="margin-bottom: 8px;" href="<%=h(context.cloneActionURL().replaceParameter(ActionURL.Param._print, "1"))%>">Print</a>
     </div>
     <div class="col-sm-4" style="margin-bottom: 5px">
         <labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" layout="inline">

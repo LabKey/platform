@@ -147,6 +147,7 @@ import java.util.regex.Pattern;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.data.DataRegion.LAST_FILTER_PARAM;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
 import static org.labkey.api.util.DOM.Attribute.style;
@@ -2468,6 +2469,24 @@ public class PageFlowUtil
             _errors.add(e.getMessage());
         }
     }
+
+
+    /* This a robot taming check.  We don't want to index portal-like pages e.g. project-begin.view and wiki-page.view (embedded webparts)
+     * with dataregion filters.  These pages have low search value ROI and robots can get obsessed with all the combinations of parameters
+     */
+    public static boolean checkPortalPageForNonDefaultParams(HttpServletRequest req)
+    {
+        // this simple check might be good enough
+        // Don't index page with non default parameters (e.g. targeting webparts in the page)
+        for (var e = req.getParameterNames() ; e.hasMoreElements() ; )
+        {
+            String p = e.nextElement();
+            if (p.contains(".") && !p.endsWith(LAST_FILTER_PARAM))    // we use .lastFilter for lots of links, but it won't do anything for a robot
+                return true;
+        }
+        return false;
+    }
+
 
     public static boolean isRobotUserAgent(String userAgent)
     {
