@@ -184,6 +184,12 @@
         if (!form)
             return;
 
+        if (Ext4.getBody().isMasked())
+        {
+            console.warn("Form submission is already in progress");
+            return;
+        }
+
         Ext4.getBody().mask();
         errorDiv.update("&nbsp;");
 
