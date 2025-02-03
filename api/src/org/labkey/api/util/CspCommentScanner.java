@@ -40,7 +40,7 @@ public class CspCommentScanner extends BaseScanner
                 int endIndex = text.indexOf("*/", i + 3) + 2;  // Skip to end of comment
 
                 if (1 == endIndex)
-                    throw new NotFoundException("Comment starting at position " + (i - 1) + " was not terminated");
+                    throw new NotFoundException("Comment starting at position " + i + " was not terminated");
 
                 // Comment index starts at the character after the space, which is i + 1 but then -1 to compensate = i
                 if (!handler.comment(i, endIndex - 1))
@@ -73,11 +73,40 @@ public class CspCommentScanner extends BaseScanner
             succeed("This/* is not a comment since there's no space preceding it */", "This/* is not a comment since there's no space preceding it */");
             succeed("http://* https://* /* only one legal comment here */", "http://* https://* ");
             succeed("/* only one legal comment here *//* not a legal comment *//* also not a legal comment */", "/* not a legal comment *//* also not a legal comment */");
+
+            failStrip("/*");
+            failStrip("/**");
+            failStrip("/*/");
+            failStrip("/*/*");
+            failStrip("This is longer text with an unterminated comment /* and then some more text");
+            failStrip("And here's an unterminated comment at the very end /*");
         }
 
         private void succeed(String text, String expected)
         {
             Assert.assertEquals(expected, new CspCommentScanner(text).stripComments().toString());
+        }
+
+        private void failStrip(String text)
+        {
+            try
+            {
+                new CspCommentScanner(text).stripComments();
+                fail("Expected an exception for unterminated comment for: " + text);
+            }
+            catch (NotFoundException e)
+            {
+                String message = e.getMessage();
+
+                // We expect a "not terminated" exception. Throw if it's anything but that.
+                if (!message.contains("was not terminated"))
+                    throw e;
+
+                int idx = message.indexOf("position ") + 9;
+                int pos = Integer.valueOf(message.substring(idx, message.indexOf(" ", idx)));
+                Assert.assertEquals('/', text.charAt(pos));
+                Assert.assertEquals('*', text.charAt(pos + 1));
+            }
         }
     }
 }
