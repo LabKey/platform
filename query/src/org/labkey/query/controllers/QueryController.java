@@ -75,6 +75,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
@@ -8179,6 +8180,7 @@ public class QueryController extends SpringActionController
         private String queryName;
         private List<String> templateLabels;
         private List<String> templateUrls;
+        private Long _lastKnownModified;
 
         public void setQueryName(String queryName)
         {
@@ -8221,6 +8223,16 @@ public class QueryController extends SpringActionController
             return queryName;
         }
 
+        public Long getLastKnownModified()
+        {
+            return _lastKnownModified;
+        }
+
+        public void setLastKnownModified(Long lastKnownModified)
+        {
+            _lastKnownModified = lastKnownModified;
+        }
+
     }
 
     @Marshal(Marshaller.Jackson)
@@ -8231,6 +8243,7 @@ public class QueryController extends SpringActionController
         private UserSchema _schema;
         private TableInfo _tInfo;
         private QueryDefinition _queryDef;
+        private Domain _domain;
 
         @Override
         protected ObjectMapper createResponseObjectMapper()
@@ -8245,11 +8258,11 @@ public class QueryController extends SpringActionController
             Container container = getContainer();
             String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
             _kind = PropertyService.get().getDomainKind(domainURI);
-            Domain domain = PropertyService.get().getDomain(container, domainURI);
-            if (domain == null)
+            _domain = PropertyService.get().getDomain(container, domainURI);
+            if (_domain == null)
                 throw new IllegalArgumentException("Domain '" + domainURI + "' not found.");
 
-            if (!_kind.canEditDefinition(user, domain))
+            if (!_kind.canEditDefinition(user, _domain))
                 throw new UnauthorizedException("You don't have permission to update import templates for this domain.");
 
             QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
@@ -8357,6 +8370,13 @@ public class QueryController extends SpringActionController
             Container container = getContainer();
             String schemaName = form.getSchemaName();
             String queryName = form.getQueryName();
+            QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
+            if (queryDef != null && queryDef.getQueryDefId() != 0)
+            {
+                Long lastKnownModified = form.getLastKnownModified();
+                if (lastKnownModified == null || lastKnownModified != queryDef.getModified().getTime())
+                    throw new ApiUsageException("Unable to save import templates. The templates appears out of date, reload the page and try again.");
+            }
 
             List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, _kind);
 
@@ -8369,7 +8389,6 @@ public class QueryController extends SpringActionController
             }
             if (!updatedTemplates.equals(existingCustomTemplates))
             {
-                QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
                 TablesDocument doc = null;
                 TableType xmlTable = null;
                 TableType.ImportTemplates xmlImportTemplates = null;
@@ -8446,6 +8465,14 @@ public class QueryController extends SpringActionController
                 {
                     QueryManager.get().update(user, queryDef);
                 }
+
+                DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer().getId(), "Import templates updated.");
+                event.setProjectId(container.getId());
+                event.setDomainUri(_domain.getTypeURI());
+                event.setDomainName(_domain.getName());
+                AuditLogService.get().addEvent(user, event);
+
+                return null;
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
