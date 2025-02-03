@@ -186,6 +186,13 @@ public class DataIteratorUtil
             }
         }
 
+        // Issue 52038: Add support for matching on encoded fieldKey
+        for (ColumnInfo col : cols)
+        {
+            if (null != col.getFieldKey())
+                targetAliasesMap.put(col.getFieldKey().toString(), new Pair<>(col, MatchType.alias));
+        }
+
         for (ColumnInfo col : cols)
         {
             String label = col.getLabel();
