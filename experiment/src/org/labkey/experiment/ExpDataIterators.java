@@ -303,6 +303,8 @@ public class ExpDataIterators
                 {
                     aliquotedFromValue = aliquotedFromObj.toString();
                 }
+                if (aliquotedFromValue != null)
+                    aliquotedFromValue = aliquotedFromValue.trim();
             }
 
             // skip required field check for aliquots since aliquots properties are inherited
@@ -431,27 +433,6 @@ public class ExpDataIterators
             return amountChanged ? new Pair<>(true, rootAliquot) : null;
         }
 
-        private String getAliquotParent(int i)
-        {
-            Object parentObj = get(i);
-            Collection<String> parentNames = getParentNames(parentObj, _tsvWriter, "AliquotedFrom", null);
-            if (parentNames != null)
-            {
-                List<String> parents = parentNames.stream()
-                        .map(String::trim)
-                        .filter(s -> !StringUtils.isEmpty(s))
-                        .toList();
-                if (!parents.isEmpty())
-                {
-                    if (parents.size() > 1)
-                        _context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
-                    return parents.get(0);
-                }
-            }
-
-            return null;
-        }
-
         @Override
         public Object get(int i)
         {
@@ -460,7 +441,7 @@ public class ExpDataIterators
                 if (_isInsert)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(get(_aliquotedFromCol), _context, _tsvWriter); // recompute parent when new aliquot is created
                     return null;
                 }
 
@@ -485,7 +466,7 @@ public class ExpDataIterators
                 if (!_isUpdate)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(get(_aliquotedFromCol), _context, _tsvWriter); // recompute parent when new aliquot is created
                     return null;
                 }
                 // update only, return rootMaterialRowId that's queried from SampleUpdateAliquotedFromDataIterator
@@ -907,6 +888,26 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
+    public static String getAliquotParent(Object parentObj, DataIteratorContext context, TSVWriter tsvWriter)
+    {
+        Collection<String> parentNames = getParentNames(parentObj, tsvWriter, "AliquotedFrom", null);
+        if (parentNames != null)
+        {
+            List<String> parents = parentNames.stream()
+                    .map(String::trim)
+                    .filter(s -> !StringUtils.isEmpty(s))
+                    .toList();
+            if (!parents.isEmpty())
+            {
+                if (parents.size() > 1)
+                    context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
+                return parents.get(0);
+            }
+        }
+
+        return null;
+    }
+
     static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
     {
         Collection<String> parentNames = null;
@@ -1254,25 +1255,10 @@ public class ExpDataIterators
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
-                    String aliquotParentName = null;
-                    if (o != null)
-                    {
-                        if (o instanceof String)
-                        {
-                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
-                        }
-                        else if (o instanceof Number)
-                        {
-                            aliquotParentName = o.toString();
-                        }
-                        else
-                        {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, ExpMaterial.ALIQUOTED_FROM_INPUT));
-                        }
 
-                        if (aliquotParentName != null)
-                            _aliquotParents.put(lsid, aliquotParentName.trim());
-                    }
+                    String aliquotParentName =  getAliquotParent(o, _context, _tsvWriter);
+                    if (aliquotParentName != null)
+                        _aliquotParents.put(lsid, aliquotParentName.trim());
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
                         _candidateAliquotNames.add(name);
