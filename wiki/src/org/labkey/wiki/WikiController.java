@@ -118,6 +118,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.DataRegion.LAST_FILTER_PARAM;
+import static org.labkey.api.util.PageFlowUtil.checkPortalPageForNonDefaultParams;
+
 public class WikiController extends SpringActionController
 {
     private static final Logger LOG = LogManager.getLogger(WikiController.class);
@@ -1122,6 +1125,9 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
+            if (PageFlowUtil.checkPortalPageForNonDefaultParams(getViewContext().getRequest()))
+                getPageConfig().setNoIndex();
+
             String name = null != form.getName() ? form.getName().trim() : null;
             //if there's no name parameter, find default page and reload with parameter.
             //default page is not necessarily same page displayed in wiki web part
@@ -1169,7 +1175,7 @@ public class WikiController extends SpringActionController
 
             if (isSource())
             {
-                if ("none".equals(getViewContext().getRequest().getParameter("_template")))
+                if ("none".equals(getViewContext().getRequest().getParameter(ActionURL.Param._template.name())))
                 {
                     getPageConfig().setTemplate(Template.None);
                     HtmlView html = HtmlView.unsafe(_wikiversion.getBody());

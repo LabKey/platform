@@ -120,7 +120,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
 
         ActionURL downloadURL = PageFlowUtil.urlProvider(NabUrls.class).urlDownloadDatafile(_container).addParameter("rowId", _run.getRowId());
         links.add(new NavTree("Download Datafile", downloadURL));
-        links.add(new NavTree("Print", getViewContext().cloneActionURL().addParameter("_print", "true")));
+        links.add(new NavTree("Print", getViewContext().cloneActionURL().addParameter(ActionURL.Param._print, "true")));
         return links;
     }
 

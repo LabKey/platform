@@ -117,4 +117,10 @@ public class WikiSchema extends UserSchema
     {
         return TABLE_NAMES;
     }
+
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return false;
+    }
 }

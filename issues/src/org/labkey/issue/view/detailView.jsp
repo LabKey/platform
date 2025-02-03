@@ -218,7 +218,7 @@
                     move.setScript("moveIssue(); return false;");
                     navTree.addChild(move);
                 }
-                navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
+                navTree.addChild("Print", context.cloneActionURL().replaceParameter(ActionURL.Param._print, "1"));
                 navTree.addChildren(additionalHeaderLinks);
                 PopupMenuView.renderTree(navTree, out); %>
         </ul>

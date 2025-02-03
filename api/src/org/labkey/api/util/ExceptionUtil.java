@@ -804,7 +804,7 @@ public class ExceptionUtil
                 message = responseStatus + ": Page not Found";
 
             URLHelper url = (URLHelper)request.getAttribute(ViewServlet.ORIGINAL_URL_URLHELPER);
-            if (null != url && null != url.getParameter("_docid"))
+            if (null != url && null != url.getParameter(ActionURL.Param._docid.name()))
             {
                 if (null != ss)
                     ss.notFound(url);
@@ -1365,7 +1365,7 @@ public class ExceptionUtil
             // simulate a search result not found
             HttpServletRequest req = TestContext.get().getRequest();
             ActionURL orig = new ActionURL("controller", "action", JunitUtil.getTestContainer());
-            orig.addParameter("_docid", "fred");
+            orig.addParameter(ActionURL.Param._docid, "fred");
             req.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, orig);
 
             answer = handleIt(guest, new NotFoundException("Not here"));
