@@ -30,6 +30,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.PropertyValues;
 import org.springframework.context.ApplicationContext;
@@ -493,5 +494,11 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     public void setAppView(boolean appView)
     {
         _isAppView = appView;
+    }
+
+    public boolean isRobot()
+    {
+        var r = getRequest();
+        return null != r && PageFlowUtil.isRobotUserAgent(r.getHeader("User-Agent"));
     }
 }

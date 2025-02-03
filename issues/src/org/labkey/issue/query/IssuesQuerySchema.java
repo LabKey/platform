@@ -630,4 +630,10 @@ public class IssuesQuerySchema extends UserSchema
             return Collections.emptyList();
         }
     }
+
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return false;
+    }
 }

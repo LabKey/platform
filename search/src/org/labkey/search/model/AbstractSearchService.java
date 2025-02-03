@@ -579,8 +579,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     /** Modifies query parameters of URLHelper */
     protected Path canonicalize(URLHelper x)
     {
-        x.deleteParameter("_print");
-        x.deleteParameter("_docid");
+        x.deleteParameter(ActionURL.Param._print.name());
+        x.deleteParameter(ActionURL.Param._docid.name());
 
         // we need to handle both path first, and controller first urls
         if (!(x instanceof ActionURL) && x.getPath().endsWith(".view"))
@@ -609,7 +609,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             // UNDONE: add find to interface
             if (!(this instanceof LuceneSearchServiceImpl))
                 return;
-            String docid = in.getParameter("_docid");
+            String docid = in.getParameter(ActionURL.Param._docid.name());
             if (StringUtils.isEmpty(docid))
                 return;
             SearchHit hit = find(docid);

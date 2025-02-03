@@ -134,7 +134,11 @@ public interface AssayService
     void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol);
     void indexAssays(SearchService.IndexTask task, Container c);
 
+    void indexAssayRun(int expRunRowId);
+
     void deindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
+
+    void deindexAssayRuns(Collection<? extends ExpRun> expRuns);
 
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.

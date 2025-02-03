@@ -193,9 +193,9 @@ public abstract class BaseWikiView extends JspView<Object>
             }
         }
 
-        if (null == context.getRequest().getParameter("_print"))
+        if (null == context.getRequest().getParameter(ActionURL.Param._print.name()))
         {
-            printURL = wiki.getPageURL().addParameter("_print", 1);
+            printURL = wiki.getPageURL().addParameter(ActionURL.Param._print, 1);
         }
 
         // Initialize Custom Menus

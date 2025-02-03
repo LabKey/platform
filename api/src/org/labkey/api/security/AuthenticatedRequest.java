@@ -231,11 +231,14 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         return _user.isGuest() && !_loggedIn;
     }
 
-    private boolean isRobot()
-    {
-        return PageFlowUtil.isRobotUserAgent(getHeader("User-Agent"));
-    }
+    private Boolean _robot = null;
 
+    public boolean isRobot()
+    {
+        if (null == _robot)
+            _robot = PageFlowUtil.isRobotUserAgent(getHeader("User-Agent"));
+        return _robot;
+    }
 
     // Methods below use reflection to pull Tomcat-specific implementation bits out of the request.  This can be helpful
     // for low-level, temporary debugging, but it's not portable across servlet containers or versions.
