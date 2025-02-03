@@ -385,7 +385,7 @@ public class ExcelLoader extends DataLoader
                 String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
                 if (!StringUtils.isEmpty(data))
                     foundData = true;
-                rowData.add(data != null ? data : "");
+                rowData.add(data != null ? data.trim() : "");
             }
             if (foundData)
                 cells.add(rowData.toArray(new String[0]));
@@ -427,7 +427,7 @@ public class ExcelLoader extends DataLoader
                         if (data != null && !data.isEmpty())
                             foundData = true;
 
-                        rowData.add(data != null ? data : "");
+                        rowData.add(data != null ? data.trim() : "");
                     }
                     else
                         rowData.add("");
