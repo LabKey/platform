@@ -34,6 +34,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SafeToRenderBuilder;
 import org.labkey.api.util.URLHelper;
@@ -51,7 +52,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -155,10 +156,6 @@ public class PageConfig
     private boolean _includePermissions = false;
     private boolean _includeInheritableFormats = false;
 
-    public final Date createTime = new Date();
-    public final Throwable createThrowable = new Throwable();
-
-    /* TODO make private */
     public PageConfig(HttpServletRequest request)
     {
         _request = request;
@@ -169,7 +166,6 @@ public class PageConfig
         _sid = String.format("%04x", UniqueID.getSessionScopedUID(_request));
     }
 
-    /* TODO make private */
     public PageConfig(HttpServletRequest request, String title)
     {
         this(request);
@@ -390,6 +386,12 @@ public class PageConfig
     }
 
 
+    public @Nullable String getMetaTag(String tag)
+    {
+        return StringUtils.join(_meta.get(tag), ", ");
+    }
+
+
     public void setNoIndex()
     {
         _meta.removeMapping("robots", "index");
@@ -403,6 +405,13 @@ public class PageConfig
         addMetaTag("robots", "nofollow");
     }
 
+    /** Call if we want to try getting robots/crawlers to ignore the page */
+    public void setRobotsNone()
+
+    {
+        setNoIndex();
+        setNoFollow();
+    }
 
     public void setCanonicalLink(String link)
     {
@@ -410,7 +419,18 @@ public class PageConfig
     }
 
 
-    String[] ignoreParameters = new String[] {"_dc", "_template", "_print", "_debug", "_docid", "_test", DataRegion.LAST_FILTER_PARAM};
+    Set<String> ignoreParameters = Set.of(
+            ActionURL.Param._dc.name(),
+            ActionURL.Param._docid.name(),
+            ActionURL.Param._template.name(),
+            ActionURL.Param._noindex.name(),
+            ActionURL.Param._print.name(),
+            ActionURL.Param.returnUrl.name(),
+            ActionURL.Param.redirectUrl.name(),
+            ActionURL.Param.cancelUrl.name(),
+            ActionURL.Param.successUrl.name(),
+            "_debug", "_test"
+            );
 
     @Nullable
     private String getCanonicalLink(URLHelper current)
@@ -419,15 +439,19 @@ public class PageConfig
             return _canonicalLink;
         if (null == current)
             return null;
-        URLHelper u = null;
-        if (current instanceof ActionURL && !((ActionURL)current).isCanonical())
-            u = current.clone();
-        for (String p : ignoreParameters)
-        {
-            if (null != current.getParameter(p))
-                u = (null==u ? current.clone() : u).deleteParameter(p);
-        }
-        return null == u ? null : u.getURIString();
+        var parameters = current.getParameters();
+        if (parameters == null || parameters.isEmpty())
+            return current.getURIString();
+
+        URLHelper u = current.clone().deleteParameters();
+
+        parameters.stream()
+                .filter(p -> !ignoreParameters.contains(p.first))
+                .filter(p -> !p.first.endsWith(DataRegion.CONTAINER_FILTER_NAME))
+                .sorted(Comparator.comparing(pair -> ((Pair<String,String>)pair).first).thenComparing(pair -> ((Pair<String,String>)pair).second))
+                .forEach(p -> u.addParameter(p.first, p.second));
+
+        return u.getURIString();
     }
 
     public HtmlString getPreloadTags()

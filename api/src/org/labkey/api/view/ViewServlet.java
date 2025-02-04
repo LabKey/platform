@@ -145,8 +145,11 @@ public class ViewServlet extends HttpServlet
             _log.debug(">> {}", description);
         }
 
-        assert ThreadContext.isEmpty();  // Prevent/detect leaks
         // Connect log messages with the active trace and span
+        String prevTraceId = ThreadContext.get(CorrelationIdentifier.getTraceIdKey());
+        String prevSpanId = ThreadContext.get(CorrelationIdentifier.getSpanIdKey());
+        assert( null == prevTraceId || prevTraceId.equals(CorrelationIdentifier.getTraceId()) );
+        assert( null == prevSpanId || prevSpanId.equals(CorrelationIdentifier.getSpanId()) );
         ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
         ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
 
@@ -205,10 +208,11 @@ public class ViewServlet extends HttpServlet
         }
         finally
         {
-            ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
-            ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
+            if (null == prevTraceId)
+                ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+            if (null == prevSpanId)
+                ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
         }
-
     }
 
 
@@ -227,10 +231,10 @@ public class ViewServlet extends HttpServlet
         module.dispatch(new ForwardWrapper(request, url), response, url);
     }
 
-    static class ForwardWrapper extends HttpServletRequestWrapper
+    public static class ForwardWrapper extends HttpServletRequestWrapper
     {
         final MockHttpServletRequest _mock;
-        ForwardWrapper(HttpServletRequest request, ActionURL url)
+        public ForwardWrapper(HttpServletRequest request, URLHelper url)
         {
             super(request);
             _mock = new MockHttpServletRequest(ViewServlet.getViewServletContext(), "GET", url.getPath());

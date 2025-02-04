@@ -584,6 +584,9 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(LoginForm form, BindException errors)
         {
+            var canonicalUrl = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), null);
+            getPageConfig().setCanonicalLink(canonicalUrl.getURIString());
+
             ModelAndView redirectView = redirectIfLoggedIn(form);
             if (redirectView != null) return redirectView;
 

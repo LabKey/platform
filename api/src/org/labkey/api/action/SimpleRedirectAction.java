@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
@@ -42,7 +43,7 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         }
 
         if (null != getViewContext().getRequest().getHeader("template"))
-            url.addParameter("_template", getViewContext().getRequest().getHeader("template"));
+            url.addParameter(ActionURL.Param._template.name(), getViewContext().getRequest().getHeader("template"));
 
         return HttpView.redirect(url, url.isAllowableHost());
     }

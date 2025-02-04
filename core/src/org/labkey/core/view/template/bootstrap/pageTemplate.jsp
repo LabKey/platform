@@ -25,14 +25,29 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="static org.labkey.core.view.template.bootstrap.PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
+    ViewContext context = getViewContext();
 
     if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
         response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
+
+    boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
+    if (isExplicitNoIndex)
+        model.setRobotsNone();
+
+    // set robots header in addition to <meta> (it is easier to test)
+    if (model.getTemplate() == PageConfig.Template.Print)
+        model.setNoIndex();
+    String robotsTag = model.getMetaTag("robots");
+    if (StringUtils.isNotBlank(robotsTag))
+        response.setHeader("X-Robots-Tag", robotsTag);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,6 +82,11 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
+    if (context.isRobot() && StringUtils.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
+    {
+        %></body></html><%
+        return;
+    }
     if (model.showHeader() != PageConfig.TrueFalse.False && null != me.getView("header"))
     {
 %>

@@ -88,8 +88,8 @@ public interface SearchService extends SearchMXBean
     // If "_docid" parameter is present, strip it and redirect as a convenience in the "result was found" case
     static void stripDocIdParameterAndRedirect(@NotNull ActionURL url)
     {
-        if (null != url.getParameter("_docid"))
-            throw new RedirectException(url.clone().deleteParameter("_docid"));
+        if (null != url.getParameter(ActionURL.Param._docid))
+            throw new RedirectException(url.clone().deleteParameter(ActionURL.Param._docid));
     }
 
     SearchCategory navigationCategory = new SearchCategory("navigation", "Projects and Folders");

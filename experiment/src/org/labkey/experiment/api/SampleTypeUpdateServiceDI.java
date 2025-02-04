@@ -132,6 +132,7 @@ import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.dataiterator.SampleUpdateAddColumnsDataIterator.CURRENT_SAMPLE_STATUS_COLUMN_NAME;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_ROLLUP_FIELD_LABELS;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
@@ -177,6 +178,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             AliquotVolume.toString(), JdbcType.DOUBLE,
             AvailableAliquotVolume.toString(), JdbcType.DOUBLE
     );
+
 
     static
     {
@@ -1544,7 +1546,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (isExpMaterialColumn(column, name))
                     return true;
             }
-            return false;
+            return isAliquotRollupHeader(name);
         }
 
         private static boolean isExpMaterialColumn(ExpMaterialTable.Column column, String name)
@@ -1590,6 +1592,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         public static boolean isUnitsHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.Units, name);
+        }
+
+        private static boolean isAliquotRollupHeader(String name)
+        {
+            Set<String> rollupFields = new CaseInsensitiveHashSet();
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELDS.keySet());
+            rollupFields.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
+            return rollupFields.contains(name);
         }
     }
 
@@ -1723,7 +1733,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
                     // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
                     map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)

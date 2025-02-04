@@ -42,6 +42,8 @@ public abstract class RateAccumulator<C, E>
         return _counter;
     }
 
+    // Even with the max(1000) this can be a little aggressive when the time period is short.
+    // For now the caller can check getCount() if this is a concern.
     double getRate(long now)
     {
         return (double)getCount() / max(1000, now - getStart());
