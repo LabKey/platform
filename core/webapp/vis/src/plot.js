@@ -2143,7 +2143,7 @@ boxPlot.render();
         // is not less than 0 due to calculations in convertYAxisDomain
         if (config.properties.yAxisScale === 'log') {
             if (config.properties.yAxisDomain[0] <= 0) {
-                config.properties.yAxisDomain[0] = minimumValue;
+                config.properties.yAxisDomain[0] = minimumValue - cushion;
             }
         }
 
