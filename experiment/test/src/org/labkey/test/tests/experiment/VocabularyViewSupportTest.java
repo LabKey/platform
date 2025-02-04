@@ -27,8 +27,6 @@ import org.labkey.test.params.list.IntListDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SampleTypeHelper;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +36,9 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class})
 public class VocabularyViewSupportTest extends ProvenanceAssayHelper
@@ -46,7 +47,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
     @BeforeClass
     public static void setupProject()
     {
-        VocabularyViewSupportTest init = (VocabularyViewSupportTest) getCurrentTest();
+        VocabularyViewSupportTest init = getCurrentTest();
         init.doSetup();
     }
 
@@ -155,15 +156,15 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         String domainProperty = domainName + domainId;
         log("Verify vocabulary is present");
-        Assert.assertTrue("Vocabulary is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty));
+        assertTrue("Vocabulary is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty));
 
         log("Verify vocab properties are present");
-        Assert.assertTrue("Color Vocabulary Property is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty + "/" + prop1Name));
-        Assert.assertTrue("Year Vocabulary Property is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty + "/" + prop2Name));
-        Assert.assertTrue("List lookup Vocabulary Property is not present.", sampleSetCustomizeGrid.isLookupColumn(domainProperty + "/" + prop3Name));
+        assertTrue("Color Vocabulary Property is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty + "/" + prop1Name));
+        assertTrue("Year Vocabulary Property is not present.", sampleSetCustomizeGrid.isColumnPresent(domainProperty + "/" + prop2Name));
+        assertTrue("List lookup Vocabulary Property is not present.", sampleSetCustomizeGrid.isLookupColumn(domainProperty + "/" + prop3Name));
 
         log("Verify property column is present");
-        Assert.assertTrue("Properties is not present.", sampleSetCustomizeGrid.isColumnPresent("Properties"));
+        assertTrue("Properties is not present.", sampleSetCustomizeGrid.isColumnPresent("Properties"));
 
         sampleSetCustomizeGrid.addColumn(domainProperty + "/" + prop1Name);
         sampleSetCustomizeGrid.addColumn(domainProperty + "/" + prop2Name);
@@ -179,24 +180,13 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         Table table = new Table(getDriver(),
                 Locator.tagWithClassContaining("table", "labkey-data-region")
                         .findElement(drt.findCell(0, "Properties")));
-        List<String> propHeaders = table.getTableHeaderTexts();
-        List<String> propertiesRowText = table.getRowAsText(0);
 
-        Assert.assertEquals("How odd! The number of data columns in the smaller table do not match the number of header columns.",
-                propHeaders.size(), propertiesRowText.size());
+        List<Map<String, String>> expectedPropertiesValue = List.of(Map.of(prop1Name, prop1Value, prop2Name, prop2Value, prop3Name, cityName));
 
-        Map<String, String> propertiesValue = new HashMap<>();
-        for(int i = 0; i < propertiesRowText.size(); i++)
-        {
-            propertiesValue.put(propHeaders.get(i), propertiesRowText.get(i));
-        }
-
-        Map<String, String> expectedPropertiesValue = Map.of(prop1Name, prop1Value, prop2Name, prop2Value, prop3Name, cityName);
-
-        Assert.assertThat("Row data does not contain color property value.", rowData, hasItem(prop1Value));
-        Assert.assertThat("Row data does not contain year property value.", rowData, hasItem(String.valueOf(prop2Value)));
-        Assert.assertThat("Row data does not contain list property value.", rowData, hasItem(cityName));
-        Assert.assertEquals("Row data does not contain properties property value.", expectedPropertiesValue, propertiesValue);
+        assertThat("Row data does not contain color property value.", rowData, hasItem(prop1Value));
+        assertThat("Row data does not contain year property value.", rowData, hasItem(prop2Value));
+        assertThat("Row data does not contain list property value.", rowData, hasItem(cityName));
+        assertEquals("Row data does not contain properties property value.", expectedPropertiesValue, table.getTableData());
     }
 
     @Test
@@ -253,13 +243,14 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLocation);
         runsTableCustomizeView.applyCustomView();
 
-        String propertiesValue = propNameLab + "\n" + propNameLocation + "\n" +
-                propValueLab + " " + labLocation;
-        WebElement propertiesCell = runsTable.findCell(0, "Properties");
-        shortWait().until(ExpectedConditions.textToBePresentInElement(propertiesCell, propertiesValue));
+        List<Map<String, String>> expectedProperties = List.of(Map.of(propNameLab, propValueLab, propNameLocation, labLocation));
+        Table propertiesTable = new Table(getDriver(),
+                Locator.tagWithClassContaining("table", "labkey-data-region")
+                        .findElement(runsTable.findCell(0, "Properties")));
 
-        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
-        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
+        assertEquals("Embedded properties table", expectedProperties, propertiesTable.getTableData());
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
+        assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
     }
 
     private DataRegionTable createListForVocabPropertyLookup(String listName) throws IOException, CommandException
