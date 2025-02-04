@@ -210,7 +210,11 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (StringUtils.isNotEmpty(fragment))
                     dataQuery += "#" + fragment;
 
-                href = url.getURIString();
+                // URLHelper.getURIString() doesn't work with local paths (unlike ActionURL.getURIString())
+                if (null == url.getHost() && null == url.getScheme() && -1 == url.getPort())
+                    href = url.getLocalURIString();
+                else
+                    href = url.getURIString();
                 HttpView.currentPageConfig().addHandlerForQuerySelector(
                         "A.noFollowNavigate",
                         "click",
