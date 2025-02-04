@@ -77,6 +77,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
@@ -146,6 +148,10 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
@@ -224,6 +230,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private boolean _initializingIndex = false;
 
+    private record IndexLockFileWatch(java.nio.file.Path dir, FileSystemDirectoryListener listener) {}
+
+    private IndexLockFileWatch _lockFileWatch;
+
     /**
      * Initializes the index, if possible. Recovers from some common failures, such as incompatible existing index formats.
      */
@@ -251,6 +261,58 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                     // "old" index format when they switch back. In either case, just delete the index and retry once.
                     deleteIndex("an exception occurred, " + e.getMessage());
                     attemptInitialize();
+                }
+
+                // Issue 47976 - help track down what's touching Lucene's write.lock file
+                if (_lockFileWatch != null)
+                {
+                    // Unregister the watcher if we've already registered one, possibly for a different index directory
+                    FileSystemWatchers.get().removeListener(_lockFileWatch.dir, _lockFileWatch.listener, null);
+                    _lockFileWatch = null;
+                }
+
+                File indexDir = getIndexDirectory();
+                if (indexDir != null)
+                {
+                    _lockFileWatch = new IndexLockFileWatch(indexDir.toPath(), new FileSystemDirectoryListener()
+                    {
+                        private static final String LOCK_FILE_NAME = "write.lock";
+
+                        @Override
+                        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+                        {
+                            entryChanged(directory, entry, "created");
+                        }
+
+                        @Override
+                        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+                        {
+                            entryChanged(directory, entry, "deleted");
+                        }
+
+                        @Override
+                        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+                        {
+                            entryChanged(directory, entry, "modified");
+                        }
+
+                        private void entryChanged(java.nio.file.Path directory, java.nio.file.Path entry, String action)
+                        {
+                            if (LOCK_FILE_NAME.equals(entry.getFileName().toString()))
+                            {
+                                _log.info("Lock file {}: {}/{}", action, directory, entry);
+                            }
+
+                        }
+
+                        @Override
+                        public void overflow()
+                        {
+                            _log.info("Overflowed monitoring index directory");
+                        }
+                    });
+
+                    FileSystemWatchers.get().addListener(_lockFileWatch.dir, _lockFileWatch.listener, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
                 }
             }
         }
