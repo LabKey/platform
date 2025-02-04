@@ -29,7 +29,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -47,10 +46,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: jeckels
- * Date: 1/23/14
- */
 public class ShortURLServiceImpl implements ShortURLService
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
@@ -141,6 +136,8 @@ public class ShortURLServiceImpl implements ShortURLService
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 newRecord = Table.insert(user, CoreSchema.getInstance().getTableInfoShortURL(), newRecord);
+                // Re-select entire row to ensure canonical casing for entityId, Issue 52162
+                newRecord = getForEntityId(newRecord.getResourceId());
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
