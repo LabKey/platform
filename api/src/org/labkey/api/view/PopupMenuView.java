@@ -210,7 +210,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (StringUtils.isNotEmpty(fragment))
                     dataQuery += "#" + fragment;
 
-                href = url.toString();
+                href = url.getURIString();
                 HttpView.currentPageConfig().addHandlerForQuerySelector(
                         "A.noFollowNavigate",
                         "click",
