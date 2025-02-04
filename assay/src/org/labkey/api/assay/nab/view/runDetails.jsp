@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -84,7 +85,12 @@
         </labkey:panel>
 
 <%
-    if (!bean.isPrintView() && writer && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled())
+    if (
+            !bean.isPrintView()
+                    && writer
+                    && AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS)
+                    && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled()
+        )
     {
 %>
         <labkey:panel title="Discussions">

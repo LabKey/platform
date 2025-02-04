@@ -9478,6 +9478,33 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class DeprecatedFlagForm
+    {
+        private String featureName;
+
+        public String getFeatureName()
+        {
+            return featureName;
+        }
+
+        public void setFeatureName(String featureName)
+        {
+            this.featureName = featureName;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class DeprecatedFlagAction extends ReadOnlyApiAction<DeprecatedFlagForm>
+    {
+        @Override
+        public ApiResponse execute(DeprecatedFlagForm form, BindException errors)
+        {
+            ApiSimpleResponse ret = new ApiSimpleResponse();
+            ret.put("response", AppProps.getInstance().isOptionalFeatureEnabled(form.getFeatureName()));
+            return ret;
+        }
+    }
+
     @RequiresPermission(AdminOperationsPermission.class)
     public static class ProductFeatureAction extends BaseApiAction<ProductConfigForm>
     {

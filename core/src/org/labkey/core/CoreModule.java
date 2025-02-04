@@ -510,6 +510,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Short-circuit robots",
                 "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
                 false);
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
+                "Restore Object-Level Discussions",
+                "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
+                false, false, FeatureType.Deprecated));
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

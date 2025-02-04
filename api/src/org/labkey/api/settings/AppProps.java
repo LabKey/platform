@@ -48,6 +48,7 @@ public interface AppProps
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
+    String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
