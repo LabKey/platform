@@ -2346,6 +2346,7 @@ public class NameGenerator
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);
                     dataTypeAltNames.add(getEncodedDataTypeInExpression(decodedDataType));
+                    dataTypeAltNames.add(QueryKey.encodePart(decodedDataType)); // add encoded form in case the original parents column in as encoded but parentValues needs to be updated (for example, strip quotes for comma)
                     for (String dataTypeAltName : dataTypeAltNames)
                     {
                         inputs.computeIfAbsent(INPUT_PARENT + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
