@@ -1109,7 +1109,8 @@ public class XarReader extends AbstractXarImporter
             vals.setProtocolLSID(protocol.getLSID());
             vals.setComments(trimString(a.getComments()));
 
-            vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
+            // vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
+            vals.setFilePathRoot(FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
             String workflowTaskLSID = a.getWorkflowTaskLSID();
 
