@@ -12,7 +12,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.util.JavaBlockCommentScanner;
+import org.labkey.api.util.CspCommentScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -31,80 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
-/** example usage,
-
- NOTE: LabKey does not yet support setting the "Report-To" header, so we do not support the report-to CSP directive.
-
- Example 1 : very strict, disallows 'external' websites, disallows unsafe-inline, but only reports violations (does not enforce)
- good for test automation!
-
-  <pre>
-      <filter>
-        <filter-name>Content Security Policy Filter Filter</filter-name>
-        <filter-class>org.labkey.filters.ContentSecurityPolicyFilter</filter-class>
-        <init-param>
-          <param-name>policy</param-name>
-          <param-value>
-            default-src 'self';
-            connect-src 'self' ${LABKEY.ALLOWED.CONNECTIONS} ;
-            object-src 'none' ;
-            style-src 'self' 'unsafe-inline' ;
-            img-src 'self' data: ;
-            font-src 'self' data: ;
-            script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}';
-            base-uri 'self' ;
-            upgrade-insecure-requests ;
-            frame-ancestors 'self' ;
-            report-uri /labkey/admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;
-          </param-value>
-        </init-param>
-        <init-param>
-          <param-name>disposition</param-name>
-          <param-value>report</param-value>
-        </init-param>
-      </filter>
-      <filter-mapping>
-        <filter-name>Content Security Policy Filter Filter</filter-name>
-        <url-pattern>/*</url-pattern>
-      </filter-mapping>
-  </pre>
-
- Example 2 : less strict but enforces directives, (NOTE: unsafe-inline is still required for many modules)
-
-  <pre>
-      <filter>
-        <filter-name>Content Security Policy Filter Filter</filter-name>
-        <filter-class>org.labkey.filters.ContentSecurityPolicyFilter</filter-class>
-        <init-param>
-          <param-name>policy</param-name>
-          <param-value>
-            default-src 'self' https: ;
-            connect-src 'self' https: ${LABKEY.ALLOWED.CONNECTIONS} ;
-            object-src 'none' ;
-            style-src 'self' https: 'unsafe-inline' ;
-            img-src 'self' data: ;
-            font-src 'self' data: ;
-            script-src 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}';
-            base-uri 'self' ;
-            upgrade-insecure-requests ;
-            frame-ancestors 'self' ;
-            report-uri /labkey/admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;
-          </param-value>
-        </init-param>
-        <init-param>
-          <param-name>disposition</param-name>
-          <param-value>enforce</param-value>
-        </init-param>
-      </filter>
-      <filter-mapping>
-        <filter-name>Content Security Policy Filter Filter</filter-name>
-        <url-pattern>/*</url-pattern>
-      </filter-mapping>
-  </pre>
-
- Do not copy-and-paste these examples for any production environment without understanding the meaning of each directive!
+/**
+ * For example CSPs, see csp.enforce and csp.report property examples in application.properties
+ * Do not use those examples for any production environment without understanding the meaning of each directive!
  */
-
 
 public class ContentSecurityPolicyFilter implements Filter
 {
@@ -177,14 +107,17 @@ public class ContentSecurityPolicyFilter implements Filter
     /** Filter out block comments and replace special characters in the provided policy */
     public static String filterPolicy(String policy)
     {
-        // We use Java-style block comments to document our policies; strip them since CSP syntax doesn't allow them.
-        JavaBlockCommentScanner scanner = new JavaBlockCommentScanner(policy.trim());
-        String s = scanner.stripComments().toString();
+        String s = policy.trim();
         s = s.replace( '\n', ' ' );
         s = s.replace( '\r', ' ' );
         s = s.replace( '\t', ' ' );
         s = s.replace((char)0x2018, (char)0x027);     // LEFT SINGLE QUOTATION MARK -> APOSTROPHE
         s = s.replace((char)0x2019, (char)0x027);     // RIGHT SINGLE QUOTATION MARK -> APOSTROPHE
+
+        // We use pseudo-Java-style block comments to document our policies; strip them since CSP syntax doesn't allow
+        // them. All replacements are performed before stripping comments to ensure whitespace is replaced with spaces.
+        CspCommentScanner scanner = new CspCommentScanner(s);
+        s = scanner.stripComments().toString();
 
         return s;
     }
@@ -252,33 +185,33 @@ public class ContentSecurityPolicyFilter implements Filter
         public void testPolicyFiltering()
         {
             String policy = """
-                    default-src\t'self' https: http: ;
+                /* Beginning of line comment should be removed */default-src\t'self' https: http: ;
                     connect-src 'self' http://www.labkey.org /* this is a mistake! */ localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
-                    object-src ‘none’ ;/* Hard to see, but there are curly quotes surrounding "none" on this line */\r
+                    object-src https://* ‘none’ ; /* Hard to see, but there are curly quotes surrounding "none" on this line */\r
                     style-src 'self'\rhttps: 'unsafe-inline' ;
                     img-src 'self'\thttps: data: ;
-                    font-src 'self' http://www.labkey.com http: /* I don't know why we're doing this! */ https: data: ;
+                    font-src 'self' http://www.labkey.com https://* http: /* I don't know why we're doing this! */ https: data: ;
                     script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
                     base-uri 'self' ; /* what in the world?! */
                     frame-ancestors 'self' ;  /* This here comment spans
                         multiple lines
                         for testing purposes
                         */
-                    report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;
+                    report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;
                 """;
 
             // Multi-line for readability, but notice that newlines are removed before assignment
             String expected = """
                 default-src 'self' https: http: ;
                     connect-src 'self' http://www.labkey.org  localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
-                    object-src 'none' ;
-                     style-src 'self' https: 'unsafe-inline' ;
+                    object-src https://* 'none' ;
+                      style-src 'self' https: 'unsafe-inline' ;
                     img-src 'self' https: data: ;
-                    font-src 'self' http://www.labkey.com http:  https: data: ;
+                    font-src 'self' http://www.labkey.com https://* http:  https: data: ;
                     script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
                     base-uri 'self' ;
                      frame-ancestors 'self' ;
-                      report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} ;""".replace('\n', ' ');
+                      report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;""".replace('\n', ' ');
 
             Assert.assertEquals(expected, filterPolicy(policy));
         }

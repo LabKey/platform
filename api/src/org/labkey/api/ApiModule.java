@@ -152,6 +152,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.CspCommentScanner;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DomTestCase;
 import org.labkey.api.util.ExceptionUtil;
@@ -376,6 +377,7 @@ public class ApiModule extends CodeOnlyModule
             Compress.TestCase.class,
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
+            CspCommentScanner.TestCase.class,
             DataIteratorUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
