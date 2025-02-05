@@ -1579,7 +1579,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf)
     {
         return new FieldNamesTable(expSchema, cf);
-    };
+    }
 
     public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
