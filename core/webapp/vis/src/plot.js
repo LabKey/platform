@@ -1842,7 +1842,6 @@ boxPlot.render();
             }
 
             if (maxValue !== undefined && minValue !== undefined) {
-
                 if (minValue > maxValue) {
                     var tmp = minValue;
                     minValue = maxValue;
@@ -1906,9 +1905,21 @@ boxPlot.render();
             valRightProp = config.properties["valueRight"];
         }
 
+
+        let minimumValue = Number.MAX_VALUE;
+        let maximumValue = Number.MIN_VALUE;
+
         for (var j = 0; j < config.data.length; j++) {
             var row = config.data[j];
             var seriesType = row["SeriesType"];
+
+            if (config.data[j][valProp] < minimumValue) {
+                minimumValue = config.data[j][valProp];
+            }
+
+            if (config.data[j][valProp] > maximumValue) {
+                maximumValue = config.data[j][valProp];
+            }
 
             // Set default mean and std dev
             if (row.type === "data" && config.qcPlotType !== LABKEY.vis.TrendingLinePlotType.CUSUM) {
@@ -2123,6 +2134,16 @@ boxPlot.render();
 
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 meanStdDevData[index] = row;
+            }
+        }
+
+        // Issue 51887: Log scale extends much lower than needed for some Panorama QC plots
+        // If the yAxisDomain min value is less than 0, then the scale is extended way-below the smallest value
+        // during the log conversion at getLogScale L810, the below code ensures that the minimum scale of the y-axis
+        // is not less than 0 due to calculations in convertYAxisDomain
+        if (config.properties.yAxisScale === 'log') {
+            if (config.properties.yAxisDomain[0] <= 0) {
+                config.properties.yAxisDomain[0] = minimumValue - cushion;
             }
         }
 
