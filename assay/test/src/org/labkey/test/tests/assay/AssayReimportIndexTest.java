@@ -12,6 +12,7 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.assay.AssayImportPage;
 import org.labkey.test.pages.assay.AssayRunsPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.assay.GeneralAssayDesign;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.time.Duration;
@@ -33,20 +34,22 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
     }
 
     @BeforeClass
-    public static void setupProject()
+    public static void setupProject() throws Exception
     {
         AssayReimportIndexTest init = getCurrentTest();
 
         init.doSetup();
     }
 
-    private void doSetup()
+    private void doSetup() throws Exception
     {
         _containerHelper.createProject(getProjectName(), "Assay");
         goToProjectHome();
-        var assayDesignPage = _assayHelper.createAssayDesign("General", ASSAY_NAME);
-        assayDesignPage.goToRunFields().addField(new FieldDefinition(STRING_FIELD_NAME, FieldDefinition.ColumnType.String));
-        assayDesignPage.clickFinish();
+
+        new GeneralAssayDesign(ASSAY_NAME)
+                .setBatchFields(List.of(new FieldDefinition("batchData", FieldDefinition.ColumnType.String)), true)
+                .setRunFields(List.of(new FieldDefinition(STRING_FIELD_NAME, FieldDefinition.ColumnType.String)), true)
+                .createAssay(getProjectName(), createDefaultConnection());
     }
 
     @Test
