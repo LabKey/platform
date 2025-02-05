@@ -120,12 +120,12 @@ public class AssayReimportIndexTest extends BaseWebDriverTest
         runsPage.getTable().deleteSelectedRows();
         SearchAdminAPIHelper.waitForIndexer();
 
-        // verify first run cannot be searched
+        // verify second run cannot be searched
         var searchResultPage3 = navBar().search(firstRun);
         checker().withScreenshot("first_run_not_found_after_de-indexing_second_run")
                 .verifyTrue("expect to find first assay run",
                         searchResultPage3.hasResultLocatedBy(Locator.linkWithText("Assay Run - " + firstRun)));
-        // verify second run cannot be searched post-delete
+        // verify first run cannot be searched post-delete
         searchResultPage3.searchForm().searchFor(secondRun);
         checker().withScreenshot("second_run_found_after_delete")
                 .verifyFalse("expect not to find second assay run after deletion",
