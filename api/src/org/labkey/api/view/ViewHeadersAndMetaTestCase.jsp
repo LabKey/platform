@@ -124,11 +124,10 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
 
         // regular old module file
         headers = getHeaders("/_.gif");
-        assertNoHeader(headers, "Cache-Control");
         assertHeader(headers, "ETag");
-        assertNoHeader(headers, "Expires");
         assertHeader(headers, "Last-Modified");
         assertNoHeader(headers, "Pragma");
+        // Cache-Control and Expires are not set in devMode
 
         // module file with content hash
         headers = getHeaders("/_.221d8352905f2c38b3cb.gif");   // this file is in webapp just for this test
