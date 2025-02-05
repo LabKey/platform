@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.20.2-fb-issue51620.0",
+    "@labkey/components": "6.21.1",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
