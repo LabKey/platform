@@ -195,27 +195,31 @@ public class PopupMenuView extends HttpView<PopupMenu>
         {
             try
             {
-                var context = HttpView.currentContext();
                 URLHelper url = new URLHelper(href);
+                boolean isLocal = null == url.getHost() && null == url.getScheme() && -1 == url.getPort();
+                if (isLocal)
+                {
+                    var context = HttpView.currentContext();
 
-                // separate the path (into href) and query/fragment (into dataQuery) portions of URL
-                var fragment = url.getFragment();
-                url.setFragment(null);
-                if (null != context && context.isRobot())
-                    url.addParameter(ActionURL.Param._noindex.name(), "1");
-                dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
-                url.deleteParameters();
-                if (!dataQuery.isEmpty())
-                    dataQuery = "?" + dataQuery;
-                if (StringUtils.isNotEmpty(fragment))
-                    dataQuery += "#" + fragment;
+                    // separate the path (into href) and query/fragment (into dataQuery) portions of URL
+                    var fragment = url.getFragment();
+                    url.setFragment(null);
+                    if (null != context && context.isRobot())
+                        url.addParameter(ActionURL.Param._noindex.name(), "1");
+                    dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+                    url.deleteParameters();
+                    if (!dataQuery.isEmpty())
+                        dataQuery = "?" + dataQuery;
+                    if (StringUtils.isNotEmpty(fragment))
+                        dataQuery += "#" + fragment;
 
-                href = url.toString();
-                HttpView.currentPageConfig().addHandlerForQuerySelector(
-                        "A.noFollowNavigate",
-                        "click",
-                        "window.location = this.href + this.dataset['query']; return false;");
-                cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+                    href = url.getLocalURIString();
+                    HttpView.currentPageConfig().addHandlerForQuerySelector(
+                            "A.noFollowNavigate",
+                            "click",
+                            "window.location = this.href + this.dataset['query']; return false;");
+                    cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+                }
             }
             catch (URISyntaxException e)
             {
