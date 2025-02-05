@@ -791,10 +791,9 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
-        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst\u00A0 \u00A0 ", "scanLast", "scanCount", "totalIntensity", "description" };
+        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst\u00A0 \u00A0", "scanLast", "scanCount", "totalIntensity", "description" };
         String[] line1Xlsx = new String[] { "2006-01-02 00:00:00", "96", "1543.3400999999999", "858.32460000000003", "false", "1714.6346000000001", "2029.6295", "2", "1", "0.19630893999999999", "26.471083", "12.982442000000001", "4", "92", "100", "9", "20248.761999999999", "description" };
-        String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description"
-        };
+        String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description" };
         String[] line7Xlsx = new String[] { "2006-01-02 00:00:00", "249", "1724.5541000000001", "773.42174999999997", "false", "1544.829", "5.9057474000000001", "2", "1", "0.51059710000000003", "0.67020833000000002", "1.4744527000000001", "2", "246", "250", "5", "29.369174999999998" };
         String[] line7Xls = new String[] { "2006-01-02 00:00", "249.0", "1724.5541", "773.42175", "false", "1544.829", "5.9057474", "2.0", "1.0", "0.5105971", "0.67020833", "1.4744527", "2.0", "246.0", "250.0", "5.0", "29.369175" };
 
