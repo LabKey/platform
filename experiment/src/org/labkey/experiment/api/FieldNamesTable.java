@@ -12,15 +12,17 @@ public class FieldNamesTable extends BaseFieldNamesTable
     public FieldNamesTable(@NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
     {
         super("FieldNames", userSchema, containerFilter);
+        setDescription("Shows one row for each administrator-defined field in the selected folder(s). Rows are shown in " +
+            "a folder or project only if the user has administrator permissions in that folder.");
 
-        addColumn("AlphaNumeric", JdbcType.BOOLEAN).setDescription("Name contains only alphabetic and numeric characters");
+        addColumn("AlphaNumeric", JdbcType.BOOLEAN).setDescription("Name contains only alphabetic and numeric characters plus underscore");
         addColumn("SpecialCharacters", JdbcType.BOOLEAN).setDescription("Name contains any of these specific punctuation characters: / \"&\\$}~,.");
     }
 
     @Override
     protected void addColumnSQL(SQLFragment sql)
     {
-        addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9]%", "AlphaNumeric");
+        addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric");
         addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
     }
 
