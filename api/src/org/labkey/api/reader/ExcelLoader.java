@@ -44,6 +44,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -356,7 +357,6 @@ public class ExcelLoader extends DataLoader
         }
     }
 
-
     @NotNull
     private String[][] getFirstNLinesXLSX(int n) throws IOException, InvalidFormatException
     {
@@ -382,10 +382,10 @@ public class ExcelLoader extends DataLoader
 
             for (Object v : currentRow)
             {
-                String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
+                String data = StringUtilsLabKey.fullTrimToEmptyString(v);
                 if (!StringUtils.isEmpty(data))
                     foundData = true;
-                rowData.add(data != null ? data.trim() : "");
+                rowData.add(data);
             }
             if (foundData)
                 cells.add(rowData.toArray(new String[0]));
@@ -418,16 +418,17 @@ public class ExcelLoader extends DataLoader
 
                         String data;
 
-                        // Use ISO format instead of Date.toString(), #21232
+                        // Use ISO format instead of Date.toString(), Issue 21232
                         if (value instanceof Date)
                             data = DateUtil.formatIsoDateShortTime((Date)value);
                         else
                             data = String.valueOf(value);
 
-                        if (data != null && !data.isEmpty())
+                        data = StringUtilsLabKey.fullTrimToEmptyString(data);
+                        if (!data.isEmpty())
                             foundData = true;
 
-                        rowData.add(data != null ? data.trim() : "");
+                        rowData.add(data);
                     }
                     else
                         rowData.add("");
@@ -672,8 +673,8 @@ public class ExcelLoader extends DataLoader
                 if (!cd.load)
                     continue;
                 Object value = row.get(columnIndex);
-                if (value instanceof String)
-                    value = ((String) value).trim();
+                if (value instanceof String s)
+                    value = StringUtilsLabKey.fullTrimToEmptyString(s);
                 fields[fieldIndex++] = value;
             }
             return fields;
@@ -726,13 +727,13 @@ public class ExcelLoader extends DataLoader
                             }
                             else if (useColumnFormats && column.clazz.equals(String.class))
                             {
-                                contents = ExcelFactory.getCellStringValue(cell).trim();
+                                contents = StringUtilsLabKey.fullTrimToEmptyString(ExcelFactory.getCellStringValue(cell));
                             }
                             else
                             {
                                 contents = PropertyType.getFromExcelCell(cell);
-                                if (contents instanceof String)
-                                    contents = ((String) contents).trim();
+                                if (contents instanceof String s)
+                                    contents = StringUtilsLabKey.fullTrimToEmptyString(s);
                             }
                         }
                         else
@@ -1323,6 +1324,9 @@ public class ExcelLoader extends DataLoader
                 while (currentRow.size() <= thisColumn)
                     currentRow.add(null);
                 debugPrint("row:" + (output_rowcount+1) + " col:" + thisColumn + " " + thisValue);
+
+                if (thisValue instanceof String s)
+                    currentRow.set(thisColumn, StringUtilsLabKey.fullTrimToEmptyString(s));
                 currentRow.set(thisColumn, thisValue);
                 value.setLength(0);
             }
