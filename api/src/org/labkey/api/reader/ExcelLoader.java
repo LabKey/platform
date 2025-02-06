@@ -1327,7 +1327,8 @@ public class ExcelLoader extends DataLoader
 
                 if (thisValue instanceof String s)
                     currentRow.set(thisColumn, StringUtilsLabKey.fullTrimToEmpty(s));
-                currentRow.set(thisColumn, thisValue);
+                else
+                    currentRow.set(thisColumn, thisValue);
                 value.setLength(0);
             }
             else if ("row".equals(name))

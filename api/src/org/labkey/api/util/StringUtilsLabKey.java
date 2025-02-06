@@ -585,7 +585,7 @@ public class StringUtilsLabKey
             assertEquals("", sanitizeSeparatorsAndTrim(""));
             assertEquals("no change", sanitizeSeparatorsAndTrim("no change"));
             assertEquals("leading  and trailing", sanitizeSeparatorsAndTrim(" leading  and trailing       "));
-            assertEquals("also   no\tchange", sanitizeSeparatorsAndTrim("also   no\tchange"));
+            assertEquals("with  tab change", sanitizeSeparatorsAndTrim("with  tab\tchange"));
             assertEquals("tab change", sanitizeSeparatorsAndTrim(" tab\tchange"));
             assertEquals("with newline", sanitizeSeparatorsAndTrim("with newline\n"));
             assertEquals("with all  specialties", sanitizeSeparatorsAndTrim("with\tall\r\nspecialties\u00A0"));
