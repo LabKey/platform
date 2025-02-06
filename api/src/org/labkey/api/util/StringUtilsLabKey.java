@@ -524,7 +524,7 @@ public class StringUtilsLabKey
      * @param obj the object whose string value is to be trimmed
      * @return the trimmed string. If the original object is null, returns the empty string.
      */
-    public static @NotNull String fullTrimToEmptyString(@Nullable Object obj)
+    public static @NotNull String fullTrimToEmpty(@Nullable Object obj)
     {
         if (obj == null)
             return "";
@@ -543,7 +543,7 @@ public class StringUtilsLabKey
         if (obj == null)
             return "";
         String stringVal = obj.toString();
-        return fullTrimToEmptyString(replaceSeparators(stringVal));
+        return fullTrimToEmpty(replaceSeparators(stringVal));
     }
 
     public static class TestCase extends Assert
@@ -551,16 +551,16 @@ public class StringUtilsLabKey
         @Test
         public void testFullTrimToEmptyString()
         {
-            assertEquals("", fullTrimToEmptyString(null));
-            assertEquals("", fullTrimToEmptyString(""));
-            assertEquals("no trimming", fullTrimToEmptyString("no trimming"));
-            assertEquals("no    trimming", fullTrimToEmptyString("no    trimming"));
-            assertEquals("standard    trim", fullTrimToEmptyString("   standard    trim "));
-            assertEquals("no\u2007 \u00A0\t\n   trimming", fullTrimToEmptyString("no\u2007 \u00A0\t\n   trimming"));
-            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmptyString("  with\u2007 \u00A0\t\n   trimming\t\n"));
-            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmptyString("\u2007 \u00A0  with\u2007 \u00A0\t\n   trimming\t\n"));
-            assertEquals("with\u2007 trimming", fullTrimToEmptyString("\u2007 \u00A0  with\u2007 trimming\t\n\u00A0\t\n  "));
-            assertEquals("with\u2007 trimming", fullTrimToEmptyString("\u2007 \u00A0  with\u2007 trimming  "));
+            assertEquals("", fullTrimToEmpty(null));
+            assertEquals("", fullTrimToEmpty(""));
+            assertEquals("no trimming", fullTrimToEmpty("no trimming"));
+            assertEquals("no    trimming", fullTrimToEmpty("no    trimming"));
+            assertEquals("standard    trim", fullTrimToEmpty("   standard    trim "));
+            assertEquals("no\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("no\u2007 \u00A0\t\n   trimming"));
+            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("  with\u2007 \u00A0\t\n   trimming\t\n"));
+            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 \u00A0\t\n   trimming\t\n"));
+            assertEquals("with\u2007 trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 trimming\t\n\u00A0\t\n  "));
+            assertEquals("with\u2007 trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 trimming  "));
         }
 
         @Test

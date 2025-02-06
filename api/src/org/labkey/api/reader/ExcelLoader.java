@@ -382,7 +382,7 @@ public class ExcelLoader extends DataLoader
 
             for (Object v : currentRow)
             {
-                String data = StringUtilsLabKey.fullTrimToEmptyString(v);
+                String data = StringUtilsLabKey.fullTrimToEmpty(v);
                 if (!StringUtils.isEmpty(data))
                     foundData = true;
                 rowData.add(data);
@@ -424,7 +424,7 @@ public class ExcelLoader extends DataLoader
                         else
                             data = String.valueOf(value);
 
-                        data = StringUtilsLabKey.fullTrimToEmptyString(data);
+                        data = StringUtilsLabKey.fullTrimToEmpty(data);
                         if (!data.isEmpty())
                             foundData = true;
 
@@ -674,7 +674,7 @@ public class ExcelLoader extends DataLoader
                     continue;
                 Object value = row.get(columnIndex);
                 if (value instanceof String s)
-                    value = StringUtilsLabKey.fullTrimToEmptyString(s);
+                    value = StringUtilsLabKey.fullTrimToEmpty(s);
                 fields[fieldIndex++] = value;
             }
             return fields;
@@ -727,13 +727,13 @@ public class ExcelLoader extends DataLoader
                             }
                             else if (useColumnFormats && column.clazz.equals(String.class))
                             {
-                                contents = StringUtilsLabKey.fullTrimToEmptyString(ExcelFactory.getCellStringValue(cell));
+                                contents = StringUtilsLabKey.fullTrimToEmpty(ExcelFactory.getCellStringValue(cell));
                             }
                             else
                             {
                                 contents = PropertyType.getFromExcelCell(cell);
                                 if (contents instanceof String s)
-                                    contents = StringUtilsLabKey.fullTrimToEmptyString(s);
+                                    contents = StringUtilsLabKey.fullTrimToEmpty(s);
                             }
                         }
                         else
@@ -1326,7 +1326,7 @@ public class ExcelLoader extends DataLoader
                 debugPrint("row:" + (output_rowcount+1) + " col:" + thisColumn + " " + thisValue);
 
                 if (thisValue instanceof String s)
-                    currentRow.set(thisColumn, StringUtilsLabKey.fullTrimToEmptyString(s));
+                    currentRow.set(thisColumn, StringUtilsLabKey.fullTrimToEmpty(s));
                 currentRow.set(thisColumn, thisValue);
                 value.setLength(0);
             }
