@@ -1581,6 +1581,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new FieldNamesTable(expSchema, cf);
     }
 
+    @Override
+    public FilteredTable<ExpSchema> createPhiFieldsTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new PhiFieldsTable(expSchema, cf);
+    }
+
     public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
     {
         if (clazz == ExpData.class)

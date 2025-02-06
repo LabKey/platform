@@ -28,20 +28,15 @@ public class FieldNamesTable extends BaseFieldNamesTable
 
     private void addBooleanPatternColumn(SQLFragment sql, String expression, String pattern, String name)
     {
-        // Need the operator that supports character classes
-        String operator = getSqlDialect().getCharClassLikeOperator();
-        sql.append(", ");
+        SQLFragment booleanExpression = new SQLFragment(expression)
+            .append(" ")
+            .append(getSqlDialect().getCharClassLikeOperator()) // Need the operator that supports character classes
+            .append(" ?");
 
-        // Can't expose a boolean expression as a boolean column on SQL Server, so wrap with a CASE statement
-        if (getSqlDialect().isSqlServer())
-            sql.append("CAST(CASE WHEN ");
-
-        sql.append(expression).append(" ").append(operator).append(" ?");
-
-        if (getSqlDialect().isSqlServer())
-            sql.append(" THEN 1 ELSE 0 END AS BIT)");
-
-        sql.append(" AS ").append(name);
-        sql.add(pattern);
+        sql.append(", ")
+            .append(getSqlDialect().wrapExistsExpression(booleanExpression))
+            .append(" AS ")
+            .append(name)
+            .add(pattern);
     }
 }

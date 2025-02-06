@@ -632,6 +632,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf);
 
+    FilteredTable<ExpSchema> createPhiFieldsTable(ExpSchema expSchema, ContainerFilter cf);
+
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);

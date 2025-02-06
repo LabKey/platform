@@ -19,6 +19,7 @@ package org.labkey.api.exp.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -52,12 +53,14 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class ExpSchema extends AbstractExpSchema
 {
@@ -231,8 +234,27 @@ public class ExpSchema extends AbstractExpSchema
             {
                 return ExperimentService.get().createFieldNamesTable(expSchema, cf);
             }
+        },
+        PhiFields
+        {
+            @Override
+            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
+            {
+                return ExperimentService.get().createPhiFieldsTable(expSchema, cf);
+            }
+
+            @Override
+            public boolean includeTable()
+            {
+                return ComplianceService.get().isComplianceSupported();
+            }
         };
         public abstract TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf);
+
+        public boolean includeTable()
+        {
+            return true;
+        }
     }
 
     public ExpTable getTable(TableType tableType)
@@ -262,19 +284,26 @@ public class ExpSchema extends AbstractExpSchema
         return ret;
     }
 
-    static private Set<String> tableNames = new LinkedHashSet<>();
-
-    static
+    // Use a holder pattern to initialize table names lazily, since ExpSchema gets referenced extremely early, before
+    // TableType.includeTable() might be ready to be called. e.g., ComplianceService isn't initialized yet.
+    private static final class TableNamesHolder
     {
-        for (TableType type : TableType.values())
+        private static final Set<String> tableNames;
+
+        static
         {
-            tableNames.add(type.toString());
+            Set<String> names = Arrays.stream(TableType.values())
+                .filter(TableType::includeTable)
+                .map(TableType::toString)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            names.add(DATA_CLASS_CATEGORY_TABLE);
+            names.add(SAMPLE_STATE_TYPE_TABLE);
+            names.add(SAMPLE_TYPE_CATEGORY_TABLE);
+            names.add(MEASUREMENT_UNITS_TABLE);
+
+            tableNames = Collections.unmodifiableSet(names);
         }
-        tableNames.add(DATA_CLASS_CATEGORY_TABLE);
-        tableNames.add(SAMPLE_STATE_TYPE_TABLE);
-        tableNames.add(SAMPLE_TYPE_CATEGORY_TABLE);
-        tableNames.add(MEASUREMENT_UNITS_TABLE);
-        tableNames = Collections.unmodifiableSet(tableNames);
     }
 
     public static final String SCHEMA_NAME = "exp";
@@ -313,7 +342,7 @@ public class ExpSchema extends AbstractExpSchema
     @Override
     public Set<String> getTableNames()
     {
-        return tableNames;
+        return TableNamesHolder.tableNames;
     }
 
     @Override
@@ -321,7 +350,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         for (TableType tableType : TableType.values())
         {
-            if (tableType.name().equalsIgnoreCase(name))
+            if (tableType.name().equalsIgnoreCase(name) && tableType.includeTable())
             {
                 return tableType.createTable(this, tableType.name(), cf);
             }
@@ -415,8 +444,8 @@ public class ExpSchema extends AbstractExpSchema
         media(null, null),
         sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURCES_AUDIT_FIELDS);
 
-        public AuditBehaviorType defaultBehavior;
-        public Set<String> additionalAuditFields;
+        public final AuditBehaviorType defaultBehavior;
+        public final Set<String> additionalAuditFields;
 
         DataClassCategoryType(@Nullable AuditBehaviorType defaultBehavior, @Nullable Set<String> addlAuditFields)
         {
@@ -751,7 +780,7 @@ public class ExpSchema extends AbstractExpSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         if (TableType.DataClasses.name().equalsIgnoreCase(settings.getQueryName()))
         {
