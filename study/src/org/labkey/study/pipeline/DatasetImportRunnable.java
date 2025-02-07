@@ -333,20 +333,16 @@ public class DatasetImportRunnable implements Runnable
                 }
             }
             assert cpuImport.stop();
-
-            for (ValidationException err : batchErrors.getRowErrors())
-                _logger.error(_fileName + " -- " + err.getMessage());
-
-            if (batchErrors.hasErrors())
-                throw batchErrors;
         }
         catch (Exception x)
         {
-            throw new RuntimeException("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
+            _logger.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
         }
         finally
         {
             IOUtils.closeQuietly(is);
+            for (ValidationException err : batchErrors.getRowErrors())
+                _logger.error(_fileName + " -- " + err.getMessage());
 
             if (_deleteAfterImport)
             {

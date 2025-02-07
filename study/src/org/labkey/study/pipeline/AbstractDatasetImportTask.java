@@ -162,7 +162,14 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 if (job != null)
                     job.setStatus(statusMsg);
 
-                runnable.run();
+                try
+                {
+                    runnable.run();
+                }
+                catch (Exception x)
+                {
+                    ctx.getLogger().error("Unexpected error loading " + runnable.getFileName(), x);
+                }
             }
 
             ctx.getLogger().info("Finish batch " + datasetsFileName);
