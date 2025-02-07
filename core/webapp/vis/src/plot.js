@@ -2142,7 +2142,7 @@ boxPlot.render();
         // during the log conversion at getLogScale L810, the below code ensures that the minimum scale of the y-axis
         // is not less than 0 due to calculations in convertYAxisDomain
         if (config.properties.yAxisScale === 'log') {
-            if (config.properties.yAxisDomain[0] <= 0) {
+            if (config?.properties?.yAxisDomain?.length >= 0 && config.properties.yAxisDomain[0] <= 0) {
                 config.properties.yAxisDomain[0] = minimumValue - cushion;
             }
         }
