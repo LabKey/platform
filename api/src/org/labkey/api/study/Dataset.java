@@ -311,6 +311,8 @@ public interface Dataset extends StudyEntity
 
     void setKeyPropertyName(String name);
 
+    Dataset createMutable(); // See Issue 52211
+
     void save(User user) throws SQLException;
 
     boolean isQueryDataset();
