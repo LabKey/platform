@@ -676,7 +676,8 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 ).getValueMap()),
                 "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
-                ).getValueMap())
+                ).getValueMap()),
+                        "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class)
         );
     }
 

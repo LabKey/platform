@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
@@ -48,6 +49,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.BaseApiAction;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -548,6 +550,14 @@ public class AdminController extends SpringActionController
     public static ActionURL getShowAdminURL()
     {
         return new ActionURL(ShowAdminAction.class, ContainerManager.getRoot());
+    }
+
+    @Override
+    protected void beforeAction(Controller action) throws ServletException
+    {
+        super.beforeAction(action);
+        if (action instanceof BaseViewAction<?> viewaction)
+            viewaction.getPageConfig().setRobotsNone();
     }
 
     @AdminConsoleAction

@@ -166,7 +166,10 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     public static StringBuilder getBaseServer(String scheme, String host, int port)
     {
         StringBuilder serverBuilder = new StringBuilder();
-        serverBuilder.append(scheme).append("://").append(host);
+        if (StringUtils.isNotEmpty(scheme) && StringUtils.isNotEmpty(host))
+            serverBuilder.append(scheme).append(":");
+        if (StringUtils.isNotEmpty(host))
+            serverBuilder.append("//").append(host);
         // we need to append a port number for http connections not on port 80, and for https connections not on 443
         if (port == 80 && ("http".equals(scheme) || "ws".equals(scheme)))
             port = -1;
@@ -233,10 +236,10 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
     protected void appendParamsAndFragment(StringBuilder uriString, boolean allowSubstSyntax)
     {
-        boolean hasParams = (null != _parameters && _parameters.size() > 0);
+        boolean hasParams = (null != _parameters && !_parameters.isEmpty());
         if (hasParams)
             uriString.append('?').append(getQueryString(allowSubstSyntax));
-        if (null != _fragment && _fragment.length() > 0)
+        if (null != _fragment && !_fragment.isEmpty())
             uriString.append("#").append(_fragment);
     }
 
@@ -260,7 +263,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
     protected Path _parsePath(String path, boolean decode)
     {
-        if (null == path || 0 == path.length() || "/".equals(path))
+        if (null == path || path.isEmpty() || "/".equals(path))
             return Path.rootPath;
         else
             return decode ? Path.decode(path) : Path.parse(path);
@@ -280,10 +283,10 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
     public String getPath()
     {
-        if (null == _path || _path.size() == 0)
+        if (null == _path || _path.isEmpty())
             return "";
         Path p;
-        if (_contextPath.size() == 0)
+        if (_contextPath.isEmpty())
             p = _path;
         else
             p = _contextPath.append(_path);
@@ -391,7 +394,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     /** NOTE URLHelper is dumb wrt contextPath, it does not know what the webapp contextPath is */
     public String getContextPath()
     {
-        if (_contextPath.size() == 0)
+        if (_contextPath.isEmpty())
             return "";
         return _contextPath.toString();
     }
@@ -502,7 +505,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             Map.Entry e = (Map.Entry) o;
             if (null == e.getKey() || null == e.getValue()) continue;
             String key = (null == prefix) ? String.valueOf(e.getKey()) :
-                    prefix + String.valueOf(e.getKey());
+                    prefix + e.getKey();
             // HttpServletRequest.getParameterMap() returns String->String[], so handle those specially here
             if (e.getValue() instanceof String[])
             {
@@ -533,7 +536,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             if (k.startsWith(prefix))
                 keys.add(k);
         }
-        return keys.toArray(new String[keys.size()]);
+        return keys.toArray(new String[0]);
     }
 
 
@@ -658,7 +661,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     // CONSIDER: convert URLHelper implementation to use PropertyValues internally
     public PropertyValues getPropertyValues()
     {
-        if (null == _parameters || _parameters.size() == 0)
+        if (null == _parameters || _parameters.isEmpty())
             return new MutablePropertyValues();
         // convert multiple values to String[] if necessary
         MultiValuedMap<String, String> map = new ArrayListValuedHashMap<>();
@@ -670,7 +673,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             if (m.getValue().size() == 1)
                 mpvs.addPropertyValue(m.getKey(), ((List<String>)m.getValue()).get(0));
             else
-                mpvs.addPropertyValue(m.getKey(), m.getValue().toArray(new String[m.getValue().size()]));
+                mpvs.addPropertyValue(m.getKey(), m.getValue().toArray(new String[0]));
         }
         return mpvs;
     }
@@ -942,7 +945,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
                 if (!isConfigured)
                 {
-                    String logMessageDetails = "returnURL value: " + this.toString();
+                    String logMessageDetails = "returnURL value: " + this;
                     HttpServletRequest request = HttpView.currentRequest();
                     if (request != null)
                     {
@@ -959,7 +962,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
                 }
                 else
                 {
-                    LOG.debug("Detected configured external host returnURL: " + this.toString());
+                    LOG.debug("Detected configured external host returnURL: " + this);
                 }
             }
         }
@@ -1011,7 +1014,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             assertFalse(s.contains("'"));
             try
             {
-                s = new URLHelper("http://server/double\"quote/?q\"uery=p\"aram").toString();
+                new URLHelper("http://server/double\"quote/?q\"uery=p\"aram").toString();
                 fail("Expected throw URISyntaxException");
             }
             catch (URISyntaxException x)
@@ -1022,7 +1025,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             assertFalse(s.contains("\""));
             try
             {
-                s = new URLHelper("http://server/back\\slash/?q\\uery=p\\aram").toString();
+                new URLHelper("http://server/back\\slash/?q\\uery=p\\aram").toString();
                 fail("Expected throw URISyntaxException");
             }
             catch (URISyntaxException x)
@@ -1042,6 +1045,26 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             String url = "/ehr-animalHistory.view#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
 
             assertEquals(url, h.toString());
+        }
+
+        void expect(String expected, String href) throws URISyntaxException
+        {
+            assertEquals(expected, new URLHelper(href).getURIString());
+        }
+
+        @Test
+        public void testPartials() throws Exception
+        {
+            // URLHelper.getURIString() should handle hrefs that don't include scheme or scheme and host
+            // e.g. don't return "null://null/index.html"
+
+            expect("https://labkey.test/", "https://labkey.test/");
+            expect("https://labkey.test/","https://labkey.test:443/");
+            expect("//labkey.test/","//labkey.test/");
+            expect("//labkey.test:443/","//labkey.test:443/");
+            expect("//labkey.test/index.html","//labkey.test/index.html");
+            expect("/","/");
+            expect("/home/project-begin.view","/home/project-begin.view");
         }
     }
 }

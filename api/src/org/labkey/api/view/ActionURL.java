@@ -57,7 +57,14 @@ public class ActionURL extends URLHelper implements Cloneable
         returnUrl,
         redirectUrl,    // mostly deprecated for returnUrl
         cancelUrl,
-        successUrl
+        successUrl,
+
+        // other common 'system' parameters
+        _dc,             // defeat cache
+        _template,
+        _print,
+        _docid,          // added to search result url
+        _noindex         // added to links to pages we know we don't want search engines to index
     }
 
     private boolean _baseServerPropsInitialized = false;

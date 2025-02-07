@@ -32,8 +32,6 @@ import static java.lang.Math.min;
 
 public class RateLimiter
 {
-    static final Logger _log = LogManager.getLogger(RateLimiter.class);
-
     final String _name;
     final Rate _target;
     boolean useSystem = false; // for small intervals or testing
@@ -140,10 +138,12 @@ public class RateLimiter
     }
 
 
-    private synchronized long getDelay()
+    public synchronized long getDelay()
     {
         return _long.getDelay(currentTimeMillis(), _target);
     }
+
+    public synchronized long getCount() { return _long.getCount(); }
 
 
     private synchronized long _updateCounts(long count)

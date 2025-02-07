@@ -53,7 +53,7 @@ public class GWTProtocol implements IsSerializable
     /** Scripts defined in the module itself, associated with the assay provider */
     private List<String> _moduleTransformScripts = new ArrayList<String>();
     /** Scripts defined in the assay definition */
-    private List<String> _protocolTransformScripts = new ArrayList<String>();
+    private List<Map<String, Object>> _protocolTransformScripts = new ArrayList<>();
 
     private List<String> _availableDetectionMethods;
     private String _selectedDetectionMethod;
@@ -192,17 +192,48 @@ public class GWTProtocol implements IsSerializable
         _allowTransformationScript = allowTransformationScript;
     }
 
-    public List<String> getProtocolTransformScripts()
+    public List<Map<String, Object>> getProtocolTransformScripts()
     {
         return _protocolTransformScripts;
     }
 
-    public void setProtocolTransformScripts(List<String> protocolTransformScripts)
+    private void handleMapTransformScripts(List<Map<String, Object>> protocolTransformScripts)
     {
-        _protocolTransformScripts = new ArrayList<String>(protocolTransformScripts.size());
+        for (Map<String, Object> map : protocolTransformScripts)
+        {
+            _protocolTransformScripts.add(Map.of(
+                    "scriptPath", ((String) map.get("scriptPath")).trim(),
+                    "runOnEdit", map.get("runOnEdit"),
+                    "runOnImport", map.get("runOnImport")
+            ));
+        }
+    }
+
+    private void handleStringTransformScripts(List<String> protocolTransformScripts)
+    {
+        List<Map<String, Object>> transformedScripts = new ArrayList<>(protocolTransformScripts.size());
         for (String script : protocolTransformScripts)
         {
-            _protocolTransformScripts.add(script.trim());
+            transformedScripts.add(Map.of(
+                    "scriptPath", script.trim(),
+                    "runOnEdit", false,
+                    "runOnImport", true
+            ));
+        }
+        handleMapTransformScripts(transformedScripts);
+    }
+
+    public void setProtocolTransformScripts(List<?> protocolTransformScripts)
+    {
+        if (!protocolTransformScripts.isEmpty()) {
+            Object first = protocolTransformScripts.get(0);
+            if (first instanceof Map) {
+                handleMapTransformScripts((List<Map<String, Object>>) protocolTransformScripts);
+            } else if (first instanceof String) {
+                handleStringTransformScripts((List<String>) protocolTransformScripts);
+            } else {
+                throw new IllegalArgumentException("Unsupported type: " + first.getClass().getName());
+            }
         }
     }
 

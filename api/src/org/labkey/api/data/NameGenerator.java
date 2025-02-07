@@ -1767,7 +1767,7 @@ public class NameGenerator
 
             if (_newNames.containsKey(name))
             {
-                throw new DuplicateNameException(name, _rowNumber);
+                throw new DuplicateNameException(name, _rowNumber, _parentTable);
             }
             else
             {
@@ -2346,6 +2346,7 @@ public class NameGenerator
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);
                     dataTypeAltNames.add(getEncodedDataTypeInExpression(decodedDataType));
+                    dataTypeAltNames.add(QueryKey.encodePart(decodedDataType)); // add encoded form in case the original parents column in as encoded but parentValues needs to be updated (for example, strip quotes for comma)
                     for (String dataTypeAltName : dataTypeAltNames)
                     {
                         inputs.computeIfAbsent(INPUT_PARENT + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
@@ -2766,9 +2767,9 @@ public class NameGenerator
     {
         private final String _name;
 
-        DuplicateNameException(String name, int rowNumber)
+        DuplicateNameException(String name, int rowNumber, @Nullable TableInfo tableInfo)
         {
-            super("Duplicate name '" + name + "' on row " + rowNumber, rowNumber);
+            super("Duplicate name '" + name + "' on row " + rowNumber + (tableInfo != null ? " of '" + tableInfo.getName() + "'" : ""), rowNumber);
             _name = name;
         }
 

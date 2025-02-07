@@ -19,6 +19,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PermissionsHelper;
 import org.labkey.test.util.StudyHelper;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -38,7 +39,7 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        AutoLinkToStudyTest initTest = (AutoLinkToStudyTest) getCurrentTest();
+        AutoLinkToStudyTest initTest = getCurrentTest();
         initTest.doSetup();
     }
 
@@ -301,11 +302,12 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         goToManageViews();
         Locator.linkWithText("Manage Categories").findElement(getDriver()).click();
         _extHelper.waitForExtDialog("Manage Categories");
-        Window categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
+        Window<?> categoryWindow = new Window.WindowFinder(getDriver()).withTitle("Manage Categories").waitFor();
         categoryWindow.clickButton("New Category", 0);
         WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
-        setFormElementJS(newCategoryField, name);
-        fireEvent(newCategoryField, SeleniumEvent.blur);
+        actionClear(newCategoryField);
+        newCategoryField.sendKeys(name);
+        newCategoryField.sendKeys(Keys.ENTER);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
         _extHelper.waitForExtDialogToDisappear("Manage Categories");

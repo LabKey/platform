@@ -117,7 +117,6 @@ public class DataRegion extends DisplayElement
     private ButtonBar _insertButtonBar = new ButtonBar();
     private ButtonBar _updateButtonBar = new ButtonBar();
     private ButtonBar _detailsButtonBar = new ButtonBar();
-    private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
     private final List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
@@ -167,6 +166,8 @@ public class DataRegion extends DisplayElement
     private List<Message> _messages;
     private final List<MessageSupplier> _messageSuppliers = new ArrayList<>();
 
+    public static final String EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS = "dataregionAsyncTotalRows";
+
     private static class GroupTable
     {
         private final List<DisplayColumnGroup> _groups = new ArrayList<>();
@@ -193,7 +194,7 @@ public class DataRegion extends DisplayElement
      * Messages that are displayed to the user and included in Query API responses.
      * These messages' content should NOT be HTML encoded as the responsibility
      * for encoding is left to the caller.
-     * See https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42017
+     * See Issue #42017
      */
     public static class Message
     {
@@ -280,8 +281,6 @@ public class DataRegion extends DisplayElement
         if (null == col)
             return;
         _displayColumns.add(col);
-        if (null != _inputPrefix)
-            col.setInputPrefix(_inputPrefix);
     }
 
     public void addDisplayColumn(int index, @NotNull DisplayColumn col)
@@ -290,14 +289,6 @@ public class DataRegion extends DisplayElement
         if (null == col)
             return;
         _displayColumns.add(index, col);
-        if (null != _inputPrefix)
-            col.setInputPrefix(_inputPrefix);
-    }
-
-    public void addDisplayColumns(List<DisplayColumn> displayColumns)
-    {
-        for (DisplayColumn displayColumn : displayColumns)
-            addDisplayColumn(displayColumn);
     }
 
     /* We don't want callers to modify this list directly.  However, this is the only way for subclasses to modify the list */
@@ -355,9 +346,6 @@ public class DataRegion extends DisplayElement
          * however, this breaks MS2 which seems to do funny things with nested RenderContexts
          */
         _displayColumns = displayColumns;
-        if (null != _inputPrefix)
-            for (DisplayColumn dc : _displayColumns)
-                dc.setInputPrefix(_inputPrefix);
     }
 
     public void removeColumns(String... columns)
@@ -417,13 +405,6 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    public void setInputPrefix(String inputPrefix)
-    {
-        _inputPrefix = inputPrefix;
-        for (DisplayColumn dc : _displayColumns)
-            dc.setInputPrefix(_inputPrefix);
-    }
-
     public void addButtonBarConfig(ButtonBarConfig buttonBarConfig)
     {
         assert buttonBarConfig != null : "Cannot add a null ButtonBarConfig";
@@ -445,19 +426,6 @@ public class DataRegion extends DisplayElement
         if (null != value)
             _hiddenFormFields.add(Pair.of(name, value));
     }
-
-    public String getHiddenFormFieldValue(String name)
-    {
-        for (Pair<String, Object> hiddenFormField : _hiddenFormFields)
-        {
-            if (name.equals(hiddenFormField.getKey()))
-            {
-                return (String) hiddenFormField.getValue();
-            }
-        }
-        return null;
-    }
-
 
     public
     @NotNull
@@ -827,7 +795,7 @@ public class DataRegion extends DisplayElement
     }
 
     @NotNull
-    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx, boolean showPaginationCount) throws IOException
     {
         if (_aggregateResults == null)
         {
@@ -835,7 +803,7 @@ public class DataRegion extends DisplayElement
             assert results != null;
             _complete = results.isComplete();
 
-            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
+            boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && showPaginationCount;
             countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
 
             List<Aggregate> baseAggregates = getSummaryStatsAggregates(ctx.getBaseSummaryStatsProviders());
@@ -1381,6 +1349,12 @@ public class DataRegion extends DisplayElement
         dataRegionJSON.put("rowCount", _rowCount);
         dataRegionJSON.put("showPagination", getShowPagination());
         dataRegionJSON.put("showPaginationCount", getShowPaginationCount());
+        if (getShowPaginationCount() && AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS))
+        {
+            // Issue 51036: load totalRows count async for DataRegions
+            dataRegionJSON.put("showPaginationCount", false);
+            dataRegionJSON.put("showPaginationCountAsync", true);
+        }
         dataRegionJSON.put("showRows", getShowRows().toString().toLowerCase());
         dataRegionJSON.put("showRecordSelectors", true);
         dataRegionJSON.put("showSelectMessage", _showSelectMessage);
@@ -1542,7 +1516,11 @@ public class DataRegion extends DisplayElement
 
     protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
-        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx);
+        // Issue 51036: load totalRows count async for DataRegions
+        boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
+        boolean showPaginationCount = getShowPaginationCount() && !asyncTotalRows;
+
+        Map<String, List<Aggregate.Result>> aggregateResults = getAggregateResults(ctx, showPaginationCount);
 
         if (!aggregateResults.isEmpty())
         {
@@ -1933,7 +1911,6 @@ public class DataRegion extends DisplayElement
 
             out.write("</table>");
 
-            renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
         }
 
@@ -1964,24 +1941,6 @@ public class DataRegion extends DisplayElement
             selector.setNamedParameters(getQueryParameters());
             selector.setMaxRows(getMaxRows()).setOffset(getOffset());
             ctx.setResults(selector.getResults());
-        }
-    }
-
-    private void renderDetailsHiddenFields(Writer out, Map rowMap) throws IOException
-    {
-        if (null != rowMap)
-        {
-            List<ColumnInfo> pkCols = getTable().getPkColumns();
-
-            for (ColumnInfo pkCol : pkCols)
-            {
-                assert null != rowMap.get(pkCol.getAlias());
-                out.write("<input type=\"hidden\" name=\"");
-                out.write(pkCol.getName());
-                out.write("\" value=\"");
-                out.write(PageFlowUtil.filter(rowMap.get(pkCol.getAlias()).toString()));
-                out.write("\">");
-            }
         }
     }
 

@@ -802,7 +802,7 @@ public class AnnouncementsController extends SpringActionController
             List<AttachmentFile> files = getAttachmentFileList();
 
             AnnouncementModel insert = form.getBean();
-            if (null == insert.getParent() || 0 == insert.getParent().length())
+            if (null == insert.getParent() || insert.getParent().isEmpty())
                 insert.setParent(form.getParentId());
 
             try
@@ -2373,7 +2373,7 @@ public class AnnouncementsController extends SpringActionController
             bean.isResponse = isResponse;
             bean.messagesURL = getBeginURL(c);  // TODO: Used as returnURL after delete thread... should be messages or list, as appropriate
             bean.listURL = getListURL(c);
-            bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter("_print", "1");
+            bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter(ActionURL.Param._print.name(), "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
             bean.embedded = (null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getController().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case

@@ -1145,4 +1145,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     {
         return new HashSet<>(selectColumns);
     }
+
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return false;
+    }
 }

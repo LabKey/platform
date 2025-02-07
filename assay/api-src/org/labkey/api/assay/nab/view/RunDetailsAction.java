@@ -75,7 +75,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         // lots of links will be broken. The workaround for now is to redirect to a print view.
         if (!isPrint() && !getContainer().hasPermission(getUser(), ReadPermission.class))
         {
-            throw new RedirectException(getViewContext().getActionURL().clone().addParameter("_print", true));
+            throw new RedirectException(getViewContext().getActionURL().clone().addParameter(ActionURL.Param._print, true));
         }
 
         // If the current user doesn't have ReadPermission to the current container, but the

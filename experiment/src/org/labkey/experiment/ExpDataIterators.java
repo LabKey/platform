@@ -71,6 +71,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
@@ -302,6 +303,8 @@ public class ExpDataIterators
                 {
                     aliquotedFromValue = aliquotedFromObj.toString();
                 }
+                if (aliquotedFromValue != null)
+                    aliquotedFromValue = aliquotedFromValue.trim();
             }
 
             // skip required field check for aliquots since aliquots properties are inherited
@@ -430,27 +433,6 @@ public class ExpDataIterators
             return amountChanged ? new Pair<>(true, rootAliquot) : null;
         }
 
-        private String getAliquotParent(int i)
-        {
-            Object parentObj = get(i);
-            Collection<String> parentNames = getParentNames(parentObj, _tsvWriter, "AliquotedFrom", null);
-            if (parentNames != null)
-            {
-                List<String> parents = parentNames.stream()
-                        .map(String::trim)
-                        .filter(s -> !StringUtils.isEmpty(s))
-                        .toList();
-                if (!parents.isEmpty())
-                {
-                    if (parents.size() > 1)
-                        _context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
-                    return parents.get(0);
-                }
-            }
-
-            return null;
-        }
-
         @Override
         public Object get(int i)
         {
@@ -459,7 +441,7 @@ public class ExpDataIterators
                 if (_isInsert)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(get(_aliquotedFromCol), _context, _tsvWriter); // recompute parent when new aliquot is created
                     return null;
                 }
 
@@ -484,7 +466,7 @@ public class ExpDataIterators
                 if (!_isUpdate)
                 {
                     if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
-                        return getAliquotParent(_aliquotedFromCol); // recompute parent when new aliquot is created
+                        return getAliquotParent(get(_aliquotedFromCol), _context, _tsvWriter); // recompute parent when new aliquot is created
                     return null;
                 }
                 // update only, return rootMaterialRowId that's queried from SampleUpdateAliquotedFromDataIterator
@@ -906,6 +888,26 @@ public class ExpDataIterators
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
     }
 
+    public static String getAliquotParent(Object parentObj, DataIteratorContext context, TSVWriter tsvWriter)
+    {
+        Collection<String> parentNames = getParentNames(parentObj, tsvWriter, "AliquotedFrom", null);
+        if (parentNames != null)
+        {
+            List<String> parents = parentNames.stream()
+                    .map(String::trim)
+                    .filter(s -> !StringUtils.isEmpty(s))
+                    .toList();
+            if (!parents.isEmpty())
+            {
+                if (parents.size() > 1)
+                    context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
+                return parents.get(0);
+            }
+        }
+
+        return null;
+    }
+
     static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
     {
         Collection<String> parentNames = null;
@@ -1051,7 +1053,6 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-
         }
 
         private BatchValidationException getErrors()
@@ -1254,25 +1255,10 @@ public class ExpDataIterators
                 if (_aliquotParentCol > -1 && !_context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns))
                 {
                     Object o = get(_aliquotParentCol);
-                    String aliquotParentName = null;
-                    if (o != null)
-                    {
-                        if (o instanceof String)
-                        {
-                            aliquotParentName = StringUtilsLabKey.unquoteString((String) o);
-                        }
-                        else if (o instanceof Number)
-                        {
-                            aliquotParentName = o.toString();
-                        }
-                        else
-                        {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, ExpMaterial.ALIQUOTED_FROM_INPUT));
-                        }
 
-                        if (aliquotParentName != null)
-                            _aliquotParents.put(lsid, aliquotParentName);
-                    }
+                    String aliquotParentName =  getAliquotParent(o, _context, _tsvWriter);
+                    if (aliquotParentName != null)
+                        _aliquotParents.put(lsid, aliquotParentName.trim());
 
                     if (aliquotParentName == null && _context.getInsertOption().mergeRows)
                         _candidateAliquotNames.add(name);
@@ -1476,7 +1462,7 @@ public class ExpDataIterators
                         }
 
                         if (aliquotParentName != null)
-                            _aliquotParents.put(key, aliquotParentName);
+                            _aliquotParents.put(key, aliquotParentName.trim());
                     }
                 }
 
@@ -2373,6 +2359,9 @@ public class ExpDataIterators
             if (!isMergeOrUpdate)
                 keyColumns.add(ExpDataTable.Column.LSID.toString());
 
+            NameExpressionOptionService svc = NameExpressionOptionService.get();
+            boolean canUpdateNames = svc.getAllowUserSpecificNamesValue(_container);
+
             if (isSample)
             {
                 if (isMergeOrUpdate)
@@ -2380,6 +2369,8 @@ public class ExpDataIterators
                     if (isUpdateUsingLsid)
                     {
                         keyColumns.add(ExpDataTable.Column.LSID.toString());
+                        if (!canUpdateNames)
+                            dontUpdate.add("name");
                     }
                     else
                     {
@@ -2401,6 +2392,8 @@ public class ExpDataIterators
                 if (isUpdateUsingLsid)
                 {
                     keyColumns.add(ExpDataTable.Column.LSID.toString());
+                    if (!canUpdateNames)
+                        dontUpdate.add("name");
                 }
                 else
                 {
@@ -2534,6 +2527,7 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
+            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
@@ -2964,7 +2958,7 @@ public class ExpDataIterators
                 String name = colInfo.getName();
 
                 fieldIndexes.add(i);
-                header.add(name);
+                header.add(_tsvWriter.quoteValue(name));
             }
 
             File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv");
@@ -3014,12 +3008,12 @@ public class ExpDataIterators
                 if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     // no dependencies to register if the names of samples are not being provided in the file.
                     if (_dataIdIndex != -1)
                     {
@@ -3031,12 +3025,12 @@ public class ExpDataIterators
                 else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 else if (lcName.startsWith(INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     if (_dataIdIndex != -1)
                         dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
                 }
@@ -3184,7 +3178,7 @@ public class ExpDataIterators
                 "Modified",
                 "ModifiedBy",
                 "Created",
-                "_rowNumber",
+                ROWNUMBER_COLUMNNAME,
                 RowId.name(),
                 "genId",
                 AliquotedFromLSID.name(),
