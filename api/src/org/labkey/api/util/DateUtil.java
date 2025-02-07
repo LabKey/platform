@@ -387,7 +387,7 @@ public class DateUtil
         return tz;
     }
 
-    private enum DateTimeOption
+    public enum DateTimeOption
     {
         DateTime,
         DateOnly,
@@ -648,26 +648,7 @@ validNum:       {
                 }
                 else if (dp == AMPM.am || dp == AMPM.pm)
                 {
-                    /*
-                     * AM/PM. Count 12:30 AM as 00:30, 12:30 PM as
-                     * 12:30, instead of blindly adding 12 if PM.
-                     */
-                    if (hour > 12 || hour < 0)
-                    {
-                        throw new ConversionException(s);
-                    }
-                    else if (dp == AMPM.am)
-                    {
-                        // AM
-                        if (hour == 12)
-                            hour = 0;
-                    }
-                    else
-                    {
-                        // PM
-                        if (hour != 12)
-                            hour += 12;
-                    }
+                    hour = convert12to24(hour, dp == AMPM.pm);
                 }
                 else //noinspection StatementWithEmptyBody
                     if (dp instanceof Weekday)
@@ -780,6 +761,33 @@ validNum:       {
             throw new ConversionException(s);
         }
     }
+
+
+    public static int convert12to24(int hour, boolean isPM)
+    {
+        /*
+         * AM/PM. Count 12:30 AM as 00:30, 12:30 PM as
+         * 12:30, instead of blindly adding 12 if PM.
+         */
+        if (hour > 12 || hour < 0)
+        {
+            throw new ConversionException("Invalid hour");
+        }
+        else if (!isPM)
+        {
+            // AM
+            if (hour == 12)
+                hour = 0;
+        }
+        else
+        {
+            // PM
+            if (hour != 12)
+                hour += 12;
+        }
+        return hour;
+    }
+
 
     public static long parseISODateTime(String s)
     {
