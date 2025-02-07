@@ -152,6 +152,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.CspCommentScanner;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DomTestCase;
 import org.labkey.api.util.ExceptionUtil;
@@ -376,6 +377,7 @@ public class ApiModule extends CodeOnlyModule
             Compress.TestCase.class,
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
+            CspCommentScanner.TestCase.class,
             DataIteratorUtil.TestCase.class,
             DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
@@ -452,6 +454,7 @@ public class ApiModule extends CodeOnlyModule
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         list.add(new JspTestCase("/org/labkey/vfs/vfsTestCase.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/view/ViewHeadersAndMetaTestCase.jsp"));
         return list;
     }
 

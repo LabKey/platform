@@ -704,11 +704,11 @@ public class AssayManager implements AssayService
     }
 
     /**
-     * Only index runs that have an associated assay provider
+     * Only index runs that have an associated assay provider and that have not been replaced
      */
     private boolean shouldIndexRun(ExpRun expRun)
     {
-        return getProvider(expRun) != null;
+        return expRun != null && getProvider(expRun) != null && expRun.getReplacedByRun() == null;
     }
 
     public void indexAssayBatch(int expRunRowId)
@@ -766,6 +766,7 @@ public class AssayManager implements AssayService
                 ).forEach(r -> indexAssayRun(task, r));
     }
 
+    @Override
     public void indexAssayRun(int expRunRowId)
     {
         SearchService ss = SearchService.get();
@@ -800,6 +801,7 @@ public class AssayManager implements AssayService
             ss.deleteResource(protocol.getDocumentId());
     }
 
+    @Override
     public void deindexAssayRuns(Collection<? extends ExpRun> expRuns)
     {
         if (expRuns == null || expRuns.isEmpty())

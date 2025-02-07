@@ -92,6 +92,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     private static final Set<PropertyStorageSpec.ForeignKey> FOREIGN_KEYS;
     private static final Set<String> FORCE_ENABLED_SYSTEM_FIELDS;
 
+    public static final String ALIQUOT_COUNT_LABEL = "Aliquots Created Count";
+    public static final String ALIQUOT_VOLUME_LABEL = "Aliquot Total Amount";
+    public static final String AVAILABLE_ALIQUOT_COUNT_LABEL = "Available Aliquot Count";
+    public static final String AVAILABLE_ALIQUOT_VOLUME_LABEL = "Available Aliquot Amount";
+
+    public static final Set<String> ALIQUOT_ROLLUP_FIELD_LABELS = CaseInsensitiveHashSet.of(ALIQUOT_COUNT_LABEL, ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_VOLUME_LABEL, AVAILABLE_ALIQUOT_COUNT_LABEL);
+
     static
     {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
@@ -110,14 +117,11 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("CpasType");
         RESERVED_NAMES.add("Is Aliquot");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
+        RESERVED_NAMES.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
+        RESERVED_NAMES.add("AliquotTotalVolume"); // Issue 52158: Sample Manager: data type reserved field name and label inconsistencies
         RESERVED_NAMES.add("Aliquoted From Parent");
-        RESERVED_NAMES.add("Available Aliquot Count");
-        RESERVED_NAMES.add("Available Aliquot Amount");
         RESERVED_NAMES.add("Root Material");
         RESERVED_NAMES.add("RecomputeRollup");
-        RESERVED_NAMES.add("AliquotTotalVolume");
-        RESERVED_NAMES.add("Aliquot Total Amount");
-        RESERVED_NAMES.add("Aliquots Created Count");
         RESERVED_NAMES.add("Aliquot Unit");
         RESERVED_NAMES.add("ExpirationDate");
         RESERVED_NAMES.add("Expiration Date");

@@ -16,11 +16,14 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
 
 public class PopupMenuView extends HttpView<PopupMenu>
 {
@@ -184,14 +187,56 @@ public class PopupMenuView extends HttpView<PopupMenu>
         if (item.isEmphasis())
             styleStr += "font-style: italic;";
 
+        // NOTE: nofollow is not recommended as way to avoid crawling internal links
+        // instead let's use an onclick handler to "hide" the link
+        String dataQuery = null;
+        String href = item.getHref();
+        if (null != href && null == item.getScript() && !item.isPost())
+        {
+            try
+            {
+                URLHelper url = new URLHelper(href);
+                boolean isLocal = null == url.getHost() && null == url.getScheme() && -1 == url.getPort();
+                if (isLocal)
+                {
+                    var context = HttpView.currentContext();
+
+                    // separate the path (into href) and query/fragment (into dataQuery) portions of URL
+                    var fragment = url.getFragment();
+                    url.setFragment(null);
+                    if (null != context && context.isRobot())
+                        url.addParameter(ActionURL.Param._noindex.name(), "1");
+                    dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+                    url.deleteParameters();
+                    if (!dataQuery.isEmpty())
+                        dataQuery = "?" + dataQuery;
+                    if (StringUtils.isNotEmpty(fragment))
+                        dataQuery += "#" + fragment;
+
+                    href = url.getLocalURIString();
+                    HttpView.currentPageConfig().addHandlerForQuerySelector(
+                            "A.noFollowNavigate",
+                            "click",
+                            "window.location = this.href + this.dataset['query']; return false;");
+                    cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+                }
+            }
+            catch (URISyntaxException e)
+            {
+                // fall through
+            }
+        }
+
         String id = config.makeId("popupMenuView");
         out.write("<a id='" + id + "'");
         if (null != cls)
             out.write(" class=\"" + cls + "\"");
-        if (null != item.getHref() && !item.isPost())
-            out.write(" href=\"" + PageFlowUtil.filter(item.getHref()) + "\"");
+        if (null != href && !item.isPost())
+            out.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
         else
             out.write(" href=\"#\"");
+        if (null != dataQuery)
+            out.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
         if (null != item.getTarget())
             out.write(" target=\"" + item.getTarget() + "\"");
         if (null != item.getDescription())

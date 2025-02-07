@@ -2164,6 +2164,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return searchIndexColumns.get(column);
     }
 
+    @Override
+    public boolean allowRobotsIndex()
+    {
+        return getUserSchema().allowRobotsIndex();
+    }
+
     public static class TestCase extends Assert{
         @Test
         public void testEnum()

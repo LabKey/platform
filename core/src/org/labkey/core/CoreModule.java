@@ -289,6 +289,7 @@ import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
+import org.labkey.core.view.template.bootstrap.PageTemplate;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
@@ -505,6 +506,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
                 "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+        AdminConsole.addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
+                "Short-circuit robots",
+                "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
+                false);
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS,
+                "Restore Object-Level Discussions",
+                "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
+                false, false, FeatureType.Deprecated));
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1112,6 +1121,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
             false);
+        AdminConsole.addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
+            "Data Region Async Total Rows",
+            "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
+            false);
 
         AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
@@ -1326,6 +1339,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
+        json.put(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS));
         return json;
     }
 

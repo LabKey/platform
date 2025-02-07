@@ -1,9 +1,11 @@
 package org.labkey.assay.plate.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.WellTable;
 
@@ -18,6 +20,7 @@ public class WellData
     private String _lsid;
     private Map<String, Object> _metadata;
     private String _position;
+    private String _replicateGroup;
     private Integer _row;
     private Integer _rowId;
     private Integer _sampleId;
@@ -47,6 +50,8 @@ public class WellData
             data.put(WellTable.Column.Type.name(), _type.name());
         if (_wellGroup != null)
             data.put(WellTable.Column.WellGroup.name(), _wellGroup);
+        if (_replicateGroup != null)
+            data.put(WellTable.Column.ReplicateGroup.name(), _replicateGroup);
 
         for (var entry : getMetadata().entrySet())
         {
@@ -65,12 +70,17 @@ public class WellData
 
     public boolean isReplicate()
     {
-        return WellGroup.Type.REPLICATE.equals(getType());
+        return _replicateGroup != null;
     }
 
     public boolean isSample()
     {
         return WellGroup.Type.SAMPLE.equals(getType());
+    }
+
+    public boolean isSampleOrReplicate()
+    {
+        return isSample() || isReplicate();
     }
 
     public Integer getCol()
@@ -81,6 +91,20 @@ public class WellData
     public void setCol(Integer col)
     {
         _col = col;
+    }
+
+    public @Nullable Pair<WellGroup.Type, String> getGroupKey()
+    {
+        if (isSample() || isReplicate())
+        {
+            if (_wellGroup != null)
+                return Pair.of(WellGroup.Type.SAMPLE, _wellGroup);
+
+            if (isReplicate())
+                return Pair.of(WellGroup.Type.REPLICATE, _replicateGroup);
+        }
+
+        return null;
     }
 
     public String getLsid()
@@ -111,6 +135,16 @@ public class WellData
     public void setPosition(String position)
     {
         _position = position;
+    }
+
+    public String getReplicateGroup()
+    {
+        return _replicateGroup;
+    }
+
+    public void setReplicateGroup(String replicateGroup)
+    {
+        _replicateGroup = replicateGroup;
     }
 
     public Integer getRow()
