@@ -132,7 +132,7 @@ public class DiscussionServiceImpl implements DiscussionService
     @Nullable
     public DiscussionService.DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
-        if (!LookAndFeelProperties.getInstance(c).isDiscussionEnabled())
+        if (!LookAndFeelProperties.getInstance(c).isDiscussionEnabled() || !AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS))
             return null;
 
         // get discussion parameters
