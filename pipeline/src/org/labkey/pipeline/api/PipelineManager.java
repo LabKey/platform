@@ -810,6 +810,7 @@ public class PipelineManager
         return archiveFile;
     }
 
+    @Nullable
     private static Path expandZipLocally(PipeRoot pipelineRoot, Path archiveFile, BindException errors)
     {
         try
@@ -864,7 +865,10 @@ public class PipelineManager
         if (archiveFile.getFileName().toString().toLowerCase().endsWith(".zip"))
         {
             Path importDir = expandZipLocally(pipelineRoot, archiveFile, errors);
-            xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
+            if (importDir != null)
+            {
+                xmlFile = getXmlFilePathFromArchive(importDir, archiveFile, xmlFileName);
+            }
         }
         //Downloading expanded archive will be handled later in the archive processing...
         //We don't really have the job context here
@@ -872,7 +876,7 @@ public class PipelineManager
         return xmlFile;
     }
 
-    public static @NotNull Path getXmlFilePathFromArchive(Path importDir, Path archiveFile, @NotNull String xmlFileName) throws InvalidFileException
+    public static @NotNull Path getXmlFilePathFromArchive(@NotNull Path importDir, Path archiveFile, @NotNull String xmlFileName) throws InvalidFileException
     {
         // when importing a folder archive for a study, the study.xml file may not be at the root
         if ("study.xml".equalsIgnoreCase(xmlFileName) && archiveFile.getFileName().toString().toLowerCase().endsWith(".folder.zip"))
@@ -886,7 +890,7 @@ public class PipelineManager
             }
             catch (Exception e)
             {
-                throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
+                throw new InvalidFileException(folderXml.getParentFile().toPath(), folderXml.toPath(), e);
             }
 
             if (folderDoc.getFolder().isSetStudy())

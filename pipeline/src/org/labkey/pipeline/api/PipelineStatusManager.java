@@ -640,14 +640,6 @@ public class PipelineStatusManager
         return getStatusFiles(filter);
     }
 
-    public static List<PipelineStatusFileImpl> getJobsWaitingForFiles(Container c)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.waitingForFiles.toString());
-
-        return getStatusFiles(filter);
-    }
-
     public static List<PipelineStatusFileImpl> getQueuedStatusFiles()
     {
         SimpleFilter filter = createQueueFilter();
@@ -931,7 +923,7 @@ public class PipelineStatusManager
             }
 
             PipelineJob.TaskStatus newStatus;
-            if (PipelineJob.TaskStatus.splitWaiting.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.waitingForFiles.matches(statusFile.getStatus()))
+            if (PipelineJob.TaskStatus.splitWaiting.matches(statusFile.getStatus()))
             {
                 newStatus = PipelineJob.TaskStatus.cancelled;
             }

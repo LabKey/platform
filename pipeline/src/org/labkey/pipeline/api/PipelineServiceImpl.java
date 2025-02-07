@@ -105,6 +105,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -134,8 +135,6 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     private static final Logger LOG = LogHelper.getLogger(PipelineService.class, "Pipeline initialization and job requeuing during server startup");
 
     private static final String PREF_LASTPROTOCOL = "lastprotocol";
-    private static final String PREF_LASTSEQUENCEDB = "lastsequencedb";
-    private static final String PREF_LASTSEQUENCEDBPATHS = "lastsequencedbpaths";
     private static final String KEY_PREFERENCES = "pipelinePreferences";
 
     public static final List<String> INACTIVE_JOB_STATUSES = Arrays.asList(
@@ -636,7 +635,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public HttpView getSetupView(SetupForm form)
+    public HttpView<SetupForm> getSetupView(SetupForm form)
     {
         return new JspView<>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
     }
@@ -647,14 +646,14 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         return PipelineController.savePipelineSetup(context, form, errors);
     }
 
-    private String getLastProtocolKey(PipelineProtocolFactory factory)
+    private String getLastProtocolKey(PipelineProtocolFactory<?> factory)
     {
         return PREF_LASTPROTOCOL + "-" + factory.getName();
     }
 
     // TODO: This should be on PipelineProtocolFactory
     @Override
-    public String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user)
+    public String getLastProtocolSetting(PipelineProtocolFactory<?> factory, Container container, User user)
     {
         try
         {
@@ -672,7 +671,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
     // TODO: This should be on PipelineProtocolFactory
     @Override
-    public void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user,
+    public void rememberLastProtocolSetting(PipelineProtocolFactory<?> factory, Container container, User user,
                                             String protocolName)
     {
         if (user.isGuest())
@@ -713,12 +712,6 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public List<PipelineStatusFileImpl> getJobsWaitingForFiles(Container c)
-    {
-        return PipelineStatusManager.getJobsWaitingForFiles(c);
-    }
-
-    @Override
     public List<PipelineStatusFileImpl> getQueuedStatusFiles(Container c)
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
@@ -742,27 +735,6 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         throw new UnsupportedOperationException("Method supported only on remote server");
     }
 
-    private List<String> parseArray(String dbPaths)
-    {
-        if(dbPaths == null) return null;
-        if(dbPaths.isEmpty()) return new ArrayList<>();
-        String[] tokens = dbPaths.split("\\|");
-        return new ArrayList<>(Arrays.asList(tokens));
-    }
-
-    private String list2String(List<String> sequenceDbPathsList)
-    {
-        if(sequenceDbPathsList == null) return null;
-        StringBuilder temp = new StringBuilder();
-        for(String path:sequenceDbPathsList)
-        {
-            if(!temp.isEmpty())
-                temp.append("|");
-            temp.append(path);
-        }
-        return temp.toString();
-    }
-
     /**
      * Recheck the status of the jobs that may or may not have been started already
      */
@@ -779,10 +751,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
                 try
                 {
-                    Class c = descriptor.getImplementationClass();
+                    Class<?> c = descriptor.getImplementationClass();
                     if (ResumableDescriptor.class.isAssignableFrom(c))
                     {
-                        ResumableDescriptor resumable = ((Class<ResumableDescriptor>)c).newInstance();
+                        ResumableDescriptor resumable = ((Class<ResumableDescriptor>)c).getDeclaredConstructor().newInstance();
                         resumable.resume(descriptor);
                     }
                 }
@@ -790,7 +762,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 {
                     LOG.error("Failed to get implementation class from descriptor " + descriptor, e);
                 }
-                catch (IllegalAccessException | InstantiationException e)
+                catch (IllegalAccessException | InstantiationException | NoSuchMethodException |
+                       InvocationTargetException e)
                 {
                     LOG.error("Failed to resume jobs for descriptor " + descriptor, e);
                 }
@@ -973,7 +946,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
             }
         }
-        AbstractFileAnalysisProtocol protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
+        AbstractFileAnalysisProtocol<?> protocol = factory.getProtocol(root, dirData, form.getProtocolName(), false);
         if (protocol == null || form.isAllowProtocolRedefinition())
         {
             String xml;
@@ -993,7 +966,9 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 }
                 ParamParser parser = PipelineJobService.get().createParamParser();
                 Map<String, String> params = new HashMap<>();
-                Map<String, Object> parsedMap = JsonUtil.DEFAULT_MAPPER.readValue(form.getConfigureJson(), new TypeReference<Map<String, Object>>(){});
+                Map<String, Object> parsedMap = JsonUtil.DEFAULT_MAPPER.readValue(form.getConfigureJson(), new TypeReference<>()
+                {
+                });
                 for (Map.Entry<String, Object> entry : parsedMap.entrySet())
                 {
                     params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());
@@ -1085,7 +1060,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     public boolean isProtocolDefined(AnalyzeForm form)
     {
         PathAnalysisProperties props = getFileAnalysisProperties(form.getContainer(), form.getTaskId(), form.getPath());
-        AbstractFileAnalysisProtocolFactory factory = props.getFactory();
+        AbstractFileAnalysisProtocolFactory<?> factory = props.getFactory();
         return factory.getProtocol(props.getPipeRoot(), props.getDirData(), form.getProtocolName(), false) != null;
     }
 
@@ -1119,11 +1094,10 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
     public static class TestCase extends Assert
     {
-        private static String PROJECT_NAME = "__PipelineRootTestProject";
-        private static String FOLDER_NAME = "subfolder";
-        private static String DEFAULT_ROOT_URI = "/files/__PipelineRootTestProject/@files";
-        private static String FILE_ROOT_SUFFIX = "_FileRootTest";
-        private static String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
+        private static final String PROJECT_NAME = "__PipelineRootTestProject";
+        private static final String FOLDER_NAME = "subfolder";
+        private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
+        private static final String PIPELINE_ROOT_SUFFIX = "_PipelineRootTest";
 
         private User _user;
         private Container _project;
@@ -1163,6 +1137,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             // verify pipeline root and file root are set to defaults and they they point to the same place
             assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isFileRoot());
             assertEquals("The default pipeline root was not set the same as the default file root.", pipelineRoot, fileRoot);
+            String DEFAULT_ROOT_URI = "/files/__PipelineRootTestProject/@files";
             assertTrue("The pipeline root uri was: " + FileUtil.uriToString(pipelineRootSetting.getUri()) + ", but expected: " + DEFAULT_ROOT_URI, FileUtil.uriToString(pipelineRootSetting.getUri()).contains(DEFAULT_ROOT_URI));
 
             // ensure everything back to the way it was before test ran

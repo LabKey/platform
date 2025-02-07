@@ -40,16 +40,13 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.pipeline.AnalyzeForm;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
-import org.labkey.api.pipeline.file.AbstractFileAnalysisJob;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocol;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.security.RequiresPermission;
@@ -121,9 +118,9 @@ public class AnalysisController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class AnalyzeAction extends SimpleViewAction<AnalyzeForm>
+    public static class AnalyzeAction extends SimpleViewAction<AnalyzeForm>
     {
-        private TaskPipeline _taskPipeline;
+        private TaskPipeline<?> _taskPipeline;
 
         @Override
         public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors)
@@ -153,12 +150,12 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private static TaskPipeline getTaskPipeline(String taskIdString)
+    private static TaskPipeline<?> getTaskPipeline(String taskIdString)
     {
         return PipelineJobService.get().getTaskPipeline(taskIdString);
     }
 
-    private static AbstractFileAnalysisProtocolFactory getProtocolFactory(TaskPipeline taskPipeline)
+    private static AbstractFileAnalysisProtocolFactory<?> getProtocolFactory(TaskPipeline<?> taskPipeline)
     {
         return PipelineJobService.get().getProtocolFactory(taskPipeline);
     }
@@ -167,7 +164,7 @@ public class AnalysisController extends SpringActionController
      * Called from LABKEY.Pipeline.startAnalysis()
      */
     @RequiresPermission(InsertPermission.class)
-    public class StartAnalysisAction extends MutatingApiAction<AnalyzeForm>
+    public static class StartAnalysisAction extends MutatingApiAction<AnalyzeForm>
     {
         @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
@@ -192,7 +189,7 @@ public class AnalysisController extends SpringActionController
      * Called from LABKEY.Pipeline.getFileStatus().
      */
     @RequiresPermission(ReadPermission.class)
-    public class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
+    public static class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
     {
         @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
@@ -258,7 +255,7 @@ public class AnalysisController extends SpringActionController
                         if (form.getPath() != null)
                         {
                             wbDirData = wbRoot.resolvePath(form.getPath());
-                            if (wbDirData == null || !NetworkDrive.exists(wbDirData))
+                            if (!NetworkDrive.exists(wbDirData))
                                 continue;
                         }
 
@@ -308,7 +305,7 @@ public class AnalysisController extends SpringActionController
         delete
             {
                 @Override
-                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name)
+                boolean doIt(PipeRoot root, PipelineProtocolFactory<?> factory, String name)
                 {
                     return factory.deleteProtocolFile(root, name);
                 }
@@ -316,7 +313,7 @@ public class AnalysisController extends SpringActionController
         archive
             {
                 @Override
-                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException
+                boolean doIt(PipeRoot root, PipelineProtocolFactory<?> factory, String name) throws IOException
                 {
                     return factory.changeArchiveStatus(root, name, true);
                 }
@@ -324,17 +321,17 @@ public class AnalysisController extends SpringActionController
         unarchive
             {
                 @Override
-                boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException
+                boolean doIt(PipeRoot root, PipelineProtocolFactory<?> factory, String name) throws IOException
                 {
                     return factory.changeArchiveStatus(root, name, false);
                 }
             };
 
-        abstract boolean doIt(PipeRoot root, PipelineProtocolFactory factory, String name) throws IOException;
+        abstract boolean doIt(PipeRoot root, PipelineProtocolFactory<?> factory, String name) throws IOException;
 
         String pastTense()
         {
-            return this.toString() + "d";
+            return this + "d";
         }
 
         boolean run(ContainerUser cu, Map<String, List<String>> selected)
@@ -344,7 +341,7 @@ public class AnalysisController extends SpringActionController
             // selected is a map of taskId -> list of protocol names.
             // Find the correct factory for each taskId, then perform operation on list of names. Fail and return on first error
             return selected.entrySet().stream().allMatch( entry -> {
-                PipelineProtocolFactory factory = getProtocolFactory(getTaskPipeline(entry.getKey()));
+                PipelineProtocolFactory<?> factory = getProtocolFactory(getTaskPipeline(entry.getKey()));
                 return entry.getValue().stream().allMatch( name -> {
                     try
                     {
@@ -372,7 +369,7 @@ public class AnalysisController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class ProtocolManagementAction extends FormHandlerAction<ProtocolManagementForm>
+    public static class ProtocolManagementAction extends FormHandlerAction<ProtocolManagementForm>
     {
 
         @Override
@@ -470,12 +467,7 @@ public class AnalysisController extends SpringActionController
                 String[] split = pair.split(",", 2);
                 if (split.length == 2) // silently ignore malformed input
                 {
-                    List<String> names = parsedSelected.get(split[0]);
-                    if (null == names)
-                    {
-                        names = new ArrayList<>();
-                        parsedSelected.put(split[0], names);
-                    }
+                    List<String> names = parsedSelected.computeIfAbsent(split[0], k -> new ArrayList<>());
                     names.add(split[1]);
                 }
             }
@@ -484,7 +476,7 @@ public class AnalysisController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ProtocolDetailsAction extends SimpleViewAction<ProtocolDetailsForm>
+    public static class ProtocolDetailsAction extends SimpleViewAction<ProtocolDetailsForm>
     {
         private String _protocolName;
 
@@ -499,8 +491,8 @@ public class AnalysisController extends SpringActionController
         {
             _protocolName = form.getName();
             PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-            AbstractFileAnalysisProtocolFactory factory = getProtocolFactory(getTaskPipeline(form.getTaskId()));
-            AbstractFileAnalysisProtocol protocol = factory.getProtocol(root, null, _protocolName, form.isArchived());
+            AbstractFileAnalysisProtocolFactory<?> factory = getProtocolFactory(getTaskPipeline(form.getTaskId()));
+            AbstractFileAnalysisProtocol<?> protocol = factory.getProtocol(root, null, _protocolName, form.isArchived());
             if (null != protocol)
                 form.setXml(protocol.getXml());
             return new JspView<>("/org/labkey/pipeline/analysis/protocolDetail.jsp", form);
@@ -555,50 +547,16 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class FileNotificationAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
-        {
-            for (PipelineStatusFile statusFile : PipelineService.get().getJobsWaitingForFiles(getContainer()))
-            {
-                if (PipelineJob.TaskStatus.waitingForFiles.matches(statusFile.getStatus()) && statusFile.getJobStore() != null)
-                {
-                    PipelineJob pipelineJob = PipelineJob.deserializeJob(statusFile.getJobStore());
-                    if (pipelineJob instanceof AbstractFileAnalysisJob)
-                    {
-                        List<File> inputFiles = ((AbstractFileAnalysisJob) pipelineJob).getInputFiles();
-                        boolean allFilesAvailable = !inputFiles.isEmpty();
-                        for (File inputFile : inputFiles)
-                        {
-                            if (!NetworkDrive.exists(inputFile))
-                            {
-                                allFilesAvailable = false;
-                                break;
-                            }
-                        }
-                        if (allFilesAvailable)
-                        {
-                            PipelineService.get().queueJob(pipelineJob);
-                        }
-                    }
-                }
-            }
-            return new ApiSimpleResponse();
-        }
-    }
-
     /**
      * Used for debugging task registration.
      */
     @RequiresPermission(AdminPermission.class)
-    public class InternalListTasksAction extends SimpleViewAction<Object>
+    public static class InternalListTasksAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/pipeline/analysis/internalListTasks.jsp", null, errors);
+            return new JspView<>("/org/labkey/pipeline/analysis/internalListTasks.jsp", null, errors);
         }
 
         @Override
@@ -612,7 +570,7 @@ public class AnalysisController extends SpringActionController
      * Used for debugging pipeline registration.
      */
     @RequiresPermission(AdminPermission.class)
-    public class InternalListPipelinesAction extends SimpleViewAction<Object>
+    public static class InternalListPipelinesAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -655,8 +613,8 @@ public class AnalysisController extends SpringActionController
             if (id == null)
                 throw new NotFoundException("taskId required");
 
-            TaskFactory factory = null;
-            TaskPipeline pipeline = null;
+            TaskFactory<?> factory = null;
+            TaskPipeline<?> pipeline = null;
 
             Map<String, String> map = Collections.emptyMap();
             TaskId taskId = TaskId.valueOf(id);
@@ -692,7 +650,7 @@ public class AnalysisController extends SpringActionController
     }
 
     @Nullable
-    private DOM.Renderable generateGraph(@Nullable TaskPipeline pipeline)
+    private DOM.Renderable generateGraph(@Nullable TaskPipeline<?> pipeline)
     {
         if (pipeline == null)
         {
@@ -733,11 +691,8 @@ public class AnalysisController extends SpringActionController
      * | in2.xls |          |
      * +---------+----------+
      * </pre>
-     *
-     * @param pipeline
-     * @return
      */
-    private String buildDigraph(TaskPipeline pipeline)
+    private String buildDigraph(TaskPipeline<?> pipeline)
     {
         TaskId[] progression = pipeline.getTaskProgression();
         if (progression == null)
@@ -753,38 +708,29 @@ public class AnalysisController extends SpringActionController
             if (name == null)
                 name = taskId.getNamespaceClass().getSimpleName();
 
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(taskId);
+            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
 
             if (factory == null)
             {
                 // not found
-                sb.append("\t\"").append(taskId.toString()).append("\"");
+                sb.append("\t\"").append(taskId).append("\"");
                 sb.append(" [label=\"").append(name).append("\"");
                 sb.append(" color=red");
                 sb.append("];");
             }
             else
             {
-                sb.append("\t\"").append(taskId.toString()).append("\"");
+                sb.append("\t\"").append(taskId).append("\"");
                 sb.append(" [shape=record label=\"{");
                 sb.append(name).append(" | {");
 
                 // inputs
                 // TODO: include parameters as inputs
                 sb.append("{");
-                if (factory instanceof CommandTaskImpl.Factory)
+                if (factory instanceof CommandTaskImpl.Factory f)
                 {
-                    CommandTaskImpl.Factory f = (CommandTaskImpl.Factory)factory;
-
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getInputPaths().keySet(), new Function<String, Object>()
-                            {
-                                @Override
-                                public Object apply(String input)
-                                {
-                                    return escapeDotFieldLabel(input) + "\\l";
-                                }
-                            }),
+                            Collections2.transform(f.getInputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\l"),
                             " | "));
                 }
                 else
@@ -797,19 +743,11 @@ public class AnalysisController extends SpringActionController
 
                 // outputs
                 sb.append("{");
-                if (factory instanceof CommandTaskImpl.Factory)
+                if (factory instanceof CommandTaskImpl.Factory f)
                 {
-                    CommandTaskImpl.Factory f = (CommandTaskImpl.Factory)factory;
 
                     sb.append(StringUtils.join(
-                            Collections2.transform(f.getOutputPaths().keySet(), new Function<String, Object>()
-                            {
-                                @Override
-                                public Object apply(String input)
-                                {
-                                    return escapeDotFieldLabel(input) + "\\r";
-                                }
-                            }),
+                            Collections2.transform(f.getOutputPaths().keySet(), (Function<String, Object>) input -> escapeDotFieldLabel(input) + "\\r"),
                             " | "));
                 }
                 else
@@ -829,17 +767,10 @@ public class AnalysisController extends SpringActionController
         sb.append("\n");
 
         // Now draw edges
-        // For now, we draw just a sequence from a->b->c. Eventaully, we should connect outputs to inputs and draw splits/joins.
+        // For now, we draw just a sequence from a->b->c. Eventually, we should connect outputs to inputs and draw splits/joins.
         sb.append("\t");
         sb.append(StringUtils.join(
-                Collections2.transform(Arrays.asList(progression), new Function<TaskId, String>()
-                {
-                    @Override
-                    public String apply(TaskId task)
-                    {
-                        return "\"" + task.toString() + "\"";
-                    }
-                }),
+                Collections2.transform(Arrays.asList(progression), task -> "\"" + task.toString() + "\""),
                 " -> "));
 
         sb.append("}");
@@ -851,7 +782,7 @@ public class AnalysisController extends SpringActionController
     // - spaces with '&#92;'
     private String escapeDotFieldLabel(String field)
     {
-        field = field.replaceAll("[\\[\\]\\{\\}<>]", "\\\\$0");
+        field = field.replaceAll("[\\[\\]{}<>]", "\\\\$0");
         return field.replaceAll("\\s", "&#92;");
     }
 

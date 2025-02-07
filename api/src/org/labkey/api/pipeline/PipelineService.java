@@ -184,10 +184,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception;
 
     // TODO: This should be on PipelineProtocolFactory
-    String getLastProtocolSetting(PipelineProtocolFactory factory, Container container, User user);
+    String getLastProtocolSetting(PipelineProtocolFactory<?> factory, Container container, User user);
 
     // TODO: This should be on PipelineProtocolFactory
-    void rememberLastProtocolSetting(PipelineProtocolFactory factory, Container container,
+    void rememberLastProtocolSetting(PipelineProtocolFactory<?> factory, Container container,
                                      User user, String protocolName);
     boolean hasSiteDefaultRoot(Container container);
 
@@ -225,9 +225,9 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     {
         private final PipeRoot _pipeRoot;
         private final Path _dirData;
-        private final AbstractFileAnalysisProtocolFactory _factory;
+        private final AbstractFileAnalysisProtocolFactory<?> _factory;
 
-        public PathAnalysisProperties(PipeRoot pipeRoot, Path dirData, AbstractFileAnalysisProtocolFactory factory)
+        public PathAnalysisProperties(PipeRoot pipeRoot, Path dirData, AbstractFileAnalysisProtocolFactory<?> factory)
         {
             _pipeRoot = pipeRoot;
             _dirData = dirData;
@@ -245,7 +245,7 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
             return _dirData;
         }
 
-        public AbstractFileAnalysisProtocolFactory getFactory()
+        public AbstractFileAnalysisProtocolFactory<?> getFactory()
         {
             return _factory;
         }
