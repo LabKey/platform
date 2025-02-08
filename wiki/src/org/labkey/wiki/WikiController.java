@@ -171,7 +171,7 @@ public class WikiController extends SpringActionController
                 }
             }
 
-            WebPartView toc = new WikiTOC(context);
+            WikiTOC toc = new WikiTOC(context);
             page.addClientDependencies(toc.getClientDependencies());
             vbox.addView(toc); //TODO: establish insertion order?
 
