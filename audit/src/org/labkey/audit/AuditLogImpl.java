@@ -102,20 +102,23 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     @Override
     public void moduleStartupComplete(ServletContext servletContext)
     {
+        // perform audit provider initialization
+        for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+        {
+            provider.initializeProvider(User.getAdminServiceUser());
+        }
+
+        // Synchronize so that we can guarantee that all events have already been added to the queue before we
+        // start processing them
         synchronized (STARTUP_LOCK)
         {
-            // perform audit provider initialization
-            for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
-            {
-                provider.initializeProvider(User.getAdminServiceUser());
-            }
             _logToDatabase.set(true);
+        }
 
-            while (!_eventTypeQueue.isEmpty())
-            {
-                Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
-                addEvents(event.first, List.of(event.second));
-            }
+        while (!_eventTypeQueue.isEmpty())
+        {
+            Pair<User, AuditTypeEvent> event = _eventTypeQueue.remove();
+            addEvents(event.first, List.of(event.second));
         }
     }
 
@@ -189,28 +192,25 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
         try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
-            if (!_logToDatabase.get())
+            /*
+              This is necessary because audit log service needs to be registered in the constructor
+              of the audit module, but the schema may not be created or updated at that point.  Events
+              that occur before startup is complete are therefore queued up and recorded after startup.
+             */
+            boolean databaseReady;
+            synchronized (STARTUP_LOCK)
             {
-                /*
-                  This is necessary because audit log service needs to be registered in the constructor
-                  of the audit module, but the schema may not be created or updated at that point.  Events
-                  that occur before startup is complete are therefore queued up and recorded after startup.
-                 */
-                synchronized (STARTUP_LOCK)
+                // Keep the critical section as lean as possible - just guarantee that all the events
+                // have been queued before releasing the lock
+                databaseReady = _logToDatabase.get();
+                if (!databaseReady)
                 {
-                    if (_logToDatabase.get())
-                    {
-                        for (var event : events)
-                            LogManager.get().insertEvent(user, event);
-                    }
-                    else
-                    {
-                        for (var event : events)
-                            _eventTypeQueue.add(new Pair<>(user, event));
-                    }
+                    for (var event : events)
+                        _eventTypeQueue.add(new Pair<>(user, event));
                 }
             }
-            else
+
+            if (databaseReady)
             {
                 if (reselectEvent && events.size()==1)
                     return LogManager.get().insertEvent(user, events.get(0));
