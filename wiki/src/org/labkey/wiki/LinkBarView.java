@@ -17,7 +17,7 @@
 package org.labkey.wiki;
 
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
@@ -27,12 +27,12 @@ import java.io.PrintWriter;
  * Date: Jun 2, 2006
  * Time: 3:29:33 PM
  */
-public class LinkBarView extends WebPartView
+public class LinkBarView extends WebPartView<Object>
 {
-    private final Pair<String, String>[] _links;
+    private final NavTree[] _links;
     private boolean _drawLine = false;
 
-    public LinkBarView(Pair<String, String>... links)
+    public LinkBarView(NavTree... links)
     {
         super(FrameType.DIV);
         _links = links;
@@ -47,9 +47,9 @@ public class LinkBarView extends WebPartView
     protected void renderView(Object model, PrintWriter out)
     {
         out.write("<table width=\"100%\" cellpadding=0><tr><td>");
-        for (Pair<String, String> link : _links)
+        for (NavTree link : _links)
         {
-            out.write(PageFlowUtil.link(link.first).href(link.second) + "&nbsp;");
+            out.write(PageFlowUtil.link(link.getText()).href(link.getHref()) + "&nbsp;");
         }
         out.write("</td></tr>");
         if (_drawLine)
