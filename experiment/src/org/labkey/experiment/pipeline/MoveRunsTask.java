@@ -225,8 +225,8 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         {
             var pipelineJob = getXarContext().getJob();
             return pipelineJob != null
-                    ? FileUtil.stringToPath(getXarContext().getContainer(), pipelineJob.getPipeRoot().getRootFileLike().toNioPathForRead().toString())
-                    : getRootPath();
+                    ? pipelineJob.getPipeRoot().getRootFileLike().toNioPathForRead()
+                    : super.getJobRootPath();
         }
 
         @Override
