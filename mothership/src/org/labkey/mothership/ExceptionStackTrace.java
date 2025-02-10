@@ -24,10 +24,6 @@ import org.labkey.api.util.ExceptionUtil;
 
 import java.util.Date;
 
-/**
- * User: jeckels
- * Date: Apr 20, 2006
- */
 public class ExceptionStackTrace
 {
     private String _container;
@@ -42,6 +38,7 @@ public class ExceptionStackTrace
     private Integer _instances;
     private Date _lastReport;
     private Date _firstReport;
+    private boolean _isClientException = false;
 
     public String getStackTrace()
     {
@@ -77,7 +74,7 @@ public class ExceptionStackTrace
     {
         if (_stackTraceHash == null && _stackTrace != null)
         {
-            _stackTraceHash = ExceptionUtil.hashStackTrace(_stackTrace);
+            _stackTraceHash = ExceptionUtil.hashStackTrace(_stackTrace, _isClientException);
         }
         return _stackTraceHash;
     }
@@ -165,6 +162,16 @@ public class ExceptionStackTrace
     public void setFirstReport(Date firstReport)
     {
         _firstReport = firstReport;
+    }
+
+    public boolean isClientException()
+    {
+        return _isClientException;
+    }
+
+    public void setClientException(boolean clientException)
+    {
+        _isClientException = clientException;
     }
 
     public static class TestCase extends Assert

@@ -665,6 +665,7 @@ public class MothershipController extends SpringActionController
                 ExceptionStackTrace stackTrace = new ExceptionStackTrace();
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
+                stackTrace.setClientException(form.isClientException());
 
                 Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
                 ServerSession session = sessionAndRelease.first;
@@ -692,6 +693,7 @@ public class MothershipController extends SpringActionController
                     report.setBrowser(form.getBrowser());
                     report.setServerSessionId(session.getServerSessionId());
                     report.setErrorCode(form.getErrorCode());
+                    report.setClientException(form.isClientException());
 
                     MothershipManager.get().insertException(stackTrace, report);
                 }
@@ -1383,6 +1385,7 @@ public class MothershipController extends SpringActionController
         private String _pageflowAction;
         private String _sqlState;
         private String _errorCode;
+        private boolean _clientException;
 
         public String getExceptionMessage()
         {
@@ -1485,6 +1488,16 @@ public class MothershipController extends SpringActionController
         public void setErrorCode(String errorCode)
         {
             _errorCode = errorCode;
+        }
+
+        public boolean isClientException()
+        {
+            return _clientException;
+        }
+
+        public void setClientException(boolean clientException)
+        {
+            _clientException = clientException;
         }
     }
 
