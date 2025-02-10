@@ -11,6 +11,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -283,6 +284,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             return new Pair<>(sqlf, rowNumContainers);
         }
 
+        @Override
         protected void prefetchExisting() throws BatchValidationException
         {
             Integer rowNumber = (Integer)_delegate.get(0);
@@ -293,7 +295,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             Pair<SQLFragment, Map<Integer, String>> selectRowsSql = getSelectExistingSql(50);
             SQLFragment select = selectRowsSql.first;
             Map<Integer, String> rowNumContainers = selectRowsSql.second;
-            var list = new SqlSelector(target.getSchema(), select).getArrayList(Map.class);
+            var list = new SqlSelector(target.getSchema(), select, QueryLogging.noValidationNeededQueryLogging()).getArrayList(Map.class);
             existingRecords.clear();
             for (int r=rowNumber ; r<=lastPrefetchRowNumber ;r++)
                 existingRecords.put(r,Map.of());
@@ -330,7 +332,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 rowNumContainers.remove(r);
             }
 
-            if (_verifyExisting && rowNumContainers.size() > 0)
+            if (_verifyExisting && !rowNumContainers.isEmpty())
                 _context.getErrors().addRowError(new ValidationException("No record found at row number: " + rowNumContainers.keySet().iterator().next() + "."));
 
             // backup to where we started so caller can iterate through them one at a time

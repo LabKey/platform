@@ -89,6 +89,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -625,7 +626,12 @@ public class ListController extends SpringActionController
                 view.addView(new HtmlView(PageFlowUtil.link("show item history").href(getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
             }
 
-            if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled() && DiscussionService.get() != null)
+            if (
+                    _list.getDiscussionSetting().isLinked()
+                            && AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS)
+                            && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled()
+                            && DiscussionService.get() != null
+                )
             {
                 String entityId = item.getEntityId();
 

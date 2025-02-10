@@ -39,12 +39,6 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 
-/**
- * User: adam
- * Date: 9/27/12
- * Time: 9:58 PM
- */
-
 // Allows some sharing of code between snapshot/ancillary study publication and specimen refresh
 public abstract class AbstractStudyPipelineJob extends PipelineJob
 {
