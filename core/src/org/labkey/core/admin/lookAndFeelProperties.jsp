@@ -56,6 +56,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -209,6 +210,10 @@
     <%=inheritCheckbox(inherited, helpMenuEnabled)%>
     <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isHelpMenuEnabled())%><%=disabled(inherited)%>></td>
 </tr>
+<%
+    if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS))
+    {
+%>
 <tr>
     <%
         String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
@@ -219,6 +224,9 @@
     <%=inheritCheckbox(inherited, discussionEnabled)%>
     <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDiscussionEnabled())%><%=disabled(inherited)%>></td>
 </tr>
+<%
+    }
+%>
 <tr>
     <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>
     <% inherited = isInherited(laf.getUnsubstitutedLogoHrefStored()); %>

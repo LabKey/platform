@@ -48,6 +48,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
@@ -173,7 +174,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
@@ -464,7 +464,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("reportAndDatasetNotificationOptions", notificationMap);
 
                 long cloudBackedStudies = allStudies.stream()
-                    .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
+                    .filter(s -> {
+                        PipeRoot pr = PipelineService.get().findPipelineRoot(s.getContainer());
+                        return pr != null && pr.isCloudRoot();
+                    })
                     .count();
                 metric.put("cloudBackedStudies", cloudBackedStudies);
 
@@ -555,7 +558,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Views", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
@@ -574,7 +577,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
@@ -625,7 +628,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView(getDisplayName(portalCtx.getContainer(),  webPart.getLocation()), HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
@@ -654,7 +657,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Datasets", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
@@ -674,9 +677,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
-            JspView view = new JspView("/org/labkey/study/designer/view/studySummary.jsp");
+            JspView<?> view = new JspView<>("/org/labkey/study/designer/view/studySummary.jsp");
             view.setTitle("Study Protocol Summary");
             view.setFrame(WebPartView.FrameType.PORTAL);
             return view;

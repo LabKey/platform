@@ -34,14 +34,14 @@ public class StudySecurityPolicyImporter implements InternalStudyImporter
 
         if (isValidForImportArchive(ctx, root))
         {
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             StudyDocument.Study.StudySecurity studySecurity = ctx.getXml().getStudySecurity();
             String policyFileName = studySecurity.getFile();
 
             if (policyFileName != null)
             {
-                ctx.getLogger().info("Loading security policy file from " + policyFileName);
+                ctx.getLogger().info("Loading security policy file from {}", policyFileName);
                 try
                 {
                     XmlObject doc = root.getXmlBean(policyFileName);
@@ -50,7 +50,7 @@ public class StudySecurityPolicyImporter implements InternalStudyImporter
                         XmlBeansUtil.validateXmlDocument(doc, "security policy file");
                         StudyPermissionExporter exporter = new StudyPermissionExporter();
                         List<String> errorMsg = exporter.loadSecurityPolicyDocument(ctx.getStudyImpl(), ctx.getUser(), spd);
-                        errorMsg.forEach(errors::reject);
+                        ctx.getLogger().warn("Errors while loading {}: {}", getDescription(), errorMsg);
                     }
                 }
                 catch (XmlValidationException e)
@@ -61,7 +61,7 @@ public class StudySecurityPolicyImporter implements InternalStudyImporter
             else
                 ctx.getLogger().error("Security policy file is not set");
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 
