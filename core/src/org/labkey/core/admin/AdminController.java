@@ -168,6 +168,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.SchemaKey;
@@ -463,6 +464,13 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
+
+        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+        {
+            AdminConsole.addLink(Diagnostics, "postgres connections", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), CoreQuerySchema.NAME, CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME));
+            AdminConsole.addLink(Diagnostics, "postgres locks", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), CoreQuerySchema.NAME, CoreQuerySchema.POSTGRES_LOCKS_TABLE_NAME));
+        }
+
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
