@@ -39,6 +39,12 @@ public abstract class BaseFieldNamesTable extends FilteredTable<ExpSchema>
     }
 
     @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema());
+    }
+
+    @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
         // Show only folders where current user has admin permissions
