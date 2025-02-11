@@ -505,8 +505,94 @@ public class StringUtilsLabKey
         };
     }
 
+    /**
+     * Replaces tabs, newlines and Separator characters (including non-breaking spaces) with simple spaces
+     * @return new string with each separator characters replaces by a single space. Returns null if original string is null.
+     */
+    public static @Nullable String replaceSeparators(@Nullable String str)
+    {
+        if (str == null)
+            return null;
+        // N.B. You might think that \p{Z} includes tabs, but it does not
+        return str.replaceAll("[\\p{Z}\\t\\n\\r]"," ");
+    }
+
+    /**
+     * Issue 51933: the trim() method does not trim off any non-breaking spaces
+     * Trims all separator characters (spaces, non-breaking spaces, newlines, tabs) from beginning and end of
+     * the string representation of the object provided.
+     * @param obj the object whose string value is to be trimmed
+     * @return the trimmed string. If the original object is null, returns the empty string.
+     */
+    public static @NotNull String fullTrimToEmpty(@Nullable Object obj)
+    {
+        if (obj == null)
+            return "";
+        String stringVal = obj.toString();
+        stringVal = stringVal.replaceAll("[\\p{Z}\\t\\n\\r\\s]+$", "");
+        return stringVal.replaceAll("^[\\p{Z}\\t\\n\\r\\s]+", "");
+    }
+
+    /**
+     * @param obj the object to convert and trim
+     * @return A string value representation of the object with leading and trailing spaces removed. In addition, all
+     * separator characters will become single spaces everywhere in the string. If obj is null, returns the empty string.
+     */
+    public static @NotNull String sanitizeSeparatorsAndTrim(@Nullable Object obj)
+    {
+        if (obj == null)
+            return "";
+        String stringVal = obj.toString();
+        return fullTrimToEmpty(replaceSeparators(stringVal));
+    }
+
     public static class TestCase extends Assert
     {
+        @Test
+        public void testFullTrimToEmptyString()
+        {
+            assertEquals("", fullTrimToEmpty(null));
+            assertEquals("", fullTrimToEmpty(""));
+            assertEquals("no trimming", fullTrimToEmpty("no trimming"));
+            assertEquals("no    trimming", fullTrimToEmpty("no    trimming"));
+            assertEquals("standard    trim", fullTrimToEmpty("   standard    trim "));
+            assertEquals("no\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("no\u2007 \u00A0\t\n   trimming"));
+            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("  with\u2007 \u00A0\t\n   trimming\t\n"));
+            assertEquals("with\u2007 \u00A0\t\n   trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 \u00A0\t\n   trimming\t\n"));
+            assertEquals("with\u2007 trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 trimming\t\n\u00A0\t\n  "));
+            assertEquals("with\u2007 trimming", fullTrimToEmpty("\u2007 \u00A0  with\u2007 trimming  "));
+        }
+
+        @Test
+        public void testReplaceSeparators()
+        {
+            assertNull(replaceSeparators(null));
+            assertEquals("", replaceSeparators(""));
+            assertEquals("", replaceSeparators(""));
+            assertEquals("a", replaceSeparators("a"));
+            assertEquals("ab ", replaceSeparators("ab\n"));
+            assertEquals("a   b", replaceSeparators("a\t\n\tb"));
+            assertEquals(" a   b ", replaceSeparators("\ta\t\r\nb\t"));
+            assertEquals("a  b  ", replaceSeparators("a\t\tb\n\n"));
+            assertEquals("  a    b  ", replaceSeparators("\u2007\ta\u00A0\t\n\tb\u202F\t"));
+            assertEquals("a b", replaceSeparators("a\tb"));
+        }
+
+        @Test
+        public void testSanitizeSeparatorsAndTrim()
+        {
+            assertEquals("", sanitizeSeparatorsAndTrim(null));
+            assertEquals("", sanitizeSeparatorsAndTrim(""));
+            assertEquals("no change", sanitizeSeparatorsAndTrim("no change"));
+            assertEquals("leading  and trailing", sanitizeSeparatorsAndTrim(" leading  and trailing       "));
+            assertEquals("with  tab change", sanitizeSeparatorsAndTrim("with  tab\tchange"));
+            assertEquals("tab change", sanitizeSeparatorsAndTrim(" tab\tchange"));
+            assertEquals("with newline", sanitizeSeparatorsAndTrim("with newline\n"));
+            assertEquals("with all  specialties", sanitizeSeparatorsAndTrim("with\tall\r\nspecialties\u00A0"));
+            assertEquals("special    separators", sanitizeSeparatorsAndTrim("special\u00A0 \u00A0 separators\n"));
+            assertEquals("special    separators", sanitizeSeparatorsAndTrim("\u202F special\u00A0 \u2007 separators\u00A0 \n"));
+        }
+
         @Test
         public void testReplaceBadCharacters()
         {
