@@ -8471,8 +8471,6 @@ public class QueryController extends SpringActionController
                 event.setDomainUri(_domain.getTypeURI());
                 event.setDomainName(_domain.getName());
                 AuditLogService.get().addEvent(user, event);
-
-                return null;
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
