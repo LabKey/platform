@@ -1,5 +1,6 @@
 package org.labkey.core.query;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -10,6 +11,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -22,12 +24,15 @@ import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Arrays;
 import java.util.Map;
 
 public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
 {
+    private static final Logger LOG = LogHelper.getLogger(PostgresConnectionsTable.class, "Access to Postgres connection status");
+
     public PostgresConnectionsTable(@NotNull CoreQuerySchema userSchema)
     {
         super(userSchema.getDbSchema(), CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME, userSchema);
@@ -155,6 +160,7 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
             {
                 throw new InvalidKeyException("No pid specified");
             }
+            LOG.info("{} is killing Postgres PID {}", user.getEmail(), pid);
             new SqlExecutor(getSchema()).execute(new SQLFragment("SELECT pg_terminate_backend(?)", pid));
             return oldRow;
         }
