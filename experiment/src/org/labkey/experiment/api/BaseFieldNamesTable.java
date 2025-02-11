@@ -12,7 +12,9 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 
 public abstract class BaseFieldNamesTable extends FilteredTable<ExpSchema>
 {
@@ -38,10 +40,11 @@ public abstract class BaseFieldNamesTable extends FilteredTable<ExpSchema>
         return addColumn(new BaseColumnInfo(FieldKey.fromParts(name), this, type));
     }
 
+    // This is a hack, required because ContainerFilter.Type.Current doesn't fill in the user
     @Override
-    protected ContainerFilter getDefaultContainerFilter()
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema());
+        return getContainer().hasPermission(user, AdminPermission.class);
     }
 
     @Override
