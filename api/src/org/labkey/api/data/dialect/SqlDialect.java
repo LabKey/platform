@@ -604,15 +604,17 @@ public abstract class SqlDialect
     }
 
     /**
-     * Converts an EXISTS SQL fragment into an expression that returns true or false. Example fragments that could be passed:
+     * Converts a boolean SQL expression into a boolean expression that can be selected. Example fragments that could be passed:
      *
      *     EXISTS (SELECT 1 FROM core.Users)
      *     EXISTS (SELECT * FROM comm.Messages WHERE CreatedBy = ?) OR EXISTS (SELECT * FROM comm.Pages WHERE CreatedBy = ?)")
+     *     Name LIKE '%[A-Za-z0-9]%'
      *
      * The method wraps the fragment with syntax required by this database to produce a SQL statement that can be used with SELECT.
-     * For example, PostgreSQL can SELECT EXISTS directly, but SQL Server can't... it requires wrapping with a CASE statement.
+     * For example, PostgreSQL can SELECT boolean expressions directly, but SQL Server can't... it requires wrapping with a CASE statement.
      */
-    public abstract SQLFragment wrapExistsExpression(SQLFragment existsSQL);
+    // TODO: Rename more generally to wrapBooleanExpression()
+    public abstract SQLFragment wrapExistsExpression(SQLFragment booleanSql);
 
     public abstract boolean supportsGroupConcat();
 

@@ -191,6 +191,7 @@ import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -1572,6 +1573,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
     {
         return new SampleStatusTable(expSchema, containerFilter);
+    }
+
+    @Override
+    public FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new FieldNamesTable(expSchema, cf);
+    }
+
+    @Override
+    public FilteredTable<ExpSchema> createPhiFieldsTable(ExpSchema expSchema, ContainerFilter cf)
+    {
+        return new PhiFieldsTable(expSchema, cf);
     }
 
     public static String getNamespacePrefix(Class<? extends ExpObject> clazz)
