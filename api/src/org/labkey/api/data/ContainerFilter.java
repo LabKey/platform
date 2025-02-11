@@ -256,7 +256,7 @@ public abstract class ContainerFilter
         List<Container> containers = ids.stream()
                 .map(ContainerManager::getForId)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         boolean hasNoSpecialChildren = includedChildTypes.isEmpty() ||
                 containers.stream().noneMatch(c -> c.hasChildrenOfAnyType(finalIncludedChildTypes));
 
@@ -355,14 +355,6 @@ public abstract class ContainerFilter
     public enum Type implements Factory
     {
         Current("Current folder")
-                {
-                    @Override
-                    public ContainerFilter create(Container c, User user)
-                    {
-                        return new CurrentContainerFilter(c);
-                    }
-                },
-        CurrentWithUser("Current folder with permissions applied to user")
                 {
                     @Override
                     public ContainerFilter create(Container c, User user)
@@ -494,7 +486,7 @@ public abstract class ContainerFilter
 
         private final String _description;
 
-        private Type(String description)
+        Type(String description)
         {
             _description = description;
         }
@@ -520,7 +512,7 @@ public abstract class ContainerFilter
         return new CurrentContainerFilter(c);
     }
 
-    public static class CurrentContainerFilter extends ContainerFilter
+    private static class CurrentContainerFilter extends ContainerFilter
     {
         CurrentContainerFilter(Container c)
         {
@@ -619,7 +611,7 @@ public abstract class ContainerFilter
         @Override
         public Type getType()
         {
-            return Type.CurrentWithUser;
+            return Type.Current;
         }
     }
 
@@ -1029,7 +1021,7 @@ public abstract class ContainerFilter
 
     public static class StudyAndSourceStudy extends ContainerFilterWithPermission
     {
-        private boolean _skipPermissionChecks;
+        private final boolean _skipPermissionChecks;
 
         public StudyAndSourceStudy(Container c, User user, boolean skipPermissionChecks)
         {

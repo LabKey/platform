@@ -62,7 +62,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return  ContainerFilter.Type.CurrentWithUser.create(_userSchema);
+        return  ContainerFilter.Type.Current.create(_userSchema);
     }
 
     public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, ContainerFilter cf, List<FieldKey> defaultVisibleColumns)
