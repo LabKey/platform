@@ -79,6 +79,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
@@ -2220,6 +2221,12 @@ public class WikiController extends SpringActionController
                 errors.rejectValue("name", ERROR_MSG, "You must provide a name for this page.");
             else if (name.startsWith("_") && !container.hasPermission(getUser(), AdminPermission.class))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
+
+            // name and title must have valid characters
+            if (null != name && !ViewServlet.validChars(name))
+                errors.rejectValue("name", ERROR_MSG, "Wiki name contains invalid characters.");
+            if (null != form.getTitle() && !ViewServlet.validChars(form.getTitle()))
+                errors.rejectValue("title", ERROR_MSG, "Wiki title contains invalid characters.");
 
             // name and title max 255 chars
             if (null != name && name.length() > 255)
