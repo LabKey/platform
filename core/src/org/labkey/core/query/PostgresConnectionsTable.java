@@ -12,8 +12,10 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
@@ -21,11 +23,12 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
 {
-    public PostgresConnectionsTable(@Nullable CoreQuerySchema userSchema)
+    public PostgresConnectionsTable(@NotNull CoreQuerySchema userSchema)
     {
         super(userSchema.getDbSchema(), CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME, userSchema);
 
@@ -34,20 +37,52 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
             throw new IllegalArgumentException("Only available for root container");
         }
 
+        setDescription("Shows info about the active Postgres connections and their activity");
+
+        // https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW
+        addColumn(new ExprColumn(this, "datid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".datid"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "datname", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".datname"), JdbcType.VARCHAR));
+
         ExprColumn pidColumn = new ExprColumn(this, "pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER);
         pidColumn.setKeyField(true);
         addColumn(pidColumn);
 
-        setDescription("Shows info about the active Postgres connections and their activity");
-
+        addColumn(new ExprColumn(this, "leader_pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".leader_pid"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "usesysid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".usesysid"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "usename", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".usename"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "blocked_by", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".blocked_by"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "state", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".state"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "application_name", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".application_name"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "client_addr", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_addr"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "client_hostname", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_hostname"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "client_port", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".client_port"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "backend_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_start"), JdbcType.TIMESTAMP));
+        addColumn(new ExprColumn(this, "xact_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".xact_start"), JdbcType.TIMESTAMP));
+        addColumn(new ExprColumn(this, "query_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".query_start"), JdbcType.TIMESTAMP));
+        addColumn(new ExprColumn(this, "state_change", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".state_change"), JdbcType.TIMESTAMP));
         addColumn(new ExprColumn(this, "wait_event_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".wait_event_type"), JdbcType.VARCHAR));
         addColumn(new ExprColumn(this, "wait_event", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".wait_event"), JdbcType.VARCHAR));
-        addColumn(new ExprColumn(this, "query_start", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".query_start"), JdbcType.TIMESTAMP));
-        addColumn(new ExprColumn(this, "running_time", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".running_time"), JdbcType.OTHER));
+        addColumn(new ExprColumn(this, "state", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".state"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "backend_xid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_xid"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "backend_xmin", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_xmin"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "query", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".query"), JdbcType.VARCHAR));
+        addColumn(new ExprColumn(this, "backend_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_type"), JdbcType.VARCHAR));
+
+        // Our calculated values
+        addColumn(new ExprColumn(this, "running_time_ms", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".running_time_ms"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "blocked_by", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".blocked_by"), JdbcType.VARCHAR));
+
+        setDefaultVisibleColumns(Arrays.asList(
+                FieldKey.fromParts("pid"),
+                FieldKey.fromParts("blocked_by"),
+                FieldKey.fromParts("datname"),
+                FieldKey.fromParts("usename"),
+                FieldKey.fromParts("application_name"),
+                FieldKey.fromParts("state"),
+                FieldKey.fromParts("wait_event"),
+                FieldKey.fromParts("query_start"),
+                FieldKey.fromParts("state_change"),
+                FieldKey.fromParts("running_time_ms"),
+                FieldKey.fromParts("query")
+        ));
     }
 
     @Override
@@ -56,15 +91,9 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
         SQLFragment result = new SQLFragment();
         result.append("""
                 SELECT
-                  pid,
-                  usename,
-                  pg_blocking_pids(pid) AS blocked_by,
-                  state,
-                  wait_event_type,
-                  wait_event,
-                  query_start,
-                  now() - query_start AS running_time,
-                  query
+                  *,
+                  CAST(pg_blocking_pids(pid) AS VARCHAR) AS blocked_by,
+                  CASE WHEN (state = 'idle' OR state IS NULL) THEN NULL ELSE GREATEST(EXTRACT(MILLISECONDS FROM AGE(NOW(), query_start)), 0) END AS running_time_ms
                 FROM pg_stat_activity""");
         return result;
     }
@@ -102,6 +131,7 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
         {
+            // If there's no PID (or a bogus PID), getMap() will return null
             return new TableSelector(PostgresConnectionsTable.this).getMap(getPid(keys));
         }
 
@@ -112,8 +142,14 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException
         {
+            // Be extra paranoid to avoid unauthorized killing of queries
+            if (!hasPermission(user, DeletePermission.class))
+            {
+                throw new ValidationException("User is not allowed to delete terminate connections");
+            }
+
             Integer pid = getPid(oldRow);
             if (pid == null)
             {
