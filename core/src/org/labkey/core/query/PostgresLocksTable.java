@@ -33,7 +33,7 @@ public class PostgresLocksTable extends VirtualTable<CoreQuerySchema>
         addColumn(new ExprColumn(this, "objsubid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objsubid"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "virtualtransaction", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".virtualtransaction"), JdbcType.VARCHAR));
         addColumn(new ExprColumn(this, "pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER)).
-                setFk(new QueryForeignKey.Builder(userSchema, null).table(CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME));
+                setFk(new QueryForeignKey.Builder(userSchema, null).table(CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME).raw(true));
         addColumn(new ExprColumn(this, "mode", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".mode"), JdbcType.VARCHAR));
         addColumn(new ExprColumn(this, "granted", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".granted"), JdbcType.BOOLEAN));
         addColumn(new ExprColumn(this, "fastpath", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".fastpath"), JdbcType.BOOLEAN));
