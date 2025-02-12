@@ -1149,3 +1149,4 @@ Ext4.override(Ext4.form.FieldSet, {
     }
 });
 
+Ext4.labkeyPatches = true; // Allow short-circuiting in 'LABKEY.requiresExt4Sandbox'
