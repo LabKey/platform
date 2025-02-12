@@ -27,6 +27,7 @@ import java.util.Date;
 public class ExceptionStackTrace
 {
     private String _container;
+    private boolean _clientException;
     private int _exceptionStackTraceId;
     private String _stackTrace;
     private String _stackTraceHash;
@@ -38,7 +39,6 @@ public class ExceptionStackTrace
     private Integer _instances;
     private Date _lastReport;
     private Date _firstReport;
-    private boolean _isClientException = false;
 
     public String getStackTrace()
     {
@@ -74,7 +74,7 @@ public class ExceptionStackTrace
     {
         if (_stackTraceHash == null && _stackTrace != null)
         {
-            _stackTraceHash = ExceptionUtil.hashStackTrace(_stackTrace, _isClientException);
+            _stackTraceHash = ExceptionUtil.hashStackTrace(_stackTrace, _clientException);
         }
         return _stackTraceHash;
     }
@@ -166,12 +166,12 @@ public class ExceptionStackTrace
 
     public boolean isClientException()
     {
-        return _isClientException;
+        return _clientException;
     }
 
     public void setClientException(boolean clientException)
     {
-        _isClientException = clientException;
+        _clientException = clientException;
     }
 
     public static class TestCase extends Assert

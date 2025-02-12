@@ -404,6 +404,7 @@ public class ExceptionUtil
         return createReportFromStacktrace(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, target, level, errorCode);
     }
 
+    // Prepares a client-side stack trace for hashing
     private static void prepareClientStackTrace(StringBuilder sb, BufferedReader reader) throws IOException
     {
         // Skip message part of the exception for hashing as this can differ easily between browsers
@@ -427,6 +428,7 @@ public class ExceptionUtil
         }
     }
 
+    // Prepares a server-side stack trace for hashing
     private static void prepareServerStackTrace(StringBuilder sb, BufferedReader reader) throws IOException
     {
         String[] ignoreLineNumberList = {"at java.", "at org.apache.", "at javax.", "at sun."};
