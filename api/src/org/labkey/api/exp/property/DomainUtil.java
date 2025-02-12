@@ -704,11 +704,11 @@ public class DomainUtil
 
 
         if (domainName != null)
-            domain.setName(domainName);
+            domain.setName(StringUtils.trimToNull(domainName));
 
         if (domain.getName() != null)
         {
-            String domainNameError = validateDomainName(domain.getName(), kind.getKindName(), kind.supportsNamingPattern());
+            String domainNameError = validateDomainName(StringUtils.trimToEmpty(domain.getName()), kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
                 throw new IllegalArgumentException(domainNameError);
         }
@@ -767,7 +767,7 @@ public class DomainUtil
             return validationException;
         }
 
-        String updatedName = update.getName();
+        String updatedName = StringUtils.trimToEmpty(update.getName());
         if (updateDomainName && !d.getName().equals(updatedName))
         {
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());

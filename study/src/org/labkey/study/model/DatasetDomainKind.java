@@ -538,7 +538,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain, DatasetDefinition def)
     {
-        String name = datasetProperties.getName();
+        String name = StringUtils.trimToEmpty(datasetProperties.getName());
         String keyPropertyName = datasetProperties.getKeyPropertyName();
         Integer datasetId = datasetProperties.getDatasetId();
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
