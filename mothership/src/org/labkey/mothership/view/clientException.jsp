@@ -12,7 +12,7 @@
 <labkey:errors/>
 <labkey:button id="inline-script" text="Inline script error" />
 <labkey:button id="resource-script" text="Resource script error" />
-<labkey:button id="nested-script" text="Resource script error" />
+<labkey:button id="nested-script" text="Nested resource script error" />
 <labkey:button id="async-script" text="Async script error (500ms)" />
 <div style="margin-top: 15px;">Opening the browser console will give more insight into thrown errors.</div>
 
