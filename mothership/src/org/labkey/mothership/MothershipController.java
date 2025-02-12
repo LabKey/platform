@@ -722,7 +722,6 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-//            throw new UnsupportedOperationException("Intentional exception for testing purposes");
             throw new SQLException("Intentional exception for testing purposes", "400");
         }
 
@@ -730,6 +729,23 @@ public class MothershipController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    @RequiresPermission(ReadPermission.class)
+    public static class ClientExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/mothership/view/clientException.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Client Exception");
         }
     }
 
