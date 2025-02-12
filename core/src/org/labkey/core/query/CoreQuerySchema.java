@@ -83,8 +83,6 @@ public class CoreQuerySchema extends UserSchema
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
-    public static final String POSTGRES_CONNECTIONS_TABLE_NAME = "PostgresConnections";
-    public static final String POSTGRES_LOCKS_TABLE_NAME = "PostgresLocks";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -127,12 +125,6 @@ public class CoreQuerySchema extends UserSchema
         {
             names.add(GROUPS_TABLE_NAME);
             names.add(USERS_AND_GROUPS_TABLE_NAME);
-        }
-
-        if (canSeePostgresStateQueries(getContainer(), getUser()))
-        {
-            names.add(POSTGRES_CONNECTIONS_TABLE_NAME);
-            names.add(POSTGRES_LOCKS_TABLE_NAME);
         }
 
         return names;
@@ -184,14 +176,6 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
-        if (canSeePostgresStateQueries(getContainer(), getUser()))
-        {
-            // Issue 52190: Expose a data that supports postgreSQL-specific analysis
-            if (POSTGRES_CONNECTIONS_TABLE_NAME.equalsIgnoreCase(name))
-                return new PostgresConnectionsTable(this);
-            if (POSTGRES_LOCKS_TABLE_NAME.equalsIgnoreCase(name))
-                return new PostgresLocksTable(this);
-        }
 
         return null;
     }

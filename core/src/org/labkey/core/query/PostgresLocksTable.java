@@ -3,20 +3,14 @@ package org.labkey.core.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.QueryForeignKey;
 
-public class PostgresLocksTable extends VirtualTable<CoreQuerySchema>
+public class PostgresLocksTable extends AbstractPostgresAdminOnlyTable
 {
-    public PostgresLocksTable(@NotNull CoreQuerySchema userSchema)
+    public PostgresLocksTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(userSchema.getDbSchema(), CoreQuerySchema.POSTGRES_LOCKS_TABLE_NAME, userSchema);
-
-        if (!userSchema.getContainer().isRoot())
-        {
-            throw new IllegalArgumentException("Only available for root container");
-        }
+        super(PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME, userSchema);
 
         setDescription("Shows info about the currently held Postgres locks");
 
@@ -33,7 +27,7 @@ public class PostgresLocksTable extends VirtualTable<CoreQuerySchema>
         addColumn(new ExprColumn(this, "objsubid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objsubid"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "virtualtransaction", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".virtualtransaction"), JdbcType.VARCHAR));
         addColumn(new ExprColumn(this, "pid", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER)).
-                setFk(new QueryForeignKey.Builder(userSchema, null).table(CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME).raw(true));
+                setFk(new QueryForeignKey.Builder(userSchema, null).table(PostgresUserSchema.POSTGRES_CONNECTIONS_TABLE_NAME).raw(true));
         addColumn(new ExprColumn(this, "mode", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".mode"), JdbcType.VARCHAR));
         addColumn(new ExprColumn(this, "granted", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".granted"), JdbcType.BOOLEAN));
         addColumn(new ExprColumn(this, "fastpath", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".fastpath"), JdbcType.BOOLEAN));

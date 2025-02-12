@@ -136,6 +136,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -267,6 +268,7 @@ import org.labkey.core.qc.DataStateImporter;
 import org.labkey.core.qc.DataStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
@@ -481,7 +483,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WebdavService.get().registerRootResolver(WebdavResolverImpl.get());
         WebdavService.get().registerRootResolver(WebFilesResolverImpl.get());
 
-        DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider(this)
+        DefaultSchema.registerProvider(CoreQuerySchema.NAME, new DefaultSchema.SchemaProvider(this)
         {
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
@@ -495,6 +497,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 return new CoreQuerySchema(schema.getUser(), schema.getContainer());
             }
         });
+
+        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+        {
+            DefaultSchema.registerProvider(PostgresUserSchema.NAME, new DefaultSchema.SchemaProvider(this)
+            {
+                @Override
+                public boolean isAvailable(DefaultSchema schema, Module module)
+                {
+                    return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
+                }
+
+                @Override
+                public QuerySchema createSchema(DefaultSchema schema, Module module)
+                {
+                    return new PostgresUserSchema(schema.getUser(), schema.getContainer());
+                }
+            });
+        }
 
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);

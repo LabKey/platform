@@ -1,17 +1,20 @@
 package org.labkey.core.query;
 
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -23,24 +26,25 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.core.admin.AdminController;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
-public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
+public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
 {
     private static final Logger LOG = LogHelper.getLogger(PostgresConnectionsTable.class, "Access to Postgres connection status");
 
-    public PostgresConnectionsTable(@NotNull CoreQuerySchema userSchema)
+    public PostgresConnectionsTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(userSchema.getDbSchema(), CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME, userSchema);
-
-        if (!userSchema.getContainer().isRoot())
-        {
-            throw new IllegalArgumentException("Only available for root container");
-        }
+        super(PostgresUserSchema.POSTGRES_CONNECTIONS_TABLE_NAME, userSchema);
 
         setDescription("Shows info about the active Postgres connections and their activity");
 
@@ -72,6 +76,8 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
         addColumn(new ExprColumn(this, "backend_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_type"), JdbcType.VARCHAR));
 
         // Our calculated values
+        var threadCol = addColumn(new ExprColumn(this, "threads", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER));
+        threadCol.setDisplayColumnFactory(ThreadDisplayColumn::new);
         addColumn(new ExprColumn(this, "running_time_ms", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".running_time_ms"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "blocked_by", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".blocked_by"), JdbcType.VARCHAR));
 
@@ -86,7 +92,8 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
                 FieldKey.fromParts("query_start"),
                 FieldKey.fromParts("state_change"),
                 FieldKey.fromParts("running_time_ms"),
-                FieldKey.fromParts("query")
+                FieldKey.fromParts("query"),
+                FieldKey.fromParts("threads")
         ));
     }
 
@@ -106,12 +113,11 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        if (ReadPermission.class.equals(perm))
+        if (DeletePermission.class.equals(perm) && getUserSchema().getContainer().hasPermission(user, ApplicationAdminPermission.class))
         {
-            return CoreQuerySchema.canSeePostgresStateQueries(ContainerManager.getRoot(), user);
+            return true;
         }
-        // Treat a delete as killing the connection forcibly
-        return DeletePermission.class.equals(perm) && ContainerManager.getRoot().hasPermission(user, ApplicationAdminPermission.class);
+        return super.hasPermission(user, perm);
     }
 
     @Override
@@ -174,6 +180,62 @@ public class PostgresConnectionsTable extends VirtualTable<CoreQuerySchema>
         private Integer getPid(Map<String, Object> oldRow)
         {
             return oldRow.containsKey("pid") ? ((Number) oldRow.get("pid")).intValue() : null;
+        }
+    }
+
+    private static class ThreadDisplayColumn extends DataColumn
+    {
+        private HashSetValuedHashMap<Thread, Integer> _pidsForThreads;
+        public ThreadDisplayColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        private HashSetValuedHashMap<Thread, Integer> getPidsForThreads()
+        {
+            if (_pidsForThreads == null)
+            {
+                _pidsForThreads = ConnectionWrapper.getSPIDsForThreads();
+            }
+            return _pidsForThreads;
+        }
+
+        @Override
+        public boolean isSortable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isFilterable()
+        {
+            return false;
+        }
+
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            Integer pid = ctx.get(getBoundColumn().getFieldKey(), Integer.class);
+            List<Thread> threads = new ArrayList<>();
+            if (pid != null)
+            {
+                for (Map.Entry<Thread, Integer> entry : getPidsForThreads().entries())
+                {
+                    if (entry.getValue() == pid.intValue())
+                    {
+                        threads.add(entry.getKey());
+                    }
+                }
+            }
+            String separator = "";
+            for (Thread thread : threads)
+            {
+                out.write(separator);
+                ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
+                url.setFragment(thread.getName());
+                out.write(new Link.LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
+                separator = "<br/>";
+            }
         }
     }
 }

@@ -315,6 +315,7 @@ import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
@@ -467,8 +468,8 @@ public class AdminController extends SpringActionController
 
         if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
         {
-            AdminConsole.addLink(Diagnostics, "postgres connections", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), CoreQuerySchema.NAME, CoreQuerySchema.POSTGRES_CONNECTIONS_TABLE_NAME));
-            AdminConsole.addLink(Diagnostics, "postgres locks", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), CoreQuerySchema.NAME, CoreQuerySchema.POSTGRES_LOCKS_TABLE_NAME));
+            AdminConsole.addLink(Diagnostics, "postgres connections", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), PostgresUserSchema.NAME, PostgresUserSchema.POSTGRES_CONNECTIONS_TABLE_NAME));
+            AdminConsole.addLink(Diagnostics, "postgres locks", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), PostgresUserSchema.NAME, PostgresUserSchema.POSTGRES_LOCKS_TABLE_NAME));
         }
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
@@ -11606,7 +11607,7 @@ public class AdminController extends SpringActionController
 
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
-    public class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
+    public static class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
     {
         private static final Logger _log = LogHelper.getLogger(ContentSecurityPolicyReportAction.class, "CSP warnings");
 
