@@ -53,6 +53,7 @@ public interface InventoryService
         StorageLocation,
         StorageRow,
         StorageRowSort,
+        StoragePositionNumber,
         StorageStatus,
         StorageUnit,
         StorageUnitLabel,

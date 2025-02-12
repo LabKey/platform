@@ -7496,6 +7496,7 @@ public class ExperimentController extends SpringActionController
                         "S.StorageLocation",
                         "S.StorageRow",
                         "S.StorageCol",
+                        "S.StoragePositionNumber",
                         "S.IsAliquot",
                         "S.Created",
                         "S.CreatedBy"

@@ -112,7 +112,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
                 name = name.substring(3);
             else if (name.startsWith("is"))
                 name = name.substring(2);
-            else if (name.startsWith("has"))
+            else if (name.startsWith("has") && !name.equals("hashCode"))
                 name = name.substring(3);
             else
                 continue;
