@@ -10436,30 +10436,17 @@ public class AdminController extends SpringActionController
         @Override
         public Object execute(ExceptionForm form, BindException errors)
         {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
-            {
-                ExceptionUtil.logClientExceptionToMothership(
-                        form.getStackTrace(),
-                        form.getExceptionMessage(),
-                        form.getBrowser(),
-                        null,
-                        form.getRequestURL(),
-                        form.getReferrerURL(),
-                        form.getUsername()
-                );
-            }
-            else
-            {
-                LOG.error("Client exception detected:\n" +
-                        form.getRequestURL() + "\n" +
-                        form.getReferrerURL() + "\n" +
-                        form.getBrowser() + "\n" +
-                        form.getUsername() + "\n" +
-                        form.getStackTrace()
-                );
-            }
+            String errorCode = ExceptionUtil.logClientExceptionToMothership(
+                form.getStackTrace(),
+                form.getExceptionMessage(),
+                form.getBrowser(),
+                null,
+                form.getRequestURL(),
+                form.getReferrerURL(),
+                form.getUsername()
+            );
 
-            return null;
+            return success(Map.of("errorCode", errorCode, "loggedToMothership", errorCode != null));
         }
     }
 

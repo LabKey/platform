@@ -515,7 +515,7 @@ public class ExceptionUtil
     /**
      * This has been separated from logExceptionToMothership() in order to provide more verbose server-side logging of client context
      */
-    public static void logClientExceptionToMothership(
+    public static @Nullable String logClientExceptionToMothership(
         String fullStackTrace,
         String exceptionMessage,
         String browser,
@@ -559,6 +559,8 @@ public class ExceptionUtil
                     stackTrace.stackTrace
             );
         }
+
+        return errorCode;
     }
 
     private static boolean shouldSend(ExceptionReportingLevel level, boolean local, ExceptionStackTrace stackTrace)

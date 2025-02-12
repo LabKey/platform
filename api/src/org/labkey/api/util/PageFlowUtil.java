@@ -1968,8 +1968,7 @@ public class PageFlowUtil
             .append(getScriptTag("/labkey.js"));
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
-        if ((AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP)) &&
-            (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
+        if (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions())
         {
             builder
                 .append(getScriptTag("/stacktrace.min.js"))
@@ -2187,7 +2186,6 @@ public class PageFlowUtil
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
-        experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 

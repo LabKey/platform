@@ -1098,10 +1098,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
-        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
-            "Client-side Exception Logging To Mothership",
-            "Report unhandled JavaScript exceptions to mothership.",
-            false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
