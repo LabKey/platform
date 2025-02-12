@@ -8375,7 +8375,7 @@ public class QueryController extends SpringActionController
             {
                 Long lastKnownModified = form.getLastKnownModified();
                 if (lastKnownModified == null || lastKnownModified != queryDef.getModified().getTime())
-                    throw new ApiUsageException("Unable to save import templates. The templates appears out of date, reload the page and try again.");
+                    throw new ApiUsageException("Unable to save import templates. The templates appear out of date, reload the page and try again.");
             }
 
             List<Pair<String, String>> updatedTemplates = getUploadedTemplates(form, _kind);
