@@ -45,13 +45,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * User: Tamra Myers
- * Date: Aug 16, 2006
- * Time: 12:33:37 PM
- */
 public class HtmlRenderer implements WikiRenderer
 {
+    private final boolean _allowSubstitutions;
     private final String _hrefPrefix;
     private final String _attachPrefix;
     private final Map<String, String> _nameTitleMap;
@@ -66,9 +62,10 @@ public class HtmlRenderer implements WikiRenderer
         _substitutionHandlers.put("dependency", new ClientDependencySubstitutionHandler());
     }
 
-
-    public HtmlRenderer(String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
+    // HTML wiki pages allow substitutions; HTML announcements and Markdown wikis (which are wrapped by this renderer) do not allow substitutions
+    public HtmlRenderer(boolean handleSubstitutions, String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
+        _allowSubstitutions = handleSubstitutions;
         _hrefPrefix = hrefPrefix;
         _attachPrefix = attachPrefix;
         _nameTitleMap = nameTitleMap == null ? new HashMap<>() : nameTitleMap;
@@ -237,97 +234,103 @@ public class HtmlRenderer implements WikiRenderer
     {
         if (text == null)
             return new FormattedHtml(HtmlString.EMPTY_STRING);
-        
-        // Find all substitution templates embedded in wiki text that have the form ${labkey.<type>(<any_stream of characters>)}.
-        Matcher webPartMatcher = _substitutionPattern.matcher(text);
 
-        // If we find none, return immediately
-        if (!webPartMatcher.find())
-            return new FormattedHtml(HtmlString.unsafe(text));
-
-        List<Definition> definitions = new ArrayList<>(10);
-        Map<Definition, List<String>> wikiErrors = new HashMap<>();
-        do
-        {
-            List<String> paramErrors = new ArrayList<>();
-            String substitutionType = webPartMatcher.group(1);          // type
-            String params = webPartMatcher.group(2).replace(",", "");
-            // Parse the parameters with the symbols in parseWith, they can be used in any order
-            // as long as they are the same symbol starts and completes a parameter value
-            List<String> paramList = new ArrayList<>();
-            paramList.add(params);
-            String[] parseWith = { "&#39;", "'" };
-            for (String parser : parseWith)
-            {
-                List<String> paramListTemp = new ArrayList<>();
-                for (String paramSection : paramList)
-                {
-                    String[] paramSplit = paramSection.split(parser);
-                    for (int i = 0; i < paramSplit.length; i+=2)
-                    {
-                        paramListTemp.add(paramSplit[i] + (paramSplit.length > i + 1 ? "'" + paramSplit[i+1]  + "'": ""));
-                    }
-                }
-                paramList = paramListTemp;
-            }
-
-            Map<String, String> paramMap = new HashMap<>(10);
-            for (String param : paramList)
-            {
-                Matcher paramMatcher = _paramPattern.matcher(param);
-
-                if (paramMatcher.matches())
-                {
-                    if (paramMap.containsKey(paramMatcher.group(1)))
-                        paramErrors.add(param.trim() + ", there are multiple parameters with this name");
-                    else
-                        paramMap.put(paramMatcher.group(1), paramMatcher.group(2));
-                }
-                else if (param.trim().length() > 0)
-                    paramErrors.add(param.trim());
-            }
-
-            // Stick new definition at beginning of list -- we want to replace them in reverse order
-            Definition definition = new Definition(substitutionType, webPartMatcher.start(), webPartMatcher.end(), paramMap);
-            definitions.add(0, definition);
-            wikiErrors.put(definition, paramErrors);
-        }
-        while(webPartMatcher.find());
-
-        StringBuilder sb = new StringBuilder(text);
         boolean volatilePage = false;
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
 
-        // Get the corresponding substitution handler for each type and replace template with substitution
-        for (Definition definition : definitions)
+        if (_allowSubstitutions)
         {
-            SubstitutionHandler handler = _substitutionHandlers.get(definition.getType());
-            FormattedHtml substitution;
+            // Find all substitution templates embedded in wiki text that have the form ${labkey.<type>(<any_stream of characters>)}.
+            Matcher webPartMatcher = _substitutionPattern.matcher(text);
 
-            if (null != handler)
-                substitution = handler.getSubstitution(definition.getParams());
-            else
-                substitution = new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: unknown type, \"labkey." + PageFlowUtil.filter(definition.getType()) + "\"</font>"));
+            // If we find none, return immediately
+            if (!webPartMatcher.find())
+                return new FormattedHtml(HtmlString.unsafe(text));
 
-            sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml().toString());
-
-            if (substitution.isVolatile())
-                volatilePage = true;
-
-            cds.addAll(substitution.getClientDependencies());
-
-            List<String> paramErrors = wikiErrors.get(definition);
-            if (paramErrors.size() > 0)
+            List<Definition> definitions = new ArrayList<>(10);
+            Map<Definition, List<String>> wikiErrors = new HashMap<>();
+            do
             {
-                String errorHTML = "<br>";
-                for (String error : paramErrors)
-                    errorHTML = errorHTML.concat("<font class='error' color='red'>Error with parameter " +
-                            error + " in " + definition.getType() + "</font><br><br>");
-                sb.insert(definition.getStart() + substitution.getHtml().toString().length(), errorHTML);
+                List<String> paramErrors = new ArrayList<>();
+                String substitutionType = webPartMatcher.group(1);          // type
+                String params = webPartMatcher.group(2).replace(",", "");
+                // Parse the parameters with the symbols in parseWith, they can be used in any order
+                // as long as they are the same symbol starts and completes a parameter value
+                List<String> paramList = new ArrayList<>();
+                paramList.add(params);
+                String[] parseWith = {"&#39;", "'"};
+                for (String parser : parseWith)
+                {
+                    List<String> paramListTemp = new ArrayList<>();
+                    for (String paramSection : paramList)
+                    {
+                        String[] paramSplit = paramSection.split(parser);
+                        for (int i = 0; i < paramSplit.length; i += 2)
+                        {
+                            paramListTemp.add(paramSplit[i] + (paramSplit.length > i + 1 ? "'" + paramSplit[i + 1] + "'" : ""));
+                        }
+                    }
+                    paramList = paramListTemp;
+                }
+
+                Map<String, String> paramMap = new HashMap<>(10);
+                for (String param : paramList)
+                {
+                    Matcher paramMatcher = _paramPattern.matcher(param);
+
+                    if (paramMatcher.matches())
+                    {
+                        if (paramMap.containsKey(paramMatcher.group(1)))
+                            paramErrors.add(param.trim() + ", there are multiple parameters with this name");
+                        else
+                            paramMap.put(paramMatcher.group(1), paramMatcher.group(2));
+                    }
+                    else if (!param.trim().isEmpty())
+                        paramErrors.add(param.trim());
+                }
+
+                // Stick new definition at beginning of list -- we want to replace them in reverse order
+                Definition definition = new Definition(substitutionType, webPartMatcher.start(), webPartMatcher.end(), paramMap);
+                definitions.add(0, definition);
+                wikiErrors.put(definition, paramErrors);
             }
+            while (webPartMatcher.find());
+
+            StringBuilder sb = new StringBuilder(text);
+
+            // Get the corresponding substitution handler for each type and replace template with substitution
+            for (Definition definition : definitions)
+            {
+                SubstitutionHandler handler = _substitutionHandlers.get(definition.getType());
+                FormattedHtml substitution;
+
+                if (null != handler)
+                    substitution = handler.getSubstitution(definition.getParams());
+                else
+                    substitution = new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: unknown type, \"labkey." + PageFlowUtil.filter(definition.getType()) + "\"</font>"));
+
+                sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml().toString());
+
+                if (substitution.isVolatile())
+                    volatilePage = true;
+
+                cds.addAll(substitution.getClientDependencies());
+
+                List<String> paramErrors = wikiErrors.get(definition);
+                if (!paramErrors.isEmpty())
+                {
+                    String errorHTML = "<br>";
+                    for (String error : paramErrors)
+                        errorHTML = errorHTML.concat("<font class='error' color='red'>Error with parameter " +
+                                error + " in " + definition.getType() + "</font><br><br>");
+                    sb.insert(definition.getStart() + substitution.getHtml().toString().length(), errorHTML);
+                }
+            }
+
+            text = sb.toString();
         }
 
-        return new FormattedHtml(HtmlString.unsafe(sb.toString()), volatilePage, cds);
+        return new FormattedHtml(HtmlString.unsafe(text), volatilePage, cds);
     }
 
 
