@@ -939,7 +939,7 @@ public class DomainUtil
 
     public static @Nullable String validateDomainName(@NotNull String domainName, String kindName, boolean supportsNamingPattern)
     {
-        String prefix = "Invalid " + kindName + " name \"" + domainName + "\". ";
+        String prefix = "Invalid " + kindName + " name '" + domainName + "'. ";
 
         if (StringUtils.isBlank(domainName))
             return kindName + " name must not be blank.";
