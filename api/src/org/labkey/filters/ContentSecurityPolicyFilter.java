@@ -69,10 +69,17 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
+    static
+    {
+        // ReactJS hot reload uses localhost port 3001. If in dev mode, allow browser to access that port.
+        if (AppProps.getInstance().isDevMode())
+            registerAllowedConnectionSource("reactjs.hot.reload", "localhost:3001");
+    }
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
     {
-        LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing " + filterConfig.getFilterName());
+        LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing {}", filterConfig.getFilterName());
 
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
@@ -184,7 +191,7 @@ public class ContentSecurityPolicyFilter implements Filter
         @Test
         public void testPolicyFiltering()
         {
-            String policy = """
+            String fakePolicyForTesting = """
                 /* Beginning of line comment should be removed */default-src\t'self' https: http: ;
                     connect-src 'self' http://www.labkey.org /* this is a mistake! */ localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
                     object-src https://* ‘none’ ; /* Hard to see, but there are curly quotes surrounding "none" on this line */\r
@@ -200,7 +207,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     report-uri /* Whoa! */ /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;
                 """;
 
-            // Multi-line for readability, but notice that newlines are removed before assignment
+            // Multi-line for readability, but notice that newlines are replaced before assignment
             String expected = """
                 default-src 'self' https: http: ;
                     connect-src 'self' http://www.labkey.org  localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
@@ -213,7 +220,7 @@ public class ContentSecurityPolicyFilter implements Filter
                      frame-ancestors 'self' ;
                       report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;""".replace('\n', ' ');
 
-            Assert.assertEquals(expected, filterPolicy(policy));
+            Assert.assertEquals(expected, filterPolicy(fakePolicyForTesting));
         }
     }
 }

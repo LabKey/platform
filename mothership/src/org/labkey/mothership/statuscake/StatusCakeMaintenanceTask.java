@@ -40,6 +40,7 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.api.query.QueryUpdateService.ConfigParameters.BulkLoad;
@@ -176,7 +177,7 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
                             List tags = check.getJSONArray("tags").toList();
                             Server s = new Server(id, name, tags);
 
-                            List<History> history = getUptime(s, client, since, statusCakeAPIKey);
+                            List<History> history = getUptime(s, client, since, statusCakeAPIKey, log);
                             log.info("Fetched " + s + " with " + history.size() + " history rows");
 
                             serverRows.add(s.toMap());
@@ -236,7 +237,11 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
         }
     }
 
-    private static List<History> getUptime(Server server, CloseableHttpClient client, LocalDateTime since, String statusCakeAPIKey) throws IOException
+    private List<History> getUptime(Server server,
+                                           CloseableHttpClient client,
+                                           LocalDateTime since,
+                                           String statusCakeAPIKey,
+                                           Logger log) throws IOException
     {
         Instant instant = since.toInstant(ZoneOffset.UTC);
 
@@ -248,11 +253,58 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
 
         List<History> result = new ArrayList<>();
 
+        // StatusCake occasionally gives a 500 error on these requests. It doesn't seem to be rate-limiting, which
+        // should return a 429. Regardless, give it a few retries before failing
+        int attemptsRemaining = 3;
+        boolean success = false;
+        while (!success)
+        {
+            try
+            {
+                requestUptime(server, client, httpGet, result);
+                success = true;
+            }
+            catch (FailedRequestException e)
+            {
+                attemptsRemaining--;
+
+                if (attemptsRemaining == 0)
+                {
+                    throw e;
+                }
+                log.warn(e.getMessage());
+                try
+                {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException ignored) {}
+            }
+        }
+
+        if (result.size() == limit)
+        {
+            History h = result.get(result.size() - 1);
+            result.addAll(getUptime(server, client, h.end(), statusCakeAPIKey ,log));
+        }
+
+        return result;
+    }
+
+    private static class FailedRequestException extends RuntimeException
+    {
+        public FailedRequestException(String message)
+        {
+            super(message);
+        }
+    }
+
+    private void requestUptime(Server server, CloseableHttpClient client, ClassicHttpRequest httpGet, List<History> result) throws IOException
+    {
         client.execute(httpGet, response -> {
             final HttpEntity entity1 = response.getEntity();
             if (response.getCode() != 200)
             {
-                throw new RuntimeException("Bad response " + response.getCode() + " for " + httpGet.getPath());
+                throw new FailedRequestException("Bad response " + response.getCode() + " for " + httpGet.getPath());
             }
 
             try (Reader reader = new InputStreamReader(entity1.getContent(), StandardCharsets.UTF_8))
@@ -275,13 +327,5 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
             }
             return null;
         });
-
-        if (result.size() == limit)
-        {
-            History h = result.get(result.size() - 1);
-            result.addAll(getUptime(server, client, h.end(), statusCakeAPIKey));
-        }
-
-        return result;
     }
 }
