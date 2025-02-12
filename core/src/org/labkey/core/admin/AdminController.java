@@ -10448,7 +10448,7 @@ public class AdminController extends SpringActionController
                         form.getUsername()
                 );
             }
-            else if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER))
+            else
             {
                 LOG.error("Client exception detected:\n" +
                         form.getRequestURL() + "\n" +

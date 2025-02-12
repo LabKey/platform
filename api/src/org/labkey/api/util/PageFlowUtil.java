@@ -1968,7 +1968,7 @@ public class PageFlowUtil
             .append(getScriptTag("/labkey.js"));
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
-        if ((AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
+        if ((AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP)) &&
             (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
             builder
@@ -2188,7 +2188,6 @@ public class PageFlowUtil
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
-        experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);
 
