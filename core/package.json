@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.22.4-fb-source-maps.0",
+    "@labkey/components": "6.22.4-fb-source-maps.1",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {

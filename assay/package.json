@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "6.22.4-fb-source-maps.0"
+    "@labkey/components": "6.22.4-fb-source-maps.1"
   },
   "devDependencies": {
     "@labkey/build": "8.3.1-fb-source-maps.5",
