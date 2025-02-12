@@ -480,5 +480,47 @@ public class ExceptionStackTrace
 
             assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
         }
+
+        @Test
+        public void testClientHashCombining()
+        {
+            // These stack traces are identical except for the application (biologics v sample-management)
+            // that produces them and the browser error message. Verify that these are hashed the same.
+            ExceptionStackTrace chromeStack = new ExceptionStackTrace();
+            chromeStack.setClientException(true);
+
+            chromeStack.setStackTrace("""
+                Uncaught TypeError: Cannot read properties of undefined (reading 'schemaName')
+                  schemaName (webpack://biologics/@labkey/labkey-ui-premium/src/actions.ts:71:36)
+                  downloadSourceTypeDefaultTemplate (webpack://biologics/src/client/containers/App/Pages/ExceptionsPage.tsx:79:8)
+                  apply (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:54:316)
+                  apply (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:54:470)
+                  apply (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:55:34)
+                  d (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:105:70)
+                  nf (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:106:379)
+                  se (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:117:103)
+                  a (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:273:41)
+                  Gb (webpack://biologics/node_modules/react-dom/cjs/react-dom.production.min.js:52:374)
+            """);
+
+            ExceptionStackTrace firefoxStack = new ExceptionStackTrace();
+            firefoxStack.setClientException(true);
+
+            firefoxStack.setStackTrace("""
+                TypeError: e is undefined
+                  schemaName (webpack://sample-management/@labkey/labkey-ui-premium/src/actions.ts:71:36)
+                  downloadSourceTypeDefaultTemplate (webpack://sample-management/src/client/containers/App/Pages/ExceptionsPage.tsx:79:8)
+                  apply (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:54:316)
+                  apply (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:54:470)
+                  apply (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:55:34)
+                  d (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:105:70)
+                  nf (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:106:379)
+                  se (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:117:103)
+                  a (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:273:41)
+                  Gb (webpack://sample-management/node_modules/react-dom/cjs/react-dom.production.min.js:52:374)
+            """);
+
+            assertEquals(chromeStack.getStackTraceHash(), firefoxStack.getStackTraceHash());
+        }
     }
 }
