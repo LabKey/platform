@@ -22,6 +22,7 @@ public class FieldNamesTable extends BaseFieldNamesTable
     @Override
     protected void addColumnSQL(SQLFragment sql)
     {
+        // Note that within a range expression, LIKE wildcards (such as underscore) don't need to be escaped
         addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric");
         addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
     }

@@ -37,6 +37,7 @@ public class SystemMaintenanceStartupListener implements StartupListener
                 MaintenanceTask.class.getName(),
                 SystemMaintenance.getTasks().stream()
                     .filter(MaintenanceTask::canDisable)
+                    .filter(task -> task.getPropertyName() != null)
                     .sorted(Comparator.comparing(MaintenanceTask::getPropertyName, String.CASE_INSENSITIVE_ORDER))
             );
         }
