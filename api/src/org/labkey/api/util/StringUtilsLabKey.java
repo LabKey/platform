@@ -947,7 +947,7 @@ public class StringUtilsLabKey
             assertTrue(isValidJavaIdentifier("abc"));
             assertTrue(isValidJavaIdentifier("Abc123"));
             assertTrue(isValidJavaIdentifier("This_and_that"));
-            assertTrue(isValidJavaIdentifier("This$andthat"));
+            assertTrue(isValidJavaIdentifier("This$and$that"));
             assertTrue(isValidJavaIdentifier("This_"));
             assertTrue(isValidJavaIdentifier("This$"));
             assertTrue(isValidJavaIdentifier("_ABC"));
