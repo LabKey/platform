@@ -75,6 +75,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -500,7 +501,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
         {
-            DefaultSchema.registerProvider(PostgresUserSchema.NAME, new DefaultSchema.SchemaProvider(this)
+            DefaultSchema.registerProvider(PostgreSql91Dialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
             {
                 @Override
                 public boolean isAvailable(DefaultSchema schema, Module module)
