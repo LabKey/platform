@@ -1105,26 +1105,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
     }
 
-    @Override
-    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
-    {
-        final CountDownLatch latch = new CountDownLatch(1);
-        SearchService.IndexTask task = createTask("WaitForIndexer", new SearchService.TaskListener()
-        {
-            @Override public void success()
-            {
-                latch.countDown();
-            }
-            @Override public void indexError(Resource r, Throwable t) { }
-        });
-        task.addNoop(priority);
-        task.setReady();
-
-        boolean success = latch.await(timeout, unit);
-        refreshNow();
-        return success;
-    }
-
     /**
      * This method is used to indicate to the crawler (or any external process) which files
      * this indexer will not index.
