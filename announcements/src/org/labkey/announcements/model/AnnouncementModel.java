@@ -249,7 +249,7 @@ public class AnnouncementModel extends Entity implements Serializable
         if (null == attachPrefix)
             return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription);
         else
-            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription, attachPrefix, getAttachments());
+            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription, false, attachPrefix, getAttachments());
     }
 
     public String getStatus()
