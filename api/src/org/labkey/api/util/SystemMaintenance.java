@@ -46,7 +46,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
- * Manages scheduling and queuing system maintenance tasks.
+ * Manages scheduling and queuing of system maintenance tasks.
  */
 public class SystemMaintenance
 {
@@ -314,13 +314,15 @@ public class SystemMaintenance
         }
 
         /**
-         * For StartupProperty implementation
+         * For StartupProperty implementation. Will return null if the maintenance task's getName() does not conform
+         * to property name rules.
          */
         @Override
-        @NotNull
+        @Nullable
         default String getPropertyName()
         {
-            return getName();
+            String name = getName();
+            return StringUtilsLabKey.isValidJavaIdentifier(name) ? name : null;
         }
     }
 }
