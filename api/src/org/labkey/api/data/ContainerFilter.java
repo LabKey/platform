@@ -554,6 +554,7 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
+            assert user != null : "User is required for permissions check!";
         }
 
         @Override
@@ -579,7 +580,7 @@ public abstract class ContainerFilter
             return getSQLFragment(schema, _container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
-        /** return null means return all rows (1=1),  empty collection means return no rows (1=0) */
+        /** return null means return all rows (1=1), empty collection means return no rows (1=0) */
         @Nullable
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
