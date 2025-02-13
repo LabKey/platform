@@ -282,7 +282,7 @@ public class LocationTable extends BaseStudyTable
         StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, EXISTS);
 
         // Wrap the EXISTS expression as needed for this dialect
-        return schema.getSqlDialect().wrapExistsExpression(existsSQL);
+        return schema.getSqlDialect().wrapBooleanExpression(existsSQL);
     }
 
     public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)

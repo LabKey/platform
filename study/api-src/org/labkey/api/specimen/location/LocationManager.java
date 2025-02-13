@@ -300,7 +300,7 @@ public class LocationManager
                 .append(" SET ")
                 .append(inUseColumn.getSelectName())
                 .append(" = ")
-                .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
+                .append(schema.getSqlDialect().wrapBooleanExpression(existsSQL));
 
             try
             {

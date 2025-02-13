@@ -34,7 +34,7 @@ public class FieldNamesTable extends BaseFieldNamesTable
             .append(" ?");
 
         sql.append(", ")
-            .append(getSqlDialect().wrapExistsExpression(booleanExpression))
+            .append(getSqlDialect().wrapBooleanExpression(booleanExpression))
             .append(" AS ")
             .append(name)
             .add(pattern);

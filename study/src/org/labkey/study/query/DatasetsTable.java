@@ -74,7 +74,7 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
                 existsSql.append(" WHERE qs.").appendIdentifier(getSqlDialect().makeLegalIdentifier("schema")).append(" = ").appendValue(StudySchema.getInstance().getSchemaName()).append(" AND ").append(tableAlias).append(".Name = qs.Name AND ");
                 existsSql.append(tableAlias).append(".Container = qs.Container)");
                 
-                return getSqlDialect().wrapExistsExpression(existsSql);
+                return getSqlDialect().wrapBooleanExpression(existsSql);
             }
         };
         result.setDescription("Whether the source is from a Query Snapshot");
