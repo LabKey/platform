@@ -39,12 +39,14 @@ public interface WikiRenderingService
 
     /**
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     * @param handleSubstitutions allow webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}})
      */
     HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription,
                                 boolean handleSubstitutions, String attachPrefix, Collection<? extends Attachment> attachments);
 
     /**
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
+     * @param handleSubstitutions allow webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}})
      */
     WikiRenderer getRenderer(WikiRendererType rendererType, boolean handleSubstitutions, String hrefPrefix,
                              String attachPrefix, Map<String, String> nameTitleMap,

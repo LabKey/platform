@@ -62,7 +62,10 @@ public class HtmlRenderer implements WikiRenderer
         _substitutionHandlers.put("dependency", new ClientDependencySubstitutionHandler());
     }
 
-    // HTML wiki pages allow substitutions; HTML announcements and Markdown wikis (which are wrapped by this renderer) do not allow substitutions
+    /**
+     * HTML wiki pages allow webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}});
+     * HTML announcements and Markdown wikis (which are wrapped by this renderer) do not allow substitutions
+     */
     public HtmlRenderer(boolean handleSubstitutions, String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
         _allowSubstitutions = handleSubstitutions;
