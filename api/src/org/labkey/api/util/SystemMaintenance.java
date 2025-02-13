@@ -23,7 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.util.logging.LogHelper;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
  */
 public class SystemMaintenance
 {
+    private static final Logger LOG = LogHelper.getLogger(AdminConsole.class, "Warnings about maintenance task names");
     private static final Object TIMER_LOCK = new Object();
     private static final List<MaintenanceTask> TASKS = new CopyOnWriteArrayList<>();
     private static final TriggerKey TRIGGER_KEY = new TriggerKey(SystemMaintenance.class.getCanonicalName());
@@ -313,15 +316,20 @@ public class SystemMaintenance
         }
 
         /**
-         * For StartupProperty implementation. Returns {@code null} if {@code getName()} does not conform to property
-         * name rules.
+         * For StartupProperty implementation. Returns {@code null} if {@code getName()} does not conform to the
+         * property name rules.
          */
         @Override
         @Nullable
         default String getPropertyName()
         {
             String name = getName();
-            return StringUtilsLabKey.isValidJavaIdentifier(name) ? name : null;
+            if (!StringUtilsLabKey.isValidJavaIdentifier(name))
+            {
+                LOG.debug("Maintenance task name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
+                name = null;
+            }
+            return name;
         }
     }
 }
