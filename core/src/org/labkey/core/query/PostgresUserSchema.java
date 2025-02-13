@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class PostgresUserSchema extends UserSchema
 {
-    public static final String POSTGRES_CONNECTIONS_TABLE_NAME = "pg_stat_activity";
+    public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
     public static final String POSTGRES_LOCKS_TABLE_NAME = "pg_locks";
 
     public static final String NAME = "postgres";
@@ -26,8 +26,8 @@ public class PostgresUserSchema extends UserSchema
     public @Nullable TableInfo createTable(String name, ContainerFilter cf)
     {
         // Issue 52190: Expose a data that supports postgreSQL-specific analysis
-        if (POSTGRES_CONNECTIONS_TABLE_NAME.equalsIgnoreCase(name))
-            return new PostgresConnectionsTable(this);
+        if (POSTGRES_STAT_ACTIVITY_TABLE_NAME.equalsIgnoreCase(name))
+            return new PostgresStatActivityTable(this);
         if (POSTGRES_LOCKS_TABLE_NAME.equalsIgnoreCase(name))
             return new PostgresLocksTable(this);
 
@@ -37,6 +37,6 @@ public class PostgresUserSchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return Set.of(POSTGRES_CONNECTIONS_TABLE_NAME, POSTGRES_LOCKS_TABLE_NAME);
+        return Set.of(POSTGRES_STAT_ACTIVITY_TABLE_NAME, POSTGRES_LOCKS_TABLE_NAME);
     }
 }

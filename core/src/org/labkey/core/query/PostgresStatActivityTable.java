@@ -9,12 +9,14 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -27,6 +29,7 @@ import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.Link;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.admin.AdminController;
@@ -38,13 +41,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
+/** Backed by pg_stat_activity view */
+public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
 {
-    private static final Logger LOG = LogHelper.getLogger(PostgresConnectionsTable.class, "Access to Postgres connection status");
+    private static final Logger LOG = LogHelper.getLogger(PostgresStatActivityTable.class, "Access to Postgres connection status");
 
-    public PostgresConnectionsTable(@NotNull PostgresUserSchema userSchema)
+    public PostgresStatActivityTable(@NotNull PostgresUserSchema userSchema)
     {
-        super(PostgresUserSchema.POSTGRES_CONNECTIONS_TABLE_NAME, userSchema);
+        super(PostgresUserSchema.POSTGRES_STAT_ACTIVITY_TABLE_NAME, userSchema);
 
         setDescription("Shows info about the active Postgres connections and their activity");
 
@@ -76,13 +80,13 @@ public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
         addColumn(new ExprColumn(this, "backend_type", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".backend_type"), JdbcType.VARCHAR));
 
         // Our calculated values
-        var threadCol = addColumn(new ExprColumn(this, "threads", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER));
+        var threadCol = addColumn(new ExprColumn(this, "threadsAndRequests", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".pid"), JdbcType.INTEGER));
         threadCol.setDisplayColumnFactory(ThreadDisplayColumn::new);
         addColumn(new ExprColumn(this, "running_time_ms", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".running_time_ms"), JdbcType.INTEGER));
         addColumn(new ExprColumn(this, "blocked_by", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".blocked_by"), JdbcType.VARCHAR));
 
         setDefaultVisibleColumns(Arrays.asList(
-                FieldKey.fromParts("pid"),
+                pidColumn.getFieldKey(),
                 FieldKey.fromParts("blocked_by"),
                 FieldKey.fromParts("datname"),
                 FieldKey.fromParts("usename"),
@@ -93,7 +97,7 @@ public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
                 FieldKey.fromParts("state_change"),
                 FieldKey.fromParts("running_time_ms"),
                 FieldKey.fromParts("query"),
-                FieldKey.fromParts("threads")
+                threadCol.getFieldKey()
         ));
     }
 
@@ -136,14 +140,14 @@ public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
         @Override
         public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
         {
-            return PostgresConnectionsTable.this.hasPermission(user, acl);
+            return PostgresStatActivityTable.this.hasPermission(user, acl);
         }
 
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
         {
             // If there's no PID (or a bogus PID), getMap() will return null
-            return new TableSelector(PostgresConnectionsTable.this).getMap(getPid(keys));
+            return new TableSelector(PostgresStatActivityTable.this).getMap(getPid(keys));
         }
 
         @Override
@@ -189,6 +193,7 @@ public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
         public ThreadDisplayColumn(ColumnInfo colInfo)
         {
             super(colInfo);
+            setTextAlign("left");
         }
 
         private HashSetValuedHashMap<Thread, Integer> getPidsForThreads()
@@ -234,7 +239,19 @@ public class PostgresConnectionsTable extends AbstractPostgresAdminOnlyTable
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
                 out.write(new Link.LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
-                separator = "<br/>";
+                separator = "\n<br/>";
+
+                // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them
+                var request = TransactionFilter.getRequestSummary(thread);
+                if (request == null)
+                {
+                    request = TransactionFilter.getRequestSummary(DbScope.getEffectiveThread(thread));
+                }
+                if (request != null)
+                {
+                    out.write(separator);
+                    out.write( PageFlowUtil.filter(request));
+                }
             }
         }
     }
