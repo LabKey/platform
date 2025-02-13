@@ -336,7 +336,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             existsSql.append("\n)");
 
             // Turn this into an expression that can be SELECTed
-            SQLFragment selectSql = dialect.wrapExistsExpression(existsSql);
+            SQLFragment selectSql = dialect.wrapBooleanExpression(existsSql);
             selectSql.insert(0, "SELECT ");
 
             return selectSql;
