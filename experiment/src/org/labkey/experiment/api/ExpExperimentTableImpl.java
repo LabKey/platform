@@ -131,7 +131,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
             existsSql.append(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
 
-            sql = getSqlDialect().wrapExistsExpression(existsSql);
+            sql = getSqlDialect().wrapBooleanExpression(existsSql);
         }
         else
         {

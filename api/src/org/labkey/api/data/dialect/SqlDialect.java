@@ -85,6 +85,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -387,8 +388,8 @@ public abstract class SqlDialect
             x = ((RuntimeSQLException)x).getSQLException();
         if (x instanceof SQLException)
         {
-            String msg = StringUtils.defaultString(x.getMessage(), "");
-            String state = StringUtils.defaultString(((SQLException)x).getSQLState(), "");
+            String msg = Objects.toString(x.getMessage(), "");
+            String state = Objects.toString(((SQLException) x).getSQLState(), "");
             return msg.toLowerCase().contains("deadlock") || state.startsWith("25") || state.startsWith("40");
         }
         return false;
@@ -604,15 +605,18 @@ public abstract class SqlDialect
     }
 
     /**
-     * Converts an EXISTS SQL fragment into an expression that returns true or false. Example fragments that could be passed:
-     *
+     * Converts a boolean SQL expression into an expression that can be selected. Example fragments that could be passed:
+     * <pre>
+     * {@code
      *     EXISTS (SELECT 1 FROM core.Users)
      *     EXISTS (SELECT * FROM comm.Messages WHERE CreatedBy = ?) OR EXISTS (SELECT * FROM comm.Pages WHERE CreatedBy = ?)")
-     *
+     *     FieldName LIKE '%[A-Za-z0-9]%'
+     * }
+     * </pre>
      * The method wraps the fragment with syntax required by this database to produce a SQL statement that can be used with SELECT.
-     * For example, PostgreSQL can SELECT EXISTS directly, but SQL Server can't... it requires wrapping with a CASE statement.
+     * For example, PostgreSQL can SELECT boolean expressions directly, but SQL Server can't... it requires wrapping with a CASE statement.
      */
-    public abstract SQLFragment wrapExistsExpression(SQLFragment existsSQL);
+    public abstract SQLFragment wrapBooleanExpression(SQLFragment booleanSql);
 
     public abstract boolean supportsGroupConcat();
 
@@ -646,7 +650,7 @@ public abstract class SqlDialect
     }
 
     /**
-     * @param includeNulls whether to include null values as empty strings between delimeters
+     * @param includeNulls whether to include null values as empty strings between delimiters
      */
     public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls);
 
@@ -1518,19 +1522,21 @@ public abstract class SqlDialect
         return _sqlTypeIntMap.get(jdbcType.sqlType);
     }
 
-
     /**
      * Encode wildcard characters in search string used by LIKE operator to force exact match of those characters.
      * Currently only encodes single wildcard character '_' and '%' used by LIKE, while more complicated pattern such as [], {} are not encoded.
      * Example:
+     * <pre>
+     * {@code
+     *      // Ensures an exact match of substring "search_string" and won't treat an underscore as a wildcard.
      *      String searchString = "search_string";
      *      SqlFragment sqlFragment = ...
      *      ...
      *      sqlFragment.append(" LIKE ?");
-     *      sqlFragment.add("_" + encodeLikeSearchString(searchString) + "%");
-     *
-     *    ##encodeLikeSearchString(searchString) ensures an exact match of substring "search_string" and won't treat an underscore as a wildcard.
-     * @param search
+     *      sqlFragment.add("_" + encodeLikeOpSearchString(searchString) + "%");
+     * }
+     * </pre>
+     * @param search search string
      * @return encoded search string
      */
     public String encodeLikeOpSearchString(String search)

@@ -37,12 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * User: adam
- * Date: Aug 18, 2010
- * Time: 1:10:39 PM
- */
-
 // Extend this to implement a dialect that will work as an external data source.
 public abstract class SimpleSqlDialect extends SqlDialect
 {
@@ -130,7 +124,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     // then either provide a standard implementation above or remove the stub implementation from this class.
 
     @Override
-    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    public SQLFragment wrapBooleanExpression(SQLFragment booleanSql)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

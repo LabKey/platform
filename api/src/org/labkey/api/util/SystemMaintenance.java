@@ -267,8 +267,9 @@ public class SystemMaintenance
         String getDescription();
 
         /**
-         * Short name used in forms and to persist disabled settings.
-         * Task name must be unique and cannot contain a comma
+         * Short name used in forms and to persist disabled settings. Name must be unique and must not contain a comma.
+         * This name can be used as a startup property to enable/disable the task, but only if it follows the Java
+         * identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
          */
         String getName();
 

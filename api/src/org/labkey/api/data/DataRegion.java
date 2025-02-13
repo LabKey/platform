@@ -1239,7 +1239,7 @@ public class DataRegion extends DisplayElement
             if (!scripts.isEmpty())
             {
                 StringWriter out = new StringWriter();
-                out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
                 for (String script : scripts)
                 {
                     out.write(script + "\n");
@@ -1479,7 +1479,7 @@ public class DataRegion extends DisplayElement
                     navtree.addChild(showUnselected);
                 }
 
-                // NOTE: This is replicated in the Paging Wigdet (Dataregion.js)
+                // NOTE: This is replicated in the Paging Widget (Dataregion.js)
                 if (getShowRows() != ShowRows.ALL)
                 {
                     NavTree showAll = new NavTree("Show All");

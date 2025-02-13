@@ -50,6 +50,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Filter;
 import org.labkey.api.util.SimpleTime;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.io.Closeable;
 import java.io.File;
@@ -330,7 +331,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     if (f < lineFields[0].length)
                     {
                         String name = lineFields[0][f];
-                        name = name.replaceAll("[\\p{Z}\\t\\n\\r]+"," ").trim();
+                        name = StringUtilsLabKey.sanitizeSeparatorsAndTrim(name);
                         if (_columnInfoMap.containsKey(name))
                         {
                             //preferentially use this class if it matches
@@ -423,9 +424,22 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         if (_skipLines > 0)
         {
             String[] headers = lineFields[_skipLines - 1];
+            String header;
             for (int f = 0; f < nCols; f++)
-                // Issue 51933: the trim() method does not trim off any non-breaking spaces, so we'll do a replacement using the larger regex class of invisible characters
-                colDescs[f].name = (f >= headers.length || StringUtils.isBlank(headers[f])) ? getDefaultColumnName(f) : headers[f].replaceAll("[\\p{Z}\\t\\n\\r]+", " ").trim();
+            {
+                if (f < headers.length)
+                {
+                    header = StringUtilsLabKey.sanitizeSeparatorsAndTrim(headers[f]);
+                    if (StringUtils.isBlank(header))
+                        header = getDefaultColumnName(f);
+                }
+                else
+                {
+                    header = getDefaultColumnName(f);
+                }
+
+                colDescs[f].name = header;
+            }
         }
         else
         {

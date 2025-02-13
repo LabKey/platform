@@ -466,10 +466,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    // PostgreSQL can evaluate EXISTS as a function, e.g., SELECT EXISTS (SELECT 1 WHERE RowId IN (1,3,4)) FROM core.Containers
-    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    // PostgreSQL can SELECT boolean expressions like EXISTS, e.g., SELECT EXISTS (SELECT 1 WHERE RowId IN (1,3,4)) FROM core.Containers
+    public SQLFragment wrapBooleanExpression(SQLFragment booleanSql)
     {
-        return existsSQL;
+        return booleanSql;
     }
 
     @Override
