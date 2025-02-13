@@ -861,22 +861,7 @@ public class SearchController extends SpringActionController
         public void export(PriorityForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();
-            final CountDownLatch latch = new CountDownLatch(1);
-
-            SearchService.IndexTask task = ss.createTask("WaitForIndexer", new SearchService.TaskListener()
-            {
-                @Override public void success()
-                {
-                    latch.countDown();
-                }
-                @Override public void indexError(Resource r, Throwable t) { }
-            });
-            task.addNoop(form.getPriority());
-            task.setReady();
-
-            boolean success = latch.await(5, TimeUnit.MINUTES);
-            if (ss instanceof LuceneSearchServiceImpl)
-                ((LuceneSearchServiceImpl)ss).refreshNow();
+            boolean success = ss.drainQueue(form.getPriority(), 5, TimeUnit.MINUTES);
 
             // Return an error if we time out
             if (!success)
