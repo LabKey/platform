@@ -474,7 +474,7 @@ if (typeof LABKEY == "undefined")
 
             checkCallback('requiresExt3', callback);
 
-            if (window.Ext?.labkeyPatches)
+            if (window.Ext && window.Ext.labkeyPatches)
             {
                 handle(callback, scope);
             }
@@ -529,7 +529,7 @@ if (typeof LABKEY == "undefined")
 
             checkCallback('requiresExt4Sandbox', callback);
 
-            if (window.Ext4?.labkeyPatches)
+            if (window.Ext4 && window.Ext4.labkeyPatches)
             {
                 handle(callback, scope);
             }
