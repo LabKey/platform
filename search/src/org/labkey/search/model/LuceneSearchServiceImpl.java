@@ -143,6 +143,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -1104,6 +1105,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
     }
 
+    @Override
+    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
+    {
+        final CountDownLatch latch = new CountDownLatch(1);
+        SearchService.IndexTask task = createTask("WaitForIndexer", new SearchService.TaskListener()
+        {
+            @Override public void success()
+            {
+                latch.countDown();
+            }
+            @Override public void indexError(Resource r, Throwable t) { }
+        });
+        task.addNoop(priority);
+        task.setReady();
+
+        boolean success = latch.await(timeout, unit);
+        refreshNow();
+        return success;
+    }
 
     /**
      * This method is used to indicate to the crawler (or any external process) which files
