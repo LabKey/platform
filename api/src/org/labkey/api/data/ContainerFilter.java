@@ -506,7 +506,7 @@ public abstract class ContainerFilter
         }
     }
 
-    // short for ContainerFilter.Type.Current.create(container, null)
+    // Does not validate permissions!
     public static ContainerFilter current(Container c)
     {
         return new CurrentContainerFilter(c);
@@ -516,7 +516,6 @@ public abstract class ContainerFilter
     {
         CurrentContainerFilter(Container c)
         {
-            // CurrentContainerFilter does not validate permission
             super(c,null);
             Objects.requireNonNull(c);
         }
