@@ -506,7 +506,7 @@ public abstract class ContainerFilter
         }
     }
 
-    // short for ContainerFilter.Type.Current.create(container, null)
+    // Does not validate permissions!
     public static ContainerFilter current(Container c)
     {
         return new CurrentContainerFilter(c);
@@ -516,7 +516,6 @@ public abstract class ContainerFilter
     {
         CurrentContainerFilter(Container c)
         {
-            // CurrentContainerFilter does not validate permission
             super(c,null);
             Objects.requireNonNull(c);
         }
@@ -555,6 +554,10 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
+            // TODO: InternalNoContainerFilter should extend ContainerFilter instead of ContainerFilterWithPermission,
+            // which would allow a more strict check below (c != null && user != null). Also, once verified on
+            // TeamCity, throw an exception here instead of asserting.
+            assert c == null || user != null : "User is required for permissions check if container is provided!";
         }
 
         @Override
@@ -580,7 +583,7 @@ public abstract class ContainerFilter
             return getSQLFragment(schema, _container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
-        /** return null means return all rows (1=1),  empty collection means return no rows (1=0) */
+        /** return null means return all rows (1=1), empty collection means return no rows (1=0) */
         @Nullable
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
