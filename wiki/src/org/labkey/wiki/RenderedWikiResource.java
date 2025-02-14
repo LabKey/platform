@@ -22,11 +22,6 @@ import org.labkey.api.wiki.WikiRenderingService;
 
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Oct 13, 2010
- * Time: 4:38:09 PM
- */
 public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
 {
     public RenderedWikiResource(Container c, String name, String entityId, String body, WikiRendererType rendererType, Map<String, Object> m)
@@ -51,6 +46,6 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
     {
         WikiRenderingService service = WikiRenderingService.get();
 
-        return service.getFormattedHtml(type, body, "Wiki WebDav '" + getName() + "' in " + _c.getPath());
+        return service.getFormattedHtml(type, body, "Wiki WebDav '" + getName() + "' in " + _c.getPath(), true, null, null);
     }
 }

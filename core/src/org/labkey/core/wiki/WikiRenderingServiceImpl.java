@@ -26,45 +26,32 @@ public class WikiRenderingServiceImpl implements WikiRenderingService
     public HtmlString getFormattedHtml(WikiRendererType rendererType,
                                        String source,
                                        @Nullable String sourceDescription,
+                                       boolean handleSubstitutions,
                                        String attachPrefix,
                                        Collection<? extends Attachment> attachments)
     {
         return HtmlStringBuilder.of(WIKI_PREFIX)
-            .append(getRenderer(rendererType, null, attachPrefix, null, attachments, sourceDescription).format(source).getHtml())
+            .append(getRenderer(rendererType, handleSubstitutions, null, attachPrefix, null, attachments, sourceDescription).format(source).getHtml())
             .append(WIKI_SUFFIX).getHtmlString();
     }
 
     @Override
     public HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription)
     {
-        return getFormattedHtml(rendererType, source, sourceDescription, null, null);
+        return getFormattedHtml(rendererType, source, sourceDescription, false, null, null);
     }
 
     @Override
-    public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
+    public WikiRenderer getRenderer(WikiRendererType rendererType, boolean handleSubstitutions, String hrefPrefix,
                                     String attachPrefix, Map<String, String> nameTitleMap,
                                     Collection<? extends Attachment> attachments, String sourceDescription)
     {
-        WikiRenderer renderer;
-
-        switch (rendererType)
+        return switch (rendererType)
         {
-            case RADEOX:
-                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
-                break;
-            case HTML:
-                renderer = new HtmlRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
-                break;
-            case TEXT_WITH_LINKS:
-                renderer = new PlainTextRenderer();
-                break;
-            case MARKDOWN:
-                renderer = new MarkdownRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
-                break;
-            default:
-                renderer = new RadeoxRenderer(null, attachPrefix, null, attachments, sourceDescription);
-        }
-
-        return renderer;
+            case RADEOX -> new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
+            case HTML -> new HtmlRenderer(handleSubstitutions, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+            case TEXT_WITH_LINKS -> new PlainTextRenderer();
+            case MARKDOWN -> new MarkdownRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        };
     }
 }

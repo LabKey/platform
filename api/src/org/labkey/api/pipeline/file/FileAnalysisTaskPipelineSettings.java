@@ -109,6 +109,10 @@ public class FileAnalysisTaskPipelineSettings extends TaskPipelineSettings
         super(FileAnalysisTaskPipeline.class, name);
     }
 
+    public FileAnalysisTaskPipelineSettings(Class<?> namespaceClass)
+    {
+        super(namespaceClass);
+    }
     public FileAnalysisTaskPipelineSettings(Class<?> namespaceClass, String name)
     {
         super(namespaceClass, name);

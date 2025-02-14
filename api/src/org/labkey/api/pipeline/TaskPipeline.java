@@ -69,4 +69,6 @@ public interface TaskPipeline<SettingsType extends TaskPipelineSettings>
 
     /**@return When true, the module providing this task must be enabled in the current container */
     boolean isActiveModuleRequired();
+
+    String getPipelineProviderName();
 }

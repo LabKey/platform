@@ -217,7 +217,7 @@ public class WikiVersion
         if (_rendererType == null)
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return WikiRenderingService.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
+        return WikiRenderingService.get().getRenderer(_rendererType, true, hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
     }
 
     // Cache the rendered wiki content by default; set to false to avoid caching

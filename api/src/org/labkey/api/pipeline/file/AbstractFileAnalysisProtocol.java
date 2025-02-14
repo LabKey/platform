@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.file;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
@@ -50,7 +51,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * <code>AbstractFileAnalysisProtocol</code>
@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnalysisJob>
         extends PipelineProtocol
 {
-    private static Logger _log = LogManager.getLogger(AbstractFileAnalysisProtocol.class);
+    private static final Logger _log = LogManager.getLogger(AbstractFileAnalysisProtocol.class);
 
     public static final String LEGACY_JOINED_BASENAME = "all";
 
@@ -189,23 +189,17 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         save(file, null, addParams);
     }
 
-    @Deprecated //Prefer the Path based version
-    protected void save(File file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
-    {
-        save(file.toPath(), addParams, instanceParams);
-    }
-
     protected void save(Path file, Map<String, String> addParams, Map<String, String> instanceParams) throws IOException
     {
-        if (xml == null || xml.length() == 0)
+        if (xml == null || xml.isEmpty())
         {
-            xml = "<?xml version=\"1.0\"?>\n" +
-                    "<bioml>\n" +
-                    "</bioml>";
+            xml = """
+                    <?xml version="1.0"?>
+                    <bioml>
+                    </bioml>""";
         }
 
-        ParamParser parser = getFactory().createParamParser();
-        parser.parse(new ReaderInputStream(new StringReader(xml), Charset.defaultCharset()));
+        ParamParser parser = parse();
         if (parser.getErrors() != null)
         {
             ParamParser.Error err = parser.getErrors()[0];
@@ -256,6 +250,14 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         }
     }
 
+    @NotNull
+    protected ParamParser parse()
+    {
+        ParamParser parser = getFactory().createParamParser();
+        parser.parse(new ReaderInputStream(new StringReader(xml), Charset.defaultCharset()));
+        return parser;
+    }
+
     @Deprecated  //Prefer the Path version
     public FileType findInputType(File file)
     {
@@ -277,18 +279,9 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     @Override
     public abstract AbstractFileAnalysisProtocolFactory getFactory();
 
-    @Deprecated //Prefer Path version
     public abstract JOB createPipelineJob(ViewBackgroundInfo info,
-                                          PipeRoot root, List<File> filesInput,
-                                          File fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
-
-    //TODO convert existing File based versions to Path, then make this abstract
-    public JOB createPipelineJob(ViewBackgroundInfo info,
                                           PipeRoot root, List<Path> filesInput,
-                                          Path fileParameters, @Nullable Map<String, String> variableMap) throws IOException
-    {
-        return createPipelineJob(info, root, filesInput.stream().map(Path::toFile).collect(Collectors.toList()), fileParameters.toFile(), variableMap);
-    }
+                                          Path fileParameters, @Nullable Map<String, String> variableMap) throws IOException;
 
     public boolean timestampLog()
     {

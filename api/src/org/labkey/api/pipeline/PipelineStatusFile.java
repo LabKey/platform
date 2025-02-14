@@ -45,8 +45,6 @@ public interface PipelineStatusFile
         List<? extends PipelineStatusFile> getQueuedStatusFiles() throws SQLException;
 
         List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c) throws SQLException;
-
-        List<? extends PipelineStatusFile> getJobsWaitingForFiles(Container c);
     }
 
     interface StatusWriter
