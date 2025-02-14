@@ -29,7 +29,7 @@ import org.labkey.api.module.Module;
  */
 public class TaskPipelineSettings
 {
-    private TaskId _id;
+    private final TaskId _id;
     private Object[] _taskProgressionSpec = new Object[0];
 
     /**
@@ -53,6 +53,8 @@ public class TaskPipelineSettings
 
     private boolean _activeModuleRequired = true;
 
+    private String _pipelineProviderName;
+
     public TaskPipelineSettings(TaskId id)
     {
         _id = id;
@@ -63,7 +65,7 @@ public class TaskPipelineSettings
      *
      * @param namespaceClass namespace class for TaskId
      */
-    public TaskPipelineSettings(Class namespaceClass)
+    public TaskPipelineSettings(Class<?> namespaceClass)
     {
         this(namespaceClass, null);
     }
@@ -74,7 +76,7 @@ public class TaskPipelineSettings
      * @param namespaceClass namespace class for TaskId
      * @param name name for TaskId
      */
-    public TaskPipelineSettings(Class namespaceClass, String name)
+    public TaskPipelineSettings(Class<?> namespaceClass, String name)
     {
         this(new TaskId(namespaceClass, name));
     }
@@ -196,6 +198,16 @@ public class TaskPipelineSettings
     public void setActiveModuleRequired(boolean activeModuleRequired)
     {
         _activeModuleRequired = activeModuleRequired;
+    }
+
+    public String getPipelineProviderName()
+    {
+        return _pipelineProviderName;
+    }
+
+    public void setPipelineProviderName(String pipelineProviderName)
+    {
+        _pipelineProviderName = pipelineProviderName;
     }
 
     protected void parseWorkflowProcessKey()
