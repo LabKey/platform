@@ -2350,9 +2350,9 @@ public class DataRegion extends DisplayElement
                     {
                         out.write("<input type='hidden' name='");
                         if (viewForm != null)
-                            out.write(viewForm.getFormFieldName(pkCol));
+                            out.write(PageFlowUtil.filter(viewForm.getFormFieldName(pkCol)));
                         else
-                            out.write(pkColName);
+                            out.write(PageFlowUtil.filter(pkColName));
                         out.write("' value=\"");
                         out.write(PageFlowUtil.filter(pkVal.toString()));
                         out.write("\">");
