@@ -554,7 +554,10 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
-            assert user != null : "User is required for permissions check!";
+            // TODO: InternalNoContainerFilter should extend ContainerFilter instead of ContainerFilterWithPermission,
+            // which would allow a more strict check below (c != null && user != null). Also, once verified on
+            // TeamCity, throw an exception here instead of asserting.
+            assert c == null || user != null : "User is required for permissions check if container is provided!";
         }
 
         @Override
