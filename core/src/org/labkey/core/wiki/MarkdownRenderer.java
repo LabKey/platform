@@ -28,7 +28,7 @@ public class MarkdownRenderer extends HtmlRenderer
 {
     public MarkdownRenderer(String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
-        super(hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        super(false, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 
     @Override

@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
@@ -63,20 +64,10 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
-        return load(getProtocolFile(root, name, archived));
+        return load(getProtocolFile(root, name, archived), root.getContainer());
     }
 
-    public T loadInstance(File file) throws IOException
-    {
-        return load(file);
-    }
-
-    protected T load(File file) throws IOException
-    {
-        return load(file.toPath());
-    }
-
-    protected T load(Path file) throws IOException
+    protected T load(Path file, Container container) throws IOException
     {
         try
         {
@@ -100,7 +91,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                 type = type.replace("org.labkey.ms2.protocol.", "org.labkey.ms2.pipeline.");
             }
 
-            PipelineProtocol protocol = (PipelineProtocol) Class.forName(type).newInstance();
+            PipelineProtocol protocol = (PipelineProtocol) Class.forName(type).getDeclaredConstructor().newInstance();
             PipelineProtocolPropsDocument.PipelineProtocolProps.Property[] props =
                     ppp.getPropertyArray();
             if (ppp.isSetTemplate())
@@ -118,7 +109,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
         }
         catch (Exception e)
         {
-            throw (IOException)new IOException("Failed to load protocol document " + file.toAbsolutePath() + ".").initCause(e);
+            throw new IOException("Failed to load protocol document " + file.toAbsolutePath() + ".", e);
         }
     }
 

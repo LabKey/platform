@@ -77,6 +77,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
     private static final long POLLING_PERIOD_SECONDS = 30L;
 
+    private boolean _closed = false;
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
     private final PathWatchService _pollingWatcher;
@@ -167,6 +168,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private void registerWithWatchService(Path directory, PathListenerManager plm) throws IOException
     {
+        if (_closed)
+        {
+            LOG.warn("Unable to register a file listener on {}, service is already closed", directory);
+            return;
+        }
+
         String fileStoreType = Files.getFileStore(directory).type();
         if (null != fileStoreType)
             fileStoreType = fileStoreType.toLowerCase();
@@ -175,15 +182,23 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // ensure we catch variations such as both nfs and nfs4
         boolean pollingWatcher = null != fileStoreType && (fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs"));
-        if (pollingWatcher)
+        try
         {
-            LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath());
-            watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            if (pollingWatcher)
+            {
+                LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath());
+                watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+            }
+            else
+            {
+                LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath());
+                watchKey = directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
+            }
         }
-        else
+        catch (ClosedWatchServiceException e)
         {
-            LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath());
-            watchKey = directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
+            LOG.error("WatchService registration failed for {}", directory, e);
+            throw e;
         }
 
         plm.setFileStoreType(fileStoreType);
@@ -314,6 +329,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void close()
         {
+            _closed = true;
             try
             {
                 _watcher.close();
