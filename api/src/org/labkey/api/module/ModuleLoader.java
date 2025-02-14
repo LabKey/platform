@@ -612,7 +612,11 @@ public class ModuleLoader implements MemTrackerListener
                 String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
                 throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + ". This version of LabKey Server supports upgrading modules from schema version " + ModuleContext.formatVersion(Constants.getEarliestUpgradeVersion()) + " and greater.");
             }
-        }
+            else
+            {
+                _log.info("Check complete: all LabKey-managed modules are recent enough to upgrade");
+            }
+       }
 
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 

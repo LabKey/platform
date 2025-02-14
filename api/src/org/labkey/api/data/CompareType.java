@@ -1202,9 +1202,9 @@ public abstract class CompareType
                 _paramVals = new Object[]{value};
         }
 
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + _comparison.getSql();
+            return new SQLFragment().appendIdentifier(dialect.getColumnSelectName(alias)).append(_comparison.getSql());
         }
 
         protected String substituteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -1297,7 +1297,7 @@ public abstract class CompareType
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
             String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
 
-            SQLFragment fragment = new SQLFragment(toWhereClause(dialect, alias));
+            SQLFragment fragment = toWhereClause(dialect, alias);
             if (colInfo == null || !needsTypeConversion() || getParamVals() == null)
             {
                 fragment.addAll(getParamVals());
@@ -1658,11 +1658,13 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
             // See Issue 51472
             return dialect.isSqlServer() ?
-                dialect.getColumnSelectName(alias) + _comparison.getSql().replace("?", SS_CAST) :
+                new SQLFragment()
+                    .appendIdentifier(dialect.getColumnSelectName(alias))
+                    .append(_comparison.getSql().replace("?", SS_CAST)) :
                 super.toWhereClause(dialect, alias);
         }
 
@@ -1697,11 +1699,13 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
             String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
-            return selectName + " >= " + q + " AND " + selectName + " < " + q;
+            return new SQLFragment()
+                .appendIdentifier(selectName)
+                .append(" >= ").append(q).append(" AND ").append(selectName).append(" < ").append(q);
         }
 
         @Override
@@ -1738,11 +1742,13 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
             String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
-            return selectName + " < " + q + " OR " + selectName + " >= " + q;
+            return new SQLFragment()
+                .appendIdentifier(selectName)
+                .append(" < ").append(q).append(" OR ").append(selectName).append(" >= ").append(q);
         }
 
         @Override
@@ -1965,7 +1971,7 @@ public abstract class CompareType
         }
 
         @Override
-        abstract String toWhereClause(SqlDialect dialect, String alias);
+        abstract SQLFragment toWhereClause(SqlDialect dialect, String alias);
     }
 
     private static class StartsWithClause extends LikeClause
@@ -1976,9 +1982,12 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
+            return new SQLFragment()
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" ")
+                .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
+                .append(dialect.concatenate("?", "'%'")).append(sqlEscape());
         }
 
         @Override
@@ -2006,9 +2015,12 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
-            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape() + ")";
+            return new SQLFragment("(")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" IS NULL OR ")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
+                .append(")");
         }
 
         @Override
@@ -2085,9 +2097,12 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
-            return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape();
+            return new SQLFragment()
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" ")
+                .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
+                .append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape());
         }
 
         @Override
@@ -2115,9 +2130,12 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
-            return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")";
+            return new SQLFragment("(")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" IS NULL OR ")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
+                .append(")");
         }
 
         @Override
@@ -2145,11 +2163,15 @@ public abstract class CompareType
         }
 
         @Override
-        String toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, String alias)
         {
             String neq = CompareType.NEQ.getSql();
             String isNull = CompareType.ISBLANK.getSql();
-            return "(" + dialect.getColumnSelectName(alias) + neq + " OR " + dialect.getColumnSelectName(alias) + isNull + ")";
+            return new SQLFragment("(")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(neq)
+                .append(" OR ")
+                .appendIdentifier(dialect.getColumnSelectName(alias)).append(isNull)
+                .append(")");
         }
     }
 
