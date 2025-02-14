@@ -42,7 +42,7 @@ public class LabKeyLog4j2ConfigurationFactory extends ConfigurationFactory
         Resource[] resources = null;
         try
         {
-            resources = resolver.getResources("classpath*:**/configs/*.log4j2.xml");
+            resources = resolver.getResources("classpath*:**/config/*.log4j2.xml");
             for (Resource resource : resources) {
                 File config = resource.getFile();
                 if (config.exists())
