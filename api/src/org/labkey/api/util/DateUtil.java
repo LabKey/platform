@@ -18,9 +18,9 @@ package org.labkey.api.util;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateParser;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +34,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -43,6 +44,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -73,7 +75,11 @@ public class DateUtil
     {
     }
 
-    private static final Logger LOG = LogManager.getLogger(DateUtil.class);
+    private static long MILLIS_PER_HOUR = TimeUnit.HOURS.toMillis(1);
+    private static long MILLIS_PER_MINUTE = TimeUnit.MINUTES.toMillis(1);
+    private static long MILLIS_PER_SECOND = TimeUnit.SECONDS.toMillis(1);
+
+    private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Fill in description");
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
@@ -300,14 +306,13 @@ public class DateUtil
 
     /**
      * Javascript style parsing, assumes US locale
-     *
      * Copied from RHINO (www.mozilla.org/rhino) and modified
      */
 
     enum Month
     {
         january(0),february(1),march(2),april(3),may(4),june(5),july(6),august(7),september(8),october(9),november(10),december(11);
-        int month;
+        final int month;
         Month(int i)
         {
             month = i;
@@ -324,6 +329,7 @@ public class DateUtil
         am, pm
     }
 
+    @SuppressWarnings("PointlessArithmeticExpression")
     enum TZ
     {
         z("UTC"),gmt("UTC"),ut("UTC"),utc("UTC"),
@@ -352,7 +358,7 @@ public class DateUtil
         t    // T : time marker
     }
 
-    private static final NavigableMap<String, Enum> PARTS_MAP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private static final NavigableMap<String, Enum<?>> PARTS_MAP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     static
     {
@@ -361,21 +367,22 @@ public class DateUtil
             .forEach(e -> PARTS_MAP.put(e.name(), e));
     }
 
-    private static @Nullable Enum resolveDatePartEnum(String s)
+    private static @Nullable Enum<?> resolveDatePartEnum(String s)
     {
         // Require an exact match if s is one character long
         if (s.length() < 2)
             return PARTS_MAP.get(s);
 
         // If s is longer than one character then find first key with s as its prefix
-        Entry<String, Enum> entry = PARTS_MAP.ceilingEntry(s);
+        Entry<String, Enum<?>> entry = PARTS_MAP.ceilingEntry(s);
 
         return (null != entry && StringUtils.startsWithIgnoreCase(entry.getKey(), s)) ? entry.getValue() : null;
     }
 
+    // this handles a token (no spaces) and returns an Enum|TimeZone
     private static Object resolveDatePart(String s)
     {
-        Enum e = resolveDatePartEnum(s);
+        Enum<?> e = resolveDatePartEnum(s);
 
         if (null != e)
             return e instanceof TZ && (null != ((TZ)e).tz) ? ((TZ)e).tz : e;
@@ -386,6 +393,23 @@ public class DateUtil
             return null;
         return tz;
     }
+
+// Coming soon...
+//    private static final DateParser timezoneFormat = new getDateParser("zzz");
+//
+//    private static TimeZone lookingAtTZ(String s, ParsePosition pos)
+//    {
+//        Calendar c = new _Calendar(null);
+//        // I like using
+//        int startIndex = pos.getIndex();
+//        if (!timezoneFormat.parse(s, pos, c))
+//            return null;
+//        if (null != c.getTimeZone())
+//            return c.getTimeZone();
+//        if (c.isSet(Calendar.ZONE_OFFSET))
+//            return getTimeZoneForOffsetInMinutes(c.get(Calendar.ZONE_OFFSET) / (60*1_000));
+//        return null;
+//    }
 
     private enum DateTimeOption
     {
@@ -403,6 +427,20 @@ public class DateUtil
     private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
     {
         return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY,  strict);
+    }
+
+    static TimeZone getTimeZoneForOffsetInMinutes(int offsetInMinutes)
+    {
+        return tzCache.computeIfAbsent(offsetInMinutes, tzoffset ->
+            {
+                char sign = tzoffset < 0 ? '-' : '+';
+                int mins = Math.abs(tzoffset);
+                int hr = mins / 60;
+                int mn = mins % 60;
+                String tzString = "GMT" + sign + (hr / 10) + (hr % 10) + (mn / 10) + (mn % 10);
+                return TimeZone.getTimeZone(tzString);
+            }
+        );
     }
 
     private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
@@ -487,6 +525,25 @@ public class DateUtil
                  * no-timezone style of GMT+4:30 works
                  */
 validNum:       {
+                    // handle yyyyMMdd
+                    if (0 == prevc && 8 == digits)
+                    {
+                        if (year != -1 || mon != -1 || mday != -1)
+                            throw new ConversionException(s);
+                        mday = n % 100;
+                        n = n / 100;
+                        mon = (n % 100) - 1;
+                        n = n / 100;
+                        year = n;
+                        // not sure why we have this range check, but this was what parseYYYYMMDD() did
+                        if (year < 1800 || year > 2200)
+                            throw new ConversionException("Year out of range from 1800-2200: " + year, null);
+                        if (mon < 0 || mon > 11)
+                            throw new ConversionException(s);
+                        if (mday < 1 || mday > 31)
+                            throw new ConversionException(s);
+                        break validNum;
+                    }
                     if ((prevc == '+' || prevc == '-') && hour >= 0 /* && year>=0 */)
                     {
                         /* make ':' case below change tzoffset */
@@ -739,9 +796,15 @@ validNum:       {
             if (strict && (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000))
                 throw new ConversionException(s);
 
-            return (hour * 60*60*1000L) + (min * 60*1000L) + (sec * 1000L) + ms;
+            // parseXMLDate() and java.sql.Time both return 1970-01-01 + {TIME} in the current timezone
+            // also fromTimeString() expects this convention (so just do that here)
+            year = 1970;
+            mon = 0;
+            mday = 1;
+            tz = null;
+            tzoffset = -1;
         }
-        
+
         //
         // This part is changed to work with Java
         //
@@ -754,19 +817,7 @@ validNum:       {
             if (tzoffset == -1)
                 tz = _timezoneDefault;
             else
-            {
-                tz = tzCache.get(tzoffset);
-                if (null == tz)
-                {
-                    char sign = tzoffset < 0 ? '-' : '+';
-                    int mins = Math.abs(tzoffset);
-                    int hr = mins / 60;
-                    int mn = mins % 60;
-                    String tzString = "GMT" + sign + (hr / 10) + (hr % 10) + (mn / 10) + (mn % 10);
-                    tz = TimeZone.getTimeZone(tzString);
-                    tzCache.put(tzoffset, tz);
-                }
-            }
+                tz = getTimeZoneForOffsetInMinutes(tzoffset);
         }
 
         try
@@ -831,12 +882,6 @@ validNum:       {
         }
         catch (IllegalArgumentException ignored) {}
 
-        try
-        {
-            return parseYYYYMMDD(s);
-        }
-        catch (ParseException ignored) {}
-
         throw new ConversionException("Can't parse \"" + s + "\" into a date");
     }
 
@@ -868,6 +913,85 @@ validNum:       {
         throw new IllegalArgumentException();
     }
 
+
+    /* for transition to new parser, this won't work going forward as we want the parser to return calendar parts
+     * e.g. java.text.CalendarBuilder or something like it
+     */
+    static DateParser getSimpleDateFormat(TimeZone zone, String pattern)
+    {
+        final SimpleDateFormat format = new SimpleDateFormat(pattern, Locale.getDefault());
+        format.setTimeZone(zone);
+        format.setLenient(false);
+
+        return new DateParser()
+        {
+            @Override
+            public Locale getLocale()
+            {
+                return Locale.getDefault();
+            }
+
+            @Override
+            public String getPattern()
+            {
+                return pattern;
+            }
+
+            @Override
+            public TimeZone getTimeZone()
+            {
+                return format.getTimeZone();
+            }
+
+            @Override
+            public Date parse(String source) throws ParseException
+            {
+                return format.parse(source);
+            }
+
+            @Override
+            public Date parse(String source, ParsePosition pos)
+            {
+                return format.parse(source, pos);
+            }
+
+            @Override
+            public boolean parse(String source, ParsePosition pos, Calendar calendar)
+            {
+                return false;
+            }
+
+            @Override
+            public Object parseObject(String source) throws ParseException
+            {
+                return parse(source);
+            }
+
+            @Override
+            public Object parseObject(String source, ParsePosition pos)
+            {
+                return parse(source, pos);
+            }
+        };
+    }
+
+    static DateParser getFastDateFormat(TimeZone zone, String pattern)
+    {
+        return FastDateFormat.getInstance(pattern, zone, Locale.getDefault());
+    }
+
+    /* Still treat as non-thread safe */
+    static DateParser getDateParser(String pattern)
+    {
+        return getDateParser(_timezoneDefault, pattern);
+    }
+
+    // use choke point (with apache DateParser interface) to make it easier to test implementations
+    static DateParser getDateParser(TimeZone tz, String pattern)
+    {
+        return getSimpleDateFormat(tz, pattern);
+    }
+
     // Parse using a specific pattern... used where strict parsing or non-standard pattern is required
     // Note: SimpleDateFormat is not thread-safe, so we create a new one for every parse.
     public static Date parseDateTime(String s, String pattern) throws ParseException
@@ -875,7 +999,7 @@ validNum:       {
         if (null == s)
             throw new ParseException("Date string is empty", 0);
 
-        return new SimpleDateFormat(pattern).parse(s);
+        return getDateParser(pattern).parse(s);
     }
 
     private static @NotNull Container getCurrentContainer()
@@ -989,15 +1113,8 @@ validNum:       {
         {
             try
             {
-                return parseYYYYMMDD(s);
-            }
-            catch (ParseException ignored) {}
-
-            try
-            {
                 // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
-                DateFormat format = new SimpleDateFormat("M-d-yy");
-                format.setLenient(false);
+                DateParser format = getDateParser("M-d-yy");
                 return format.parse(s).getTime();
             }
             catch (ParseException pe)
@@ -1013,25 +1130,6 @@ validNum:       {
 
             throw e;
         }
-    }
-
-    private static long parseYYYYMMDD(String s) throws ParseException
-    {
-        if (s.length() == 8)
-        {
-            DateFormat format = new SimpleDateFormat("yyyyMMdd");
-            format.setLenient(false);
-            Date date = format.parse(s);
-            Calendar cal = new GregorianCalendar();
-            cal.setTime(date);
-            int year = cal.get(Calendar.YEAR);
-            if (year >= 1800 && year <= 2200)
-            {
-                return date.getTime();
-            }
-            throw new ParseException("Year out of range from 1800-2200: " + year, 0);
-        }
-        throw new ParseException("Not a date: " + s, 0);
     }
 
     public static Date parseSimpleTime(@NotNull Object o)
@@ -1056,31 +1154,39 @@ validNum:       {
         return duration;
     }
 
-    public static long parseTime(String s)
+    static final long defaultTimeOffsetMillis = TimeZone.getDefault().getOffset(0);
+
+    public static long parseTimeToMillis(String s, boolean strict)
     {
-        return parseDateTimeUS(s, DateTimeOption.TimeOnly, true);
+        long localTime = parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
+        // remove timezone offset
+        return localTime + defaultTimeOffsetMillis;
     }
 
-    public static long parseTime(String s, boolean strict)
+    public static long parseTimeToMillis(String s)
     {
-        return parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
+        return parseTimeToMillis(s, true);
     }
 
+    // parse time as Date on epoch 1970/1/1
     public static Time fromTimeString(@NotNull String s, boolean strict)
     {
         return fromTimeString(s, getCurrentContainer(), strict);
     }
 
+    // parse time as Date on epoch 1970/1/1
     public static Time fromTimeString(@NotNull String s, boolean strict, boolean simpleParsingOnly /* for example, when infer domain field type*/)
     {
         return fromTimeString(s, getCurrentContainer(), strict, simpleParsingOnly);
     }
 
+    // parse time as Date on epoch 1970/1/1
     public static Time fromTimeString(@NotNull String s, Container container, boolean strict)
     {
         return fromTimeString(s, container, strict, false);
     }
 
+    // parse time as Date on epoch 1970/1/1
     public static Time fromTimeString(@NotNull String s, Container container, boolean strict, boolean simpleParsingOnly)
     {
         @Nullable String extraTimeParsingPattern = FolderSettingsCache.getExtraTimeParsingPattern(container);
@@ -1143,10 +1249,8 @@ validNum:       {
             }
         }
 
-        long time = DateUtil.parseTime(s, strict);
-        // DateUtil.parseTime throws away the timezone part during parsing, need to add offset back
-        int timezoneDiffSec = TimeZone.getDefault().getOffset(time);
-        return new Time(time - 1000 * timezoneDiffSec);
+        long time = parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
+        return new Time(time);
     }
 
     public static String getStandardDateFormatString()
@@ -1412,7 +1516,7 @@ validNum:       {
     {
         try
         {
-            if (durationCandidate.isEmpty() || !(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
+            if (!(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
             {
                 return false;
             }
@@ -1435,7 +1539,7 @@ validNum:       {
         throw new IllegalArgumentException("The duration provided is not valid: " + duration);
     }
 
-    public static _duration _parseDuration(String s)
+    private static _duration _parseDuration(String s)
     {
         boolean period = false;
         boolean monthInPeriod = false;
@@ -1630,8 +1734,8 @@ Parse:
 
         long min = r / DateUtils.MILLIS_PER_MINUTE;
         r = r % DateUtils.MILLIS_PER_MINUTE;
-        if (min != 0 || s.length() > 0)
-            s.append(String.valueOf(min)).append("m");
+        if (min != 0 || !s.isEmpty())
+            s.append(min).append("m");
         if (r == 0)
             return s.toString();
 
@@ -1726,6 +1830,7 @@ Parse:
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static class TestCase extends Assert
     {
         private long parseDate(String s)
@@ -1766,7 +1871,7 @@ Parse:
         {
             try
             {
-                parseTime(s);
+                parseTimeToMillis(s);
                 fail("Not a legal datetime: " + s);
             }
             catch (ConversionException x)
@@ -1822,7 +1927,9 @@ Parse:
 
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
+// BUG?     parseDateTime() is not suppose to parse time only values
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
+            assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), fromTimeString("15:02:00.0000000",true).getTime());
 
             // illegal
             assertIllegalDateTime("2");
@@ -1871,10 +1978,9 @@ Parse:
             assertIllegalDateTime("Jan/Feb/2001");
 
             // Z testing
-            SimpleDateFormat zo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-            SimpleDateFormat lo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            SimpleDateFormat ut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            ut.setTimeZone(TimeZone.getTimeZone("GMT"));
+            DateParser zo = getDateParser("yyyy-MM-dd HH:mm:ss z");
+            DateParser lo = getDateParser("yyyy-MM-dd HH:mm:ss");
+            DateParser ut = getDateParser(TimeZone.getTimeZone("GMT"), "yyyy-MM-dd HH:mm:ss");
 
             long datetimeUTC = zo.parse("2001-02-03 04:05:06 GMT").getTime();
             long datetimeLocal = lo.parse("2001-02-03 04:05:06").getTime();
@@ -2010,10 +2116,9 @@ Parse:
             assertIllegalDateTime("Jan/Feb/2001");
 
             // Z testing
-            SimpleDateFormat zo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-            SimpleDateFormat lo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            SimpleDateFormat ut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            ut.setTimeZone(TimeZone.getTimeZone("GMT"));
+            DateParser zo = getDateParser("yyyy-MM-dd HH:mm:ss z");
+            DateParser lo = getDateParser("yyyy-MM-dd HH:mm:ss");
+            DateParser ut = getDateParser(TimeZone.getTimeZone("GMT"), "yyyy-MM-dd HH:mm:ss");
 
             long datetimeUTC = zo.parse("2001-02-03 04:05:06 GMT").getTime();
             long datetimeLocal = lo.parse("2001-02-03 04:05:06").getTime();
@@ -2132,45 +2237,45 @@ Parse:
             long timeSecExpected = TimeUnit.HOURS.toMillis(4) + TimeUnit.MINUTES.toMillis(5) + TimeUnit.SECONDS.toMillis(6);
             long timeMinExpected = TimeUnit.HOURS.toMillis(4) + TimeUnit.MINUTES.toMillis(5);
             long timeHrExpected = TimeUnit.HOURS.toMillis(4);
-            assertEquals(timeHrExpected, parseTime("4"));
-            assertEquals(timeHrExpected, parseTime("4 am"));
-            assertEquals(timeHrExpected, parseTime("4AM"));
-            assertEquals(timeHrExpected + hrs12, parseTime("4pm"));
-            assertEquals(timeHrExpected + hrs12, parseTime("16"));
-            assertEquals(timeHrExpected + hrs12, parseTime("16:00:00"));
-            assertEquals(timeMinExpected, parseTime("4:05"));
-            assertEquals(timeSecExpected, parseTime("4:05:06"));
-            assertEquals(timeSecExpected, parseTime("4:05:06 am"));
-            assertEquals(timeSecExpected, parseTime("4:05:06AM"));
-            assertEquals(timeSecExpected, parseTime("4:05:06.0"));
-            assertEquals(timeSecExpected, parseTime("4:05:06.00"));
-            assertEquals(timeSecExpected, parseTime("4:05:06.000"));
-            assertEquals(timeSecExpected+7, parseTime("4:05:06.007"));
-            assertEquals(timeSecExpected+70, parseTime("4:05:06.07"));
-            assertEquals(timeSecExpected+700, parseTime("4:05:06.7"));
+            assertEquals(timeHrExpected, parseTimeToMillis("4"));
+            assertEquals(timeHrExpected, parseTimeToMillis("4 am"));
+            assertEquals(timeHrExpected, parseTimeToMillis("4AM"));
+            assertEquals(timeHrExpected + hrs12, parseTimeToMillis("4pm"));
+            assertEquals(timeHrExpected + hrs12, parseTimeToMillis("16"));
+            assertEquals(timeHrExpected + hrs12, parseTimeToMillis("16:00:00"));
+            assertEquals(timeMinExpected, parseTimeToMillis("4:05"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06 am"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06AM"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06.0"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06.00"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06.000"));
+            assertEquals(timeSecExpected+7, parseTimeToMillis("4:05:06.007"));
+            assertEquals(timeSecExpected+70, parseTimeToMillis("4:05:06.07"));
+            assertEquals(timeSecExpected+700, parseTimeToMillis("4:05:06.7"));
 
             // milliseconds trimmed to 3 decimal places
-            assertEquals(timeSecExpected+100, parseTime("4:05:06.1"));
-            assertEquals(timeSecExpected+120, parseTime("4:05:06.12"));
-            assertEquals(timeSecExpected+123, parseTime("4:05:06.123"));
-            assertEquals(timeSecExpected+123, parseTime("4:05:06.1234"));
-            assertEquals(timeSecExpected+123, parseTime("4:05:06.123456"));
+            assertEquals(timeSecExpected+100, parseTimeToMillis("4:05:06.1"));
+            assertEquals(timeSecExpected+120, parseTimeToMillis("4:05:06.12"));
+            assertEquals(timeSecExpected+123, parseTimeToMillis("4:05:06.123"));
+            assertEquals(timeSecExpected+123, parseTimeToMillis("4:05:06.1234"));
+            assertEquals(timeSecExpected+123, parseTimeToMillis("4:05:06.123456"));
 
             // fractional seconds
-            assertEquals(timeSecExpected, parseTime("4:05:06:00"));
+            assertEquals(timeSecExpected, parseTimeToMillis("4:05:06:00"));
             // "01" fractional seconds is .01666 seconds, rounded to .017
-            assertEquals(timeSecExpected+17, parseTime("4:05:06:01"));
-            assertEquals(timeSecExpected+17, parseTime("04:05:06:01"));
-            assertEquals(timeSecExpected+133, parseTime("4:05:06:08"));
-            assertEquals(timeSecExpected+983, parseTime("4:05:06:59"));
+            assertEquals(timeSecExpected+17, parseTimeToMillis("4:05:06:01"));
+            assertEquals(timeSecExpected+17, parseTimeToMillis("04:05:06:01"));
+            assertEquals(timeSecExpected+133, parseTimeToMillis("4:05:06:08"));
+            assertEquals(timeSecExpected+983, parseTimeToMillis("4:05:06:59"));
             // invalid fractional seconds > 59
             assertIllegalTime("4:05:06:60");
             assertIllegalTime("4:05:06:61");
             assertIllegalTime("4:05:06:91");
             // invalid fractional seconds > 59, but allowed to overflow when strict=false
-            assertEquals(timeSecExpected+1000, parseTime("4:05:06:60", false));
-            assertEquals(timeSecExpected+1017, parseTime("4:05:06:61", false));
-            assertEquals(timeSecExpected+1517, parseTime("4:05:06:91", false));
+            assertEquals(timeSecExpected+1000, parseTimeToMillis("4:05:06:60", false));
+            assertEquals(timeSecExpected+1017, parseTimeToMillis("4:05:06:61", false));
+            assertEquals(timeSecExpected+1517, parseTimeToMillis("4:05:06:91", false));
 
             assertIllegalTime("2/3/2001 4:05:06");
             assertIllegalTime("4/05:06");
@@ -2351,6 +2456,7 @@ Parse:
 
             onlyDate = getDateOnly(sqlDate);
             onlyTime = getTimeOnly(sqlDate);
+            assertNotNull(onlyTime);
             assertEquals(onlyDate.getTime(), expectedDate.getTime());
             assertEquals(sqlDate.getTime(), combineDateTime(onlyDate, onlyTime).getTime());
             assertEquals(onlyTime.getTime(), new Date(70, 0, 1, 0, 0, 0).getTime());
@@ -2363,7 +2469,7 @@ Parse:
         }
 
         @Test
-        public void summerTime()
+        public void summerTime() throws Exception
         {
             // see https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=41109
             // NOTE: WET, CET, EET automatically adjust according to the date (summer/winter).
@@ -2382,6 +2488,23 @@ Parse:
             assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EET")));
             assertEquals( 9, h(parseDateTime("2020/1/1 12:00pm EEST")));
             assertEquals( 9, h(parseDateTime("2020/6/1 12:00pm EEST")));
+
+            // dateParse(PATTERN)
+            DateParser sdf = getDateParser("yyyy/MM/dd hh:mmaa zzz");
+            assertEquals(12, h(sdf.parse("2020/1/1 12:00pm WET").getTime()));
+//            assertEquals(11, h(sdf.parse("2020/6/1 12:00pm WET").getTime()));
+            assertEquals(11, h(sdf.parse("2020/1/1 12:00pm WEST").getTime()));
+            assertEquals(11, h(sdf.parse("2020/6/1 12:00pm WEST").getTime()));
+
+            assertEquals(11, h(sdf.parse("2020/1/1 12:00pm CET").getTime()));
+//            assertEquals(10, h(sdf.parse("2020/6/1 12:00pm CET").getTime()));
+            assertEquals(10, h(sdf.parse("2020/1/1 12:00pm CEST").getTime()));
+            assertEquals(10, h(sdf.parse("2020/6/1 12:00pm CEST").getTime()));
+
+            assertEquals(10, h(sdf.parse("2020/1/1 12:00pm EET").getTime()));
+//            assertEquals( 9, h(sdf.parse("2020/6/1 12:00pm EET").getTime()));
+            assertEquals( 9, h(sdf.parse("2020/1/1 12:00pm EEST").getTime()));
+            assertEquals( 9, h(sdf.parse("2020/6/1 12:00pm EEST").getTime()));
         }
 
         @Test
