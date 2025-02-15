@@ -546,6 +546,25 @@ public class StringUtilsLabKey
         return fullTrimToEmpty(replaceSeparators(stringVal));
     }
 
+    /**
+     * Tests whether the provided string could be used as a Java identifier or part of a name in a property file. Does
+     * not check for Java keywords.
+     */
+    public static boolean isValidJavaIdentifier(@Nullable String test)
+    {
+        boolean valid = !StringUtils.isBlank(test);
+        if (valid)
+        {
+            valid = Character.isJavaIdentifierStart(test.charAt(0));
+            int i = 1;
+            while (valid && i < test.length())
+            {
+                valid = Character.isJavaIdentifierPart(test.charAt(i++));
+            }
+        }
+        return valid;
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -908,6 +927,31 @@ public class StringUtilsLabKey
         {
             List<String> strings = Arrays.asList(elements);
             assertEquals(expected, joinWithConjunction(strings, "and"));
+        }
+
+        @Test
+        public void testIsValidIdentifier()
+        {
+            assertFalse(isValidJavaIdentifier(null));
+            assertFalse(isValidJavaIdentifier(""));
+            assertFalse(isValidJavaIdentifier(" "));
+            assertFalse(isValidJavaIdentifier("   "));
+            assertFalse(isValidJavaIdentifier("1"));
+            assertFalse(isValidJavaIdentifier("123"));
+            assertFalse(isValidJavaIdentifier("I have spaces"));
+            assertFalse(isValidJavaIdentifier("!niceTry"));
+
+            assertTrue(isValidJavaIdentifier("A"));
+            assertTrue(isValidJavaIdentifier("$"));
+            assertTrue(isValidJavaIdentifier("ABC"));
+            assertTrue(isValidJavaIdentifier("abc"));
+            assertTrue(isValidJavaIdentifier("Abc123"));
+            assertTrue(isValidJavaIdentifier("This_and_that"));
+            assertTrue(isValidJavaIdentifier("This$and$that"));
+            assertTrue(isValidJavaIdentifier("This_"));
+            assertTrue(isValidJavaIdentifier("This$"));
+            assertTrue(isValidJavaIdentifier("_ABC"));
+            assertTrue(isValidJavaIdentifier("$ABC"));
         }
     }
 }

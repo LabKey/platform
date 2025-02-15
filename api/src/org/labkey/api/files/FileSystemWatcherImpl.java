@@ -77,6 +77,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
     private static final long POLLING_PERIOD_SECONDS = 30L;
 
+    private boolean _closed = false;
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
     private final PathWatchService _pollingWatcher;
@@ -167,6 +168,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
     private void registerWithWatchService(Path directory, PathListenerManager plm) throws IOException
     {
+        if (_closed)
+        {
+            LOG.warn("Unable to register a file listener on {}, service is already closed", directory);
+            return;
+        }
+
         String fileStoreType = Files.getFileStore(directory).type();
         if (null != fileStoreType)
             fileStoreType = fileStoreType.toLowerCase();
@@ -322,6 +329,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         protected void close()
         {
+            _closed = true;
             try
             {
                 _watcher.close();

@@ -17,6 +17,7 @@
 package org.labkey.api.pipeline;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -94,7 +95,7 @@ abstract public class PipelineProvider
             }
             else
             {
-                _initialFileTypes = initialFileTypes.toArray(new FileType[initialFileTypes.size()]);
+                _initialFileTypes = initialFileTypes.toArray(new FileType[0]);
             }
         }
         
@@ -180,30 +181,6 @@ abstract public class PipelineProvider
         }
     }
 
-    /**
-     * Operations that can be performed on a job belonging to this provider from the job's status details page.
-     * Cancel and retry are examples.
-     */
-    public static class StatusAction
-    {
-        private final String _label;
-
-        public StatusAction(String label)
-        {
-            _label = label;
-        }
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public boolean isVisible(PipelineStatusFile statusFile)
-        {
-            return true;
-        }
-    }
-
     protected String _name;
     private final Module _owningModule;
 
@@ -258,7 +235,6 @@ abstract public class PipelineProvider
     /**
      * Override to do any extra work necessary before deleting a status entry.
      *
-     * @param user
      * @param sf the entry to delete
      */
     public void preDeleteStatusFile(User user, PipelineStatusFile sf)
@@ -279,7 +255,7 @@ abstract public class PipelineProvider
      * @return Web part shown on the setup page.
      */
     @Nullable
-    public HttpView getSetupWebPart(Container container)
+    public HttpView<?> getSetupWebPart(Container container)
     {
         // No setup.
         return null;
@@ -317,12 +293,17 @@ abstract public class PipelineProvider
         }
     }
 
-    protected String createActionId(Class action, String description)
+    protected String createActionId(@NotNull Class<?> action, @Nullable String description)
+    {
+        return createActionId(action.getName(), description);
+    }
+
+    protected String createActionId(@NotNull String action, @Nullable String description)
     {
         if (description != null)
-            return action.getName() + ':' + description;
+            return action + ':' + description;
         else
-            return action.getName();
+            return action;
     }
 
     @Deprecated //Prefer List<Path> version
@@ -343,15 +324,13 @@ abstract public class PipelineProvider
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);
-//        Uncomment to debug GWT app - can't just edit the URL and reload because it's a POST
-//        actionURL.addParameter("gwt.codesvr", "127.0.0.1:9997");
         directory.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
       }
 
     protected void addAction(String actionId, URLHelper actionURL, String description, PipelineDirectory entry, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
-        if (!includeAll && (files == null || files.size() == 0))
+        if (!includeAll && (files == null || files.isEmpty()))
             return;
 
         entry.addAction(new PipelineAction(actionId, description, actionURL, files, allowMultiSelect, allowEmptySelect));
@@ -360,7 +339,7 @@ abstract public class PipelineProvider
     protected void addAction(String actionId, Class<? extends Controller> action, String description, PipelineDirectory directory, List<Path> files,
                              boolean allowMultiSelect, boolean allowEmptySelect, boolean includeAll)
     {
-        if (!includeAll && (files == null || files.size() == 0))
+        if (!includeAll && (files == null || files.isEmpty()))
             return;
         ActionURL actionURL = directory.cloneHref();
         actionURL.setAction(action);

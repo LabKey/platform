@@ -32,7 +32,9 @@ public class OptionalFeatureStartupListener implements StartupListener
             super(
                 SCOPE_OPTIONAL_FEATURE,
                 OptionalFeatureFlag.class.getName(),
-                AdminConsole.getOptionalFeatureFlags().stream().sorted(Comparator.comparing(OptionalFeatureFlag::getPropertyName, String.CASE_INSENSITIVE_ORDER))
+                AdminConsole.getOptionalFeatureFlags().stream()
+                    .filter(flag -> flag.getPropertyName() != null)
+                    .sorted(Comparator.comparing(OptionalFeatureFlag::getPropertyName, String.CASE_INSENSITIVE_ORDER))
             );
         }
 

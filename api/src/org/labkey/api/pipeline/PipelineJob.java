@@ -182,14 +182,6 @@ abstract public class PipelineJob extends Job implements Serializable
             @Override
             public boolean isActive() { return false; }
         },
-        waitingForFiles
-        {
-            @Override
-            public boolean isActive() { return false; }
-
-            @Override
-            public String toString() { return "WAITING FOR FILES"; }
-        },
         splitWaiting
         {
             @Override

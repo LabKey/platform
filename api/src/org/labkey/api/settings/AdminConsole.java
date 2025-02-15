@@ -15,12 +15,16 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
@@ -59,6 +63,7 @@ public class AdminConsole
         }
     }
 
+    private static final Logger LOG = LogHelper.getLogger(AdminConsole.class, "Warnings about optional feature flag names");
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<>();
     private static final Set<OptionalFeatureFlag> _optionalFlags = new ConcurrentSkipListSet<>();
 
@@ -138,6 +143,10 @@ public class AdminConsole
         }
     }
 
+    /**
+     * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
+     *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
+     */
     public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
         addOptionalFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental));
@@ -171,6 +180,10 @@ public class AdminConsole
         private final boolean _hidden;
         private final FeatureType _type;
 
+        /**
+         * @param flag must be unique. Can be used as a startup property to enable/disable the task, but only if it follows
+         *             the Java identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
+         */
         public OptionalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden, FeatureType type)
         {
             _flag = flag;
@@ -225,11 +238,20 @@ public class AdminConsole
 
         // StartupProperty implementation
 
-        @NotNull
+        /**
+         *  Returns {@code null} if {@code getFlag()} does not conform to the property name rules.
+         */
+        @Nullable
         @Override
         public String getPropertyName()
         {
-            return getFlag();
+            String name = getFlag();
+            if (!StringUtilsLabKey.isValidJavaIdentifier(name))
+            {
+                LOG.debug("Feature flag name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
+                name = null;
+            }
+            return name;
         }
     }
 }

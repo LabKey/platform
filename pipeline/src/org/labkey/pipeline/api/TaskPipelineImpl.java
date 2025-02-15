@@ -54,6 +54,7 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
 
     /** The module providing this task must be enabled in the current container */
     private boolean _activeModuleRequired = true;
+    private String _pipelineProviderName;
 
     public TaskPipelineImpl()
     {
@@ -128,6 +129,9 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
 
         _activeModuleRequired = settings.isActiveModuleRequired();
 
+        if (settings.getPipelineProviderName() != null)
+            _pipelineProviderName = settings.getPipelineProviderName();
+
         return this;
     }
 
@@ -195,5 +199,16 @@ public class TaskPipelineImpl<SettingsType extends TaskPipelineSettings> impleme
     public boolean isActiveModuleRequired()
     {
         return _activeModuleRequired;
+    }
+
+    @Override
+    public String getPipelineProviderName()
+    {
+        return _pipelineProviderName;
+    }
+
+    public void setPipelineProviderName(String pipelineProviderName)
+    {
+        _pipelineProviderName = pipelineProviderName;
     }
 }
