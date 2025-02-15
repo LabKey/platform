@@ -163,61 +163,6 @@ public class StudySchema
         return getSchema().getTable("StudySnapshot");
     }
 
-    public TableInfo getTableInfoStudyDesignImmunogenTypes()
-    {
-        return getSchema().getTable("StudyDesignImmunogenTypes");
-    }
-
-    public TableInfo getTableInfoStudyDesignChallengeTypes()
-    {
-        return getSchema().getTable("StudyDesignChallengeTypes");
-    }
-
-    public TableInfo getTableInfoStudyDesignGenes()
-    {
-        return getSchema().getTable("StudyDesignGenes");
-    }
-
-    public TableInfo getTableInfoStudyDesignRoutes()
-    {
-        return getSchema().getTable("StudyDesignRoutes");
-    }
-
-    public TableInfo getTableInfoStudyDesignSubTypes()
-    {
-        return getSchema().getTable("StudyDesignSubTypes");
-    }
-
-    public TableInfo getTableInfoStudyDesignSampleTypes()
-    {
-        return getSchema().getTable("StudyDesignSampleTypes");
-    }
-
-    public TableInfo getTableInfoStudyDesignUnits()
-    {
-        return getSchema().getTable("StudyDesignUnits");
-    }
-
-    public TableInfo getTableInfoStudyDesignAssays()
-    {
-        return getSchema().getTable("StudyDesignAssays");
-    }
-
-    public TableInfo getTableInfoStudyDesignLabs()
-    {
-        return getSchema().getTable("StudyDesignLabs");
-    }
-
-    public TableInfo getTableInfoTreatmentVisitMap()
-    {
-        return getSchema().getTable("TreatmentVisitMap");
-    }
-
-    public TableInfo getTableInfoObjective()
-    {
-        return getSchema().getTable("Objective");
-    }
-
     public TableInfo getTableInfoVisitTag()
     {
         return getSchema().getTable("VisitTag");
@@ -231,10 +176,5 @@ public class StudySchema
     public TableInfo getTableInfoAssaySpecimenVisit()
     {
         return getSchema().getTable("AssaySpecimenVisit");
-    }
-
-    public TableInfo getTableInfoDoseAndRoute()
-    {
-        return getSchema().getTable("DoseAndRoute");
     }
 }

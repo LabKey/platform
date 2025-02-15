@@ -59,6 +59,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.writer.AbstractStudyContext;
+import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -75,26 +77,6 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
-import org.labkey.study.query.studydesign.DoseAndRouteTable;
-import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
-import org.labkey.study.query.studydesign.StudyDesignChallengeTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignGenesTable;
-import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignLabsTable;
-import org.labkey.study.query.studydesign.StudyDesignRoutesTable;
-import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignSubTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignUnitsTable;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductAntigenTable;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyProductTable;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
-import org.labkey.study.query.studydesign.StudyTreatmentTable;
-import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
 import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.springframework.validation.BindException;
 
@@ -144,8 +126,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String STUDY_SNAPSHOT_TABLE_NAME = "StudySnapshot";
 
     // study design tables that appear in study folders
-    public static final String OBJECTIVE_TABLE_NAME = "Objective";
-    public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TABLE_NAME = "Visit";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
@@ -154,25 +134,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
-
-    // extensible study design tables
-    public static final String PRODUCT_TABLE_NAME = "Product";
-    public static final String PRODUCT_ANTIGEN_TABLE_NAME = "ProductAntigen";
-    public static final String TREATMENT_TABLE_NAME = "Treatment";
-    public static final String TREATMENT_PRODUCT_MAP_TABLE_NAME = "TreatmentProductMap";
-    public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
-
-    // study design tables that appear in all folders (?)
-    public static final String STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME = "StudyDesignImmunogenTypes";
-    public static final String STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME = "StudyDesignChallengeTypes";
-    public static final String STUDY_DESIGN_GENES_TABLE_NAME = "StudyDesignGenes";
-    public static final String STUDY_DESIGN_ROUTES_TABLE_NAME = "StudyDesignRoutes";
-    public static final String STUDY_DESIGN_SUB_TYPES_TABLE_NAME = "StudyDesignSubTypes";
-    public static final String STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME = "StudyDesignSampleTypes";
-    public static final String STUDY_DESIGN_UNITS_TABLE_NAME = "StudyDesignUnits";
-    public static final String STUDY_DESIGN_ASSAYS_TABLE_NAME = "StudyDesignAssays";
-    public static final String STUDY_DESIGN_LABS_TABLE_NAME = "StudyDesignLabs";
-    public static final String DOSE_AND_ROUTE_TABLE_NAME = "DoseAndRoute";
 
     @Nullable // if no study defined in this container
     final StudyImpl _study;
@@ -186,7 +147,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     protected Set<String> _tableNames;
 
     private ParticipantGroup _sessionParticipantGroup;
-
+    private StudyDesignQuerySchema _designQuerySchema;
 
     /** use StudyQuerySchema.createSchema() */
     protected StudyQuerySchema(@NotNull StudyImpl study, User user, @Nullable Role contextualRole)
@@ -222,6 +183,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (null != contextualRole && ReaderRole.class != contextualRole.getClass())
             throw new IllegalStateException("Only ReaderRole is currently supported");
         _contextualRole = contextualRole;
+        _designQuerySchema = StudyDesignQuerySchema.get(this, c, study, contextualRole);
     }
 
     public static StudyQuerySchema createSchema(StudyImpl study, @NotNull User user)
@@ -314,18 +276,8 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             Set<String> names = new LinkedHashSet<>();
 
-            // Always add StudyProperties and study designer lookup tables, even if we have no study
+            // Always add StudyProperties, even if we have no study
             names.add(PROPERTIES_TABLE_NAME);
-            names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-            names.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
-            names.add(STUDY_DESIGN_GENES_TABLE_NAME);
-            names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
-            names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
-            names.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-            names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
-            names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
-            names.add(STUDY_DESIGN_LABS_TABLE_NAME);
-            names.add(DOSE_AND_ROUTE_TABLE_NAME);
 
             if (_study != null)
             {
@@ -392,14 +344,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                     names.add(dsd.getName());
                 }
 
-                // study design tables
-                names.add(PRODUCT_TABLE_NAME);
-                names.add(PRODUCT_ANTIGEN_TABLE_NAME);
-                names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
-                names.add(TREATMENT_TABLE_NAME);
-                names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
-                names.add(OBJECTIVE_TABLE_NAME);
-                names.add(PERSONNEL_TABLE_NAME);
                 names.add(VISIT_TAG_TABLE_NAME);
                 names.add(VISIT_TAG_MAP_TABLE_NAME);
                 names.add(ASSAY_SPECIMEN_TABLE_NAME);
@@ -407,6 +351,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
                 names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
+
+            // study designer table names
+            if (_designQuerySchema != null)
+                names.addAll(_designQuerySchema.getTableNames());
+
             _tableNames = Collections.unmodifiableSet(names);
         }
 
@@ -559,46 +508,11 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new LocationTable(this, cf);
         }
 
-        // always expose the study designer lookup tables
-        if (STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME.equalsIgnoreCase(name))
+        if (_designQuerySchema != null)
         {
-            return new StudyDesignImmunogenTypesTable(this, cf);
-        }
-        if (STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignChallengeTypesTable(this, cf);
-        }
-        if (STUDY_DESIGN_GENES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignGenesTable(this, cf);
-        }
-        if (STUDY_DESIGN_ROUTES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignRoutesTable(this, cf);
-        }
-        if (STUDY_DESIGN_SUB_TYPES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignSubTypesTable(this, cf);
-        }
-        if (STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignSampleTypesTable(this, cf);
-        }
-        if (STUDY_DESIGN_UNITS_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignUnitsTable(this, cf);
-        }
-        if (STUDY_DESIGN_ASSAYS_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignAssaysTable(this, cf);
-        }
-        if (STUDY_DESIGN_LABS_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyDesignLabsTable(this, cf);
-        }
-        if (DOSE_AND_ROUTE_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new DoseAndRouteTable(this, cf);
+            TableInfo tableInfo = _designQuerySchema.createTable(name, cf);
+            if (tableInfo != null)
+                return tableInfo;
         }
 
         if (_study == null)
@@ -786,38 +700,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             return new StudySnapshotTable(this, cf);
         }
-        if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            StudyProductDomainKind domainKind = new StudyProductDomainKind();
-            Domain domain = ensureDomain(domainKind, PRODUCT_TABLE_NAME);
-
-            return StudyProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
-        }
-        if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
-            Domain domain = ensureDomain(domainKind, PRODUCT_ANTIGEN_TABLE_NAME);
-
-            return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
-        }
-        if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
-            Domain domain = ensureDomain(domainKind, TREATMENT_PRODUCT_MAP_TABLE_NAME);
-
-            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
-        }
-        if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
-            Domain domain = ensureDomain(domainKind, TREATMENT_TABLE_NAME);
-
-            return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
-        }
-        if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyTreatmentVisitMapTable(this, cf);
-        }
         if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
         {
             return new SpecimenPivotByPrimaryType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
@@ -833,18 +715,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new LocationSpecimenListTable(this, cf);
-        }
-        if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
-            Domain domain = ensureDomain(domainKind, PERSONNEL_TABLE_NAME);
-
-            // TODO ContainerFilter
-            return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : null);
-        }
-        if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new StudyObjectiveTable(this, cf);
         }
         if (ASSAY_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -1337,25 +1207,25 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     private static final Set<String> _dataspaceFolderLevelTables = new HashSet<>();
     static
     {
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_GENES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_LABS_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(STUDY_DESIGN_UNITS_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(PRODUCT_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(DOSE_AND_ROUTE_TABLE_NAME);
-        _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);
         _dataspaceProjectLevelTables.add(VISIT_TAG_TABLE_NAME);
         _dataspaceProjectLevelTables.add(VISIT_TABLE_NAME);
 
-        _dataspaceFolderLevelTables.add(TREATMENT_TABLE_NAME);
+        _dataspaceFolderLevelTables.add(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
         _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);
-        _dataspaceFolderLevelTables.add(OBJECTIVE_TABLE_NAME);
+        _dataspaceFolderLevelTables.add(StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME);
     }
 
     public static boolean isDataspaceProjectTable(String tableName)
@@ -1481,16 +1351,9 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
                 // Always add StudyProperties and study designer lookup tables, even if we have no study
                 names.add(PROPERTIES_TABLE_NAME);
-                names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-                names.add(STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
-                names.add(STUDY_DESIGN_GENES_TABLE_NAME);
-                names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
-                names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
-                names.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-                names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
-                names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
-                names.add(STUDY_DESIGN_LABS_TABLE_NAME);
-                names.add(DOSE_AND_ROUTE_TABLE_NAME);
+
+                if (_parentSchema._designQuerySchema != null)
+                    names.addAll(_parentSchema._designQuerySchema.getTableNames());
 
                 if (_study != null)
                 {
@@ -1523,15 +1386,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                     names.add(ASSAY_SPECIMEN_TABLE_NAME);
                     names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
-                    // study designs
-                    names.add(PRODUCT_TABLE_NAME);
-                    names.add(PRODUCT_ANTIGEN_TABLE_NAME);
-                    names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
-                    names.add(TREATMENT_TABLE_NAME);
-                    names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
-
-                    names.add(OBJECTIVE_TABLE_NAME);
-                    names.add(PERSONNEL_TABLE_NAME);
                     names.add(VISIT_TAG_TABLE_NAME);
                     names.add(VISIT_TAG_MAP_TABLE_NAME);
                     names.add(STUDY_SNAPSHOT_TABLE_NAME);

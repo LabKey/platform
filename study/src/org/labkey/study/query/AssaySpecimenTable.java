@@ -26,10 +26,10 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
 
-import static org.labkey.study.query.StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME;
 
 /**
  * User: cnathe

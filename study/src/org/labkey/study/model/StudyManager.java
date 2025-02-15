@@ -73,7 +73,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -103,7 +102,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -162,6 +160,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.Visit.Order;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -181,18 +180,18 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
-import org.labkey.study.query.StudyPersonnelDomainKind;
+import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.studydesign.AbstractStudyDesignDomainKind;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
+import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
+import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
+import org.labkey.api.studydesign.query.StudyProductDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -224,11 +223,11 @@ import java.util.WeakHashMap;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.study.query.StudyQuerySchema.PERSONNEL_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.PRODUCT_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME;
-import static org.labkey.study.query.StudyQuerySchema.TREATMENT_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PRODUCT_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME;
+import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_TABLE_NAME;
 
 public class StudyManager
 {
@@ -1759,7 +1758,7 @@ public class StudyManager
 
     public String getStudyDesignLabLabelByName(Container container, String name)
     {
-        return getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignLabs(), name);
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), name);
     }
 
     public String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
@@ -2701,7 +2700,7 @@ public class StudyManager
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            StudyDesignManager.get().deleteStudyDesignLookupValues(c, deletedTables);
+            StudyDesignManager.get().deleteStudyDesignData(c, deletedTables);
 
             for (DatasetDefinition dsd : dsds)
             {
@@ -2784,10 +2783,6 @@ public class StudyManager
 
             deleteStudyDesignData(c, user, studyDesignTables);
 
-            Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoTreatmentVisitMap());
-            Table.delete(StudySchema.getInstance().getTableInfoObjective(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoObjective());
             Table.delete(StudySchema.getInstance().getTableInfoVisitTag(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitTag());
             Table.delete(StudySchema.getInstance().getTableInfoVisitTagMap(), containerFilter);
@@ -5091,7 +5086,7 @@ public class StudyManager
 
             data.put("Name", name = "Test Lab");
             data.put("Label", label = "Test Lab Label");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignLabs(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), data);
             assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabLabelByName(_container, name));
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabLabelByName(_container, "UNK"));
             _lookups.put("Lab", name);
@@ -5100,7 +5095,7 @@ public class StudyManager
             data.put("Label", label = "Test Sample Type Label");
             data.put("PrimaryType", "Test Primary Type");
             data.put("ShortSampleCode", "TP");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
             _lookups.put("SampleType", name);
         }
 

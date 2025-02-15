@@ -93,6 +93,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JspTestCase;
@@ -133,19 +134,33 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.GroupSecurityType;
+import org.labkey.study.model.ImportHelperServiceImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantGroupServiceImpl;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ProtocolDocumentType;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.QueryDatasetQueryChangeListener;
-import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
@@ -237,7 +252,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
-        PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
 
         // specimen-related domain kinds
         PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
@@ -248,12 +262,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new VialDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
-
-        // study design domains
-        PropertyService.get().registerDomainKind(new StudyProductDomainKind());
-        PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
-        PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
-        PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
 
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
@@ -486,11 +494,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 allStudies.stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
                     .forEach(schema->{
-                        TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+                        TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
                         if (new TableSelector(products).exists())
                             hasProducts.increment();
 
-                        TableInfo treatments = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+                        TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
                         if (new TableSelector(treatments).exists())
                             hasTreatments.increment();
                     });
@@ -521,7 +529,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set("studydataset", "studydesign", "specimentables");
+        return PageFlowUtil.set("studydataset", "specimentables");
     }
 
     private void registerFolderTypes()

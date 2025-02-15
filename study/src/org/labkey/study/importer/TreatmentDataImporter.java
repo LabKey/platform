@@ -19,6 +19,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -104,13 +105,13 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
                     // this table was added in 16.3, so any archive created prior to that will not have this tsv file to import
                     if (ctx.getArchiveVersion() >= 16.3)
-                        studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
+                        studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
 
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
@@ -119,13 +120,13 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     }
 
                     // add the treatment specific tables
-                    StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME, null);
+                    StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.PRODUCT_TABLE_NAME, null);
                     PreserveExistingProjectData productTransform = !isDataspaceProject ? null //Issue 28858
                             : new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap);
                     importTableData(ctx, vf, productTablePackage, _productTableMapBuilder, productTransform);
 
                     // product antigen table
-                    StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME, null);
+                    StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME, null);
                     List<TransformHelper> transformHelpers = new ArrayList<>();
                     TransformHelper transformHelperComp;
 
@@ -138,14 +139,14 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     // this table was added in 16.3, so any archive created prior to that will not have this tsv file to import
                     if (ctx.getArchiveVersion() >= 16.3)
                     {
-                        StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME, null);
+                        StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.DOSE_AND_ROUTE_TABLE_NAME, null);
                         importTableData(ctx, vf, doseAndRouteTablePackage, null, new TransformHelperComposition(Collections.singletonList(_productAntigenTableTransform)));
                     }
 
-                    StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME, null);
+                    StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.TREATMENT_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentTablePackage, _treatmentTableMapBuilder, null);
 
-                    StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME, null);
+                    StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentProductTablePackage, null, _treatmentProductTransform);
 
                     // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
