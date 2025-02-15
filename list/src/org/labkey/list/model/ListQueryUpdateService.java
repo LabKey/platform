@@ -126,15 +126,21 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     for (DomainProperty prop : _list.getDomain().getProperties())
                     {
                         String propName = prop.getName();
-                        if (!raw.containsKey(propName))
+                        Object value = null;
+                        if (raw.containsKey(propName))
+                        {
+                            value = raw.get(propName);
+                        }
+                        else
                         {
                             ColumnInfo column = queryTable.getColumn(propName);
                             if (column != null)
                             {
-                                Object value = raw.get(column.getAlias());
-                                ret.put(propName, value);
+                                value = raw.get(column.getAlias());
                             }
                         }
+                        if (value != null)
+                            ret.put(propName, value);
                     }
                 }
             }
