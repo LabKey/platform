@@ -2277,6 +2277,10 @@ Parse:
             assertEquals(timeSecExpected+1017, parseTimeToMillis("4:05:06:61", false));
             assertEquals(timeSecExpected+1517, parseTimeToMillis("4:05:06:91", false));
 
+            assertEquals(java.sql.Time.valueOf("0:05:06"), fromTimeString("0:05:06", true));
+            assertEquals(java.sql.Time.valueOf("12:05:06"), fromTimeString("12:05:06", true));
+            assertEquals(java.sql.Time.valueOf("23:05:06"), fromTimeString("23:05:06", true));
+
             assertIllegalTime("2/3/2001 4:05:06");
             assertIllegalTime("4/05:06");
             assertIllegalTime("4:05/06");
