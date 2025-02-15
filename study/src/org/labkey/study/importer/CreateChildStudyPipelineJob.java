@@ -23,7 +23,6 @@ import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
@@ -64,6 +63,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.pipeline.AbstractDatasetImportTask;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudyExportContext;
@@ -79,11 +79,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
-* User: adam
-* Date: 9/27/12
-* Time: 9:52 PM
-*/
 public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 {
     private final ChildStudyDefinition _form;
@@ -180,28 +175,20 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     }
                 }
 
-                // issue 15942: for date based studies any demographics datasets that have a StartDate column need to be included so that
-                // visits are correctly calculated\
+                // issue 15942: for date-based studies, the first demographics dataset that has a StartDate column needs
+                // to be included so that visits are correctly calculated
                 if (sourceStudy.getTimepointType() == TimepointType.DATE)
                 {
-                    for (DatasetDefinition dataset : sourceStudy.getDatasets())
+                    DatasetDefinition startDateDataset = VisitManager.getStartDateDataset(sourceStudy);
+                    if (startDateDataset != null)
                     {
-                        if (dataset.isDemographicData())
-                        {
-                            TableInfo tInfo = dataset.getStorageTableInfo();
-                            if (tInfo == null) continue;
-                            ColumnInfo col = tInfo.getColumn("StartDate");
-                            if (null != col)
-                            {
-                                datasets.add(dataset);
+                        datasets.add(startDateDataset);
 
-                                // also add the visits included in this dataset
-                                if (selectedVisits != null)
-                                {
-                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), dataset.getDatasetId()))
-                                        selectedVisits.add(visit.getId());
-                                }
-                            }
+                        // also add the visits included in this dataset
+                        if (selectedVisits != null)
+                        {
+                            for (Visit visit : StudyManager.getInstance().getVisitsForDataset(sourceStudy.getContainer(), startDateDataset.getDatasetId()))
+                                selectedVisits.add(visit.getId());
                         }
                     }
                 }

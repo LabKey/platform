@@ -79,6 +79,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
@@ -117,9 +118,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.data.DataRegion.LAST_FILTER_PARAM;
-import static org.labkey.api.util.PageFlowUtil.checkPortalPageForNonDefaultParams;
 
 public class WikiController extends SpringActionController
 {
@@ -164,14 +162,11 @@ public class WikiController extends SpringActionController
                         WebPartFactory wbf = factory.getWebPartFactory();
                         vbox.addView(wbf.getWebPartView(context, wbf.createWebPart()));
                     }
-                    catch (WebPartConfigurationException e)
-                    {
-
-                    }
+                    catch (WebPartConfigurationException ignored) {}
                 }
             }
 
-            WebPartView toc = new WikiTOC(context);
+            WikiTOC toc = new WikiTOC(context);
             page.addClientDependencies(toc.getClientDependencies());
             vbox.addView(toc); //TODO: establish insertion order?
 
@@ -503,7 +498,7 @@ public class WikiController extends SpringActionController
             return manageView;
         }
 
-        public class ManageBean
+        public static class ManageBean
         {
             public Wiki wiki;
             public List<String> pageNames;
@@ -738,7 +733,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getContainer();
 
-            if (null == form.getName() || form.getName().trim().length() == 0)
+            if (null == form.getName() || form.getName().trim().isEmpty())
                 throw new NotFoundException("You must supply a page name!");
 
             _rootWiki = WikiSelectManager.getWiki(c, form.getName());
@@ -824,16 +819,6 @@ public class WikiController extends SpringActionController
         {
             root.addChild("Print All Pages");
         }
-    }
-
-    private static List<Wiki> namesToWikis(Container c, List<String> names)
-    {
-        LinkedList<Wiki> wikis = new LinkedList<>();
-
-        for (String name : names)
-            wikis.add(WikiSelectManager.getWiki(c, name));
-
-        return wikis;
     }
 
     public class PrintRawBean
@@ -1150,7 +1135,7 @@ public class WikiController extends SpringActionController
 
                 _wiki = new Wiki(getContainer(), name);
                 _wikiversion = new WikiVersion(name);
-                //set new page title to be name.
+                //set new page title to be the name.
                 _wikiversion.setTitle(name);
                 // check if this is a search result hit
                 SearchService ss = SearchService.get();
@@ -1196,14 +1181,14 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                WebPartView v = new WikiView(_wiki, _wikiversion, existing);
+                WikiView v = new WikiView(_wiki, _wikiversion, existing);
 
                 // get discussion view
                 if (existing && DiscussionService.get() != null)
                 {
                     ActionURL pageUrl = new PageAction(getViewContext(), _wiki, _wikiversion).getUrl();
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
-                    HttpView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
+                    DiscussionService.DiscussionView discussionView = getDiscussionView(_wiki.getEntityId(), pageUrl, discussionTitle);
                     if (discussionView != null)
                     {
                         v.setView("discussion", discussionView);
@@ -1246,7 +1231,7 @@ public class WikiController extends SpringActionController
     }
 
     @Nullable
-    private HttpView getDiscussionView(String objectId, ActionURL pageURL, String title)
+    private DiscussionService.DiscussionView getDiscussionView(String objectId, ActionURL pageURL, String title)
     {
         DiscussionService service = DiscussionService.get();
         return service.getDiscussionArea(getViewContext(), objectId, pageURL, title, true, false);
@@ -1476,12 +1461,12 @@ public class WikiController extends SpringActionController
 
         private int getEarlierVersion()
         {
-            return version1 < version2 ? version1 : version2;
+            return Math.min(version1, version2);
         }
 
         private int getLaterVersion()
         {
-            return version1 < version2 ? version2 : version1;
+            return Math.max(version1, version2);
         }
     }
 
@@ -1530,8 +1515,8 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permissions to view the history for this page!");
 
             LinkBarView lb = new LinkBarView(
-                    new Pair<>("return to page", getViewContext().cloneActionURL().setAction(PageAction.class).toString()),
-                    new Pair<>("view current version", getViewContext().cloneActionURL().setAction(VersionAction.class).toString())
+                    new NavTree("return to page", getViewContext().cloneActionURL().setAction(PageAction.class)),
+                    new NavTree("view current version", getViewContext().cloneActionURL().setAction(VersionAction.class))
                     );
             GridView gridView = new WikiVersionsGrid(_wiki, _wikiversion, errors);
             VBox historyView = new VBox(lb, gridView);
@@ -1833,12 +1818,12 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
+    public static class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
     {
         @Override
         public ApiResponse execute(ContainerForm form, BindException errors)
         {
-            if (null == form.getId() || form.getId().length() == 0)
+            if (null == form.getId() || form.getId().isEmpty())
                 throw new IllegalArgumentException("The id parameter must be set to a valid container id!");
 
             Container container = ContainerManager.getForId(form.getId());
@@ -1960,7 +1945,7 @@ public class WikiController extends SpringActionController
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
-            if (null != form.getName() && form.getName().length() > 0)
+            if (null != form.getName() && !form.getName().isEmpty())
             {
                 wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
                 if (null == wiki && !form.getCreate())
@@ -1999,8 +1984,8 @@ public class WikiController extends SpringActionController
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
             String defFormat = properties.get(SaveWikiAction.PROP_DEFAULT_FORMAT);
-            if ((null == form.getFormat() || form.getFormat().length() == 0)
-                    && null != defFormat && defFormat.length() > 0)
+            if ((null == form.getFormat() || form.getFormat().isEmpty())
+                    && null != defFormat && !defFormat.isEmpty())
                 form.setFormat(defFormat);
 
             WikiEditModel model = new WikiEditModel(
@@ -2237,6 +2222,12 @@ public class WikiController extends SpringActionController
             else if (name.startsWith("_") && !container.hasPermission(getUser(), AdminPermission.class))
                 errors.rejectValue("name", ERROR_MSG, "Wiki names starting with underscore are reserved for administrators.");
 
+            // name and title must have valid characters
+            if (null != name && !ViewServlet.validChars(name))
+                errors.rejectValue("name", ERROR_MSG, "Wiki name contains invalid characters.");
+            if (null != form.getTitle() && !ViewServlet.validChars(form.getTitle()))
+                errors.rejectValue("title", ERROR_MSG, "Wiki title contains invalid characters.");
+
             // name and title max 255 chars
             if (null != name && name.length() > 255)
                 errors.rejectValue("name", ERROR_MSG, "Wiki names must be < 256 characters.");
@@ -2439,7 +2430,7 @@ public class WikiController extends SpringActionController
         @Override
         public ApiResponse execute(AttachFilesForm form, BindException errors)
         {
-            if (null == form.getEntityId() || form.getEntityId().length() == 0)
+            if (null == form.getEntityId() || form.getEntityId().isEmpty())
                 throw new IllegalArgumentException("The entityId parameter is required!");
 
             //get the wiki using the entity id
@@ -2471,7 +2462,7 @@ public class WikiController extends SpringActionController
             //build the response
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
-            if (warnings.size() > 0)
+            if (!warnings.isEmpty())
                 resp.put("warnings", warnings);
 
             Wiki wikiUpdated = WikiSelectManager.getWiki(getContainer(), wiki.getName());
@@ -2587,7 +2578,7 @@ public class WikiController extends SpringActionController
                         parent = parent.getParentWiki();
                     }
                     
-                    expandPath(path.toArray(new String[path.size()]), 0, pages, true);
+                    expandPath(path.toArray(new String[0]), 0, pages, true);
                 }
             }
         }
@@ -2657,7 +2648,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresLogin
-    public class SetEditorPreferenceAction extends MutatingApiAction<SetEditorPreferenceForm>
+    public static class SetEditorPreferenceAction extends MutatingApiAction<SetEditorPreferenceForm>
     {
         public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
         public static final String PROP_USE_VISUAL_EDITOR = "useVisualEditor";

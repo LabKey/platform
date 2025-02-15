@@ -264,7 +264,6 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     public boolean isCancellable()
     {
         return (isActive() && !PipelineJob.TaskStatus.cancelling.matches(_status)) ||
-                PipelineJob.TaskStatus.waitingForFiles.matches(_status) ||
                 PipelineJob.TaskStatus.splitWaiting.matches(_status);
     }
 

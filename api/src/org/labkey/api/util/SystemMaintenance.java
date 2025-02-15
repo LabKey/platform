@@ -23,7 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.util.logging.LogHelper;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -46,10 +48,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
- * Manages scheduling and queuing system maintenance tasks.
+ * Manages scheduling and queuing of system maintenance tasks.
  */
 public class SystemMaintenance
 {
+    private static final Logger LOG = LogHelper.getLogger(AdminConsole.class, "Warnings about maintenance task names");
     private static final Object TIMER_LOCK = new Object();
     private static final List<MaintenanceTask> TASKS = new CopyOnWriteArrayList<>();
     private static final TriggerKey TRIGGER_KEY = new TriggerKey(SystemMaintenance.class.getCanonicalName());
@@ -267,8 +270,9 @@ public class SystemMaintenance
         String getDescription();
 
         /**
-         * Short name used in forms and to persist disabled settings.
-         * Task name must be unique and cannot contain a comma
+         * Short name used in forms and to persist disabled settings. Name must be unique and must not contain a comma.
+         * This name can be used as a startup property to enable/disable the task, but only if it follows the Java
+         * identifier rules (e.g., alphanumeric plus _, start with a letter, no spaces).
          */
         String getName();
 
@@ -302,7 +306,6 @@ public class SystemMaintenance
         /**
          * Specify if the task is meant to be configurable / recurring and therefore shown in the group of maintenance
          * tasks that can be enabled / disabled as part of the daily/nightly schedule.
-         *
          * Note: If your task is associated with a Java upgrade code method then you probably don't need to override
          * this or have a maintenance task at all. Administrators can now invoke any Java upgrade code methods from
          * the link on the SQL Scripts page.
@@ -313,13 +316,20 @@ public class SystemMaintenance
         }
 
         /**
-         * For StartupProperty implementation
+         * For StartupProperty implementation. Returns {@code null} if {@code getName()} does not conform to the
+         * property name rules.
          */
         @Override
-        @NotNull
+        @Nullable
         default String getPropertyName()
         {
-            return getName();
+            String name = getName();
+            if (!StringUtilsLabKey.isValidJavaIdentifier(name))
+            {
+                LOG.debug("Maintenance task name doesn't conform to the property name rules so it won't be available as a startup property: {}", name);
+                name = null;
+            }
+            return name;
         }
     }
 }

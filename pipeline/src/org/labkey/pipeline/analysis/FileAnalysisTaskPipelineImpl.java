@@ -212,6 +212,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (settings.getCustomFields() != null)
             _customFields = settings.getCustomFields();
 
+        if (settings.getPipelineProviderName() != null)
+            setPipelineProviderName(settings.getPipelineProviderName());
+
         return this;
     }
 

@@ -44,6 +44,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
@@ -356,7 +357,6 @@ public class ExcelLoader extends DataLoader
         }
     }
 
-
     @NotNull
     private String[][] getFirstNLinesXLSX(int n) throws IOException, InvalidFormatException
     {
@@ -382,10 +382,10 @@ public class ExcelLoader extends DataLoader
 
             for (Object v : currentRow)
             {
-                String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
+                String data = StringUtilsLabKey.fullTrimToEmpty(v);
                 if (!StringUtils.isEmpty(data))
                     foundData = true;
-                rowData.add(data != null ? data : "");
+                rowData.add(data);
             }
             if (foundData)
                 cells.add(rowData.toArray(new String[0]));
@@ -418,16 +418,17 @@ public class ExcelLoader extends DataLoader
 
                         String data;
 
-                        // Use ISO format instead of Date.toString(), #21232
+                        // Use ISO format instead of Date.toString(), Issue 21232
                         if (value instanceof Date)
                             data = DateUtil.formatIsoDateShortTime((Date)value);
                         else
                             data = String.valueOf(value);
 
-                        if (data != null && !data.isEmpty())
+                        data = StringUtilsLabKey.fullTrimToEmpty(data);
+                        if (!data.isEmpty())
                             foundData = true;
 
-                        rowData.add(data != null ? data : "");
+                        rowData.add(data);
                     }
                     else
                         rowData.add("");
@@ -671,7 +672,10 @@ public class ExcelLoader extends DataLoader
                 ColumnDescriptor cd = allColumns[columnIndex];
                 if (!cd.load)
                     continue;
-                fields[fieldIndex++] = row.get(columnIndex);
+                Object value = row.get(columnIndex);
+                if (value instanceof String s)
+                    value = StringUtilsLabKey.fullTrimToEmpty(s);
+                fields[fieldIndex++] = value;
             }
             return fields;
         }
@@ -723,11 +727,13 @@ public class ExcelLoader extends DataLoader
                             }
                             else if (useColumnFormats && column.clazz.equals(String.class))
                             {
-                                contents = ExcelFactory.getCellStringValue(cell);
+                                contents = StringUtilsLabKey.fullTrimToEmpty(ExcelFactory.getCellStringValue(cell));
                             }
                             else
                             {
                                 contents = PropertyType.getFromExcelCell(cell);
+                                if (contents instanceof String s)
+                                    contents = StringUtilsLabKey.fullTrimToEmpty(s);
                             }
                         }
                         else
@@ -786,10 +792,9 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
-        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst\u00A0 \u00A0 ", "scanLast", "scanCount", "totalIntensity", "description" };
+        String[] line0 = new String[] { "date", "scan", "time", "mz", "accurateMZ", "mass", "intensity", "charge", "chargeStates", "kl", "background", "median", "peaks", "scan\nFirst", "scanLast", "scanCount", "totalIntensity", "description" };
         String[] line1Xlsx = new String[] { "2006-01-02 00:00:00", "96", "1543.3400999999999", "858.32460000000003", "false", "1714.6346000000001", "2029.6295", "2", "1", "0.19630893999999999", "26.471083", "12.982442000000001", "4", "92", "100", "9", "20248.761999999999", "description" };
-        String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description"
-        };
+        String[] line1Xls = new String[] { "2006-01-02 00:00", "96.0", "1543.3401", "858.3246", "false", "1714.6346", "2029.6295", "2.0", "1.0", "0.19630894", "26.471083", "12.982442", "4.0", "92.0", "100.0", "9.0", "20248.762", "description" };
         String[] line7Xlsx = new String[] { "2006-01-02 00:00:00", "249", "1724.5541000000001", "773.42174999999997", "false", "1544.829", "5.9057474000000001", "2", "1", "0.51059710000000003", "0.67020833000000002", "1.4744527000000001", "2", "246", "250", "5", "29.369174999999998" };
         String[] line7Xls = new String[] { "2006-01-02 00:00", "249.0", "1724.5541", "773.42175", "false", "1544.829", "5.9057474", "2.0", "1.0", "0.5105971", "0.67020833", "1.4744527", "2.0", "246.0", "250.0", "5.0", "29.369175" };
 
@@ -1319,7 +1324,11 @@ public class ExcelLoader extends DataLoader
                 while (currentRow.size() <= thisColumn)
                     currentRow.add(null);
                 debugPrint("row:" + (output_rowcount+1) + " col:" + thisColumn + " " + thisValue);
-                currentRow.set(thisColumn, thisValue);
+
+                if (thisValue instanceof String s)
+                    currentRow.set(thisColumn, StringUtilsLabKey.fullTrimToEmpty(s));
+                else
+                    currentRow.set(thisColumn, thisValue);
                 value.setLength(0);
             }
             else if ("row".equals(name))

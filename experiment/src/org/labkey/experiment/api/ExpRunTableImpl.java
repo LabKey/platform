@@ -806,7 +806,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
                             sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").appendValue(exp.getRowId()).append(")");
 
-                            return getSqlDialect().wrapExistsExpression(sql);
+                            return getSqlDialect().wrapBooleanExpression(sql);
                         }
                     };
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());

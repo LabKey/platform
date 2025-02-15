@@ -61,6 +61,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
+import org.labkey.query.QueryDefinitionImpl;
+import org.labkey.query.persist.QueryDef;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
@@ -267,6 +269,13 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 }
             }
             resp.put("importTemplates", templates);
+
+            if (queryDef instanceof QueryDefinitionImpl queryDefinition)
+            {
+                QueryDef def = queryDefinition.getQueryDef();
+                if (def != null && def.getQueryDefId() != 0)
+                    resp.put("modified", def.getModified().getTime());
+            }
 
             Collection<FieldKey> fields = Collections.emptyList();
             if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)

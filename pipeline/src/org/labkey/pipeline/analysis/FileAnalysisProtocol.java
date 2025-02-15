@@ -63,15 +63,6 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
     }
 
     @Override
-    @Deprecated // Prefer Path version
-    public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<File> filesInput,
-                                                     File fileParameters, @Nullable Map<String, String> variableMap
-    ) throws IOException
-    {
-        return createPipelineJob(info, root, filesInput.stream().map(File::toPath).collect(Collectors.toList()), fileParameters.toPath(), variableMap);
-    }
-
-    @Override
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<Path> filesInput,
                                                      Path fileParameters, @Nullable Map<String, String> variableMap
     ) throws IOException
