@@ -1704,8 +1704,9 @@ public abstract class CompareType
             String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(selectName)
-                .append(" >= ").append(q).append(" AND ").append(selectName).append(" < ").append(q);
+                .appendIdentifier(selectName).append(" >= ").append(q)
+                .append(" AND ")
+                .appendIdentifier(selectName).append(" < ").append(q);
         }
 
         @Override
@@ -1747,8 +1748,9 @@ public abstract class CompareType
             String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(selectName)
-                .append(" < ").append(q).append(" OR ").append(selectName).append(" >= ").append(q);
+                .appendIdentifier(selectName).append(" < ").append(q)
+                .append(" OR ")
+                .appendIdentifier(selectName).append(" >= ").append(q);
         }
 
         @Override

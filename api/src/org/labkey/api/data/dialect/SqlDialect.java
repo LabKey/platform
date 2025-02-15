@@ -832,7 +832,7 @@ public abstract class SqlDialect
         return _reservedWordSet.contains(word);
     }
 
-
+    // TODO: Return SQLFragment to ensure columnName gets added with appendIdentifier()
     public String getColumnSelectName(String columnName)
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()
