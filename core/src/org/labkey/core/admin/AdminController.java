@@ -60,6 +60,7 @@ import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
@@ -2609,17 +2610,18 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private abstract class AbstractPostgresAction extends SimpleViewAction<Object>
+    private abstract class AbstractPostgresAction extends QueryViewAction<QueryViewAction.QueryExportForm, QueryView>
     {
         private final String _queryName;
 
         protected AbstractPostgresAction(String queryName)
         {
+            super(QueryExportForm.class);
             _queryName = queryName;
         }
 
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        protected QueryView createQueryView(QueryExportForm form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
         {
             if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
@@ -2627,7 +2629,18 @@ public class AdminController extends SpringActionController
             }
 
             QuerySettings qSettings = new QuerySettings(getViewContext(), "query", _queryName);
-            QueryView result = new QueryView(new PostgresUserSchema(getUser(), getContainer()), qSettings, errors);
+            QueryView result = new QueryView(new PostgresUserSchema(getUser(), getContainer()), qSettings, errors)
+            {
+                @Override
+                public DataView createDataView()
+                {
+                    // Troubleshooters don't have normal read access to the root container so grant them special access
+                    // for these queries
+                    DataView view = super.createDataView();
+                    view.getRenderContext().getViewContext().addContextualRole(ReaderRole.class);
+                    return view;
+                }
+           };
             result.setTitle(_queryName);
             result.setFrame(WebPartView.FrameType.PORTAL);
             return result;
@@ -2681,7 +2694,7 @@ public class AdminController extends SpringActionController
 
     public static class ThreadsBean
     {
-        public Map<Thread, Set<Integer>> spids = new HashMap<>();
+        public Map<Thread, Set<Integer>> spids;
         public List<Thread> threads;
         public Map<Thread, StackTraceElement[]> stackTraces;
 
