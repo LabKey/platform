@@ -704,11 +704,13 @@ public class DomainUtil
 
 
         if (domainName != null)
-            domain.setName(StringUtils.trimToNull(domainName));
+            domain.setName(StringUtils.trimToEmpty(domainName));
+        else
+            domain.setName(StringUtils.trimToEmpty(domain.getName()));
 
         if (domain.getName() != null)
         {
-            String domainNameError = validateDomainName(StringUtils.trimToEmpty(domain.getName()), kind.getKindName(), kind.supportsNamingPattern());
+            String domainNameError = validateDomainName(domain.getName(), kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
                 throw new IllegalArgumentException(domainNameError);
         }
