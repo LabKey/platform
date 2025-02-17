@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
@@ -64,11 +63,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
 
     public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
-        return load(getProtocolFile(root, name, archived), root.getContainer());
-    }
-
-    protected T load(Path file, Container container) throws IOException
-    {
+        Path file = getProtocolFile(root, name, archived);
         try
         {
             Map<String, String> mapNS = new HashMap<>();
@@ -164,7 +159,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
             }
         }
 
-        String[] vals = setNames.toArray(new String[setNames.size()]);
+        String[] vals = setNames.toArray(new String[0]);
         Arrays.sort(vals, String.CASE_INSENSITIVE_ORDER);
         return vals;
     }
