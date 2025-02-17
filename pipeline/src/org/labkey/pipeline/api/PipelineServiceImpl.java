@@ -896,7 +896,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (pr == null || !pr.isValid())
             throw new NotFoundException();
 
-        Path dirData = pr.getRootNioPath();
+        Path dirData = null;
         if (path != null)
         {
             dirData = pr.resolveToNioPath(path);
