@@ -806,7 +806,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (!FileUtil.isLegalName(name))
         {
-            error.append("Folder name must be a legal filename and not contain one of '/', '\\', ':', '?', '<', '>', '*', '|', '\"', '^'");
+            error.append("Folder name must be a legal filename and not contain any of these characters: /\\:?<>*|\"^'");
             return false;
         }
 
