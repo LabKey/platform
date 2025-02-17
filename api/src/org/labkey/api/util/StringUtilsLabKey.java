@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
 
@@ -52,8 +53,6 @@ public class StringUtilsLabKey
 
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
-
-
 
     public static @Nullable String validateLegalNames(String s, @NotNull String illegalCharset, String type)
     {
@@ -340,7 +339,7 @@ public class StringUtilsLabKey
 
     /**
      * Given a name, transforms it into a valid domain for an internet address, if possible, according to the constraints
-     * specified here: https://tools.ietf.org/html/rfc1035
+     * specified here: <a href="https://tools.ietf.org/html/rfc1035">RFC 1035</a>
      * @param name the name to be transformed.
      * @return null if the given string contains no characters that can be transformed in the order given to make a valid domain name ; a string containing only alphanumeric characters and dashes
      * that does not start with a dash or
@@ -563,6 +562,42 @@ public class StringUtilsLabKey
             }
         }
         return valid;
+    }
+
+    private static final byte NON_ASCII_MASK = (byte)0b1000_0000;
+    private static final byte START_BYTE_MASK = (byte)0b1100_0000;
+
+    public static String truncateToUtf8ByteLimit(String s, int maxBytes)
+    {
+        if (maxBytes < 0)
+            throw new IllegalStateException("maxBytes cannot be negative");
+
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length > maxBytes)
+        {
+            if (maxBytes > 0)
+            {
+                // Inspect the byte at the max truncation point to determine if it's in the middle of a character.
+                // High bit on means non-ASCII, which means we may need to back up one or more bytes to avoid an
+                // incomplete character.
+                if ((bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
+                {
+                    // Inspect the byte just after the max truncation point; anything other than a subsequent byte means
+                    // max truncation point is the end of character. The check below is true if byte is 0b10xx_xxxx.
+                    if (((~bytes[maxBytes] ^ NON_ASCII_MASK) & START_BYTE_MASK) == START_BYTE_MASK)
+                    {
+                        // Find the first start character (iterating backwards) and truncate just before it
+                        do
+                        {
+                            maxBytes--;
+                        }
+                        while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
+                    }
+                }
+            }
+            s = new String(bytes, 0, maxBytes);
+        }
+        return s;
     }
 
     public static class TestCase extends Assert
@@ -952,6 +987,76 @@ public class StringUtilsLabKey
             assertTrue(isValidJavaIdentifier("This$"));
             assertTrue(isValidJavaIdentifier("_ABC"));
             assertTrue(isValidJavaIdentifier("$ABC"));
+        }
+
+        @Test
+        public void testTruncateToUtf8ByteLimit()
+        {
+            List<String> testStrings = List.of(
+                "",
+                "A",
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+                "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
+                "°±²³´µ¶·¸¹º»¼½¾¿",
+                "こんにちは世界!",
+                "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
+                "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
+                "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
+                "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
+            );
+
+            testStrings.forEach(this::testTruncateSingleString);
+
+            // Create a list with all distinct characters (including surrogate pairs) from the above test strings
+            List<String> uniqueChars = testStrings.stream().flatMap(s -> {
+                List<String> moreStrings = new LinkedList<>();
+                for (int i = 0; i < s.length(); i++)
+                {
+                    char c = s.charAt(i);
+                    if (Character.isSurrogate(c))
+                    {
+                        char c2 = s.charAt(i + 1);
+                        moreStrings.add(c + "" + c2);
+                        i++;
+                    }
+                    else
+                    {
+                        moreStrings.add(String.valueOf(c));
+                    }
+                }
+                return moreStrings.stream();
+            })
+            .distinct()
+            .sorted()
+            .collect(Collectors.toCollection(ArrayList::new));
+
+            // Test the character list sorted and then reversed
+            testTruncateSingleString(String.join("", uniqueChars));
+            Collections.reverse(uniqueChars);
+            testTruncateSingleString(String.join("", uniqueChars));
+
+            // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
+            for (int i = 0; i < 10; i++)
+            {
+                Collections.shuffle(uniqueChars);
+                String test = String.join("", uniqueChars);
+                testTruncateSingleString(test);
+            }
+        }
+
+        // Test truncating this string at every possible byte length from 0 to byte length + 1
+        private void testTruncateSingleString(String s)
+        {
+            int byteLength = s.getBytes(StandardCharsets.UTF_8).length;
+            String prev = "";
+            for (int maxBytes = 0; maxBytes <= byteLength + 1; maxBytes++)
+            {
+                String truncated = truncateToUtf8ByteLimit(s, maxBytes);
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, s.startsWith(truncated));
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.startsWith(prev));
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
+                prev = truncated;
+            }
         }
     }
 }
