@@ -300,7 +300,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupStringValue(ribbonMessage, null);
     }
 
-
     @Override
     public int getSSLPort()
     {
@@ -332,10 +331,16 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isExt3APIRequired() { return lookupBooleanValue(ext3APIRequired, false); }
+    public boolean isExt3APIRequired()
+    {
+        return lookupBooleanValue(ext3APIRequired, false);
+    }
 
     @Override
-    public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(selfReportExceptions, true); }
+    public boolean isSelfReportExceptions()
+    {
+        return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(selfReportExceptions, true);
+    }
 
     @Override
     public ExceptionReportingLevel getExceptionReportingLevel()

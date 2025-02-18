@@ -1,4 +1,4 @@
-package org.labkey.experiment.samples;
+package org.labkey.experiment;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
