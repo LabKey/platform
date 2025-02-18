@@ -168,7 +168,7 @@ public class DateUtil
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
      * (which is called in the constructor)
      */
-    private static class _Calendar extends GregorianCalendar
+    public static class _Calendar extends GregorianCalendar
     {
         _Calendar(TimeZone tz, Locale locale)
         {
