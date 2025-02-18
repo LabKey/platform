@@ -392,7 +392,7 @@ export async function checkDomainName(server: IntegrationTestServer, domainType:
     let dataTypeRowId = 0;
     if (domainType !== 'SampleSet')
         dataTypeRowId = await getDataClassRowIdByName(server, domainName, folderOptions);
-    const requireMsg = `${domainType === 'SampleSet' ? 'Sample Type' : domainType} name must not be blank.`
+    const requireMsg = `${domainType} name must not be blank.`
     badNames[''] = requireMsg;
     badNames[' '] = requireMsg;
     for (let i = 0; i < badNameKeys.length; i++){
