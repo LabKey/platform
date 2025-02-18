@@ -18,16 +18,13 @@ package org.labkey.mothership;
 
 import java.util.Date;
 
-/**
- * User: jeckels
- * Date: Apr 20, 2006
- */
 public class ExceptionReport
 {
     private int _exceptionReportId;
     private int _exceptionStackTraceId;
     private Date _created;
     private String _installGUID;
+    private boolean _clientException;
     private String _url;
     private String _username;
     private String _browser;
@@ -168,6 +165,16 @@ public class ExceptionReport
     public void setExceptionMessage(String exceptionMessage)
     {
         _exceptionMessage = exceptionMessage;
+    }
+
+    public boolean isClientException()
+    {
+        return _clientException;
+    }
+
+    public void setClientException(boolean clientException)
+    {
+        _clientException = clientException;
     }
 
     public String getErrorCode()
