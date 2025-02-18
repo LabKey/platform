@@ -9,6 +9,7 @@ import org.apache.logging.log4j.core.config.Order;
 import org.apache.logging.log4j.core.config.composite.CompositeConfiguration;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.xml.XmlConfiguration;
+import org.apache.logging.log4j.core.config.xml.XmlConfigurationFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -23,7 +24,7 @@ import java.util.List;
         category = "ConfigurationFactory"
 )
 @Order(1)
-public class LabKeyLog4j2ConfigurationFactory extends ConfigurationFactory
+public class LabKeyLog4j2ConfigurationFactory extends XmlConfigurationFactory
 {
     @Override
     public String[] getSupportedTypes()
@@ -53,14 +54,17 @@ public class LabKeyLog4j2ConfigurationFactory extends ConfigurationFactory
                 }
             }
 
+            if (configs.isEmpty())
+                return super.getConfiguration(context, source);
+
             // Sort 00.log4j2.xml < 01.log4j2.xml < 02.log4j2.xml
             configs.sort(Comparator.comparing(AbstractConfiguration::getName));
+            return new CompositeConfiguration(configs);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
 
-        return new CompositeConfiguration(configs);
     }
 }
