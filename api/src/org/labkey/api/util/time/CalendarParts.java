@@ -1,0 +1,234 @@
+package org.labkey.api.util.time;
+
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.TimeZone;
+
+import static java.util.Calendar.AM_PM;
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.DST_OFFSET;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.HOUR;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.YEAR;
+import static java.util.Calendar.ZONE_OFFSET;
+
+// java.text.CalendarBuilder is package private
+// Calendar.Builder is public, but has no getters.  isSet() is private and it does not have get()
+
+public class CalendarParts
+{
+    public final long NANOS_IN_MILLI = 1_000_000L;
+
+    final _Calendar parts = new _Calendar();
+
+    long nanos;
+
+    public CalendarParts setTimeZone(TimeZone value)
+    {
+        parts.setTimeZone(value);
+        return this;
+    }
+
+    public CalendarParts set(int field, int value)
+    {
+        parts.set(field, value);
+        if (Calendar.MILLISECOND == field)
+            nanos = value * NANOS_IN_MILLI;
+        return this;
+    }
+
+    public boolean isSet(int field)
+    {
+        return parts.isSet(field);
+    }
+
+    public boolean isSet(int field1, int field2)
+    {
+        return parts.isSet(field1) && parts.isSet(field2);
+    }
+
+    public boolean isSet(int field1, int field2, int field3)
+    {
+        return parts.isSet(field1) && parts.isSet(field2) && parts.isSet(field3);
+    }
+
+    public boolean isHourSet()
+    {
+        return anySet(HOUR, HOUR_OF_DAY);
+    }
+
+    public boolean anySet(int field1, int field2)
+    {
+        return parts.isSet(field1) || parts.isSet(field2);
+    }
+
+    public boolean anySet(int field1, int field2, int field3)
+    {
+        return parts.isSet(field1) || parts.isSet(field2) || parts.isSet(field3);
+    }
+
+    public TimeZone getTimeZone()
+    {
+        return parts.getTimeZone();
+    }
+
+    public int get(int field)
+    {
+        return parts.get(field);
+    }
+
+    // Nanos and Millis are not separate fields, they are two representations of the same fields.
+    // setting one overwrites the other.
+    @SuppressWarnings("LombokGetterMayBeUsed")
+    public long getNanos()
+    {
+        return nanos;
+    }
+
+    public int getYear()
+    {
+        return parts.get(YEAR);
+    }
+
+    public CalendarParts setYear(int year)
+    {
+        parts.set(YEAR, year);
+        return this;
+    }
+
+    public int getMonth()
+    {
+        return parts.get(Calendar.MONTH);
+    }
+
+    public CalendarParts setMonth(int month)
+    {
+        parts.set(Calendar.MONTH, month);
+        return this;
+    }
+
+    public int getDayOfMonth()
+    {
+        return parts.get(Calendar.DAY_OF_MONTH);
+    }
+
+    public CalendarParts setDayOfMonth(int dayOfMonth)
+    {
+        parts.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        return this;
+    }
+
+    public int getHourOfDay()
+    {
+        return parts.get(Calendar.HOUR_OF_DAY);
+    }
+
+    public CalendarParts setHourOfDay(int hours)
+    {
+        parts.clear(HOUR);
+        parts.set(HOUR_OF_DAY, hours);
+        return this;
+    }
+
+    public CalendarParts setHour(int hours)
+    {
+        parts.clear(HOUR_OF_DAY);
+        parts.set(HOUR, hours);
+        return this;
+    }
+
+    public CalendarParts setMinute(int minutes)
+    {
+        parts.set(MINUTE, minutes);
+        return this;
+    }
+
+    public CalendarParts setSeconds(int seconds)
+    {
+        parts.set(SECOND, seconds);
+        return this;
+    }
+
+    public CalendarParts setMilliseconds(int millis)
+    {
+        set(Calendar.MILLISECOND, millis);
+        nanos = millis * NANOS_IN_MILLI;
+        return this;
+    }
+
+    public CalendarParts setNanoseconds(long nanos)
+    {
+        this.nanos = nanos;
+        if (nanos / NANOS_IN_MILLI >= Integer.MAX_VALUE-1)
+            throw new IllegalArgumentException();
+        set(Calendar.MILLISECOND, (int)Math.round((double)nanos / NANOS_IN_MILLI));
+        return this;
+    }
+
+
+    public void setCalendar(Calendar cal)
+    {
+        for (int field=0 ; field < Calendar.FIELD_COUNT; field++)
+        {
+            if (parts.isSet(field))
+                cal.set(field, parts.get(field));
+        }
+        if (null != parts.getTimeZone())
+            cal.setTimeZone(parts.getTimeZone());
+    }
+
+
+    static public class _Calendar extends Calendar
+    {
+        @Override
+        public void add(int field, int amount)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void computeTime()
+        {
+        }
+
+        @Override
+        protected void computeFields()
+        {
+        }
+
+        @Override
+        public void roll(int field, boolean up)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getMinimum(int field)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getMaximum(int field)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getGreatestMinimum(int field)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getLeastMaximum(int field)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+}
