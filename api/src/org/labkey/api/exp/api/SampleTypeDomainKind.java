@@ -132,8 +132,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("Status");
         RESERVED_NAMES.add("Amount");
         RESERVED_NAMES.add("RunId"); // Issue 50461
-        RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.names());
-        RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.labels());
+        RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
             // NOTE: We generate the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.

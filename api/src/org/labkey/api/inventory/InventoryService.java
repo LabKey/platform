@@ -17,6 +17,7 @@ package org.labkey.api.inventory;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -86,9 +87,16 @@ public interface InventoryService
             return Arrays.stream(InventoryStatusColumn.values()).map(InventoryStatusColumn::name).toList();
         }
 
-        public static List<String> labels()
+        public static Set<String> namesAndLabels()
         {
-            return Arrays.stream(InventoryStatusColumn.values()).map(InventoryStatusColumn::label).toList();
+            Set<String> values = new CaseInsensitiveHashSet();
+            for (InventoryStatusColumn column : InventoryStatusColumn.values())
+            {
+                values.add(column.name());
+                values.add(column.label());
+                values.add(column.label().replaceAll("\\s", ""));
+            }
+            return values;
         }
     }
 
