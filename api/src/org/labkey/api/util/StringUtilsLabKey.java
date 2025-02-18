@@ -992,6 +992,13 @@ public class StringUtilsLabKey
         @Test
         public void testTruncateToUtf8ByteLimit()
         {
+            // First, a few basic checks
+            assertEquals("abc", truncateToUtf8ByteLimit("abc", 3));
+            assertEquals("ab", truncateToUtf8ByteLimit("abc", 2));
+            assertEquals("☃☃", truncateToUtf8ByteLimit("☃☃", 10));
+            assertEquals("☃", truncateToUtf8ByteLimit("☃☃", 3));
+            assertEquals("", truncateToUtf8ByteLimit("☃☃", 2));
+
             List<String> testStrings = List.of(
                 "",
                 "A",
@@ -1055,6 +1062,8 @@ public class StringUtilsLabKey
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, s.startsWith(truncated));
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.startsWith(prev));
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
+                int minChars = maxBytes / 4;
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.length() >= minChars);
                 prev = truncated;
             }
         }
