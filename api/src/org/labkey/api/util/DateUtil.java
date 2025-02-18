@@ -187,14 +187,14 @@ public class DateUtil
             super(tz, locale);
             setTimeInMillis(l);
         }
-
-        @Override
-        public void setTimeInMillis(long millis)
-        {
-            isTimeSet = true;
-            time = millis;
-            areFieldsSet = false;
-        }
+//
+//        @Override
+//        public void setTimeInMillis(long millis)
+//        {
+//            isTimeSet = true;
+//            time = millis;
+//            areFieldsSet = false;
+//        }
     }
 
     // when strict=true, disallow date overflow arithmetic
