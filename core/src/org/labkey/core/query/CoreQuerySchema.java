@@ -36,6 +36,7 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
@@ -56,7 +57,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CoreQuerySchema extends UserSchema
 {
@@ -82,7 +82,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
-    public static final String SHORTURL_TABLE_NAME = "ShortURL";
+    public static final String SHORT_URL_TABLE_NAME = "ShortURL";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -174,10 +174,16 @@ public class CoreQuerySchema extends UserSchema
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
             return getMVIndicatorTable(cf);
-        if (SHORTURL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
+        if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
 
         return null;
+    }
+
+    public static boolean canSeePostgresStateQueries(Container container, UserPrincipal user)
+    {
+        return container.isRoot() &&
+                (container.hasPermission(user, ApplicationAdminPermission.class) || container.hasPermission(user, TroubleshooterPermission.class));
     }
 
     public TableInfo getWorkbooks(ContainerFilter cf)
@@ -339,7 +345,7 @@ public class CoreQuerySchema extends UserSchema
         defCols.add(FieldKey.fromParts("Container"));
         principals.setDefaultVisibleColumns(defCols);
 
-        principals.getMutableColumn("Container").setFk(new ContainerForeignKey(this));
+        principals.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this));
 
         //filter out inactive
         principals.addCondition(new SQLFragment("Active=?", true));
@@ -497,7 +503,7 @@ public class CoreQuerySchema extends UserSchema
         users.setDefaultVisibleColumns(visibleColumns);
     }
 
-    private void addAvatarColumn(FilteredTable users)
+    private void addAvatarColumn(UsersTable users)
     {
         var avatarCol = users.wrapColumn(UserAvatarDisplayColumnFactory.FIELD_KEY, users.getRealTable().getColumn("userid"));
         avatarCol.setDescription("Thumbnail icon associated with this user account.");
@@ -557,49 +563,51 @@ public class CoreQuerySchema extends UserSchema
     {
         QueryDefinition def = QueryService.get().createQueryDef(getUser(), getContainer(), this, "UsersAndGroups");
         def.setSql(
-                "SELECT \n" +
-                "  Users.UserId,\n" +
-                "  Users.DisplayName,\n" +
-                "  Users.Email,\n" +
-                "  'u' AS Type,\n" +
-                "  NULL AS Container\n" +
-                "FROM Users\n" +
-                "\n" +
-                "UNION\n" +
-                "\n" +
-                "SELECT \n" +
-                "  Groups.Userid,\n" +
-                "  Groups.Name as DisplayName,\n" +
-                "  NULL AS Email,\n" +
-                "  Groups.Type,\n" +
-                "  Groups.Container\n" +
-                "FROM Groups");
+                """
+                        SELECT\s
+                          Users.UserId,
+                          Users.DisplayName,
+                          Users.Email,
+                          'u' AS Type,
+                          NULL AS Container
+                        FROM Users
+                        
+                        UNION
+                        
+                        SELECT\s
+                          Groups.Userid,
+                          Groups.Name as DisplayName,
+                          NULL AS Email,
+                          Groups.Type,
+                          Groups.Container
+                        FROM Groups""");
         def.setMetadataXml(
-                "<tables xmlns=\"http://labkey.org/data/xml\">\n" +
-                        "  <table tableName=\"UsersAndGroups\" tableDbType=\"NOT_IN_DB\">\n" +
-                        "    <description>Union of the Users and Groups tables</description>\n" +
-                        "    <pkColumnName>UserId</pkColumnName>\n" +
-                        "    <columns>\n" +
-                        "      <column columnName=\"UserId\">\n" +
-                        "        <isKeyField>true</isKeyField>\n" +
-                        "        <dimension>true</dimension>\n" +
-                        "        <fk>\n" +
-                        "          <fkDbSchema>core</fkDbSchema>\n" +
-                        "          <fkTable>Users</fkTable>\n" +
-                        "          <fkColumnName>UserId</fkColumnName>\n" +
-                        "        </fk>\n" +
-                        "      </column>\n" +
-                        "      <column columnName=\"Container\">\n" +
-                        "        <dimension>true</dimension>\n" +
-                        "        <fk>\n" +
-                        "          <fkDbSchema>core</fkDbSchema>\n" +
-                        "          <fkTable>Containers</fkTable>\n" +
-                        "          <fkColumnName>EntityId</fkColumnName>\n" +
-                        "        </fk>\n" +
-                        "      </column>\n" +
-                        "    </columns>\n" +
-                        "  </table>\n" +
-                        "</tables>");
+                """
+                        <tables xmlns="http://labkey.org/data/xml">
+                          <table tableName="UsersAndGroups" tableDbType="NOT_IN_DB">
+                            <description>Union of the Users and Groups tables</description>
+                            <pkColumnName>UserId</pkColumnName>
+                            <columns>
+                              <column columnName="UserId">
+                                <isKeyField>true</isKeyField>
+                                <dimension>true</dimension>
+                                <fk>
+                                  <fkDbSchema>core</fkDbSchema>
+                                  <fkTable>Users</fkTable>
+                                  <fkColumnName>UserId</fkColumnName>
+                                </fk>
+                              </column>
+                              <column columnName="Container">
+                                <dimension>true</dimension>
+                                <fk>
+                                  <fkDbSchema>core</fkDbSchema>
+                                  <fkTable>Containers</fkTable>
+                                  <fkColumnName>EntityId</fkColumnName>
+                                </fk>
+                              </column>
+                            </columns>
+                          </table>
+                        </tables>""");
         List<QueryException> errors = new ArrayList<>();
         TableInfo t;
         t = def.getTable(this, errors, true);
@@ -655,7 +663,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getQCStatesTable(ContainerFilter cf)
     {
         TableInfo dataStatesTable = getDataStatesTable(cf);
-        FilteredTable table = new FilteredTable<>(dataStatesTable, this);
+        FilteredTable<?> table = new FilteredTable<>(dataStatesTable, this);
         SQLFragment sql = new SQLFragment("(stateType IS NULL)");
         table.setName(QCSTATE_TABLE_NAME);
 
@@ -667,7 +675,7 @@ public class CoreQuerySchema extends UserSchema
         return table;
     }
 
-    protected void addNullSetFilter(FilteredTable table)
+    protected void addNullSetFilter(FilteredTable<?> table)
     {
         table.addCondition(new SQLFragment("1=2"), FieldKey.fromParts("UserId"));
     }
@@ -727,7 +735,7 @@ public class CoreQuerySchema extends UserSchema
                     .stream()
                     .filter(prop -> prop.isRequired() && prop.isShownInUpdateView())
                     .map(DomainProperty::getName)
-                    .collect(Collectors.toList());
+                    .toList();
 
                 if (!requiredFields.isEmpty())
                 {
@@ -750,7 +758,7 @@ public class CoreQuerySchema extends UserSchema
                                 if (results.hasColumn(fieldKey))
                                 {
                                     Object val = results.getObject(fieldKey);
-                                    if (val == null || val.toString().trim().length() == 0)
+                                    if (val == null || val.toString().trim().isEmpty())
                                         return true;
                                 }
                             }
@@ -775,8 +783,8 @@ public class CoreQuerySchema extends UserSchema
             setDescription("Contains one row for each view category.");
             wrapAllColumns(true);
 
-            getMutableColumn(FieldKey.fromParts("RowId")).setHidden(true);
-            var parentCol = getMutableColumn(FieldKey.fromParts("Parent"));
+            getMutableColumnOrThrow("RowId").setHidden(true);
+            var parentCol = getMutableColumnOrThrow("Parent");
             parentCol.setFk(new LookupForeignKey("RowId", "Label"){
 
                 @Override

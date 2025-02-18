@@ -1064,7 +1064,11 @@ public class DbScope
      */
     public static Thread getEffectiveThread()
     {
-        Thread thread = Thread.currentThread();
+        return getEffectiveThread(Thread.currentThread());
+    }
+
+    public static Thread getEffectiveThread(Thread thread)
+    {
         synchronized (_sharedConnections)
         {
             Thread result = _sharedConnections.get(thread);
