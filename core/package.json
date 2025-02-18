@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.22.0",
+    "@labkey/components": "6.23.2-trimDomainNames.1",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
