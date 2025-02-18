@@ -69,6 +69,7 @@
             <column columnName="LastReport"/>
             <column columnName="FirstReport"/>
             <column columnName="Instances"/>
+            <column columnName="ClientException"/>
         </columns>
     </table>
     <table tableName="ServerInstallation" tableDbType="TABLE">

@@ -110,7 +110,6 @@ public class DomainImpl implements Domain
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
     transient AliasManager _aliasManager = null;
 
-
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
@@ -359,7 +358,8 @@ public class DomainImpl implements Domain
         }
     }
 
-    private boolean isNew()
+    @Override
+    public boolean isNew()
     {
         return _new;
     }
@@ -550,8 +550,8 @@ public class DomainImpl implements Domain
                 new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
             }
 
-            List<DomainProperty> checkRequiredStatus = new ArrayList<>();
-            boolean isDomainNew = isNew();         // #32406 Need to capture because _new changes during the process
+            // Issue 32406: Need to capture because _new changes during the process
+            boolean isDomainNew = isNew();
             if (saveOnlyIfNotExists && !isDomainNew)
                 throw new IllegalStateException();
             if (!isDomainNew || saveOnlyIfNotExists)
@@ -611,7 +611,7 @@ public class DomainImpl implements Domain
             // Compile audit info for every property change
             List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
 
-            // Delete first #8978
+            // Issue 8978: Delete first
             for (DomainPropertyImpl impl : _properties)
             {
                 if (impl._deleted || (impl.isRecreateRequired()))
@@ -634,8 +634,9 @@ public class DomainImpl implements Domain
             // Keep track of the intended final name for each updated property, and its sort order
             Map<DomainPropertyImpl, Pair<String, Integer>> finalNames = new HashMap<>();
             Map<DomainProperty, Object> defaultValueMap = new HashMap<>();
+            List<DomainProperty> checkRequiredStatus = new ArrayList<>();
 
-            // Now add and update #8978
+            // Issue 8978: Now add and update
             for (DomainPropertyImpl impl : _properties)
             {
                 if (!impl._deleted)
@@ -672,7 +673,7 @@ public class DomainImpl implements Domain
                         if (impl._pdOld != null)
                         {
                             // If this field is newly required, or it's required and we're disabling MV indicators on
-                            // it, make sure that all of the rows have values for it
+                            // it, make sure that all the rows have values for it
                             if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
                                     (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
                             {
@@ -689,8 +690,9 @@ public class DomainImpl implements Domain
                             if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
                             {
                                 finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
-                                // Save any fields whose name changed with a temp, guaranteed unique name. This is important in case a single save
-                                // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
+                                // Issue 17020: Save any fields whose name changed with a temp, guaranteed unique name.
+                                // This is important in case a single save is renaming "Field1"->"Field2" and
+                                // "Field2"->"Field1".
                                 String tmpName = "~tmp" + new GUID().toStringNoDashes();
                                 impl.setName(tmpName);
                                 impl._pd.setStorageColumnName(tmpName);
@@ -822,8 +824,8 @@ public class DomainImpl implements Domain
 
             Runnable afterDomainCommitOrRollback = () ->
             {
-                // Even if no storage table schema changes occurred, we want to invalidate table to pick up an metadata changes
-                // Invalidate even if !propChanged, because ordering might have changed (#25296)
+                // Issue 25296: Even if no storage table schema changes occurred, we want to invalidate table to
+                // pick up any metadata changes. Invalidate even if !propChanged, because ordering might have changed.
                 OntologyManager.invalidateDomain(this);
                 if (getDomainKind() != null)
                     getDomainKind().invalidate(this);
@@ -1323,9 +1325,7 @@ public class DomainImpl implements Domain
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof DomainImpl))
-            return false;
-        return (_dd.equals(((DomainImpl) obj)._dd));
+        return obj instanceof DomainImpl impl && _dd.equals(impl._dd);
     }
 
     @Override
@@ -1365,7 +1365,7 @@ public class DomainImpl implements Domain
         Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
         for (GWTIndex index : indices)
         {
-            // issue 25273: verify that each index column name exists in the domain
+            // Issue 25273: verify that each index column name exists in the domain
             if (lowerReservedNames != null)
             {
                 for (String indexColName : index.getColumnNames())
@@ -1409,7 +1409,8 @@ public class DomainImpl implements Domain
             }
             for (DomainPropertyImpl dp : this.getProperties())
             {
-                if (null != dp._pd && !dp._deleted && null != dp._pd.getStorageColumnName())    // Don't claim deleted names (#23295)
+                // Issue 23295: Don't claim deleted names
+                if (null != dp._pd && !dp._deleted && null != dp._pd.getStorageColumnName())
                     _aliasManager.claimAlias(dp._pd.getStorageColumnName(), dp.getName());
             }
         }
@@ -1458,7 +1459,7 @@ public class DomainImpl implements Domain
         for (int i = 0; i < disabledFields.length(); i++)
             disabledSystemFields.add(disabledFields.optString(i));
 
-        DomainKind domainKind = getDomainKind();
+        DomainKind<?> domainKind = getDomainKind();
         if (domainKind != null)
             return domainKind.getDisabledSystemFields(disabledSystemFields);
 

@@ -89,6 +89,9 @@ import java.util.stream.Collectors;
 // track changes we've implemented for each version over time.
 public abstract class PostgreSql91Dialect extends SqlDialect
 {
+    // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
+    public static final String POSTGRES_SCHEMA_NAME = "postgres";
+
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
     public static final String PRODUCT_NAME = "PostgreSQL";
     public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
@@ -1137,7 +1140,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             }
         }
 
-        if (nonDateTimeColumns.size() > 0)
+        if (!nonDateTimeColumns.isEmpty())
             statements.add(alterTableSegment + " " + StringUtils.join(nonDateTimeColumns, ""));
 
         return statements;
@@ -1563,30 +1566,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             while (rs.next())
             {
                 Map<ParamTraits, Integer> traitMap = new HashMap<>();
-                int type;
-                switch (rs.getString("data_type"))
+                int type = switch (rs.getString("data_type"))
                 {
-                    case "integer":
-                        type = Types.INTEGER;
-                        break;
-                    case "timestamp without time zone":
-                        type = Types.TIMESTAMP;
-                        break;
-                    case "boolean":
-                        type = Types.BOOLEAN;
-                        break;
-                    case "numeric":
-                        type = Types.NUMERIC;
-                        break;
-                    case "refcursor": // the return resultset
-                        type = Types.OTHER;
-                        break;
-                    case "USER-DEFINED":   // for containerId. Not trying to further distinguish the underlying type for other user defined types
-                    case "character varying":
-                    default:
-                        type = Types.VARCHAR;
-                        break;
-                }
+                    case "integer" -> Types.INTEGER;
+                    case "timestamp without time zone" -> Types.TIMESTAMP;
+                    case "boolean" -> Types.BOOLEAN;
+                    case "numeric" -> Types.NUMERIC;
+                    case "refcursor" -> // the return resultset
+                            Types.OTHER;   // for containerId. Not trying to further distinguish the underlying type for other user defined types
+                    default -> Types.VARCHAR;
+                };
                 int direction;
                 switch (rs.getString("parameter_mode"))
                 {

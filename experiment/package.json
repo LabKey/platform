@@ -13,10 +13,10 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "6.21.3"
+    "@labkey/components": "6.24.2"
   },
   "devDependencies": {
-    "@labkey/build": "8.3.0",
+    "@labkey/build": "8.4.0",
     "@labkey/test": "1.7.1",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.12",
