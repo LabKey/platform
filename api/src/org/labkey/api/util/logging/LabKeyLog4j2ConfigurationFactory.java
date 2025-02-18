@@ -16,6 +16,7 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import java.io.IOException;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -42,14 +43,14 @@ public class LabKeyLog4j2ConfigurationFactory extends XmlConfigurationFactory
         try
         {
             //Get Base Log4j2 configuration
-            List<XmlConfiguration> configs = resolveConfigFiles("classpath:log4j2.xml", context, resolver);
+            List<XmlConfiguration> configs = Arrays.asList((XmlConfiguration) super.getConfiguration(context, source));
 
             //Get any Override configurations
             List<XmlConfiguration> overrideConfigs = resolveConfigFiles("classpath*:**/config/*.log4j2.xml", context, resolver);
 
             // If there are no override configs, then return base configuration
             if (overrideConfigs.isEmpty())
-                return super.getConfiguration(context, source);
+                return configs.get(0);
 
             // Sort the override configs: 00.log4j2.xml < 01.log4j2.xml < 02.log4j2.xml
             overrideConfigs.sort(Comparator.comparing(AbstractConfiguration::getName));
@@ -60,7 +61,8 @@ public class LabKeyLog4j2ConfigurationFactory extends XmlConfigurationFactory
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            LOGGER.error("Unable to load configuration", e);
+            return null;
         }
     }
 
