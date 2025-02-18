@@ -769,9 +769,10 @@ public class DomainUtil
             return validationException;
         }
 
-        String updatedName = StringUtils.trimToEmpty(update.getName());
+        String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
+            updatedName = StringUtils.trimToEmpty(updatedName);
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
             {
