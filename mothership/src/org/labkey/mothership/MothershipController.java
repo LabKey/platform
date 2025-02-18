@@ -665,6 +665,7 @@ public class MothershipController extends SpringActionController
                 ExceptionStackTrace stackTrace = new ExceptionStackTrace();
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
+                stackTrace.setClientException(form.isClientException());
 
                 Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
                 ServerSession session = sessionAndRelease.first;
@@ -692,6 +693,7 @@ public class MothershipController extends SpringActionController
                     report.setBrowser(form.getBrowser());
                     report.setServerSessionId(session.getServerSessionId());
                     report.setErrorCode(form.getErrorCode());
+                    report.setClientException(form.isClientException());
 
                     MothershipManager.get().insertException(stackTrace, report);
                 }
@@ -720,7 +722,6 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-//            throw new UnsupportedOperationException("Intentional exception for testing purposes");
             throw new SQLException("Intentional exception for testing purposes", "400");
         }
 
@@ -728,6 +729,23 @@ public class MothershipController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    @RequiresPermission(ReadPermission.class)
+    public static class ClientExceptionAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/mothership/view/clientException.jsp");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Client Exception");
         }
     }
 
@@ -1383,6 +1401,7 @@ public class MothershipController extends SpringActionController
         private String _pageflowAction;
         private String _sqlState;
         private String _errorCode;
+        private boolean _clientException;
 
         public String getExceptionMessage()
         {
@@ -1485,6 +1504,16 @@ public class MothershipController extends SpringActionController
         public void setErrorCode(String errorCode)
         {
             _errorCode = errorCode;
+        }
+
+        public boolean isClientException()
+        {
+            return _clientException;
+        }
+
+        public void setClientException(boolean clientException)
+        {
+            _clientException = clientException;
         }
     }
 
