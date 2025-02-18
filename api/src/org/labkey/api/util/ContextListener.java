@@ -33,6 +33,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.springframework.web.context.ContextLoaderListener;
 
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -48,7 +49,11 @@ public class ContextListener implements ServletContextListener
     {
         // make sure compiler knows about DateUtil._Calendar
         // JVM bug 17.0.7
-        var c = new DateUtil._Calendar(TimeZone.getDefault(), Locale.getDefault());
+        Calendar c = new DateUtil._Calendar(TimeZone.getDefault(), Locale.getDefault());
+        c.get(Calendar.YEAR);       // computeFields()
+        c.set(Calendar.YEAR,2020);
+        c.getTimeInMillis();        //computeTime()
+        c = GregorianCalendar.getInstance();
         c.get(Calendar.YEAR);       // computeFields()
         c.set(Calendar.YEAR,2020);
         c.getTimeInMillis();        //computeTime()
