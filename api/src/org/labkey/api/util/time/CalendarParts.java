@@ -61,6 +61,18 @@ public class CalendarParts
         return anySet(HOUR, HOUR_OF_DAY);
     }
 
+    public boolean isTimezoneSet()
+    {
+        return null != parts.getTimeZone() || parts.isSet(ZONE_OFFSET);
+    }
+
+    public void clearTimezone()
+    {
+        parts.setTimeZone(null);
+        parts.clear(ZONE_OFFSET);
+        parts.clear(DST_OFFSET);
+    }
+
     public boolean anySet(int field1, int field2)
     {
         return parts.isSet(field1) || parts.isSet(field2);

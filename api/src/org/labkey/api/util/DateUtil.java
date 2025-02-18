@@ -329,7 +329,7 @@ public class DateUtil
                                     parts.isSet(MILLISECOND) && parts.getNanos() >= 1_000_000_000)
                                 return false;
                         }
-                        if (null == parts.getTimeZone())
+                        if (!parts.isTimezoneSet())
                             parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
                         return lenient || (cal.get(YEAR) == parts.getYear() &&
@@ -346,6 +346,7 @@ public class DateUtil
                             return false;
                         if (parts.isHourSet() || parts.anySet(MINUTE,SECOND))
                             return false;
+                        parts.clearTimezone();
                         parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
                         return lenient || (cal.get(YEAR) == parts.getYear() &&
@@ -376,6 +377,7 @@ public class DateUtil
                         parts.setYear(1970);
                         parts.setMonth(JANUARY);
                         parts.setDayOfMonth(1);
+                        parts.clearTimezone();
                         parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
                         return true;
