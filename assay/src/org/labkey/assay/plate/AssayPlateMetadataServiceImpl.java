@@ -964,7 +964,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         for (var updateField : update.getFields())
         {
             var propertyId = updateField.getPropertyId();
-            var isNew = !originalFields.containsKey(propertyId);
+            var isNew = replicateDomain.isNew() || !originalFields.containsKey(propertyId);
             var isValidType = updateField.isMeasure() && PropertyType.getFromURI(null, updateField.getRangeURI()).getJdbcType().isNumeric();
 
             if (isNew)
@@ -1001,6 +1001,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                     var updatedName = updatedNames.get(i);
                                     var dp = replicateDomain.getPropertyByName(name);
                                     dp.setName(updatedName);
+                                    domainDirty = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var updatedNames = PlateReplicateStatsDomainKind.getStatsFieldNames(updateField.getName());
+                            for (String updatedName : updatedNames)
+                            {
+                                if (!existingReplicateFields.containsKey(updatedName))
+                                {
+                                    addField(replicateDomain, updatedName);
                                     domainDirty = true;
                                 }
                             }
