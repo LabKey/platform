@@ -727,7 +727,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             def = study.getDataset(datasetProperties.getDatasetId());
             validateDatasetProperties(datasetProperties, container, user, update, def);
             checkCanUpdate(def, container, user, datasetProperties, original, update);
-            hasNameChange = !def.getName().equals(datasetProperties.getName());
+            String updatedName = StringUtils.trimToEmpty(datasetProperties.getName());
+            datasetProperties.setName(updatedName);
+            hasNameChange = !def.getName().equals(updatedName);
         }
 
         // Acquire lock before we actually start the transaction to avoid deadlocks when it's refreshed during the process
