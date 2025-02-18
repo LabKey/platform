@@ -49,8 +49,9 @@ public class ContextListener implements ServletContextListener
         // make sure compiler knows about DateUtil._Calendar
         // JVM bug 17.0.7
         var c = new DateUtil._Calendar(TimeZone.getDefault(), Locale.getDefault());
+        c.get(Calendar.YEAR);       // computeFields()
         c.set(Calendar.YEAR,2020);
-        c.getTimeInMillis();
+        c.getTimeInMillis();        //computeTime()
     }
 
 
