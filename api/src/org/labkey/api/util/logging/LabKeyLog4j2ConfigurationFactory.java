@@ -33,38 +33,53 @@ public class LabKeyLog4j2ConfigurationFactory extends XmlConfigurationFactory
     }
 
     @Override
-    public Configuration getConfiguration(final LoggerContext context, final ConfigurationSource source) {
-        List<XmlConfiguration> configs = new ArrayList<>();
-
+    public Configuration getConfiguration(final LoggerContext context, final ConfigurationSource source)
+    {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        // Use Ant-style patterns to match resources
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(classLoader);
 
-        // Use Ant-style patterns to match resources
-        Resource[] resources = null;
         try
         {
-            resources = resolver.getResources("classpath*:**/config/*.log4j2.xml");
-            for (Resource resource : resources) {
-                File config = resource.getFile();
-                if (config.exists())
-                {
-                    ConfigurationSource cs = ConfigurationSource.fromUri(resource.getURI());
-                    XmlConfiguration xmlConfiguration = new XmlConfiguration(context, cs);
-                    configs.add(xmlConfiguration);
-                }
-            }
+            //Get Base Log4j2 configuration
+            List<XmlConfiguration> configs = resolveConfigFiles("classpath:log4j2.xml", context, resolver);
 
-            if (configs.isEmpty())
+            //Get any Override configurations
+            List<XmlConfiguration> overrideConfigs = resolveConfigFiles("classpath*:**/config/*.log4j2.xml", context, resolver);
+
+            // If there are no override configs, then return base configuration
+            if (overrideConfigs.isEmpty())
                 return super.getConfiguration(context, source);
 
-            // Sort 00.log4j2.xml < 01.log4j2.xml < 02.log4j2.xml
-            configs.sort(Comparator.comparing(AbstractConfiguration::getName));
+            // Sort the override configs: 00.log4j2.xml < 01.log4j2.xml < 02.log4j2.xml
+            overrideConfigs.sort(Comparator.comparing(AbstractConfiguration::getName));
+
+            // log4j2.xml, 00.log4j2.xml, 01.log4j2.xml...
+            configs.addAll(overrideConfigs);
             return new CompositeConfiguration(configs);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
+    }
 
+    private List<XmlConfiguration> resolveConfigFiles(String pattern, final LoggerContext context, PathMatchingResourcePatternResolver resolver) throws IOException
+    {
+        List<XmlConfiguration> configs = new ArrayList<>();
+        Resource[] resources = resolver.getResources(pattern);
+
+        for (Resource resource : resources)
+        {
+            File config = resource.getFile();
+            if (config.exists())
+            {
+                ConfigurationSource cs = ConfigurationSource.fromUri(resource.getURI());
+                XmlConfiguration xmlConfiguration = new XmlConfiguration(context, cs);
+                configs.add(xmlConfiguration);
+            }
+        }
+
+        return configs;
     }
 }
