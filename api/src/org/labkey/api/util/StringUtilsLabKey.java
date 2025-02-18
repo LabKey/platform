@@ -575,24 +575,21 @@ public class StringUtilsLabKey
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > maxBytes)
         {
-            if (maxBytes > 0)
+            // Inspect the byte at the max truncation point to determine if it's in the middle of a character.
+            // High bit on means non-ASCII, which means we may need to back up one or more bytes to avoid an
+            // incomplete character.
+            if (maxBytes > 0 && (bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
             {
-                // Inspect the byte at the max truncation point to determine if it's in the middle of a character.
-                // High bit on means non-ASCII, which means we may need to back up one or more bytes to avoid an
-                // incomplete character.
-                if ((bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
+                // Inspect the byte just after the max truncation point; anything other than a subsequent byte means
+                // max truncation point is the end of character. The check below is true if byte is 0b10xx_xxxx.
+                if (((~bytes[maxBytes] ^ NON_ASCII_MASK) & START_BYTE_MASK) == START_BYTE_MASK)
                 {
-                    // Inspect the byte just after the max truncation point; anything other than a subsequent byte means
-                    // max truncation point is the end of character. The check below is true if byte is 0b10xx_xxxx.
-                    if (((~bytes[maxBytes] ^ NON_ASCII_MASK) & START_BYTE_MASK) == START_BYTE_MASK)
+                    // Find the first start character (iterating backwards) and truncate just before it
+                    do
                     {
-                        // Find the first start character (iterating backwards) and truncate just before it
-                        do
-                        {
-                            maxBytes--;
-                        }
-                        while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
+                        maxBytes--;
                     }
+                    while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
                 }
             }
             s = new String(bytes, 0, maxBytes);
