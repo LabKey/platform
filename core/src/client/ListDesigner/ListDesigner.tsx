@@ -117,7 +117,7 @@ export class ListDesigner extends React.Component<Props, State> {
         if (controller?.toLowerCase() === 'list' && action?.toLowerCase() === 'grid') {
             const parameters = ActionURL.getParameters(returnUrl);
             if (parameters.hasOwnProperty('name') && model.name && parameters.name !== model.name) {
-                parameters.name = model.name;
+                parameters.name = model.name.trim();
                 return ActionURL.buildURL(controller, action, containerPath, parameters);
             }
         }
