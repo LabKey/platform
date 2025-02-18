@@ -54,11 +54,11 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.23.2-trimDomainNames.1",
+    "@labkey/components": " 6.24.1-trimDomainNames.1",
     "@labkey/themes": "1.4.0"
   },
   "devDependencies": {
-    "@labkey/build": "8.3.0",
+    "@labkey/build": "8.4.0",
     "@labkey/eslint-config-react": "0.0.15",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.12",
