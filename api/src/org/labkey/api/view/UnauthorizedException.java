@@ -25,6 +25,8 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class UnauthorizedException extends HttpStatusException
 {
+    private static final String DEFAULT_MESSAGE = "User does not have permission to perform this operation.";
+
     /** Options for how the client should be informed of not being allowed to see a resource */
     public enum Type
     {
@@ -45,12 +47,12 @@ public class UnauthorizedException extends HttpStatusException
 
     public UnauthorizedException(String message)
     {
-        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."), null, HttpServletResponse.SC_UNAUTHORIZED);
+        super(StringUtils.defaultIfEmpty(message, DEFAULT_MESSAGE), null, HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public UnauthorizedException(String message, Throwable cause)
     {
-        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."), cause, HttpServletResponse.SC_UNAUTHORIZED);
+        super(StringUtils.defaultIfEmpty(message, DEFAULT_MESSAGE), cause, HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public void setType(Type type)
