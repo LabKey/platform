@@ -56,6 +56,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleConverter;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ReturnURLString;
@@ -1073,6 +1074,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
     // Example: "Could not convert value '2.34' (Double) for Boolean field 'Medical History.Dep Diagnosed in Last 18 Months'"
     public static String getStandardConversionErrorMessage(Object value, String fieldName, Class<?> expectedClass)
     {
-        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + expectedClass.getSimpleName() + " field '" + fieldName + "'";
+        String fieldType = expectedClass.getSimpleName();
+
+        // Issue 50768: Need a better error message if date value is not in the expected format.
+        if (fieldType.equalsIgnoreCase("date") || fieldType.equalsIgnoreCase("datetime"))
+            return "'" + value + "’ is not a valid " + fieldType + " for " + fieldName + " using " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDisplayString() + ".";
+
+        return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + fieldType + " field '" + fieldName + "'" ;
     }
 }
