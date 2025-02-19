@@ -73,7 +73,7 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         // ReactJS hot reload uses localhost port 3001. If in dev mode, allow browser to access that port.
         if (AppProps.getInstance().isDevMode())
-            registerAllowedConnectionSource("reactjs.hot.reload", "localhost:3001");
+            registerAllowedConnectionSource("reactjs.hot.reload", "localhost:3001 ws:");
     }
 
     @Override
