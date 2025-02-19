@@ -1489,10 +1489,9 @@ public class PropertyController extends SpringActionController
 
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
-
         if (original.getName() != null && update.getName() != null && !original.getName().equals(update.getName()))
         {
-            String domainNameError = DomainUtil.validateDomainName(update.getName(), kind.getKindName(), kind.supportsNamingPattern());
+            String domainNameError = DomainUtil.validateDomainName(StringUtils.trimToEmpty(update.getName()), kind.getKindName(), kind.supportsNamingPattern());
             if (domainNameError != null)
                 throw new IllegalArgumentException(domainNameError);
         }

@@ -161,7 +161,7 @@ public void reservedNameFirst() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("DataClass name 'First' is reserved.", e.getMessage());
+        assertEquals("Invalid DataClass name 'First'. 'First' is a reserved name.", e.getMessage());
     }
 }
 
@@ -179,7 +179,7 @@ public void reservedNameAll() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("DataClass name 'All' is reserved.", e.getMessage());
+        assertEquals("Invalid DataClass name 'All'. 'All' is a reserved name.", e.getMessage());
     }
 }
 
