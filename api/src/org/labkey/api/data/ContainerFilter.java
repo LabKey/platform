@@ -256,7 +256,7 @@ public abstract class ContainerFilter
         List<Container> containers = ids.stream()
                 .map(ContainerManager::getForId)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
         boolean hasNoSpecialChildren = includedChildTypes.isEmpty() ||
                 containers.stream().noneMatch(c -> c.hasChildrenOfAnyType(finalIncludedChildTypes));
 
@@ -355,14 +355,6 @@ public abstract class ContainerFilter
     public enum Type implements Factory
     {
         Current("Current folder")
-                {
-                    @Override
-                    public ContainerFilter create(Container c, User user)
-                    {
-                        return new CurrentContainerFilter(c);
-                    }
-                },
-        CurrentWithUser("Current folder with permissions applied to user")
                 {
                     @Override
                     public ContainerFilter create(Container c, User user)
@@ -494,7 +486,7 @@ public abstract class ContainerFilter
 
         private final String _description;
 
-        private Type(String description)
+        Type(String description)
         {
             _description = description;
         }
@@ -514,17 +506,16 @@ public abstract class ContainerFilter
         }
     }
 
-    // short for ContainerFilter.Type.Current.create(container, null)
+    // Does not validate permissions!
     public static ContainerFilter current(Container c)
     {
         return new CurrentContainerFilter(c);
     }
 
-    public static class CurrentContainerFilter extends ContainerFilter
+    private static class CurrentContainerFilter extends ContainerFilter
     {
         CurrentContainerFilter(Container c)
         {
-            // CurrentContainerFilter does not validate permission
             super(c,null);
             Objects.requireNonNull(c);
         }
@@ -563,6 +554,10 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
+            // TODO: InternalNoContainerFilter should extend ContainerFilter instead of ContainerFilterWithPermission,
+            // which would allow a more strict check below (c != null && user != null). Also, once verified on
+            // TeamCity, throw an exception here instead of asserting.
+            assert c == null || user != null : "User is required for permissions check if container is provided!";
         }
 
         @Override
@@ -588,7 +583,7 @@ public abstract class ContainerFilter
             return getSQLFragment(schema, _container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
-        /** return null means return all rows (1=1),  empty collection means return no rows (1=0) */
+        /** return null means return all rows (1=1), empty collection means return no rows (1=0) */
         @Nullable
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
@@ -619,7 +614,7 @@ public abstract class ContainerFilter
         @Override
         public Type getType()
         {
-            return Type.CurrentWithUser;
+            return Type.Current;
         }
     }
 
@@ -1029,7 +1024,7 @@ public abstract class ContainerFilter
 
     public static class StudyAndSourceStudy extends ContainerFilterWithPermission
     {
-        private boolean _skipPermissionChecks;
+        private final boolean _skipPermissionChecks;
 
         public StudyAndSourceStudy(Container c, User user, boolean skipPermissionChecks)
         {

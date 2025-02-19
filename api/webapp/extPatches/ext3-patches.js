@@ -378,3 +378,5 @@ Ext.override(Ext.tree.TreeNodeUI, {
         this.textNode = cs[index].firstChild;
     }
 });
+
+Ext.labkeyPatches = true; // Allow short-circuiting in 'LABKEY.requiresExt3'
