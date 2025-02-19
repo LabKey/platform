@@ -75,7 +75,7 @@ public class ContentSecurityPolicyFilter implements Filter
         // and connections.
         if (AppProps.getInstance().isDevMode())
         {
-            registerAllowedSources(Directive.Connection, "reactjs.hot.reload", "localhost:3001");
+            registerAllowedSources(Directive.Connection, "reactjs.hot.reload", "localhost:3001 ws://localhost:3001");
             registerAllowedSources(Directive.Font, "reactjs.hot.reload", "localhost:3001");
         }
     }
