@@ -34,6 +34,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
@@ -264,10 +266,26 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 var columnInfo = wrapColumn(col);
+                if (col.isHidden())
+                    columnInfo .setHidden(true);
+
                 if (col.getName().equals("Lsid"))
                 {
                     columnInfo.setHidden(true);
                     columnInfo.setKeyField(true);
+                }
+
+                // Issue 52283 : copy the property descriptor settings
+                String propertyURI = col.getPropertyURI();
+                DomainProperty dp = propertyURI != null ? domain.getPropertyByURI(propertyURI) : null;
+                if (dp != null)
+                {
+                    PropertyDescriptor pd = dp.getPropertyDescriptor();
+                    if (pd != null)
+                    {
+                        PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, null);
+                        columnInfo.setFieldKey(FieldKey.fromParts(dp.getName()));
+                    }
                 }
                 addColumn(columnInfo);
             }
