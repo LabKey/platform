@@ -42,7 +42,18 @@ public class ParseDateTimeEN implements DateParser
     final DateUtil.MonthDayOption monthDayOption;
     final boolean lenient;
 
-    public ParseDateTimeEN(
+
+    public static ParseDateTimeEN getInstance(
+        @NotNull Locale locale, @Nullable TimeZone timeZone,
+        @NotNull DateUtil.DateTimeOption dateTimeOption, @NotNull DateUtil.MonthDayOption monthDayOption,
+        boolean lenient)
+    {
+        // no need to cache this is just a pass through
+        return new ParseDateTimeEN(locale ,timeZone , dateTimeOption , monthDayOption , lenient);
+    }
+
+
+    protected ParseDateTimeEN(
             @NotNull Locale locale, @Nullable TimeZone timeZone,
             @NotNull DateUtil.DateTimeOption dateTimeOption, @NotNull DateUtil.MonthDayOption monthDayOption,
             boolean lenient
@@ -52,7 +63,6 @@ public class ParseDateTimeEN implements DateParser
         this.defaultTimeZone = timeZone;
         this.dateTimeOption = dateTimeOption;
         this.monthDayOption = monthDayOption;
-        // I like lenient as a parse() parameter, but I'm trying to stick with the DateParser interface for now
         this.lenient = lenient;
     }
 
@@ -176,9 +186,21 @@ public class ParseDateTimeEN implements DateParser
         }
     }
 
-    enum AMPM
+    enum AMPM implements CalendarConstant
     {
-        am, pm
+        am, pm;
+
+        @Override
+        public int getField()
+        {
+            return Calendar.AM_PM;
+        }
+
+        @Override
+        public int getValue()
+        {
+            return ordinal();
+        }
     }
 
     @SuppressWarnings("PointlessArithmeticExpression")
@@ -534,9 +556,9 @@ public class ParseDateTimeEN implements DateParser
                     if (parts.isHourSet() || parts.anySet(MINUTE, SECOND))
                         throw new ConversionException(s);
                 }
-                else if (dp == AMPM.am || dp == AMPM.pm)
+                else if (dp instanceof AMPM ampmValue)
                 {
-                    parts.set(AM_PM, dp == AMPM.am ? Calendar.AM : Calendar.PM);
+                    parts.set(ampmValue.getField(), ampmValue.getValue());
                     if (parts.isSet(HOUR_OF_DAY))
                     {
                         var hour = parts.getHourOfDay();

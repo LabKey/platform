@@ -448,7 +448,7 @@ public class DateUtil
         try
         {
             var lenient = !strict;
-            DateParser parser = new ParseDateTimeEN(_localeDefault, _timezoneDefault, option, md, lenient);
+            DateParser parser = ParseDateTimeEN.getInstance(_localeDefault, _timezoneDefault, option, md, lenient);
             Date date = parser.parse(s);
             return date.getTime();
         }
@@ -2330,7 +2330,9 @@ Parse:
             l -= l % (60 * 60 * 1000);
             assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
             Calendar c = newCalendar(l);
-            c.set(HOUR,0);
+            c.clear(HOUR);
+            c.clear(Calendar.AM_PM);
+            c.set(HOUR_OF_DAY,0);
             l = c.getTimeInMillis();
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
         }
