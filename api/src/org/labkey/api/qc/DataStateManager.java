@@ -35,7 +35,7 @@ import java.util.Map;
 public class DataStateManager
 {
     private static final DataStateManager _instance = new DataStateManager();
-    private static final Map<String, DataStateHandler> _DataStateHandlers = new HashMap<>();
+    private static final Map<String, DataStateHandler<AbstractManageDataStatesForm>> _DataStateHandlers = new HashMap<>();
     private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
             (c, argument) -> new DataStateCollections(c)
     );
@@ -103,7 +103,7 @@ public class DataStateManager
             throw new IllegalArgumentException("DataStateHandler '" + handlerType + "' is already registered.");
     }
 
-    public Map<String, DataStateHandler> getRegisteredDataHandlers()
+    public Map<String, DataStateHandler<AbstractManageDataStatesForm>> getRegisteredDataHandlers()
     {
         return _DataStateHandlers;
     }
