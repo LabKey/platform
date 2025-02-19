@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.HtmlString;
@@ -43,11 +44,11 @@ public enum ExternalServerType
         }
 
         @Override
-        public void setHosts(Collection<String> hosts)
+        public void setHosts(Collection<String> hosts, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setExternalSourceHosts(hosts);
-            props.save(null);
+            props.save(user);
 
             // Refresh the CSP with new values.
             ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY);
@@ -94,11 +95,11 @@ public enum ExternalServerType
         }
 
         @Override
-        public void setHosts(Collection<String> hosts)
+        public void setHosts(Collection<String> hosts, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setExternalRedirectHosts(hosts);
-            props.save(null);
+            props.save(user);
         }
 
         @Override
@@ -136,11 +137,11 @@ public enum ExternalServerType
         }
 
         @Override
-        public void setHosts(Collection<String> allowedExtensions)
+        public void setHosts(Collection<String> allowedExtensions, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setAllowedFileExtensions(allowedExtensions);
-            props.save(null);
+            props.save(user);
         }
 
         @Override
@@ -174,7 +175,7 @@ public enum ExternalServerType
 
     public abstract HtmlString getDescription();
     public abstract List<String> getHosts();
-    public abstract void setHosts(Collection<String> redirectHosts);
+    public abstract void setHosts(Collection<String> redirectHosts, User user);
     public abstract HtmlString getTitle();
     public abstract HtmlString getLabel();
 
