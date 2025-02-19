@@ -164,7 +164,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
-    @Deprecated
+    @Deprecated // Use registerAllowedSources(Directive.Connection...)
     public static void registerAllowedConnectionSource(String key, String... allowedUrls)
     {
         registerAllowedSources(Directive.Connection, key, allowedUrls);
@@ -207,8 +207,8 @@ public class ContentSecurityPolicyFilter implements Filter
                     .collect(Collectors.joining(" ")))
             );
 
-        // Backward compatibility for CSPs using old name
-        // TODO: Remove in 25.4
+        // Backward compatibility for CSPs using old substitution key
+        // TODO: Remove in 25.4 and adjust the junit test below
         if (_substitutionMap.containsKey(Directive.Connection.getSubstitutionKey()))
             _substitutionMap.put("LABKEY.ALLOWED.CONNECTIONS", _substitutionMap.get(Directive.Connection.getSubstitutionKey()));
     }
@@ -250,12 +250,68 @@ public class ContentSecurityPolicyFilter implements Filter
             Assert.assertEquals(expected, filterPolicy(fakePolicyForTesting));
         }
 
-//        @Test
-//        public void testSubstitutions()
-//        {
-//            // TODO: Save away existing ALLOWED_SOURCES
-//            unregisterAllowedSources(Directive.Connection, "foo");
-//            registerAllowedSources(Directive.Connection, "foo", "bar");
-//        }
+        @Test
+        public void testSubstitutionMap()
+        {
+            // Make a deep copy of ALLOWED_SOURCES so we can restore it after testing
+            final Map<Directive, SetValuedMap<String, String>> savedSources;
+            final int sourceMapSize;
+            final int substitutionMapSize;
+            synchronized (ALLOWED_SOURCES_LOCK)
+            {
+                sourceMapSize = ALLOWED_SOURCES.size();
+                substitutionMapSize = _substitutionMap.size();
+                savedSources = ALLOWED_SOURCES.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashSetValuedHashMap<>(e.getValue())));
+                ALLOWED_SOURCES.clear();
+                regenerateSubstitutionMap();
+            }
+
+            assertTrue(ALLOWED_SOURCES.isEmpty());
+            assertTrue(_substitutionMap.isEmpty());
+            unregisterAllowedSources(Directive.Connection, "foo");
+            assertTrue(ALLOWED_SOURCES.isEmpty());
+            assertTrue(_substitutionMap.isEmpty());
+            registerAllowedSources(Directive.Connection, "foo", "MySource");
+            assertEquals(1, ALLOWED_SOURCES.size());
+            assertEquals(2, _substitutionMap.size()); // Old connection substitution key should be added as well
+            registerAllowedSources(Directive.Connection, "bar", "MySource");
+            assertEquals(1, ALLOWED_SOURCES.size());
+            assertEquals(2, _substitutionMap.size()); // Duplicate source should be filtered out
+
+            registerAllowedSources(Directive.Font, "font", "MySource");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            registerAllowedSources(Directive.Font, "font2", "MyOtherSource");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            String value = _substitutionMap.get("FONT.SOURCES");
+            assertEquals("! !", value.replace("MyOtherSource", "!").replace("MySource", "!"));
+            unregisterAllowedSources(Directive.Font, "font2");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            unregisterAllowedSources(Directive.Font, "font");
+            assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
+            assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
+            assertEquals(2, _substitutionMap.size()); // Back to the way it was
+
+            registerAllowedSources(Directive.Frame, "frame", "FrameSource", "FrameStore");
+            assertEquals(3, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+
+            registerAllowedSources(Directive.Style, "style", "StyleSource", "MoreStylishStore");
+            assertEquals(4, ALLOWED_SOURCES.size());
+            assertEquals(4, _substitutionMap.size());
+
+            // Restore the previous ALLOWED_SOURCES
+            synchronized (ALLOWED_SOURCES_LOCK)
+            {
+                ALLOWED_SOURCES.clear();
+                ALLOWED_SOURCES.putAll(savedSources);
+                regenerateSubstitutionMap();
+                assertEquals(sourceMapSize, ALLOWED_SOURCES.size());
+                assertEquals(substitutionMapSize, _substitutionMap.size());
+            }
+        }
     }
 }

@@ -25,6 +25,6 @@ public enum Directive
 
     public String getSubstitutionKey()
     {
-        return "LABKEY.ALLOWED." + name().toUpperCase() + ".SOURCES";
+        return name().toUpperCase() + ".SOURCES";
     }
 }
