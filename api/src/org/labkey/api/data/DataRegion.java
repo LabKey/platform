@@ -2356,51 +2356,6 @@ public class DataRegion extends DisplayElement
             out.write("</table>");
         }
 
-        out.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
-
-        //Make sure all pks are included
-        if (action == MODE_UPDATE)
-        {
-            // Note: valueMap != null, since we checked this above
-
-            if (valueMap instanceof BoundMap)
-                renderOldValues(out, valueMap);
-            else
-                renderOldValues(out, valueMap, ctx.getFieldMap());
-
-            TableViewForm viewForm = ctx.getForm();
-            List<ColumnInfo> pkCols = getTable().getPkColumns();
-            for (ColumnInfo pkCol : pkCols)
-            {
-                String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName))
-                {
-                    Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenever someone
-                    //posts? I tend to think so.
-                    if (null != viewForm)
-                        pkVal = viewForm.get(pkColName);
-
-                    if (pkVal == null)
-                        pkVal = valueMap.get(pkColName);
-
-                    if (null != pkVal)
-                    {
-                        out.write("<input type='hidden' name='");
-                        if (viewForm != null)
-                            out.write(PageFlowUtil.filter(viewForm.getFormFieldName(pkCol)));
-                        else
-                            out.write(PageFlowUtil.filter(pkColName));
-                        out.write("' value=\"");
-                        out.write(PageFlowUtil.filter(pkVal.toString()));
-                        out.write("\">");
-                    }
-                    renderedColumns.add(pkColName);
-                }
-            }
-        }
-
-        out.write("</td></tr></table>");
         buttonBar.render(ctx, out);
         renderFormEnd(ctx, out);
     }
