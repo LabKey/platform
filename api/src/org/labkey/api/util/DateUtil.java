@@ -173,11 +173,13 @@ public class DateUtil
         _Calendar(TimeZone tz, Locale locale)
         {
             super(tz, locale);
+            clear();
         }
 
         _Calendar(TimeZone tz, Locale locale, int year, int mon, int mday, int hour, int min, int sec, int ms)
         {
             super(tz, locale);
+            clear();
             set(year, mon, mday, hour, min, sec);
             set(Calendar.MILLISECOND, ms);
         }
@@ -2317,7 +2319,8 @@ Parse:
             l -= l % (60 * 60 * 1000);
             assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
             Calendar c = newCalendar(l);
-            c.set(Calendar.HOUR,0);
+            c.clear(Calendar.HOUR);
+            c.set(Calendar.HOUR_OF_DAY,0);
             l = c.getTimeInMillis();
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
         }
