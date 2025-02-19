@@ -32,11 +32,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.web.context.ContextLoaderListener;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -45,21 +41,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ContextListener implements ServletContextListener
 {
-    static
-    {
-        // make sure compiler knows about DateUtil._Calendar
-        // JVM bug 17.0.7
-        Calendar c = new DateUtil._Calendar(TimeZone.getDefault(), Locale.getDefault());
-        c.get(Calendar.YEAR);       // computeFields()
-        c.set(Calendar.YEAR,2020);
-        c.getTimeInMillis();        //computeTime()
-        c = GregorianCalendar.getInstance();
-        c.get(Calendar.YEAR);       // computeFields()
-        c.set(Calendar.YEAR,2020);
-        c.getTimeInMillis();        //computeTime()
-    }
-
-
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
     // IMPORTANT see also LabKeyBootstrapClassLoader/PipelineBootstrapConfig which duplicates this code, keep them consistent
