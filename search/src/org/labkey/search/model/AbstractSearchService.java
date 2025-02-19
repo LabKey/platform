@@ -34,6 +34,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -600,6 +602,26 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     @Override
+    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException
+    {
+        final CountDownLatch latch = new CountDownLatch(1);
+        SearchService.IndexTask task = createTask("WaitForIndexer", new SearchService.TaskListener()
+        {
+            @Override public void success()
+            {
+                latch.countDown();
+            }
+            @Override public void indexError(Resource r, Throwable t) { }
+        });
+        task.addNoop(priority);
+        task.setReady();
+
+        boolean success = latch.await(timeout, unit);
+        refreshNow();
+        return success;
+    }
+
+    @Override
     public void notFound(URLHelper in)
     {
         try
@@ -725,7 +747,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             Pair<String, String> resourceResolverKeyIdentifier = getResourceResolverKeyIdentifier(resourceIdentifier);
             if (resourceResolverKeyIdentifier == null)
-                continue;;
+                continue;
             resolverIdentifiers
                     .computeIfAbsent(resourceResolverKeyIdentifier.first, (k) -> new HashMap<>())
                     .put(resourceResolverKeyIdentifier.second, resourceIdentifier);

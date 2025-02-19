@@ -187,6 +187,18 @@ public class IssueManager
     @Nullable
     public static IssueObject getIssue(@Nullable Container c, User user, int issueId)
     {
+        return getIssue(c, user, issueId, true);
+    }
+
+    @Nullable
+    public static IssueObject getIssue(
+            @Nullable Container c,
+            User user,
+            int issueId,
+            boolean throwOnRestrictedFailure        // controls whether we throw on a RestrictedIssueProvider failure
+                                                    // or just return null
+    )
+    {
         IssueObject issue = _getIssue(c, user, issueId);
 
         // check permissions for a restricted issue list
@@ -206,12 +218,17 @@ public class IssueManager
 
             if (!provider.hasPermission(user, issue, relatedIssues, errors))
             {
-                StringBuilder msg = new StringBuilder(errors.isEmpty() ? "Access denied" : "");
-                for (ValidationError ve : errors)
+                if (throwOnRestrictedFailure)
                 {
-                    msg.append(ve.getMessage()).append("\n");
+                    StringBuilder msg = new StringBuilder(errors.isEmpty() ? "Access denied" : "");
+                    for (ValidationError ve : errors)
+                    {
+                        msg.append(ve.getMessage()).append("\n");
+                    }
+                    throw new UnauthorizedException(msg.toString());
                 }
-                throw new UnauthorizedException(msg.toString());
+                else
+                    return null;
             }
         }
         return issue;
@@ -280,7 +297,7 @@ public class IssueManager
         for (Integer relatedIssueInt : relatedIssues)
         {
             // only add related issues that the user has permission to see
-            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
+            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt, false);
             if (relatedIssue != null)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
@@ -315,7 +332,7 @@ public class IssueManager
     {
         for (Integer relatedIssueInt : issue.getRelatedIssues())
         {
-            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt);
+            IssueObject relatedIssue = IssueManager.getIssue(null, user, relatedIssueInt, false);
             if (relatedIssue != null && relatedIssue.getCommentObjects().size() > 0)
             {
                 boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
