@@ -99,7 +99,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        assert null == filter || filter.getType() == ContainerFilter.Type.Current || filter.getType() == ContainerFilter.Type.CurrentWithUser;
+        assert null == filter || filter.getType() == ContainerFilter.Type.Current;
     }
 
     @Override
