@@ -57,7 +57,7 @@ public abstract class AbstractSpecimenTransformTask
     public void transform(File input, File output) throws PipelineJobException
     {
         throw new UnsupportedOperationException("Use the Path version of the transform method");
-    };
+    }
 
     public void transform(Path input, Path output) throws PipelineJobException
     {
@@ -327,7 +327,7 @@ public abstract class AbstractSpecimenTransformTask
                 Object t = row.get(keyTime);
                 if (t != null)
                 {
-                    long time = DateUtil.parseTime(String.valueOf(t));
+                    long time = DateUtil.parseTimeToMillis(String.valueOf(t));
                     date = new Date(date.getTime() + time);
                 }
             }
@@ -349,23 +349,6 @@ public abstract class AbstractSpecimenTransformTask
         {
             Date date = d instanceof Date ? (Date)d : new Date(DateUtil.parseDateTime(String.valueOf(d)));
             return date;
-        }
-        catch (ConversionException x)
-        {
-            /* */
-        }
-        return null;
-    }
-
-    protected Date parseTime(String key, Map<String, Object> row)
-    {
-        Object d = row.get(key);
-        if (null == d)
-            return null;
-        try
-        {
-            long time = DateUtil.parseTime(String.valueOf(d));
-            return new Date(time);
         }
         catch (ConversionException x)
         {
