@@ -8,6 +8,8 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -79,7 +81,8 @@ public class FileRootMaintenanceTask implements MaintenanceTask
                             // roots and non-changing sizes.
                             boolean sizeChanged = !Objects.equals(record.fileRootSize(), size);
                             SQLFragment updateSql = sizeChanged ?
-                                    new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), size, record.entityId()) :
+                                    // Use a TypedValue to avoid a type conversion problem on Postgres when the value is null
+                                    new SQLFragment(updateLastCrawledAndSizeSql, new Date(current), new Parameter.TypedValue(size, JdbcType.BIGINT), record.entityId()) :
                                     new SQLFragment(updateLastCrawledSql, new Date(current), record.entityId());
 
                             // core.Containers has no PK, so Table.update() is not an option

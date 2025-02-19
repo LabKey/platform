@@ -87,11 +87,14 @@ public interface Domain extends IPropertyType
     void save(User user, boolean auditComment) throws ChangePropertyDescriptorException;
     void save(User user, @Nullable String allowAddBaseProperty) throws ChangePropertyDescriptorException;
 
+    /** Returns true if this domain has not yet been saved. */
+    boolean isNew();
+
     /**
-     * This returns a map of names -> PropertyDescriptor that is useful for import that includes all of the
+     * This returns a map of names -> PropertyDescriptor that is useful for import that includes all the
      * different names that a column may be referred to, dealing with naming collisions between aliases and property names
      * in the right way.
-     * @param includeMVIndicators whether or not to include the missing value indicator "column" names in the map
+     * @param includeMVIndicators whether to include the missing value indicator "column" names in the map
      */
     Map<String, DomainProperty> createImportMap(boolean includeMVIndicators);
 
@@ -108,7 +111,7 @@ public interface Domain extends IPropertyType
 
     /**
      * Used by storage provisioner to add indices to the provisioned table.  The indices on this Domain
-     * are in addition to those from the {@link DomainKind#getPropertyIndices()}.
+     * are in addition to those from the {@link DomainKind#getPropertyIndices(Domain)}.
      * Currently, the indices are not saved as a part of the domain definition.
      */
     void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> indices);
@@ -116,7 +119,6 @@ public interface Domain extends IPropertyType
     @NotNull Set<PropertyStorageSpec.Index> getPropertyIndices();
 
     /**
-     *
      * @param shouldDeleteAllData Flag that all data should be deleted, initial use case is for Lists and Datasets
      *                            having all their user-editable fields replaced via Import Fields form
      */

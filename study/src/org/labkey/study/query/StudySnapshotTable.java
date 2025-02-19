@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
@@ -50,7 +49,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema());
+        return ContainerFilter.Type.Current.create(getUserSchema());
     }
 
     public StudySnapshotTable(StudyQuerySchema schema, ContainerFilter cf)
@@ -109,7 +108,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 Object jsonValue = JsonUtil.DEFAULT_MAPPER.readValue(String.valueOf(value), Object.class);
 
                 out.write(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
-          }
+            }
         });
 
         ComplianceService complianceService = ComplianceService.get();

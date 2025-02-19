@@ -674,7 +674,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderIssueIdLink(Integer id)
     {
-        IssueObject issue = IssueManager.getIssue(null, _user, id);
+        IssueObject issue = IssueManager.getIssue(null, _user, id, false);
         Container c = issue != null ? issue.lookupContainer() : null;
         if (c != null && c.hasPermission(_user, ReadPermission.class))
         {

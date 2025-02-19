@@ -499,19 +499,20 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
 
             //handle name change
-            boolean hasNameChange = !original.getName().equals(update.getName());
+            String updatedName = StringUtils.trim(update.getName());
+            boolean hasNameChange = !original.getName().equals(updatedName);
             String auditComment = null;
             if (hasNameChange)
             {
-                if (update.getName().length() > MAX_NAME_LENGTH)
+                if (updatedName.length() > MAX_NAME_LENGTH)
                 {
                     return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
-                else if (ListService.get().getList(container, update.getName(), false) != null)
+                else if (ListService.get().getList(container, updatedName, false) != null)
                 {
-                    return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
+                    return exception.addGlobalError("The name '" + updatedName + "' is already in use.");
                 }
-                auditComment = "The name of the list domain '" + original.getName() + "' was changed to '" + update.getName() + "'.";
+                auditComment = "The name of the list domain '" + original.getName() + "' was changed to '" + updatedName + "'.";
             }
 
             //return if there are errors before moving forward with the save
@@ -631,7 +632,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
 
         if (null != newListProps.getName())
-            updatedListProps.setName(newListProps.getName());
+            updatedListProps.setName(newListProps.getName().trim());
 
         updatedListProps.setTitleColumn(newListProps.getTitleColumn());
         updatedListProps.setDescription(newListProps.getDescription());

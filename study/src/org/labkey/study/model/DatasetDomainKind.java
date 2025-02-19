@@ -538,7 +538,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain, DatasetDefinition def)
     {
-        String name = datasetProperties.getName();
+        String name = StringUtils.trimToEmpty(datasetProperties.getName());
         String keyPropertyName = datasetProperties.getKeyPropertyName();
         Integer datasetId = datasetProperties.getDatasetId();
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
@@ -727,7 +727,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             def = study.getDataset(datasetProperties.getDatasetId());
             validateDatasetProperties(datasetProperties, container, user, update, def);
             checkCanUpdate(def, container, user, datasetProperties, original, update);
-            hasNameChange = !def.getName().equals(datasetProperties.getName());
+            String updatedName = StringUtils.trimToEmpty(datasetProperties.getName());
+            datasetProperties.setName(updatedName);
+            hasNameChange = !def.getName().equals(updatedName);
         }
 
         // Acquire lock before we actually start the transaction to avoid deadlocks when it's refreshed during the process
