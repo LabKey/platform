@@ -10949,7 +10949,7 @@ public class AdminController extends SpringActionController
                     if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalHost.trim()))
                     {
                         hosts.remove(externalHost);
-                        hostType.setHosts(hosts);
+                        hostType.setHosts(hosts, getUser());
                         break;
                     }
                 }
@@ -10961,7 +10961,7 @@ public class AdminController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(validatedHosts.stream().toList());
+                hostType.setHosts(validatedHosts.stream().toList(), getUser());
             }
             //save new external host
             else if (form.isSaveNew())
@@ -10970,7 +10970,7 @@ public class AdminController extends SpringActionController
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(hostSet);
+                hostType.setHosts(hostSet, getUser());
             }
 
             return true;
