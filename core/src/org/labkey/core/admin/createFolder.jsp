@@ -193,8 +193,6 @@
                     allowBlank: false,
                     maxLength: 255,
                     validateOnBlur: false,
-                    regex: /^[^@\/\\;:?<>*|"^][^\/\\;:?<>*|"^]*$/,
-                    regexText: "Folder must be a legal filename and not start with '@' or contain one of '/', '\\', ';', ':', '?', '<', '>', '*', '|', '\"', or '^'",
                     listeners: {
                         render: function(field){
                             field.focus('', 10);
