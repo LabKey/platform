@@ -189,7 +189,8 @@ public class DateUtil
             super(tz, locale);
             setTimeInMillis(l);
         }
-//
+
+//    This seems to trigger a JVM crash in adoptium jdk 17.0.7
 //        @Override
 //        public void setTimeInMillis(long millis)
 //        {
