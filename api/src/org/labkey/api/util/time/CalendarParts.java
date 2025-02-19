@@ -1,27 +1,24 @@
 package org.labkey.api.util.time;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-import static java.util.Calendar.AM_PM;
-import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DST_OFFSET;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.HOUR;
 import static java.util.Calendar.MILLISECOND;
 import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.MONTH;
 import static java.util.Calendar.SECOND;
 import static java.util.Calendar.YEAR;
 import static java.util.Calendar.ZONE_OFFSET;
 
 // java.text.CalendarBuilder is package private
-// Calendar.Builder is public, but has no getters.  isSet() is private and it does not have get()
-
+// java.util.Calendar.Builder is public, but has no getters.  isSet() is private and it does not have get()
+// java.util.Calendar can manipulate the set values.  We want the values to remain they are found in the source.
 public class CalendarParts
 {
     public final long NANOS_IN_MILLI = 1_000_000L;
+    public final long NANOS_IN_SECOND = 1_000_000_000L;
 
     final _Calendar parts = new _Calendar();
 
@@ -188,6 +185,14 @@ public class CalendarParts
         {
             if (parts.isSet(field))
                 cal.set(field, parts.get(field));
+        }
+        // edge case to avoid failure if cal.lenient()==false
+        // don't round up to 1000 ms when populating calendar
+        // if you care about nanos you need to be using java.sql.Timestamp anyway
+        if (!cal.isLenient())
+        {
+            if (this.isSet(MILLISECOND) && this.get(MILLISECOND) == 1000 && nanos < NANOS_IN_SECOND)
+                cal.set(MILLISECOND, 999);
         }
         if (null != parts.getTimeZone())
             cal.setTimeZone(parts.getTimeZone());

@@ -315,32 +315,32 @@ public class DateUtil
         DateTime
                 {
                     @Override
-                    public boolean toCalendar(CalendarParts parts, Calendar cal, boolean lenient)
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
                     {
-                        // consider supporting other date combos, (week of year, etc)
+                        // consider supporting other date combos, (week of year, etc.)
                         if (!parts.isSet(YEAR, MONTH, DAY_OF_MONTH))
                             return false;
-                        if (!lenient)
-                        {
-                            if (parts.isSet(HOUR) && parts.get(HOUR) >= 12 ||
-                                    parts.isSet(HOUR_OF_DAY) && parts.get(HOUR_OF_DAY) >= 24 ||
-                                    parts.isSet(MINUTE) && parts.get(MINUTE) >= 60 ||
-                                    parts.isSet(SECOND) && parts.get(SECOND) >= 60 ||
-                                    parts.isSet(MILLISECOND) && parts.getNanos() >= 1_000_000_000)
-                                return false;
-                        }
                         if (!parts.isTimezoneSet())
                             parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
-                        return lenient || (cal.get(YEAR) == parts.getYear() &&
+                        // if lenient==false, then computeTime() (called by getTimeInMillis()) will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() || (
+                                cal.get(YEAR) == parts.getYear() &&
                                 cal.get(MONTH) == parts.getMonth() &&
-                                cal.get(DAY_OF_MONTH) == parts.getDayOfMonth());
+                                cal.get(DAY_OF_MONTH) == parts.getDayOfMonth() &&
+                                (!parts.isSet(HOUR) || parts.get(HOUR) < 12) &&
+                                (!parts.isSet(HOUR_OF_DAY) || parts.get(HOUR_OF_DAY) < 23) ||
+                                (!parts.isSet(MINUTE) || parts.get(MINUTE) < 60) ||
+                                (!parts.isSet(SECOND) || parts.get(SECOND) < 60) ||
+                                (!parts.isSet(MILLISECOND) || parts.getNanos() < 1_000_000_000));
+                        return true;
                     }
                 },
         DateOnly
                 {
                     @Override
-                    public boolean toCalendar(CalendarParts parts, Calendar cal, boolean lenient)
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
                     {
                         if (!parts.isSet(YEAR,MONTH,DAY_OF_MONTH))
                             return false;
@@ -349,29 +349,27 @@ public class DateUtil
                         parts.clearTimezone();
                         parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
-                        return lenient || (cal.get(YEAR) == parts.getYear() &&
+                        // if lenient==false, then computeTime() will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() || (
+                                cal.get(YEAR) == parts.getYear() &&
                                 cal.get(MONTH) == parts.getMonth() &&
                                 cal.get(DAY_OF_MONTH) == parts.getDayOfMonth());
+                        return true;
                     }
                 },
         TimeOnly
                 {
                     @Override
-                    public boolean toCalendar(CalendarParts parts, Calendar cal, boolean lenient)
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
                     {
-                        if (!lenient)
+                        if (!cal.isLenient())
                         {
                             if (parts.anySet(YEAR,MONTH,DAY_OF_MONTH))
                                 return false;
                             if (null != parts.getTimeZone())
                                 return false;
                             if (!parts.isHourSet() && !parts.anySet(MINUTE, SECOND))
-                                return false;
-                            if (parts.isSet(HOUR) && parts.get(HOUR)>=12 ||
-                                parts.isSet(HOUR_OF_DAY) && parts.get(HOUR_OF_DAY)>=24 ||
-                                parts.isSet(MINUTE) && parts.get(MINUTE)>=60 ||
-                                parts.isSet(SECOND) && parts.get(SECOND)>=60 ||
-                                parts.isSet(MILLISECOND) && parts.getNanos() >= 1_000_000_000)
                                 return false;
                         }
                         parts.setYear(1970);
@@ -380,17 +378,26 @@ public class DateUtil
                         parts.clearTimezone();
                         parts.setTimeZone(_timezoneDefault);
                         parts.setCalendar(cal);
+                        // if lenient==false, then computeTime() will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() ||
+                                (!parts.isSet(HOUR) || parts.get(HOUR) < 12) &&
+                                (!parts.isSet(HOUR_OF_DAY) || parts.get(HOUR_OF_DAY) < 23) ||
+                                (!parts.isSet(MINUTE) || parts.get(MINUTE) < 60) ||
+                                (!parts.isSet(SECOND) || parts.get(SECOND) < 60) ||
+                                (!parts.isSet(MILLISECOND) || parts.getNanos() < 1_000_000_000);
                         return true;
                     }
                 };
 
 
-        public abstract boolean toCalendar(CalendarParts parts, Calendar cal, boolean lenient);
+        public abstract boolean toCalendar(CalendarParts parts, Calendar cal);
 
         public java.util.Date toJavaDate(CalendarParts parts, boolean lenient) throws ConversionException
         {
             _Calendar cal = new _Calendar(_timezoneDefault, _localeDefault);
-            if (!toCalendar(parts, cal, lenient))
+            cal.setLenient(lenient);
+            if (!toCalendar(parts, cal))
                 return null;
             return cal.getTime();
         }
@@ -400,7 +407,8 @@ public class DateUtil
             if (parts.getNanos() < 0 || parts.getNanos() >= 1_000_000_000L)
                 return null;
             _Calendar cal = new _Calendar(_timezoneDefault, _localeDefault);
-            if (!toCalendar(parts, cal, lenient))
+            cal.setLenient(lenient);
+            if (!toCalendar(parts, cal))
                 return null;
             var ts = new java.sql.Timestamp(cal.getTimeInMillis());
             ts.setNanos((int)parts.getNanos());

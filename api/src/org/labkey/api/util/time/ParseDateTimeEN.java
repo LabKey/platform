@@ -115,11 +115,13 @@ public class ParseDateTimeEN implements DateParser
     @Override
     public boolean parse(String source, ParsePosition pos, Calendar calendar)
     {
+        if (!lenient)
+            calendar.setLenient(false);
         var parts = new CalendarParts();
         var scanned = scan(source, pos, parts);
         if (!scanned)
             return false;
-        dateTimeOption.toCalendar(parts, calendar, lenient);
+        dateTimeOption.toCalendar(parts, calendar);
         return true;
     }
 
