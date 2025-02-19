@@ -474,7 +474,14 @@ if (typeof LABKEY == "undefined")
 
             checkCallback('requiresExt3', callback);
 
-            requiresLib('Ext3', callback, scope);
+            if (window.Ext && window.Ext.labkeyPatches)
+            {
+                handle(callback, scope);
+            }
+            else
+            {
+                requiresLib('Ext3', callback, scope);
+            }
         };
 
         var requiresExt3ClientAPI = function(callback, scope)
@@ -522,7 +529,14 @@ if (typeof LABKEY == "undefined")
 
             checkCallback('requiresExt4Sandbox', callback);
 
-            requiresLib('Ext4', callback, scope);
+            if (window.Ext4 && window.Ext4.labkeyPatches)
+            {
+                handle(callback, scope);
+            }
+            else
+            {
+                requiresLib('Ext4', callback, scope);
+            }
         };
 
         var requiresLib = function(lib, callback, scope)

@@ -2233,7 +2233,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.Type.Current.create(container, null), getTinfoMaterialInput(), types);
+        return getInputRoles(container, ContainerFilter.current(container), getTinfoMaterialInput(), types);
     }
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
