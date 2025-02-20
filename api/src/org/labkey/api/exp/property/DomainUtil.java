@@ -704,7 +704,9 @@ public class DomainUtil
 
 
         if (domainName != null)
-            domain.setName(domainName);
+            domain.setName(StringUtils.trimToEmpty(domainName));
+        else
+            domain.setName(StringUtils.trimToEmpty(domain.getName()));
 
         if (domain.getName() != null)
         {
@@ -770,6 +772,7 @@ public class DomainUtil
         String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
+            updatedName = StringUtils.trimToEmpty(updatedName);
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
             {
@@ -939,7 +942,7 @@ public class DomainUtil
 
     public static @Nullable String validateDomainName(@NotNull String domainName, String kindName, boolean supportsNamingPattern)
     {
-        String prefix = "Invalid " + kindName + " name \"" + domainName + "\". ";
+        String prefix = "Invalid " + kindName + " name '" + domainName + "'. ";
 
         if (StringUtils.isBlank(domainName))
             return kindName + " name must not be blank.";

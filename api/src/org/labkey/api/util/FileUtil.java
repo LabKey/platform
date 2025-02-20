@@ -1462,7 +1462,7 @@ quickScan:
 
 
     private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^', '\n', '\r', '\''};
-    private static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
+    public static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
     public static boolean isLegalName(String name)
     {

@@ -193,8 +193,6 @@
                     allowBlank: false,
                     maxLength: 255,
                     validateOnBlur: false,
-                    regex: /^[^@\/\\;:?<>*|"^][^\/\\;:?<>*|"^]*$/,
-                    regexText: "Folder must be a legal filename and not start with '@' or contain one of '/', '\\', ';', ':', '?', '<', '>', '*', '|', '\"', or '^'",
                     listeners: {
                         render: function(field){
                             field.focus('', 10);
@@ -622,7 +620,7 @@
         const getTemplateFolders = function(data) {
             // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
             // and if it is not a workbook or container tab folder
-            if (data.path !== "/" && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
+            if (data.path !== "/" && data.effectivePermissions && LABKEY.Security.hasEffectivePermission(data.effectivePermissions, LABKEY.Security.effectivePermissions.admin)
                     && !data.isWorkbook && !data.isContainerTab)
             {
                 templateFolders.push([data.id, data.path]);

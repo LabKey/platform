@@ -66,6 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public interface SearchService extends SearchMXBean
@@ -112,6 +113,12 @@ public interface SearchService extends SearchMXBean
      * Delete the index documents for any files in a container then start a new crawler task for just that container
      */
     void reindexContainerFiles(Container c);
+
+    /**
+     * Puts work in the indexer queue at the specified priority and waits up to the timeout for it to complete
+     * @return true if the task in the queue completed before the timeout
+     */
+    boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit) throws InterruptedException;
 
     enum PRIORITY
     {

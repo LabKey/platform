@@ -137,25 +137,26 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     public void testDatasets()
     {
         String badDataSetName = TestDataGenerator.randomInvalidDomainName(5);
-        createDataset(badDataSetName, "Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.");
+        createDataset(badDataSetName, "Invalid StudyDatasetVisit name '" + badDataSetName + "'. StudyDatasetVisit name must start with a letter or a number.");
 
         String datasetA = TestDataGenerator.randomDomainName();
         createDataset(datasetA, null);
 
-        renameDataset("Invalid StudyDatasetVisit name \"" + badDataSetName + "\". StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
+        renameDataset("Invalid StudyDatasetVisit name '" + badDataSetName + "'. StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
 
         String datasetAUpdated = TestDataGenerator.randomDomainName();
-        renameDataset(null, datasetA, datasetAUpdated, datasetA, datasetAUpdated, "XTest", "YTest", "ZTest");
+        datasetAUpdated = " " + datasetAUpdated + " "; // assure we trim leading and trailing spaces even if passed in
+        renameDataset(null, datasetA, datasetAUpdated, datasetA, datasetAUpdated.trim(), "XTest", "YTest", "ZTest");
         createDataset(datasetA, null);
         deleteFields(datasetA);
 
-        checkFieldsPresent(datasetAUpdated, "YTest", "ZTest");
+        checkFieldsPresent(datasetAUpdated.trim(), "YTest", "ZTest");
 
         verifySideFilter();
 
         verifyReportAndViewDatasetReferences();
 
-        createDataset("B", null);
+        createDataset(" B", null);
         importDatasetData("B", DATASET_HEADER, DATASET_B_DATA, "All data");
         checkDataElementsPresent("B",  DATASET_B_DATA.split("\t|\n"));
 

@@ -2233,7 +2233,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.Type.Current.create(container, null), getTinfoMaterialInput(), types);
+        return getInputRoles(container, ContainerFilter.current(container), getTinfoMaterialInput(), types);
     }
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
@@ -8047,7 +8047,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         // Issue 51321: check reserved data class name: First, All
         if ("First".equalsIgnoreCase(name) || "All".equalsIgnoreCase(name))
-            throw new ApiUsageException("DataClass name '" + name + "' is reserved.");
+            throw new ApiUsageException("Invalid DataClass name '" + name + "'. '" + name + "' is a reserved name.");
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
