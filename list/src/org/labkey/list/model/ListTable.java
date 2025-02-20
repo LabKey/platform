@@ -447,9 +447,18 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         if (listDef.getTitleColumn() != null)
         {
             ColumnInfo titleColumn = getColumn(listDef.getTitleColumn());
-
             if (titleColumn != null)
                 return titleColumn.getName();
+            else
+            {
+                // Issue 51877: a list titleColumn might be a calculated field
+                List<FieldKey> calcFieldKeys = DomainUtil.getCalculatedFieldsForDefaultView(this);
+                for (FieldKey calcFieldKey : calcFieldKeys)
+                {
+                    if (listDef.getTitleColumn().equalsIgnoreCase(calcFieldKey.getName()))
+                        return calcFieldKey.getName();
+                }
+            }
         }
 
         // Title column setting is <AUTO> -- select the first string column that's not a lookup (see #9114)
