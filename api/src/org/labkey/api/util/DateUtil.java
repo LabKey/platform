@@ -2303,6 +2303,8 @@ Parse:
             assertIllegalTime("4:65:06");
             assertIllegalTime("4:65:66");
             assertIllegalTime("4.0");
+
+            assertEquals(parseISODateTime("1970-1-1 16:00:00"), fromTimeString("4 pm", true).getTime());
         }
 
         @Test
