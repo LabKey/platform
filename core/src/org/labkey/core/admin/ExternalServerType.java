@@ -6,6 +6,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.HtmlString;
@@ -51,8 +52,8 @@ public enum ExternalServerType
             props.save(user);
 
             // Refresh the CSP with new values.
-            ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY);
-            ContentSecurityPolicyFilter.registerAllowedConnectionSource(EXTERNAL_SOURCE_HOSTS_KEY, getHosts().toArray(new String[0]));
+            ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY);
+            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY, getHosts().toArray(new String[0]));
         }
 
         @Override

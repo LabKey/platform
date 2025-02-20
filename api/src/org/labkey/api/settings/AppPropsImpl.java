@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.Directive;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -595,7 +596,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 {
                     var url = new URLHelper(s).setPath("");
                     if (StringUtils.isNotEmpty(url.getHost()))
-                        ContentSecurityPolicyFilter.registerAllowedConnectionSource("static.files.prefix", url.toString());
+                        ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, "static.files.prefix", url.toString());
                     prefix = s;
                 }
                 catch (URISyntaxException ignore)
