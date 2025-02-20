@@ -8,8 +8,11 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.collections4.SetValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.CspCommentScanner;
@@ -22,31 +25,28 @@ import org.labkey.api.util.logging.LogHelper;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
 /**
- * For example CSPs, see csp.enforce and csp.report property examples in application.properties
- * Do not use those examples for any production environment without understanding the meaning of each directive!
+ * Content Security Policies (CSPs) are loaded from the csp.enforce and csp.report properties in application.properties.
  */
-
 public class ContentSecurityPolicyFilter implements Filter
 {
     public static final String FEATURE_FLAG_DISABLE_ENFORCE_CSP = "disableEnforceCsp";
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
-    private static final String ALLOWED_CONNECT_SUBSTITUTION = "LABKEY.ALLOWED.CONNECTIONS";
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
-    private static final Map<String, List<String>> ALLOWED_CONNECTION_SOURCES = new ConcurrentHashMap<>();
+    private static final Object ALLOWED_SOURCES_LOCK = new Object();
+    private static final Map<Directive, SetValuedMap<String, String>> ALLOWED_SOURCES = new HashMap<>();
 
-    private static String connectionSrc = "";
+    private static Map<String, String> _substitutionMap = Collections.emptyMap();
 
     // Per-filter-instance parameters that are set in init() and never changed
     private StringExpression policyExpression = null;
@@ -71,9 +71,13 @@ public class ContentSecurityPolicyFilter implements Filter
 
     static
     {
-        // ReactJS hot reload uses localhost port 3001. If in dev mode, allow browser to access that port.
+        // ReactJS hot reload uses localhost port 3001. If in dev mode, allow browser to access that port for fonts
+        // and connections.
         if (AppProps.getInstance().isDevMode())
-            registerAllowedConnectionSource("reactjs.hot.reload", "localhost:3001");
+        {
+            registerAllowedSources(Directive.Connection, "reactjs.hot.reload", "localhost:3001 ws://localhost:3001");
+            registerAllowedSources(Directive.Font, "reactjs.hot.reload", "localhost:3001");
+        }
     }
 
     @Override
@@ -136,27 +140,13 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             if (type != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
             {
-                Map<String, String> map = Map.of(
-                    NONCE_SUBST, getScriptNonceHeader(req),
-                    ALLOWED_CONNECT_SUBSTITUTION, connectionSrc
-                );
+                Map<String, String> map = new HashMap<>(_substitutionMap);
+                map.put(NONCE_SUBST, getScriptNonceHeader(req));
                 var csp = policyExpression.eval(map);
                 resp.setHeader(type.getHeaderName(), csp);
             }
         }
         chain.doFilter(request, response);
-    }
-
-    /**
-     * Return concatenated list of allowed connection hosts
-     */
-    private static String getAllowedConnectionsHeader(Collection<List<String>> allowedConnectionSources)
-    {
-        //Remove substitution parameter if no sources are registered
-        if (allowedConnectionSources.isEmpty())
-            return "";
-
-        return allowedConnectionSources.stream().flatMap(Collection::stream).distinct().collect(Collectors.joining(" "));
     }
 
     public static String getScriptNonceHeader(HttpServletRequest request)
@@ -174,16 +164,53 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
+    @Deprecated // Use registerAllowedSources(Directive.Connection...)
     public static void registerAllowedConnectionSource(String key, String... allowedUrls)
     {
-        ALLOWED_CONNECTION_SOURCES.put(key, Collections.unmodifiableList(Arrays.asList(allowedUrls)));
-        connectionSrc = getAllowedConnectionsHeader(ALLOWED_CONNECTION_SOURCES.values());
+        registerAllowedSources(Directive.Connection, key, allowedUrls);
     }
 
-    public static void unregisterAllowedConnectionSource(String key)
+    public static void registerAllowedSources(Directive directive, String key, String... allowedSources)
     {
-        ALLOWED_CONNECTION_SOURCES.remove(key);
-        connectionSrc = getAllowedConnectionsHeader(ALLOWED_CONNECTION_SOURCES.values());
+        synchronized (ALLOWED_SOURCES_LOCK)
+        {
+            SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.computeIfAbsent(directive, d -> new HashSetValuedHashMap<>());
+            Arrays.stream(allowedSources).forEach(s -> multiMap.put(key, s));
+            regenerateSubstitutionMap();
+        }
+    }
+
+    public static void unregisterAllowedSources(Directive directive, String key)
+    {
+        synchronized (ALLOWED_SOURCES_LOCK)
+        {
+            SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.get(directive);
+            if (multiMap != null)
+            {
+                Set<String> previous = multiMap.remove(key);
+                // Empty set means no previous mappings were removed, so no need to regenerate the substitution map
+                if (!previous.isEmpty())
+                    regenerateSubstitutionMap();
+            }
+        }
+    }
+
+    // Pre-generate the substitution map on every register/unregister
+    private static void regenerateSubstitutionMap()
+    {
+        _substitutionMap = ALLOWED_SOURCES.entrySet().stream()
+            .filter(e -> !e.getValue().isEmpty())
+            .collect(Collectors.toMap(
+                e -> e.getKey().getSubstitutionKey(),
+                e -> e.getValue().values().stream()
+                    .distinct()
+                    .collect(Collectors.joining(" ")))
+            );
+
+        // Backward compatibility for CSPs using old substitution key
+        // TODO: Remove in 25.4 and adjust the junit test below
+        if (_substitutionMap.containsKey(Directive.Connection.getSubstitutionKey()))
+            _substitutionMap.put("LABKEY.ALLOWED.CONNECTIONS", _substitutionMap.get(Directive.Connection.getSubstitutionKey()));
     }
 
     public static class TestCase extends Assert
@@ -221,6 +248,70 @@ public class ContentSecurityPolicyFilter implements Filter
                       report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;""".replace('\n', ' ');
 
             Assert.assertEquals(expected, filterPolicy(fakePolicyForTesting));
+        }
+
+        @Test
+        public void testSubstitutionMap()
+        {
+            // Make a deep copy of ALLOWED_SOURCES so we can restore it after testing
+            final Map<Directive, SetValuedMap<String, String>> savedSources;
+            final int sourceMapSize;
+            final int substitutionMapSize;
+            synchronized (ALLOWED_SOURCES_LOCK)
+            {
+                sourceMapSize = ALLOWED_SOURCES.size();
+                substitutionMapSize = _substitutionMap.size();
+                savedSources = ALLOWED_SOURCES.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashSetValuedHashMap<>(e.getValue())));
+                ALLOWED_SOURCES.clear();
+                regenerateSubstitutionMap();
+            }
+
+            assertTrue(ALLOWED_SOURCES.isEmpty());
+            assertTrue(_substitutionMap.isEmpty());
+            unregisterAllowedSources(Directive.Connection, "foo");
+            assertTrue(ALLOWED_SOURCES.isEmpty());
+            assertTrue(_substitutionMap.isEmpty());
+            registerAllowedSources(Directive.Connection, "foo", "MySource");
+            assertEquals(1, ALLOWED_SOURCES.size());
+            assertEquals(2, _substitutionMap.size()); // Old connection substitution key should be added as well
+            registerAllowedSources(Directive.Connection, "bar", "MySource");
+            assertEquals(1, ALLOWED_SOURCES.size());
+            assertEquals(2, _substitutionMap.size()); // Duplicate source should be filtered out
+
+            registerAllowedSources(Directive.Font, "font", "MySource");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            registerAllowedSources(Directive.Font, "font2", "MyOtherSource");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            String value = _substitutionMap.get("FONT.SOURCES");
+            assertEquals("! !", value.replace("MyOtherSource", "!").replace("MySource", "!"));
+            unregisterAllowedSources(Directive.Font, "font2");
+            assertEquals(2, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+            unregisterAllowedSources(Directive.Font, "font");
+            assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
+            assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
+            assertEquals(2, _substitutionMap.size()); // Back to the way it was
+
+            registerAllowedSources(Directive.Frame, "frame", "FrameSource", "FrameStore");
+            assertEquals(3, ALLOWED_SOURCES.size());
+            assertEquals(3, _substitutionMap.size());
+
+            registerAllowedSources(Directive.Style, "style", "StyleSource", "MoreStylishStore");
+            assertEquals(4, ALLOWED_SOURCES.size());
+            assertEquals(4, _substitutionMap.size());
+
+            // Restore the previous ALLOWED_SOURCES
+            synchronized (ALLOWED_SOURCES_LOCK)
+            {
+                ALLOWED_SOURCES.clear();
+                ALLOWED_SOURCES.putAll(savedSources);
+                regenerateSubstitutionMap();
+                assertEquals(sourceMapSize, ALLOWED_SOURCES.size());
+                assertEquals(substitutionMapSize, _substitutionMap.size());
+            }
         }
     }
 }
