@@ -100,6 +100,8 @@
 <%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="java.util.concurrent.TimeUnit" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -118,8 +120,10 @@ public void setUp()
 }
 
 @After
-public void tearDown()
+public void tearDown() throws InterruptedException
 {
+    // Wait for the indexer to finish working on the data we just added to help avoid deadlocks
+    SearchService.get().drainQueue(SearchService.PRIORITY.crawl, 15, TimeUnit.SECONDS);
     ContainerManager.deleteAll(c, TestContext.get().getUser());
 }
 
@@ -157,7 +161,7 @@ public void reservedNameFirst() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("DataClass name 'First' is reserved.", e.getMessage());
+        assertEquals("Invalid DataClass name 'First'. 'First' is a reserved name.", e.getMessage());
     }
 }
 
@@ -175,7 +179,7 @@ public void reservedNameAll() throws Exception
     }
     catch (ApiUsageException e)
     {
-        assertEquals("DataClass name 'All' is reserved.", e.getMessage());
+        assertEquals("Invalid DataClass name 'All'. 'All' is a reserved name.", e.getMessage());
     }
 }
 

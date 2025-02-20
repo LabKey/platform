@@ -143,6 +143,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -1103,7 +1104,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Just index as an empty file, #33236
         }
     }
-
 
     /**
      * This method is used to indicate to the crawler (or any external process) which files
