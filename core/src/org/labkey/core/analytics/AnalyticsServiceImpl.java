@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Directive;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AppProps;
@@ -115,11 +116,11 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public void resetCSP()
     {
-        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY);
+        ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY);
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
+            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
         }
     }
 

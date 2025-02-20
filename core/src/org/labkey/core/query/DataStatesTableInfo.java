@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateHandler;
 import org.labkey.api.qc.DataStateManager;
@@ -39,6 +40,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -87,17 +89,35 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             return _dataState;
         }
 
+        private boolean isDuplicate(String label, Container container)
+        {
+            Map<String, DataStateHandler<AbstractManageDataStatesForm>> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            for (DataStateHandler<AbstractManageDataStatesForm> handler : registeredHandlers.values())
+            {
+                if (!handler.caseInsensitiveDuplicateAllowed())
+                {
+                    List<DataState> dataStates = handler.getStates(container);
+                    for (DataState dataState : dataStates)
+                    {
+                        if (dataState.getLabel().equalsIgnoreCase(label))
+                            return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container)
         {
-            Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
-            DataState QCToDelete = getDataState(oldRowMap, container);
+            Map<String, DataStateHandler<AbstractManageDataStatesForm>> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            DataState stateToDelete = getDataState(oldRowMap, container);
 
-            if (QCToDelete == null) // not in use if it doesn't exist; avoid NPE
+            if (stateToDelete == null) // not in use if it doesn't exist; avoid NPE
                 return true;
 
-            for (DataStateHandler handler : registeredHandlers.values())
+            for (DataStateHandler<AbstractManageDataStatesForm> handler : registeredHandlers.values())
             {
-                if (handler.isStateInUse(container, QCToDelete))
+                if (handler.isStateInUse(container, stateToDelete))
                     return false;
             }
             return true;
@@ -105,10 +125,10 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
 
         private String validateQCStateChangeAllowed(Map<String, Object> row, Container container)
         {
-            Map<String, DataStateHandler> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
+            Map<String, DataStateHandler<AbstractManageDataStatesForm>> registeredHandlers = DataStateManager.getInstance().getRegisteredDataHandlers();
             DataState qcChanging = getDataState(row, container);
 
-            for (DataStateHandler handler : registeredHandlers.values())
+            for (DataStateHandler<AbstractManageDataStatesForm> handler : registeredHandlers.values())
             {
                 String errorMsg = handler.getStateChangeError(container, qcChanging, row);
                 if (errorMsg != null)
@@ -129,6 +149,9 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
             if (!validateLabel(row, true))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
 
+            if (isDuplicate(String.valueOf(row.get("label")), container))
+                throw new QueryUpdateServiceException("Label '" + row.get("label") + "' already exists, perhaps with different capitalization.");
+
             String errorMsg = validateQCStateChangeAllowed(row, container);
             if (errorMsg != null)
                 throw new QueryUpdateServiceException(errorMsg);
@@ -148,6 +171,8 @@ public class DataStatesTableInfo extends FilteredTable<CoreQuerySchema>
         {
             if (!validateLabel(row, false))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
+            if (isDuplicate(String.valueOf(row.get("label")), container))
+                throw new QueryUpdateServiceException("Label '" + row.get("label") + "' already exists, perhaps with different capitalization.");
 
             Map<String, Object> rowToInsert;
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
