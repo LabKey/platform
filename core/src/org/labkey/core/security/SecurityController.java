@@ -1822,7 +1822,7 @@ public class SecurityController extends SpringActionController
         public @NotNull User getUser(boolean throwIfNull)
         {
             if (throwIfNull && null == _user)
-                throw new IllegalStateException("User not found");
+                throw new NotFoundException("User not found");
 
             return _user;
         }
