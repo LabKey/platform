@@ -796,7 +796,8 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.rforge:rengine:${rforgeVersion}",
+//            "org.rosuda.REngine:rengine:${rforgeVersion}",
+                "org.rosuda.REngine:REngine:2.1.0",
             "Rengine",
             "Rserve",
             "http://www.rforge.net/Rserve",
@@ -809,7 +810,8 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.rforge:rserve:${rforgeVersion}",
+//            "org.rosuda.REngine:rserve:${rforgeVersion}",
+                "org.rosuda.REngine:Rserve:1.8.1",
             "Rserve",
             "Rserve",
             "http://www.rforge.net/Rserve",
