@@ -303,6 +303,10 @@ public class ContentSecurityPolicyFilter implements Filter
             assertEquals(4, ALLOWED_SOURCES.size());
             assertEquals(4, _substitutionMap.size());
 
+            registerAllowedSources(Directive.Image, "image", "ImageSource", "BetterImageStore");
+            assertEquals(5, ALLOWED_SOURCES.size());
+            assertEquals(5, _substitutionMap.size());
+
             // Restore the previous ALLOWED_SOURCES
             synchronized (ALLOWED_SOURCES_LOCK)
             {

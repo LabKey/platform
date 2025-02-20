@@ -9,6 +9,7 @@ public enum Directive
     Connection("connect-src"),
     Font("font-src"),
     Frame("frame-src"),
+    Image("image-src"),
     Style("style-src");
 
     private final String _cspDirective;
