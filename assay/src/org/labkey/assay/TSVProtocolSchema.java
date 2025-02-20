@@ -68,6 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class TSVProtocolSchema extends AssayProtocolSchema
 {
@@ -262,14 +263,16 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             setDescription("Represents the replicate statistics for a plate based assay containing replicate well groups.");
             setName("PlateReplicateStats");
             setPublicSchemaName(_userSchema.getSchemaName());
+            FieldKey lsidFieldKey = FieldKey.fromParts("Lsid");
+            Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 var columnInfo = wrapColumn(col);
                 if (col.isHidden())
-                    columnInfo .setHidden(true);
+                    columnInfo.setHidden(true);
 
-                if (col.getName().equals("Lsid"))
+                if (lsidFieldKey.equals(col.getFieldKey()))
                 {
                     columnInfo.setHidden(true);
                     columnInfo.setKeyField(true);
@@ -283,7 +286,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     PropertyDescriptor pd = dp.getPropertyDescriptor();
                     if (pd != null)
                     {
-                        PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, null);
+                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, defaultsSupplier);
                         columnInfo.setFieldKey(FieldKey.fromParts(dp.getName()));
                     }
                 }
