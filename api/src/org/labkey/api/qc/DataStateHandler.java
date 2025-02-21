@@ -28,6 +28,10 @@ public interface DataStateHandler<FORM extends AbstractManageDataStatesForm>
     boolean isStateInUse(Container container, DataState state);
     boolean isBlankStatePublic(Container container);
     boolean isRequireCommentOnQCStateChange(Container container);
+    default boolean caseInsensitiveDuplicateAllowed()
+    {
+        return true;
+    }
 
     /**
      * Check if a given state allows for changes based on things like if it is in-use, etc. and return the error

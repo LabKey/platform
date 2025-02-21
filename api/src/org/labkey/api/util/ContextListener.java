@@ -84,6 +84,10 @@ public class ContextListener implements ServletContextListener
         getSpringContextListener().contextInitialized(servletContextEvent);
 
         ModuleLoader.getInstance().init(servletContextEvent.getServletContext());
+
+        // Issue 52270 - avoid hard shutdown when server is already shutting down. Register the first shutdown listener
+        // so we're the first to know
+        addShutdownListener(ModuleLoader.getInstance());
     }
 
     @Override

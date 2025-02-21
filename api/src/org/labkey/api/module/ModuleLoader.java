@@ -84,6 +84,7 @@ import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
@@ -142,7 +143,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 /**
  * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
  */
-public class ModuleLoader implements MemTrackerListener
+public class ModuleLoader implements MemTrackerListener, ShutdownListener
 {
     /** System property name for an extra directory of static content */
     private static final String EXTRA_WEBAPP_DIR = "extrawebappdir";
@@ -187,6 +188,7 @@ public class ModuleLoader implements MemTrackerListener
     // NOTE: the following startup fields are synchronized under STARTUP_LOCK
     private StartupState _startupState = StartupState.StartupIncomplete;
     private String _startingUpMessage = null;
+    private boolean _shuttingDown;
 
     private enum UpgradeState {UpgradeRequired, UpgradeInProgress, UpgradeComplete}
 
@@ -272,6 +274,18 @@ public class ModuleLoader implements MemTrackerListener
             if (terminateAfterStartup)
                 System.exit(0);
         }
+    }
+
+    @Override
+    public String getName()
+    {
+        return "ModuleLoader";
+    }
+
+    @Override
+    public void shutdownPre()
+    {
+        _shuttingDown = true;
     }
 
     @Nullable
@@ -612,7 +626,11 @@ public class ModuleLoader implements MemTrackerListener
                 String countPhrase = 1 == tooOld.size() ? " of this module is" : "s of these modules are";
                 throw new ConfigurationException("Can't upgrade this deployment. The installed schema version" + countPhrase + " too old: " + tooOld + ". This version of LabKey Server supports upgrading modules from schema version " + ModuleContext.formatVersion(Constants.getEarliestUpgradeVersion()) + " and greater.");
             }
-        }
+            else
+            {
+                _log.info("Check complete: all LabKey-managed modules are recent enough to upgrade");
+            }
+       }
 
         boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
 
@@ -1454,7 +1472,8 @@ public class ModuleLoader implements MemTrackerListener
         if (null == _startupFailure)
             _startupFailure = t;
 
-        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")))
+        // Issue 52270 - avoid hard shutdown when server is already shutting down
+        if (Boolean.valueOf(System.getProperty("terminateOnStartupFailure")) && !_shuttingDown)
         {
             // Issue 40038: Ride-or-die Mode
             _log.fatal("Startup failure, terminating", t);

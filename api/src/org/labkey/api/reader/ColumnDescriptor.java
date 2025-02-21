@@ -24,9 +24,6 @@ import java.lang.reflect.Method;
 
 /**
  * Used by data loaders to define their column properties
- *
- * User: jgarms
- * Date: Oct 22, 2008
  */
 public class ColumnDescriptor
 {
@@ -53,7 +50,7 @@ public class ColumnDescriptor
         this.missingValues = defaultValue;
     }
 
-    public Class clazz = String.class;
+    public Class<?> clazz = String.class;
     public String name = null;
     public String propertyURI = null;
     public boolean load = true;

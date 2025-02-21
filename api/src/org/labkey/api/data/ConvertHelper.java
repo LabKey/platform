@@ -1077,8 +1077,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         String fieldType = expectedClass.getSimpleName();
 
         // Issue 50768: Need a better error message if date value is not in the expected format.
-        if (fieldType.equalsIgnoreCase("date") || fieldType.equalsIgnoreCase("datetime"))
-            return "'" + value + "’ is not a valid " + fieldType + " for " + fieldName + " using " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDisplayString() + ".";
+        if (fieldType.equalsIgnoreCase("date") || fieldType.equalsIgnoreCase("datetime") || fieldType.equalsIgnoreCase("timestamp"))
+            return "'" + value + "’ is not a valid " + fieldType + " for " + fieldName + " using " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDisplayString();
 
         return "Could not convert value '" + value + "' (" + value.getClass().getSimpleName() + ") for " + fieldType + " field '" + fieldName + "'" ;
     }
