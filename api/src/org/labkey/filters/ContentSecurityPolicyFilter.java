@@ -130,6 +130,9 @@ public class ContentSecurityPolicyFilter implements Filter
         CspCommentScanner scanner = new CspCommentScanner(s);
         s = scanner.stripComments().toString();
 
+        // Replace sequences of multiple spaces with a single space
+        s = s.replaceAll(" +", " ");
+
         return s;
     }
 
