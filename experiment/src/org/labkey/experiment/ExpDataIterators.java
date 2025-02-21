@@ -2961,7 +2961,7 @@ public class ExpDataIterators
                 ColumnInfo colInfo = getColumnInfo(i);
                 String name = colInfo.getName();
                 String lcName = name.toLowerCase();
-                if (i == _typeColIndex) // Issue 52355: assure we have some data in the row by including the type
+                if (_typeColIndex != null && _typeColIndex == i) // Issue 52355: assure we have some data in the row by including the type
                 {
                     fieldIndexes.add(i);
                     header.add(_typeColName);
