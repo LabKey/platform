@@ -233,12 +233,12 @@ public class SecurityManager
     {
         if (StringUtils.trimToNull(serviceURL) == null)
         {
-            ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(key);
+            ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, key);
             LOG.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
             return;
         }
 
-        ContentSecurityPolicyFilter.registerAllowedConnectionSource(key, serviceURL);
+        ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, key, serviceURL);
         LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
