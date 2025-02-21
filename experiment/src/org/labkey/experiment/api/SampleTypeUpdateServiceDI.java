@@ -1103,6 +1103,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 .collect(Collectors.toSet()))
                 .containsAll(includedColumns);
         TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+        if (isAllFromMaterialTable)
+        {
+            // ExperimentService.get().getTinfoMaterial() uses Container column, not Folder
+            includedColumns.remove(ExpMaterialTable.Column.Folder.name());
+            includedColumns.add("container");
+        }
 
         boolean hasParentInput = false;
         if (_sampleType != null)

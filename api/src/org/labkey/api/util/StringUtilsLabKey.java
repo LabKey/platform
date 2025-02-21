@@ -592,7 +592,7 @@ public class StringUtilsLabKey
                     while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
                 }
             }
-            s = new String(bytes, 0, maxBytes);
+            s = new String(bytes, 0, maxBytes, StandardCharsets.UTF_8);
         }
         return s;
     }
