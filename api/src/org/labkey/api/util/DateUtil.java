@@ -54,6 +54,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -65,6 +66,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Calendar.AM_PM;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR;
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -357,21 +359,27 @@ public class DateUtil
                     @Override
                     public boolean toCalendar(CalendarParts parts, Calendar cal)
                     {
-                        if (!cal.isLenient())
+                        if (parts.anySet(YEAR,MONTH,DAY_OF_MONTH))
                         {
-                            if (parts.anySet(YEAR,MONTH,DAY_OF_MONTH))
-                                return false;
-                            if (null != parts.getTimeZone())
-                                return false;
-                            if (!parts.isHourSet() && !parts.anySet(MINUTE, SECOND))
+                            // We've allowed TimeOnly parsing to ignore the date part of a string (CONSIDER changing that)
+                            // However, don't accept part of a date.
+                            if (!cal.isLenient() || !parts.isSet(YEAR,MONTH,DAY_OF_MONTH))
                                 return false;
                         }
-                        parts.setYear(1970);
-                        parts.setMonth(JANUARY);
-                        parts.setDayOfMonth(1);
-                        parts.clearTimezone();
-                        parts.setTimeZone(_timezoneDefault);
-                        parts.setCalendar(cal);
+                        if (!parts.isHourSet() && !parts.anySet(MINUTE, SECOND))
+                            return false;
+                        if (!cal.isLenient())
+                        {
+                            if (null != parts.getTimeZone())
+                                return false;
+                        }
+                        // just copy time fields
+                        for (int field : Arrays.asList(HOUR,AM_PM,HOUR_OF_DAY,MINUTE,SECOND,MILLISECOND))
+                            if (parts.isSet(field))
+                                cal.set(field, parts.get(field));
+                        cal.set(YEAR, 1970);
+                        cal.set(MONTH, JANUARY);
+                        cal.set(DAY_OF_MONTH, 1);
                         // if lenient==false, then computeTime() will validate that no parts are out of range
                         cal.getTimeInMillis();
                         assert cal.isLenient() ||
@@ -2305,6 +2313,9 @@ Parse:
             assertIllegalTime("4.0");
 
             assertEquals(parseISODateTime("1970-1-1 16:00:00"), fromTimeString("4 pm", true).getTime());
+
+            assertIllegalTime("1830");
+            assertIllegalTime("19999 pm");
         }
 
         @Test
@@ -2335,7 +2346,7 @@ Parse:
             assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
             Calendar c = newCalendar(l);
             c.clear(HOUR);
-            c.clear(Calendar.AM_PM);
+            c.clear(AM_PM);
             c.set(HOUR_OF_DAY,0);
             l = c.getTimeInMillis();
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
