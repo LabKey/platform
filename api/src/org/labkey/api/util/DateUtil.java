@@ -749,21 +749,11 @@ public class DateUtil
         {
             try
             {
-                // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
-                DateParser format = getDateParser("M-d-yy");
-                return format.parse(s).getTime();
+                return parseXMLDate(s);
             }
-            catch (ParseException pe)
+            catch (IllegalArgumentException ignored)
             {
-                try
-                {
-                    return parseXMLDate(s);
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                }
             }
-
             throw e;
         }
     }
