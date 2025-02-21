@@ -240,15 +240,15 @@ public class ContentSecurityPolicyFilter implements Filter
             // Multi-line for readability, but notice that newlines are replaced before assignment
             String expected = """
                 default-src 'self' https: http: ;
-                    connect-src 'self' http://www.labkey.org  localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
-                    object-src https://* 'none' ;
-                      style-src 'self' https: 'unsafe-inline' ;
-                    img-src 'self' https: data: ;
-                    font-src 'self' http://www.labkey.com https://* http:  https: data: ;
-                    script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
-                    base-uri 'self' ;
-                     frame-ancestors 'self' ;
-                      report-uri  /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;""".replace('\n', ' ');
+                connect-src 'self' http://www.labkey.org localhost:* ws: ${LABKEY.ALLOWED.CONNECTIONS} ;
+                object-src https://* 'none' ;
+                style-src 'self' https: 'unsafe-inline' ;
+                img-src 'self' https: data: ;
+                font-src 'self' http://www.labkey.com https://* http: https: data: ;
+                script-src 'unsafe-eval' 'strict-dynamic' 'nonce-${REQUEST.SCRIPT.NONCE}' ;
+                base-uri 'self' ;
+                frame-ancestors 'self' ;
+                report-uri /admin-contentsecuritypolicyreport.api?${CSP.REPORT.PARAMS} https://*;""".replace('\n', ' ');
 
             Assert.assertEquals(expected, filterPolicy(fakePolicyForTesting));
         }
@@ -270,54 +270,59 @@ public class ContentSecurityPolicyFilter implements Filter
                 regenerateSubstitutionMap();
             }
 
-            assertTrue(ALLOWED_SOURCES.isEmpty());
-            assertTrue(_substitutionMap.isEmpty());
-            unregisterAllowedSources(Directive.Connection, "foo");
-            assertTrue(ALLOWED_SOURCES.isEmpty());
-            assertTrue(_substitutionMap.isEmpty());
-            registerAllowedSources(Directive.Connection, "foo", "MySource");
-            assertEquals(1, ALLOWED_SOURCES.size());
-            assertEquals(2, _substitutionMap.size()); // Old connection substitution key should be added as well
-            registerAllowedSources(Directive.Connection, "bar", "MySource");
-            assertEquals(1, ALLOWED_SOURCES.size());
-            assertEquals(2, _substitutionMap.size()); // Duplicate source should be filtered out
-
-            registerAllowedSources(Directive.Font, "font", "MySource");
-            assertEquals(2, ALLOWED_SOURCES.size());
-            assertEquals(3, _substitutionMap.size());
-            registerAllowedSources(Directive.Font, "font2", "MyOtherSource");
-            assertEquals(2, ALLOWED_SOURCES.size());
-            assertEquals(3, _substitutionMap.size());
-            String value = _substitutionMap.get("FONT.SOURCES");
-            assertEquals("! !", value.replace("MyOtherSource", "!").replace("MySource", "!"));
-            unregisterAllowedSources(Directive.Font, "font2");
-            assertEquals(2, ALLOWED_SOURCES.size());
-            assertEquals(3, _substitutionMap.size());
-            unregisterAllowedSources(Directive.Font, "font");
-            assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
-            assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
-            assertEquals(2, _substitutionMap.size()); // Back to the way it was
-
-            registerAllowedSources(Directive.Frame, "frame", "FrameSource", "FrameStore");
-            assertEquals(3, ALLOWED_SOURCES.size());
-            assertEquals(3, _substitutionMap.size());
-
-            registerAllowedSources(Directive.Style, "style", "StyleSource", "MoreStylishStore");
-            assertEquals(4, ALLOWED_SOURCES.size());
-            assertEquals(4, _substitutionMap.size());
-
-            registerAllowedSources(Directive.Image, "image", "ImageSource", "BetterImageStore");
-            assertEquals(5, ALLOWED_SOURCES.size());
-            assertEquals(5, _substitutionMap.size());
-
-            // Restore the previous ALLOWED_SOURCES
-            synchronized (ALLOWED_SOURCES_LOCK)
+            try
             {
-                ALLOWED_SOURCES.clear();
-                ALLOWED_SOURCES.putAll(savedSources);
-                regenerateSubstitutionMap();
-                assertEquals(sourceMapSize, ALLOWED_SOURCES.size());
-                assertEquals(substitutionMapSize, _substitutionMap.size());
+                assertTrue(ALLOWED_SOURCES.isEmpty());
+                assertTrue(_substitutionMap.isEmpty());
+                unregisterAllowedSources(Directive.Connection, "foo");
+                assertTrue(ALLOWED_SOURCES.isEmpty());
+                assertTrue(_substitutionMap.isEmpty());
+                registerAllowedSources(Directive.Connection, "foo", "MySource");
+                assertEquals(1, ALLOWED_SOURCES.size());
+                assertEquals(2, _substitutionMap.size()); // Old connection substitution key should be added as well
+                registerAllowedSources(Directive.Connection, "bar", "MySource");
+                assertEquals(1, ALLOWED_SOURCES.size());
+                assertEquals(2, _substitutionMap.size()); // Duplicate source should be filtered out
+
+                registerAllowedSources(Directive.Font, "font", "MySource");
+                assertEquals(2, ALLOWED_SOURCES.size());
+                assertEquals(3, _substitutionMap.size());
+                registerAllowedSources(Directive.Font, "font2", "MyOtherSource");
+                assertEquals(2, ALLOWED_SOURCES.size());
+                assertEquals(3, _substitutionMap.size());
+                String value = _substitutionMap.get("FONT.SOURCES");
+                assertEquals("! !", value.replace("MyOtherSource", "!").replace("MySource", "!"));
+                unregisterAllowedSources(Directive.Font, "font2");
+                assertEquals(2, ALLOWED_SOURCES.size());
+                assertEquals(3, _substitutionMap.size());
+                unregisterAllowedSources(Directive.Font, "font");
+                assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
+                assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
+                assertEquals(2, _substitutionMap.size()); // Back to the way it was
+
+                registerAllowedSources(Directive.Frame, "frame", "FrameSource", "FrameStore");
+                assertEquals(3, ALLOWED_SOURCES.size());
+                assertEquals(3, _substitutionMap.size());
+
+                registerAllowedSources(Directive.Style, "style", "StyleSource", "MoreStylishStore");
+                assertEquals(4, ALLOWED_SOURCES.size());
+                assertEquals(4, _substitutionMap.size());
+
+                registerAllowedSources(Directive.Image, "image", "ImageSource", "BetterImageStore");
+                assertEquals(5, ALLOWED_SOURCES.size());
+                assertEquals(5, _substitutionMap.size());
+            }
+            finally
+            {
+                // Restore the previous ALLOWED_SOURCES
+                synchronized (ALLOWED_SOURCES_LOCK)
+                {
+                    ALLOWED_SOURCES.clear();
+                    ALLOWED_SOURCES.putAll(savedSources);
+                    regenerateSubstitutionMap();
+                    assertEquals(sourceMapSize, ALLOWED_SOURCES.size());
+                    assertEquals(substitutionMapSize, _substitutionMap.size());
+                }
             }
         }
     }
