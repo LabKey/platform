@@ -2961,7 +2961,12 @@ public class ExpDataIterators
                 ColumnInfo colInfo = getColumnInfo(i);
                 String name = colInfo.getName();
                 String lcName = name.toLowerCase();
-                if (validFields.contains(name))
+                if (i == _typeColIndex)
+                {
+                    fieldIndexes.add(i);
+                    header.add("SampleType");
+                }
+                else if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
                     header.add(_tsvWriter.quoteValue(name));
