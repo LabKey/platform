@@ -18,7 +18,7 @@ import org.springframework.validation.BindException;
 import java.util.Collection;
 import java.util.List;
 
-public enum ExternalServerType
+public enum AllowListType
 {
     Source {
         @Override
@@ -39,13 +39,13 @@ public enum ExternalServerType
         }
 
         @Override
-        public List<String> getHosts()
+        public List<String> getValues()
         {
             return AppProps.getInstance().getExternalSourceHosts();
         }
 
         @Override
-        public void setHosts(Collection<String> hosts, User user)
+        public void setValues(Collection<String> hosts, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setExternalSourceHosts(hosts);
@@ -53,7 +53,13 @@ public enum ExternalServerType
 
             // Refresh the CSP with new values.
             ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY);
-            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY, getHosts().toArray(new String[0]));
+            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY, getValues().toArray(new String[0]));
+        }
+
+        @Override
+        public void validateValueFormat(String value, BindException errors)
+        {
+
         }
 
         @Override
@@ -69,6 +75,8 @@ public enum ExternalServerType
         }
     },
     Redirect {
+        private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
+
         @Override
         public HtmlString getDescription()
         {
@@ -90,17 +98,31 @@ public enum ExternalServerType
         }
 
         @Override
-        public List<String> getHosts()
+        public List<String> getValues()
         {
             return AppProps.getInstance().getExternalRedirectHosts();
         }
 
         @Override
-        public void setHosts(Collection<String> hosts, User user)
+        public void setValues(Collection<String> hosts, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setExternalRedirectHosts(hosts);
             props.save(user);
+        }
+
+        @Override
+        @JsonIgnore
+        public void validateValueFormat(String host, BindException errors)
+        {
+            if (StringUtils.isEmpty(host))
+            {
+                errors.addError(new LabKeyError("Redirect host name must not be blank."));
+            }
+            else if (!AUTHORITY_VALIDATOR.isValidAuthority(host))
+            {
+                errors.addError(new LabKeyError(String.format("Redirect host name %1$s is not formatted correctly", host)));
+            }
         }
 
         @Override
@@ -132,13 +154,13 @@ public enum ExternalServerType
         }
 
         @Override
-        public List<String> getHosts()
+        public List<String> getValues()
         {
             return AppProps.getInstance().getAllowedExtensions();
         }
 
         @Override
-        public void setHosts(Collection<String> allowedExtensions, User user)
+        public void setValues(Collection<String> allowedExtensions, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setAllowedFileExtensions(allowedExtensions);
@@ -146,11 +168,12 @@ public enum ExternalServerType
         }
 
         @Override
-        public void validateHostFormat(String externalHost, BindException errors)
+        @JsonIgnore
+        public void validateValueFormat(String value, BindException errors)
         {
-            if (StringUtils.isEmpty(externalHost))
+            if (StringUtils.isEmpty(value))
                 errors.addError(new LabKeyError("File extension must not be blank."));
-            else if (!externalHost.startsWith("."))
+            else if (!value.startsWith("."))
                 errors.addError(new LabKeyError("File extension must start with a '.'"));
         }
 
@@ -167,7 +190,6 @@ public enum ExternalServerType
         }
     };
 
-    private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
     private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
     public static String getExternalSourceHostsKey()
     {
@@ -175,11 +197,11 @@ public enum ExternalServerType
     }
 
     public abstract HtmlString getDescription();
-    public abstract List<String> getHosts();
-    public abstract void setHosts(Collection<String> redirectHosts, User user);
+    public abstract List<String> getValues();
+    public abstract void setValues(Collection<String> redirectHosts, User user);
+    public abstract void validateValueFormat(String value, BindException errors);
     public abstract HtmlString getTitle();
     public abstract HtmlString getLabel();
-
 
     public String getHelpTopic()
     {
@@ -188,34 +210,6 @@ public enum ExternalServerType
 
     public URLHelper getSuccessURL(Container container)
     {
-        return new ActionURL(AdminController.ExternalHostsAdminAction .class, container).addParameter("type", name());
+        return new ActionURL(AdminController.AllowListAction.class, container).addParameter("type", name());
     }
-
-    @JsonIgnore
-    public void validateHostFormat(String externalHost, BindException errors)
-    {
-        if (StringUtils.isEmpty(externalHost))
-        {
-            errors.addError(new LabKeyError("External host name must not be blank."));
-        }
-        else if (!AUTHORITY_VALIDATOR.isValidAuthority(externalHost))
-        {
-            errors.addError(new LabKeyError(String.format("External host name %1$s is not formatted correctly", externalHost)));
-        }
-    }
-
-    private static class AuthorityValidator extends UrlValidator
-    {
-        public AuthorityValidator(long options)
-        {
-            super(options);
-        }
-
-        @Override
-        public boolean isValidAuthority(String authority)
-        {
-            String base = authority.startsWith("*.") ? authority.substring(2) : authority;
-            return super.isValidAuthority(base);
-        }
-    };
 }

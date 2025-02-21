@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -29,58 +29,58 @@
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
-    function deleteExisting(hostToDelete) {
+    function deleteExisting(valueToDelete) {
 
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
-        document.getElementById("existingExternalHost").value = hostToDelete;
-        document.forms["existingExternalHosts"].submit();
+        document.getElementById("existingValue").value = valueToDelete;
+        document.forms["existingValues"].submit();
     }
 
     function saveAll() {
 
         //clicking on save will save all the values - changed and unchanged values
         var num = 1;
-        var inputNameExisting = "existingExternalHost" + num;
-        var hosts = "";
+        var inputNameExisting = "existingValue" + num;
+        var values = "";
 
         while (null != document.getElementById(inputNameExisting))
         {
-            hosts += (document.getElementById(inputNameExisting).value + "\n");
+            values += (document.getElementById(inputNameExisting).value + "\n");
             num++;
-            inputNameExisting = "existingExternalHost" + num;
+            inputNameExisting = "existingValue" + num;
         }
 
         document.getElementById("saveAll").value = true;
-        document.getElementById("existingExternalHosts").value = hosts;
-        document.forms["existingExternalHosts"].submit();
+        document.getElementById("existingValues").value = values;
+        document.forms["existingValues"].submit();
     }
 </script>
 
-<labkey:form method="post" name="existingExternalHosts">
+<labkey:form method="post" name="existingValues">
 
     <%
-        AdminController.ExternalHostsForm bean = (AdminController.ExternalHostsForm) HttpView.currentModel();
+        AllowListForm bean = (AllowListForm) HttpView.currentModel();
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
             <th><%=h(bean.getTypeEnum().getTitle() + "s")%></th>
             <th></th>
         </tr>
-        <% if (bean.getExistingHostList().isEmpty()) { %>
+        <% if (bean.getExistingValuesList().isEmpty()) { %>
             <tr><td colspan="2">No <%=h(bean.getTypeEnum().getTitle())%>s have been configured.</td></tr>
         <% } %>
 
         <%
             int num = 1;
-            for (String externalHost : bean.getExistingHostList()) {
-                String inputNameExisting = "existingExternalHost" + num;
+            for (String value : bean.getExistingValuesList()) {
+                String inputNameExisting = "existingValue" + num;
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalHost)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(value)%>" size="80"/></td>
 
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalHost) + "\");") %>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
 
             </td>
         </tr>
@@ -89,10 +89,10 @@
             }
         %>
     </table>
-        <% if (!bean.getExistingHostList().isEmpty()) { %>
+        <% if (!bean.getExistingValuesList().isEmpty()) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
-            <input type="hidden" id="existingExternalHost" name="existingExternalHost" value="" />
-            <input type="hidden" id="existingExternalHosts" name="existingExternalHosts" value="" />
+            <input type="hidden" id="existingValue" name="existingValue" value="" />
+            <input type="hidden" id="existingValues" name="existingValues" value="" />
             <tr>
                 <td></td>
                 <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>

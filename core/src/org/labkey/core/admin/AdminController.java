@@ -452,9 +452,9 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external sources", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Source.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -10910,25 +10910,25 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public class ExternalHostsAdminAction extends FormViewAction<ExternalHostsForm>
+    public class AllowListAction extends FormViewAction<AllowListForm>
     {
-        private ExternalServerType _type;
+        private AllowListType _type;
         @Override
-        public void validateCommand(ExternalHostsForm target, Errors errors)
+        public void validateCommand(AllowListForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ExternalHostsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(AllowListForm form, boolean reshow, BindException errors)
         {
             _type = form.getTypeEnum();
 
-            form.setExistingHostsList(form.getTypeEnum().getHosts());
+            form.setExistingValuesList(form.getTypeEnum().getValues());
 
-            JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
+            JspView<AllowListForm> newView = new JspView<>("/org/labkey/core/admin/addNewListValue.jsp", form, errors);
             newView.setTitle("Register New " + form.getTypeEnum().getTitle());
             newView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
+            JspView<AllowListForm> existingView = new JspView<>("/org/labkey/core/admin/existingListValues.jsp", form, errors);
             existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
@@ -10936,20 +10936,20 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ExternalHostsForm form, BindException errors) throws Exception
+        public boolean handlePost(AllowListForm form, BindException errors) throws Exception
         {
-            ExternalServerType hostType = form.getTypeEnum();
-            //handle delete of existing external redirect host
+            AllowListType allowListType = form.getTypeEnum();
+            //handle delete of existing value
             if (form.isDelete())
             {
-                String urlToDelete = form.getExistingExternalHost();
-                List<String> hosts = hostType.getHosts();
-                for (String externalHost : hosts)
+                String urlToDelete = form.getExistingValue();
+                List<String> values = allowListType.getValues();
+                for (String value : values)
                 {
-                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalHost.trim()))
+                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
                     {
-                        hosts.remove(externalHost);
-                        hostType.setHosts(hosts, getUser());
+                        values.remove(value);
+                        allowListType.setValues(values, getUser());
                         break;
                     }
                 }
@@ -10957,27 +10957,27 @@ public class AdminController extends SpringActionController
             //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                Set<String> validatedHosts = form.validateHostList(errors);
+                Set<String> validatedValues = form.validateValues(errors);
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(validatedHosts.stream().toList(), getUser());
+                allowListType.setValues(validatedValues.stream().toList(), getUser());
             }
-            //save new external host
+            //save new external value
             else if (form.isSaveNew())
             {
-                Set<String> hostSet = form.validateNewExternalHost(errors);
+                Set<String> valueSet = form.validateNewValue(errors);
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(hostSet, getUser());
+                allowListType.setValues(valueSet, getUser());
             }
 
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(ExternalHostsForm form)
+        public URLHelper getSuccessURL(AllowListForm form)
         {
             return form.getTypeEnum().getSuccessURL(getContainer());
         }
@@ -10990,36 +10990,38 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class ExternalHostsForm
+    public static class AllowListForm
     {
-        private String _newExternalHost;
-        private String _existingExternalHost;
+        private String _newValue;
+        private String _existingValue;
         private boolean _delete;
-        private String _existingExternalHosts;
+        private String _existingValues;
         private boolean _saveAll;
         private boolean _saveNew;
         private String _type;
 
-        private List<String> _existingHostURLList;
+        private List<String> _existingValuesList;
 
-        public String getNewExternalHost()
+        public String getNewValue()
         {
-            return _newExternalHost;
+            return _newValue;
         }
 
-        public void setNewExternalHost(String newExternalHost)
+        @SuppressWarnings("unused")
+        public void setNewValue(String newValue)
         {
-            _newExternalHost = newExternalHost;
+            _newValue = newValue;
         }
 
-        public String getExistingExternalHost()
+        public String getExistingValue()
         {
-            return _existingExternalHost;
+            return _existingValue;
         }
 
-        public void setExistingExternalHost(String existingExternalHost)
+        @SuppressWarnings("unused")
+        public void setExistingValue(String existingValue)
         {
-            _existingExternalHost = existingExternalHost;
+            _existingValue = existingValue;
         }
 
         public boolean isDelete()
@@ -11027,19 +11029,21 @@ public class AdminController extends SpringActionController
             return _delete;
         }
 
+        @SuppressWarnings("unused")
         public void setDelete(boolean delete)
         {
             _delete = delete;
         }
 
-        public String getExistingExternalHosts()
+        public String getExistingValues()
         {
-            return _existingExternalHosts;
+            return _existingValues;
         }
 
-        public void setExistingExternalHosts(String existingExternalHosts)
+        @SuppressWarnings("unused")
+        public void setExistingValues(String existingValues)
         {
-            _existingExternalHosts = existingExternalHosts;
+            _existingValues = existingValues;
         }
 
         public boolean isSaveAll()
@@ -11047,6 +11051,7 @@ public class AdminController extends SpringActionController
             return _saveAll;
         }
 
+        @SuppressWarnings("unused")
         public void setSaveAll(boolean saveAll)
         {
             _saveAll = saveAll;
@@ -11057,24 +11062,25 @@ public class AdminController extends SpringActionController
             return _saveNew;
         }
 
+        @SuppressWarnings("unused")
         public void setSaveNew(boolean saveNew)
         {
             _saveNew = saveNew;
         }
 
-        public List<String> getExistingHostList()
+        public List<String> getExistingValuesList()
         {
             //for updated urls that comes in as String values from the jsp/html form
-            if (null != getExistingExternalHosts())
+            if (null != getExistingValues())
             {
-                return new ArrayList<>(Arrays.asList(getExistingExternalHosts().split("\n")));
+                return new ArrayList<>(Arrays.asList(getExistingValues().split("\n")));
             }
-            return _existingHostURLList;
+            return _existingValuesList;
         }
 
-        public void setExistingHostsList(List<String> urlList)
+        public void setExistingValuesList(List<String> valuesList)
         {
-            _existingHostURLList = urlList;
+            _existingValuesList = valuesList;
         }
 
         public String getType()
@@ -11089,58 +11095,57 @@ public class AdminController extends SpringActionController
         }
 
         @NotNull
-        public ExternalServerType getTypeEnum()
+        public AllowListType getTypeEnum()
         {
-            return EnumUtils.getEnum(ExternalServerType.class, getType(), ExternalServerType.Redirect);
+            return EnumUtils.getEnum(AllowListType.class, getType(), AllowListType.Redirect);
         }
 
         @JsonIgnore
-        public Set<String> validateNewExternalHost(BindException errors)
+        public Set<String> validateNewValue(BindException errors)
         {
-            String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
-            getTypeEnum().validateHostFormat(newExternalHost, errors);
+            String value = StringUtils.trimToEmpty(getNewValue());
+            getTypeEnum().validateValueFormat(value, errors);
             if (errors.hasErrors())
                 return null;
 
-            Set<String> hostSet = new CaseInsensitiveHashSet(getTypeEnum().getHosts());
-            checkDuplicatesByAddition(newExternalHost, hostSet, errors);
-            return hostSet;
+            Set<String> valueSet = new CaseInsensitiveHashSet(getTypeEnum().getValues());
+            checkDuplicatesByAddition(value, valueSet, errors);
+            return valueSet;
         }
 
         @JsonIgnore
-        public Set<String> validateHostList(BindException errors)
+        public Set<String> validateValues(BindException errors)
         {
-            List<String> hosts = getExistingHostList(); //get hosts from the form, this includes updated hosts
-            Set<String> hostSet = new CaseInsensitiveHashSet();
+            List<String> values = getExistingValuesList(); //get values from the form, this includes updated values
+            Set<String> valueSet = new CaseInsensitiveHashSet();
 
-            if (null != hosts && !hosts.isEmpty())
+            if (null != values && !values.isEmpty())
             {
-                for (String host : hosts)
+                for (String value : values)
                 {
-                    getTypeEnum().validateHostFormat(host, errors);
+                    getTypeEnum().validateValueFormat(value, errors);
                     if (errors.hasErrors())
                         continue;
 
-                    checkDuplicatesByAddition(host, hostSet, errors);
+                    checkDuplicatesByAddition(value, valueSet, errors);
                 }
             }
 
-            return hostSet;
+            return valueSet;
         }
 
         /**
-         * Adds host to host set unless it is a duplicate, in which case it adds an error
-         * Note: Attempts to validate host string using URLHelper
-         * @param host to check
-         * @param hostSet of existing hosts
+         * Adds value to value set unless it is a duplicate, in which case it adds an error
+         * @param value to check
+         * @param valueSet of existing values
          * @param errors collections of errors observed
          */
         @JsonIgnore
-        private void checkDuplicatesByAddition(String host, Set<String> hostSet, BindException errors)
+        private void checkDuplicatesByAddition(String value, Set<String> valueSet, BindException errors)
         {
-            String trimHost = StringUtils.trimToEmpty(host);
-            if (!hostSet.add(trimHost))
-                errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate hosts not allowed.", trimHost)));
+            String trimValue = StringUtils.trimToEmpty(value);
+            if (!valueSet.add(trimValue))
+                errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate values not allowed.", trimValue)));
         }
     }
 
