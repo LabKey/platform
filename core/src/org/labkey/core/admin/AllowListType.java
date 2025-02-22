@@ -47,19 +47,11 @@ public enum AllowListType
         @Override
         public void setValues(Collection<String> hosts, User user)
         {
-            WriteableAppProps props = AppProps.getWriteableInstance();
-            props.setExternalSourceHosts(hosts);
-            props.save(user);
-
-            // Refresh the CSP with new values.
-            ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY);
-            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, EXTERNAL_SOURCE_HOSTS_KEY, getValues().toArray(new String[0]));
         }
 
         @Override
         public void validateValueFormat(String value, BindException errors)
         {
-
         }
 
         @Override

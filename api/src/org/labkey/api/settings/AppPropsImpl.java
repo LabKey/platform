@@ -86,6 +86,8 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private static final String DISTRIBUTION_FILENAME;
     private static final Set<SupportedDatabase> DISTRIBUTION_SUPPORTED_DATABASES;
 
+    public static final String ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
+
     private static final Logger LOG = LogHelper.getLogger(AppPropsImpl.class, "Site settings startup properties");
 
     static
@@ -669,13 +671,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     @Override
     @NotNull
-    public List<String> getExternalSourceHosts()
-    {
-        return getExternalHosts(externalSourceHostURLs);
-    }
-
-    @Override
-    @NotNull
     public List<String> getAllowedExtensions()
     {
         return getExternalHosts(allowedFileExtensions);
@@ -731,5 +726,24 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases()
     {
         return DISTRIBUTION_SUPPORTED_DATABASES;
+    }
+
+    @Deprecated
+    @Override
+    @NotNull
+    public List<String> getExternalSourceHosts()
+    {
+        String urls = lookupStringValue("externalSourceHostURLs", "");
+        if (StringUtils.isNotBlank(urls))
+        {
+            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_HOST_DELIMITER)));
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    public @NotNull String getAllowedExternalResources()
+    {
+        return lookupStringValue(ALLOWED_EXTERNAL_RESOURCES, "[]");
     }
 }

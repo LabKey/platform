@@ -17,6 +17,7 @@ package org.labkey.core.admin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -181,6 +182,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Directive;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -317,6 +319,8 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.security.AllowedExternalResourceHosts;
+import org.labkey.core.security.AllowedExternalResourceHosts.Substitution;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
@@ -453,7 +457,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "allowed external sources", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Source.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external sources", new ActionURL(ExternalSourcesAction.class, root), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
@@ -10841,30 +10845,30 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             Collection<BlockListFilter.Suspicious> list = BlockListFilter.reportSuspicious();
-            HtmlStringBuilder sb = HtmlStringBuilder.of();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             if (list.isEmpty())
             {
-                sb.append("No suspicious activity.\n");
+                html.append("No suspicious activity.\n");
             }
             else
             {
-                sb.unsafeAppend("<table class='table'>");
-                sb.unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
+                html.unsafeAppend("<table class='table'>");
+                html.unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
                 for (BlockListFilter.Suspicious s : list)
                 {
-                    sb.unsafeAppend("<tr><td>")
-                            .append(s.host);
+                    html.unsafeAppend("<tr><td>")
+                        .append(s.host);
                     if (!isBlank(s.user))
-                            sb.append(HtmlString.NBSP).append("(" + s.user + ")");
-                     sb.unsafeAppend("</td><td>")
-                            .append(s.userAgent)
-                            .unsafeAppend("</td><td>")
-                            .append(s.count)
-                            .unsafeAppend("</td></tr>\n");
+                        html.append(HtmlString.NBSP).append("(" + s.user + ")");
+                     html.unsafeAppend("</td><td>")
+                        .append(s.userAgent)
+                        .unsafeAppend("</td><td>")
+                        .append(s.count)
+                        .unsafeAppend("</td></tr>\n");
                 }
-                sb.unsafeAppend("</table>");
+                html.unsafeAppend("</table>");
             }
-            return new HtmlView(sb);
+            return new HtmlView(html);
         }
 
         @Override
@@ -10880,7 +10884,7 @@ public class AdminController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresNoPermission
     @AllowedBeforeInitialUserIsSet
-    public class ConfigurationSummaryAction extends ReadOnlyApiAction<Object>
+    public static class ConfigurationSummaryAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -10902,6 +10906,37 @@ public class AdminController extends SpringActionController
             result.addMixIn(ExternalScriptEngineDefinitionImpl.class, IgnorePasswordMixIn.class);
             return result;
         }
+
+        /* returns a jackson serializable object that reports superset of information returned in admin console */
+        private JSONObject getConfigurationJson()
+        {
+            JSONObject res = new JSONObject();
+
+            res.put("server", AdminBean.getPropertyMap());
+
+            final Map<String,Map<String,Object>> sets = new TreeMap<>();
+            new SqlSelector(CoreSchema.getInstance().getScope(),
+                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
+                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+                {
+                    String category = (String)m.get("category");
+                    String name = (String)m.get("name");
+                    Object value = m.get("value");
+                    if (!sets.containsKey(category))
+                        sets.put(category, new TreeMap<>());
+                    sets.get(category).put(name,value);
+                }
+            );
+            res.put("siteSettings", sets);
+
+            HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
+            res.put("health", result);
+
+            LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
+            res.put("scriptEngines", mgr.getEngineDefinitions());
+
+            return res;
+        }
     }
 
     @JsonIgnoreProperties(value = { "password", "changePassword", "configuration" })
@@ -10913,6 +10948,7 @@ public class AdminController extends SpringActionController
     public class AllowListAction extends FormViewAction<AllowListForm>
     {
         private AllowListType _type;
+
         @Override
         public void validateCommand(AllowListForm target, Errors errors)
         {
@@ -11149,35 +11185,158 @@ public class AdminController extends SpringActionController
         }
     }
 
-    /* returns a jackson serializable object that reports superset of information returned in admin console */
-    JSONObject getConfigurationJson()
+    public static class ExternalSourcesForm
     {
-        JSONObject res = new JSONObject();
+        private boolean _saveNew;
+        private String _newDirective;
+        private String _newHost;
 
-        res.put("server", AdminBean.getPropertyMap());
+        public boolean isSaveNew()
+        {
+            return _saveNew;
+        }
 
-        final Map<String,Map<String,Object>> sets = new TreeMap<>();
-        new SqlSelector(CoreSchema.getInstance().getScope(),
-            new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+        @SuppressWarnings("unused")
+        public void setSaveNew(boolean saveNew)
+        {
+            _saveNew = saveNew;
+        }
+
+        public String getNewDirective()
+        {
+            return _newDirective;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNewDirective(String newDirective)
+        {
+            _newDirective = newDirective;
+        }
+
+        public String getNewHost()
+        {
+            return _newHost;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNewHost(String newHost)
+        {
+            _newHost = newHost;
+        }
+
+        private Collection<Substitution> validateNewSubstitution(BindException errors) throws JsonProcessingException
+        {
+            Directive directive = EnumUtils.getEnum(Directive.class, getNewDirective());
+            String host = StringUtils.trimToEmpty(getNewHost());
+
+            if (getNewDirective() == null)
             {
-                String category = (String)m.get("category");
-                String name = (String)m.get("name");
-                Object value = m.get("value");
-                if (!sets.containsKey(category))
-                    sets.put(category, new TreeMap<>());
-                sets.get(category).put(name,value);
+                errors.addError(new LabKeyError("Directive must not be blank."));
             }
-        );
-        res.put("siteSettings", sets);
+            else if (null == directive)
+            {
+                errors.addError(new LabKeyError("Unrecognized directive."));
+            }
 
-        HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
-        res.put("health", result);
+            if (StringUtils.isEmpty(host))
+            {
+                errors.addError(new LabKeyError("Redirect host name must not be blank."));
+            }
 
-        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
-        res.put("scriptEngines", mgr.getEngineDefinitions());
+            // TODO: Validate host - set errors
+            // TODO: Validate no duplicates - set errors
 
-        return res;
+            if (errors.hasErrors())
+                return null;
+
+            List<Substitution> ret = AllowedExternalResourceHosts.readSubstitutions();
+            ret.add(new Substitution(directive, host));
+
+            return ret;
+        }
+    }
+
+    @AdminConsoleAction()
+    public class ExternalSourcesAction extends FormViewAction<ExternalSourcesForm>
+    {
+        @Override
+        public void validateCommand(ExternalSourcesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
+        {
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+
+            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/externalSources.jsp", null, errors);
+            newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Source");
+            newView.setFrame(WebPartView.FrameType.PORTAL);
+//            JspView<AllowListForm> existingView = new JspView<>("/org/labkey/core/admin/existingListValues.jsp", form, errors);
+//            existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
+//            existingView.setFrame(WebPartView.FrameType.PORTAL);
+
+            return new VBox(newView);
+        }
+
+        @Override
+        public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
+        {
+            Collection<Substitution> substitutions = null;
+
+            if (false)
+            {
+                substitutions = null;
+//            //handle delete of existing value
+//            if (form.isDelete())
+//            {
+//                String urlToDelete = form.getExistingValue();
+//                List<String> values = allowListType.getValues();
+//                for (String value : values)
+//                {
+//                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
+//                    {
+//                        values.remove(value);
+//                        allowListType.setValues(values, getUser());
+//                        break;
+//                    }
+//                }
+//            }
+//            //handle updates - clicking on Save button under Existing will save the updated urls
+//            else if (form.isSaveAll())
+//            {
+//                Set<String> validatedValues = form.validateValues(errors);
+//                if (errors.hasErrors())
+//                    return false;
+//
+//                allowListType.setValues(validatedValues.stream().toList(), getUser());
+            }
+            //save new external value
+            else if (form.isSaveNew())
+            {
+                substitutions = form.validateNewSubstitution(errors);
+            }
+
+            if (errors.hasErrors())
+                return false;
+
+            AllowedExternalResourceHosts.saveSubstitutions(substitutions, getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ExternalSourcesForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("externalHosts");
+            addAdminNavTrail(root, "Allowed External Resource Hosts", getClass());
+        }
     }
 
     @RequiresPermission(AdminPermission.class)

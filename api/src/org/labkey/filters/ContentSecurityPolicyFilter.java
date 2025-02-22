@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.Directive;
@@ -62,6 +63,8 @@ public class ContentSecurityPolicyFilter implements Filter
 
     // Updated after every change to "allowed sources"
     private StringExpression _policyExpression = null;
+
+    private static final Logger LOG = LogHelper.getLogger(ContentSecurityPolicyFilter.class, "Register/unregister allowed resource hosts");
 
     public enum ContentSecurityPolicyType
     {
@@ -195,16 +198,11 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
-    @Deprecated // Use registerAllowedSources(Directive.Connection...)
-    public static void registerAllowedConnectionSource(String key, String... allowedUrls)
-    {
-        registerAllowedSources(Directive.Connection, key, allowedUrls);
-    }
-
     public static void registerAllowedSources(Directive directive, String key, String... allowedSources)
     {
         synchronized (ALLOWED_SOURCES_LOCK)
         {
+            LOG.debug("Registering {} for {}: {}", directive, key, Arrays.toString(allowedSources));
             SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.computeIfAbsent(directive, d -> new HashSetValuedHashMap<>());
             Arrays.stream(allowedSources).forEach(s -> multiMap.put(key, s));
             regenerateSubstitutionMap();
@@ -215,6 +213,7 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         synchronized (ALLOWED_SOURCES_LOCK)
         {
+            LOG.debug("Unregistering {} for {}", directive, key);
             SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.get(directive);
             if (multiMap != null)
             {

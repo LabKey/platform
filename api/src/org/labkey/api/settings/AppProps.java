@@ -47,6 +47,7 @@ public interface AppProps
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String DEPRECATED_OBJECT_LEVEL_DISCUSSIONS = "deprecatedObjectLevelDiscussions";
+    String ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
 
     String UNKNOWN_VERSION = "Unknown Release Version";
 
@@ -237,16 +238,15 @@ public interface AppProps
     boolean isIncludeServerHttpHeader();
 
     /**
-     *
      * @return List of configured external redirect hosts
      */
     @NotNull
     List<String> getExternalRedirectHosts();
 
     /**
-     *
      * @return List of configured external resource hosts
      */
+    @Deprecated // Left for backward compatibility
     @NotNull
     List<String> getExternalSourceHosts();
 
@@ -259,4 +259,6 @@ public interface AppProps
     @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
 
     @NotNull List<String> getAllowedExtensions();
+
+    @NotNull String getAllowedExternalResources();
 }

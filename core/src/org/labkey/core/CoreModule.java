@@ -213,7 +213,6 @@ import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
 import org.labkey.core.admin.DisplayFormatValidationProviderFactory;
-import org.labkey.core.admin.AllowListType;
 import org.labkey.core.admin.FilesSiteSettingsAction;
 import org.labkey.core.admin.MenuViewFactory;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
@@ -276,6 +275,7 @@ import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
+import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
 import org.labkey.core.security.SecurityController;
@@ -1050,7 +1050,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
         populateLookAndFeelResourcesWithStartupProps();
-        registerAllowedConnectionSources();
+        AllowedExternalResourceHosts.registerHosts();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -1239,16 +1239,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
-    }
-
-    private void registerAllowedConnectionSources()
-    {
-        ContentSecurityPolicyFilter.registerAllowedConnectionSource(
-            AllowListType.getExternalSourceHostsKey(),
-            AllowListType.Source.getValues().toArray(new String[0])
-        );
-
-        LOG.debug("Registered [{}] as an allowed connection source", () -> String.join(", ", AppProps.getInstance().getExternalSourceHosts()));
     }
 
     // Issue 7527: Auto-detect missing sql views and attempt to recreate

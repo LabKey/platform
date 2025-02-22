@@ -232,11 +232,6 @@ public class WriteableAppProps extends AppPropsImpl
         setExternalHosts(externalRedirectHostURLs, externalRedirectHosts);
     }
 
-    public void setExternalSourceHosts(@NotNull Collection<String> externalSourceHosts)
-    {
-        setExternalHosts(externalSourceHostURLs, externalSourceHosts);
-    }
-
     private void setExternalHosts(RandomStartupProperties propName, @NotNull Collection<String> externalSourceHosts)
     {
         storeStringValue(propName, String.join(EXTERNAL_HOST_DELIMITER, externalSourceHosts));
@@ -246,5 +241,10 @@ public class WriteableAppProps extends AppPropsImpl
     {
         setExternalHosts(RandomStartupProperties.allowedFileExtensions, allowedFileExtensions);
         FileUtil.setExtensionChecker(AppProps.getInstance());
+    }
+
+    public void setAllowedExternalSources(String jsonArray)
+    {
+        storeStringValue(ALLOWED_EXTERNAL_RESOURCES, jsonArray);
     }
 }
