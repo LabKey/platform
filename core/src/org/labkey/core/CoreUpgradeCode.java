@@ -174,6 +174,10 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
+    /**
+     * Called from core-25.000-25.001.sql
+     */
+    @SuppressWarnings("unused")
     public static void migrateAllowedExternalConnectionHosts(ModuleContext context)
     {
         if (context.isNewInstall())
