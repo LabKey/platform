@@ -251,7 +251,8 @@ public class Query
 
 	private void _parse(String queryText, boolean skipSuggestedColumns)
     {
-		try
+        // recursion can happen through lookups and never invoke resolveTable() so check here as well (issue 52088)
+		try (var qrc = queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
 		{
             // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15562
             if (null == getSchema())
@@ -690,7 +691,7 @@ public class Query
     static private final ThreadLocal<AtomicInteger> resolveDepth = ThreadLocal.withInitial(() -> new AtomicInteger(0));
 
     static final int MAX_TABLES_IN_QUERY = 200;
-    static final int MAX_RESOLVE_DEPTH = 20;
+    static final int MAX_RESOLVE_DEPTH = 40;
 
     int _countResolvedTables = 0;
     int _depth = 1;
