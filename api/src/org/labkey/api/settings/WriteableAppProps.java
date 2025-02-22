@@ -243,7 +243,7 @@ public class WriteableAppProps extends AppPropsImpl
         FileUtil.setExtensionChecker(AppProps.getInstance());
     }
 
-    public void setAllowedExternalSources(String jsonArray)
+    public void setAllowedExternalResourceHosts(String jsonArray)
     {
         storeStringValue(ALLOWED_EXTERNAL_RESOURCES, jsonArray);
     }

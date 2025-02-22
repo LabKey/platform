@@ -30,23 +30,23 @@ public class AllowedExternalResourceHosts
     {
     }
 
-    public record Substitution(Directive directive, String host) { }
+    public record AllowedHost(Directive directive, String host) { }
 
-    public static void saveSubstitutions(@Nullable Collection<Substitution> substitutions, User user) throws JsonProcessingException
+    public static void saveAllowedHosts(@Nullable Collection<AllowedHost> allowedHosts, User user) throws JsonProcessingException
     {
-        if (null != substitutions)
+        if (null != allowedHosts)
         {
-            String json = JsonUtil.createDefaultMapper().writeValueAsString(substitutions);
+            String json = JsonUtil.createDefaultMapper().writeValueAsString(allowedHosts);
 
             WriteableAppProps props = AppProps.getWriteableInstance();
-            props.setAllowedExternalSources(json);
+            props.setAllowedExternalResourceHosts(json);
             props.save(user);
 
-            // Group the substitutions by directive
-            Map<Directive, List<String>> map = substitutions.stream()
-                .collect(Collectors.groupingBy(Substitution::directive, Collectors.mapping(Substitution::host, Collectors.toCollection(ArrayList::new))));
+            // Group the allowed hosts by directive
+            Map<Directive, List<String>> map = allowedHosts.stream()
+                .collect(Collectors.groupingBy(AllowedHost::directive, Collectors.mapping(AllowedHost::host, Collectors.toCollection(ArrayList::new))));
 
-            // Unregister all supported directives then register the directives with substitutions
+            // Unregister all supported directives then register the directives with that have allowed hosts
             Arrays.stream(Directive.values()).forEach(dir -> {
                 ContentSecurityPolicyFilter.unregisterAllowedSources(dir, ALLOWED_EXTERNAL_RESOURCES);
                 List<String> list = map.get(dir);
@@ -57,19 +57,19 @@ public class AllowedExternalResourceHosts
     }
 
     // Returns a mutable list (mutating it won't affect any cached values)
-    public static List<Substitution> readSubstitutions() throws JsonProcessingException
+    public static List<AllowedHost> readAllowedHosts() throws JsonProcessingException
     {
-        String json = AppProps.getInstance().getAllowedExternalResources();
+        String json = AppProps.getInstance().getAllowedExternalResourceHosts();
         return JsonUtil.createDefaultMapper().readValue(json, new TypeReference<>() {});
     }
 
     public static void registerHosts()
     {
-        final List<Substitution> list;
+        final List<AllowedHost> list;
 
         try
         {
-            list = AllowedExternalResourceHosts.readSubstitutions();
+            list = AllowedExternalResourceHosts.readAllowedHosts();
         }
         catch (JsonProcessingException e)
         {

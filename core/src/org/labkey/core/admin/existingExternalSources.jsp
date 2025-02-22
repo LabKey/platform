@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExternalSourcesForm" %>
-<%@ page import="org.labkey.core.security.AllowedExternalResourceHosts.Substitution" %>
+<%@ page import="org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -66,17 +66,17 @@
 
     <%
         ExternalSourcesForm bean = (ExternalSourcesForm) HttpView.currentModel();
-        List<Substitution> existingSubstitutions = bean.getSavedSubstitutions();
-        existingSubstitutions.sort(Comparator.comparing(Substitution::directive).thenComparing(Substitution::host));
+        List<AllowedHost> existingAllowedHosts = bean.getSavedAllowedHosts();
+        existingAllowedHosts.sort(Comparator.comparing(AllowedHost::directive).thenComparing(AllowedHost::host));
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
-        <% if (existingSubstitutions.isEmpty()) { %>
-            <tr><td colspan="2">No External Sources have been configured.</td></tr>
+        <% if (existingAllowedHosts.isEmpty()) { %>
+            <tr><td colspan="2">No External Resource Hosts have been configured.</td></tr>
         <% } %>
 
         <%
             int num = 1;
-            for (Substitution sub : existingSubstitutions) {
+            for (AllowedHost sub : existingAllowedHosts) {
                 String directiveId = "directive" + num;
                 String hostId = "host" + num;
         %>
@@ -100,7 +100,7 @@
             }
         %>
     </table>
-        <% if (!existingSubstitutions.isEmpty()) { %>
+        <% if (!existingAllowedHosts.isEmpty()) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
             <input type="hidden" id="existingValue" name="existingValue" value="" />
             <input type="hidden" id="existingValues" name="existingValues" value="" />

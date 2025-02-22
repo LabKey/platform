@@ -320,7 +320,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
-import org.labkey.core.security.AllowedExternalResourceHosts.Substitution;
+import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
@@ -11272,17 +11272,17 @@ public class AdminController extends SpringActionController
             _existingValues = existingValues;
         }
 
-        private Substitution getExistingSubstitution(BindException errors)
+        private AllowedHost getExistingAllowedHost(BindException errors)
         {
-            return getSubstitution(getExistingValue(), errors);
+            return getAllowedHost(getExistingValue(), errors);
         }
 
-        private Substitution getSubstitution(String value, BindException errors)
+        private AllowedHost getAllowedHost(String value, BindException errors)
         {
             String[] parts = value.split("\\|", 2); // Stop after the first bar to produce two parts
             if (parts.length != 2)
             {
-                errors.addError(new LabKeyError("Can't parse substitution."));
+                errors.addError(new LabKeyError("Can't parse allowed host."));
                 return null;
             }
             Directive dir = EnumUtils.getEnum(Directive.class, parts[0], null);
@@ -11291,17 +11291,17 @@ public class AdminController extends SpringActionController
                 errors.addError(new LabKeyError("Unknown directive."));
                 return null;
             }
-            return new Substitution(dir, parts[1]);
+            return new AllowedHost(dir, parts[1]);
         }
 
-        private List<Substitution> getExistingSubstitutions(BindException errors)
+        private List<AllowedHost> getExistingAllowedHosts(BindException errors)
         {
             return Arrays.stream(getExistingValues().split("\n"))
-                .map(value->getSubstitution(value, errors))
+                .map(value-> getAllowedHost(value, errors))
                 .toList();
         }
 
-        private List<Substitution> validateNewSubstitution(BindException errors) throws JsonProcessingException
+        private List<AllowedHost> validateNewAllowedHost(BindException errors) throws JsonProcessingException
         {
             Directive directive = EnumUtils.getEnum(Directive.class, getNewDirective());
             String host = StringUtils.trimToEmpty(getNewHost());
@@ -11326,15 +11326,16 @@ public class AdminController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            List<Substitution> ret = getSavedSubstitutions();
-            ret.add(new Substitution(directive, host));
+            List<AllowedHost> ret = getSavedAllowedHosts();
+            ret.add(new AllowedHost(directive, host));
 
             return ret;
         }
 
-        public List<Substitution> getSavedSubstitutions() throws JsonProcessingException
+        // Returns a mutable list
+        public List<AllowedHost> getSavedAllowedHosts() throws JsonProcessingException
         {
-            return AllowedExternalResourceHosts.readSubstitutions();
+            return AllowedExternalResourceHosts.readAllowedHosts();
         }
     }
 
@@ -11352,10 +11353,10 @@ public class AdminController extends SpringActionController
             boolean isTroubleshooter = !getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", null, errors);
-            newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Source");
+            newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
-            existingView.setTitle("Existing External Sources");
+            existingView.setTitle("Existing External Resource Hosts");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
             return new VBox(newView, existingView);
@@ -11364,19 +11365,19 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
         {
-            List<Substitution> substitutions = null;
+            List<AllowedHost> allowedHosts = null;
 
             //handle delete of existing value
             if (form.isDelete())
             {
-                Substitution subToDelete = form.getExistingSubstitution(errors);
+                AllowedHost subToDelete = form.getExistingAllowedHost(errors);
                 if (errors.hasErrors())
                     return false;
-                substitutions = form.getSavedSubstitutions();
-                var iter = substitutions.listIterator();
+                allowedHosts = form.getSavedAllowedHosts();
+                var iter = allowedHosts.listIterator();
                 while (iter.hasNext())
                 {
-                    Substitution sub = iter.next();
+                    AllowedHost sub = iter.next();
                     if (sub.equals(subToDelete))
                     {
                         iter.remove();
@@ -11387,20 +11388,20 @@ public class AdminController extends SpringActionController
             //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                substitutions = form.getExistingSubstitutions(errors);
+                allowedHosts = form.getExistingAllowedHosts(errors);
                 if (errors.hasErrors())
                     return false;
             }
             //save new external value
             else if (form.isSaveNew())
             {
-                substitutions = form.validateNewSubstitution(errors);
+                allowedHosts = form.validateNewAllowedHost(errors);
             }
 
             if (errors.hasErrors())
                 return false;
 
-            AllowedExternalResourceHosts.saveSubstitutions(substitutions, getUser());
+            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
 
             return true;
         }

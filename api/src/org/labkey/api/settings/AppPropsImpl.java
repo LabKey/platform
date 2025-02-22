@@ -742,7 +742,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public @NotNull String getAllowedExternalResources()
+    public @NotNull String getAllowedExternalResourceHosts()
     {
         return lookupStringValue(ALLOWED_EXTERNAL_RESOURCES, "[]");
     }

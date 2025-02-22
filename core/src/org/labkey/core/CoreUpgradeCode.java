@@ -36,7 +36,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.security.AllowedExternalResourceHosts;
-import org.labkey.core.security.AllowedExternalResourceHosts.Substitution;
+import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 
 import java.util.HashSet;
 import java.util.List;
@@ -180,13 +180,13 @@ public class CoreUpgradeCode implements UpgradeCode
             return;
 
         List<String> hosts = AppProps.getInstance().getExternalSourceHosts();
-        List<Substitution> substitutions = hosts.stream()
-            .map(host -> new Substitution(Directive.Connection, host))
+        List<AllowedHost> allowedHosts = hosts.stream()
+            .map(host -> new AllowedHost(Directive.Connection, host))
             .toList();
 
         try
         {
-            AllowedExternalResourceHosts.saveSubstitutions(substitutions, context.getUpgradeUser());
+            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
         }
         catch (JsonProcessingException e)
         {

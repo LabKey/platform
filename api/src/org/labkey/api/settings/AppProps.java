@@ -246,7 +246,7 @@ public interface AppProps
     /**
      * @return List of configured external resource hosts
      */
-    @Deprecated // Left for backward compatibility
+    @Deprecated // Left for upgrade code only
     @NotNull
     List<String> getExternalSourceHosts();
 
@@ -260,5 +260,5 @@ public interface AppProps
 
     @NotNull List<String> getAllowedExtensions();
 
-    @NotNull String getAllowedExternalResources();
+    @NotNull String getAllowedExternalResourceHosts();
 }
