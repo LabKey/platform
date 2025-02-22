@@ -11187,9 +11187,22 @@ public class AdminController extends SpringActionController
 
     public static class ExternalSourcesForm
     {
+        private boolean _delete;
         private boolean _saveNew;
         private String _newDirective;
         private String _newHost;
+        private String _existingValue;
+
+        public boolean isDelete()
+        {
+            return _delete;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDelete(boolean delete)
+        {
+            _delete = delete;
+        }
 
         public boolean isSaveNew()
         {
@@ -11224,7 +11237,18 @@ public class AdminController extends SpringActionController
             _newHost = newHost;
         }
 
-        private Collection<Substitution> validateNewSubstitution(BindException errors) throws JsonProcessingException
+        public String getExistingValue()
+        {
+            return _existingValue;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExistingValue(String existingValue)
+        {
+            _existingValue = existingValue;
+        }
+
+        private List<Substitution> validateNewSubstitution(BindException errors) throws JsonProcessingException
         {
             Directive directive = EnumUtils.getEnum(Directive.class, getNewDirective());
             String host = StringUtils.trimToEmpty(getNewHost());
@@ -11287,26 +11311,37 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
         {
-            Collection<Substitution> substitutions = null;
+            List<Substitution> substitutions = null;
 
-            if (false)
+            //handle delete of existing value
+            if (form.isDelete())
             {
-                substitutions = null;
-//            //handle delete of existing value
-//            if (form.isDelete())
-//            {
-//                String urlToDelete = form.getExistingValue();
-//                List<String> values = allowListType.getValues();
-//                for (String value : values)
-//                {
-//                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
-//                    {
-//                        values.remove(value);
-//                        allowListType.setValues(values, getUser());
-//                        break;
-//                    }
-//                }
-//            }
+                String subToDelete = form.getExistingValue();
+                String[] parts = subToDelete.split(":", 2);
+                if (parts.length != 2)
+                {
+                    errors.addError(new LabKeyError("Can't parse substitution."));
+                    return false;
+                }
+                Directive dir = EnumUtils.getEnum(Directive.class, parts[0], null);
+                if (null == dir)
+                {
+                    errors.addError(new LabKeyError("Unknown directive."));
+                    return false;
+                }
+                Substitution delete = new Substitution(dir, parts[1]);
+                substitutions = form.getExistingSubstitutions();
+                var iter = substitutions.listIterator();
+                while (iter.hasNext())
+                {
+                    Substitution sub = iter.next();
+                    if (sub.equals(delete))
+                    {
+                        iter.remove();
+                        break;
+                    }
+                }
+            }
 //            //handle updates - clicking on Save button under Existing will save the updated urls
 //            else if (form.isSaveAll())
 //            {
@@ -11315,7 +11350,7 @@ public class AdminController extends SpringActionController
 //                    return false;
 //
 //                allowListType.setValues(validatedValues.stream().toList(), getUser());
-            }
+//            }
             //save new external value
             else if (form.isSaveNew())
             {

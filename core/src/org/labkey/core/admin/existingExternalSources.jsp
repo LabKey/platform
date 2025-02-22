@@ -22,8 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExternalSourcesForm" %>
 <%@ page import="org.labkey.core.security.AllowedExternalResourceHosts.Substitution" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -74,14 +74,15 @@
 
         <%
             int num = 1;
-            for (Substitution value : existingSubstitutions) {
+            for (Substitution sub : existingSubstitutions) {
                 String inputNameExisting = "existingValue" + num;
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(value)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(sub.directive().getCspDirective())%>" size="20"<%=disabled(isTroubleshooter)%>/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(" + q(sub.directive() + ":" + sub.host()) + ");") %>
 
             </td>
         </tr>
