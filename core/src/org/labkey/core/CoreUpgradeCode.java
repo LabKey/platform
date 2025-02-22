@@ -15,6 +15,7 @@
  */
 package org.labkey.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -29,8 +30,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Directive;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.security.AllowedExternalResourceHosts;
+import org.labkey.core.security.AllowedExternalResourceHosts.Substitution;
 
 import java.util.HashSet;
 import java.util.List;
@@ -165,6 +171,26 @@ public class CoreUpgradeCode implements UpgradeCode
             toLowerCaseWithCounterSeqs(container);
 
             LOG.info("** finished upgrade withCounter DBSequences for container: " + container.getPath());
+        }
+    }
+
+    public static void migrateAllowedExternalConnectionHosts(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        List<String> hosts = AppProps.getInstance().getExternalSourceHosts();
+        List<Substitution> substitutions = hosts.stream()
+            .map(host -> new Substitution(Directive.Connection, host))
+            .toList();
+
+        try
+        {
+            AllowedExternalResourceHosts.saveSubstitutions(substitutions, context.getUpgradeUser());
+        }
+        catch (JsonProcessingException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 }

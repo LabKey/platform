@@ -6,13 +6,11 @@ import org.apache.commons.validator.routines.UrlValidator;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
@@ -20,52 +18,6 @@ import java.util.List;
 
 public enum AllowListType
 {
-    Source {
-        @Override
-        public HtmlString getDescription()
-        {
-            return HtmlString.unsafe("""
-                <div style="width: 700px">
-                    <p>
-                        For security reasons, LabKey Server restricts the hosts that can be used as resource origins. By default, only LabKey sources are allowed, other server URLs must be configured below to enable them to be used as script sources.
-                        For more information on the security concern, please refer to the <a href="https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing">OWASP cheat sheet</a>.
-                    </p>
-                    <p>
-                        Add allowed source URLs or IP address as they will be referenced in script source values.
-                        For example: www.myexternalhost.com or 1.2.3.4
-                    </p>
-                </div>
-                """);
-        }
-
-        @Override
-        public List<String> getValues()
-        {
-            return AppProps.getInstance().getExternalSourceHosts();
-        }
-
-        @Override
-        public void setValues(Collection<String> hosts, User user)
-        {
-        }
-
-        @Override
-        public void validateValueFormat(String value, BindException errors)
-        {
-        }
-
-        @Override
-        public HtmlString getTitle()
-        {
-            return HtmlString.of(String.format("External %1$s Host", name()));
-        }
-
-        @Override
-        public HtmlString getLabel()
-        {
-            return HtmlString.of("Host");
-        }
-    },
     Redirect {
         private static final AuthorityValidator AUTHORITY_VALIDATOR = new AuthorityValidator(UrlValidator.ALLOW_LOCAL_URLS);
 
@@ -181,12 +133,6 @@ public enum AllowListType
             return HtmlString.of("Extension");
         }
     };
-
-    private static final String EXTERNAL_SOURCE_HOSTS_KEY = "External Sources";
-    public static String getExternalSourceHostsKey()
-    {
-        return EXTERNAL_SOURCE_HOSTS_KEY;
-    }
 
     public abstract HtmlString getDescription();
     public abstract List<String> getValues();

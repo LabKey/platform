@@ -11249,10 +11249,15 @@ public class AdminController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            List<Substitution> ret = AllowedExternalResourceHosts.readSubstitutions();
+            List<Substitution> ret = getExistingSubstitutions();
             ret.add(new Substitution(directive, host));
 
             return ret;
+        }
+
+        public List<Substitution> getExistingSubstitutions() throws JsonProcessingException
+        {
+            return AllowedExternalResourceHosts.readSubstitutions();
         }
     }
 
@@ -11269,14 +11274,14 @@ public class AdminController extends SpringActionController
         {
             boolean isTroubleshooter = !getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
-            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/externalSources.jsp", null, errors);
+            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", null, errors);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Source");
             newView.setFrame(WebPartView.FrameType.PORTAL);
-//            JspView<AllowListForm> existingView = new JspView<>("/org/labkey/core/admin/existingListValues.jsp", form, errors);
-//            existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
-//            existingView.setFrame(WebPartView.FrameType.PORTAL);
+            JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
+            existingView.setTitle("Existing External Sources");
+            existingView.setFrame(WebPartView.FrameType.PORTAL);
 
-            return new VBox(newView);
+            return new VBox(newView, existingView);
         }
 
         @Override
