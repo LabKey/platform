@@ -149,8 +149,12 @@ public class NetworkDrive
             return false;
         if (Files.exists(p))
             return true;
-        ensureDrive(p.toString());
-        return Files.exists(p);
+        if (FileUtil.FILE_SCHEME.equals(p.toUri().getScheme()))
+        {
+            ensureDrive(p.toString());
+            return Files.exists(p);
+        }
+        return false;
     }
 
     public static void ensureDrive(FileLike f)
