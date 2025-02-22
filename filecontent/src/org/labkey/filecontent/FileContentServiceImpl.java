@@ -80,6 +80,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -339,7 +340,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
                 try
                 {
-                    if (createDir && !Files.exists(fileRootPath))
+                    if (createDir && !NetworkDrive.exists(fileRootPath))
                         FileUtil.createDirectories(fileRootPath);
                 }
                 catch (IOException e)
@@ -602,7 +603,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         try
         {
-            if (root == null || !root.exists())
+            if (!NetworkDrive.exists(root))
             {
                 File configuredRoot = root;
                 root = getDefaultRoot();
@@ -621,7 +622,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 _problematicFileRootMessage = null;
             }
 
-            if (!root.exists())
+            if (!NetworkDrive.exists(root))
             {
                 if (FileUtil.mkdirs(root))
                 {
@@ -658,7 +659,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 root = root.getParentFile();
         }
         File defaultRoot = new File(root, "files");
-        if (!defaultRoot.exists())
+        if (!NetworkDrive.exists(defaultRoot))
             FileUtil.mkdirs(defaultRoot);
 
         return defaultRoot;
@@ -670,7 +671,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         if (root == null)
             throw new IllegalArgumentException("Invalid site root: specified root is null");
 
-        if (!root.exists())
+        if (!NetworkDrive.exists(root))
             throw new IllegalArgumentException("Invalid site root: " + root.getAbsolutePath() + " does not exist");
 
         File prevRoot = getSiteDefaultRoot();
@@ -764,7 +765,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     return null;
             }
 
-            if (!Files.exists(root))
+            if (!NetworkDrive.exists(root))
             {
                 if (create)
                     throw new MissingRootDirectoryException(c.isRoot() ? c : c.getProject(), root);
@@ -862,7 +863,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     if (!FileUtil.hasCloudScheme(srcParent))
                     {
                         File src = new File(srcParent.toFile(), c.getName());
-                        if (src.exists())
+                        if (NetworkDrive.exists(src))
                         {
                             if (!FileUtil.hasCloudScheme(dest))
                             {
@@ -873,7 +874,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                             {
                                 // local -> cloud; source starts under @files
                                 File filesSrc = FileUtil.appendName(src, FILES_LINK);
-                                if (filesSrc.exists())
+                                if (NetworkDrive.exists(filesSrc))
                                     moveFileRoot(filesSrc.toPath(), dest, user, c);
                                 FileUtil.deleteDir(src);        // moveFileRoot will delete @files, but we need to delete its parent
                             }
@@ -935,10 +936,10 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                             File parentDir = locationFile.getParentFile();
                             File oldLocation = new File(parentDir, oldValue);
                             File newLocation = new File(parentDir, newValue);
-                            if (newLocation.exists())
+                            if (NetworkDrive.exists(newLocation))
                                 moveToDeleted(newLocation);
 
-                            if (oldLocation.exists())
+                            if (NetworkDrive.exists(oldLocation))
                             {
                                 oldLocation.renameTo(newLocation);
                                 fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
@@ -972,18 +973,18 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
      */
     private static boolean moveToDeleted(File fileToMove) throws IOException
     {
-        if (!fileToMove.exists())
+        if (!NetworkDrive.exists(fileToMove))
             return false;
 
         File parent = fileToMove.getParentFile();
 
         File deletedDir = new File(parent, ".deleted");
-        if (!deletedDir.exists())
+        if (!NetworkDrive.exists(deletedDir))
             if (!FileUtil.mkdir(deletedDir))
                 return false;
 
         File newLocation = new File(deletedDir, fileToMove.getName());
-        if (newLocation.exists())
+        if (NetworkDrive.exists(newLocation))
             FileUtil.deleteDir(newLocation);
 
         return fileToMove.renameTo(newLocation);
@@ -1093,7 +1094,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public boolean isValidProjectRoot(String root)
     {
         File f = new File(root);
-        return f.exists() && f.isDirectory();
+        return NetworkDrive.exists(f) && f.isDirectory();
     }
 
     @Override
@@ -1131,7 +1132,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             // If it exists, try deleting the target directory, which will only succeed if it's empty, but would
             // enable using renameTo() method. Don't delete if it's a symbolic link, since it wouldn't be recreated
             // in the same way.
-            if (dest.exists() && !Files.isSymbolicLink(dest.toPath()))
+            if (NetworkDrive.exists(dest) && !Files.isSymbolicLink(dest.toPath()))
                 doRename = dest.delete();
 
             if (doRename && !prev.renameTo(dest))
@@ -1292,7 +1293,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         try {
             java.nio.file.Path assayFilesRoot = getFileRootPath(c, ContentType.assayfiles);
-            if (assayFilesRoot != null && Files.exists(assayFilesRoot))
+            if (NetworkDrive.exists(assayFilesRoot))
             {
                 Map<String, Object> node = createFileSetNode(c, ASSAY_FILES, assayFilesRoot);
                 node.put("default", false);
@@ -1646,7 +1647,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             return null;
 
         File file = new File(absoluteFilePath);
-        if (!file.exists())
+        if (!NetworkDrive.exists(file))
         {
             _log.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
             return null;
@@ -1779,7 +1780,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             File siteRoot = svc.getSiteDefaultRoot();
             File testRoot = new File(siteRoot, FILE_ROOT_SUFFIX);
             testRoot.mkdirs();
-            Assert.assertTrue("Unable to create test file root", testRoot.exists());
+            Assert.assertTrue("Unable to create test file root", NetworkDrive.exists(testRoot));
 
             return testRoot;
         }
@@ -1843,7 +1844,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     _log,
                     false);
 
-            Assert.assertTrue("File not found: " + childFile.getPath(), childFile.exists());
+            Assert.assertTrue("File not found: " + childFile.getPath(), NetworkDrive.exists(childFile));
             ContainerManager.move(subsubfolder, subfolder2, TestContext.get().getUser());
             Container movedSubfolder = ContainerManager.getChild(subfolder2, subsubfolder.getName());
 
@@ -1852,7 +1853,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             assertPathsEqual("SubSubfolder has incorrect root", _expectedPaths.get(movedSubfolder), svc.getFileRoot(movedSubfolder));
 
             File expectedFile = new File(svc.getFileRoot(movedSubfolder, ContentType.files), TXT_FILE);
-            Assert.assertTrue("File was not moved, expected: " + expectedFile.getPath(), expectedFile.exists());
+            Assert.assertTrue("File was not moved, expected: " + expectedFile.getPath(), NetworkDrive.exists(expectedFile));
 
             ExpData movedData = ExperimentService.get().getExpData(data.getRowId());
             Assert.assertNotNull(movedData);
@@ -1938,7 +1939,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             deleteContainerAndFiles(svc, ContainerManager.getForPath(PROJECT2));
 
             File testRoot = getTestRoot();
-            if (testRoot.exists())
+            if (NetworkDrive.exists(testRoot))
             {
                 FileUtil.deleteDir(testRoot);
             }
@@ -1951,7 +1952,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 ContainerManager.deleteAll(c, TestContext.get().getUser());
 
                 File file1 = svc.getFileRoot(c);
-                if (file1 != null && file1.exists())
+                if (NetworkDrive.exists(file1))
                 {
                     FileUtil.deleteDir(file1);
                 }
