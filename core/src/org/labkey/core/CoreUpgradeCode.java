@@ -128,9 +128,9 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
         SQLFragment toLowerSql = new SQLFragment("UPDATE ").append(tableInfo)
-                .append(" SET Name = LOWER(Name) ")
-                .append(" WHERE Container = ? AND NAME LIKE 'SampleNameGenCounter-%'")
-                .add(container);
+            .append(" SET Name = LOWER(Name) ")
+            .append(" WHERE Container = ? AND NAME LIKE 'SampleNameGenCounter-%'")
+            .add(container);
         new SqlExecutor(tableInfo.getSchema()).execute(toLowerSql);
     }
 
@@ -147,9 +147,9 @@ public class CoreUpgradeCode implements UpgradeCode
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
 
         SQLFragment sql = new SQLFragment()
-                .append("SELECT DISTINCT Container\n")
-                .append("FROM ").append(tableInfo, "seq")
-                .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%'");
+            .append("SELECT DISTINCT Container\n")
+            .append("FROM ").append(tableInfo, "seq")
+            .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%'");
 
         @NotNull List<String> containers = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
         if (containers.isEmpty())
@@ -188,13 +188,6 @@ public class CoreUpgradeCode implements UpgradeCode
             .map(host -> new AllowedHost(Directive.Connection, host))
             .toList();
 
-        try
-        {
-            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
-        }
-        catch (JsonProcessingException e)
-        {
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
+        AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
     }
 }

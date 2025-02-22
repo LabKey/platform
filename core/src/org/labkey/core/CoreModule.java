@@ -1050,6 +1050,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
         populateLookAndFeelResourcesWithStartupProps();
+        AllowedExternalResourceHosts.registerStartupProperties();
         AllowedExternalResourceHosts.registerHosts();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();

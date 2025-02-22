@@ -4,9 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Directive;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.StandardStartupPropertyHandler;
+import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JsonUtil;
@@ -32,11 +35,21 @@ public class AllowedExternalResourceHosts
 
     public record AllowedHost(Directive directive, String host) { }
 
-    public static void saveAllowedHosts(@Nullable Collection<AllowedHost> allowedHosts, User user) throws JsonProcessingException
+    public static void saveAllowedHosts(@Nullable Collection<AllowedHost> allowedHosts, User user)
     {
         if (null != allowedHosts)
         {
-            String json = JsonUtil.createDefaultMapper().writeValueAsString(allowedHosts);
+            final String json;
+
+            try
+            {
+                json = JsonUtil.createDefaultMapper().writeValueAsString(allowedHosts);
+            }
+            catch (JsonProcessingException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+                return;
+            }
 
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setAllowedExternalResourceHosts(json);
@@ -79,5 +92,22 @@ public class AllowedExternalResourceHosts
 
         list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources(sub.directive(), sub.host()));
         LOG.debug("Registered [{}] as allowed external sources", list);
+    }
+
+    public static void registerStartupProperties()
+    {
+        ModuleLoader.getInstance().handleStartupProperties(new StandardStartupPropertyHandler<>("AllowedExternalResourceHosts", Directive.class)
+        {
+            @Override
+            public void handle(Map<Directive, StartupPropertyEntry> properties)
+            {
+                List<AllowedHost> allowedHosts = properties.entrySet().stream()
+                    .flatMap(e -> Arrays.stream(e.getValue().getValue().split(" "))
+                        .map(host -> new AllowedHost(e.getKey(), host))
+                    )
+                    .toList();
+                saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
+            }
+        });
     }
 }
