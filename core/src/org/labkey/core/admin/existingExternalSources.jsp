@@ -43,15 +43,17 @@
     function saveAll() {
 
         //clicking on save will save all the values - changed and unchanged values
-        var num = 1;
-        var inputNameExisting = "existingValue" + num;
-        var values = "";
+        let num = 1;
+        let directiveId = "directive" + num;
+        let hostId = "host" + num;
+        let values = "";
 
-        while (null != document.getElementById(inputNameExisting))
+        while (null != document.getElementById(directiveId))
         {
-            values += (document.getElementById(inputNameExisting).value + "\n");
+            values += (document.getElementById(directiveId).getAttribute('data-directive') + "|" + document.getElementById(hostId).value) + "\n";
             num++;
-            inputNameExisting = "existingValue" + num;
+            directiveId = "directive" + num;
+            hostId = "host" + num;
         }
 
         document.getElementById("saveAll").value = true;
@@ -64,7 +66,7 @@
 
     <%
         ExternalSourcesForm bean = (ExternalSourcesForm) HttpView.currentModel();
-        List<Substitution> existingSubstitutions = bean.getExistingSubstitutions();
+        List<Substitution> existingSubstitutions = bean.getSavedSubstitutions();
         existingSubstitutions.sort(Comparator.comparing(Substitution::directive).thenComparing(Substitution::host));
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
@@ -75,14 +77,21 @@
         <%
             int num = 1;
             for (Substitution sub : existingSubstitutions) {
-                String inputNameExisting = "existingValue" + num;
+                String directiveId = "directive" + num;
+                String hostId = "host" + num;
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(sub.directive().getCspDirective())%>" size="20"<%=disabled(isTroubleshooter)%>/></td>
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
+            <td><input type="text" id="<%=h(directiveId)%>" name="<%=h(directiveId)%>" value="<%=h(sub.directive().getCspDirective())%>" data-directive="<%=sub.directive()%>" size="20" disabled/></td>
+            <td><input type="text" id="<%=h(hostId)%>" name="<%=h(hostId)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
-            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(" + q(sub.directive() + ":" + sub.host()) + ");") %>
+            <td><%=isTroubleshooter ?
+                HtmlString.EMPTY_STRING :
+                button("Delete")
+                    .primary(true)
+                    .onClick("return deleteExisting(" +
+                        q(sub.directive() + "|" + sub.host()) + // Using | separator is safe because directive name never contains it
+                        ");") %>
 
             </td>
         </tr>

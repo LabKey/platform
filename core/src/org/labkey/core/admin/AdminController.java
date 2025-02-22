@@ -11189,9 +11189,12 @@ public class AdminController extends SpringActionController
     {
         private boolean _delete;
         private boolean _saveNew;
+        private boolean _saveAll;
+
         private String _newDirective;
         private String _newHost;
         private String _existingValue;
+        private String _existingValues;
 
         public boolean isDelete()
         {
@@ -11213,6 +11216,16 @@ public class AdminController extends SpringActionController
         public void setSaveNew(boolean saveNew)
         {
             _saveNew = saveNew;
+        }
+
+        public boolean isSaveAll()
+        {
+            return _saveAll;
+        }
+
+        public void setSaveAll(boolean saveAll)
+        {
+            _saveAll = saveAll;
         }
 
         public String getNewDirective()
@@ -11248,6 +11261,46 @@ public class AdminController extends SpringActionController
             _existingValue = existingValue;
         }
 
+        public String getExistingValues()
+        {
+            return _existingValues.replace("\r", "");
+        }
+
+        @SuppressWarnings("unused")
+        public void setExistingValues(String existingValues)
+        {
+            _existingValues = existingValues;
+        }
+
+        private Substitution getExistingSubstitution(BindException errors)
+        {
+            return getSubstitution(getExistingValue(), errors);
+        }
+
+        private Substitution getSubstitution(String value, BindException errors)
+        {
+            String[] parts = value.split("\\|", 2); // Stop after the first bar to produce two parts
+            if (parts.length != 2)
+            {
+                errors.addError(new LabKeyError("Can't parse substitution."));
+                return null;
+            }
+            Directive dir = EnumUtils.getEnum(Directive.class, parts[0], null);
+            if (null == dir)
+            {
+                errors.addError(new LabKeyError("Unknown directive."));
+                return null;
+            }
+            return new Substitution(dir, parts[1]);
+        }
+
+        private List<Substitution> getExistingSubstitutions(BindException errors)
+        {
+            return Arrays.stream(getExistingValues().split("\n"))
+                .map(value->getSubstitution(value, errors))
+                .toList();
+        }
+
         private List<Substitution> validateNewSubstitution(BindException errors) throws JsonProcessingException
         {
             Directive directive = EnumUtils.getEnum(Directive.class, getNewDirective());
@@ -11273,13 +11326,13 @@ public class AdminController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            List<Substitution> ret = getExistingSubstitutions();
+            List<Substitution> ret = getSavedSubstitutions();
             ret.add(new Substitution(directive, host));
 
             return ret;
         }
 
-        public List<Substitution> getExistingSubstitutions() throws JsonProcessingException
+        public List<Substitution> getSavedSubstitutions() throws JsonProcessingException
         {
             return AllowedExternalResourceHosts.readSubstitutions();
         }
@@ -11316,41 +11369,28 @@ public class AdminController extends SpringActionController
             //handle delete of existing value
             if (form.isDelete())
             {
-                String subToDelete = form.getExistingValue();
-                String[] parts = subToDelete.split(":", 2);
-                if (parts.length != 2)
-                {
-                    errors.addError(new LabKeyError("Can't parse substitution."));
+                Substitution subToDelete = form.getExistingSubstitution(errors);
+                if (errors.hasErrors())
                     return false;
-                }
-                Directive dir = EnumUtils.getEnum(Directive.class, parts[0], null);
-                if (null == dir)
-                {
-                    errors.addError(new LabKeyError("Unknown directive."));
-                    return false;
-                }
-                Substitution delete = new Substitution(dir, parts[1]);
-                substitutions = form.getExistingSubstitutions();
+                substitutions = form.getSavedSubstitutions();
                 var iter = substitutions.listIterator();
                 while (iter.hasNext())
                 {
                     Substitution sub = iter.next();
-                    if (sub.equals(delete))
+                    if (sub.equals(subToDelete))
                     {
                         iter.remove();
                         break;
                     }
                 }
             }
-//            //handle updates - clicking on Save button under Existing will save the updated urls
-//            else if (form.isSaveAll())
-//            {
-//                Set<String> validatedValues = form.validateValues(errors);
-//                if (errors.hasErrors())
-//                    return false;
-//
-//                allowListType.setValues(validatedValues.stream().toList(), getUser());
-//            }
+            //handle updates - clicking on Save button under Existing will save the updated urls
+            else if (form.isSaveAll())
+            {
+                substitutions = form.getExistingSubstitutions(errors);
+                if (errors.hasErrors())
+                    return false;
+            }
             //save new external value
             else if (form.isSaveNew())
             {

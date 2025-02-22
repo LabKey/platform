@@ -60,7 +60,7 @@
             <td>&nbsp;<input name="newHost" id="newHostTextField" size="75" /></td>
         </tr>
         <tr>
-            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Save").submit(true) %></td>
+            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Add").submit(true) %></td>
         </tr>
     </table>
 </labkey:form>

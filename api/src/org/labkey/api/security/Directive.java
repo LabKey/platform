@@ -1,10 +1,12 @@
 package org.labkey.api.security;
 
+import org.labkey.api.util.SafeToRenderEnum;
+
 /**
  * All CSP directives that support substitutions. These constant names are persisted to the database, so be careful with
  * any changes. If adding a Directive, make sure to add the corresponding substitutions to application.properties.
  */
-public enum Directive
+public enum Directive implements SafeToRenderEnum
 {
     Connection("connect-src"),
     Font("font-src"),
