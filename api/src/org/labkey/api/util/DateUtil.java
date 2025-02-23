@@ -1515,6 +1515,18 @@ Parse:
             }
         }
 
+        void assertIllegalFromTimeString(String s, boolean strict)
+        {
+            try
+            {
+                DateUtil.fromTimeString(s, strict);
+                fail("Not a legal time: " + s);
+            }
+            catch (ConversionException x)
+            {
+            }
+        }
+
         @Test
         public void testDateTimeUS() throws ParseException
         {
@@ -1929,6 +1941,19 @@ Parse:
 
             assertIllegalTime("1830");
             assertIllegalTime("19999 pm");
+            assertIllegalFromTimeString("19999 pm", false);
+            assertIllegalFromTimeString("19999 pm", true);
+
+            assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("3", true));
+            assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("03", true));
+            assertEquals(java.sql.Time.valueOf("6:00:00"), fromTimeString("0030", false));
+            assertIllegalFromTimeString("0030", true);
+            assertEquals(java.sql.Time.valueOf("21:00:00"), fromTimeString("0069", false));
+            assertIllegalFromTimeString("0069", true);
+            assertIllegalFromTimeString("0070", false);
+            assertIllegalFromTimeString("0070", true);
+            assertIllegalFromTimeString("1830", false);
+            assertIllegalFromTimeString("1830", true);
         }
 
         @Test
