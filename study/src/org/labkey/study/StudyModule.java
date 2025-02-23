@@ -68,6 +68,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -83,6 +84,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
@@ -94,6 +96,11 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
+import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
+import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
+import org.labkey.api.studydesign.query.StudyProductDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JspTestCase;
@@ -413,6 +420,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "Allow unprovisioned, query-based dataset snapshots to be created.",
                 false);
 
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
+                "Restore Study Protocol Design Tools",
+                "This option and all support for study protocol design tools and tables will be removed in LabKey Server v25.7.",
+                false, false, FeatureType.Deprecated));
+
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
@@ -512,6 +524,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
+
+        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        {
+            // study design domains
+            PropertyService.get().registerDomainKind(new StudyProductDomainKind());
+            PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
+            PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
+            PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
+            PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
+        }
     }
 
     @Override

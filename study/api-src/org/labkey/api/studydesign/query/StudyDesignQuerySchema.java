@@ -8,9 +8,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
-import org.labkey.api.studydesign.StudyDesignManager;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -85,8 +88,18 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
     @Nullable
     public static StudyDesignQuerySchema get(UserSchema userSchema, Container c, @Nullable Study study, @Nullable Role contextualRole)
     {
-        // return StudyDesignManager.get().isModuleActive(c) ? new StudyDesignQuerySchema(userSchema, study, contextualRole) : null;
-        return new StudyDesignQuerySchema(userSchema, study, contextualRole);
+        return OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG)
+                ? new StudyDesignQuerySchema(userSchema, study, contextualRole)
+                : null;
+    }
+
+    @Nullable
+    public static StudyDesignQuerySchema get(Study study, User user)
+    {
+        UserSchema schema = StudyService.get().getStudyQuerySchema(study, user);
+        if (schema != null)
+            return get(schema, schema.getContainer(), study, null);
+        return null;
     }
 
     public UserSchema getParentSchema()
