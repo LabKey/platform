@@ -159,7 +159,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
         _register(new _IntegerConverter(), Integer.TYPE);
         _register(new NullSafeConverter(new LenientSqlDateConverter()), java.sql.Date.class);
-        _register(new NullSafeConverter(new TimeConverter()), java.sql.Time.class);
+        _register(new NullSafeConverter(new LenientTimeConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);
         _register(new NullSafeConverter(new _LongConverter()), Long.class);
@@ -295,7 +295,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
-    public static class TimeConverter implements Converter
+    public static class LenientTimeConverter implements Converter
     {
         @Override
         public Object convert(Class clss, Object o)
