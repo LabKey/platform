@@ -6,10 +6,9 @@
  *
  * Port of MiniProfiler: https://github.com/MiniProfiler/ui
  */
-
   <div class="profiler-result">
     <div class="profiler-button {{= it.hasDuplicateCustomTimings ? 'profiler-warning' : '' }}" title="{{! it.name }}">
-      <span class="profiler-number">
+      {{! it.name }}<span class="profiler-number">
         {{= this.formatDuration(it.duration) }} <span class="profiler-unit">ms</span>
       </span>
       {{? it.hasDuplicateCustomTimings }}<span class="profiler-nuclear">!</span>{{?}}
@@ -230,4 +229,3 @@
 <script id="customGapTemplate" type="text/x-dot-template">
 
 </script>
-

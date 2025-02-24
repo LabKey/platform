@@ -28,6 +28,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="static org.labkey.core.view.template.bootstrap.PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS" %>
+<%@ page import="org.labkey.api.miniprofiler.MiniProfiler" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -78,9 +80,10 @@
                %><%=unsafe(script)%><%
            }
        }
+   var bodyCss = HtmlString.unsafe(MiniProfiler.isEnabled(context) ? "margin-right:20%;" : "");
 %>
 </head>
-<body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
+<body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>" style="<%=bodyCss%>">
 <%
     if (context.isRobot() && StringUtils.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
     {
@@ -111,7 +114,10 @@
     </div>
 </footer>
 <% }
-if (null != me.getViewContext().getContainer()) {
+    if (MiniProfiler.isEnabled(context))  { %>
+<div id="miniprofilerSidePanel" style="position:fixed; top:0 ; left:80% ; width:20% ; height:100%; background-color:pink; border: 1px solid black; padding: 4px;"></div>
+<% }
+    if (null != me.getViewContext().getContainer()) {
 %><a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a><%
 }
 %><!-- <%= h(request.getHeader("User-Agent")) %> -->

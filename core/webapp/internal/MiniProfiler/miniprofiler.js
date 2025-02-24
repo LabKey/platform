@@ -855,7 +855,6 @@ LABKEY.internal.MiniProfiler = new function () {
             // before showing the one we clicked
             popupShow(button, popup);
         }
-
     }
 
     function popupShow(button, popup) {
@@ -872,23 +871,25 @@ LABKEY.internal.MiniProfiler = new function () {
         var rect = button.getBoundingClientRect(),
             top = rect.top - 1, // position next to the button we clicked
             windowHeight = window.innerHeight,
-            //maxHeight = windowHeight - top - 40, // make sure the popup doesn't extend below the fold
             isBottom = _options.renderPosition.indexOf("bottom") != -1; // is this rendering on the bottom (if no, then is top by default)
 
-        if (isBottom) {
-            var bottom = windowHeight - top - rect.height, // get bottom of button
-                isLeft = _options.renderPosition.indexOf("left") != -1;
+        // if (isBottom) {
+        //     var bottom = windowHeight - top - rect.height, // get bottom of button
+        //         isLeft = _options.renderPosition.indexOf("left") != -1;
+        //
+        //     var horizontalPosition = isLeft ? "left" : "right";
+        //     setStyle(popup, 'bottom', bottom + "px");
+        //     //setStyle(popup, 'max-height', maxHeight);
+        //     setStyle(popup, horizontalPosition, (rect.width - 3) + "px"); // move left or right, based on config
+        // }
+        // else {
+        //     setStyle(popup, 'top', top);
+        //     //setStyle(popup, 'max-height', maxHeight);
+        //     setStyle(popup, _options.renderPosition, (rect.width - 3) + "px"); // move left or right, based on config
+        // }
 
-            var horizontalPosition = isLeft ? "left" : "right";
-            setStyle(popup, 'bottom', bottom + "px");
-            //setStyle(popup, 'max-height', maxHeight);
-            setStyle(popup, horizontalPosition, (rect.width - 3) + "px"); // move left or right, based on config
-        }
-        else {
-            setStyle(popup, 'top', top);
-            //setStyle(popup, 'max-height', maxHeight);
-            setStyle(popup, _options.renderPosition, (rect.width - 3) + "px"); // move left or right, based on config
-        }
+        setStyle(popup, 'top', Math.min(rect.top, windowHeight-rect.height) + "px");
+        setStyle(popup, 'right', (rect.width - 3) + "px");
     }
 
     function popupPreventHorizontalScroll(popup) { }
@@ -1036,6 +1037,29 @@ LABKEY.internal.MiniProfiler = new function () {
         }
     }
 
+    function initSideBarView() {
+        if (_options.authorized) {
+            // all fetched profilings will go in here
+            _container =  document.getElementById("miniprofilerSidePanel");
+            _container.className = 'profiler-results';
+
+            // we'll render results json via a jquery.tmpl - after we get the templates, we'll fetch the initial json to populate it
+            fetchTemplates(function () {
+                //console.log("initialized");
+                _initialized = true;
+
+                // get master page profiler results
+                fetchResults(_options.ids);
+            });
+        }
+        else {
+            fetchResults(_options.ids);
+        }
+
+        // some elements want to be hidden on certain doc events
+        bindDocumentEvents();
+    }
+
     function initPopupView() {
         if (_options.authorized) {
             // all fetched profilings will go in here
@@ -1044,7 +1068,7 @@ LABKEY.internal.MiniProfiler = new function () {
             document.body.appendChild(_container);
 
             // Sets which corner to render in - default is upper left
-            _container.classList.add("profiler-" + (_options.renderPosition ? _options.renderPosition : "bottomright"));
+            _container.classList.add("profiler-" + (_options.renderPosition ? _options.renderPosition : "upperleft"));
 
             // initialize the controls
             initControls(_container);
@@ -1144,7 +1168,8 @@ LABKEY.internal.MiniProfiler = new function () {
         _options = config;
 
         var doInit = function () {
-            initPopupView();
+            // initPopupView();
+            initSideBarView();
         };
 
         var wait = 0;
