@@ -638,7 +638,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             for (ColumnInfo from : _inner.getColumns())
             {
-                String name = StringUtils.defaultString(_map.get(from.getName()), from.getName());
+                String name = Objects.toString(_map.get(from.getName()), from.getName());
                 AliasedColumn to = new AliasedColumn(this, new FieldKey(null, name), from, true)
                 {
                     @Override

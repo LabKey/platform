@@ -151,12 +151,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, Class<? extends Permission> acl)
     {
-        var ret = getQueryTable().hasPermission(user, acl);
-        {
-            if (!ret)
-                return  getQueryTable().hasPermission(user, acl);
-        }
-        return ret;
+        return getQueryTable().hasPermission(user, acl);
     }
 
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys, boolean allowCrossContainer)
@@ -335,10 +330,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasImportRowsPermission(user, container, context))
-        {
-            if (!hasImportRowsPermission(user, container, context))
-                throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
-        }
+            throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
             assert(getQueryTable().supportsInsertOption(context.getInsertOption()));

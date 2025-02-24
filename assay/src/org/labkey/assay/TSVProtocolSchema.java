@@ -34,6 +34,8 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
@@ -66,6 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class TSVProtocolSchema extends AssayProtocolSchema
 {
@@ -260,14 +263,32 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             setDescription("Represents the replicate statistics for a plate based assay containing replicate well groups.");
             setName("PlateReplicateStats");
             setPublicSchemaName(_userSchema.getSchemaName());
+            FieldKey lsidFieldKey = FieldKey.fromParts("Lsid");
+            Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 var columnInfo = wrapColumn(col);
-                if (col.getName().equals("Lsid"))
+                if (col.isHidden())
+                    columnInfo.setHidden(true);
+
+                if (lsidFieldKey.equals(col.getFieldKey()))
                 {
                     columnInfo.setHidden(true);
                     columnInfo.setKeyField(true);
+                }
+
+                // Issue 52283 : copy the property descriptor settings
+                String propertyURI = col.getPropertyURI();
+                DomainProperty dp = propertyURI != null ? domain.getPropertyByURI(propertyURI) : null;
+                if (dp != null)
+                {
+                    PropertyDescriptor pd = dp.getPropertyDescriptor();
+                    if (pd != null)
+                    {
+                        defaultsSupplier = PropertyColumn.copyAttributes(userSchema.getUser(), columnInfo, dp, getContainer(), null, containerFilter, defaultsSupplier);
+                        columnInfo.setFieldKey(FieldKey.fromParts(dp.getName()));
+                    }
                 }
                 addColumn(columnInfo);
             }

@@ -35,6 +35,8 @@ import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.util.time.CalendarParts;
+import org.labkey.api.util.time.ParseDateTimeEN;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -59,14 +61,21 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
+
+import static java.util.Calendar.AM_PM;
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.HOUR;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.JANUARY;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.YEAR;
 
 
 public class DateUtil
@@ -75,17 +84,10 @@ public class DateUtil
     {
     }
 
-    private static long MILLIS_PER_HOUR = TimeUnit.HOURS.toMillis(1);
-    private static long MILLIS_PER_MINUTE = TimeUnit.MINUTES.toMillis(1);
-    private static long MILLIS_PER_SECOND = TimeUnit.SECONDS.toMillis(1);
-
     private static final Logger LOG = LogHelper.getLogger(DateUtil.class, "Fill in description");
     private static final Map<Integer, TimeZone> tzCache = new ConcurrentHashMap<>();
     private static final Locale _localeDefault = Locale.getDefault();
     private static final TimeZone _timezoneDefault = TimeZone.getDefault();
-    private static final int currentYear = new GregorianCalendar().get(Calendar.YEAR);
-    private static final int twoDigitCutoff = (currentYear - 80) % 100;
-    private static final int defaultCentury = (currentYear - 80) - twoDigitCutoff;
 
     private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
     private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
@@ -201,12 +203,12 @@ public class DateUtil
     private static Calendar newCalendar(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms, boolean strict)
     {
         Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, ms);
-        if (strict && (cal.get(Calendar.YEAR) != year ||
-                cal.get(Calendar.MONTH) != mon ||
+        if (strict && (cal.get(YEAR) != year ||
+                cal.get(MONTH) != mon ||
                 cal.get(Calendar.DAY_OF_MONTH) != mday ||
                 cal.get(Calendar.HOUR_OF_DAY) != hour ||
                 cal.get(Calendar.MINUTE) != min ||
-                cal.get(Calendar.SECOND) != sec ||
+                cal.get(SECOND) != sec ||
                 cal.get(Calendar.MILLISECOND) != ms))
             throw new IllegalArgumentException();
         return cal;
@@ -231,12 +233,12 @@ public class DateUtil
     {
         StringBuilder sb = new StringBuilder("1999-12-31 23:59:59.999".length());
         Calendar c = newCalendar(l);
-        int year = c.get(Calendar.YEAR);
-        int month = c.get(Calendar.MONTH)+1;
+        int year = c.get(YEAR);
+        int month = c.get(MONTH)+1;
         int day = c.get(Calendar.DAY_OF_MONTH);
         int hour = c.get(Calendar.HOUR_OF_DAY);
         int min = c.get(Calendar.MINUTE);
-        int sec = c.get(Calendar.SECOND);
+        int sec = c.get(SECOND);
         int ms = c.get(Calendar.MILLISECOND);
 
         if (year < 0)
@@ -304,118 +306,126 @@ public class DateUtil
     }
 
 
-    /**
-     * Javascript style parsing, assumes US locale
-     * Copied from RHINO (www.mozilla.org/rhino) and modified
-     */
-
-    enum Month
+    public enum DateTimeOption
     {
-        january(0),february(1),march(2),april(3),may(4),june(5),july(6),august(7),september(8),october(9),november(10),december(11);
-        final int month;
-        Month(int i)
-        {
-            month = i;
-        }
-    }
-
-    enum Weekday
-    {
-        monday,tuesday,wednesday,thursday,friday,saturday,sunday
-    }
-
-    enum AMPM
-    {
-        am, pm
-    }
-
-    @SuppressWarnings("PointlessArithmeticExpression")
-    enum TZ
-    {
-        z("UTC"),gmt("UTC"),ut("UTC"),utc("UTC"),
-        // North America
-        est(-5*60),edt(-4*60),cst(-6*60),cdt(-5*60),mst(-7*60),mdt(-6*60),pst(-8*60),pdt(-7*60),
-        // Europe
-        wet("WET"), cet("CET"), eet("EET"),
-        west(+1*60), cest(+2*60), eest(+3*60)
-        ;
-
-        TimeZone tz=null;
-        int tzoffset=-1;
-        TZ(int tzoffset)
-        {
-            this.tzoffset = tzoffset;
-        }
-        TZ(String id)
-        {
-            tz = TimeZone.getTimeZone(id);
-            assert !"GMT".equals(tz.getID());
-        }
-    }
-
-    enum ISO
-    {
-        t    // T : time marker
-    }
-
-    private static final NavigableMap<String, Enum<?>> PARTS_MAP = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
-    static
-    {
-        Stream.of(AMPM.values(), Month.values(), Weekday.values(), TZ.values(), ISO.values())
-            .flatMap(Arrays::stream)
-            .forEach(e -> PARTS_MAP.put(e.name(), e));
-    }
-
-    private static @Nullable Enum<?> resolveDatePartEnum(String s)
-    {
-        // Require an exact match if s is one character long
-        if (s.length() < 2)
-            return PARTS_MAP.get(s);
-
-        // If s is longer than one character then find first key with s as its prefix
-        Entry<String, Enum<?>> entry = PARTS_MAP.ceilingEntry(s);
-
-        return (null != entry && StringUtils.startsWithIgnoreCase(entry.getKey(), s)) ? entry.getValue() : null;
-    }
-
-    // this handles a token (no spaces) and returns an Enum|TimeZone
-    private static Object resolveDatePart(String s)
-    {
-        Enum<?> e = resolveDatePartEnum(s);
-
-        if (null != e)
-            return e instanceof TZ && (null != ((TZ)e).tz) ? ((TZ)e).tz : e;
-
-        TimeZone tz = TimeZone.getTimeZone(s);
-        // getTimeZone() unhelpfully returns GMT if the id is not recognized
-        if ("GMT".equals(tz.getID()))
-            return null;
-        return tz;
-    }
-
-// Coming soon...
-//    private static final DateParser timezoneFormat = new getDateParser("zzz");
-//
-//    private static TimeZone lookingAtTZ(String s, ParsePosition pos)
-//    {
-//        Calendar c = new _Calendar(null);
-//        // I like using
-//        int startIndex = pos.getIndex();
-//        if (!timezoneFormat.parse(s, pos, c))
-//            return null;
-//        if (null != c.getTimeZone())
-//            return c.getTimeZone();
-//        if (c.isSet(Calendar.ZONE_OFFSET))
-//            return getTimeZoneForOffsetInMinutes(c.get(Calendar.ZONE_OFFSET) / (60*1_000));
-//        return null;
-//    }
-
-    private enum DateTimeOption
-    {
-        DateTime,
-        DateOnly,
+        DateTime
+                {
+                    @Override
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
+                    {
+                        // consider supporting other date combos, (week of year, etc.)
+                        if (!parts.isSet(YEAR, MONTH, DAY_OF_MONTH))
+                            return false;
+                        if (!parts.isTimezoneSet())
+                            parts.setTimeZone(_timezoneDefault);
+                        parts.setCalendar(cal);
+                        // if lenient==false, then computeTime() (called by getTimeInMillis()) will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() || (
+                                cal.get(YEAR) == parts.getYear() &&
+                                cal.get(MONTH) == parts.getMonth() &&
+                                cal.get(DAY_OF_MONTH) == parts.getDayOfMonth() &&
+                                (!parts.isSet(HOUR) || parts.get(HOUR) < 12) &&
+                                (!parts.isSet(HOUR_OF_DAY) || parts.get(HOUR_OF_DAY) < 23) ||
+                                (!parts.isSet(MINUTE) || parts.get(MINUTE) < 60) ||
+                                (!parts.isSet(SECOND) || parts.get(SECOND) < 60) ||
+                                (!parts.isSet(MILLISECOND) || parts.getNanos() < 1_000_000_000));
+                        return true;
+                    }
+                },
+        DateOnly
+                {
+                    @Override
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
+                    {
+                        if (!parts.isSet(YEAR,MONTH,DAY_OF_MONTH))
+                            return false;
+                        if (parts.isHourSet() || parts.anySet(MINUTE,SECOND))
+                            return false;
+                        parts.clearTimezone();
+                        parts.setTimeZone(_timezoneDefault);
+                        parts.setCalendar(cal);
+                        // if lenient==false, then computeTime() will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() || (
+                                cal.get(YEAR) == parts.getYear() &&
+                                cal.get(MONTH) == parts.getMonth() &&
+                                cal.get(DAY_OF_MONTH) == parts.getDayOfMonth());
+                        return true;
+                    }
+                },
         TimeOnly
+                {
+                    @Override
+                    public boolean toCalendar(CalendarParts parts, Calendar cal)
+                    {
+                        if (parts.anySet(YEAR,MONTH,DAY_OF_MONTH))
+                        {
+                            // We've allowed TimeOnly parsing to ignore the date part of a string (CONSIDER changing that)
+                            // However, don't accept part of a date.
+                            if (!cal.isLenient() || !parts.isSet(YEAR,MONTH,DAY_OF_MONTH))
+                                return false;
+                        }
+                        if (!parts.isHourSet() && !parts.anySet(MINUTE, SECOND))
+                            return false;
+                        if (!cal.isLenient())
+                        {
+                            if (null != parts.getTimeZone())
+                                return false;
+                        }
+                        // just copy time fields
+                        for (int field : Arrays.asList(HOUR,AM_PM,HOUR_OF_DAY,MINUTE,SECOND,MILLISECOND))
+                            if (parts.isSet(field))
+                                cal.set(field, parts.get(field));
+                        cal.set(YEAR, 1970);
+                        cal.set(MONTH, JANUARY);
+                        cal.set(DAY_OF_MONTH, 1);
+                        // if lenient==false, then computeTime() will validate that no parts are out of range
+                        cal.getTimeInMillis();
+                        assert cal.isLenient() ||
+                                (!parts.isSet(HOUR) || parts.get(HOUR) < 12) &&
+                                (!parts.isSet(HOUR_OF_DAY) || parts.get(HOUR_OF_DAY) < 23) ||
+                                (!parts.isSet(MINUTE) || parts.get(MINUTE) < 60) ||
+                                (!parts.isSet(SECOND) || parts.get(SECOND) < 60) ||
+                                (!parts.isSet(MILLISECOND) || parts.getNanos() < 1_000_000_000);
+                        return true;
+                    }
+                };
+
+
+        public abstract boolean toCalendar(CalendarParts parts, Calendar cal);
+
+        public java.util.Date toJavaDate(CalendarParts parts, boolean lenient) throws ConversionException
+        {
+            _Calendar cal = new _Calendar(_timezoneDefault, _localeDefault);
+            cal.setLenient(lenient);
+            if (!toCalendar(parts, cal))
+                return null;
+            return cal.getTime();
+        }
+
+        public java.sql.Timestamp toSqlTimestamp(CalendarParts parts, boolean lenient) throws ConversionException
+        {
+            if (parts.getNanos() < 0 || parts.getNanos() >= 1_000_000_000L)
+                return null;
+            _Calendar cal = new _Calendar(_timezoneDefault, _localeDefault);
+            cal.setLenient(lenient);
+            if (!toCalendar(parts, cal))
+                return null;
+            var ts = new java.sql.Timestamp(cal.getTimeInMillis());
+            ts.setNanos((int)parts.getNanos());
+            return ts;
+        }
+
+        public java.sql.Date toSqlDate(CalendarParts parts, boolean lenient) throws ConversionException
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public java.sql.Timestamp toSqlTime(CalendarParts parts, boolean lenient) throws ConversionException
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public enum MonthDayOption
@@ -429,7 +439,7 @@ public class DateUtil
         return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY,  strict);
     }
 
-    static TimeZone getTimeZoneForOffsetInMinutes(int offsetInMinutes)
+    public static TimeZone getTimeZoneForOffsetInMinutes(int offsetInMinutes)
     {
         return tzCache.computeIfAbsent(offsetInMinutes, tzoffset ->
             {
@@ -445,390 +455,16 @@ public class DateUtil
 
     private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
     {
-        Month month = null; // set if month is specified using name
-        int year = -1;
-        int mon = -1;
-        int mday = -1;
-        int hour = -1;
-        int min = -1;
-        int sec = -1;
-        double nanos = -1;
-        int decimalPosition = 1_000_000_000;    // used to compute nanos
-        char c, si;
-        int i = 0;
-        int n, digits;
-        int tzoffset = -1;
-        TimeZone tz = null;
-        char prevc = 0;
-        boolean seenplusminus = false;
-        boolean monthexpected = false;
-
-        int limit = s.length();
-        while (i < limit)
-        {
-            c = s.charAt(i);
-            i++;
-            if (c <= ' ' || c == ',' || c == '-')
-            {
-                if (i < limit)
-                {
-                    si = s.charAt(i);
-                    if (c == '-' && '0' <= si && si <= '9')
-                    {
-                        prevc = c;
-                    }
-                }
-                continue;
-            }
-
-            if (c == '(')
-            {
-                int start = i;
-                while (i < limit && s.charAt(i) != ')')
-                    i++;
-                if (i == limit)
-                    throw new ConversionException("Could not parse timezone specification: " + s.substring(start-1));
-
-                // Parse the text inside parentheses if time zone hasn't been specified yet, otherwise ignore it. See #20932.
-                if (null == tz && -1 == tzoffset)
-                {
-                    String spec = s.substring(start, i);
-                    Object dp = resolveDatePart(spec);
-                    if (dp instanceof TimeZone)
-                        tz = (TimeZone) dp;
-                    else if (dp instanceof TZ)
-                        tzoffset = ((TZ) dp).tzoffset;
-                    else
-                        throw new ConversionException("Could not parse timezone specification: " + spec);
-                }
-
-                i++;
-                continue;
-            }
-
-            if ('0' <= c && c <= '9')
-            {
-                n = c - '0';
-                digits = 1;
-                while (i < limit && '0' <= (c = s.charAt(i)) && c <= '9')
-                {
-                    digits++;
-                    n = n * 10 + c - '0';
-                    i++;
-                }
-
-                /* allow TZA before the year, so
-                 * 'Wed Nov 05 21:49:11 GMT-0800 1997'
-                 * works */
-
-                /* uses of seenplusminus allow : in TZA, so Java
-                 * no-timezone style of GMT+4:30 works
-                 */
-validNum:       {
-                    // handle yyyyMMdd
-                    if (0 == prevc && 8 == digits)
-                    {
-                        if (year != -1 || mon != -1 || mday != -1)
-                            throw new ConversionException(s);
-                        mday = n % 100;
-                        n = n / 100;
-                        mon = (n % 100) - 1;
-                        n = n / 100;
-                        year = n;
-                        // not sure why we have this range check, but this was what parseYYYYMMDD() did
-                        if (year < 1800 || year > 2200)
-                            throw new ConversionException("Year out of range from 1800-2200: " + year, null);
-                        if (mon < 0 || mon > 11)
-                            throw new ConversionException(s);
-                        if (mday < 1 || mday > 31)
-                            throw new ConversionException(s);
-                        break validNum;
-                    }
-                    if ((prevc == '+' || prevc == '-') && hour >= 0 /* && year>=0 */)
-                    {
-                        /* make ':' case below change tzoffset */
-                        seenplusminus = true;
-
-                        /* offset */
-                        if (n < 24)
-                            n = n * 60; /* EG. "GMT-3" */
-                        else
-                            n = n % 100 + n / 100 * 60; /* eg "GMT-0430" */
-                        if (prevc == '-')
-                            n = -n;
-                        if ((tz != null && tz.getRawOffset() != 0) || (tzoffset != 0 && tzoffset != -1))
-                            throw new ConversionException(s);
-                        tzoffset = n;
-                        tz = null;
-                        break validNum;
-                    }
-                    if (digits > 3 || (n >= 70 && prevc != ':') || ((prevc == '/' || prevc == '-' || prevc == '.') && mon >= 0 && mday >= 0 && year < 0))
-                    {
-                        if (year >= 0)
-                            throw new ConversionException(s);
-                        else if (c <= ' ' || c == ',' || c == '/' || c == '-' || c == '.' || i >= limit)
-                        {
-                            if (n >= 100 || digits > 3)
-                                year = n;
-                            else if (n > twoDigitCutoff)
-                                year = n + defaultCentury;
-                            else
-                                year = n + defaultCentury + 100;
-                        }
-                        else
-                            throw new ConversionException(s);
-                        break validNum;
-                    }
-                    if (c == ':' || (hour < 0 && option == DateTimeOption.TimeOnly))
-                    {
-                        if (c == '/' || c == '.')
-                            throw new ConversionException(s);
-                        else if (hour < 0)
-                            hour = n;
-                        else if (min < 0)
-                            min = n;
-                        else if (sec < 0)
-                            sec = n;
-                        else
-                            throw new ConversionException(s);
-                        break validNum;
-                    }
-                    // '.' can also be a date separator so check for fractional second before parsing date separator
-                    if (c == '.' && min >= 0 && sec < 0)
-                    {
-                        sec = n;
-                        i++;
-                        nanos = 0;
-                        while (i < limit && '0' <= (c = s.charAt(i)) && c <= '9')
-                        {
-                            decimalPosition /= 10;
-                            nanos += decimalPosition * (c - '0');
-                            i++;
-                        }
-                        break validNum;
-                    }
-                    if (c == '/' || c == '-' || c == '.')
-                    {
-                        if (c == '/' && option == DateTimeOption.TimeOnly)
-                            throw new ConversionException(s);
-                        if (md == MonthDayOption.MONTH_DAY || year >= 0)
-                        {
-                            if (mon < 0)
-                                mon = n - 1;
-                            else if (mday < 0)
-                                mday = n;
-                            else
-                                throw new ConversionException(s);
-                        }
-                        else
-                        {
-                            if (mday < 0)
-                                mday = n;
-                            else if (mon < 0)
-                                mon = n - 1;
-                            else
-                                throw new ConversionException(s);
-                        }
-                        break validNum;
-                    }
-                    if (i < limit)
-                    {
-                        if (mday < 0 && -1 != "jfmasondJFMASOND".indexOf(c))
-                        {
-                            monthexpected = true;
-                        }
-                        else if (c > ' ' && -1 == ",-ZTaApP".indexOf(c))
-                        {
-                            throw new ConversionException(s);
-                        }
-                    }
-                    if (seenplusminus && n < 60)
-                    {  /* handle GMT-3:30 */
-                        if (tzoffset < 0)
-                            tzoffset -= n;
-                        else
-                            tzoffset += n;
-                        break validNum;
-                    }
-                    if (hour >= 0 && min < 0)
-                    {
-                        min = n;
-                        break validNum;
-                    }
-                    if (min >= 0 && sec < 0)
-                    {
-                        sec = n;
-                        break validNum;
-                    }
-                    // handle crazy FCS format hh:mm:ss:jiffy format (e.g. 1/60 sec)
-                    if (sec >= 0 && nanos < 0 && prevc == ':')
-                    {
-                        nanos = 1_000_000_000.0 * n / 60;
-                        break validNum;
-                    }
-                    if (mday < 0)
-                    {
-                        mday = n;
-                        break validNum;
-                    }
-                    else
-                    {
-                        throw new ConversionException(s);
-                    }
-                } // validNum: end of number handling
-                prevc = 0;
-            }
-            else if (c == '/' || c == ':' || c == '+' || c == '.')
-            {
-                prevc = c;
-            }
-            else
-            {
-                int st = i - 1;
-                while (i < limit)
-                {
-                    c = s.charAt(i);
-                    if (!(('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')))
-                        break;
-                    i++;
-                }
-                Object dp = resolveDatePart(s.substring(st,i));
-                if (null == dp)
-                    throw new ConversionException(s);
-                if (option != DateTimeOption.TimeOnly && monthexpected && !(dp instanceof Month))
-                    throw new ConversionException(s);
-                monthexpected = false;
-                if (dp == ISO.t)
-                {
-                    if (hour >= 0 || min >= 0 || sec >= 0)
-                        throw new ConversionException(s);
-                }
-                else if (dp == AMPM.am || dp == AMPM.pm)
-                {
-                    /*
-                     * AM/PM. Count 12:30 AM as 00:30, 12:30 PM as
-                     * 12:30, instead of blindly adding 12 if PM.
-                     */
-                    if (hour > 12 || hour < 0)
-                    {
-                        throw new ConversionException(s);
-                    }
-                    else if (dp == AMPM.am)
-                    {
-                        // AM
-                        if (hour == 12)
-                            hour = 0;
-                    }
-                    else
-                    {
-                        // PM
-                        if (hour != 12)
-                            hour += 12;
-                    }
-                }
-                else //noinspection StatementWithEmptyBody
-                    if (dp instanceof Weekday)
-                {
-                    // ignore week days
-                }
-                else if (dp instanceof Month)
-                {
-                    // month
-                    if (mon < 0)
-                    {
-                        month = (Month)dp;
-                        mon = month.month;
-                    }
-                    else if (mday < 0 && month == null)
-                    {
-                        // handle 01/Jan/2001 case (strange I know, the customer is always right)
-                        month = (Month)dp;
-                        mday = mon+1;
-                        mon = month.month;
-                    }
-                    else
-                    {
-                        throw new ConversionException(s);
-                    }
-                    // handle "01Jan2001" or "01 Jan 2001" pretend we're seeing 01/Jan/2001
-                    if (i < limit && year < 0)
-                        prevc = '/';
-                }
-                else if (dp instanceof TimeZone)
-                {
-                    tz = (TimeZone)dp;
-                }
-                else
-                {
-                    tzoffset = ((TZ)dp).tzoffset;
-                }
-            }
-        }
-
-        switch (option)
-        {
-            case DateOnly:
-                if (hour >= 0 || min >= 0 || sec >= 0 || tzoffset >= 0)
-                    throw new ConversionException(s);
-                // fall through
-            case DateTime:
-                if (year < 0 || mon < 0 || mday < 0)
-                    throw new ConversionException(s);
-                break;
-            case TimeOnly:
-                if (strict && (year >= 0 || mon >= 0 || mday >= 0 || tzoffset != -1))
-                    throw new ConversionException(s);
-                break;
-        }
-
-        if (nanos < 0)
-            nanos = 0;
-        int ms = (int)Math.round(nanos / 1_000_000.0);
-        if (sec < 0)
-            sec = 0;
-        if (min < 0)
-            min = 0;
-        if (hour < 0)
-            hour = 0;
-
-        if (option == DateTimeOption.TimeOnly)
-        {
-            if (strict && (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000))
-                throw new ConversionException(s);
-
-            // parseXMLDate() and java.sql.Time both return 1970-01-01 + {TIME} in the current timezone
-            // also fromTimeString() expects this convention (so just do that here)
-            year = 1970;
-            mon = 0;
-            mday = 1;
-            tz = null;
-            tzoffset = -1;
-        }
-
-        //
-        // This part is changed to work with Java
-        //
-
-        if (tzoffset != -1 && tz != null)
-            throw new ConversionException("ambiguous timezone specification");
-
-        if (tz == null)
-        {
-            if (tzoffset == -1)
-                tz = _timezoneDefault;
-            else
-                tz = getTimeZoneForOffsetInMinutes(tzoffset);
-        }
-
         try
         {
-            Calendar cal = newCalendar(tz, year, mon, mday, hour, min, sec, ms, strict);
-
-            return cal.getTimeInMillis();
+            var lenient = !strict;
+            DateParser parser = ParseDateTimeEN.getInstance(_localeDefault, _timezoneDefault, option, md, lenient);
+            Date date = parser.parse(s);
+            return date.getTime();
         }
-        catch (IllegalArgumentException x)
+        catch (IllegalArgumentException|ParseException ex)
         {
-            throw new ConversionException(s);
+            throw new ConversionException("Could not parse date '" + s + "'", ex);
         }
     }
 
@@ -1670,9 +1306,9 @@ Parse:
         calendar.setTimeInMillis(start);
 
         if (d.year > 0)
-            calendar.add(Calendar.YEAR, d.year*sign);
+            calendar.add(YEAR, d.year*sign);
         if (d.month > 0)
-            calendar.add(Calendar.MONTH, d.month*sign);
+            calendar.add(MONTH, d.month*sign);
         if (d.day > 0)
             calendar.add(Calendar.DAY_OF_MONTH, d.day*sign);
         if (d.hour > 0)
@@ -2163,8 +1799,8 @@ Parse:
         {
             Calendar parsedXml = new GregorianCalendar();
             parsedXml.setTimeInMillis(millis);
-            assertEquals(2001, parsedXml.get(Calendar.YEAR));
-            assertEquals(Calendar.FEBRUARY, parsedXml.get(Calendar.MONTH));
+            assertEquals(2001, parsedXml.get(YEAR));
+            assertEquals(Calendar.FEBRUARY, parsedXml.get(MONTH));
             // Depending on your local time zone, you will get different days
             assertTrue(parsedXml.get(Calendar.DAY_OF_MONTH) == 3 || parsedXml.get(Calendar.DAY_OF_MONTH) == 2);
         }
@@ -2288,6 +1924,11 @@ Parse:
             assertIllegalTime("4:65:06");
             assertIllegalTime("4:65:66");
             assertIllegalTime("4.0");
+
+            assertEquals(parseISODateTime("1970-1-1 16:00:00"), fromTimeString("4 pm", true).getTime());
+
+            assertIllegalTime("1830");
+            assertIllegalTime("19999 pm");
         }
 
         @Test
@@ -2317,7 +1958,9 @@ Parse:
             l -= l % (60 * 60 * 1000);
             assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
             Calendar c = newCalendar(l);
-            c.set(Calendar.HOUR,0);
+            c.clear(HOUR);
+            c.clear(AM_PM);
+            c.set(HOUR_OF_DAY,0);
             l = c.getTimeInMillis();
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
         }
