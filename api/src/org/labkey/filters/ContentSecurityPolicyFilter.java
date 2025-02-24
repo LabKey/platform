@@ -254,6 +254,31 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
+    public static boolean hasCsp(ContentSecurityPolicyType type)
+    {
+        return CSP_FILTERS.stream().anyMatch(filter -> type.equals(filter._type));
+    }
+
+    public static List<String> getMissingSubstitutions(ContentSecurityPolicyType type)
+    {
+        ContentSecurityPolicyFilter filter = CSP_FILTERS.stream().filter(f -> type.equals(f._type)).findFirst().orElse(null);
+        final List<String> ret;
+        if (filter == null)
+        {
+            ret = Collections.emptyList();
+        }
+        else
+        {
+            String template = filter._policyTemplate;
+            ret = Arrays.stream(Directive.values())
+                .map(dir -> "${" + dir.getSubstitutionKey() + "}")
+                .filter(key -> !template.contains(key))
+                .toList();
+        }
+
+        return ret;
+    }
+
     public static class TestCase extends Assert
     {
         @Test

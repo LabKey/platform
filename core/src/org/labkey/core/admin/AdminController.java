@@ -11109,7 +11109,8 @@ public class AdminController extends SpringActionController
             //for updated urls that comes in as String values from the jsp/html form
             if (null != getExistingValues())
             {
-                return new ArrayList<>(Arrays.asList(getExistingValues().split("\n")));
+                // The JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
+                return new ArrayList<>(Arrays.asList(getExistingValues().replace("\r", "").split("\n")));
             }
             return _existingValuesList;
         }
@@ -11263,6 +11264,7 @@ public class AdminController extends SpringActionController
 
         public String getExistingValues()
         {
+            // The JSP JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
             return _existingValues.replace("\r", "");
         }
 
@@ -11953,6 +11955,9 @@ public class AdminController extends SpringActionController
                             String labkeyVersion = request.getParameter("labkeyVersion");
                             if (null != labkeyVersion)
                                 jsonObj.put("labkeyVersion", labkeyVersion);
+                            String cspVersion = request.getParameter("cspVersion");
+                            if (null != cspVersion)
+                                jsonObj.put("cspVersion", cspVersion);
                             var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
                         }

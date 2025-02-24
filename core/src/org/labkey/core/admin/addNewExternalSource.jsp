@@ -19,20 +19,55 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.Directive" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.filters.ContentSecurityPolicyFilter" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.List" %>
+<%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
     boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
+
+    String noEffect = "External resource hosts can be configured below, but they'll have no effect until ";
+    String message;
+
+    boolean hasEnforce = ContentSecurityPolicyFilter.hasCsp(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce);
+    if (hasEnforce)
+    {
+        message = "This server is configured with an enforce Content Security Policy (CSP) ";
+        boolean disabled = OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP);
+
+        if (disabled)
+        {
+            message += "but it's currently disabled via an experimental feature flag! " + noEffect + "the enforce CSP is re-enabled.";
+        }
+        else
+        {
+            List<String> missing = ContentSecurityPolicyFilter.getMissingSubstitutions(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce);
+            int count = missing.size();
+            message += missing.isEmpty() ?
+                "that includes all the expected substitutions." :
+                "but the following substitution" + (count > 1 ? "s are" : " is") + " missing: " + String.join(", ", missing) +
+                    ". External resource hosts for " + (count > 1 ? "these directives" : "this directive") + " can be configured below, but they'll have no effect.";
+        }
+    }
+    else
+    {
+        message = "This server is not configured with an enforce Content Security Policy (CSP); LabKey strongly recommends " +
+            "configuring a strict enforce CSP. " + noEffect + "an enforce CSP is configured.";
+    }
 %>
 <labkey:errors/>
 <div style="width: 800px;">
     <p>
-        For security reasons, the standard LabKey Content Security Policy (CSP) restricts the hosts that browsers can
-        use as resource origins. By default, only sources from this server are allowed; other server hosts must be
-        configured below to enable them to be used as external sources. All provided hosts are added into the CSP
-        using the \${} substitution key shown next to each directive.
+        <%=h(message)%>
+    </p>
+    <p>
+        The standard LabKey CSP restricts the hosts that browsers can use as resource origins. By default, only sources
+        from this server are allowed; other server hosts must be configured below to enable them to be used as external
+        sources. All provided hosts are added into the CSP using the \${} substitution key shown next to each directive.
 <%
     if (!isTroubleshooter)
     {
@@ -54,10 +89,14 @@
 <labkey:form method="post">
     <table>
         <tr>
-            <td><%=select().name("newDirective").addOptions(
+            <td><label class="labkey-form-label">Directive</label></td>
+            <td><%=select().name("newDirective").id("newDirective").addStyle("width:300px").addOptions(
                 Arrays.stream(Directive.values()).collect(LabKeyCollectors.toLinkedMap(Enum::name, d->d.getCspDirective() + " ${" + d.getSubstitutionKey() + "}"))
             )%></td>
-            <td>&nbsp;<input name="newHost" id="newHostTextField" size="75" /></td>
+        </tr>
+        <tr>
+            <td><label for="newHostTextField" class="labkey-form-label">Host</label></td>
+            <td><input name="newHost" id="newHostTextField" size="75" /></td>
         </tr>
         <tr>
             <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Add").submit(true) %></td>

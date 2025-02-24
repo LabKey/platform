@@ -64,24 +64,30 @@
 
 <labkey:form method="post" name="existingValues">
 
-    <%
-        ExternalSourcesForm bean = (ExternalSourcesForm) HttpView.currentModel();
-        List<AllowedHost> existingAllowedHosts = bean.getSavedAllowedHosts();
-        existingAllowedHosts.sort(Comparator.comparing(AllowedHost::directive).thenComparing(AllowedHost::host));
-    %>
+<%
+    ExternalSourcesForm bean = (ExternalSourcesForm) HttpView.currentModel();
+    List<AllowedHost> existingAllowedHosts = bean.getSavedAllowedHosts();
+    existingAllowedHosts.sort(Comparator.comparing(AllowedHost::directive).thenComparing(AllowedHost::host));
+%>
     <table class="labkey-data-region-legacy labkey-show-borders">
-        <% if (existingAllowedHosts.isEmpty()) { %>
-            <tr><td colspan="2">No External Resource Hosts have been configured.</td></tr>
-        <% } %>
-
-        <%
-            int num = 1;
-            for (AllowedHost sub : existingAllowedHosts) {
-                String directiveId = "directive" + num;
-                String hostId = "host" + num;
-        %>
+<%
+    if (existingAllowedHosts.isEmpty())
+    {
+%>
+        <tr><td colspan="2">No External Resource Hosts have been configured.</td></tr>
+<%
+    }
+    else
+    {
+%>
+        <tr><th>Directive</th><th>Host</th></tr>
+<%
+        int num = 1;
+        for (AllowedHost sub : existingAllowedHosts) {
+            String directiveId = "directive" + num;
+            String hostId = "host" + num;
+%>
         <tr>
-
             <td><input type="text" id="<%=h(directiveId)%>" name="<%=h(directiveId)%>" value="<%=h(sub.directive().getCspDirective())%>" data-directive="<%=sub.directive()%>" size="20" disabled/></td>
             <td><input type="text" id="<%=h(hostId)%>" name="<%=h(hostId)%>" value="<%= h(sub.host())%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
@@ -95,18 +101,20 @@
 
             </td>
         </tr>
-        <%
+<%
             num++;
-            }
-        %>
+        }
+
+        if (!existingAllowedHosts.isEmpty())
+        {
+%>
     </table>
-        <% if (!existingAllowedHosts.isEmpty()) { %>
-            <input type="hidden" id="delete" name="delete" value="false" />
-            <input type="hidden" id="existingValue" name="existingValue" value="" />
-            <input type="hidden" id="existingValues" name="existingValues" value="" />
-            <tr>
-                <td></td>
-                <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
-            </tr>
-        <% } %>
+    <input type="hidden" id="delete" name="delete" value="false" />
+    <input type="hidden" id="existingValue" name="existingValue" value="" />
+    <input type="hidden" id="existingValues" name="existingValues" value="" />
+    <br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
+<%
+        }
+    }
+%>
 </labkey:form>
