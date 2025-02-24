@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.EnumUtils" %>
 <%@ page import="org.labkey.api.collections.LabKeyCollectors" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.Directive" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.core.admin.AdminController.ExternalSourcesForm" %>
 <%@ page import="org.labkey.filters.ContentSecurityPolicyFilter" %>
+<%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -65,8 +67,8 @@
         <%=h(message)%>
     </p>
     <p>
-        The standard LabKey CSP restricts the hosts that browsers can use as resource origins. By default, only sources
-        from this server are allowed; other server hosts must be configured below to enable them to be used as external
+        The standard LabKey CSP restricts hosts that browsers can use as resource origins. By default, only sources from
+        this server are allowed; other server hosts must be configured below to enable them to be used as external
         sources. All provided hosts are added into the CSP using the \${} substitution key shown next to each directive.
 <%
     if (!isTroubleshooter)
@@ -85,13 +87,22 @@
 <%
     if (!isTroubleshooter)
     {
+        ExternalSourcesForm form = (ExternalSourcesForm)getModelBean();
+        Directive directive = EnumUtils.getEnum(Directive.class, form.getNewDirective());
 %>
 <labkey:form method="post">
     <table>
         <tr>
             <td><label class="labkey-form-label">Directive</label></td>
-            <td><%=select().name("newDirective").id("newDirective").addStyle("width:300px").addOptions(
-                Arrays.stream(Directive.values()).collect(LabKeyCollectors.toLinkedMap(Enum::name, d->d.getCspDirective() + " ${" + d.getSubstitutionKey() + "}"))
+            <td><%=select()
+                .name("newDirective")
+                .id("newDirective")
+                .addStyle("width:300px")
+                .selected(directive)
+                .addOptions(
+                    Arrays.stream(Directive.values())
+                        .collect(LabKeyCollectors.toLinkedMap(Enum::name, d->d.getCspDirective() + " ${" + d.getSubstitutionKey() + "}")
+                )
             )%></td>
         </tr>
         <tr>

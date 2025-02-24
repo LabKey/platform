@@ -11388,7 +11388,7 @@ public class AdminController extends SpringActionController
         {
             boolean isTroubleshooter = !getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
-            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", null, errors);
+            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
             JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
