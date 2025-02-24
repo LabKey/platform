@@ -16,7 +16,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -351,14 +350,14 @@ public class QuerySelectView extends AbstractQueryRelation
             filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
         }
 
-        String orderBy = null;
+        SQLFragment orderBy = null;
 
         if (sort != null)
         {
             orderBy = sort.getOrderByClause(dialect, columnMap);
         }
 
-        if ((filterFrag == null || filterFrag.getSQL().length() == 0) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
+        if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
         {
             selectFrag.append("\n").append(fromFrag);
             return selectFrag;

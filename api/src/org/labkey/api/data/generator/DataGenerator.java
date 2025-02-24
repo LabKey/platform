@@ -538,7 +538,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         SQLFragment sql = new SQLFragment("SELECT " + columns);
         SQLFragment fromSql = new SQLFragment(" FROM ").append(tableInfo, "dc");
 
-        return dialect.limitRows(sql, fromSql, null, dialect.isSqlServer() ? "ORDER By RowId" : null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
+        return dialect.limitRows(sql, fromSql, null, dialect.isSqlServer() ? new SQLFragment("ORDER By RowId") : null, null, limit, totalCount > limit ? randomLong(0, totalCount-limit) : 0);
     }
 
     public List<Map<String, Object>> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)

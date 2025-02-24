@@ -42,14 +42,14 @@ public class LimitRowsSqlGenerator
         }
     }
 
-    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset, LimitRowsCustomizer customizer)
+    public static SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy, int maxRows, long offset, LimitRowsCustomizer customizer)
     {
         SQLFragment sql = appendFromFilterOrderAndGroupBy(select, from, filter, order, groupBy);
 
         return limitRows(sql, maxRows, offset, customizer);
     }
 
-    public static SQLFragment appendFromFilterOrderAndGroupBy(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy)
+    public static SQLFragment appendFromFilterOrderAndGroupBy(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy)
     {
         if (select == null)
             throw new IllegalArgumentException("select");
@@ -59,7 +59,7 @@ public class LimitRowsSqlGenerator
         return appendFromFilterOrderAndGroupByNoValidation(select, from, filter, order, groupBy);
     }
 
-    public static SQLFragment appendFromFilterOrderAndGroupByNoValidation(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy)
+    public static SQLFragment appendFromFilterOrderAndGroupByNoValidation(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy)
     {
         SQLFragment sql = new SQLFragment();
         sql.append(select);
@@ -114,3 +114,4 @@ public class LimitRowsSqlGenerator
         }
     }
 }
+
