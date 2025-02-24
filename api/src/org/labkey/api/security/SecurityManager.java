@@ -19,7 +19,9 @@ package org.labkey.api.security;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.websocket.server.HandshakeRequest;
 import org.apache.commons.codec.binary.Base64;
@@ -522,9 +524,9 @@ public class SecurityManager
         return sessionUser;
     }
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
+    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
-        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header");
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\"");
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
@@ -549,8 +551,11 @@ public class SecurityManager
 
                 if (null != session)
                 {
-                    request = new SessionReplacingRequest(request, session);
                     AUTH_LOG.debug("   API key is a valid session key");
+                    Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
+                    sessionCookie.setPath("/");
+                    response.addCookie(sessionCookie);
+                    request = new SessionReplacingRequest(request, session);
                 }
                 else
                 {
@@ -638,7 +643,7 @@ public class SecurityManager
         }
         finally
         {
-            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header. User: " + u);
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\". User: " + u);
         }
     }
 
