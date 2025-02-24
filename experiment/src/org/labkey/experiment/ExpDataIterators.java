@@ -3019,7 +3019,12 @@ public class ExpDataIterators
                 ColumnInfo colInfo = getColumnInfo(i);
                 String name = colInfo.getName();
                 String lcName = name.toLowerCase();
-                if (validFields.contains(name))
+                if (_typeColIndex != null && _typeColIndex == i) // Issue 52355: assure we have some data in the row by including the type
+                {
+                    fieldIndexes.add(i);
+                    header.add(_typeColName);
+                }
+                else if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
                     header.add(_tsvWriter.quoteValue(name));
