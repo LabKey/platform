@@ -60,7 +60,7 @@ public class Sort
 
         public static SortDirection fromString(String s)
         {
-            if (s == null || s.length() == 0)
+            if (s == null || s.isEmpty())
                 return ASC;
 
             if (s.length() == 1)
@@ -146,9 +146,13 @@ public class Sort
             return (_dir == SortDirection.ASC ? "" : "-") + _fieldKey.toString();
         }
 
-        private String toOrderByString(SqlDialect dialect, String alias)
+        private SQLFragment toOrderByFragment(SqlDialect dialect, String alias)
         {
-            return (null != dialect ? dialect.getColumnSelectName(alias) : alias) + " " + _dir.getSqlDir();
+            SQLFragment sql = new SQLFragment();
+            sql.appendIdentifier(null != dialect ? dialect.getColumnSelectName(alias) : alias);
+            sql.append(" ");
+            sql.append(_dir.getSqlDir());
+            return sql;
         }
 
         public String getSelectName(SqlDialect dialect)
@@ -413,10 +417,9 @@ public class Sort
 
     public int indexOf(@NotNull FieldKey fieldKey)
     {
-        if (_sortList != null)
-            for (SortField sortField : _sortList)
-                if (fieldKey.equals(sortField.getFieldKey()))
-                    return _sortList.indexOf(sortField);
+        for (SortField sortField : _sortList)
+            if (fieldKey.equals(sortField.getFieldKey()))
+                return _sortList.indexOf(sortField);
 
         return -1;
     }
@@ -428,8 +431,6 @@ public class Sort
 
     public String getSortParamValue()
     {
-        if (null == _sortList)
-            return null;
 
         StringBuilder sb = new StringBuilder();
         String sep = "";
@@ -445,7 +446,7 @@ public class Sort
 
     public Set<FieldKey> getRequiredColumns(Map<FieldKey, ? extends ColumnInfo> columns)
     {
-        if (null == _sortList || _sortList.size() == 0)
+        if (_sortList.isEmpty())
             return Collections.emptySet();
 
         Set<FieldKey> requiredFieldKeys = new HashSet<>();
@@ -468,17 +469,17 @@ public class Sort
         return requiredFieldKeys;
     }
 
-    public String getOrderByClause(SqlDialect dialect)
+    public SQLFragment getOrderByClause(SqlDialect dialect)
     {
         return getOrderByClause(dialect, Collections.emptyMap());
     }
 
-    public String getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
+    public SQLFragment getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
         if (_sortList.isEmpty())
-            return "";
+            return new SQLFragment();
 
-        StringBuilder sb = new StringBuilder();
+        SQLFragment sql = new SQLFragment();
 
         //NOTE: we are translating between the raw sort, and the sortFieldKeys() provided by that column
         Set<String>  distinctKeys = new CaseInsensitiveHashSet();
@@ -490,7 +491,7 @@ public class Sort
             ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo == null)
             {
-                appendColumnToSort(sf, dialect, fieldKey.getName(), distinctKeys, sb);
+                appendColumnToSort(sf, dialect, fieldKey.getName(), distinctKeys, sql);
             }
             else
             {
@@ -511,7 +512,7 @@ public class Sort
                 {
                     for (ColumnInfo sortCol : sortFields)
                     {
-                        appendColumnToSort(sf, dialect, sortCol.getAlias(), distinctKeys, sb);
+                        appendColumnToSort(sf, dialect, sortCol.getAlias(), distinctKeys, sql);
 
                         // If we have an mv indicator column, we need to sort on it secondarily
                         if (sortCol.isMvEnabled())
@@ -521,7 +522,7 @@ public class Sort
                             if (mvIndicatorColumn != null)
                             {
                                 SortField mvSortField = new SortField(mvIndicatorColumn.getFieldKey(), sf.getSortDirection());
-                                appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sb);
+                                appendColumnToSort(mvSortField, dialect, mvIndicatorColumn.getAlias(), distinctKeys, sql);
                             }
                         }
                     }
@@ -530,30 +531,28 @@ public class Sort
         }
 
         // Determine if any ORDER BY additions were made
-        String orderBy = sb.toString();
+        if (!sql.getSQL().isEmpty())
+            return new SQLFragment("ORDER BY ").append(sql);
 
-        if (orderBy.length() > 0)
-            return "ORDER BY " + orderBy;
-
-        return "";
+        return new SQLFragment();
     }
 
-    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, StringBuilder sb)
+    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, SQLFragment sql)
     {
         if (distinctKeys.contains(alias))
             return;
 
-        if (distinctKeys.size() > 0)
-            sb.append(", ");
+        if (!distinctKeys.isEmpty())
+            sql.append(", ");
 
-        sb.append(sf.toOrderByString(dialect, alias));
+        sql.append(sf.toOrderByFragment(dialect, alias));
         distinctKeys.add(alias);
     }
 
     // Return an English version of the sort
     public String getSortText()
     {
-        String sql = getOrderByClause(null).replaceFirst("ORDER BY ", "");
+        String sql = getOrderByClause(null).getRawSQL().replaceFirst("ORDER BY ", "");
         return sql.replaceAll(" ,", ",").replaceAll("\"", "");
     }
 
@@ -588,7 +587,7 @@ public class Sort
         if (merge)
         {
             String existingSort = url.getParameter(key);
-            if (existingSort != null && existingSort.length() > 0)
+            if (existingSort != null && !existingSort.isEmpty())
                 value = existingSort + "," + value;
         }
 
