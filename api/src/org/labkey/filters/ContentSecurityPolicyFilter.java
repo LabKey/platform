@@ -266,7 +266,7 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
-    // Pre-generate the substitution map on every register/unregister
+    // Regenerate the substitution map and all policy expressions on every register/unregister
     private static void regenerateSubstitutionMap()
     {
         synchronized (ALLOWED_SOURCES_LOCK)
