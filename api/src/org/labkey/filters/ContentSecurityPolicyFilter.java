@@ -14,15 +14,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.CspCommentScanner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -33,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 
@@ -48,7 +50,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
 
-    private static final List<ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteArrayList<>();
+    private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
 
     // Lock that protects the static data structures below
     private static final Object ALLOWED_SOURCES_LOCK = new Object();
@@ -60,6 +62,7 @@ public class ContentSecurityPolicyFilter implements Filter
     // Per-filter-instance parameters that are set in init() and never changed
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
     private String _policyTemplate = null;
+    private String _cspVersion = "Unknown";
 
     // Updated after every change to "allowed sources"
     private StringExpression _policyExpression = null;
@@ -110,9 +113,11 @@ public class ContentSecurityPolicyFilter implements Filter
 
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
                 s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                        .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
 
                 _policyTemplate = s;
+
+                extractCspVersion(s);
             }
             else if ("disposition".equalsIgnoreCase(paramName))
             {
@@ -128,23 +133,10 @@ public class ContentSecurityPolicyFilter implements Filter
             }
         }
 
+        if (CSP_FILTERS.put(_type, this) != null)
+            throw new ServletException("ContentSecurityPolicyFilter is misconfigured, duplicate policies of type: " + _type);
+
         regeneratePolicyExpression();
-        CSP_FILTERS.add(this);
-    }
-
-    // Make all the "allowed sources" substitutions at init() and whenever the allowed sources map changes. With this,
-    // the only substitution needed on a per-request basis is the nonce value.
-    private void regeneratePolicyExpression()
-    {
-        final String allowSubstitutedPolicy;
-
-        synchronized (ALLOWED_SOURCES_LOCK)
-        {
-            allowSubstitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
-                .eval(ALLOWED_SOURCES_SUBSTITUTION_MAP);
-        }
-
-        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.KeepSubstitution);
     }
 
     /** Filter out block comments and replace special characters in the provided policy */
@@ -166,6 +158,55 @@ public class ContentSecurityPolicyFilter implements Filter
         s = s.replaceAll(" +", " ");
 
         return s;
+    }
+
+    /**
+     * Extract the cspVersion parameter value from the report-uri directive, if possible. Otherwise, cspVersion is left
+     * as "Unknown". This value is reported as part of usage metrics.
+     */
+    private void extractCspVersion(String s)
+    {
+        String directive = "report-uri";
+        int dirIdx = StringUtils.indexOfIgnoreCase(s, directive);
+
+        if (dirIdx != -1)
+        {
+            int start =  StringUtils.indexOfIgnoreCase(s, directive, dirIdx);
+            int end = s.indexOf(';', start);
+
+            if (end == -1)
+                end = s.length();
+
+            try
+            {
+                ActionURL reportUrl =  new ActionURL(s.substring(start, end));
+                String cspVersion = reportUrl.getParameter("cspVersion");
+
+                if (null != cspVersion)
+                    _cspVersion = cspVersion;
+            }
+            catch (IllegalArgumentException e)
+            {
+                LOG.warn("Unable to parse {} URI", directive, e);
+            }
+        }
+
+        LOG.debug("CspVersion: {}", _cspVersion);
+    }
+
+    // Make all the "allowed sources" substitutions at init() and whenever the allowed sources map changes. With this,
+    // the only substitution needed on a per-request basis is the nonce value.
+    private void regeneratePolicyExpression()
+    {
+        final String allowSubstitutedPolicy;
+
+        synchronized (ALLOWED_SOURCES_LOCK)
+        {
+            allowSubstitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
+                .eval(ALLOWED_SOURCES_SUBSTITUTION_MAP);
+        }
+
+        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.KeepSubstitution);
     }
 
     @Override
@@ -250,18 +291,18 @@ public class ContentSecurityPolicyFilter implements Filter
                 ALLOWED_SOURCES_SUBSTITUTION_MAP.put("LABKEY.ALLOWED.CONNECTIONS", ALLOWED_SOURCES_SUBSTITUTION_MAP.get(Directive.Connection.getSubstitutionKey()));
 
             // Tell each registered ContentSecurityPolicyFilter to refresh its policy template based on the new substitution map
-            CSP_FILTERS.forEach(ContentSecurityPolicyFilter::regeneratePolicyExpression);
+            CSP_FILTERS.values().forEach(ContentSecurityPolicyFilter::regeneratePolicyExpression);
         }
     }
 
     public static boolean hasCsp(ContentSecurityPolicyType type)
     {
-        return CSP_FILTERS.stream().anyMatch(filter -> type.equals(filter._type));
+        return CSP_FILTERS.get(type) != null;
     }
 
     public static List<String> getMissingSubstitutions(ContentSecurityPolicyType type)
     {
-        ContentSecurityPolicyFilter filter = CSP_FILTERS.stream().filter(f -> type.equals(f._type)).findFirst().orElse(null);
+        ContentSecurityPolicyFilter filter = CSP_FILTERS.get(type);
         final List<String> ret;
         if (filter == null)
         {
@@ -277,6 +318,12 @@ public class ContentSecurityPolicyFilter implements Filter
         }
 
         return ret;
+    }
+
+    public static void registerMetricsProvider()
+    {
+        UsageMetricsService.get().registerUsageMetrics("API", () -> Map.of("cspFilters", CSP_FILTERS.values().stream()
+            .collect(Collectors.toMap(filter -> filter._type, filter -> filter._cspVersion))));
     }
 
     public static class TestCase extends Assert
@@ -413,7 +460,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
         private void verifySubstitutionInPolicyExpressions(String value, int expectedCount)
         {
-            List<String> failures = CSP_FILTERS.stream()
+            List<String> failures = CSP_FILTERS.values().stream()
                 .map(filter -> filter._policyExpression.eval(Map.of()))
                 .filter(policy -> StringUtils.countMatches(policy, value) != expectedCount)
                 .toList();
