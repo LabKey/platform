@@ -270,6 +270,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new LocationDomainKind());
         PropertyService.get().registerDomainKind(new SpecimenSampleTypeDomainKind());
 
+        // study design domains
+        PropertyService.get().registerDomainKind(new StudyProductDomainKind());
+        PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
+        PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
+        PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
+        PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
+
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
@@ -524,16 +531,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
-
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            // study design domains
-            PropertyService.get().registerDomainKind(new StudyProductDomainKind());
-            PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
-            PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
-            PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
-            PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
-        }
     }
 
     @Override
