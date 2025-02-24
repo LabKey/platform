@@ -506,24 +506,27 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     .count();
                 metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
 
-                // Count the studies that use products and treatments
-                MutableInt hasProducts = new MutableInt(0);
-                MutableInt hasTreatments = new MutableInt(0);
+                if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+                {
+                    // Count the studies that use products and treatments
+                    MutableInt hasProducts = new MutableInt(0);
+                    MutableInt hasTreatments = new MutableInt(0);
 
-                allStudies.stream()
-                    .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                    .forEach(schema->{
-                        TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
-                        if (new TableSelector(products).exists())
-                            hasProducts.increment();
+                    allStudies.stream()
+                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                            .forEach(schema->{
+                                TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+                                if (new TableSelector(products).exists())
+                                    hasProducts.increment();
 
-                        TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
-                        if (new TableSelector(treatments).exists())
-                            hasTreatments.increment();
-                    });
+                                TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
+                                if (new TableSelector(treatments).exists())
+                                    hasTreatments.increment();
+                            });
 
-                metric.put("studyProducts", hasProducts.intValue());
-                metric.put("studyTreatments", hasTreatments.intValue());
+                    metric.put("studyProducts", hasProducts.intValue());
+                    metric.put("studyTreatments", hasTreatments.intValue());
+                }
 
                 return metric;
             });

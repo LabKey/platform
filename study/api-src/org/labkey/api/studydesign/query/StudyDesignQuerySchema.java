@@ -20,9 +20,6 @@ import java.util.Set;
 
 public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSchema.HasContextualRoles
 {
-    private static final String NAME = "studydesign";
-    private static final String DESCRIPTION = "Contains data for associating experiments, samples (materials), assays, notes, etc. with a lab book";
-
     public static final String STUDY_SCHEMA_NAME = "study";
 
     // study design provisioned tables
