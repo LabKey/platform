@@ -26,6 +26,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -93,6 +94,7 @@ import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -11224,6 +11226,7 @@ public class AdminController extends SpringActionController
             return _saveAll;
         }
 
+        @SuppressWarnings("unused")
         public void setSaveAll(boolean saveAll)
         {
             _saveAll = saveAll;
@@ -11287,51 +11290,82 @@ public class AdminController extends SpringActionController
                 errors.addError(new LabKeyError("Can't parse allowed host."));
                 return null;
             }
-            Directive dir = EnumUtils.getEnum(Directive.class, parts[0], null);
-            if (null == dir)
-            {
-                errors.addError(new LabKeyError("Unknown directive."));
-                return null;
-            }
-            return new AllowedHost(dir, parts[1]);
+            return validateHost(parts[0], parts[1], errors);
         }
 
         private List<AllowedHost> getExistingAllowedHosts(BindException errors)
         {
-            return Arrays.stream(getExistingValues().split("\n"))
+            List<AllowedHost> existing = Arrays.stream(getExistingValues().split("\n"))
                 .map(value-> getAllowedHost(value, errors))
                 .toList();
-        }
-
-        private List<AllowedHost> validateNewAllowedHost(BindException errors) throws JsonProcessingException
-        {
-            Directive directive = EnumUtils.getEnum(Directive.class, getNewDirective());
-            String host = StringUtils.trimToEmpty(getNewHost());
-
-            if (getNewDirective() == null)
-            {
-                errors.addError(new LabKeyError("Directive must not be blank."));
-            }
-            else if (null == directive)
-            {
-                errors.addError(new LabKeyError("Unrecognized directive."));
-            }
-
-            if (StringUtils.isEmpty(host))
-            {
-                errors.addError(new LabKeyError("Redirect host name must not be blank."));
-            }
-
-            // TODO: Validate host - set errors
-            // TODO: Validate no duplicates - set errors
 
             if (errors.hasErrors())
                 return null;
 
-            List<AllowedHost> ret = getSavedAllowedHosts();
-            ret.add(new AllowedHost(directive, host));
+            return checkDuplicates(existing, errors);
+        }
+
+        private List<AllowedHost> validateNewAllowedHost(BindException errors) throws JsonProcessingException
+        {
+            AllowedHost newAllowedHost = validateHost(getNewDirective(), getNewHost(), errors);
+
+            if (errors.hasErrors())
+                return null;
+
+            List<AllowedHost> hosts = getSavedAllowedHosts();
+            hosts.add(newAllowedHost);
+
+            return checkDuplicates(hosts, errors);
+        }
+
+        // Lenient for now: no blanks or unknown directives
+        private AllowedHost validateHost(String directiveString, String host, BindException errors)
+        {
+            AllowedHost ret = null;
+
+            if (StringUtils.isEmpty(directiveString))
+            {
+                errors.addError(new LabKeyError("Directive must not be blank."));
+            }
+            else if (StringUtils.isEmpty(host))
+            {
+                errors.addError(new LabKeyError("Host must not be blank."));
+            }
+            else
+            {
+                Directive directive = EnumUtils.getEnum(Directive.class, directiveString);
+
+                if (null == directive)
+                {
+                    errors.addError(new LabKeyError("Unknown directive: " + directiveString));
+                }
+                else
+                {
+                    ret = new AllowedHost(directive, host.trim());
+                }
+            }
 
             return ret;
+        }
+
+        /**
+         * Check for duplicates in hosts: within each Directive, hosts are checked using case-sensitive comparisons
+         * @param hosts a list of AllowedHost objects to check for duplicates
+         * @param errors errors to populate
+         * @return hosts if there are no duplicates, otherwise {@code null}
+         */
+        private @Nullable List<AllowedHost> checkDuplicates(List<AllowedHost> hosts, BindException errors)
+        {
+            // Not a simple Set<AllowedHost> check since we want host check to be case-insensitive
+            MultiValuedMap<Directive, String> map = new CaseInsensitiveHashSetValuedMap<>();
+
+            hosts.forEach(allowedHost -> {
+                String host = allowedHost.host().trim();
+                if (!map.put(allowedHost.directive(), host))
+                    errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate values are not allowed.", allowedHost)));
+            });
+
+            return errors.hasErrors() ? null : hosts;
         }
 
         // Returns a mutable list
