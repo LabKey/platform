@@ -7398,7 +7398,7 @@ public class StudyController extends BaseStudyController
                     writer.write(getViewContext().getResponse());
                 }
 
-                return false;  // Don't redirect
+                return true;
             }
             else
                 throw new IllegalStateException("A study does not exist in this folder");
@@ -7407,7 +7407,7 @@ public class StudyController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(Object o)
         {
-            throw new IllegalStateException();
+            return null;
         }
     }
 
