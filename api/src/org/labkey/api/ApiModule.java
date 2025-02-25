@@ -149,6 +149,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -216,6 +217,8 @@ public class ApiModule extends CodeOnlyModule
     private static final String CORS_PREFIX = "cors.";
     private static final String CORS_FILTER_NAME = "CorsFilter";
 
+    private static final Map<String, Object> CSP_METRICS = new HashMap<>();
+
     @Override
     protected void init()
     {
@@ -261,6 +264,9 @@ public class ApiModule extends CodeOnlyModule
         ContextListener.addStartupListener(new OptionalFeatureStartupListener());
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), () ->
+                Map.of("contentSecurityPolicy", Collections.unmodifiableMap(CSP_METRICS)));
     }
 
     @Override
@@ -314,6 +320,7 @@ public class ApiModule extends CodeOnlyModule
         String policy = servletCtx.getInitParameter(parameterName);
         if (null != policy)
         {
+            CSP_METRICS.put(disposition, policy);
             FilterRegistration registration = servletCtx.addFilter(filterName, new ContentSecurityPolicyFilter());
             registration.addMappingForUrlPatterns(allOf(DispatcherType.class), false, "/*");
             registration.setInitParameters(Map.of("policy", policy, "disposition", disposition));
@@ -537,7 +544,7 @@ public class ApiModule extends CodeOnlyModule
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
 
-        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        AuthenticationConfiguration.SSOAuthenticationConfiguration<?> config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
         if (config != null)
             json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
 
