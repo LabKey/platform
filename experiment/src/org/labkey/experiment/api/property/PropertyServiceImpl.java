@@ -369,14 +369,26 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (validator != null && validator.getExpressionValue() != null)
             expression = validator.getExpressionValue();
 
-        // split expression, trim choices, and remove duplicates
-        String[] choiceTokens = expression.split("\\|");
-        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim).collect(Collectors.toSet());
+        // Issue 52072: match a pipe symbol that is not preceded by a backslash
+        String[] choiceTokens = expression.split("(?<!\\\\)\\|");
+
+        // split expression, trim choices, remove duplicates, replace escaped pipes
+        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim)
+                .map(choice -> choice.replaceAll("\\\\\\|", "|"))
+                .collect(Collectors.toSet());
 
         // remove empty strings and sort
         return choiceSet.stream().filter(choice -> !StringUtils.isEmpty(choice))
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public String getTextChoiceValidatorExpression(List<String> options)
+    {
+        return options.stream()
+                .map(choice -> choice.replace("|", "\\|"))
+                .collect(Collectors.joining("|"));
     }
 
     @Override

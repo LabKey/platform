@@ -541,7 +541,10 @@ public class DomainUtil
             // add in the TextChoice validValues here so that the client side code doesn't have to do the same
             // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
             if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
-                properties.put("validValues", StringUtils.join(PropertyService.get().getTextChoiceValidatorOptions(pv), "|"));
+            {
+                List<String> validValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
+                properties.put("validValues", PropertyService.get().getTextChoiceValidatorExpression(validValues));
+            }
             gpv.setProperties(properties);
 
             validators.add(gpv);
