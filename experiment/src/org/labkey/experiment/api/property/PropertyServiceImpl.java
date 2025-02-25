@@ -824,6 +824,28 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             instance.setExpressionValue("a|c|d|b");
             choices = service.getTextChoiceValidatorOptions(instance);
             Assert.assertEquals(Arrays.asList("a", "b", "c", "d"), choices);
+
+            // escape pipe
+            instance.setExpressionValue("a|c\\|d|b| c\\|d |a\\|a|\\|test\\|");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "a|a", "b", "c|d", "|test|"), choices);
+        }
+
+        @Test
+        public void testTextChoiceValidatorExpression()
+        {
+            PropertyServiceImpl service = new PropertyServiceImpl();
+            TextChoiceValidator validator = new TextChoiceValidator();
+            IPropertyValidator instance = validator.createInstance();
+
+            String expression = service.getTextChoiceValidatorExpression(List.of());
+            Assert.assertEquals("", expression);
+
+            expression = service.getTextChoiceValidatorExpression(List.of("a", "b", "c"));
+            Assert.assertEquals("a|b|c", expression);
+
+            expression = service.getTextChoiceValidatorExpression(List.of("a", "b|B", "|C|c|"));
+            Assert.assertEquals("a|b\\|B|\\|C\\|c\\|", expression);
         }
 
         @Test
