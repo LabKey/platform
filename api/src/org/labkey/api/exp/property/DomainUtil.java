@@ -75,6 +75,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -543,7 +544,7 @@ public class DomainUtil
             if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
             {
                 List<String> validValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
-                properties.put("validValues", PropertyService.get().getTextChoiceValidatorExpression(validValues));
+                properties.put("validValues", PageFlowUtil.joinValuesToString(validValues, "|"));
             }
             gpv.setProperties(properties);
 

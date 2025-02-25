@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -74,6 +73,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -369,26 +369,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (validator != null && validator.getExpressionValue() != null)
             expression = validator.getExpressionValue();
 
-        // Issue 52072: match a pipe symbol that is not preceded by a backslash
-        String[] choiceTokens = expression.split("(?<!\\\\)\\|");
-
-        // split expression, trim choices, remove duplicates, replace escaped pipes
-        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim)
-                .map(choice -> choice.replaceAll("\\\\\\|", "|"))
-                .collect(Collectors.toSet());
-
-        // remove empty strings and sort
-        return choiceSet.stream().filter(choice -> !StringUtils.isEmpty(choice))
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public String getTextChoiceValidatorExpression(List<String> options)
-    {
-        return options.stream()
-                .map(choice -> choice.replace("|", "\\|"))
-                .collect(Collectors.joining("|"));
+        return PageFlowUtil.splitStringToValues(expression, "|");
     }
 
     @Override
@@ -829,23 +810,6 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             instance.setExpressionValue("a|c\\|d|b| c\\|d |a\\|a|\\|test\\|");
             choices = service.getTextChoiceValidatorOptions(instance);
             Assert.assertEquals(Arrays.asList("a", "a|a", "b", "c|d", "|test|"), choices);
-        }
-
-        @Test
-        public void testTextChoiceValidatorExpression()
-        {
-            PropertyServiceImpl service = new PropertyServiceImpl();
-            TextChoiceValidator validator = new TextChoiceValidator();
-            IPropertyValidator instance = validator.createInstance();
-
-            String expression = service.getTextChoiceValidatorExpression(List.of());
-            Assert.assertEquals("", expression);
-
-            expression = service.getTextChoiceValidatorExpression(List.of("a", "b", "c"));
-            Assert.assertEquals("a|b|c", expression);
-
-            expression = service.getTextChoiceValidatorExpression(List.of("a", "b|B", "|C|c|"));
-            Assert.assertEquals("a|b\\|B|\\|C\\|c\\|", expression);
         }
 
         @Test

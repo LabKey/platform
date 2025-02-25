@@ -127,8 +127,6 @@ public interface PropertyService
 
     List<String> getTextChoiceValidatorOptions(IPropertyValidator validator);
 
-    String getTextChoiceValidatorExpression(List<String> options);
-
     @NotNull
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);
 
