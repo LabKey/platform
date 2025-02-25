@@ -2383,7 +2383,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return mi == null ? null : new ExpMaterialRunInputImpl(mi);
     }
 
-    private ExpProtocolInputImpl protocolInputObjectType(Map<String, Object> row)
+    private ExpProtocolInputImpl<?, ?> protocolInputObjectType(Map<String, Object> row)
     {
         String objectType = (String)row.get("ObjectType");
         if (ExpData.DEFAULT_CPAS_TYPE.equals(objectType))
@@ -2400,14 +2400,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new IllegalStateException("objectType not supported: " + objectType);
     }
 
-    public List<? extends ExpProtocolInputImpl> getProtocolInputs(int protocolId)
+    public List<? extends ExpProtocolInputImpl<?, ?>> getProtocolInputs(int protocolId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolId"), protocolId);
         Collection<Map<String, Object>> rows = new TableSelector(getTinfoProtocolInput(), filter, new Sort("rowId")).getMapCollection();
         return rows.stream().map(this::protocolInputObjectType).toList();
     }
 
-    public ExpProtocolInputImpl getProtocolInput(int rowId)
+    public ExpProtocolInputImpl<?, ?> getProtocolInput(int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
         Map<String, Object> row = new TableSelector(getTinfoProtocolInput(), filter, null).getMap();
@@ -2416,7 +2416,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @Nullable
-    public ExpProtocolInputImpl getProtocolInput(Lsid lsid)
+    public ExpProtocolInputImpl<?, ?> getProtocolInput(Lsid lsid)
     {
         if (!AbstractProtocolInput.NAMESPACE.equals(lsid.getNamespace()))
             return null;
@@ -2719,7 +2719,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2734,7 +2734,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + StringUtils.defaultString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -3040,7 +3040,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             edges.add(List.of(fromObjectId, toObjectId, edgeRunId));
         });
 
-        if (params.size() == 0 && edges.size() == 0)
+        if (params.isEmpty() && edges.isEmpty())
             return true;
 
         Set<List<Object>> paramSet = new HashSet<>(params);
@@ -4691,7 +4691,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     linkedColumnNames.add(column.getName());
             }
 
-            if (linkedColumnNames.size() > 0)
+            if (!linkedColumnNames.isEmpty())
             {
                 // Obtain, for selected rows, the ids of datasets that are linked
                 Set<Integer> linkedDatasetsBySelectedRow = new HashSet<>();
@@ -4794,7 +4794,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean moreBatches = true;
             while (moreBatches)
             {
-                SQLFragment sql = dialect.limitRows(new SQLFragment("SELECT *"), new SQLFragment("FROM exp.Material"), new SQLFragment("WHERE ").append(materialFilterSQL), "ORDER BY RowId", null, maxBatch, count);
+                SQLFragment sql = dialect.limitRows(new SQLFragment("SELECT *"), new SQLFragment("FROM exp.Material"), new SQLFragment("WHERE ").append(materialFilterSQL), new SQLFragment("ORDER BY RowId"), null, maxBatch, count);
                 List<Material> rawMaterials = new SqlSelector(getExpSchema(), sql).getArrayList(Material.class);
 
                 moreBatches = rawMaterials.size() == maxBatch;
@@ -5312,7 +5312,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append("DELETE FROM ").append(String.valueOf(getTinfoDataAliasMap())).append(" WHERE LSID = ?").add(data.getLSID()).appendEOS()
                     .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE fromObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
                     .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE toObjectId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS()
-                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS();;
+                    .append("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE sourceId = (select objectid from exp.object where objecturi = ?)").add(data.getLSID()).appendEOS();
                 new SqlExecutor(getExpSchema()).execute(deleteSql);
 
                 if (data.getClassId() != null)
@@ -6650,7 +6650,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         catch (BatchValidationException e)
         {
             // None of these types actually throw the exception on save
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
 
         List<ExpData> result = new ArrayList<>();
@@ -7181,9 +7181,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialRowId FROM " + table + " ")
                     .append(sqlfilter).append(" AND RootMaterialRowId <> RowId")).forEach(rs ->
-            {
-                _aliquotRootCache.put(rs.getString("Lsid"), rs.getInt("RootMaterialRowId"));
-            });
+                    _aliquotRootCache.put(rs.getString("Lsid"), rs.getInt("RootMaterialRowId")));
         }
 
         public boolean isEmpty()
@@ -7490,7 +7488,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
 
-        private class ProtocolAppRecord
+        private static class ProtocolAppRecord
         {
             ExpProtocolApplicationImpl _protApp;
             Date _activityDate;
@@ -7526,7 +7524,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private ExpRunImpl createRun(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                          Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException, ValidationException
     {
-        User user = info.getUser();
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
             throw new ValidationException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root.");
@@ -8110,7 +8107,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpProtocolImpl> getAllExpProtocols()
     {
-        return getExpProtocols((SimpleFilter) null, null, null);
+        return getExpProtocols(null, null, null);
     }
 
     @Override
@@ -10166,7 +10163,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public record edge(int to, int from) {};
+    public record edge(int to, int from) {}
     public static class InnerResult
     {
         public int depth, self, fromObjectId, toObjectId;
@@ -10307,8 +10304,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment sql = new SQLFragment()
                     .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" parents AS (").append(parentsInner).append(")\n")
                     .append("SELECT * FROM parents WHERE self != fromObjectId");
-            List<InnerResult> results = new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
-            return results;
+            return new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
         }
 
         List<InnerResult> getChildren(int seed)
@@ -10319,8 +10315,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment sql = new SQLFragment()
                     .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" children AS (").append(childrenInner).append(")\n")
                     .append("SELECT * FROM children WHERE self != toObjectId");
-            List<InnerResult> results = new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
-            return results;
+            return new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
         }
 
         String path(int... id)
