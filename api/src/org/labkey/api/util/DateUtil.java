@@ -499,12 +499,6 @@ public class DateUtil
     {
         try
         {
-            return parseISODateTime(s);
-        }
-        catch (Exception ignored) {}
-
-        try
-        {
             // java.util.Date.toString produces dates in the following format.  Try to
             // convert them here.  This is necessary to pass the DRT when running in a
             // non-US timezone:
