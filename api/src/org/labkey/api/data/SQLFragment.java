@@ -718,7 +718,11 @@ public class SQLFragment implements Appendable, CharSequence
         }
         if (sql.commonTableExpressionsMap != null && !sql.commonTableExpressionsMap.isEmpty())
         {
-            throw new IllegalArgumentException("Not supported for SQLFragments CTEs - they must be inserted/merged separately");
+            throw new IllegalArgumentException("Not supported for SQLFragments with CTEs - they must be inserted/merged separately");
+        }
+        if (!tempTokens.isEmpty())
+        {
+            throw new IllegalArgumentException("Not supported for SQLFragments with temp tokens - they must be inserted/merged separately");
         }
         getStringBuilder().insert(index, sql.getRawSQL());
     }
@@ -783,7 +787,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     @Override
-    public CharSequence subSequence(int start, int end)
+    public @NotNull CharSequence subSequence(int start, int end)
     {
         return getSqlCharSequence().subSequence(start, end);
     }
@@ -897,7 +901,7 @@ public class SQLFragment implements Appendable, CharSequence
         {
             String t = line.trim();
 
-            if (t.length() == 0)
+            if (t.isEmpty())
                 continue;
 
             if (t.startsWith("-- </"))
