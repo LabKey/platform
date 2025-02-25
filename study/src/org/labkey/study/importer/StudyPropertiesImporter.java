@@ -50,7 +50,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     private final Map<Object, Object> _objectiveIdMap = new HashMap<>();
     private final SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
     private final SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
-    private static final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
+    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     private String getDataType()
     {

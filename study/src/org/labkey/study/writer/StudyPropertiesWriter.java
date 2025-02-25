@@ -39,7 +39,7 @@ import java.util.Set;
 public class StudyPropertiesWriter extends DefaultStudyDesignWriter
 {
     public static final String SCHEMA_FILENAME = "study_metadata.xml";
-    private static final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
+    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     /**
      * Exports additional study related properties into the properties sub folder

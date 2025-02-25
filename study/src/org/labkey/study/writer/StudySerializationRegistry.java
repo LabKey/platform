@@ -62,7 +62,6 @@ public class StudySerializationRegistry
     );
 
     private static final List<InternalStudyImporter> _baseInternalImporters = List.of(
-            new AssayScheduleImporter(),
             new CohortImporter(),
             new DatasetDefinitionImporter(),
             new DatasetCohortAssigner(),
@@ -70,8 +69,6 @@ public class StudySerializationRegistry
             new ParticipantGroupImporter(),
             new ProtocolDocumentImporter(),
             new StudyQcStatesImporter(),
-            new TreatmentDataImporter(),
-            new TreatmentVisitMapImporter(),
             new VisitImporter(),
             new VisitCohortAssigner(),
             new StudyViewsImporter(),
@@ -116,6 +113,7 @@ public class StudySerializationRegistry
         if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
         {
             importers.add(new TreatmentDataImporter());
+            importers.add(new TreatmentVisitMapImporter());
             importers.add(new AssayScheduleImporter());
         }
         return importers;

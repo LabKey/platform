@@ -23,6 +23,7 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.AssayScheduleWebpart;
 import org.labkey.test.components.studydesigner.BaseManageVaccineDesignVisitPage;
@@ -101,6 +102,7 @@ public class ProgressReportTest extends ReportTest
     @Override
     protected void doCreateSteps()
     {
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
         _containerHelper.createProject(getProjectName(), null);
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), getFolderName(), "Study", null);
         importStudyFromZip(STUDY_ZIP);
@@ -136,6 +138,13 @@ public class ProgressReportTest extends ReportTest
         assaySchedulePage.selectVisits(VISITS, 2);
 
         assaySchedulePage.save();
+    }
+
+    @Override
+    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        super.doCleanup(afterTest);
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Override

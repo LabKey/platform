@@ -39,6 +39,7 @@ import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -313,6 +314,8 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testCreateVisitViaAssaySchedule()
     {
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+
         clickFolder(STUDY1);
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage assay schedule"));
@@ -327,6 +330,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         manageVisitPage.goToEditVisit("Visit 4");
         clickButton("Delete Visit");
         clickButton("Delete");
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Test
