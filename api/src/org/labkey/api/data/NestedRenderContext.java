@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class NestedRenderContext extends RenderContext
 {
-    private QueryNestingOption _nestingOption;
+    private final QueryNestingOption _nestingOption;
 
     public NestedRenderContext(QueryNestingOption nestingOption, ViewContext context)
     {
@@ -131,7 +131,7 @@ public class NestedRenderContext extends RenderContext
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
             SQLFragment fullSQL = new SQLFragment(" " + groupColumn.getAlias() + " IN (SELECT " + groupColumn.getAlias() + " FROM (");
             fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT "  + groupColumn.getAlias() + " "),
-                    fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? sortSQL : null, groupBySQL, maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
+                    fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? new SQLFragment(sortSQL) : null, new SQLFragment(groupBySQL), maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.append(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data
@@ -166,7 +166,7 @@ public class NestedRenderContext extends RenderContext
         fromSQL.append(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query
-        VirtualTable aggTableInfo = new VirtualTable(tinfo.getSchema(), "AggTable", tinfo.getUserSchema())
+        VirtualTable<?> aggTableInfo = new VirtualTable<>(tinfo.getSchema(), "AggTable", tinfo.getUserSchema())
         {
             @NotNull
             @Override

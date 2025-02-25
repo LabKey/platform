@@ -338,7 +338,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy, int maxRows, long offset)
     {
         return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
