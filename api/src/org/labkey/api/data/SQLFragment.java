@@ -710,6 +710,19 @@ public class SQLFragment implements Appendable, CharSequence
         return sql;
     }
 
+    public void insert(int index, SQLFragment sql)
+    {
+        if (!sql.getParams().isEmpty())
+        {
+            throw new IllegalArgumentException("Not supported for SQLFragments with parameters - they must be inserted/merged separately");
+        }
+        if (sql.commonTableExpressionsMap != null && !sql.commonTableExpressionsMap.isEmpty())
+        {
+            throw new IllegalArgumentException("Not supported for SQLFragments CTEs - they must be inserted/merged separately");
+        }
+        getStringBuilder().insert(index, sql.getRawSQL());
+    }
+
     /** Insert into the SQL */
     public void insert(int index, String str)
     {
