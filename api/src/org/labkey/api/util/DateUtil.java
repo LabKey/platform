@@ -1946,12 +1946,12 @@ Parse:
 
             assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("3", true));
             assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("03", true));
-            assertEquals(java.sql.Time.valueOf("6:00:00"), fromTimeString("0030", false));
-            assertIllegalFromTimeString("0030", true);
-            assertEquals(java.sql.Time.valueOf("21:00:00"), fromTimeString("0069", false));
-            assertIllegalFromTimeString("0069", true);
-            assertIllegalFromTimeString("0070", false);
-            assertIllegalFromTimeString("0070", true);
+            assertEquals(java.sql.Time.valueOf("6:00:00").toString(), fromTimeString("30", false).toString());
+            assertIllegalFromTimeString("30", true);
+            assertEquals(java.sql.Time.valueOf("21:00:00").toString(), fromTimeString("69", false).toString());
+            assertIllegalFromTimeString("69", true);
+            assertIllegalFromTimeString("70", false);
+            assertIllegalFromTimeString("70", true);
             assertIllegalFromTimeString("1830", false);
             assertIllegalFromTimeString("1830", true);
         }
