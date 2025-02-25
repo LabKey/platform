@@ -38,9 +38,11 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudySnapshotType;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.importer.SimpleStudyImporter;
@@ -460,7 +462,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
      */
     private void importStudyDesignData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        if (importContext != null)
+        if (importContext != null && OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
         {
             // assay schedule and treatment data (study design)
             new TreatmentDataImporter().process(importContext, studyDir, errors);

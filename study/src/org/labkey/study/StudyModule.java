@@ -551,7 +551,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set("studydataset", "specimentables");
+        return PageFlowUtil.set("studydataset", "studydesign", "specimentables");
     }
 
     private void registerFolderTypes()
@@ -720,17 +720,32 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Set.of(
-            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-            ParticipantGroupManager.ParticipantGroupTestCase.class,
-            StudyImpl.ProtocolDocumentTestCase.class,
-            StudyManager.AssayScheduleTestCase.class,
-            StudyManager.StudySnapshotTestCase.class,
-            StudyManager.VisitCreationTestCase.class,
-            StudyModule.TestCase.class,
-            TreatmentManager.TreatmentDataTestCase.class,
-            VisitImpl.TestCase.class
-        );
+        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        {
+            return Set.of(
+                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                    ParticipantGroupManager.ParticipantGroupTestCase.class,
+                    StudyImpl.ProtocolDocumentTestCase.class,
+                    StudyManager.AssayScheduleTestCase.class,
+                    StudyManager.StudySnapshotTestCase.class,
+                    StudyManager.VisitCreationTestCase.class,
+                    StudyModule.TestCase.class,
+                    TreatmentManager.TreatmentDataTestCase.class,
+                    VisitImpl.TestCase.class
+            );
+        }
+        else
+        {
+            return Set.of(
+                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                    ParticipantGroupManager.ParticipantGroupTestCase.class,
+                    StudyImpl.ProtocolDocumentTestCase.class,
+                    StudyManager.StudySnapshotTestCase.class,
+                    StudyManager.VisitCreationTestCase.class,
+                    StudyModule.TestCase.class,
+                    VisitImpl.TestCase.class
+            );
+        }
     }
 
     @Override
