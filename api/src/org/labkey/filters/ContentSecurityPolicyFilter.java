@@ -323,7 +323,8 @@ public class ContentSecurityPolicyFilter implements Filter
     public static void registerMetricsProvider()
     {
         UsageMetricsService.get().registerUsageMetrics("API", () -> Map.of("cspFilters", CSP_FILTERS.values().stream()
-            .collect(Collectors.toMap(filter -> filter._type, filter -> filter._cspVersion))));
+            .collect(Collectors.toMap(filter -> filter._type,
+                filter -> Map.of("version", filter._cspVersion, "csp", filter._policyTemplate, "cspSubstituted", filter._policyExpression.getSource())))));
     }
 
     public static class TestCase extends Assert
