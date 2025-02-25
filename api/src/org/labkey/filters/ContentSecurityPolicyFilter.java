@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.security.Directive;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -113,7 +114,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
                 // Replace REPORT_PARAMETER_SUBSTITUTION now since its value is static
                 s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                        .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
 
                 _policyTemplate = s;
 
@@ -166,20 +167,22 @@ public class ContentSecurityPolicyFilter implements Filter
      */
     private void extractCspVersion(String s)
     {
+        // Simple parser that should be compliant with https://www.w3.org/TR/CSP3/#parse-serialized-policy
+        Map<String, String> cspMap = Arrays.stream(s.split(";"))
+            .map(String::trim)
+            .filter(line -> !line.isEmpty())
+            .map(line -> line.split("\\s", 2))
+            .filter(parts -> parts.length == 2)
+            .collect(LabKeyCollectors.toCaseInsensitiveLinkedMap(parts -> parts[0], parts -> parts[1]));
+
         String directive = "report-uri";
-        int dirIdx = StringUtils.indexOfIgnoreCase(s, directive);
+        String reportUri = cspMap.get(directive);
 
-        if (dirIdx != -1)
+        if (reportUri != null)
         {
-            int start =  StringUtils.indexOfIgnoreCase(s, directive, dirIdx);
-            int end = s.indexOf(';', start);
-
-            if (end == -1)
-                end = s.length();
-
             try
             {
-                ActionURL reportUrl =  new ActionURL(s.substring(start, end));
+                ActionURL reportUrl =  new ActionURL(reportUri);
                 String cspVersion = reportUrl.getParameter("cspVersion");
 
                 if (null != cspVersion)

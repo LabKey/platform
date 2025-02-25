@@ -101,12 +101,17 @@ public class AllowedExternalResourceHosts
             @Override
             public void handle(Map<Directive, StartupPropertyEntry> properties)
             {
-                List<AllowedHost> allowedHosts = properties.entrySet().stream()
-                    .flatMap(e -> Arrays.stream(e.getValue().getValue().split(" "))
-                        .map(host -> new AllowedHost(e.getKey(), host))
-                    )
-                    .toList();
-                saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
+                // If any allowed-hosts startup properties are provided, they completely replace whatever values were
+                // previously configured
+                if (!properties.isEmpty())
+                {
+                    List<AllowedHost> allowedHosts = properties.entrySet().stream()
+                        .flatMap(e -> Arrays.stream(e.getValue().getValue().split(" "))
+                            .map(host -> new AllowedHost(e.getKey(), host))
+                        )
+                        .toList();
+                    saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
+                }
             }
         });
     }

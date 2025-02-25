@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExternalSourcesForm" %>
 <%@ page import="org.labkey.filters.ContentSecurityPolicyFilter" %>
-<%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
