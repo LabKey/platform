@@ -11318,18 +11318,22 @@ public class AdminController extends SpringActionController
             return checkDuplicates(hosts, errors);
         }
 
-        // Lenient for now: no blanks or unknown directives
+        // Lenient for now: no unknown directives, no blank hosts or hosts with semicolons
         private AllowedHost validateHost(String directiveString, String host, BindException errors)
         {
             AllowedHost ret = null;
 
             if (StringUtils.isEmpty(directiveString))
             {
-                errors.addError(new LabKeyError("Directive must not be blank."));
+                errors.addError(new LabKeyError("Directive must not be blank"));
             }
             else if (StringUtils.isEmpty(host))
             {
-                errors.addError(new LabKeyError("Host must not be blank."));
+                errors.addError(new LabKeyError("Host must not be blank"));
+            }
+            else if (host.contains(";"))
+            {
+                errors.addError(new LabKeyError("Semicolons are not allowed in host names"));
             }
             else
             {
