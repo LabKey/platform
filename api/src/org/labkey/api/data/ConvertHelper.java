@@ -306,7 +306,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof java.sql.Time)
                 return o;
 
-            return DateUtil.fromTimeString(o.toString(), false);
+            return DateUtil.fromTimeString(o.toString(), true);
         }
     }
 
