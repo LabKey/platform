@@ -11353,7 +11353,8 @@ public class AdminController extends SpringActionController
         }
 
         /**
-         * Check for duplicates in hosts: within each Directive, hosts are checked using case-sensitive comparisons
+         * Check for duplicates in hosts: within each Directive, hosts are checked using case-insensitive comparisons
+
          * @param hosts a list of AllowedHost objects to check for duplicates
          * @param errors errors to populate
          * @return hosts if there are no duplicates, otherwise {@code null}
