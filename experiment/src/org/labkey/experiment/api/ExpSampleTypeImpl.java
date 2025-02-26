@@ -865,8 +865,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
             // Just call uncache(), and let normal cache loading do its thing
             SampleTypeServiceImpl.get().clearMaterialSourceCache(getContainer());
-
-            SampleTypeServiceImpl.get().indexSampleType(this);
         }
     }
 
