@@ -145,6 +145,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -2540,18 +2541,17 @@ public class PageFlowUtil
         String[] valueTokens = str.split("(?<!\\\\)" + escapedDelimiter);
 
         // trim values and replace escaped delimiter
-        List<String> valueList = Arrays.stream(valueTokens).map(String::trim)
-                .map(val -> val.replaceAll("\\\\" + escapedDelimiter, delimiter))
-                .toList();
+        Stream<String> valueStream = Arrays.stream(valueTokens).map(String::trim)
+                .map(val -> val.replaceAll("\\\\" + escapedDelimiter, delimiter));
 
         if (removeDuplicates)
-            valueList = valueList.stream().distinct().toList();
+            valueStream = valueStream.distinct();
         if (removeEmpty)
-            valueList = valueList.stream().filter(StringUtils::isNotEmpty).toList();
+            valueStream = valueStream.filter(StringUtils::isNotEmpty);
         if (sort)
-            valueList = valueList.stream().sorted().toList();
+            valueStream = valueStream.sorted();
 
-        return valueList;
+        return valueStream.toList();
     }
 
     public static String joinValuesToString(@NotNull List<String> values, String delimiter)
