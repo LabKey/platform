@@ -1196,6 +1196,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void indexDataClass(ExpDataClassImpl dataClass)
     {
+        if (dataClass == null)
+            return;
+
         SearchService ss = SearchService.get();
         if (ss == null)
             return;
@@ -8013,6 +8016,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.addCommitTask(() -> ExperimentServiceImpl.get().indexDataClass(getDataClass(c, dataClass.getName())), POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
             }
         }

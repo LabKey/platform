@@ -15,11 +15,9 @@
  */
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
@@ -295,7 +293,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
 
         ExperimentServiceImpl.get().clearDataClassCache(getContainer());
-        ExperimentServiceImpl.get().indexDataClass(this);
     }
 
     @Override

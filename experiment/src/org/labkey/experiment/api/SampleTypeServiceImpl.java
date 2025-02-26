@@ -240,6 +240,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void indexSampleType(ExpSampleType sampleType)
     {
+        if (sampleType == null)
+            return;
+
         SearchService ss = SearchService.get();
         if (ss == null)
             return;
@@ -890,6 +893,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                    transaction.addCommitTask(() -> {
+                        SampleTypeService.get().indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()));
+                    }, POSTCOMMIT, POSTROLLBACK);
+
                     return st;
                 }
                 catch (ExperimentException | MetadataUnavailableException eex)
