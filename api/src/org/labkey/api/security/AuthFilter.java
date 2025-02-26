@@ -186,7 +186,7 @@ public class AuthFilter implements Filter
 
         try
         {
-            Pair<User, HttpServletRequest> pair = SecurityManager.attemptAuthentication(req);
+            Pair<User, HttpServletRequest> pair = SecurityManager.attemptAuthentication(req, resp);
 
             if (null != pair)
             {
