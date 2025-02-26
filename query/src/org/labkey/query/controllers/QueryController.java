@@ -1519,12 +1519,20 @@ public class QueryController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, true);
 
-            QueryView queryView = Objects.requireNonNull(form.getQueryView());
-
-            var t = queryView.getTable();
-            if (null != t && !t.allowRobotsIndex())
+            QueryView queryView;
+            try
             {
-                getPageConfig().setRobotsNone();
+                queryView = Objects.requireNonNull(form.getQueryView());
+                var table = queryView.getTable();
+                if (null != table && !table.allowRobotsIndex())
+                {
+                    getPageConfig().setRobotsNone();
+                }
+            }
+            catch (QueryService.NamedParameterNotProvided | QueryParseException x)
+            {
+                ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                throw x;
             }
 
             if (isPrint())
