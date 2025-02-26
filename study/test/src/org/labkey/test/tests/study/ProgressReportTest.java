@@ -101,6 +101,7 @@ public class ProgressReportTest extends ReportTest
     @Override
     protected void doCreateSteps()
     {
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
         _containerHelper.createProject(getProjectName(), null);
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), getFolderName(), "Study", null);
         importStudyFromZip(STUDY_ZIP);
@@ -136,6 +137,13 @@ public class ProgressReportTest extends ReportTest
         assaySchedulePage.selectVisits(VISITS, 2);
 
         assaySchedulePage.save();
+    }
+
+    @Override
+    protected void doCleanup(boolean afterTest)
+    {
+        super.doCleanup(afterTest);
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Override
