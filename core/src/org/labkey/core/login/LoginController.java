@@ -377,9 +377,9 @@ public class LoginController extends SpringActionController
             config.setIncludeLoginLink(false);
             config.setIncludeSearch(false);
 
-            JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
+            JspView<?> jsp = new JspView<>("/org/labkey/core/login/register.jsp");
 
-            WebPartView view = ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "register");
+            WebPartView<?> view = ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "register");
             view.setFrame(WebPartView.FrameType.NONE);
             jsp.setView("registerView", view);
             return jsp;
@@ -841,13 +841,13 @@ public class LoginController extends SpringActionController
 
         if (null == user)
         {
-            _log.error("Password reset attempted for an email that doesn't match an existing account: " + email);
+            _log.warn("Password reset attempted for an email that doesn't match an existing account: {}", email);
             return resetPasswordResponse(user, null, null);
         }
 
         if (!LoginManager.loginExists(user))
         {
-            _log.error("Password reset attempted for an account that doesn't have a password: " + email);
+            _log.warn("Password reset attempted for an account that doesn't have a password: {}", email);
             return resetPasswordResponse(user, "You cannot reset the password for your account because it doesn't have a password. This usually means you log in via LDAP or single sign-on. Contact a server administrator if you have questions.", "Reset Password failed: " + email + " does not have a password");
         }
 
@@ -1003,7 +1003,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public static class GetRegistrationConfigApiAction extends ReadOnlyApiAction
+    public static class GetRegistrationConfigApiAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1033,7 +1033,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page)
+    private HttpView<?> showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page)
     {
         String email = form.getEmail();
 
@@ -1072,7 +1072,7 @@ public class LoginController extends SpringActionController
         else if (request.getParameter("_skipAutoRedirect") == null)
         {
             // see if any of the SSO auth providers are set to autoRedirect from the login action
-            SSOAuthenticationConfiguration ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+            SSOAuthenticationConfiguration<?> ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
             if (ssoAuthenticationConfiguration != null)
                 return HttpView.redirect(ssoAuthenticationConfiguration.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
         }
@@ -1082,14 +1082,12 @@ public class LoginController extends SpringActionController
         page.setIncludeSearch(false);
         page.setTitle("Sign In");
 
-        WebPartView view = getLoginView(errors);
-
-        vBox.addView(view);
+        vBox.addView(getLoginView(errors));
 
         return vBox;
     }
 
-    private WebPartView getLoginView(BindException errors)
+    private WebPartView<?> getLoginView(BindException errors)
     {
         // Get the login page specified by controller-action in the Look and Feel Settings
         // This is placed in showLogin() instead of the getLoginURL() to ensure that the logic above
@@ -1097,7 +1095,7 @@ public class LoginController extends SpringActionController
         String loginController = "login";
         String loginAction = "login";
         String customLogin = StringUtils.trimToNull(LookAndFeelProperties.getInstance(getContainer()).getCustomLogin());
-        WebPartView view = null;
+        WebPartView<?> view = null;
         if (null != customLogin)
         {
             ActionURL url = new ActionURL(customLogin);
@@ -1968,7 +1966,7 @@ public class LoginController extends SpringActionController
         @Override
         protected Supplier<String> getSuccessMessageSupplier(SetPasswordForm form)
         {
-            return () -> form.getMessage();
+            return form::getMessage;
         }
 
         @Override
