@@ -126,7 +126,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -2040,16 +2039,8 @@ public class SecurityController extends SpringActionController
             HtmlStringBuilder builder = HtmlStringBuilder.of()
                 .unsafeAppend("<p>")
                 .append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
-            if (mailHref != null)
-            {
-                builder.append(" Alternatively, you can copy the ")
-                    .append(new Link.LinkBuilder("contents of the message").href(mailHref).target("_blank").clearClasses())
-                    .append(" into an email client and send it to the user manually.");
-            }
-            builder.unsafeAppend("</p>\n<p>")
-                .append("For help on fixing your mail server settings, please consult the SMTP section of the ")
-                .append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"))
-                .unsafeAppend(".</p>");
+
+            SecurityManager.appendAdminMailHelpHtml(builder, mailHref);
 
             return builder.getHtmlString();
         }
