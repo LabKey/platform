@@ -61,7 +61,7 @@ public class AllowedExternalResourceHosts
             Map<Directive, List<String>> map = allowedHosts.stream()
                 .collect(Collectors.groupingBy(AllowedHost::directive, Collectors.mapping(AllowedHost::host, Collectors.toCollection(ArrayList::new))));
 
-            // Unregister all supported directives then register the directives with that have allowed hosts
+            // Unregister all supported directives then register the directives that have at least one allowed host
             Arrays.stream(Directive.values()).forEach(dir -> {
                 ContentSecurityPolicyFilter.unregisterAllowedSources(dir, ALLOWED_EXTERNAL_RESOURCES);
                 List<String> list = map.get(dir);
