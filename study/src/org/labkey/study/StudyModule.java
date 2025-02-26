@@ -83,6 +83,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
@@ -133,7 +134,26 @@ import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortDomainKind;
+import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.GroupSecurityType;
+import org.labkey.study.model.ImportHelperServiceImpl;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantGroupServiceImpl;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ProtocolDocumentType;
+import org.labkey.study.model.SequenceNumImportHelper;
+import org.labkey.study.model.StudyDomainKind;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyLsidHandler;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.TestDatasetDomainKind;
+import org.labkey.study.model.TreatmentManager;
+import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -404,6 +424,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "Allow query based dataset snapshots",
                 "Allow unprovisioned, query-based dataset snapshots to be created.",
                 false);
+
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
+                "Restore Study Protocol Design Tools",
+                "This option and all support for study protocol design tools and tables will be removed in LabKey Server v25.7.",
+                false, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
