@@ -184,7 +184,7 @@ public final class PlateManagerTest
     @AfterClass
     public static void cleanup()
     {
-//        deleteTestContainer();
+        deleteTestContainer();
         container = null;
         user = null;
     }
