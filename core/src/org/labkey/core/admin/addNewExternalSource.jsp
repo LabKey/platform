@@ -19,10 +19,11 @@
 <%@ page import="org.labkey.api.collections.LabKeyCollectors" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.Directive" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExternalSourcesForm" %>
 <%@ page import="org.labkey.filters.ContentSecurityPolicyFilter" %>
+<%@ page import="org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP" %>
@@ -30,12 +31,12 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
-    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
+    boolean isTroubleshooter = !c.hasPermission(getUser(), ApplicationAdminPermission.class);
 
     String noEffect = "External resource hosts can be configured below, but they'll have no effect until ";
     String message;
 
-    boolean hasEnforce = ContentSecurityPolicyFilter.hasCsp(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce);
+    boolean hasEnforce = ContentSecurityPolicyFilter.hasCsp(ContentSecurityPolicyType.Enforce);
     if (hasEnforce)
     {
         message = "This server is configured with an enforce Content Security Policy (CSP) ";
@@ -47,7 +48,7 @@
         }
         else
         {
-            List<String> missing = ContentSecurityPolicyFilter.getMissingSubstitutions(ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce);
+            List<String> missing = ContentSecurityPolicyFilter.getMissingSubstitutions(ContentSecurityPolicyType.Enforce);
             int count = missing.size();
             message += missing.isEmpty() ?
                 "that includes all the expected substitutions." :

@@ -459,7 +459,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "allowed external sources", new ActionURL(ExternalSourcesAction.class, root), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external resource hosts", new ActionURL(ExternalSourcesAction.class, root), TroubleshooterPermission.class);
         AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
@@ -11390,7 +11390,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
         {
-            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
 
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
