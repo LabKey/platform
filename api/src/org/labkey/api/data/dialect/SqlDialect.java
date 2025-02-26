@@ -558,7 +558,7 @@ public abstract class SqlDialect
      * @param maxRows Table.ALL_ROWS means all rows, 0 (Table.NO_ROWS) means no rows, > 0 limits result set
      * @param offset 0 based   @return the query
      */
-    public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset);
+    public abstract SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy, int maxRows, long offset);
 
     /** Does the dialect support limitRows() with an offset? */
     public abstract boolean supportsOffset();
@@ -832,7 +832,7 @@ public abstract class SqlDialect
         return _reservedWordSet.contains(word);
     }
 
-
+    // TODO: Return SQLFragment to ensure columnName gets added with appendIdentifier()
     public String getColumnSelectName(String columnName)
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()

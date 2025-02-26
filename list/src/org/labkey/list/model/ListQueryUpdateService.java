@@ -113,7 +113,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             if (null != keyFilter)
             {
-                Map<String, Object> raw = new TableSelector(getQueryTable(), keyFilter, null).getMap();
+                TableInfo queryTable = getQueryTable();
+                Map<String, Object> raw = new TableSelector(queryTable, keyFilter, null).getMap();
 
                 if (null != raw && !raw.isEmpty())
                 {
@@ -124,10 +125,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
                     for (DomainProperty prop : _list.getDomain().getProperties())
                     {
-                        Object value = getField(raw, prop.getName());
-
-                        if (null != value)
-                            ret.put(prop.getName(), value);
+                        String propName = prop.getName();
+                        ColumnInfo column = queryTable.getColumn(propName);
+                        Object value = column.getValue(raw);
+                        if (value != null)
+                            ret.put(propName, value);
                     }
                 }
             }

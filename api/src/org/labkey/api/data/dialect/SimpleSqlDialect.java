@@ -190,7 +190,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, SQLFragment order, SQLFragment groupBy, int maxRows, long offset)
     {
         return null;
     }

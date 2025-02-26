@@ -386,7 +386,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         if (null != formatString)
         {
-            Class valueClass = getDisplayValueClass();
+            Class<?> valueClass = getDisplayValueClass();
 
             try
             {
@@ -607,7 +607,7 @@ public abstract class DisplayColumn extends RenderColumn
         return "string";
     }
 
-    public static Class getClassFromJsonTypeName(String typeName)
+    public static Class<?> getClassFromJsonTypeName(String typeName)
     {
         if (typeName == null)
             return String.class;
@@ -755,14 +755,14 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (null != getColumnInfo())
         {
-            if (!getColumnInfo().getFieldKey().toString().equals(getColumnInfo().getLabel()))
+            if (!getColumnInfo().getFieldKey().toDisplayString().equals(getColumnInfo().getLabel()))
             {
                 boolean suffix = !tooltip.isEmpty();
                 if (suffix)
                 {
                     tooltip.append(" (");
                 }
-                tooltip.append(getColumnInfo().getFieldKey().toString());
+                tooltip.append(getColumnInfo().getFieldKey().toDisplayString());
                 if (suffix)
                 {
                     tooltip.append(")");
