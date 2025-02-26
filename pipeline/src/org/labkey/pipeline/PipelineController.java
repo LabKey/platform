@@ -1222,16 +1222,6 @@ public class PipelineController extends SpringActionController
             {
                 _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
 
-                // Be sure that the set of folder to apply the import to match the setting to enable/disable them
-                if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().isEmpty()))
-                {
-                    errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
-                }
-                else if (!form.isApplyToMultipleFolders() && form.getFolderRowIds() != null)
-                {
-                    errors.reject(ERROR_MSG, "Folder RowIds provided when 'apply to multiple folders' not enabled.");
-                }
-
                 // Be sure that the user has admin permissions to all selected folders and that all selected folders exist
                 if (form.getFolderRowIds() != null)
                 {
@@ -1260,16 +1250,6 @@ public class PipelineController extends SpringActionController
                     {
                         errors.reject(ERROR_MSG, "Pipeline root not found for selected container: " + container.getTitle() + ".");
                     }
-                }
-
-                // Be sure that the provided data types to import match the setting to enable/disable them
-                if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().isEmpty()))
-                {
-                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
-                }
-                else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
-                {
-                    errors.reject(ERROR_MSG, "Folder data types provided when 'select specific objects to import' not enabled.");
                 }
             }
         }
@@ -1313,7 +1293,6 @@ public class PipelineController extends SpringActionController
                     options.setCreateSharedDatasets(form.isCreateSharedDatasets());
                     options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
                     options.setDataTypes(form.getDataTypes());
-                    options.setIncludeSubfolders(!form.isApplyToMultipleFolders());
 
                     ComplianceService complianceService = ComplianceService.get();
                     if (null != complianceService)
@@ -1375,8 +1354,6 @@ public class PipelineController extends SpringActionController
         private String _filePath;
         private boolean _validateQueries;
         private boolean _createSharedDatasets;
-        private boolean _specificImportOptions;
-        private boolean _applyToMultipleFolders;
         private boolean _isCloudRoot; // Remove as part of Issue #43835
         private boolean _failForUndefinedVisits;
         private Set<String> _dataTypes;
@@ -1410,26 +1387,6 @@ public class PipelineController extends SpringActionController
         public void setCreateSharedDatasets(boolean createSharedDatasets)
         {
             _createSharedDatasets = createSharedDatasets;
-        }
-
-        public boolean isSpecificImportOptions()
-        {
-            return _specificImportOptions;
-        }
-
-        public void setSpecificImportOptions(boolean specificImportOptions)
-        {
-            _specificImportOptions = specificImportOptions;
-        }
-
-        public boolean isApplyToMultipleFolders()
-        {
-            return _applyToMultipleFolders;
-        }
-
-        public void setApplyToMultipleFolders(boolean applyToMultipleFolders)
-        {
-            _applyToMultipleFolders = applyToMultipleFolders;
         }
 
         public boolean isFailForUndefinedVisits()

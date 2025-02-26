@@ -89,8 +89,6 @@ Ext4.onReady(function()
                 canCreateSharedDatasets: <%=canCreateSharedDatasets%>,
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,
-                isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
-                isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
                 isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>,
                 isCloudRoot: <%=bean.isCloudRoot()%>,   // Remove as part of Issue #43835
                 showFailForUndefinedVisits: <%=(timepointType == null || timepointType == TimepointType.VISIT) && ((study == null) || !study.isFailForUndefinedTimepoints())%>
