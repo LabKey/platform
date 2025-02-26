@@ -86,8 +86,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private static final String DISTRIBUTION_FILENAME;
     private static final Set<SupportedDatabase> DISTRIBUTION_SUPPORTED_DATABASES;
 
-    public static final String ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
-
     private static final Logger LOG = LogHelper.getLogger(AppPropsImpl.class, "Site settings startup properties");
 
     static

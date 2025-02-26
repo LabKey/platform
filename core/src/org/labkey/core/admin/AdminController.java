@@ -10854,15 +10854,15 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                html.unsafeAppend("<table class='table'>");
-                html.unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
+                html.unsafeAppend("<table class='table'>")
+                    .unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
                 for (BlockListFilter.Suspicious s : list)
                 {
                     html.unsafeAppend("<tr><td>")
                         .append(s.host);
                     if (!isBlank(s.user))
                         html.append(HtmlString.NBSP).append("(" + s.user + ")");
-                     html.unsafeAppend("</td><td>")
+                    html.unsafeAppend("</td><td>")
                         .append(s.userAgent)
                         .unsafeAppend("</td><td>")
                         .append(s.count)
