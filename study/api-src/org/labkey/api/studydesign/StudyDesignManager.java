@@ -22,8 +22,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
@@ -49,19 +47,6 @@ public class StudyDesignManager
     public static StudyDesignManager get()
     {
         return _instance;
-    }
-
-/*
-    public DbSchema getSchema()
-    {
-        return StudySchema.getInstance().getSchema();
-    }
-*/
-
-    public boolean isModuleActive(Container c)
-    {
-        Module studyDesignModule = ModuleLoader.getInstance().getModule("StudyDesign");
-        return null != studyDesignModule && c.getActiveModules().contains(studyDesignModule);
     }
 
     public void deleteStudyDesignData(Container c, Set<TableInfo> deletedTables)
