@@ -188,6 +188,8 @@ public class SecurityManager
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
 
+    public static final String JSESSIONID = "JSESSIONID";
+
     static
     {
         EmailTemplateService.get().registerTemplate(RegistrationEmailTemplate.class);
@@ -552,10 +554,14 @@ public class SecurityManager
                 if (null != session)
                 {
                     AUTH_LOG.debug("   API key is a valid session key");
-                    Cookie sessionCookie = new Cookie("JSESSIONID", session.getId());
-                    sessionCookie.setPath("/");
-                    response.addCookie(sessionCookie);
-                    request = new SessionReplacingRequest(request, session);
+                    String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
+                    if (!session.getId().equals(sessionId))
+                    {
+                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                        sessionCookie.setPath("/");
+                        response.addCookie(sessionCookie);
+                        request = new SessionReplacingRequest(request, session);
+                    }
                 }
                 else
                 {

@@ -35,7 +35,6 @@ public class CSRFUtil
     public  static final String csrfName =    "X-LABKEY-CSRF";
     public  static final String csrfHeader =  "X-LABKEY-CSRF";
     private static final String csrfCookie =  "X-LABKEY-CSRF";
-    public static final String SESSION_COOKIE_NAME = "JSESSIONID";
 
     public static String getExpectedToken(HttpServletRequest request, @Nullable HttpServletResponse response)
     {
