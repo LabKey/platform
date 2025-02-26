@@ -11319,7 +11319,7 @@ public class AdminController extends SpringActionController
         }
 
         // Lenient for now: no unknown directives, no blank hosts or hosts with semicolons
-        private AllowedHost validateHost(String directiveString, String host, BindException errors)
+        public static AllowedHost validateHost(String directiveString, String host, BindException errors)
         {
             AllowedHost ret = null;
 
@@ -11358,7 +11358,7 @@ public class AdminController extends SpringActionController
          * @param errors errors to populate
          * @return hosts if there are no duplicates, otherwise {@code null}
          */
-        private @Nullable List<AllowedHost> checkDuplicates(List<AllowedHost> hosts, BindException errors)
+        public static @Nullable List<AllowedHost> checkDuplicates(List<AllowedHost> hosts, BindException errors)
         {
             // Not a simple Set<AllowedHost> check since we want host check to be case-insensitive
             MultiValuedMap<Directive, String> map = new CaseInsensitiveHashSetValuedMap<>();

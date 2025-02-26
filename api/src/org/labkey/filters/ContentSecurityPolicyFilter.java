@@ -171,7 +171,7 @@ public class ContentSecurityPolicyFilter implements Filter
         Map<String, String> cspMap = Arrays.stream(s.split(";"))
             .map(String::trim)
             .filter(line -> !line.isEmpty())
-            .map(line -> line.split("\\s", 2))
+            .map(line -> line.split("\\s+", 2))
             .filter(parts -> parts.length == 2)
             .collect(LabKeyCollectors.toCaseInsensitiveLinkedMap(parts -> parts[0], parts -> parts[1]));
 

@@ -14,7 +14,9 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.admin.AdminController;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,16 +103,30 @@ public class AllowedExternalResourceHosts
             @Override
             public void handle(Map<Directive, StartupPropertyEntry> properties)
             {
-                // If any allowed-hosts startup properties are provided, they completely replace whatever values were
+                // If any allowed-hosts startup properties are provided, they completely replace *all* values that were
                 // previously configured
                 if (!properties.isEmpty())
                 {
+                    BindException errors = new BindException(new Object(), "form");
                     List<AllowedHost> allowedHosts = properties.entrySet().stream()
-                        .flatMap(e -> Arrays.stream(e.getValue().getValue().split(" "))
-                            .map(host -> new AllowedHost(e.getKey(), host))
+                        .flatMap(e -> Arrays.stream(e.getValue().getValue().trim().split("\\s+"))
+                            .map(host -> AdminController.ExternalSourcesForm.validateHost(e.getKey().name(), host, errors))
                         )
                         .toList();
-                    saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
+
+                    if (!errors.hasErrors())
+                    {
+                        AdminController.ExternalSourcesForm.checkDuplicates(allowedHosts, errors);
+                    }
+
+                    if (errors.hasErrors())
+                    {
+                        LOG.error("Invalid AllowedExternalResourceHosts startup properties", errors);
+                    }
+                    else
+                    {
+                        saveAllowedHosts(allowedHosts, User.getAdminServiceUser());
+                    }
                 }
             }
         });
