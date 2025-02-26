@@ -499,12 +499,6 @@ public class DateUtil
     {
         try
         {
-            return parseISODateTime(s);
-        }
-        catch (Exception ignored) {}
-
-        try
-        {
             // java.util.Date.toString produces dates in the following format.  Try to
             // convert them here.  This is necessary to pass the DRT when running in a
             // non-US timezone:
@@ -749,21 +743,11 @@ public class DateUtil
         {
             try
             {
-                // One final format to try - handles "2-3-01", "02-03-01", "02-03-2001", etc
-                DateParser format = getDateParser("M-d-yy");
-                return format.parse(s).getTime();
+                return parseXMLDate(s);
             }
-            catch (ParseException pe)
+            catch (IllegalArgumentException ignored)
             {
-                try
-                {
-                    return parseXMLDate(s);
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                }
             }
-
             throw e;
         }
     }
@@ -1515,6 +1499,18 @@ Parse:
             }
         }
 
+        void assertIllegalFromTimeString(String s, boolean strict)
+        {
+            try
+            {
+                DateUtil.fromTimeString(s, strict);
+                fail("Not a legal time: " + s);
+            }
+            catch (ConversionException x)
+            {
+            }
+        }
+
         @Test
         public void testDateTimeUS() throws ParseException
         {
@@ -1929,6 +1925,19 @@ Parse:
 
             assertIllegalTime("1830");
             assertIllegalTime("19999 pm");
+            assertIllegalFromTimeString("19999 pm", false);
+            assertIllegalFromTimeString("19999 pm", true);
+
+            assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("3", true));
+            assertEquals(java.sql.Time.valueOf("3:00:00"), fromTimeString("03", true));
+            assertEquals(java.sql.Time.valueOf("6:00:00").toString(), fromTimeString("30", false).toString());
+            assertIllegalFromTimeString("30", true);
+            assertEquals(java.sql.Time.valueOf("21:00:00").toString(), fromTimeString("69", false).toString());
+            assertIllegalFromTimeString("69", true);
+            assertIllegalFromTimeString("70", false);
+            assertIllegalFromTimeString("70", true);
+            assertIllegalFromTimeString("1830", false);
+            assertIllegalFromTimeString("1830", true);
         }
 
         @Test

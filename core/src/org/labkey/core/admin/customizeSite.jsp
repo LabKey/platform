@@ -198,7 +198,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label for="<%=h(usageReportingLevel + "1")%>">
-                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>' onChange="enableUsageTest();"
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>'
                                value="<%=UsageReportingLevel.NONE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>" />
                         <strong>Off</strong>: Do not check for updates or report any usage data.
                     </label>
@@ -207,7 +207,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label for="<%=h(usageReportingLevel + "2")%>">
-                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "2")%>' onChange="enableUsageTest();"
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "2")%>'
                                value="<%=UsageReportingLevel.ON%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>" />
                         <strong>On</strong>: Report system information, usage data, and organization details, and show messages when important upgrades are available.
                     </label>
@@ -216,7 +216,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label for="<%=h(usageReportingLevel + "3")%>">
-                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "3")%>' onChange="enableUsageTest();"
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "3")%>'
                                       value="<%=UsageReportingLevel.ON_WITHOUT_UPGRADE_MESSAGE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.ON_WITHOUT_UPGRADE_MESSAGE)%>" />
                         <strong>Report only</strong>: Report system information, usage data, and organization details, but do not show upgrade messages.
                     </label>

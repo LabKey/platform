@@ -221,6 +221,15 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         }
 
         @Override
+        public Path getJobRootPath()
+        {
+            var pipelineJob = getXarContext().getJob();
+            return pipelineJob != null
+                    ? pipelineJob.getPipeRoot().getRootFileLike().toNioPathForRead()
+                    : super.getJobRootPath();
+        }
+
+        @Override
         public boolean shouldIgnoreDataFiles()
         {
             return true;
