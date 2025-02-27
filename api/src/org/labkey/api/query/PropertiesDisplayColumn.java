@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 
 public class PropertiesDisplayColumn extends DataColumn implements NestedPropertyDisplayColumn
@@ -74,11 +73,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
         innerDataRegion.setShowFilters(false);
     }
 
-    UserSchema getUserSchema()
-    {
-        return schema;
-    }
-
     // This function may be called more than once for the same row during rendering
     private void updateInnerContext(RenderContext outerCtx)
     {
@@ -91,7 +85,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             propCols = (Map<String, Pair<PropertyColumn, DisplayColumn>>)outerCtx.computeIfAbsent(EXTRA_PROPERTIES, k -> new LinkedHashMap<>());
         }
 
-        String currentLsid = requireNonNullElse((String)getValue(outerCtx), null);
+        String currentLsid = (String)getValue(outerCtx);
         if (Objects.equals(innerCtxLsid, currentLsid))
             return;
 
@@ -242,8 +236,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     {
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            var nested = ExtendedApiQueryResponse.getNestedPropertiesArray(ctx, this, true, true, false);
-            return nested;
+            return ExtendedApiQueryResponse.getNestedPropertiesArray(ctx, this, true, true, false);
         }
 
         return null;
@@ -295,7 +288,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
 
-    private class PropsTable extends VirtualTable
+    private static class PropsTable extends VirtualTable<UserSchema>
     {
         static final String OBJECTURI_PARAMETER = "__OBJECTURI__";
 
