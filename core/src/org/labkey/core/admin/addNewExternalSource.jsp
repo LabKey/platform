@@ -81,8 +81,11 @@
 %>
     </p>
     <p>
-        For more information on the security concern, please refer to the
-        <%=link("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").clearClasses()%>
+        For information about configuring CSPs with LabKey, refer to our <%=helpLink("cspConfig", "Content Security Policy Configuration page")%>.
+    </p>
+    <p>
+        For more information on the security concern, refer to the
+        <%=link("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").target("_owasp").clearClasses()%>.
     </p>
 </div>
 <%
