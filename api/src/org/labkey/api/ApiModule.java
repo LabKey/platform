@@ -254,6 +254,7 @@ public class ApiModule extends CodeOnlyModule
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
+        ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
         // Handle optional feature and system maintenance startup properties as late as possible; we want all optional
