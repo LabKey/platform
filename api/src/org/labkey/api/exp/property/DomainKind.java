@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -40,6 +41,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -55,6 +57,7 @@ import java.util.stream.Collectors;
 
 abstract public class DomainKind<T> implements Handler<String>
 {
+    public static final Logger LOG = LogHelper.getLogger(DomainKind.class, "Generic domain kind activities.");
     abstract public String getKindName();
 
     /**
@@ -239,9 +242,15 @@ abstract public class DomainKind<T> implements Handler<String>
         String storageTableName = domain.getStorageTableName();
 
         if (null != storageTableName)
+        {
+            LOG.debug("Invalidating " + schemaName + "." + storageTableName);
             getScope().invalidateTable(schemaName, storageTableName, getSchemaType());
+        }
         else
+        {
+            LOG.debug("Invalidating " + schemaName);
             getScope().invalidateSchema(schemaName, getSchemaType());
+        }
     }
 
     /**
