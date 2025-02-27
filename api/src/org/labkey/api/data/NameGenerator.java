@@ -90,6 +90,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.data.NameGenerator.NameGenerationExpression.findFirstOpenOrCloseTag;
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.util.SubstitutionFormat.dailySampleCount;
@@ -529,11 +530,11 @@ public class NameGenerator
 
         // check withCount is inside ${}
         String prevStr = nameExpression.substring(0, index);
-        int prevOpenCount = StringUtils.countMatches(prevStr, "${");
-        int prevCloseCount = StringUtils.countMatches(prevStr, "}");
+        int prevOpenCount = StringUtils.countMatches(prevStr, "${") - StringUtils.countMatches(prevStr, "\\${");
+        int prevCloseCount = StringUtils.countMatches(prevStr, "}") - StringUtils.countMatches(prevStr, "\\}");
         String postStr = nameExpression.substring(index);
-        int postOpenCount = StringUtils.countMatches(postStr, "${");
-        int postCloseCount = StringUtils.countMatches(postStr, "}");
+        int postOpenCount = StringUtils.countMatches(postStr, "${") - StringUtils.countMatches(postStr, "\\${");
+        int postCloseCount = StringUtils.countMatches(postStr, "}") - StringUtils.countMatches(postStr, "\\}");
         if ((prevOpenCount - prevCloseCount) != 1 || (postCloseCount - postOpenCount) != 1)
             warningMessages.add(String.format("The '%s' substitution pattern starting at position %d should be enclosed in ${}.", SubstitutionValue.withCounter.name(), start));
 
@@ -618,13 +619,13 @@ public class NameGenerator
         int start = 0;
         int openIndex;
         final String openTag = "${";
-        final char closeTag = '}';
+        final String closeTag = "}";
         List<String> errors = new ArrayList<>();
         List<Integer> unmatchedOpen = new ArrayList<>();
         List<Integer> unmatchedClosed = new ArrayList<>();
         LinkedList<Integer> openIndexes = new LinkedList<>();
 
-        while (start < nameExpression.length() && (openIndex = nameExpression.indexOf(openTag, start)) >= 0)
+        while (start < nameExpression.length() && (openIndex = findFirstOpenOrCloseTag(nameExpression, openTag, start)) >= 0)
         {
             openIndexes.clear();
             openIndexes.push(openIndex);
@@ -632,8 +633,8 @@ public class NameGenerator
 
             while (subInd < nameExpression.length())
             {
-                int nextOpen = nameExpression.indexOf(openTag, subInd);
-                int nextClose = nameExpression.indexOf(closeTag, subInd);
+                int nextOpen = findFirstOpenOrCloseTag(nameExpression, openTag, subInd);
+                int nextClose = findFirstOpenOrCloseTag(nameExpression, closeTag, subInd);
 
                 // no more opens or closes
                 if (nextOpen == -1 && nextClose == -1)
@@ -847,6 +848,7 @@ public class NameGenerator
         return ExperimentService.get().getDataClass(container, user, dataType) != null;
     }
 
+    // TODO remove support
     static String getEncodedDataTypeInExpression(String expression)
     {
         return expression.replaceAll("/", "\\$S");
@@ -2410,6 +2412,12 @@ public class NameGenerator
             return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
         }
 
+        @Override
+        protected boolean isBackslashEscape()
+        {
+            return true;
+        }
+
         public List<String> getSyntaxErrors()
         {
             return _syntaxErrors;
@@ -2459,6 +2467,25 @@ public class NameGenerator
             return super.parsePart(expression);
         }
 
+        public static int findFirstOpenOrCloseTag(String str, String target, int startIndex)
+        {
+            int searchStart = startIndex;
+            int index = str.indexOf(target, searchStart);
+
+            // Keep searching until we find a valid 'target' that's not preceeded by \ (for example, find ${, but exclude \${)
+            while (index != -1)
+            {
+                if (index == 0 || str.charAt(index - 1) != '\\')
+                    return index;
+
+                // Otherwise, continue searching after the current occurrence of the target
+                searchStart = index + 1;
+                index = str.indexOf(target, searchStart);
+            }
+
+            return -1;
+        }
+
         @Override
         protected void parse()
         {
@@ -2467,9 +2494,9 @@ public class NameGenerator
             int openIndex;
             int openCount = 0;
             final String openTag = "${";
-            final char closeTag = '}';
+            final String closeTag = "}";
 
-            while (start < _source.length() && (openIndex = _source.indexOf(openTag, start)) >= 0)
+            while (start < _source.length() && (openIndex = findFirstOpenOrCloseTag(_source, openTag, start)) >= 0)
             {
                 if (openIndex > 0)
                     _parsedExpression.add(new StringExpressionFactory.ConstantPart(_source.substring(start, openIndex)));
@@ -2479,8 +2506,8 @@ public class NameGenerator
 
                 while (subInd < _source.length())
                 {
-                    int nextOpen = _source.indexOf(openTag, subInd);
-                    int nextClose = _source.indexOf(closeTag, subInd);
+                    int nextOpen = findFirstOpenOrCloseTag(_source, openTag, subInd);
+                    int nextClose = findFirstOpenOrCloseTag(_source, closeTag, subInd);
 
                     if (nextOpen == -1 && nextClose == -1)
                         break;
@@ -2500,11 +2527,7 @@ public class NameGenerator
                         break;
 
                     if (openCount < 0)
-                    {
-                        if (_validateSyntax) // unmatched {} are already checked previously
-                            return;
                         throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
-                    }
                 }
 
                 if (openCount == 0)
@@ -2525,11 +2548,7 @@ public class NameGenerator
                     start = subInd;
                 }
                 else
-                {
-                    if (_validateSyntax)
-                        return;
                     throw new IllegalArgumentException("Illegal expression: open and close tags are not matched.");
-                }
             }
 
             if (start < _source.length())

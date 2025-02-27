@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.query.QueryKey;
 
 import java.sql.Time;
 import java.text.DecimalFormat;
@@ -595,7 +596,7 @@ public class SubstitutionFormat
     public static List<String> validateNonFunctionalSyntax(String formatName, String nameExpression, int start, String noun, boolean allowLookup)
     {
         List<String> messages = new ArrayList<>();
-        if (start < 2 || !nameExpression.startsWith("${", start-2))
+        if (start < 2 || !(nameExpression.startsWith("${", start-2) || nameExpression.startsWith("${\\", start-3)))
         {
             if (allowLookup && nameExpression.startsWith("/", start-1))
                 return messages;
@@ -606,14 +607,14 @@ public class SubstitutionFormat
             if (NameGenerator.SubstitutionValue.DataInputs.name().equals(formatName) || NameGenerator.SubstitutionValue.MaterialInputs.name().equals(formatName))
             {
                 // check for ancestor lookup
-                if (nameExpression.startsWith("..[", start-3))
+                if (nameExpression.startsWith("..[", start-3) || nameExpression.startsWith("..[\\", start-4))
                     return messages;
                 // check for ancestor search
-                if (nameExpression.startsWith("${~", start-3))
+                if (nameExpression.startsWith("${~", start-3) || nameExpression.startsWith("${~\\", start-4))
                     return messages;
             }
-            messages.add(String.format("'%s' is recognized as a %s. Use ${%s} if you want to include the %s value in the naming pattern.", formatName, noun, formatName, noun));
-
+            if (!formatName.startsWith("${"))
+                messages.add(String.format("'%s' is recognized as a %s. Use ${%s} if you want to include the %s value in the naming pattern.", formatName, noun, formatName, noun));
         }
         // missing ending brace check handled by general check for matching begin and end braces
         return messages;
