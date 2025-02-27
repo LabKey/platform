@@ -2414,9 +2414,9 @@ public class SecurityManager
     {
         if (messageContentsURL != null)
         {
-            builder.append(" Alternatively, you can copy the ");
-            builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses());
-            builder.append(" into an email client and send it to the user manually.");
+            builder.append(" Alternatively, you can copy the ")
+                .append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses())
+                .append(" into an email client and send it to the user manually.");
         }
 
         builder.unsafeAppend("</p><p>")
