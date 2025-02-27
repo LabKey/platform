@@ -466,8 +466,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
         this.dateFormat = LABKEY.extDefaultDateFormat;
         this.dateRenderer = function(value) {
-            var formattedVal = Ext4.util.Format.date(value, LABKEY.extDefaultDateFormat);
-            return LABKEY.Utils.encodeHtml(formattedVal);
+            return LABKEY.Utils.encodeHtml(value);
         };
         this.editInfo = json.editInfo;
         this.sortOrder = json.sortOrder;
