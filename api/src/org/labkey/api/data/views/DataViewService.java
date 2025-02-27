@@ -25,6 +25,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -273,6 +274,12 @@ public class DataViewService
                     o.put(dp.getName(), createUserObject(u, user));
                 else
                     o.put(dp.getName(), String.valueOf(tag.getValue()));
+            }
+            else if (DataViewProvider.EditInfo.Property.refreshDate.name().equals(dp.getName()) && tag.getValue() instanceof Date d)
+            {
+                // Issue 52268: Data Views Webpart behaves badly when the server is in a different time zone
+                // Serialize as a date, not a datetime
+                o.put(dp.getName(), DateUtil.formatIsoDate(d));
             }
             else
             {

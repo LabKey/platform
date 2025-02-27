@@ -240,6 +240,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void indexSampleType(ExpSampleType sampleType)
     {
+        if (sampleType == null)
+            return;
+
         SearchService ss = SearchService.get();
         if (ss == null)
             return;
@@ -890,6 +893,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                    transaction.addCommitTask(() -> {
+                        indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()));
+                    }, POSTCOMMIT);
+
                     return st;
                 }
                 catch (ExperimentException | MetadataUnavailableException eex)
@@ -1071,7 +1078,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            st.save(user, true);
+            st.save(user);
             String auditComment = null;
             if (hasNameChange)
             {
@@ -1096,7 +1103,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
                     clearMaterialSourceCache(container);
-                    SampleTypeServiceImpl.get().indexSampleType(st);
 
                     if (finalHasMetricUnitChanged)
                     {
@@ -1109,8 +1115,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                             throw new RuntimeSQLException(e);
                         }
                     }
-
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }

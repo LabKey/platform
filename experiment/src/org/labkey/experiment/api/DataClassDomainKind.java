@@ -427,17 +427,6 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public void invalidate(Domain domain)
-    {
-        LOG.debug("Invalidating data class domain " + domain.getStorageTableName());
-        super.invalidate(domain);
-
-        ExpDataClassImpl dc = getDataClass(domain);
-        if (dc != null && dc.getDomain() != null && dc.getDomain().getStorageTableName() != null)
-            ExperimentServiceImpl.get().indexDataClass(dc);
-    }
-
-    @Override
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof DataClassTemplateType;
