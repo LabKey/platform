@@ -312,7 +312,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
 
             ExperimentServiceImpl.get().clearDataClassCache(c);
-
+            dc = ExperimentServiceImpl.get().getDataClass(c, rowId); // retrieve the new data class with updated domain
             ExperimentServiceImpl.get().indexDataClass(dc);
 
             return ret;
