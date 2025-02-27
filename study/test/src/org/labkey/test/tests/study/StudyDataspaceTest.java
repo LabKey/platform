@@ -23,6 +23,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
+import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
@@ -32,6 +33,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
@@ -90,6 +92,14 @@ public class StudyDataspaceTest extends StudyBaseTest
     {
         initializeFolder();
         setPipelineRoot(StudyHelper.getStudySubfolderPath());
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+    }
+
+    @Override
+    public void doCleanup(boolean afterTest) throws TestTimeoutException
+    {
+        super.doCleanup(afterTest);
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Override
