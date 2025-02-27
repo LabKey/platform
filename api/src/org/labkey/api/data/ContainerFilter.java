@@ -506,7 +506,18 @@ public abstract class ContainerFilter
         }
     }
 
+    public static ContainerFilter current(Container c, User user)
+    {
+        return Type.Current.create(c, user);
+    }
+
+    public static ContainerFilter current(ContainerUser cu)
+    {
+        return Type.Current.create(cu);
+    }
+
     // Does not validate permissions!
+    @Deprecated // Use current(Container, User) or current(ContainerUser) instead
     public static ContainerFilter current(Container c)
     {
         return new CurrentContainerFilter(c);
