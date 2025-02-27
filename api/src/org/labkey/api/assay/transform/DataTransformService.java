@@ -19,7 +19,6 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
-import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -259,7 +258,7 @@ public class DataTransformService
     {
         if (request != null)
         {
-            return CSRFUtil.SESSION_COOKIE_NAME;
+            return SecurityManager.JSESSIONID;
         }
         // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
         return SecurityManager.TRANSFORM_SESSION_ID;
@@ -310,7 +309,7 @@ public class DataTransformService
     {
         if (request != null)
         {
-            return PageFlowUtil.getCookieValue(request.getCookies(), CSRFUtil.SESSION_COOKIE_NAME, "");
+            return PageFlowUtil.getCookieValue(request.getCookies(), SecurityManager.JSESSIONID, "");
         }
         return apiKey;
     }

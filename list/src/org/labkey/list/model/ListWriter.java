@@ -182,7 +182,7 @@ public class ListWriter
                             .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
-                    Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
+                    Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().get(0).getFieldKey());
 
                     // NOTE: TSVGridWriter generates and closes Results
                     try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))

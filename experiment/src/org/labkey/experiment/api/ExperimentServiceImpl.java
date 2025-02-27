@@ -1196,6 +1196,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void indexDataClass(ExpDataClassImpl dataClass)
     {
+        if (dataClass == null)
+            return;
+
         SearchService ss = SearchService.get();
         if (ss == null)
             return;
@@ -7929,6 +7932,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(DataTypeForExclusion.DataClass, impl.getRowId(), c, u);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            tx.addCommitTask(() -> indexDataClass(getDataClass(c, bean.getName())), POSTCOMMIT);
             tx.commit();
         }
         catch (MetadataUnavailableException e)
@@ -8013,6 +8017,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!errors.hasErrors())
             {
                 transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.addCommitTask(() -> indexDataClass(getDataClass(c, dataClass.getName())), POSTCOMMIT);
                 transaction.commit();
             }
         }
