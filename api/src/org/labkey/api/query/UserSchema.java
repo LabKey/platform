@@ -374,6 +374,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path.toString();
     }
 
+    @Override
     public SchemaKey getSchemaPath()
     {
         return _path;

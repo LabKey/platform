@@ -138,6 +138,11 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     @NotNull
     String getSchemaName();
 
+    default SchemaKey getSchemaPath()
+    {
+        return SchemaKey.decode(getSchemaName());
+    }
+
     /** @return short description of the content and purpose of the schema */
     @Nullable String getDescription();
 
