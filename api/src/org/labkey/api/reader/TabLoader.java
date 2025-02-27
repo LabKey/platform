@@ -466,8 +466,17 @@ public class TabLoader extends DataLoader
                         buf.append(nextLine);
                         continue;
                     }
-
-                    if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
+                    // Issue 52095: quotes at the beginning of a string may not surround the entire field.
+                    else if (end < buf.length() - 1 && buf.charAt(end+1) != _chDelimiter)
+                    {
+                        int fieldEnd = buf.indexOf(_strDelimiter, end);
+                        if (fieldEnd == end+1 || !buf.substring(end+1, fieldEnd).matches("\\s*"))
+                        {
+                            isDelimiterOrQuote = false;
+                            break;
+                        }
+                    }
+                    else if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
                     {
                         // Issue 51056: pooling sample parents with single quote doesn't work
                         // " a, " b should be parsed as [" a, " b], not [a,  b]
@@ -872,6 +881,50 @@ public class TabLoader extends DataLoader
             verifyMalformedData(tsv, true, "\"testb", "\"a \"b");
 
             assertTrue(tsv.delete());
+        }
+
+        @Test
+        public void testWithQuotes() throws IOException
+        {
+            String quotedCsvData = """
+                "Header1","Header2","Header3"
+                "test1a","testb"  ,3""";
+
+            File file = _createTempFile(quotedCsvData, ".csv");
+            Consumer<TabLoader> consumer = t->{};
+
+            try (TabLoader l = new TabLoader(file))
+            {
+                consumer.accept(l);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(3, l.getColumns().length);
+                assertEquals(2, maps.size());
+
+                Map<String, Object> firstRow = maps.get(0);
+                assertEquals("test1a", firstRow.get("Header1"));
+                assertEquals("test1b", firstRow.get("Header2"));
+                assertEquals("3", firstRow.get("Header3"));
+            }
+
+            assertTrue(file.delete());
+
+            String csvDataWithQuotes = """
+                Header1,Header2,Header3
+                "test1/a"/b,"testb", testc""";
+            file = _createTempFile(csvDataWithQuotes, ".csv");
+
+            try (TabLoader l = new TabLoader(file))
+            {
+                consumer.accept(l);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals(3, l.getColumns().length);
+                assertEquals(2, maps.size());
+
+                Map<String, Object> firstRow = maps.get(0);
+                assertEquals("test1/a/b", firstRow.get("Header1"));
+                assertEquals("test1b", firstRow.get("Header2"));
+                assertEquals("testc", firstRow.get("Header3"));
+            }
         }
 
         @Test
