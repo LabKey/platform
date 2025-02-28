@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.study.Study" %>
@@ -65,6 +66,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -338,7 +340,7 @@
     if (study.allowExport(getUser()))
     {
 %>
-        <%= button("Create Ancillary Study").onClick("showCreateStudyWizard('ancillary'); return false;") %>
+        <%= OptionalFeatureService.get().isFeatureEnabled(StudyManager.ENABLE_ANCILLARY_STUDIES) ? button("Create Ancillary Study").onClick("showCreateStudyWizard('ancillary'); return false;") : HtmlString.EMPTY_STRING%>
         <%= button("Publish Study").onClick("showCreateStudyWizard('publish'); return false;") %>
 <%
     }
