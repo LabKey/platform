@@ -540,8 +540,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tpl if="this.isValid(data.status)">' +
                 '<tr><td>Status:</td><td>{[fm.htmlEncode(values.data.status)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.refreshDate != undefined">' +
-                '<tr><td valign="top">Data Cut Date:</td><td>{[m.htmlEncode(values.data.refreshDate)]}</td></tr>' +
+                '<tpl if="data.refreshDate != undefined && data.refreshDate != \'\'">' +
+                '<tr><td valign="top">Data Cut Date:</td><td>{[fm.htmlEncode(values.data.refreshDate)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="this.isValid(data.description)">' +
                 '<tr><td valign="top">Description:</td><td>{[fm.htmlEncode(values.data.description)]}</td></tr>' +
