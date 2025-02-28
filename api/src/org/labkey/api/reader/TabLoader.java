@@ -470,7 +470,7 @@ public class TabLoader extends DataLoader
                     else if (end < buf.length() - 1 && buf.charAt(end+1) != _chDelimiter)
                     {
                         int fieldEnd = buf.indexOf(_strDelimiter, end);
-                        if (fieldEnd == end+1 || !buf.substring(end+1, fieldEnd).matches("\\s*"))
+                        if (fieldEnd > end && (fieldEnd == end+1 || !buf.substring(end+1, fieldEnd).matches("\\s*")))
                         {
                             isDelimiterOrQuote = false;
                             break;
