@@ -366,6 +366,7 @@ public class SqlParser
     public QExpr parseExpr(String str, boolean constExpression, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<>();
+        _parseWarnings = new ArrayList<>();
         try (var parser = getAntlrParser())
         {
             parser.reset(str, _parseErrors);
