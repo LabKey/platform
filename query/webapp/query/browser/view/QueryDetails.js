@@ -849,10 +849,14 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                     scope : this,
                     fn : function(cmp) {
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(null, this.refreshQueryDependencies, function(error) {
+                        this.queriesCache.load(null, this.refreshQueryDependencies, LABKEY.Utils.getCallbackWrapper(function(error) {
                             this.removeQueryDependencies();
-                            this.onLoadError(error);
-                        }, this);
+                            this.getContent().add({
+                                xtype : 'box',
+                                itemId : 'lk-dependency-report',
+                                html : '<br/>Failed to load dependency information. ' + Ext4.htmlEncode(error.exception ? error.exception : ''),
+                            });
+                       }, this, true), this);
                     }
                 }
             }
