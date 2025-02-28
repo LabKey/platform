@@ -15,6 +15,7 @@
  */
 package org.labkey.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -29,8 +30,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Directive;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.security.AllowedExternalResourceHosts;
+import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 
 import java.util.HashSet;
 import java.util.List;
@@ -122,9 +128,9 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
         SQLFragment toLowerSql = new SQLFragment("UPDATE ").append(tableInfo)
-                .append(" SET Name = LOWER(Name) ")
-                .append(" WHERE Container = ? AND NAME LIKE 'SampleNameGenCounter-%'")
-                .add(container);
+            .append(" SET Name = LOWER(Name) ")
+            .append(" WHERE Container = ? AND NAME LIKE 'SampleNameGenCounter-%'")
+            .add(container);
         new SqlExecutor(tableInfo.getSchema()).execute(toLowerSql);
     }
 
@@ -141,9 +147,9 @@ public class CoreUpgradeCode implements UpgradeCode
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
 
         SQLFragment sql = new SQLFragment()
-                .append("SELECT DISTINCT Container\n")
-                .append("FROM ").append(tableInfo, "seq")
-                .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%'");
+            .append("SELECT DISTINCT Container\n")
+            .append("FROM ").append(tableInfo, "seq")
+            .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%'");
 
         @NotNull List<String> containers = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
         if (containers.isEmpty())
@@ -166,5 +172,22 @@ public class CoreUpgradeCode implements UpgradeCode
 
             LOG.info("** finished upgrade withCounter DBSequences for container: " + container.getPath());
         }
+    }
+
+    /**
+     * Called from core-25.000-25.001.sql
+     */
+    @SuppressWarnings("unused")
+    public static void migrateAllowedExternalConnectionHosts(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        List<String> hosts = AppProps.getInstance().getExternalSourceHosts();
+        List<AllowedHost> allowedHosts = hosts.stream()
+            .map(host -> new AllowedHost(Directive.Connection, host))
+            .toList();
+
+        AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, context.getUpgradeUser());
     }
 }
