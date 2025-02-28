@@ -464,6 +464,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 metric.put("linkedAssayDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(PublishSourceType) FROM study.dataset WHERE PublishSourceType = 'Assay'").getObject(Long.class));
 
                 metric.put("redcapCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM prop.PropertySets WHERE Category = 'RedcapConfigurationSettings'").getObject(Long.class));
+
+                // Note: study.StudySnapshot maintains a rows for deleted child studies (allowing re-creation of those child studies).
+                // In that case, Destination is set to null. COUNT(DISTINCT) skips these null values, so this returns the count of existing child studies.
                 metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
                 metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
 
