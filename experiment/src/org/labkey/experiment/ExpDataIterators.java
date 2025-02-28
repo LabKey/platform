@@ -913,17 +913,18 @@ public class ExpDataIterators
         Collection<String> parentNames = null;
         if (parentObj != null)
         {
-            if (parentObj instanceof String)
+            if (parentObj instanceof String parentStr)
             {
-                if (((String) parentObj).trim().isEmpty())
+                if (parentStr.trim().isEmpty())
                 {
-                    parentNames = Arrays.asList(((String) parentObj).trim());
+                    parentNames = Arrays.asList(parentStr.trim());
                 }
                 else
                 {
                     // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
                     // using TabLoader instead of just splitting on the comma.
-                    String quotedStr = ((String) parentObj).contains(",") ? (String) parentObj : tsvWriter.quoteValue((String) parentObj); // if value contains comma, no need to quote again
+                    boolean likelyAlreadyQuoted = parentStr.contains(",") || parentStr.contains("\n") || parentStr.contains("\r");
+                    String quotedStr = likelyAlreadyQuoted ? parentStr : tsvWriter.quoteValue(parentStr); // if value contains comma, no need to quote again
                     try (TabLoader tabLoader = new TabLoader(quotedStr))
                     {
                         tabLoader.setDelimiterCharacter(',');
