@@ -2535,14 +2535,13 @@ public class PageFlowUtil
 
     public static List<String> splitStringToValues(@NotNull String str, String delimiter, boolean removeDuplicates, boolean removeEmpty, boolean sort)
     {
-        String escapedDelimiter = "\\" + delimiter;
-
         // Issue 52072: match a delimiter symbol that is not escaped
+        String escapedDelimiter = "\\" + delimiter;
         String[] valueTokens = str.split("(?<!\\\\)" + escapedDelimiter);
 
         // trim values and replace escaped delimiter
         Stream<String> valueStream = Arrays.stream(valueTokens).map(String::trim)
-                .map(val -> val.replaceAll("\\\\" + escapedDelimiter, delimiter));
+                .map(val -> val.replaceAll("\\\\([\\\\" + delimiter + "])", "$1"));
 
         if (removeDuplicates)
             valueStream = valueStream.distinct();
@@ -2556,10 +2555,10 @@ public class PageFlowUtil
 
     public static String joinValuesToString(@NotNull List<String> values, String delimiter)
     {
-        String escapedDelimiter = "\\" + delimiter;
         return values.stream()
-                .map(value -> value.replace(delimiter, escapedDelimiter))
-                .collect(Collectors.joining(delimiter));
+                .map(String::trim)
+                .map(value -> value.replaceAll("([\\\\" + delimiter + "])", "\\\\$1"))
+                .collect(Collectors.joining(' ' + delimiter + ' '));
     }
 
     public static class TestCase extends Assert
@@ -2809,10 +2808,16 @@ public class PageFlowUtil
             Assert.assertEquals("", expression);
 
             expression = PageFlowUtil.joinValuesToString(List.of("a", "b", "c", " b  "), "|");
-            Assert.assertEquals("a|b|c| b  ", expression);
+            Assert.assertEquals("a | b | c | b", expression);
 
             expression = PageFlowUtil.joinValuesToString(List.of("a", "b|B", "|C|c|"), "|");
-            Assert.assertEquals("a|b\\|B|\\|C\\|c\\|", expression);
+            Assert.assertEquals("a | b\\|B | \\|C\\|c\\|", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a\\a", "b"), "|");
+            Assert.assertEquals("a\\\\a | b", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a\\", "b"), "|");
+            Assert.assertEquals("a\\\\ | b", expression);
         }
 
         @Test
@@ -2821,8 +2826,14 @@ public class PageFlowUtil
             List<String> values = PageFlowUtil.splitStringToValues("", "|");
             Assert.assertEquals(new ArrayList<>(), values);
 
-            values = PageFlowUtil.splitStringToValues("\\|C\\|c\\||a|b\\|B", "|");
+            values = PageFlowUtil.splitStringToValues("\\|C\\|c\\| | a | b\\|B", "|");
             Assert.assertEquals(List.of("a", "b|B", "|C|c|"), values);
+
+            values = PageFlowUtil.splitStringToValues("a\\\\a", "|");
+            Assert.assertEquals(List.of("a\\a"), values);
+
+            values = PageFlowUtil.splitStringToValues("a\\\\ | b", "|");
+            Assert.assertEquals(List.of("a\\", "b"), values);
 
             values = PageFlowUtil.splitStringToValues("b|a|c| b  | |", "|");
             Assert.assertEquals(List.of("a", "b", "c"), values);
