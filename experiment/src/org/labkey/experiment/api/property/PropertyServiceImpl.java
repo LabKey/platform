@@ -814,7 +814,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             // escape the escape char
             instance.setExpressionValue("a\\\\ | b\\|b | c");
             choices = service.getTextChoiceValidatorOptions(instance);
-            Assert.assertEquals(Arrays.asList("a\\", "b", "c"), choices);
+            Assert.assertEquals(Arrays.asList("a\\", "b|b", "c"), choices);
         }
 
         @Test
