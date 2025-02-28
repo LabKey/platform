@@ -314,7 +314,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testCreateVisitViaAssaySchedule()
     {
-        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        Boolean studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
         clickFolder(STUDY1);
         goToManageStudy();
         clickAndWait(Locator.linkWithText("manage assay schedule"));
@@ -329,7 +329,8 @@ public class SharedStudyTest extends BaseWebDriverTest
         manageVisitPage.goToEditVisit("Visit 4");
         clickButton("Delete Visit");
         clickButton("Delete");
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        if (studyDesignPreviouslyEnabled != null)
+            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", studyDesignPreviouslyEnabled);
     }
 
     @Test

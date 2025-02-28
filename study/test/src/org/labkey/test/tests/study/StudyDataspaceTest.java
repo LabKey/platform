@@ -55,6 +55,7 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected final String SUBFOLDER_STUDY5 = "SubFolder 5";
     protected final String VISIT_TAG_QWP_TITLE = "VisitTag";
     private final PortalHelper _portalHelper = new PortalHelper(this);
+    private Boolean _studyDesignPreviouslyEnabled;
 
     @Override
     protected BrowserType bestBrowser()
@@ -92,14 +93,15 @@ public class StudyDataspaceTest extends StudyBaseTest
     {
         initializeFolder();
         setPipelineRoot(StudyHelper.getStudySubfolderPath());
-        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        _studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        if (_studyDesignPreviouslyEnabled != null)
+            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
     }
 
     @Override

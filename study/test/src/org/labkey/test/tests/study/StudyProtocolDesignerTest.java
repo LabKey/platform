@@ -101,13 +101,14 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
 
 
     private PortalHelper _portalHelper;
+    private Boolean _studyDesignPreviouslyEnabled;
 
     @BeforeClass
     public static void doSetup()
     {
-        StudyProtocolDesignerTest initTest = (StudyProtocolDesignerTest)getCurrentTest();
+        StudyProtocolDesignerTest initTest = getCurrentTest();
 
-        OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
+        initTest._studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest.importFolderFromZip(FOLDER_ARCHIVE);
 
@@ -118,7 +119,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        if (_studyDesignPreviouslyEnabled != null)
+            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
         super.doCleanup(afterTest);
     }
 

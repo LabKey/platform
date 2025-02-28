@@ -47,6 +47,7 @@ public class ProgressReportTest extends ReportTest
 {
     private static final File STUDY_ZIP = TestFileUtils.getSampleData("studies/LabkeyDemoStudy.zip");
     private static final String[] ASSAYS = {"Elispot", "Luminex", "VSVG"};
+    private Boolean _studyDesignPreviouslyEnabled;
 
     private static List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
             new BaseManageVaccineDesignVisitPage.Visit("Baseline", 0.0, 0.0),
@@ -101,7 +102,7 @@ public class ProgressReportTest extends ReportTest
     @Override
     protected void doCreateSteps()
     {
-        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        _studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
         _containerHelper.createProject(getProjectName(), null);
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), getFolderName(), "Study", null);
         importStudyFromZip(STUDY_ZIP);
@@ -143,7 +144,8 @@ public class ProgressReportTest extends ReportTest
     protected void doCleanup(boolean afterTest)
     {
         super.doCleanup(afterTest);
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
+        if (_studyDesignPreviouslyEnabled != null)
+            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
     }
 
     @Override

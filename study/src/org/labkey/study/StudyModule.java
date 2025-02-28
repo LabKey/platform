@@ -428,7 +428,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
                 "Study Protocol Design Tools",
                 "This option adds support for the study protocol and vaccine design tools.",
-                false, false, FeatureType.Optional));
+                false, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
