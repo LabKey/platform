@@ -37,11 +37,13 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.StudyInternalServiceImpl" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
@@ -49,7 +51,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageLocationsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantCategoriesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageParticipantsAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageQCStatesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
@@ -66,7 +67,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -253,7 +253,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Quality Control States</td>
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
-                        <td><%=link("Manage Dataset QC States", ManageQCStatesAction.class) %></td>
+                        <td><%=link("Manage Dataset QC States", StudyController.getManageQCStatesURL(getContainer(), getActionURL())) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Study Products</td>
