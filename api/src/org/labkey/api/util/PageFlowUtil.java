@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
@@ -136,6 +137,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2889,6 +2891,18 @@ public class PageFlowUtil
 
             values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', false, false, false);
             Assert.assertEquals(List.of("b", "a", "c", "b", "", ""), values);
+        }
+
+        @Test
+        public void testJoinAndSplit()
+        {
+            RandomStringUtils random = RandomStringUtils.insecure();
+            List<String> values = new LinkedList<>();
+            for (int i = 0; i < 100; i++)
+            {
+                values.add(random.next(100, 'A', 'B', '\\', '|'));
+            }
+            assertEquals(values, splitStringToValues(joinValuesToString(values, '|'), '|', false, false, false));
         }
     }
 
