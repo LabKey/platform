@@ -279,7 +279,7 @@ public class DataViewService
             {
                 // Issue 52268: Data Views Webpart behaves badly when the server is in a different time zone
                 // Serialize as a date, not a datetime
-                o.put(dp.getName(), DateUtil.formatIsoDate(d));
+                o.put(dp.getName(), DateUtil.formatDate(info.getContainer(), d));
             }
             else
             {

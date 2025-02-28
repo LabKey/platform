@@ -466,7 +466,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         }
         this.dateFormat = LABKEY.extDefaultDateFormat;
         this.dateRenderer = function(value) {
-            return LABKEY.Utils.encodeHtml(value);
+            var formattedVal = Ext4.util.Format.date(value, LABKEY.extDefaultDateFormat);
+            return LABKEY.Utils.encodeHtml(formattedVal);
         };
         this.editInfo = json.editInfo;
         this.sortOrder = json.sortOrder;
@@ -540,7 +541,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tr><td>Status:</td><td>{[fm.htmlEncode(values.data.status)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.refreshDate != undefined">' +
-                '<tr><td valign="top">Data Cut Date:</td><td>{[this.renderDate(values.data.refreshDate)]}</td></tr>' +
+                '<tr><td valign="top">Data Cut Date:</td><td>{[m.htmlEncode(values.data.refreshDate)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="this.isValid(data.description)">' +
                 '<tr><td valign="top">Description:</td><td>{[fm.htmlEncode(values.data.description)]}</td></tr>' +
@@ -555,9 +556,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     },
                     renderCategory : function(cat) {
                         return Ext4.htmlEncode(Ext4.isString(cat) ? cat : cat.label);
-                    },
-                    renderDate : function(data) {
-                        return this.initialConfig.dateRenderer(data);
                     }
                 }, {dateRenderer : this.dateRenderer});
 
@@ -770,7 +768,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                  dataIndex: 'refreshDate',
                  menuDisabled : true,
                  sortable : false,
-                 renderer : this.dateRenderer,
+                 // Issue 52268: pass around date as a string to avoid timezone shifting
+                 renderer : LABKEY.Utils.encodeHtml,
                  scope    : this
              });
         }
