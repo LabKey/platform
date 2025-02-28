@@ -369,7 +369,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (validator != null && validator.getExpressionValue() != null)
             expression = validator.getExpressionValue();
 
-        return PageFlowUtil.splitStringToValues(expression, "|");
+        return PageFlowUtil.splitStringToValues(expression, '|');
     }
 
     @Override

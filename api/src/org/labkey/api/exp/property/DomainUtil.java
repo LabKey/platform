@@ -544,7 +544,7 @@ public class DomainUtil
             if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
             {
                 List<String> validValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
-                properties.put("validValues", PageFlowUtil.joinValuesToString(validValues, "|"));
+                properties.put("validValues", PageFlowUtil.joinValuesToString(validValues, '|'));
             }
             gpv.setProperties(properties);
 
