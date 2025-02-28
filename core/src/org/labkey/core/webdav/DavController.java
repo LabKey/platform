@@ -5061,7 +5061,10 @@ public class DavController extends SpringActionController
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
-            ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
+            if ("attachment".equals(contentDisposition) && resource.getName() != null)
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName());
+            else
+                ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
         }
 
         // Find content type
