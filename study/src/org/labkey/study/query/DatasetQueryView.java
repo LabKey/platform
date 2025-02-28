@@ -612,8 +612,7 @@ public class DatasetQueryView extends StudyQueryView
         {
             if (!addSeparator)
                 button.addSeparator();
-            button.addMenuItem("Manage states", new ActionURL(StudyController.ManageQCStatesAction.class,
-                    getContainer()).addReturnURL(getViewContext().getActionURL()));
+            button.addMenuItem("Manage states", StudyController.getManageQCStatesURL(getContainer(), getViewContext().getActionURL()));
         }
         return button;
     }
