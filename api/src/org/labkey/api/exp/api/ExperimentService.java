@@ -989,7 +989,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     HttpView<?> createRunExportView(Container container, String defaultFilenamePrefix);
 
-    HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix);
+    HttpView<?> createFileExportView(Container container, User user, String defaultFilenamePrefix);
 
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message, String userComment);
