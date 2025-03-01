@@ -103,7 +103,7 @@ public class ExperimentRunListView extends QueryView
     /** Optionally render a header in addition to the main grid */
     protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        _selectedType.renderHeader(request, response);
+        _selectedType.renderHeader(request, response, getUser());
     }
 
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)

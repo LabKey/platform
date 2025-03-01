@@ -5233,7 +5233,7 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                Set<String> materialInputRoles = new TreeSet<>(ExperimentService.get().getMaterialInputRoles(getContainer()));
+                Set<String> materialInputRoles = new TreeSet<>(ExperimentService.get().getMaterialInputRoles(getContainer(), getUser()));
                 Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<>();
                 for (ExpMaterial material : _materials)
                 {

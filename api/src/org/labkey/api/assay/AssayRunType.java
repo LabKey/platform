@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -94,13 +95,13 @@ public class AssayRunType extends ExperimentRunType
         bar.addAll(buttons);
     }
 
-    @Override // TODO: Change signature to take a ContainerUser and pass that to ContainerFilter.current()
-    public void renderHeader(HttpServletRequest request, HttpServletResponse response) throws Exception
+    @Override
+    public void renderHeader(HttpServletRequest request, HttpServletResponse response, User user) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (provider != null)
         {
-            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.current(_protocol.getContainer()));
+            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.current(_protocol.getContainer(), user));
             header.render(request, response);
             response.getWriter().write("<p/>\n");
         }

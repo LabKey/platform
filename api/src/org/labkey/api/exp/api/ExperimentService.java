@@ -458,7 +458,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * @param type may be null. If non-null, only return roles that are used for that type of application (input, output, or intermediate)
      */
-    Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... type);
+    Set<String> getMaterialInputRoles(Container container, User user, ExpProtocol.ApplicationType... type);
 
     /**
      * Get the DataInput edge between the dataId and the protocolApplication.
