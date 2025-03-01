@@ -5061,7 +5061,9 @@ public class DavController extends SpringActionController
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
-            if ("attachment".equals(contentDisposition) && resource.getName() != null)
+            // If an "attachment" content-disposition is requested and the "filename" parameter is not set, then
+            // retain the name of the resource in the content-disposition in the response header.
+            if ("attachment".equals(contentDisposition) && resource.getName() != null && getFilenameParameter() == null)
                 ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName());
             else
                 ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
