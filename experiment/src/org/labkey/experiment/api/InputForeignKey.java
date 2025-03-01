@@ -51,7 +51,7 @@ public class InputForeignKey extends LookupForeignKey
         super(null);
         _schema = schema;
         _type = type;
-        _filter = filter == null ? ContainerFilter.current(schema.getContainer()) : filter;
+        _filter = filter == null ? ContainerFilter.current(schema) : filter;
     }
 
     @Override

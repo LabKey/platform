@@ -4169,7 +4169,7 @@ public class ExperimentController extends SpringActionController
             QueryUpdateService updateService = _updateService;
             if (getOptionParamValue(Params.crossTypeImport))
             {
-                tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()), null);
+                tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(this), null);
                 updateService = tInfo.getUpdateService();
             }
 

@@ -94,7 +94,7 @@ public class AssayRunType extends ExperimentRunType
         bar.addAll(buttons);
     }
 
-    @Override
+    @Override // TODO: Change signature to take a ContainerUser and pass that to ContainerFilter.current()
     public void renderHeader(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         AssayProvider provider = AssayService.get().getProvider(_protocol);

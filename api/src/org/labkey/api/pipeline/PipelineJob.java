@@ -59,6 +59,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.remoteapi.query.Filter;
 import org.quartz.CronExpression;
@@ -97,7 +98,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * or be comprised of multiple tasks ({@link Task}) that can be checkpointed and restarted individually.
  */
 @JsonIgnoreProperties(value={"_logFilePathName"}, allowGetters = true)  //Property removed. Added here for backwards compatibility
-abstract public class PipelineJob extends Job implements Serializable
+abstract public class PipelineJob extends Job implements Serializable, ContainerUser
 {
     public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));
 

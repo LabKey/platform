@@ -518,7 +518,7 @@ public abstract class ContainerFilter
 
     // Does not validate permissions!
     @Deprecated // Use current(Container, User) or current(ContainerUser) instead
-    public static ContainerFilter current(Container c)
+    public static @NotNull ContainerFilter current(Container c)
     {
         return new CurrentContainerFilter(c);
     }
@@ -556,8 +556,7 @@ public abstract class ContainerFilter
         }
     };
 
-    /* TODO ContainerFilter -- Consolidate with InternalNoContainerFilter
-    /** Use this with extreme caution - it doesn't check permissions */
+    /** Use this with extreme caution - this doesn't check permissions */
     public static final ContainerFilter EVERYTHING = new InternalNoContainerFilter();
 
     public static class ContainerFilterWithPermission extends ContainerFilter
@@ -565,10 +564,7 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
-            // TODO: InternalNoContainerFilter should extend ContainerFilter instead of ContainerFilterWithPermission,
-            // which would allow a more strict check below (c != null && user != null). Also, once verified on
-            // TeamCity, throw an exception here instead of asserting.
-            assert c == null || user != null : "User is required for permissions check if container is provided!";
+            assert user != null : "User is required for permissions check!";
         }
 
         @Override
@@ -1244,9 +1240,9 @@ public abstract class ContainerFilter
             }
             List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm, roles);
             Set<GUID> ids = containers.stream()
-                    .filter(c -> !c.isDuplicatedInContainerFilter())
-                    .map(Container::getEntityId)
-                    .collect(Collectors.toSet());
+                .filter(c -> !c.isDuplicatedInContainerFilter())
+                .map(Container::getEntityId)
+                .collect(Collectors.toSet());
             if (ContainerManager.getRoot().hasPermission(_user, perm, roles))
             {
                 ids.add(ContainerManager.getRoot().getEntityId());
@@ -1262,7 +1258,7 @@ public abstract class ContainerFilter
     }
 
 
-    public static class InternalNoContainerFilter extends ContainerFilterWithPermission
+    public static class InternalNoContainerFilter extends ContainerFilter
     {
         public InternalNoContainerFilter()
         {
@@ -1294,13 +1290,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
-        {
-            return new SQLFragment("1=1");
-        }
-
-        @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @Nullable Collection<GUID> getIds()
         {
             return null;
         }

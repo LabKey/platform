@@ -900,7 +900,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         ContainerFilter cf = QueryService.get().getContainerFilterForLookups(container, user);
         if (cf != null)
             return cf;
-        return ContainerFilter.current(container);
+        return ContainerFilter.current(container, user);
     }
 
     @Override
