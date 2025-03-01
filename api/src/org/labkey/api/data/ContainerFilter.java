@@ -1383,8 +1383,12 @@ public abstract class ContainerFilter
 
             assertNotEquals(home, test);
 
+            // TODO: Remove after removing the final usages of current(Container)
             assertEquals(current(home).getCacheKey(), current(home).getCacheKey());
             assertNotEquals(current(home).getCacheKey(), current(test).getCacheKey());
+
+            assertEquals(current(home, user).getCacheKey(), current(home, user).getCacheKey());
+            assertNotEquals(current(home, user).getCacheKey(), current(test, user).getCacheKey());
 
             assertEquals(EVERYTHING.getCacheKey(), new InternalNoContainerFilter().getCacheKey());
 
