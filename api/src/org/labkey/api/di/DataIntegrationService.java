@@ -35,6 +35,7 @@ import java.util.function.BiFunction;
 public interface DataIntegrationService
 {
     String MODULE_NAME = "DataIntegration";
+    String ETL_PREFIX = "ETL Job: ";
 
     static DataIntegrationService get()
     {

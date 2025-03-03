@@ -25,6 +25,7 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -107,7 +108,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                     && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
                     && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
-                    && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix());
+                    && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
+                    && !(run.getName().startsWith(DataIntegrationService.ETL_PREFIX) && run.getJobId() != null);
         }
 
         private List<ExpRun> getRuns(Container c)
