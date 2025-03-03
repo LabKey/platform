@@ -849,21 +849,8 @@ public class NameGenerator
         return ExperimentService.get().getDataClass(container, user, dataType) != null;
     }
 
-    // TODO remove support
-    static String getEncodedDataTypeInExpression(String expression)
-    {
-        return expression.replaceAll("/", "\\$S");
-    }
-
-    static String getDecodedDataTypeInExpression(String expression)
-    {
-        return QueryKey.decodePart(expression);
-    }
-
     private Object getParentLookupTokenPreview(String currentDataType, FieldKey fkTok, String inputPrefix, @Nullable String inputDataType, @Nullable NameExpressionAncestorPartOption ancestorPartOption, String lookupField, User user, Map<String, String> dataClassNames, Map<String, String> sampleTypeNames)
     {
-        if (inputDataType != null)
-            inputDataType = getDecodedDataTypeInExpression(inputDataType);
         String inputPrefixLc = inputPrefix.toLowerCase();
         boolean isMaterial = inputPrefixLc.startsWith("materialinputs") || inputPrefixLc.startsWith("inputs");
         boolean isData = inputPrefixLc.startsWith("datainputs") || inputPrefixLc.startsWith("inputs");
@@ -1928,13 +1915,10 @@ public class NameGenerator
         {
             String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
             String inputCol = inputType + "/" + parentTypeName;
-            String inputColEncoded = inputType + "/" + getEncodedDataTypeInExpression(parentTypeName);
 
             Set<String> fieldNames = new HashSet<>();
             if (_expParentLookupFields.containsKey(inputCol))
                 fieldNames.addAll(_expParentLookupFields.get(inputCol));
-            if (_expParentLookupFields.containsKey(inputColEncoded))
-                fieldNames.addAll(_expParentLookupFields.get(inputColEncoded));
             if (_expParentLookupFields.containsKey(inputType))
                 fieldNames.addAll(_expParentLookupFields.get(inputType));
             if (_expParentLookupFields.containsKey(INPUT_PARENT))
@@ -1963,8 +1947,6 @@ public class NameGenerator
                 inputLookupValues.computeIfAbsent(inputType + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
                 // add to <Type>Inputs/<TypeName>/<LookupField>
                 inputLookupValues.computeIfAbsent(inputCol + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
-                if (!inputColEncoded.equalsIgnoreCase(inputCol))
-                    inputLookupValues.computeIfAbsent(inputColEncoded + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
             }
         }
 
@@ -2069,14 +2051,11 @@ public class NameGenerator
 
             if (!hasTypeLookup)
             {
-                String parentTypeNameEncoded = getEncodedDataTypeInExpression(parentTypeName);
                 if (isMaterialParent)
                 {
                     if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
                         hasTypeLookup = true;
                     else if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
-                        hasTypeLookup = true;
-                    else if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeNameEncoded))
                         hasTypeLookup = true;
                 }
                 else
@@ -2084,8 +2063,6 @@ public class NameGenerator
                     if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
                         hasTypeLookup = true;
                     else if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
-                        hasTypeLookup = true;
-                    else if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeNameEncoded))
                         hasTypeLookup = true;
                 }
             }
@@ -2348,7 +2325,6 @@ public class NameGenerator
 
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);
-                    dataTypeAltNames.add(getEncodedDataTypeInExpression(decodedDataType));
                     dataTypeAltNames.add(QueryKey.encodePart(decodedDataType)); // add encoded form in case the original parents column in as encoded but parentValues needs to be updated (for example, strip quotes for comma)
                     for (String dataTypeAltName : dataTypeAltNames)
                     {
