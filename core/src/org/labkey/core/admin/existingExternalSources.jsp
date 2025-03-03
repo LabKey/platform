@@ -74,13 +74,13 @@
     if (existingAllowedHosts.isEmpty())
     {
 %>
-        <tr><td colspan="2">No External Resource Hosts have been configured.</td></tr>
+        <thead><tr><td colspan="2">No External Resource Hosts have been configured.</td></tr></thead>
 <%
     }
     else
     {
 %>
-        <tr><th>Directive</th><th>Host</th></tr>
+        <thead><tr><th>Directive</th><th>Host</th></tr></thead>
 <%
         int num = 1;
         for (AllowedHost sub : existingAllowedHosts) {
