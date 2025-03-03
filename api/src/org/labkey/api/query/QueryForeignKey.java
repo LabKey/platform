@@ -361,6 +361,20 @@ public class QueryForeignKey extends AbstractForeignKey
     }
 
     @Override
+    public SchemaKey getLookupSchemaKey()
+    {
+        if (_lookupSchemaKey != null)
+        {
+            return _lookupSchemaKey;
+        }
+        if (_schema != null)
+        {
+            return _schema.getSchemaPath();
+        }
+        return super.getLookupSchemaKey();
+    }
+
+    @Override
     protected QuerySchema getLookupSchema()
     {
         if (_schema == null && _user != null && _lookupSchemaKey != null)

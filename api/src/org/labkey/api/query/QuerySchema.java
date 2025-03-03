@@ -103,7 +103,7 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
 
     default ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.current(getContainer());
+        return ContainerFilter.current(this);
     }
 
     default ContainerFilter getDefaultLookupContainerFilter()
@@ -137,6 +137,11 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     /** @return a SchemaKey encoded name for this schema. */
     @NotNull
     String getSchemaName();
+
+    default SchemaKey getSchemaPath()
+    {
+        return SchemaKey.decode(getSchemaName());
+    }
 
     /** @return short description of the content and purpose of the schema */
     @Nullable String getDescription();

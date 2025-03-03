@@ -808,7 +808,7 @@ public class PipelineStatusManager
             if (!container.isRoot())
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
-                SQLFragment containerSQL = ContainerFilter.current(container).getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"));
+                SQLFragment containerSQL = ContainerFilter.current(container, user).getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"));
                 sql.append(" AND ");
                 sql.append(containerSQL);
                 expSql.append(" AND ");

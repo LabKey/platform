@@ -1,8 +1,3 @@
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%
 /*
  * Copyright (c) 2019 LabKey Corporation
@@ -20,12 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
-    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
-    AdminController.ExternalHostsForm bean = (AdminController.ExternalHostsForm) HttpView.currentModel();
+    boolean isTroubleshooter = !c.hasPermission(getUser(), ApplicationAdminPermission.class);;
+    AllowListForm bean = (AllowListForm) HttpView.currentModel();
 %>
 <labkey:errors/>
 <%=bean.getTypeEnum().getDescription()%>
@@ -43,8 +43,8 @@
 <labkey:form method="post">
     <table>
         <tr>
-            <td class="labkey-form-label"><label for="newExternalHostTextField"><%=bean.getTypeEnum().getLabel()%></label></td>
-            <td><input name="newExternalHost" id="newExternalHostTextField" size="75" /></td>
+            <td class="labkey-form-label"><label for="newValueTextField"><%=bean.getTypeEnum().getLabel()%></label></td>
+            <td><input name="newValue" id="newValueTextField" size="75" /></td>
         </tr>
         <tr>
             <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Save").submit(true) %></td>

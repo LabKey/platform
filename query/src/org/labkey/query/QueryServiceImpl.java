@@ -1160,7 +1160,7 @@ public class QueryServiceImpl implements QueryService
 
                         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
                         {
-                            Path key = new Path(schema.getPath().toString(), view.getQueryDefinition().getName(), StringUtils.defaultString(view.getName(), ""));
+                            Path key = new Path(schema.getSchemaPath().toString(), view.getQueryDefinition().getName(), Objects.toString(view.getName(), ""));
                             if (!views.containsKey(key))
                                 views.put(key, view);
                         }
@@ -1172,7 +1172,7 @@ public class QueryServiceImpl implements QueryService
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
         for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, null, null, owner, inheritable, sharedOnly))
         {
-            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), StringUtils.defaultString(cstmView.getName(), ""));
+            Path key = new Path(cstmView.getSchema(), cstmView.getQueryName(), Objects.toString(cstmView.getName(), ""));
             // The database custom views are in priority order so check if the view has already been added
             if (!views.containsKey(key))
             {

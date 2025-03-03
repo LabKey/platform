@@ -105,6 +105,6 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.current(getContainer());
+        return ContainerFilter.current(getContainer(), getUserSchema().getUser());
     }
 }

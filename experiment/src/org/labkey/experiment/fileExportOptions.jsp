@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<ExperimentController.ExportBean> me = (JspView<ExperimentController.ExportBean>) HttpView.currentView();
+JspView<ExperimentController.ExportBean> me = HttpView.currentView();
 ExperimentController.ExportBean bean = me.getModelBean();
 HtmlString guid = HtmlString.of(GUID.makeGUID());
 %>

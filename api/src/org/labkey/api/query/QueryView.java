@@ -72,6 +72,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -107,7 +108,7 @@ import java.util.stream.Collectors;
  * View that generates the majority of standard data grids/tables in the LabKey Server UI.
  * The backing query is lazily invoked when it comes times to render the QueryView.
  */
-public class QueryView extends WebPartView<Object>
+public class QueryView extends WebPartView<Object> implements ContainerUser
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
 
@@ -449,6 +450,7 @@ public class QueryView extends WebPartView<Object>
     }
 
 
+    @Override
     public User getUser()
     {
         return _schema.getUser();

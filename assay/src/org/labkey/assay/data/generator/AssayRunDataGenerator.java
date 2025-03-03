@@ -108,7 +108,7 @@ public class AssayRunDataGenerator extends DataGenerator<AssayRunDataGenerator.C
 
     private void updateSampleProps(String protocolName, List<Map<String, Object>> rawData, Domain resultsDomain)
     {
-        ContainerFilter currentCf = ContainerFilter.current(getContainer());
+        ContainerFilter currentCf = ContainerFilter.current(this);
         List<DomainProperty> sampleProps = resultsDomain.getProperties().stream().filter(prop -> SAMPLE_CONCEPT_URI.equals(prop.getConceptURI())).collect(Collectors.toList());
         // Find the sample type for each sample field.
         for (DomainProperty sampleProp : sampleProps)

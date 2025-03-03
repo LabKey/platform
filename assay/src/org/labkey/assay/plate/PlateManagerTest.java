@@ -1824,6 +1824,75 @@ public final class PlateManagerTest
         }
     }
 
+    @Test
+    public void testCrossPlateSampleGroupValidation() throws Exception
+    {
+        // Arrange
+        List<ExpMaterial> samples = createSamples(5);
+        List<Integer> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
+
+        List<Map<String, Object>> data = List.of(
+            createWellRow("A1", "SAMPLE", sampleRowIds.get(0), "First", null),
+            createWellRow("C1", "SAMPLE", sampleRowIds.get(0), "First", null),
+            createWellRow("A2", "NEGATIVE_CONTROL", sampleRowIds.get(1), "First", null),
+            createWellRow("C2", "NEGATIVE_CONTROL", sampleRowIds.get(1), "First", null),
+            createWellRow("A3", "SAMPLE", sampleRowIds.get(2), "Second", null),
+            createWellRow("C3", "SAMPLE", null, "Second", null)
+        );
+
+        var firstPlate = createPlate(PLATE_TYPE_12_WELLS, "FirstPlate", null, data);
+        assertNotNull(firstPlate.getPlateSet());
+
+        // Act
+        // Attempt to put different samples in a sample group on a single plate
+        {
+            var wellC1 = getWellRow(firstPlate.getRowId(), "C1");
+            wellC1.put("sampleId", sampleRowIds.get(1));
+            var errors = updateWells(List.of(wellC1), true);
+
+            // Assert
+            assertEquals("Group \"First\" refers to multiple samples. Choose the same sample for all wells in this group.", errors.getMessage());
+        }
+
+        data = List.of(
+            createWellRow("A1", "SAMPLE", sampleRowIds.get(0), "First", null),
+            createWellRow("C1", "SAMPLE", sampleRowIds.get(0), "First", null),
+            createWellRow("A2", "NEGATIVE_CONTROL", sampleRowIds.get(4), "Third", null),
+            createWellRow("C2", "NEGATIVE_CONTROL", sampleRowIds.get(4), "Third", null),
+            createWellRow("A3", "SAMPLE", null, "Second", null),
+            createWellRow("C3", "SAMPLE", null, "Second", null),
+            createWellRow("C4", "NEGATIVE_CONTROL", null, "First", null)
+        );
+
+        // Act
+        // Successfully create a second plate which partially aligns on sample groups with the first plate
+        var secondPlate = createPlate(PLATE_TYPE_12_WELLS, "SecondPlate", firstPlate.getPlateSet().getRowId(), data);
+
+        // Act
+        // Attempt to specify a mismatched sample on the second plate
+        var wellC3 = getWellRow(secondPlate.getRowId(), "C3");
+        wellC3.put("sampleId", sampleRowIds.get(1));
+        var errors = updateWells(List.of(wellC3), true);
+
+        // Assert
+        assertEquals("Sample group \"Second\" contains mismatched samples across plates. Ensure the same sample is recorded for each well in this sample group across all plates in the plate set.", errors.getMessage());
+
+        // Act
+        // Attempt to specify a mismatched control on the second plate
+//        var wellC4 = getWellRow(secondPlate.getRowId(), "C4");
+//        wellC4.put("sampleId", sampleRowIds.get(4));
+//        errors = updateWells(List.of(wellC4), true);
+//
+//        // Assert
+//        assertEquals("Sample group \"First\" contains mismatched samples across plates. Ensure the same sample is recorded for each well in this sample group across all plates in the plate set.", errors.getMessage());
+
+        // Act
+        // Successfully align the samples across all groups
+//        wellC3.put("sampleId", sampleRowIds.get(2));
+//        wellC4.put("sampleId", sampleRowIds.get(1));
+//        updateWells(List.of(wellC3, wellC4));
+    }
+
     private Plate createPlate(@NotNull PlateType plateType) throws Exception
     {
         return createPlate(plateType, null, null, null);
@@ -1990,6 +2059,9 @@ public final class PlateManagerTest
             if (!expectErrors && e.hasErrors())
                 fail(e.getMessage());
         }
+
+        if (expectErrors && !errors.hasErrors())
+            fail("Expected an error when updating wells but an error did not occur.");
 
         return errors;
     }

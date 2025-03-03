@@ -137,7 +137,7 @@ public class JSONDataLoader extends DataLoader
                         case FIELD_NAME:
                             if (depth == 1)
                             {
-                                switch (parser.getCurrentName())
+                                switch (parser.currentName())
                                 {
                                     case "schemaName" -> {
                                         tok = parser.nextToken();
@@ -280,16 +280,16 @@ public class JSONDataLoader extends DataLoader
     {
         expectObjectStart(_parser);
 
-        while (_parser.getCurrentToken() == JsonToken.FIELD_NAME)
+        while (_parser.currentToken() == JsonToken.FIELD_NAME)
         {
-            String fieldName = _parser.getCurrentName();
+            String fieldName = _parser.currentName();
             _parser.nextToken();
 
-            if ("metaData".equals(fieldName) && _parser.getCurrentToken() == JsonToken.START_OBJECT)
+            if ("metaData".equals(fieldName) && _parser.currentToken() == JsonToken.START_OBJECT)
             {
                 parseMetadataContents();
             }
-            else if ("rows".equals(fieldName) && _parser.getCurrentToken() == JsonToken.START_ARRAY)
+            else if ("rows".equals(fieldName) && _parser.currentToken() == JsonToken.START_ARRAY)
             {
                 // stop parsing
                 break;
@@ -300,8 +300,8 @@ public class JSONDataLoader extends DataLoader
             }
         }
 
-        if (!(_parser.getCurrentToken() == JsonToken.START_ARRAY && _parser.getCurrentName().equals("rows")))
-            throw new JsonParseException(_parser, "Expected 'rows' field", _parser.getTokenLocation());
+        if (!(_parser.currentToken() == JsonToken.START_ARRAY && _parser.currentName().equals("rows")))
+            throw new JsonParseException(_parser, "Expected 'rows' field", _parser.currentTokenLocation());
     }
 
     /**
@@ -314,12 +314,12 @@ public class JSONDataLoader extends DataLoader
     {
         expectObjectStart(_parser);
 
-        while (_parser.getCurrentToken() == JsonToken.FIELD_NAME)
+        while (_parser.currentToken() == JsonToken.FIELD_NAME)
         {
-            String fieldName = _parser.getCurrentName();
+            String fieldName = _parser.currentName();
             _parser.nextToken();
 
-            if ("fields".equals(fieldName) && _parser.getCurrentToken() == JsonToken.START_ARRAY && _columns == null)
+            if ("fields".equals(fieldName) && _parser.currentToken() == JsonToken.START_ARRAY && _columns == null)
             {
                 _columns = parseFields(_parser, _mvIndicatorContainer);
             }
@@ -398,14 +398,14 @@ public class JSONDataLoader extends DataLoader
         FieldKey fieldKey = null;
         String type = null;
         Class jdbcTypeClass = null;
-        Boolean mvEnabled = Boolean.FALSE;
+        boolean mvEnabled = Boolean.FALSE;
 
-        while (parser.getCurrentToken() == JsonToken.FIELD_NAME)
+        while (parser.currentToken() == JsonToken.FIELD_NAME)
         {
-            String fieldName = parser.getCurrentName();
+            String fieldName = parser.currentName();
             parser.nextToken();
 
-            if ((fieldName.equals("fieldKey") || fieldName.equals("fieldKeyArray")) && JsonToken.START_ARRAY == parser.getCurrentToken() && fieldKey == null)
+            if ((fieldName.equals("fieldKey") || fieldName.equals("fieldKeyArray")) && JsonToken.START_ARRAY == parser.currentToken() && fieldKey == null)
             {
                 fieldKey = parser.readValueAs(FieldKey.class);
                 if (fieldKey == null)
@@ -561,7 +561,7 @@ public class JSONDataLoader extends DataLoader
      */
     protected static Map<String, Map<ColMapEntry, Object>> parseRow(JsonParser parser) throws IOException
     {
-        if (parser.getCurrentToken() != JsonToken.START_OBJECT)
+        if (parser.currentToken() != JsonToken.START_OBJECT)
             return null;
 
         expectObjectStart(parser);
@@ -1153,11 +1153,11 @@ public class JSONDataLoader extends DataLoader
             ColumnDescriptor[] cols = loader._columns;
             assertEquals(1, cols.length);
 
-            assertEquals(cols[0].name, "A");
-            assertEquals(cols[0].clazz, Integer.class);
+            assertEquals("A", cols[0].name);
+            assertEquals(Integer.class, cols[0].clazz);
 
-            assertEquals("rows", parser.getCurrentName());
-            assertEquals(JsonToken.START_ARRAY, parser.getCurrentToken());
+            assertEquals("rows", parser.currentName());
+            assertEquals(JsonToken.START_ARRAY, parser.currentToken());
         }
 
         @Test
@@ -1180,8 +1180,8 @@ public class JSONDataLoader extends DataLoader
 
             assertNull(loader._columns);
 
-            assertEquals("rows", parser.getCurrentName());
-            assertEquals(JsonToken.START_ARRAY, parser.getCurrentToken());
+            assertEquals("rows", parser.currentName());
+            assertEquals(JsonToken.START_ARRAY, parser.currentToken());
         }
 
         @Test

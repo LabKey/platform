@@ -46,12 +46,6 @@ import java.util.HashSet;
 
 public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 {
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.Type.Current.create(getUserSchema());
-    }
-
     public StudySnapshotTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, cf);

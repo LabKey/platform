@@ -48,22 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 7/11/13
- */
 public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
 {
     protected AuditTypeProvider _provider;
     protected Map<FieldKey, String> _legacyNameMap;
     protected Map<String, String> _dbSchemaToColumnMap;
-
-
-    @Override
-    protected ContainerFilter getDefaultContainerFilter()
-    {
-        return ContainerFilter.Type.Current.create(_userSchema);
-    }
 
     public DefaultAuditTypeTable(AuditTypeProvider provider, TableInfo storage, UserSchema schema, ContainerFilter cf, List<FieldKey> defaultVisibleColumns)
     {
