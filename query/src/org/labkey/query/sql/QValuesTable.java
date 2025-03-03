@@ -62,7 +62,7 @@ public class QValuesTable extends QTable
     @Override
     public ContainerFilter.Type getContainerFilterType()
     {
-        return ContainerFilter.EVERYTHING.getType();
+        return ContainerFilter.EVERYTHING_UNSAFE.getType();
     }
 
     class _QueryRelation extends AbstractQueryRelation

@@ -123,7 +123,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
                         public TableInfo getLookupTableInfo()
                         {
                             DomainAuditProvider provider = new DomainAuditProvider();
-                            TableInfo table = provider.createTableInfo(getUserSchema(), ContainerFilter.EVERYTHING);
+                            TableInfo table = provider.createTableInfo(getUserSchema(), ContainerFilter.EVERYTHING_UNSAFE);
                             return table;
                         }
                     });
