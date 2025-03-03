@@ -124,7 +124,7 @@ public class SampleDatasetTable extends LinkedDatasetTable
                 // It is easier to handle these changes on the construction-side, so we use a helper schema
                 // CONSIDER: do we need a version of getTable() that allows passing custom options?
                 var noLinks = Objects.requireNonNull(samplesSchema.getSchema(SamplesSchema.STUDY_LINKED_SCHEMA_NAME));
-                _sampleTable = Objects.requireNonNull(noLinks.getTable(sampleType.getName(), ContainerFilter.EVERYTHING));
+                _sampleTable = Objects.requireNonNull(noLinks.getTable(sampleType.getName(), ContainerFilter.EVERYTHING_UNSAFE));
             }
             else
             {

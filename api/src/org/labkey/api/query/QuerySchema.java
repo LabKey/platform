@@ -103,7 +103,7 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
 
     default ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.current(getContainer());
+        return ContainerFilter.current(this);
     }
 
     default ContainerFilter getDefaultLookupContainerFilter()

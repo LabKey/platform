@@ -116,7 +116,7 @@ public class PublishController extends SpringActionController
         @Override
         public ModelAndView getView(PublishHistoryForm form, BindException errors)
         {
-            ContainerFilter containerFilter = ContainerFilter.current(getContainer());
+            ContainerFilter containerFilter = ContainerFilter.current(this);
             if (form.getContainerFilterName() != null)
                 containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 
@@ -187,7 +187,7 @@ public class PublishController extends SpringActionController
         @Override
         public ModelAndView getView(SampleTypeHistoryForm form, BindException errors)
         {
-            ContainerFilter containerFilter = ContainerFilter.current(getContainer());
+            ContainerFilter containerFilter = ContainerFilter.current(this);
             if (form.getContainerFilterName() != null)
                 containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 

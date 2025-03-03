@@ -845,7 +845,7 @@ public class DatasetQueryView extends StudyQueryView
             public SQLFragment getValidationSql(Container container, User user, ExpProtocol protocol, TableInfo dataTable)
             {
                 var sqs = StudyQuerySchema.createSchema(_dataset.getStudy(), user, null);
-                TableInfo datasetTable = sqs.getDatasetTable(_dataset, ContainerFilter.EVERYTHING);
+                TableInfo datasetTable = sqs.getDatasetTable(_dataset, ContainerFilter.EVERYTHING_UNSAFE);
 
                 String studyVisit = _dataset.getStudy().getTimepointType().isVisitBased() ? "SequenceNum" : "Date";
                 if (datasetTable instanceof FilteredTable<?> filteredTable)
@@ -868,7 +868,7 @@ public class DatasetQueryView extends StudyQueryView
             @Override
             public @Nullable ContainerFilter getContainerFilter()
             {
-                return ContainerFilter.EVERYTHING;
+                return ContainerFilter.EVERYTHING_UNSAFE;
             }
         }
     }

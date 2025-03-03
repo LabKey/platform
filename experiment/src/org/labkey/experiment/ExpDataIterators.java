@@ -2559,7 +2559,7 @@ public class ExpDataIterators
 
                 if (_folderColIndex != null || _isCrossFolderUpdate)
                 {
-                    ContainerFilter cf = ContainerFilter.current(container);
+                    ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
                         cf = new ContainerFilter.AllInProjectPlusShared(container, user);
                     Collection<GUID> validContainerIds =  cf.getIds();
