@@ -72,28 +72,28 @@ public class JsonUtil
 
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
     {
-        if (p.getCurrentToken() != JsonToken.START_OBJECT)
-            throw new JsonParseException(p, "Expected object start '{', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+        if (p.currentToken() != JsonToken.START_OBJECT)
+            throw new JsonParseException(p, "Expected object start '{', got '" + p.currentToken() + "'", p.currentTokenLocation());
 
-        JsonLocation loc = p.getTokenLocation();
+        JsonLocation loc = p.currentTokenLocation();
         p.nextToken();
         return loc;
     }
 
     public static void expectObjectEnd(JsonParser p) throws IOException
     {
-        if (p.getCurrentToken() != JsonToken.END_OBJECT)
-            throw new JsonParseException(p, "Expected object end '}', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+        if (p.currentToken() != JsonToken.END_OBJECT)
+            throw new JsonParseException(p, "Expected object end '}', got '" + p.currentToken() + "'", p.currentTokenLocation());
 
         p.nextToken();
     }
 
     public static JsonLocation expectArrayStart(JsonParser p) throws IOException
     {
-        if (p.getCurrentToken() != JsonToken.START_ARRAY)
-            throw new JsonParseException(p, "Expected array start '[', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+        if (p.currentToken() != JsonToken.START_ARRAY)
+            throw new JsonParseException(p, "Expected array start '[', got '" + p.currentToken() + "'", p.currentTokenLocation());
 
-        JsonLocation loc = p.getTokenLocation();
+        JsonLocation loc = p.currentTokenLocation();
         p.nextToken();
         return loc;
     }
@@ -101,14 +101,14 @@ public class JsonUtil
     public static void expectArrayEnd(JsonParser p) throws IOException
     {
         if (!isArrayEnd(p))
-            throw new JsonParseException(p, "Expected array end ']', got '" + p.getCurrentToken() + "'", p.getTokenLocation());
+            throw new JsonParseException(p, "Expected array end ']', got '" + p.currentToken() + "'", p.currentTokenLocation());
 
         p.nextToken();
     }
 
     public static boolean isArrayEnd(JsonParser p)
     {
-        return p.getCurrentToken() == JsonToken.END_ARRAY;
+        return p.currentToken() == JsonToken.END_ARRAY;
     }
 
     public static void skipValue(JsonParser p) throws IOException
