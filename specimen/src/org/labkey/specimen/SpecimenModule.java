@@ -75,8 +75,6 @@ import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
-import org.labkey.specimen.pipeline.SampleMindedTransform;
-import org.labkey.specimen.pipeline.SampleMindedTransformTask;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
@@ -242,7 +240,6 @@ public class SpecimenModule extends SpringModule
         StudyService.get().registerStudyTabProvider(tabs -> tabs.add(new SpecimensPage("Specimen Data")));
         SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
-        SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
         PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
         StudyInternalService.get().registerManageStudyViewFactory(ctx -> ctx.getContainer().hasActiveModuleByName("specimen") ? new ManageSpecimenView() : null);
 
@@ -321,7 +318,6 @@ public class SpecimenModule extends SpringModule
     public Set<Class> getUnitTests()
     {
         return Set.of(
-            SampleMindedTransformTask.TestCase.class,
             SpecimenWriter.TestCase.class
         );
     }

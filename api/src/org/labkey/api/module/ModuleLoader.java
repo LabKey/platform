@@ -30,7 +30,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
+import org.labkey.api.collections.CaseInsensitiveKeyedHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
@@ -229,7 +229,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
-    private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
+    private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
 
     private ModuleLoader()
     {

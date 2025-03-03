@@ -98,12 +98,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         return _name;
     }
-
-    public SchemaKey getPath()
-    {
-        return _path;
-    }
-
+    
     @Override
     @Nullable
     public String getDescription()
@@ -374,6 +369,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return _path.toString();
     }
 
+    @Override
     public SchemaKey getSchemaPath()
     {
         return _path;

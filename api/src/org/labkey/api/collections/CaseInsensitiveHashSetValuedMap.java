@@ -17,22 +17,22 @@ package org.labkey.api.collections;
 
 import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Set;
 
 /**
- * A case-insensitive version of org.apache.commons.collections4.multimap.HashSetValuedHashMap
+ * An org.apache.commons.collections4.multimap.HashSetValuedHashMap with case-insensitive String values
  */
-public class CaseInsensitiveHashSetValuedMap<V> extends AbstractSetValuedMap<String, V> implements CaseInsensitiveCollection
+public class CaseInsensitiveHashSetValuedMap<K> extends AbstractSetValuedMap<K, String> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveHashSetValuedMap()
     {
-        super(new CaseInsensitiveHashMap<>());
+        super(new HashMap<>());
     }
 
     @Override
-    protected Set<V> createCollection()
+    protected Set<String> createCollection()
     {
-        return new HashSet<>();
+        return new CaseInsensitiveHashSet();
     }
 }

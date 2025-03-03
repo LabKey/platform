@@ -339,7 +339,7 @@ public class SurveyManager
         SurveySchema s = SurveySchema.getInstance();
         SqlExecutor executor = new SqlExecutor(s.getSchema());
 
-        SurveyDesign[] surveyDesigns = getSurveyDesigns(c, ContainerFilter.current(c));
+        SurveyDesign[] surveyDesigns = getSurveyDesigns(c, ContainerFilter.current(c, user));
 
         for (SurveyDesign design : surveyDesigns)
             deleteSurveyDesign(c, user, design.getRowId(), true);

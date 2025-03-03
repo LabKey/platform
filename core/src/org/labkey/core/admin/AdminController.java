@@ -17,6 +17,7 @@ package org.labkey.core.admin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -25,6 +26,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -92,6 +94,7 @@ import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -181,6 +184,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Directive;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -317,6 +321,8 @@ import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
+import org.labkey.core.security.AllowedExternalResourceHosts;
+import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
@@ -452,9 +458,9 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
         AdminConsole.addLink(Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
-        AdminConsole.addLink(Configuration, "external redirect hosts", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Redirect.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "external allowed sources", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.Source.name()), TroubleshooterPermission.class);
-        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(ExternalHostsAdminAction.class, root).addParameter("type", ExternalServerType.FileExtension.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external redirect hosts", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.Redirect.name()), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed external resource hosts", new ActionURL(ExternalSourcesAction.class, root), TroubleshooterPermission.class);
+        AdminConsole.addLink(Configuration, "allowed file extensions", new ActionURL(AllowListAction.class, root).addParameter("type", AllowListType.FileExtension.name()), TroubleshooterPermission.class);
 
         // Diagnostics
         AdminConsole.addLink(Diagnostics, "actions", new ActionURL(ActionsAction.class, root));
@@ -10841,30 +10847,30 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             Collection<BlockListFilter.Suspicious> list = BlockListFilter.reportSuspicious();
-            HtmlStringBuilder sb = HtmlStringBuilder.of();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             if (list.isEmpty())
             {
-                sb.append("No suspicious activity.\n");
+                html.append("No suspicious activity.\n");
             }
             else
             {
-                sb.unsafeAppend("<table class='table'>");
-                sb.unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
+                html.unsafeAppend("<table class='table'>")
+                    .unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
                 for (BlockListFilter.Suspicious s : list)
                 {
-                    sb.unsafeAppend("<tr><td>")
-                            .append(s.host);
+                    html.unsafeAppend("<tr><td>")
+                        .append(s.host);
                     if (!isBlank(s.user))
-                            sb.append(HtmlString.NBSP).append("(" + s.user + ")");
-                     sb.unsafeAppend("</td><td>")
-                            .append(s.userAgent)
-                            .unsafeAppend("</td><td>")
-                            .append(s.count)
-                            .unsafeAppend("</td></tr>\n");
+                        html.append(HtmlString.NBSP).append("(" + s.user + ")");
+                    html.unsafeAppend("</td><td>")
+                        .append(s.userAgent)
+                        .unsafeAppend("</td><td>")
+                        .append(s.count)
+                        .unsafeAppend("</td></tr>\n");
                 }
-                sb.unsafeAppend("</table>");
+                html.unsafeAppend("</table>");
             }
-            return new HtmlView(sb);
+            return new HtmlView(html);
         }
 
         @Override
@@ -10880,7 +10886,7 @@ public class AdminController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     @RequiresNoPermission
     @AllowedBeforeInitialUserIsSet
-    public class ConfigurationSummaryAction extends ReadOnlyApiAction<Object>
+    public static class ConfigurationSummaryAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -10902,6 +10908,37 @@ public class AdminController extends SpringActionController
             result.addMixIn(ExternalScriptEngineDefinitionImpl.class, IgnorePasswordMixIn.class);
             return result;
         }
+
+        /* returns a jackson serializable object that reports superset of information returned in admin console */
+        private JSONObject getConfigurationJson()
+        {
+            JSONObject res = new JSONObject();
+
+            res.put("server", AdminBean.getPropertyMap());
+
+            final Map<String,Map<String,Object>> sets = new TreeMap<>();
+            new SqlSelector(CoreSchema.getInstance().getScope(),
+                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
+                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+                {
+                    String category = (String)m.get("category");
+                    String name = (String)m.get("name");
+                    Object value = m.get("value");
+                    if (!sets.containsKey(category))
+                        sets.put(category, new TreeMap<>());
+                    sets.get(category).put(name,value);
+                }
+            );
+            res.put("siteSettings", sets);
+
+            HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
+            res.put("health", result);
+
+            LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
+            res.put("scriptEngines", mgr.getEngineDefinitions());
+
+            return res;
+        }
     }
 
     @JsonIgnoreProperties(value = { "password", "changePassword", "configuration" })
@@ -10910,25 +10947,26 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction()
-    public class ExternalHostsAdminAction extends FormViewAction<ExternalHostsForm>
+    public class AllowListAction extends FormViewAction<AllowListForm>
     {
-        private ExternalServerType _type;
+        private AllowListType _type;
+
         @Override
-        public void validateCommand(ExternalHostsForm target, Errors errors)
+        public void validateCommand(AllowListForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(ExternalHostsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(AllowListForm form, boolean reshow, BindException errors)
         {
             _type = form.getTypeEnum();
 
-            form.setExistingHostsList(form.getTypeEnum().getHosts());
+            form.setExistingValuesList(form.getTypeEnum().getValues());
 
-            JspView<ExternalHostsForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalHost.jsp", form, errors);
+            JspView<AllowListForm> newView = new JspView<>("/org/labkey/core/admin/addNewListValue.jsp", form, errors);
             newView.setTitle("Register New " + form.getTypeEnum().getTitle());
             newView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<ExternalHostsForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalHosts.jsp", form, errors);
+            JspView<AllowListForm> existingView = new JspView<>("/org/labkey/core/admin/existingListValues.jsp", form, errors);
             existingView.setTitle("Existing " + form.getTypeEnum().getTitle() + "s");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
@@ -10936,20 +10974,20 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ExternalHostsForm form, BindException errors) throws Exception
+        public boolean handlePost(AllowListForm form, BindException errors) throws Exception
         {
-            ExternalServerType hostType = form.getTypeEnum();
-            //handle delete of existing external redirect host
+            AllowListType allowListType = form.getTypeEnum();
+            //handle delete of existing value
             if (form.isDelete())
             {
-                String urlToDelete = form.getExistingExternalHost();
-                List<String> hosts = hostType.getHosts();
-                for (String externalHost : hosts)
+                String urlToDelete = form.getExistingValue();
+                List<String> values = allowListType.getValues();
+                for (String value : values)
                 {
-                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(externalHost.trim()))
+                    if (null != urlToDelete && urlToDelete.trim().equalsIgnoreCase(value.trim()))
                     {
-                        hosts.remove(externalHost);
-                        hostType.setHosts(hosts, getUser());
+                        values.remove(value);
+                        allowListType.setValues(values, getUser());
                         break;
                     }
                 }
@@ -10957,27 +10995,27 @@ public class AdminController extends SpringActionController
             //handle updates - clicking on Save button under Existing will save the updated urls
             else if (form.isSaveAll())
             {
-                Set<String> validatedHosts = form.validateHostList(errors);
+                Set<String> validatedValues = form.validateValues(errors);
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(validatedHosts.stream().toList(), getUser());
+                allowListType.setValues(validatedValues.stream().toList(), getUser());
             }
-            //save new external host
+            //save new external value
             else if (form.isSaveNew())
             {
-                Set<String> hostSet = form.validateNewExternalHost(errors);
+                Set<String> valueSet = form.validateNewValue(errors);
                 if (errors.hasErrors())
                     return false;
 
-                hostType.setHosts(hostSet, getUser());
+                allowListType.setValues(valueSet, getUser());
             }
 
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(ExternalHostsForm form)
+        public URLHelper getSuccessURL(AllowListForm form)
         {
             return form.getTypeEnum().getSuccessURL(getContainer());
         }
@@ -10990,36 +11028,38 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class ExternalHostsForm
+    public static class AllowListForm
     {
-        private String _newExternalHost;
-        private String _existingExternalHost;
+        private String _newValue;
+        private String _existingValue;
         private boolean _delete;
-        private String _existingExternalHosts;
+        private String _existingValues;
         private boolean _saveAll;
         private boolean _saveNew;
         private String _type;
 
-        private List<String> _existingHostURLList;
+        private List<String> _existingValuesList;
 
-        public String getNewExternalHost()
+        public String getNewValue()
         {
-            return _newExternalHost;
+            return _newValue;
         }
 
-        public void setNewExternalHost(String newExternalHost)
+        @SuppressWarnings("unused")
+        public void setNewValue(String newValue)
         {
-            _newExternalHost = newExternalHost;
+            _newValue = newValue;
         }
 
-        public String getExistingExternalHost()
+        public String getExistingValue()
         {
-            return _existingExternalHost;
+            return _existingValue;
         }
 
-        public void setExistingExternalHost(String existingExternalHost)
+        @SuppressWarnings("unused")
+        public void setExistingValue(String existingValue)
         {
-            _existingExternalHost = existingExternalHost;
+            _existingValue = existingValue;
         }
 
         public boolean isDelete()
@@ -11027,19 +11067,21 @@ public class AdminController extends SpringActionController
             return _delete;
         }
 
+        @SuppressWarnings("unused")
         public void setDelete(boolean delete)
         {
             _delete = delete;
         }
 
-        public String getExistingExternalHosts()
+        public String getExistingValues()
         {
-            return _existingExternalHosts;
+            return _existingValues;
         }
 
-        public void setExistingExternalHosts(String existingExternalHosts)
+        @SuppressWarnings("unused")
+        public void setExistingValues(String existingValues)
         {
-            _existingExternalHosts = existingExternalHosts;
+            _existingValues = existingValues;
         }
 
         public boolean isSaveAll()
@@ -11047,6 +11089,7 @@ public class AdminController extends SpringActionController
             return _saveAll;
         }
 
+        @SuppressWarnings("unused")
         public void setSaveAll(boolean saveAll)
         {
             _saveAll = saveAll;
@@ -11057,24 +11100,26 @@ public class AdminController extends SpringActionController
             return _saveNew;
         }
 
+        @SuppressWarnings("unused")
         public void setSaveNew(boolean saveNew)
         {
             _saveNew = saveNew;
         }
 
-        public List<String> getExistingHostList()
+        public List<String> getExistingValuesList()
         {
             //for updated urls that comes in as String values from the jsp/html form
-            if (null != getExistingExternalHosts())
+            if (null != getExistingValues())
             {
-                return new ArrayList<>(Arrays.asList(getExistingExternalHosts().split("\n")));
+                // The JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
+                return new ArrayList<>(Arrays.asList(getExistingValues().replace("\r", "").split("\n")));
             }
-            return _existingHostURLList;
+            return _existingValuesList;
         }
 
-        public void setExistingHostsList(List<String> urlList)
+        public void setExistingValuesList(List<String> valuesList)
         {
-            _existingHostURLList = urlList;
+            _existingValuesList = valuesList;
         }
 
         public String getType()
@@ -11089,90 +11134,331 @@ public class AdminController extends SpringActionController
         }
 
         @NotNull
-        public ExternalServerType getTypeEnum()
+        public AllowListType getTypeEnum()
         {
-            return EnumUtils.getEnum(ExternalServerType.class, getType(), ExternalServerType.Redirect);
+            return EnumUtils.getEnum(AllowListType.class, getType(), AllowListType.Redirect);
         }
 
         @JsonIgnore
-        public Set<String> validateNewExternalHost(BindException errors)
+        public Set<String> validateNewValue(BindException errors)
         {
-            String newExternalHost = StringUtils.trimToEmpty(getNewExternalHost());
-            getTypeEnum().validateHostFormat(newExternalHost, errors);
+            String value = StringUtils.trimToEmpty(getNewValue());
+            getTypeEnum().validateValueFormat(value, errors);
             if (errors.hasErrors())
                 return null;
 
-            Set<String> hostSet = new CaseInsensitiveHashSet(getTypeEnum().getHosts());
-            checkDuplicatesByAddition(newExternalHost, hostSet, errors);
-            return hostSet;
+            Set<String> valueSet = new CaseInsensitiveHashSet(getTypeEnum().getValues());
+            checkDuplicatesByAddition(value, valueSet, errors);
+            return valueSet;
         }
 
         @JsonIgnore
-        public Set<String> validateHostList(BindException errors)
+        public Set<String> validateValues(BindException errors)
         {
-            List<String> hosts = getExistingHostList(); //get hosts from the form, this includes updated hosts
-            Set<String> hostSet = new CaseInsensitiveHashSet();
+            List<String> values = getExistingValuesList(); //get values from the form, this includes updated values
+            Set<String> valueSet = new CaseInsensitiveHashSet();
 
-            if (null != hosts && !hosts.isEmpty())
+            if (null != values && !values.isEmpty())
             {
-                for (String host : hosts)
+                for (String value : values)
                 {
-                    getTypeEnum().validateHostFormat(host, errors);
+                    getTypeEnum().validateValueFormat(value, errors);
                     if (errors.hasErrors())
                         continue;
 
-                    checkDuplicatesByAddition(host, hostSet, errors);
+                    checkDuplicatesByAddition(value, valueSet, errors);
                 }
             }
 
-            return hostSet;
+            return valueSet;
         }
 
         /**
-         * Adds host to host set unless it is a duplicate, in which case it adds an error
-         * Note: Attempts to validate host string using URLHelper
-         * @param host to check
-         * @param hostSet of existing hosts
+         * Adds value to value set unless it is a duplicate, in which case it adds an error
+         * @param value to check
+         * @param valueSet of existing values
          * @param errors collections of errors observed
          */
         @JsonIgnore
-        private void checkDuplicatesByAddition(String host, Set<String> hostSet, BindException errors)
+        private void checkDuplicatesByAddition(String value, Set<String> valueSet, BindException errors)
         {
-            String trimHost = StringUtils.trimToEmpty(host);
-            if (!hostSet.add(trimHost))
-                errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate hosts not allowed.", trimHost)));
+            String trimValue = StringUtils.trimToEmpty(value);
+            if (!valueSet.add(trimValue))
+                errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate values not allowed.", trimValue)));
         }
     }
 
-    /* returns a jackson serializable object that reports superset of information returned in admin console */
-    JSONObject getConfigurationJson()
+    public static class ExternalSourcesForm
     {
-        JSONObject res = new JSONObject();
+        private boolean _delete;
+        private boolean _saveNew;
+        private boolean _saveAll;
 
-        res.put("server", AdminBean.getPropertyMap());
+        private String _newDirective;
+        private String _newHost;
+        private String _existingValue;
+        private String _existingValues;
 
-        final Map<String,Map<String,Object>> sets = new TreeMap<>();
-        new SqlSelector(CoreSchema.getInstance().getScope(),
-            new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-            "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+        public boolean isDelete()
+        {
+            return _delete;
+        }
+
+        @SuppressWarnings("unused")
+        public void setDelete(boolean delete)
+        {
+            _delete = delete;
+        }
+
+        public boolean isSaveNew()
+        {
+            return _saveNew;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSaveNew(boolean saveNew)
+        {
+            _saveNew = saveNew;
+        }
+
+        public boolean isSaveAll()
+        {
+            return _saveAll;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSaveAll(boolean saveAll)
+        {
+            _saveAll = saveAll;
+        }
+
+        public String getNewDirective()
+        {
+            return _newDirective;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNewDirective(String newDirective)
+        {
+            _newDirective = newDirective;
+        }
+
+        public String getNewHost()
+        {
+            return _newHost;
+        }
+
+        @SuppressWarnings("unused")
+        public void setNewHost(String newHost)
+        {
+            _newHost = newHost;
+        }
+
+        public String getExistingValue()
+        {
+            return _existingValue;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExistingValue(String existingValue)
+        {
+            _existingValue = existingValue;
+        }
+
+        public String getExistingValues()
+        {
+            // The JSP JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
+            return _existingValues.replace("\r", "");
+        }
+
+        @SuppressWarnings("unused")
+        public void setExistingValues(String existingValues)
+        {
+            _existingValues = existingValues;
+        }
+
+        private AllowedHost getExistingAllowedHost(BindException errors)
+        {
+            return getAllowedHost(getExistingValue(), errors);
+        }
+
+        private AllowedHost getAllowedHost(String value, BindException errors)
+        {
+            String[] parts = value.split("\\|", 2); // Stop after the first bar to produce two parts
+            if (parts.length != 2)
             {
-                String category = (String)m.get("category");
-                String name = (String)m.get("name");
-                Object value = m.get("value");
-                if (!sets.containsKey(category))
-                    sets.put(category, new TreeMap<>());
-                sets.get(category).put(name,value);
+                errors.addError(new LabKeyError("Can't parse allowed host."));
+                return null;
             }
-        );
-        res.put("siteSettings", sets);
+            return validateHost(parts[0], parts[1], errors);
+        }
 
-        HealthCheck.Result result = HealthCheckRegistry.get().checkHealth(Arrays.asList("all"));
-        res.put("health", result);
+        private List<AllowedHost> getExistingAllowedHosts(BindException errors)
+        {
+            List<AllowedHost> existing = Arrays.stream(getExistingValues().split("\n"))
+                .map(value-> getAllowedHost(value, errors))
+                .toList();
 
-        LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();
-        res.put("scriptEngines", mgr.getEngineDefinitions());
+            if (errors.hasErrors())
+                return null;
 
-        return res;
+            return checkDuplicates(existing, errors);
+        }
+
+        private List<AllowedHost> validateNewAllowedHost(BindException errors) throws JsonProcessingException
+        {
+            AllowedHost newAllowedHost = validateHost(getNewDirective(), getNewHost(), errors);
+
+            if (errors.hasErrors())
+                return null;
+
+            List<AllowedHost> hosts = getSavedAllowedHosts();
+            hosts.add(newAllowedHost);
+
+            return checkDuplicates(hosts, errors);
+        }
+
+        // Lenient for now: no unknown directives, no blank hosts or hosts with semicolons
+        public static AllowedHost validateHost(String directiveString, String host, BindException errors)
+        {
+            AllowedHost ret = null;
+
+            if (StringUtils.isEmpty(directiveString))
+            {
+                errors.addError(new LabKeyError("Directive must not be blank"));
+            }
+            else if (StringUtils.isEmpty(host))
+            {
+                errors.addError(new LabKeyError("Host must not be blank"));
+            }
+            else if (host.contains(";"))
+            {
+                errors.addError(new LabKeyError("Semicolons are not allowed in host names"));
+            }
+            else
+            {
+                Directive directive = EnumUtils.getEnum(Directive.class, directiveString);
+
+                if (null == directive)
+                {
+                    errors.addError(new LabKeyError("Unknown directive: " + directiveString));
+                }
+                else
+                {
+                    ret = new AllowedHost(directive, host.trim());
+                }
+            }
+
+            return ret;
+        }
+
+        /**
+         * Check for duplicates in hosts: within each Directive, hosts are checked using case-insensitive comparisons
+
+         * @param hosts a list of AllowedHost objects to check for duplicates
+         * @param errors errors to populate
+         * @return hosts if there are no duplicates, otherwise {@code null}
+         */
+        public static @Nullable List<AllowedHost> checkDuplicates(List<AllowedHost> hosts, BindException errors)
+        {
+            // Not a simple Set<AllowedHost> check since we want host check to be case-insensitive
+            MultiValuedMap<Directive, String> map = new CaseInsensitiveHashSetValuedMap<>();
+
+            hosts.forEach(allowedHost -> {
+                String host = allowedHost.host().trim();
+                if (!map.put(allowedHost.directive(), host))
+                    errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate values are not allowed.", allowedHost)));
+            });
+
+            return errors.hasErrors() ? null : hosts;
+        }
+
+        // Returns a mutable list
+        public List<AllowedHost> getSavedAllowedHosts() throws JsonProcessingException
+        {
+            return AllowedExternalResourceHosts.readAllowedHosts();
+        }
+    }
+
+    @AdminConsoleAction()
+    public class ExternalSourcesAction extends FormViewAction<ExternalSourcesForm>
+    {
+        @Override
+        public void validateCommand(ExternalSourcesForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
+        {
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
+
+            JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
+            newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
+            newView.setFrame(WebPartView.FrameType.PORTAL);
+            JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
+            existingView.setTitle("Existing External Resource Hosts");
+            existingView.setFrame(WebPartView.FrameType.PORTAL);
+
+            return new VBox(newView, existingView);
+        }
+
+        @Override
+        public boolean handlePost(ExternalSourcesForm form, BindException errors) throws Exception
+        {
+            List<AllowedHost> allowedHosts = null;
+
+            //handle delete of existing value
+            if (form.isDelete())
+            {
+                AllowedHost subToDelete = form.getExistingAllowedHost(errors);
+                if (errors.hasErrors())
+                    return false;
+                allowedHosts = form.getSavedAllowedHosts();
+                var iter = allowedHosts.listIterator();
+                while (iter.hasNext())
+                {
+                    AllowedHost sub = iter.next();
+                    if (sub.equals(subToDelete))
+                    {
+                        iter.remove();
+                        break;
+                    }
+                }
+            }
+            //handle updates - clicking on Save button under Existing will save the updated urls
+            else if (form.isSaveAll())
+            {
+                allowedHosts = form.getExistingAllowedHosts(errors);
+                if (errors.hasErrors())
+                    return false;
+            }
+            //save new external value
+            else if (form.isSaveNew())
+            {
+                allowedHosts = form.validateNewAllowedHost(errors);
+            }
+
+            if (errors.hasErrors())
+                return false;
+
+            AllowedExternalResourceHosts.saveAllowedHosts(allowedHosts, getUser());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ExternalSourcesForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("externalHosts");
+            addAdminNavTrail(root, "Allowed External Resource Hosts", getClass());
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -11708,6 +11994,9 @@ public class AdminController extends SpringActionController
                             String labkeyVersion = request.getParameter("labkeyVersion");
                             if (null != labkeyVersion)
                                 jsonObj.put("labkeyVersion", labkeyVersion);
+                            String cspVersion = request.getParameter("cspVersion");
+                            if (null != cspVersion)
+                                jsonObj.put("cspVersion", cspVersion);
                             var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
                         }

@@ -2559,7 +2559,7 @@ public class ExpDataIterators
 
                 if (_folderColIndex != null || _isCrossFolderUpdate)
                 {
-                    ContainerFilter cf = ContainerFilter.current(container);
+                    ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
                         cf = new ContainerFilter.AllInProjectPlusShared(container, user);
                     Collection<GUID> validContainerIds =  cf.getIds();
@@ -3005,7 +3005,12 @@ public class ExpDataIterators
                 ColumnInfo colInfo = getColumnInfo(i);
                 String name = colInfo.getName();
                 String lcName = name.toLowerCase();
-                if (validFields.contains(name))
+                if (_typeColIndex != null && _typeColIndex == i) // Issue 52355: assure we have some data in the row by including the type
+                {
+                    fieldIndexes.add(i);
+                    header.add(_typeColName);
+                }
+                else if (validFields.contains(name))
                 {
                     fieldIndexes.add(i);
                     header.add(_tsvWriter.quoteValue(name));

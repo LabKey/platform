@@ -614,16 +614,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public void invalidate(Domain domain)
-    {
-        super.invalidate(domain);
-
-        ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
-        if (st != null)
-            SampleTypeService.get().indexSampleType(st);
-    }
-
-    @Override
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof SampleSetTemplateType;

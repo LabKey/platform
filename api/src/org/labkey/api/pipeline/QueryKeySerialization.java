@@ -79,7 +79,7 @@ public class QueryKeySerialization
                 String name = null;
                 while (parser.nextToken() != JsonToken.END_OBJECT)
                 {
-                    String fieldName = parser.getCurrentName();
+                    String fieldName = parser.currentName();
                     JsonToken token1 = parser.nextToken();       // get past FIELD_NAME
                     if ("_parent".equals(fieldName))
                         parent = parser.readValueAs(SchemaKey.class);
@@ -91,13 +91,13 @@ public class QueryKeySerialization
 
                 return new SchemaKey(parent, name);
             }
-            else if (JsonToken.VALUE_NULL.equals(parser.getCurrentToken()))
+            else if (JsonToken.VALUE_NULL.equals(parser.currentToken()))
             {
                 return null;
             }
             else
             {
-                throw new IOException("Unexpected token in serialized SchemaKey: " + parser.getCurrentToken());
+                throw new IOException("Unexpected token in serialized SchemaKey: " + parser.currentToken());
             }
         }
 
@@ -124,7 +124,7 @@ public class QueryKeySerialization
                 String name = null;
                 while (parser.nextToken() != JsonToken.END_OBJECT)
                 {
-                    String fieldName = parser.getCurrentName();
+                    String fieldName = parser.currentName();
                     JsonToken token1 = parser.nextToken();       // get past FIELD_NAME
                     if ("_parent".equals(fieldName))
                         parent = parser.readValueAs(FieldKey.class);
@@ -136,13 +136,13 @@ public class QueryKeySerialization
 
                 return new FieldKey(parent, name);
             }
-            else if (JsonToken.VALUE_NULL.equals(parser.getCurrentToken()))
+            else if (JsonToken.VALUE_NULL.equals(parser.currentToken()))
             {
                 return null;
             }
             else
             {
-                throw new IOException("Unexpected token in serialized FieldKey: " + parser.getCurrentToken());
+                throw new IOException("Unexpected token in serialized FieldKey: " + parser.currentToken());
             }
         }
 

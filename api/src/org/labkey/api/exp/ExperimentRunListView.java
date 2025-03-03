@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
@@ -49,18 +51,12 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.ClientDependency;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A grid view of a subset of all experiment runs, typically of a given protocol or assay type.
- * User: jeckels
- * Date: Oct 12, 2006
  */
 public class ExperimentRunListView extends QueryView
 {
@@ -107,7 +103,7 @@ public class ExperimentRunListView extends QueryView
     /** Optionally render a header in addition to the main grid */
     protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        _selectedType.renderHeader(request, response);
+        _selectedType.renderHeader(request, response, getUser());
     }
 
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
@@ -269,7 +265,7 @@ public class ExperimentRunListView extends QueryView
         PanelButton result = super.createExportButton(recordSelectorColumns);
         String defaultFilenamePrefix = "Exported" + (getTitle() == null ? "Runs" : getTitle());
 
-        HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), defaultFilenamePrefix);
+        HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), getUser(), defaultFilenamePrefix);
         result.addSubPanel("Files", filesView);
 
         HttpView xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);

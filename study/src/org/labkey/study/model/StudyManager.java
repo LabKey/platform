@@ -233,6 +233,7 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Datasets");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subjects");
+    public static final String ENABLE_ANCILLARY_STUDIES = "enableAncillaryStudies";
 
     private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
