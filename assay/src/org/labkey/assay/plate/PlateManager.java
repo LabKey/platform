@@ -175,6 +175,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
+import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
 import static org.labkey.assay.plate.query.WellTable.WELL_LOCATION;
 
 public class PlateManager implements PlateService, AssayListener, ExperimentListener
@@ -3465,7 +3466,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 wellSampleDataForPlate.add(CaseInsensitiveHashMap.of(
                     WellTable.Column.SampleID.name(), sampleIds.get(sampleIdsCounter),
-                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    WellTable.Column.Type.name(), SAMPLE.name(),
                     WELL_LOCATION, createPosition(c, rowIdx, colIdx).getDescription()
                 ));
                 sampleIdsCounter++;
@@ -3511,7 +3512,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             for (int colIdx = 0; colIdx < plateType.getColumns(); colIdx++)
             {
                 data.add(CaseInsensitiveHashMap.of(
-                    WellTable.Column.Type.name(), WellGroup.Type.SAMPLE.name(),
+                    WellTable.Column.Type.name(), SAMPLE.name(),
                     WELL_LOCATION, createPosition(container, rowIdx, colIdx).getDescription()
                 ));
             }
@@ -3962,7 +3963,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     public void validateWellGroups(Container container, User user, Collection<Integer> plateRowIds) throws ValidationException
     {
         clearCache(plateRowIds);
-        Set<Integer> plateSetsWithReplicates = new HashSet<>();
+        Set<Integer> plateSetsWithSampleGroups = new HashSet<>();
+        Set<Integer> plateSetsWithReplicateGroups = new HashSet<>();
         Set<Pair<Integer, Integer>> plateSetsWithControls = new HashSet<>();
 
         for (var plateRowId : plateRowIds)
@@ -3971,33 +3973,37 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!TsvPlateLayoutHandler.TYPE.equalsIgnoreCase(plate.getAssayType()))
                 continue;
 
+            var plateSet = plate.getPlateSet();
+            if (plateSet == null)
+                throw new ValidationException("Failed to resolve plate set for plate \"%s\".", plate.getName());
+
             for (var wellGroup : plate.getWellGroups())
             {
                 switch (wellGroup.getType())
                 {
-                    case REPLICATE -> {
+                    case REPLICATE ->
+                    {
                         if (wellGroup.isZone())
                             throw new ValidationException(String.format("Replicates must specify a \"%s\".", WellTable.Column.ReplicateGroup.name()));
 
-                        var plateSet = plate.getPlateSet();
-                        if (plateSet != null)
-                            plateSetsWithReplicates.add(plateSet.getRowId());
+                        plateSetsWithReplicateGroups.add(plateSet.getRowId());
                     }
-                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL ->
+                    case CONTROL, NEGATIVE_CONTROL, POSITIVE_CONTROL, SAMPLE ->
                     {
                         validateWellGroup(plate, wellGroup);
 
-                        var ps = plate.getPlateSet();
-                        if (ps == null)
-                            throw new ValidationException("Failed to resolve plate set for plate \"%s\".", plate.getName());
+                        if (plateSet.isTemplate())
+                            continue;
 
-                        if (!ps.isStandalone() && !ps.getRowId().equals(ps.getRootPlateSetId()) && !ps.isTemplate())
+                        if (!wellGroup.isZone())
+                            plateSetsWithSampleGroups.add(plateSet.getRowId());
+
+                        if (!SAMPLE.equals(wellGroup.getType()) && !plateSet.isStandalone() && !plateSet.getRowId().equals(plateSet.getRootPlateSetId()))
                         {
-                            if (ps.getRootPlateSetId() != null)
-                                plateSetsWithControls.add(Pair.of(ps.getRowId(), ps.getRootPlateSetId()));
+                            if (plateSet.getRootPlateSetId() != null)
+                                plateSetsWithControls.add(Pair.of(plateSet.getRowId(), plateSet.getRootPlateSetId()));
                         }
                     }
-                    case SAMPLE -> validateWellGroup(plate, wellGroup);
                     default -> throw new ValidationException(
                         String.format(
                             "Well Group Type \"%s\" is not supported for assay type \"%s\" plates.",
@@ -4011,15 +4017,21 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             validateWells(plate);
         }
 
-        if (!plateSetsWithReplicates.isEmpty())
+        if (!plateSetsWithReplicateGroups.isEmpty())
         {
-            for (var plateSetId : plateSetsWithReplicates.stream().sorted().toList())
-                validatePlateSetReplicates(container, user, plateSetId);
+            for (var plateSetId : plateSetsWithReplicateGroups.stream().sorted().toList())
+                validatePlateSetReplicateGroups(container, user, plateSetId);
+        }
+
+        if (!plateSetsWithSampleGroups.isEmpty())
+        {
+            for (var plateSetId : plateSetsWithSampleGroups.stream().sorted().toList())
+                validatePlateSetSampleGroups(container, user, plateSetId);
         }
 
         if (!plateSetsWithControls.isEmpty())
         {
-            for (var plateSetIds : plateSetsWithControls)
+            for (var plateSetIds : plateSetsWithControls.stream().sorted().toList())
                 validatePlateSetControls(container, user, plateSetIds);
         }
     }
@@ -4143,7 +4155,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         """, columnsSql, plateSetRowId, columnsSql);
     }
 
-    private void validatePlateSetReplicates(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    private void validatePlateSetReplicateGroups(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
     {
         var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
         var replicateWellGroupCount = getReplicateGroupCount(plateSchema, plateSetRowId);
@@ -4178,6 +4190,73 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         // Fallback to more generic message if we did not resolve a specific mismatch
         throw new ValidationException(String.format("Plate set (%d) contains mismatched replicate well data.", plateSetRowId));
+    }
+
+    private String getSampleGroupLabKeySql(@NotNull Integer plateSetRowId, boolean includeSampleId)
+    {
+        List<String> columnNames = new ArrayList<>();
+        columnNames.add(WellTable.Column.Type.name());
+        columnNames.add(WellTable.Column.WellGroup.name());
+        if (includeSampleId)
+            columnNames.add(WellTable.Column.SampleID.name());
+        String columns = columnNames.stream().map(LabKeySql::quoteIdentifier).collect(Collectors.joining(", "));
+
+        String wellTypes = StringUtils.join(
+                Stream.of(WellGroup.Type.CONTROL, WellGroup.Type.NEGATIVE_CONTROL, WellGroup.Type.POSITIVE_CONTROL, WellGroup.Type.SAMPLE)
+                        .map(type -> LabKeySql.quoteString(type.name())).toList(), ", "
+        );
+
+        return String.format("""
+            SELECT DISTINCT %s
+            FROM plate.Well
+            WHERE PlateId.PlateSet.RowId = %s AND WellGroup IS NOT NULL AND Type IN (%s) AND SampleID IS NOT NULL
+            GROUP BY %s
+        """, columns, plateSetRowId, wellTypes, columns);
+    }
+
+    private long getSampleGroupCount(@NotNull UserSchema plateSchema, @NotNull Integer plateSetRowId)
+    {
+        String labkeySql = getSampleGroupLabKeySql(plateSetRowId, false);
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+    }
+
+    private void validatePlateSetSampleGroups(Container container, User user, @NotNull Integer plateSetRowId) throws ValidationException
+    {
+        var plateSchema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        var sampleGroupCount = getSampleGroupCount(plateSchema, plateSetRowId);
+
+        if (sampleGroupCount == 0)
+            return;
+
+        var sampleGroupLabKeySql = getSampleGroupLabKeySql(plateSetRowId, true);
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sampleGroupLabKeySql).select())
+        {
+            if (sampleGroupCount == results.getSize())
+                return;
+
+            // Now we know that there are mismatched samples within a sample group. Find the first mismatched group.
+            Set<Pair<String, String>> groups = new HashSet<>();
+            while (results.next())
+            {
+                String groupName = StringUtils.trimToNull(results.getString(WellTable.Column.WellGroup.name()));
+                if (groupName == null)
+                    continue;
+
+                String type = StringUtils.trimToNull(results.getString(WellTable.Column.Type.name()));
+                if (type == null)
+                    continue;
+
+                var key = Pair.of(groupName, type);
+                if (groups.contains(key))
+                    throw new ValidationException(String.format("Sample group \"%s\" contains mismatched samples across plates. Ensure the same sample is recorded for each well in this sample group across all plates in the plate set.", groupName));
+
+                groups.add(key);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     private void validateWellGroup(Plate plate, WellGroup wellGroup) throws ValidationException
@@ -4758,7 +4837,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                         if (wellLayout.isSampleOnly())
                         {
-                            d.setType(WellGroup.Type.SAMPLE);
+                            d.setType(SAMPLE);
                             if (d.getSampleId() != null)
                                 context.platedSampleIds().add(d.getSampleId());
                         }
@@ -4781,7 +4860,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 WellData d = new WellData();
                 d.setPosition(p.getDescription());
-                d.setType(WellGroup.Type.SAMPLE);
+                d.setType(SAMPLE);
                 d.setSampleId(well.sourceSampleId());
                 context.platedSampleIds().add(well.sourceSampleId());
 

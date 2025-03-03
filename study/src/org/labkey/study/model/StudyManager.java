@@ -73,7 +73,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -103,7 +102,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
@@ -234,6 +232,7 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Datasets");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subjects");
+    public static final String ENABLE_ANCILLARY_STUDIES = "enableAncillaryStudies";
 
     private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();

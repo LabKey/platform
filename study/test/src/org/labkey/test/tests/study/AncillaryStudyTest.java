@@ -23,6 +23,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.WikiHelper;
 
@@ -75,6 +76,7 @@ public class AncillaryStudyTest extends StudyBaseTest
     {
         _containerHelper.deleteProject(getProjectName(), afterTest);
         TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath(), "export"));
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "enableAncillaryStudies");
     }
 
     @Override
@@ -101,6 +103,7 @@ public class AncillaryStudyTest extends StudyBaseTest
 
     private void createAncillaryStudy()
     {
+        OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "enableAncillaryStudies");
         navigateToFolder(PROJECT_NAME, getFolderName());
         clickTab("Manage");
 
