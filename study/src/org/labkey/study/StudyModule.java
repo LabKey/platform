@@ -448,11 +448,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 "This option adds support for the study protocol and vaccine design tools.",
                 false, false, FeatureType.Deprecated));
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
-                "Restore Study Protocol Design Tools",
-                "This option and all support for study protocol design tools and tables will be removed in LabKey Server v25.7.",
-                false, false, FeatureType.Deprecated));
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
