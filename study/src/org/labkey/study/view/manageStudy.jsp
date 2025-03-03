@@ -67,6 +67,8 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.StudyUtils" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -255,6 +257,7 @@
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
                         <td><%=link("Manage Dataset QC States", StudyController.getManageQCStatesURL(getContainer(), getActionURL())) %></td>
                     </tr>
+                    <% if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG)) { %>
                     <tr>
                         <td class="lk-study-prop-label">Study Products</td>
                         <td class="lk-study-prop-desc">This study defines <%= getStudyProducts(user, null).size() %> study products</td>
@@ -283,6 +286,7 @@
                         %>
                         <td><%= link("Manage Assay Schedule", assayScheduleURL) %></td>
                     </tr>
+                    <% } %>
                     <tr>
                         <td class="lk-study-prop-label">Demo Mode</td>
                         <td class="lk-study-prop-desc">Demo mode obscures <%=h(subjectNounSingle.toLowerCase())%> IDs on many pages</td>

@@ -35,7 +35,7 @@ import org.labkey.api.study.security.permissions.ManageStudyPermission;
  * User: cnathe
  * Date: 12/30/13
  */
-public class ImmunizationScheduleWebpartFactory extends BaseWebPartFactory
+public class ImmunizationScheduleWebpartFactory extends StudyDesignWebpartFactory
 {
     public static String NAME = "Immunization Schedule";
 
@@ -47,6 +47,9 @@ public class ImmunizationScheduleWebpartFactory extends BaseWebPartFactory
     @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
+        if (!canShow())
+            return null;
+
         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studydesign/immunizationScheduleWebpart.jsp", webPart);
         view.setTitle(NAME);
         view.setFrame(WebPartView.FrameType.PORTAL);

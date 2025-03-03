@@ -86,6 +86,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
@@ -439,6 +440,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "This option and all support for creating ancillary studies will be removed in LabKey Server v25.4.",
             false, false, FeatureType.Deprecated
         ));
+
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
+                "Study Protocol Design Tools",
+                "This option adds support for the study protocol and vaccine design tools.",
+                false, false, FeatureType.Deprecated));
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

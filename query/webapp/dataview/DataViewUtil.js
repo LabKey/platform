@@ -72,7 +72,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
                     {name : 'modified', type: 'date'},
                     {name : 'modifiedBy'},
                     {name : 'contentModified', type: 'date'},
-                    {name : 'refreshDate',  type: 'date'},
+                    {name : 'refreshDate'},
                     {name : 'name'},
                     {name : 'access', mapping: 'access.label'},
                     {name : 'accessUrl', mapping: 'access.url'},
