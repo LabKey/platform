@@ -3575,7 +3575,7 @@ public class StudyController extends BaseStudyController
 
     public static ActionURL getManageQCStatesURL(Container c, @NotNull ActionURL returnUrl)
     {
-        return new ActionURL(ManageQCStatesAction.class, c).addReturnURL(returnUrl);
+        return new ActionURL(ManageQCStatesAction.class, c).addReturnUrl(returnUrl);
     }
 
     @RequiresPermission(AdminPermission.class)

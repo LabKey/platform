@@ -41,7 +41,7 @@
         dependencies.add("Ext4");
     }
 %>
-<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnUrl(getActionURL().clone()))%>
+<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnUrl(getActionURL()))%>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
     for (OlapSchemaDescriptor sd : list)

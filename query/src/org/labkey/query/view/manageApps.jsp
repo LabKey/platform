@@ -234,7 +234,7 @@
 </br>
 <h3>OLAP Cube definitions in this folder:</h3>
 <p>
-<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnUrl(getActionURL().clone())).id("create-cube-definition")%>
+<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnUrl(getActionURL())).id("create-cube-definition")%>
 </p>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
@@ -244,8 +244,8 @@
         %><tr data-name="<%=h(sd.getName())%>">
             <td style="font-weight: bold;"><%=h(sd.getName())%></td>
             <% if (sd.isEditable()) { %>
-                <td><%=link("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnUrl(getActionURL().clone()))%></td>
-                <td><%=link("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnUrl(getActionURL().clone()))%></td>
+                <td><%=link("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnUrl(getActionURL()))%></td>
+                <td><%=link("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnUrl(getActionURL()))%></td>
             <% } %>
         </tr><%
 

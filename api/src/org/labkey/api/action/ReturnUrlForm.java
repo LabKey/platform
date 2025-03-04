@@ -190,18 +190,6 @@ public class ReturnUrlForm
                 defaultURL);
     }
 
-    @Deprecated
-    public ReturnURLString getReturnURL()
-    {
-        return _returnUrl;
-    }
-
-    @Deprecated
-    public void setReturnURL(ReturnURLString returnUrl)
-    {
-        setReturnUrl(returnUrl);
-    }
-
     /** Applies the return URL from this form (if any) to the given URL */
     public void propagateReturnURL(ActionURL urlNeedingParameter)
     {
