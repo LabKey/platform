@@ -4636,9 +4636,8 @@ public class QueryController extends SpringActionController
             {
                 for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
                 {
-                    // allow for the fileMap key to include the row index for defining which row to attach this file to
-                    // ex: "FileField::0", "FieldField::1" for usages executing a single command and "FileField::0::0",
-                    // "FileField::0::1" for usages executing multiple commands (See SaveRowsAction).
+                    // Allow for the fileMap key to include the row index, and optionally command index, for defining
+                    // which row to attach this file to
                     String fieldKey = fileEntry.getKey();
                     int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
                     if (delimIndex > -1)
@@ -4647,12 +4646,14 @@ public class QueryController extends SpringActionController
 
                         if (commandIndex == null)
                         {
+                            // Single command, so we're parsing file names in the format of: FileField::0
                             fieldKey = parts[0];
                             String fieldRowIndex = parts[1];
                             if (!fieldRowIndex.equals(rowIndex+"")) continue;
                         }
                         else
                         {
+                            // Multi-command, so we're parsing file names in the format of: FileField::0::1
                             fieldKey = parts[0];
                             String fieldCommandIndex = parts[1];
                             String fieldRowIndex = parts[2];
