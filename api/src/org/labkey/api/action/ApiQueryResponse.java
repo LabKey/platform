@@ -389,7 +389,7 @@ public class ApiQueryResponse implements ApiResponse
                 if (sort.length() == 0)
                     continue;
                 String dir = "ASC";
-                if (sort.charAt(0) == '-' || sort.charAt(1) == '+')
+                if (sort.charAt(0) == '-' || sort.charAt(0) == '+')
                 {
                     dir = sort.charAt(0) == '-' ? "DESC" : "ASC";
                     sort = sort.substring(1);
