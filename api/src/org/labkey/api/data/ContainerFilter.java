@@ -524,7 +524,8 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
-            assert user != null : "User is required for permissions check!";
+            if (user != null)
+                throw new IllegalStateException("User is required for permissions check!");
         }
 
         @Override
