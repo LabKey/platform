@@ -2339,15 +2339,15 @@ public class PageFlowUtil
     }
 
     @Nullable
-    public static Project getTermsOfUseProject(Container container, String returnURL)
+    public static Project getTermsOfUseProject(Container container, String returnUrl)
     {
         Container termsContainer = null;
 
-        if (null != returnURL)
+        if (null != returnUrl)
         {
             try
             {
-                URLHelper urlHelper = new URLHelper(returnURL);
+                URLHelper urlHelper = new URLHelper(returnUrl);
                 Container redirectContainer = ContainerManager.getForURL(new ActionURL(urlHelper.getLocalURIString()));
                 if (null != redirectContainer)
                     termsContainer = redirectContainer.getProject();

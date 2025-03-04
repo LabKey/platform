@@ -793,7 +793,7 @@ public class StatusController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ConfirmDeleteStatusForm form)
         {
-            URLHelper ret = form.getReturnURLHelper();
+            URLHelper ret = form.getReturnUrlHelper();
             if (null == ret)
                 ret = urlShowList(getContainer(), true, null);
             return ret;
@@ -958,7 +958,7 @@ public class StatusController extends SpringActionController
         ActionURL url = new ActionURL(PipelineController.CancelJobAction.class, c);
         url.addParameter("rowId", rowId);
         if (returnUrl != null)
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
         return url;
     }
 

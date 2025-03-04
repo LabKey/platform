@@ -28,11 +28,11 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    JspView<VisitReorderForm> me = (JspView<VisitReorderForm>) HttpView.currentView();
+    JspView<VisitReorderForm> me = HttpView.currentView();
 
-    ActionURL returnURL = (me.getModelBean()).getReturnActionURL();
-    if (null == returnURL)
-        returnURL = urlFor(ManageVisitsAction.class);
+    ActionURL returnUrl = (me.getModelBean()).getReturnActionURL();
+    if (null == returnUrl)
+        returnUrl = urlFor(ManageVisitsAction.class);
 %>
 <style>
     .button-reordering {
@@ -191,7 +191,7 @@ function orderModule(listName, hiddenElName, down)
                 %>
                 </select>
                 <input type="hidden" name="chronologicalOrder" value="<%= h(orderedList) %>">
-                <%=generateReturnUrlFormField(returnURL)%>
+                <%=generateReturnUrlFormField(returnUrl)%>
             </td>
             <td align="center" valign="center" style="padding-left: 10px;">
                 <%= button("Move Up").addClass("button-reordering").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br>
@@ -201,5 +201,5 @@ function orderModule(listName, hiddenElName, down)
     </table>
     <br/>
     <%= button("Save").submit(true) %>
-    <%= button("Cancel").href(returnURL) %>
+    <%= button("Cancel").href(returnUrl) %>
 </labkey:form>

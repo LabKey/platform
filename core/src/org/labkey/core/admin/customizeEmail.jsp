@@ -98,7 +98,7 @@
         <tr>
             <td></td><td>
             <%= button("Save").submit(true) %>
-            <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
+            <%= button("Cancel").href(bean.getReturnUrlHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
             <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + q(urlFor(DeleteCustomEmailAction.class)) + ";").id("siteResetButton").style("display: none;")%>
             <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + q(urlFor(DeleteCustomEmailAction.class)) + ";").id("folderResetButton").style("display: none;")%>
         </tr>

@@ -425,7 +425,7 @@ public class SpecimenController extends SpringActionController
                 if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
                 {
                     final String jsRegionObject = DataRegion.getJavaScriptObjectReference(gridView.getSettings().getDataRegionName());
-                    String createRequestURL = urlFor(ShowCreateSpecimenRequestAction.class).addReturnURL(getViewContext().getActionURL()).toString();
+                    String createRequestURL = urlFor(ShowCreateSpecimenRequestAction.class).addReturnUrl(getViewContext().getActionURL()).toString();
 
                     requestMenuButton.addMenuItem("Create New Request",
                             "if (verifySelected(" + jsRegionObject + ".form, '" + createRequestURL +
@@ -2585,7 +2585,7 @@ public class SpecimenController extends SpringActionController
         ActionURL url = new ActionURL(ManageRequestAction.class, c);
         url.addParameter(IdForm.PARAMS.id, Integer.toString(requestID));
         if (returnUrl != null)
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
         return url;
     }
 
@@ -4127,7 +4127,7 @@ public class SpecimenController extends SpringActionController
                             addParameter(ParticipantCommentForm.params.participantId, vial.getPtid()).
                             addParameter(ParticipantCommentForm.params.visitId, String.valueOf(vial.getVisitValue())).
                             addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                            addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                                addReturnUrl(new URLHelper(commentsForm.getReferrer()));
                     }
                 }
                 else
@@ -4135,7 +4135,7 @@ public class SpecimenController extends SpringActionController
                     _successUrl = new ActionURL(CopyParticipantCommentAction.class, container).
                         addParameter(ParticipantCommentForm.params.participantId, commentsForm.getCopyParticipantId()).
                         addParameter(ParticipantCommentForm.params.comment, commentsForm.getComments()).
-                        addReturnURL(new URLHelper(commentsForm.getReferrer()));
+                            addReturnUrl(new URLHelper(commentsForm.getReferrer()));
                 }
 
                 // delete existing vial comments if move is specified
@@ -5629,7 +5629,7 @@ public class SpecimenController extends SpringActionController
 
                 url.addParameter(ParticipantCommentForm.params.datasetId, ds.getDatasetId()).
                         addParameter(ParticipantCommentForm.params.comment, form.getComment()).
-                        addReturnURL(form.getReturnActionURL()).
+                        addReturnUrl(form.getReturnActionURL()).
                         addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());
 
                 for (int rowId : form.getVialCommentsToClear())

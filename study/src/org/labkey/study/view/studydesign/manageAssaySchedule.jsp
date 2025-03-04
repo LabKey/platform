@@ -62,7 +62,7 @@
             disableEdit : <%=disableEdit%>,
             visitNoun : <%=q(visitNoun)%>,
             useAlternateLookupFields : <%=form.isUseAlternateLookupFields()%>,
-            returnURL : <%=q(returnUrl)%>
+            returnUrl : <%=q(returnUrl)%>
         });
     });
 </script>

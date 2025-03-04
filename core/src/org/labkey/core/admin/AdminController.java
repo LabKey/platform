@@ -587,7 +587,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
+            URLHelper returnUrl = getViewContext().getActionURL().getReturnUrl();
             if (null != returnUrl)
                 root.addChild("Return to Project", returnUrl);
             root.addChild("Admin Console");
@@ -626,9 +626,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getModuleStatusURL(URLHelper returnURL)
+        public ActionURL getModuleStatusURL(URLHelper returnUrl)
         {
-            return AdminController.getModuleStatusURL(returnURL);
+            return AdminController.getModuleStatusURL(returnUrl);
         }
 
         @Override
@@ -672,21 +672,21 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCustomizeEmailURL(@NotNull Container c, @Nullable Class<? extends EmailTemplate> selectedTemplate, @Nullable URLHelper returnURL)
+        public ActionURL getCustomizeEmailURL(@NotNull Container c, @Nullable Class<? extends EmailTemplate> selectedTemplate, @Nullable URLHelper returnUrl)
         {
-            return getCustomizeEmailURL(c, selectedTemplate == null ? null : selectedTemplate.getName(), returnURL);
+            return getCustomizeEmailURL(c, selectedTemplate == null ? null : selectedTemplate.getName(), returnUrl);
         }
 
-        public ActionURL getCustomizeEmailURL(@NotNull Container c, @Nullable String selectedTemplate, @Nullable URLHelper returnURL)
+        public ActionURL getCustomizeEmailURL(@NotNull Container c, @Nullable String selectedTemplate, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(CustomizeEmailAction.class, c);
             if (selectedTemplate != null)
             {
                 url.addParameter("templateClass", selectedTemplate);
             }
-            if (returnURL != null)
+            if (returnUrl != null)
             {
-                url.addReturnURL(returnURL);
+                url.addReturnUrl(returnUrl);
             }
             return url;
         }
@@ -697,11 +697,11 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getMaintenanceURL(URLHelper returnURL)
+        public ActionURL getMaintenanceURL(URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
+            if (returnUrl != null)
+                url.addReturnUrl(returnUrl);
             return url;
         }
 
@@ -742,18 +742,18 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCreateProjectURL(@Nullable ActionURL returnURL)
+        public ActionURL getCreateProjectURL(@Nullable ActionURL returnUrl)
         {
-            return getCreateFolderURL(ContainerManager.getRoot(), returnURL);
+            return getCreateFolderURL(ContainerManager.getRoot(), returnUrl);
         }
 
         @Override
-        public ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL)
+        public ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnUrl)
         {
             ActionURL result = new ActionURL(CreateFolderAction.class, c);
-            if (returnURL != null)
+            if (returnUrl != null)
             {
-                result.addReturnURL(returnURL);
+                result.addReturnUrl(returnUrl);
             }
             return result;
         }
@@ -887,7 +887,7 @@ public class AdminController extends SpringActionController
      * During upgrade, startup, or maintenance mode, the user will be redirected to
      * MaintenanceAction and only admin users will be allowed to log into the server.
      * The maintenance.jsp page checks startup is complete or adminOnly mode is turned off
-     * and will redirect to the returnURL or the loginURL.
+     * and will redirect to the returnUrl or the loginURL.
      * See Issue 18758 for more information.
      */
     @RequiresNoPermission
@@ -933,9 +933,9 @@ public class AdminController extends SpringActionController
             ActionURL loginURL = null;
             if (getUser().isGuest())
             {
-                URLHelper returnURL = form.getReturnURLHelper();
-                if (returnURL != null)
-                    loginURL = urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnURL);
+                URLHelper returnUrl = form.getReturnUrlHelper();
+                if (returnUrl != null)
+                    loginURL = urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), returnUrl);
                 else
                     loginURL = urlProvider(LoginUrls.class).getLoginURL();
             }
@@ -4303,11 +4303,11 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static ActionURL getModuleStatusURL(URLHelper returnURL)
+    public static ActionURL getModuleStatusURL(URLHelper returnUrl)
     {
         ActionURL url = new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
-        if (returnURL != null)
-            url.addReturnURL(returnURL);
+        if (returnUrl != null)
+            url.addReturnUrl(returnUrl);
         return url;
     }
 
@@ -6121,7 +6121,7 @@ public class AdminController extends SpringActionController
         {
             ActionURL url = new ActionURL(FileRootsStandAloneAction.class, getContainer())
                     .addParameter("folderSetup", true)
-                    .addReturnURL(getViewContext().getActionURL().getReturnURL());
+                    .addReturnUrl(getViewContext().getActionURL().getReturnUrl());
 
             if (form.isFileRootChanged())
                 url.addParameter("rootSet", form.getMigrateFilesOption());
@@ -6169,9 +6169,9 @@ public class AdminController extends SpringActionController
         {
             ActionURL url = getContainer().getStartURL(getUser());
 
-            if (getViewContext().getActionURL().getReturnURL() != null)
+            if (getViewContext().getActionURL().getReturnUrl() != null)
             {
-                url.addReturnURL(getViewContext().getActionURL().getReturnURL());
+                url.addReturnUrl(getViewContext().getActionURL().getReturnUrl());
             }
 
             return url;
@@ -7162,7 +7162,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomEmailForm form)
         {
-            return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
+            return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnUrlHelper());
         }
     }
 
@@ -7540,7 +7540,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class RenameFolderAction extends FormViewAction<ManageFoldersForm>
     {
-        private ActionURL _returnURL;
+        private ActionURL _returnUrl;
 
         @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
@@ -7560,7 +7560,7 @@ public class AdminController extends SpringActionController
             {
                 String title = form.isTitleSameAsName() ? null : StringUtils.trimToNull(form.getTitle());
                 Container c = ContainerManager.rename(getContainer(), getUser(), form.getName(), title, form.isAddAlias());
-                _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
+                _returnUrl = new AdminUrlsImpl().getManageFoldersURL(c);
                 return true;
             }
             catch (Exception e)
@@ -7574,7 +7574,7 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
-            return _returnURL;
+            return _returnUrl;
         }
 
         @Override

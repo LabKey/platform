@@ -1998,7 +1998,7 @@ public class StudyController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(LocationForm form)
         {
-            return form.getReturnURLHelper();
+            return form.getReturnUrlHelper();
         }
 
         private Collection<Container> getContainers(LocationForm form)
@@ -3253,7 +3253,7 @@ public class StudyController extends BaseStudyController
                 base.addParameter(param.getKey(), param.getValue());
             }
         }
-        base.addReturnURL(url); // Set current URL so participant page can navigate back (nav trail)
+        base.addReturnUrl(url); // Set current URL so participant page can navigate back (nav trail)
 
         for (DisplayColumn col : columns)
         {
@@ -5195,7 +5195,7 @@ public class StudyController extends BaseStudyController
 
                         _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
                                 .addParameter("datasetId", def.getDatasetId())
-                                .addReturnURL(returnUrl);
+                                .addReturnUrl(returnUrl);
                     }
                 }
                 else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
@@ -5999,7 +5999,7 @@ public class StudyController extends BaseStudyController
             if (_showCustomizeLink && c.hasPermissions(getViewContext().getUser(), permissions))
             {
                 ActionURL customizeURL = new ActionURL(CustomizeParticipantViewAction.class, c);
-                customizeURL.addReturnURL(getViewContext().getActionURL());
+                customizeURL.addReturnUrl(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 out.print("</td><td>");
                 PageFlowUtil.link("Customize View").href(customizeURL).appendTo(out);

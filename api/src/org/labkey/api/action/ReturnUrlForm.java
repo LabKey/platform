@@ -21,13 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 
 /**
  * Simple form bean that includes a returnUrl property, typically used to send the user back to the page where they initiated the action.
@@ -89,7 +87,7 @@ public class ReturnUrlForm
     }
 
     @Nullable
-    public URLHelper getReturnURLHelper()
+    public URLHelper getReturnUrlHelper()
     {
         return _returnUrl != null ? _returnUrl.getURLHelper() : null;
     }
@@ -111,9 +109,9 @@ public class ReturnUrlForm
     /**
      * Get the first non-null URL from <code>returnUrl</code> or the <code>defaultURL</code> parameter.
      */
-    public URLHelper getReturnURLHelper(URLHelper defaultURL)
+    public URLHelper getReturnUrlHelper(URLHelper defaultURL)
     {
-        return firstOf(getReturnURLHelper(), defaultURL);
+        return firstOf(getReturnUrlHelper(), defaultURL);
     }
 
     /**
@@ -192,27 +190,24 @@ public class ReturnUrlForm
                 defaultURL);
     }
 
-    // when we convert code to use ReturnUrlForm we may leave behind bookmarks using "returnURL"
     @Deprecated
     public ReturnURLString getReturnURL()
     {
-        throwBadParam();
         return _returnUrl;
     }
 
     @Deprecated
     public void setReturnURL(ReturnURLString returnUrl)
     {
-        throwBadParam();
         setReturnUrl(returnUrl);
     }
 
     /** Applies the return URL from this form (if any) to the given URL */
     public void propagateReturnURL(ActionURL urlNeedingParameter)
     {
-        if (getReturnURLHelper() != null)
+        if (getReturnUrlHelper() != null)
         {
-            urlNeedingParameter.addReturnURL(getReturnURLHelper());
+            urlNeedingParameter.addReturnUrl(getReturnUrlHelper());
         }
     }
 
@@ -225,30 +220,4 @@ public class ReturnUrlForm
 
         return null;
     }
-
-    /**
-     * Report a bad returnUrl usage.
-     * Some views don't show Spring binding errors from the thrown exception so
-     * log an ERROR message to the console and let the test framework report it.
-     */
-    public static void throwBadParam()
-    {
-        throwBadParam("returnURL");
-    }
-
-    /**
-     * Report a bad returnUrl usage.
-     * Some views don't show Spring binding errors from the thrown exception so
-     * log an ERROR message to the console and let the test framework report it.
-     */
-    public static void throwBadParam(String badParamName)
-    {
-        StringBuilder msg = new StringBuilder("Use 'returnUrl' instead of '").append(badParamName).append("'");
-        if (HttpView.hasCurrentView())
-            msg.append(" from URL: ").append(HttpView.currentContext().getRequest().getRequestURI());
-        LOG.error(msg.toString());
-        if (AppProps.getInstance().isDevMode())
-            throw new UnsupportedOperationException(msg.toString());
-    }
-
 }

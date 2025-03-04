@@ -51,7 +51,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     private final @Nullable GUID _projectId;
     private final int _groupId;
     @JsonIgnore // Can't be handled by remote pipelines
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
     private final int _adminUserId;
 
     @JsonCreator
@@ -64,15 +64,15 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         _projectId = projectId;
         _groupId = groupId;
         _adminUserId = adminUserId;
-        _returnURL = null;
+        _returnUrl = null;
     }
 
-    public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, ActionURL returnURL)
+    public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, ActionURL returnUrl)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
         _groupId = group.getUserId();
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
     }
 
     @Override
@@ -81,7 +81,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
 
-        return new GroupImpersonationContext(project, getAdminUser(), group, _returnURL, this);
+        return new GroupImpersonationContext(project, getAdminUser(), group, _returnUrl, this);
     }
 
     @Override
@@ -184,20 +184,20 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_group") Group group,
                 @JsonProperty("_groups") PrincipalArray groups,
-                @JsonProperty("_returnURL") ActionURL returnURL,
+                @JsonProperty("_returnUrl") ActionURL returnUrl,
                 @JsonProperty("_factory") ImpersonationContextFactory factory)
 
         {
-            super(adminUser, project, returnURL, factory);
+            super(adminUser, project, returnUrl, factory);
             _group = group;
             _groups = groups;
         }
 
-        private GroupImpersonationContext(@Nullable Container project, User user, Group group, ActionURL returnURL, ImpersonationContextFactory factory)
+        private GroupImpersonationContext(@Nullable Container project, User user, Group group, ActionURL returnUrl, ImpersonationContextFactory factory)
         {
             // project is used to verify authorization, but isn't needed while impersonating... the group itself will
             // limit the admin user appropriately
-            super(user, null, returnURL, factory);
+            super(user, null, returnUrl, factory);
 
             if (!canImpersonateGroup(project, user, group))
                 throw new UnauthorizedImpersonationException("You are not allowed to impersonate this group", getFactory());

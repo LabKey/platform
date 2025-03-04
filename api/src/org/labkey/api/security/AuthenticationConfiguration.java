@@ -85,7 +85,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
     interface PrimaryAuthenticationConfiguration<AP extends PrimaryAuthenticationProvider<?>> extends AuthenticationConfiguration<AP>
     {
-        default @Nullable URLHelper logout(HttpServletRequest request, @Nullable URLHelper returnURL)
+        default @Nullable URLHelper logout(HttpServletRequest request, @Nullable URLHelper returnUrl)
         {
             return null;
         }

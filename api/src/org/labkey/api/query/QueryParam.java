@@ -37,9 +37,6 @@ public enum QueryParam implements SafeToRenderEnum
 
     allowHeaderLock,
     dataRegionName,
-    /** Use {@link ActionURL.Param#returnUrl} and {@link ActionURL#addReturnURL(URLHelper)} instead. */
-    @Deprecated
-    srcURL,
     containerFilterName,
     selectionKey
 }

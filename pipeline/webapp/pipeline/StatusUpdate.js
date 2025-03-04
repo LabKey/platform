@@ -25,10 +25,10 @@ Ext4.ns('LABKEY.pipeline');
   * @constructor
   * @param {String} controller The controller in which the region should update itself.
   * @param {String} action The action in the specified controller in which the region should update itself.
-  * @param {String} returnURL The URL to which operations (cancel, delete, etc requests) should return after they've been processed.
+  * @param {String} returnUrl The URL to which operations (cancel, delete, etc requests) should return after they've been processed.
   */
 
-LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
+LABKEY.pipeline.StatusUpdate = function(controller, action, returnUrl)
 {
     //private data
     var _controller = controller;
@@ -78,7 +78,7 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
 
         // Get the current parameters, then replace (or add) a returnUrl value, see issue 41283
         var params = LABKEY.ActionURL.getParameters();
-        params.returnUrl = returnURL;
+        params.returnUrl = returnUrl;
 
         var url = LABKEY.ActionURL.buildURL(_controller, _action, null, params);
 

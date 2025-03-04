@@ -31,7 +31,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.query.SchemaKey;
@@ -358,8 +357,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             if (null == pkVal)
             {
                 Object oldValues = getOldValues();
-                if (oldValues instanceof Map)
-                    pkVal = ((Map) oldValues).get(pkName);
+                if (oldValues instanceof Map m)
+                    pkVal = m.get(pkName);
                 else
                     try
                     {
@@ -616,7 +615,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void setTypedValues(Map<String, Object> values, boolean merge)
     {
         assert null != _dynaClass;
-        assert null != (values = Collections.unmodifiableMap(values));
+        values = Collections.unmodifiableMap(values);
 
         //We assume this means data is loaded.
         _isDataLoaded = true;
@@ -784,7 +783,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (_isBulkUpdate)
         {
             Set<String> selected = DataRegionSelection.getSelected(context, null, false);
-            _selectedRows = selected.toArray(new String[selected.size()]);
+            _selectedRows = selected.toArray(new String[0]);
         }
         else
         {
@@ -827,12 +826,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         // handle binding of base class ReturnURLForm
         PropertyValue pvReturn = params.getPropertyValue(ActionURL.Param.returnUrl.toString());
-        if (null == pvReturn)
-        {
-            pvReturn = params.getPropertyValue("returnURL");
-            if (pvReturn != null)
-                ReturnUrlForm.throwBadParam();
-        }
         if (null != pvReturn)
         {
             try

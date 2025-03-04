@@ -58,7 +58,7 @@
 
     ActionURL completionUrl = urlFor(CompleteMemberAction.class);
     completionUrl.addParameter("groupId", bean.group.getUserId());
-    URLHelper returnURL = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
+    URLHelper returnUrl = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
 %>
 <style type="text/css">
     .lowlight {
@@ -262,11 +262,11 @@ else
             <td>
                 <% if (!isGroup)
                    {
-                    %><%= link("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId).addReturnURL(returnURL)) %><%
+                    %><%= link("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId).addReturnUrl(returnUrl)) %><%
                    }
                    else
                    {
-                    %><%= link("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId).addReturnURL(returnURL)) %><%
+                    %><%= link("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId).addReturnUrl(returnUrl)) %><%
                    }
                 %>
             </td>
