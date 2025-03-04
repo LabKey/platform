@@ -464,7 +464,7 @@ public class TabLoader extends DataLoader
                         buf.append(nextLine);
                         continue;
                     }
-                    else if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
+                    if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
                     {
                         // Issue 51056: pooling sample parents with single quote doesn't work
                         // " a, " b should be parsed as [" a, " b], not [a,  b]
