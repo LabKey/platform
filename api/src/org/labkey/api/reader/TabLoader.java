@@ -1177,7 +1177,7 @@ public class TabLoader extends DataLoader
         @Test
         public void testParseQuotes()
         {
-            final String data = """
+            String data = """
                 Name\tMulti-Line\tAge
                 Bob\t"with\ttab
                 with""quote"\t10
@@ -1187,6 +1187,7 @@ public class TabLoader extends DataLoader
                 ""two""\tthree"
                 \tred\\nblue\\tgreen\t4
                 Fred\t"quoted stuff" unquoted\t1""";
+            data = data + "\nAlice\t\"\"\"quoted stuff\"\" unquoted";
 
             try (TabLoader loader = new TabLoader(data, true))
             {
@@ -1194,7 +1195,7 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(true);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(5, rows.size());
+                assertEquals(6, rows.size());
 
                 Map<String, Object> row = rows.get(0);
                 assertEquals("Bob", row.get("Name"));
@@ -1224,7 +1225,7 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(false);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(5, rows.size());
+                assertEquals(6, rows.size());
 
                 Map<String, Object> row = rows.get(0);
                 assertEquals("Bob", row.get("Name"));
@@ -1248,8 +1249,16 @@ public class TabLoader extends DataLoader
 
                 row = rows.get(4);
                 assertEquals("Fred", row.get("Name"));
+                // Issue 52095 (sort of). If a field value begins with a quote that is to be retained, 
+                // that field needs to be surrounded by quotes and the internal quotes doubled up.
                 assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
+
+                row = rows.get(5);
+                assertEquals("Alice", row.get("Name"));
+                // Issue 52095 (sort of). If a field value begins with a quote that is to be retained,
+                // that field needs to be surrounded by quotes and the internal quotes doubled up.
+                assertEquals("\"quoted stuff\" unquoted", row.get("Multi-Line"));
 
                 List<Map<String, Object>> rows2 = loader.stream()
                     .collect(Collectors.toList());
