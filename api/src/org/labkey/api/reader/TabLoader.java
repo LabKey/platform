@@ -1191,6 +1191,8 @@ public class TabLoader extends DataLoader
         {
             final String data = """
                 Name\tMulti-Line\tAge
+                Bob\t"with\ttab
+                with""quote"\t10
                 Bob\t"apple
                 orange\tgrape"\t3
                 Bob\t"one
@@ -1204,19 +1206,24 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(true);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(4, rows.size());
+                assertEquals(5, rows.size());
 
                 Map<String, Object> row = rows.get(0);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
+                assertEquals(10, row.get("Age"));
+
+                row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
                 assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
                 assertEquals(3, row.get("Age"));
 
-                row = rows.get(1);
+                row = rows.get(2);
                 assertEquals("Bob", row.get("Name"));
                 assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
                 assertNull(row.get("Age"));
 
-                row = rows.get(2);
+                row = rows.get(3);
                 assertNull(row.get("Name"));
                 assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
                 assertEquals(4, row.get("Age"));
@@ -1229,24 +1236,29 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(false);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(4, rows.size());
+                assertEquals(5, rows.size());
 
                 Map<String, Object> row = rows.get(0);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
+                assertEquals(10, row.get("Age"));
+
+                row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
                 assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
                 assertEquals(3, row.get("Age"));
 
-                row = rows.get(1);
+                row = rows.get(2);
                 assertEquals("Bob", row.get("Name"));
                 assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
                 assertNull(row.get("Age"));
 
-                row = rows.get(2);
+                row = rows.get(3);
                 assertNull(row.get("Name"));
                 assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
                 assertEquals(4, row.get("Age"));
 
-                row = rows.get(3);
+                row = rows.get(4);
                 assertEquals("Fred", row.get("Name"));
                 assertEquals("\"quoted stuff\" unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
