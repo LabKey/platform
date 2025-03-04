@@ -10,7 +10,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.query.ExpSchema;
 
-public class PhiFieldsTable extends BaseFieldNamesTable
+public class PhiFieldsTable extends BaseFieldsTable
 {
     public PhiFieldsTable(@NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
     {

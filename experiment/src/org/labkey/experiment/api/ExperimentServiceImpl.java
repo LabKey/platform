@@ -1585,9 +1585,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf)
+    public FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf)
     {
-        return new FieldNamesTable(expSchema, cf);
+        return new FieldsTable(expSchema, cf);
     }
 
     @Override

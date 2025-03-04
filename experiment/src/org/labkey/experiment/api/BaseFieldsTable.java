@@ -14,11 +14,11 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.permissions.AdminPermission;
 
-public abstract class BaseFieldNamesTable extends FilteredTable<ExpSchema>
+public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
 {
     private final String _tableName;
 
-    public BaseFieldNamesTable(String tableName, @NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
+    public BaseFieldsTable(String tableName, @NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
     {
         super(OntologyManager.getTinfoPropertyDescriptor(), userSchema, containerFilter);
         _tableName = tableName;
