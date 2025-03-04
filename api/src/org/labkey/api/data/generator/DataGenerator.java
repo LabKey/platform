@@ -48,6 +48,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -67,7 +68,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public class DataGenerator<T extends DataGenerator.Config>
+public class DataGenerator<T extends DataGenerator.Config> implements ContainerUser
 {
     private static final String SEARCH_FIELD_NAME = "Search";
     private static final String USED_FIELD_NAME = "Used";

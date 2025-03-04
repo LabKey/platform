@@ -99,11 +99,11 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
             throw new IllegalArgumentException("You must supply a msgFrom value.");
 
         JSONArray recipients = json.optJSONArray(Props.msgRecipients.name());
-        if (recipients == null || recipients.length() < 1)
+        if (recipients == null || recipients.isEmpty())
             throw new IllegalArgumentException("No message recipients supplied.");
 
         JSONArray contents = json.optJSONArray(Props.msgContent.name());
-        if (contents == null || contents.length() < 1)
+        if (contents == null || contents.isEmpty())
             throw new IllegalArgumentException("No message contents supplied.");
 
         MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();

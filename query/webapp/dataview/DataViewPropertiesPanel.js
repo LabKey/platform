@@ -143,7 +143,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 name        : 'refreshDate',
                 value       : this.data.refreshDate != null  ? this.data.refreshDate : '',
                 blankText   : 'Date of last refresh',
-                format      : LABKEY.extDateInputFormat,
+                format      : LABKEY.extDefaultDateFormat,
                 editable    : true,
                 labelWidth : 120,
                 width      : 400,

@@ -1732,13 +1732,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public ContainerFilter getProductFoldersDataContainerFilter(User user)
     {
         if (!isProductFoldersEnabled())
-            return ContainerFilter.current(this);
+            return ContainerFilter.current(this, user);
 
         if (QueryService.get().isProductFoldersAllFolderScopeEnabled())
         {
             if (isProject() || getProject() != null)
                 return new ContainerFilter.AllInProjectPlusShared(this, user);
-            return ContainerFilter.current(this);
+            return ContainerFilter.current(this, user);
         }
 
         if (isProject())
@@ -1747,7 +1747,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (getProject() != null)
             return new ContainerFilter.CurrentPlusProjectAndShared(this, user);
 
-        return ContainerFilter.current(this);
+        return ContainerFilter.current(this, user);
     }
 
     public boolean isDataspace()

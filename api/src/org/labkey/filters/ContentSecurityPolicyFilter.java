@@ -372,6 +372,8 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             synchronized (ALLOWED_SOURCES_LOCK)
             {
+                // Ensure substitution map has been initialized, otherwise the finally block asserts will fail
+                regenerateSubstitutionMap();
                 // Make a deep copy of ALLOWED_SOURCES so we can restore it after testing
                 int sourceMapSize = ALLOWED_SOURCES.size();
                 int substitutionMapSize = ALLOWED_SOURCES_SUBSTITUTION_MAP.size();
