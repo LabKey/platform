@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyService;
@@ -45,7 +46,6 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -146,7 +146,7 @@ public class SurveyModule extends DefaultModule
     {
         Collection<String> results = new ArrayList<>();
 
-        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.current(c));
+        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.current(c, User.getAdminServiceUser()));
         if(surveyDesigns.length > 0)
         {
             results.add(StringUtilsLabKey.pluralize(surveyDesigns.length, " survey design"));

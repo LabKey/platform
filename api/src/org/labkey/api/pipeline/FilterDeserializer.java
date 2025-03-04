@@ -28,7 +28,7 @@ public class FilterDeserializer extends StdDeserializer<Filter>
 
             while (parser.nextToken() != JsonToken.END_OBJECT)
             {
-                String fieldName = parser.getCurrentName();
+                String fieldName = parser.currentName();
                 parser.nextToken();       // get past FIELD_NAME
                 if ("_columnName".equals(fieldName))
                     columnName = parser.getValueAsString();
@@ -42,13 +42,13 @@ public class FilterDeserializer extends StdDeserializer<Filter>
 
             return new Filter(columnName, value, operator);
         }
-        else if (JsonToken.VALUE_NULL.equals(parser.getCurrentToken()))
+        else if (JsonToken.VALUE_NULL.equals(parser.currentToken()))
         {
             return null;
         }
         else
         {
-            throw new IOException("Unexpected token in serialized Filter: " + parser.getCurrentToken());
+            throw new IOException("Unexpected token in serialized Filter: " + parser.currentToken());
         }
     }
 }

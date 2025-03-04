@@ -399,9 +399,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix)
+    public HttpView<?> createFileExportView(Container container, User user, String defaultFilenamePrefix)
     {
-        Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container));
+        Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container, user));
         // Remove case-only dupes
         Set<String> dedupedRoles = new CaseInsensitiveHashSet();
         roles.removeIf(role -> !dedupedRoles.add(role));
@@ -2234,9 +2234,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
+    public Set<String> getMaterialInputRoles(Container container, User user, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.current(container), getTinfoMaterialInput(), types);
+        return getInputRoles(container, ContainerFilter.current(container, user), getTinfoMaterialInput(), types);
     }
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)

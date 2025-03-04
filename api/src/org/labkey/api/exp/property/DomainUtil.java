@@ -121,9 +121,8 @@ public class DomainUtil
     {
         if (defaultValue == null || (defaultValue instanceof String && StringUtils.isBlank((String)defaultValue)))
             return "[none]";
-        if (defaultValue instanceof Date)
+        if (defaultValue instanceof Date defaultDate)
         {
-            Date defaultDate = (Date) defaultValue;
             if (property.getFormat() != null)
                 return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
@@ -1181,7 +1180,6 @@ public class DomainUtil
             to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
-    @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
@@ -1202,7 +1200,7 @@ public class DomainUtil
 
             if (v.getExtraProperties() != null && v.getExtraProperties().containsKey("valueUpdates"))
             {
-                if (v.getExtraProperties().get("valueUpdates").size() > 0)
+                if (!v.getExtraProperties().get("valueUpdates").isEmpty())
                     valueUpdates.add(v.getExtraProperties().get("valueUpdates"));
             }
         }
@@ -1238,10 +1236,10 @@ public class DomainUtil
         if (domain != null && domain.getDomainKind() != null)
         {
             // using ContainerFilter.EVERYTHING to account for /Shared domains
-            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.EVERYTHING);
+            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.EVERYTHING_UNSAFE);
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
-                // we need to make all of the row updates for this domain property at one time to prevent the
+                // we need to make all the row updates for this domain property at one time to prevent the
                 // double mapping if one choice value was changed from a -> b and another from b -> c
                 // (not sure why someone would do that though)
                 List<Map<String, Object>> rows = new ArrayList<>();
@@ -1299,7 +1297,6 @@ public class DomainUtil
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static void _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
         if (pv != null && gpv != null)
@@ -1346,7 +1343,7 @@ public class DomainUtil
 
             String name = field.getName();
 
-            if (null == name || name.trim().length() == 0)
+            if (null == name || name.trim().isEmpty())
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;

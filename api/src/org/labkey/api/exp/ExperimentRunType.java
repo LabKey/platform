@@ -180,7 +180,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     }
 
     /** Allows subclasses to render a header to the response before the QueryView with the run list gets rendered */
-    public void renderHeader(HttpServletRequest request, HttpServletResponse response) throws Exception
+    public void renderHeader(HttpServletRequest request, HttpServletResponse response, User user) throws Exception
     {
     }
 }

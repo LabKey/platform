@@ -234,7 +234,7 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
             // for now assay plate sets will have distinct samples per plate (even though this is not enforced)
             samplesNeeded = plateWells * getConfig().getPlatesPerPlateset();
 
-        List<Integer> ids = selectExistingSampleIds(samplesNeeded, samplesNeeded, ContainerFilter.current(getContainer()));
+        List<Integer> ids = selectExistingSampleIds(samplesNeeded, samplesNeeded, ContainerFilter.current(this));
         if (ids.size() < samplesNeeded)
             throw new IllegalStateException(String.format("There are not enough samples to properly plate all of the data, you need at least (%d) samples.", samplesNeeded));
 

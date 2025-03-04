@@ -330,7 +330,7 @@ public class AssayUpgradeCode implements UpgradeCode
                             ContainerManager.getRoot(),
                             User.getAdminServiceUser(),
                             plateSetRowId,
-                            ContainerFilter.EVERYTHING
+                            ContainerFilter.EVERYTHING_UNSAFE
                     );
                     String lineagePath = lineage.getSeedPath();
 
@@ -676,7 +676,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
             for (Integer plateSetId : plateSetIds)
             {
-                PlateSet plateSet = PlateService.get().getPlateSet(ContainerFilter.EVERYTHING, plateSetId);
+                PlateSet plateSet = PlateService.get().getPlateSet(ContainerFilter.EVERYTHING_UNSAFE, plateSetId);
                 if (plateSet == null)
                     throw new IllegalStateException("updateBuiltInColumns: Plate Set with plate of id " + plateSetId + " not found.");
 
