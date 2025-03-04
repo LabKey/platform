@@ -44,6 +44,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.sql.LabKeySql;
@@ -365,6 +366,7 @@ public class SqlParser
     public QExpr parseExpr(String str, boolean constExpression, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<>();
+        _parseWarnings = new ArrayList<>();
         try (var parser = getAntlrParser())
         {
             parser.reset(str, _parseErrors);
@@ -849,6 +851,32 @@ public class SqlParser
 //                if (children.size() == 1)
 //                    return first(children);
                 node.getToken().setType(AS);
+                break;
+            }
+            case DIV:
+            {
+                var usesNullIf = false;
+                var nonZeroConstant = false;
+                var divisorType = children.size() > 1 ? children.get(1).getTokenType() : 0;
+                if (divisorType==METHOD_CALL)
+                {
+                    var method = children.get(1).childList().get(0);
+                    if ("NULLIF".equalsIgnoreCase(method.getTokenText()))
+                        usesNullIf = true;
+                }
+                else if (divisorType==NUM_DOUBLE || divisorType==NUM_FLOAT || divisorType==NUM_INT || divisorType==NUM_LONG)
+                {
+                    try
+                    {
+                        nonZeroConstant = 0.0 != (Double)JdbcType.DOUBLE.convert(children.get(1).getTokenText());
+                    }
+                    catch(ConversionException e)
+                    {
+                        nonZeroConstant = true;
+                    }
+                }
+                if (!usesNullIf && !nonZeroConstant)
+                    _parseWarnings.add(new QueryParseWarning("Consider using NULLIF() to prevent division by zero. e.g. dividend / NULLIF(divisor,0))", null, node.getLine(), node.getCharPositionInLine()));
                 break;
             }
             case ESCAPE:
