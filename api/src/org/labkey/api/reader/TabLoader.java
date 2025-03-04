@@ -444,7 +444,6 @@ public class TabLoader extends DataLoader
 
                 end = start;
                 boolean hasQuotes = false;
-                boolean isMultiline = false;
                 while (true)
                 {
                     end = buf.indexOf(_strQuote, end + 1);
@@ -461,20 +460,9 @@ public class TabLoader extends DataLoader
                                 isDelimiterOrQuote = false;
                             break;
                         }
-                        isMultiline = true;
                         buf.append('\n');
                         buf.append(nextLine);
                         continue;
-                    }
-                    // Issue 52095: quotes at the beginning of a string may not surround the entire field.
-                    else if (end < buf.length() - 1 && buf.charAt(end+1) != _chDelimiter && !_parseEnclosedQuotes && !isMultiline)
-                    {
-                        int fieldEnd = buf.indexOf(_strDelimiter, end);
-                        if (fieldEnd > end && (fieldEnd == end+1 || !buf.substring(end+1, fieldEnd).matches("\\s*")))
-                        {
-                            isDelimiterOrQuote = false;
-                            break;
-                        }
                     }
                     else if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
                     {
@@ -867,7 +855,7 @@ public class TabLoader extends DataLoader
         {
             File csv = _createTempFile(malformedCsvData, ".csv");
 
-            verifyMalformedData(csv, false, "testb, \"a \"b", null);
+            verifyMalformedData(csv, false, "testb, a \"b", null);
             verifyMalformedData(csv, true, "\"testb", "\"a \"b");
 
             assertTrue(csv.delete());
@@ -878,7 +866,7 @@ public class TabLoader extends DataLoader
         {
             File tsv = _createTempFile(malformedTsvData, ".tsv");
 
-            verifyMalformedData(tsv, false, "testb\t\"a \"b", null);
+            verifyMalformedData(tsv, false, "testb\ta \"b", null);
             verifyMalformedData(tsv, true, "\"testb", "\"a \"b");
 
             assertTrue(tsv.delete());
@@ -1260,7 +1248,7 @@ public class TabLoader extends DataLoader
 
                 row = rows.get(4);
                 assertEquals("Fred", row.get("Name"));
-                assertEquals("\"quoted stuff\" unquoted", row.get("Multi-Line"));
+                assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
 
                 List<Map<String, Object>> rows2 = loader.stream()
