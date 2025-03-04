@@ -274,22 +274,11 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
                 var fileObject = createFile(protocol, dir, "tmp");
 
-                // Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                 List<String> columns = provider.getResultsDomain(protocol).getProperties().stream().map(DomainProperty::getName).collect(Collectors.toList());
-                if (!columns.isEmpty() && columns.get(0).startsWith("#"))
-                {
-                    String firstColumn = columns.get(0);
-                    String newFirstColumn = firstColumn.substring(1);
-                    columns.set(0, newFirstColumn);
-                    for (Map<String, Object> row : rawData)
-                    {
-                        if (row.containsKey(firstColumn))
-                            row.put(newFirstColumn, row.remove(firstColumn));
-                    }
-                }
 
                 try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
+                    tsvWriter.setAdditionalQuotedChars("#"); //Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
