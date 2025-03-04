@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportAction" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.pipeline.PipelineModule" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -57,6 +59,7 @@
 
     Study study = studyService != null ? studyService.getStudy(getContainer()) : null;
     TimepointType timepointType = study != null ? study.getTimepointType() : null;
+    boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG);
 %>
 
 <labkey:errors/>
@@ -89,6 +92,7 @@ Ext4.onReady(function()
                 canCreateSharedDatasets: <%=canCreateSharedDatasets%>,
                 isCreateSharedDatasets: <%=bean.isCreateSharedDatasets()%>,
                 isValidateQueries: <%=bean.isValidateQueries()%>,
+                showAdvancedImportOptions: <%=isAdvancedImportOptionEnabled%>,
                 isSpecificImportOptions: <%=bean.isSpecificImportOptions()%>,
                 isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
                 isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>,
