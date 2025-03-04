@@ -19,7 +19,9 @@ package org.labkey.api.security;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.websocket.server.HandshakeRequest;
 import org.apache.commons.codec.binary.Base64;
@@ -185,6 +187,8 @@ public class SecurityManager
     public static final String SCOPE_USER_ROLES = "UserRoles";
     public static final String SCOPE_GROUP_ROLES = "GroupRoles";
     public static final String SCOPE_USER_GROUPS = "UserGroups";
+
+    public static final String JSESSIONID = "JSESSIONID";
 
     static
     {
@@ -522,9 +526,9 @@ public class SecurityManager
         return sessionUser;
     }
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
+    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
-        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header");
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\"");
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
@@ -549,8 +553,15 @@ public class SecurityManager
 
                 if (null != session)
                 {
-                    request = new SessionReplacingRequest(request, session);
                     AUTH_LOG.debug("   API key is a valid session key");
+                    String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
+                    if (!session.getId().equals(sessionId))
+                    {
+                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                        sessionCookie.setPath("/");
+                        response.addCookie(sessionCookie);
+                        request = new SessionReplacingRequest(request, session);
+                    }
                 }
                 else
                 {
@@ -638,7 +649,7 @@ public class SecurityManager
         }
         finally
         {
-            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header. User: " + u);
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\". User: " + u);
         }
     }
 
@@ -2251,6 +2262,7 @@ public class SecurityManager
 
         ActionURL messageContentsURL = null;
         User currentUser = context.getUser();
+        boolean emailFailure = false;
 
         try
         {
@@ -2306,6 +2318,9 @@ public class SecurityManager
 
             if (null != newUser)
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system. Sending the verification email failed.");
+
+            // Error message above includes a link to the email contents; set this flag to skip rendering this link again. Issue #51936.
+            emailFailure = true;
         }
         catch (UserManagementException e)
         {
@@ -2316,20 +2331,24 @@ public class SecurityManager
         // hide showRegistrationEmail link if provider is specified for now
         if (messageContentsURL != null && provider == null)
         {
-            LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
-            message.append(" Click ").append(link).append(" to see the email.");
+            // Email failure message already includes link to the contents
+            if (!emailFailure)
+            {
+                LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
+                message.append(" Click ").append(link).append(" to see the email.");
+            }
 
             if (!context.getContainer().isRoot())
             {
                 LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
-                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".");
+                message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".").append(HtmlString.BR).append(HtmlString.BR);
             }
         }
 
         return message.getHtmlString();
     }
 
-    @SuppressWarnings("unused") // Called from mGAP
+    @SuppressWarnings("unused") // Called from mGAP and mcc
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
         sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
@@ -2380,19 +2399,10 @@ public class SecurityManager
     {
         if (isAdmin)
         {
-            builder.append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
-
-            if (messageContentsURL != null)
-            {
-                builder.append(" Alternatively, you can copy the ");
-                builder.append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses());
-                builder.append(" into an email client and send it to the user manually.");
-            }
-
-            builder.unsafeAppend("</p>");
-            builder.unsafeAppend("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            builder.append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
-            builder.append(".").append(HtmlString.BR);
+            builder
+                .unsafeAppend("<p>")
+                .append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
+            appendAdminMailHelpHtml(builder, messageContentsURL);
         }
         else
         {
@@ -2400,6 +2410,21 @@ public class SecurityManager
         }
     }
 
+    public static void appendAdminMailHelpHtml(HtmlStringBuilder builder, ActionURL messageContentsURL)
+    {
+        if (messageContentsURL != null)
+        {
+            builder.append(" Alternatively, you can copy the ")
+                .append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses())
+                .append(" into an email client and send it to the user manually.");
+        }
+
+        builder.unsafeAppend("</p><p>")
+            .append("Get help fixing your SMTP mail server settings ")
+            .append(new HelpTopic("SMTPsettings").getSimpleLinkHtml("here"))
+            .append(".")
+            .unsafeAppend("</p>");
+    }
 
     public static void createNewProjectGroups(Container project, User user)
     {

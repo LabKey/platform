@@ -2024,15 +2024,7 @@ public class OntologyManager
             else if (null != property.getDateTimeValue())
                 dates.add(Arrays.asList(objectId, propertyId, new java.sql.Timestamp(property.getDateTimeValue().getTime()), mvIndicator));
             else if (null != property.getStringValue())
-            {
-                String string = property.getStringValue();
-                // UNDONE - handle truncation in some other way?
-                if (string.length() > PropertyStorageSpec.DEFAULT_SIZE)
-                {
-                    throw new SQLException("String value too long in field " + getPropertyDescriptor(propertyId).getName() + ": " + (string.length() < 150 ? string : string.substring(0, 149) + "..."));
-                }
-                strings.add(Arrays.asList(objectId, propertyId, string, mvIndicator));
-            }
+                strings.add(Arrays.asList(objectId, propertyId, property.getStringValue(), mvIndicator));
             else if (null != mvIndicator)
             {
                 mvIndicators.add(Arrays.asList(objectId, propertyId, property.getTypeTag(), mvIndicator));

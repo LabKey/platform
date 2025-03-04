@@ -40,7 +40,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,7 +126,7 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
                 {
                     // lookup to SampleType by ID
                     col.setLabel("Sample Type ID");
-                    col.setFk(QueryForeignKey.from(getUserSchema(), ContainerFilter.EVERYTHING).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets));
+                    col.setFk(QueryForeignKey.from(getUserSchema(), ContainerFilter.EVERYTHING_UNSAFE).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.SampleSets));
 
                     // ExpSampleTypeTableImpl uses a details URL with the current Container as the URL's fixed
                     // container context, but we would like to use the audit event row's container column instead.

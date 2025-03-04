@@ -21,7 +21,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -29,7 +28,6 @@ import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
@@ -64,7 +62,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
         public AuditUnionTable(@NotNull UserSchema schema, ContainerFilter cf)
         {
-            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.EVERYTHING);
+            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.EVERYTHING_UNSAFE);
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());

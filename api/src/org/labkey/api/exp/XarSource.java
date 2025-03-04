@@ -84,6 +84,8 @@ public abstract class XarSource implements Serializable
 
     public abstract Path getRootPath();
 
+    public Path getJobRootPath() { return getRootPath(); }
+
     /**
      * Should be true if this was uploaded XML that was not part of a full XAR
      */

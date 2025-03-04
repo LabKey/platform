@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
@@ -136,6 +137,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -144,6 +146,8 @@ import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -2526,6 +2530,70 @@ public class PageFlowUtil
         return false;
     }
 
+    public static List<String> splitStringToValues(@NotNull String str, char delimiter)
+    {
+        return splitStringToValues(str, delimiter, true, true, true);
+    }
+
+    public static List<String> splitStringToValues(@NotNull String str, char delimiter, boolean removeDuplicates, boolean removeEmpty, boolean sort)
+    {
+        // Split on delimiter using backslash as the escape char
+        Stream<String> valueStream = splitStringToValues(str, delimiter, '\\').map(String::trim);
+
+        if (removeDuplicates)
+            valueStream = valueStream.distinct();
+        if (removeEmpty)
+            valueStream = valueStream.filter(StringUtils::isNotEmpty);
+        if (sort)
+            valueStream = valueStream.sorted();
+
+        return valueStream.toList();
+    }
+
+    private static Stream<String> splitStringToValues(@NotNull String str, char delimiter, char escape)
+    {
+        List<String> result = new ArrayList<>();
+        StringBuilder currentToken = new StringBuilder();
+        boolean escaped = false;
+
+        for (char c : str.toCharArray())
+        {
+            if (escaped)
+            {
+                currentToken.append(c);
+                escaped = false;
+            }
+            else if (c == escape)
+            {
+                escaped = true;
+            }
+            else if (c == delimiter)
+            {
+                result.add(currentToken.toString());
+                currentToken.setLength(0);
+            }
+            else
+            {
+                currentToken.append(c);
+            }
+        }
+        result.add(currentToken.toString());
+
+        return result.stream();
+    }
+
+    /**
+     * Trims all values and escapes the delimiter and backslash with backslash within each value. Then joins the
+     * values using delimiter into a string.
+     */
+    public static String joinValuesToString(@NotNull List<String> values, char delimiter)
+    {
+        return values.stream()
+            .map(String::trim)
+            .map(value -> value.replaceAll("([\\\\" + delimiter + "])", "\\\\$1"))
+            .collect(Collectors.joining(String.valueOf(delimiter)));
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -2764,6 +2832,77 @@ public class PageFlowUtil
             html = filter("click here http://this/is/a/test.view", true, true);
             assertTrue(html.contains("href=\"http:"));
             assertTrue(html.contains("view</a>"));
+        }
+
+        @Test
+        public void testJoinValuesToString()
+        {
+            String expression = PageFlowUtil.joinValuesToString(List.of(), '|');
+            Assert.assertEquals("", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a", "b", "c", " b  "), '|');
+            Assert.assertEquals("a|b|c|b", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a", "b|B", "|C|c|"), '|');
+            Assert.assertEquals("a|b\\|B|\\|C\\|c\\|", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a\\a", "b"), '|');
+            Assert.assertEquals("a\\\\a|b", expression);
+
+            expression = PageFlowUtil.joinValuesToString(List.of("a\\", "b"), '|');
+            Assert.assertEquals("a\\\\|b", expression);
+        }
+
+        @Test
+        public void testSplitStringToValues()
+        {
+            List<String> values = PageFlowUtil.splitStringToValues("", '|');
+            Assert.assertEquals(new ArrayList<>(), values);
+
+            values = PageFlowUtil.splitStringToValues("\\|C\\|c\\||a|b\\|B", '|');
+            Assert.assertEquals(List.of("a", "b|B", "|C|c|"), values);
+
+            values = PageFlowUtil.splitStringToValues("a\\\\a", '|');
+            Assert.assertEquals(List.of("a\\a"), values);
+
+            values = PageFlowUtil.splitStringToValues("a\\\\|b", '|');
+            Assert.assertEquals(List.of("a\\", "b"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|');
+            Assert.assertEquals(List.of("a", "b", "c"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', true, true, false);
+            Assert.assertEquals(List.of("b", "a", "c"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', true, false, true);
+            Assert.assertEquals(List.of("", "a", "b", "c"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', false, true, true);
+            Assert.assertEquals(List.of("a", "b", "b", "c"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', false, false, true);
+            Assert.assertEquals(List.of("", "", "a", "b", "b", "c"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', false, true, false);
+            Assert.assertEquals(List.of("b", "a", "c", "b"), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', true, false, false);
+            Assert.assertEquals(List.of("b", "a", "c", ""), values);
+
+            values = PageFlowUtil.splitStringToValues("b|a|c| b ||", '|', false, false, false);
+            Assert.assertEquals(List.of("b", "a", "c", "b", "", ""), values);
+        }
+
+        @Test
+        public void testJoinAndSplit()
+        {
+            RandomStringUtils random = RandomStringUtils.insecure();
+            List<String> values = new LinkedList<>();
+            for (int i = 0; i < 100; i++)
+            {
+                values.add(random.next(100, 'A', 'B', '\\', '|'));
+            }
+            assertEquals(values, splitStringToValues(joinValuesToString(values, '|'), '|', false, false, false));
         }
     }
 

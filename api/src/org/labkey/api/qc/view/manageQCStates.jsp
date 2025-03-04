@@ -27,7 +27,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AbstractManageQCStatesBean> me = (JspView<AbstractManageQCStatesBean>) HttpView.currentView();
+    JspView<AbstractManageQCStatesBean> me = HttpView.currentView();
 
     Container container = getContainer();
     AbstractManageQCStatesBean bean = me.getModelBean();
