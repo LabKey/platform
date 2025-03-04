@@ -1468,7 +1468,6 @@ public class OntologyManager
                         uncache(dd);
                         dd = dd.edit()
                             .setContainer(project)
-                            .setProject(project)
                             .setDomainId(0)
                             .build();
                         dd = ensureDomainDescriptor(dd);
@@ -1657,7 +1656,7 @@ public class OntologyManager
                         // location
                         if (!dd.getContainer().equals(c) || !dd.getProject().equals(fNewProject))
                         {
-                            dd = dd.edit().setContainer(c).setProject(fNewProject).setDomainId(0).build();
+                            dd = dd.edit().setContainer(c).setDomainId(0).build();
                         }
 
                         dd = ensureDomainDescriptor(dd);
