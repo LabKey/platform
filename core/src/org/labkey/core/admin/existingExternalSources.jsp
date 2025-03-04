@@ -74,7 +74,7 @@
     if (existingAllowedHosts.isEmpty())
     {
 %>
-        <thead><tr><td colspan="2">No External Resource Hosts have been configured.</td></tr></thead>
+        <thead><tr><th colspan="2">No External Resource Hosts have been configured.</th></tr></thead>
 <%
     }
     else
