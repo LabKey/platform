@@ -75,6 +75,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -540,7 +541,10 @@ public class DomainUtil
             // add in the TextChoice validValues here so that the client side code doesn't have to do the same
             // parsing of the validator expression (i.e. sorting, trimming, removing duplicates, etc.)
             if (PropertyValidatorType.TextChoice.equals(gpv.getType()))
-                properties.put("validValues", StringUtils.join(PropertyService.get().getTextChoiceValidatorOptions(pv), "|"));
+            {
+                List<String> validValues = PropertyService.get().getTextChoiceValidatorOptions(pv);
+                properties.put("validValues", PageFlowUtil.joinValuesToString(validValues, '|'));
+            }
             gpv.setProperties(properties);
 
             validators.add(gpv);
