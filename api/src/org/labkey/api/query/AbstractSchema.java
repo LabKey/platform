@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 abstract public class AbstractSchema implements QuerySchema
@@ -42,8 +43,8 @@ abstract public class AbstractSchema implements QuerySchema
     public AbstractSchema(DbSchema dbSchema, User user, Container container)
     {
         _dbSchema = dbSchema;
-        _user = user;
-        _container = container;
+        _user = Objects.requireNonNull(user);
+        _container = Objects.requireNonNull(container);
         MemTracker.get().put(this);
     }
 
