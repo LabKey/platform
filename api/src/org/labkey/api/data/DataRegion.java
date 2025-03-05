@@ -922,7 +922,7 @@ public class DataRegion extends DisplayElement
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
         _renderButtonBarNew(ctx, out, renderButtons);
         HtmlWriter writer = HtmlWriter.of(out);
-        DIV(cl("pull-right"), DIV("labkey-pagination")).appendTo(writer);
+        DIV(cl("pull-right"), DIV(cl("labkey-pagination"))).appendTo(writer);
         out.write("</div>");
 
         _renderDrawer(writer);
