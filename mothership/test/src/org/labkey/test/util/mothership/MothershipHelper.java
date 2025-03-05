@@ -166,6 +166,22 @@ public class MothershipHelper extends LabKeySiteWrapper
         }
     }
 
+    public List<Map<String, Object>> getOrderedStackTraces()
+    {
+        Connection connection = createDefaultConnection();
+        SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
+        command.addSort("LastReport", Sort.Direction.DESCENDING);
+        try
+        {
+            SelectRowsResponse response = command.execute(connection, MOTHERSHIP_PROJECT);
+            return response.getRows();
+        }
+        catch (IOException|CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void resetStackTrace(int exceptionStackTraceId)
     {
         updateStackTrace(exceptionStackTraceId, "", "", "");
