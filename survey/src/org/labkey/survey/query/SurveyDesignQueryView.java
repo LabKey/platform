@@ -55,7 +55,7 @@ public class SurveyDesignQueryView extends QueryView
         if (getContainer().hasPermission(getUser(), InsertPermission.class))
         {
             ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
-            insertURL.addReturnURL(getReturnURL());
+            insertURL.addReturnUrl(getReturnUrl());
 
             ActionButton insert = new ActionButton(insertURL, "Create Survey Design");
             insert.setActionType(ActionButton.Action.LINK);
@@ -68,7 +68,7 @@ public class SurveyDesignQueryView extends QueryView
     public ActionButton createDeleteButton()
     {
         ActionURL url = new ActionURL(SurveyController.DeleteSurveyDesignsAction.class, getContainer());
-        url.addReturnURL(getReturnURL());
+        url.addReturnUrl(getReturnUrl());
 
         ActionButton btnDelete = new ActionButton(url, "Delete");
         btnDelete.setActionType(ActionButton.Action.POST);

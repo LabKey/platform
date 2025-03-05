@@ -211,9 +211,9 @@ public class PropertyController extends SpringActionController
                 // re-fetch the domain so that we can redirect using the saved domainId
                 _domain = PropertyService.get().getDomain(getContainer(), domainURI);
                 ActionURL redirectURL = urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
-                URLHelper returnURL = getViewContext().getActionURL().getReturnURL();
-                if (returnURL != null)
-                    redirectURL.addReturnURL(returnURL);
+                URLHelper returnUrl = getViewContext().getActionURL().getReturnUrl();
+                if (returnUrl != null)
+                    redirectURL.addReturnUrl(returnUrl);
                 throw new RedirectException(redirectURL);
             }
             else

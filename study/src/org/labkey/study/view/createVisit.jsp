@@ -30,16 +30,16 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<VisitForm> me = (JspView<VisitForm>)HttpView.currentView();
+    JspView<VisitForm> me = HttpView.currentView();
     VisitForm form = me.getModelBean();
     VisitImpl v = form.getBean();
 
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
 
-    ActionURL returnURL = form.getReturnActionURL();
-    if (null == returnURL)
-        returnURL = urlFor(ManageVisitsAction.class);
+    ActionURL returnUrl = form.getReturnActionURL();
+    if (null == returnUrl)
+        returnUrl = urlFor(ManageVisitsAction.class);
 %>
 <labkey:errors/>
 <p style="width: 750px;">
@@ -130,6 +130,6 @@ is uploaded along with the data. This form allows you to define a range of seque
         </tr>
     </table>
     <br/>
-    <%=generateReturnUrlFormField(returnURL)%>
-    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
+    <%=generateReturnUrlFormField(returnUrl)%>
+    <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnUrl) %>
 </labkey:form>

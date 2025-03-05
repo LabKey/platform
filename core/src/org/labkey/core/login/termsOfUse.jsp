@@ -34,15 +34,15 @@
     }
 %>
 <%
-    HttpView<AgreeToTermsBean> me = (HttpView<AgreeToTermsBean>) HttpView.currentView();
+    HttpView<AgreeToTermsBean> me = HttpView.currentView();
     AgreeToTermsBean bean = me.getModelBean();
 
-    URLHelper returnURL = bean.form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+    URLHelper returnUrl = bean.form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL());
     HtmlString termsHtml = bean.termsOfUseHTML;
 
     // Redirect immediately if terms are blank or null
     if (HtmlString.isBlank(termsHtml))
-        throw new RedirectException(returnURL);
+        throw new RedirectException(returnUrl);
 
     ActionURL formURL = urlFor(AgreeToTermsAction.class);
 %>
@@ -68,7 +68,7 @@
             </div>
         </div>
 
-        <%=generateReturnUrlFormField(returnURL)%>
+        <%=generateReturnUrlFormField(returnUrl)%>
 
         <input type="hidden" id="urlhash" name="urlhash">
     </form>

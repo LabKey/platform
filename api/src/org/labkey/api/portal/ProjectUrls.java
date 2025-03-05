@@ -31,13 +31,13 @@ public interface ProjectUrls extends UrlProvider
     ActionURL getHomeURL();
     ActionURL getCustomizeWebPartURL(Container c);
     ActionURL getAddWebPartURL(Container c);
-    ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL);
-    ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL);
-    ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL);
-    ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnURL);
-    ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnURL);
-    ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnURL);
+    ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnUrl);
+    ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnUrl);
+    ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnUrl);
+    ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnUrl);
+    ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnUrl);
+    ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnUrl);
     ActionURL getExpandCollapseURL(Container c, String path, String treeId);
     ActionURL getFileBrowserURL(Container c, String path);
-    ActionURL getTogglePageAdminModeURL(Container c, ActionURL returnURL);
+    ActionURL getTogglePageAdminModeURL(Container c, ActionURL returnUrl);
 }

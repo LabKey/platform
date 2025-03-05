@@ -454,7 +454,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     }
 
 
-    public URLHelper addParameter(Enum key, boolean value)
+    public URLHelper addParameter(Enum<?> key, boolean value)
     {
         return addParameter(key.name(), value);
     }
@@ -468,8 +468,6 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     public URLHelper addParameter(String key, String value)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        if (key.equals("returnURL"))
-            ReturnUrlForm.throwBadParam();
         if (null == _parameters) _parameters = new ArrayList<>();
         _parameters.add(new Pair<>(key, value));
         return this;
@@ -878,9 +876,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         if (null == getScheme() || null == getHost())
             return false;
         String scheme = getScheme().toLowerCase();
-        if ("https".equals(scheme) || "http".equals(scheme))
-            return true;
-        return false;
+        return "https".equals(scheme) || "http".equals(scheme);
     }
 
     public static boolean isHttpURL(String url)
@@ -925,7 +921,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
     {
         String host = StringUtils.trimToNull(this.getHost());
 
-        // We have a returnURL that includes a server host name
+        // We have a returnUrl that includes a server host name
         if (host != null)
         {
             // Check if it matches the current server's preferred host name, per the base server URL setting
@@ -945,7 +941,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
                 if (!isConfigured)
                 {
-                    String logMessageDetails = "returnURL value: " + this;
+                    String logMessageDetails = "returnUrl value: " + this;
                     HttpServletRequest request = HttpView.currentRequest();
                     if (request != null)
                     {
@@ -962,7 +958,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
                 }
                 else
                 {
-                    LOG.debug("Detected configured external host returnURL: " + this);
+                    LOG.debug("Detected configured external host returnUrl: " + this);
                 }
             }
         }

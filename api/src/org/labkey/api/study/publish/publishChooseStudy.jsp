@@ -268,7 +268,7 @@
     %>
 
     <labkey:button text="Next" onclick="handleNext();" id="next-btn" submit="false" enabled="<%=!exceedsMaxRows || !bean.getBatchIds().isEmpty()%>"/>
-    <labkey:button text="Cancel" href="<%=bean.getReturnURL()%>"/>
+    <labkey:button text="Cancel" href="<%=bean.getReturnUrl()%>"/>
 
     <%
         for (Pair<String, String> parameter : parameters)
@@ -292,7 +292,7 @@
     <%
         }
     %>
-    <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(bean.getReturnURL()) %>">
+    <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(bean.getReturnUrl()) %>">
     <input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>">
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
 </labkey:form>

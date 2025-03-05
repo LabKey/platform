@@ -29,14 +29,14 @@ public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
     ActionURL getVerificationURL(Container c, User user, String verification, @Nullable List<Pair<String, String>> extraParameters);
-    ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
+    ActionURL getChangePasswordURL(Container c, User user, URLHelper returnUrl, @Nullable String message);
     ActionURL getInitialUserURL();
     ActionURL getLoginURL();
-    ActionURL getLoginURL(URLHelper returnURL);
-    ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL);
+    ActionURL getLoginURL(URLHelper returnUrl);
+    ActionURL getLoginURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getLogoutURL(Container c);
-    ActionURL getLogoutURL(Container c, URLHelper returnURL);
-    ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
-    ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
-    ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile);
+    ActionURL getLogoutURL(Container c, URLHelper returnUrl);
+    ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl);
+    ActionURL getAgreeToTermsURL(Container c, URLHelper returnUrl);
+    ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile);
 }

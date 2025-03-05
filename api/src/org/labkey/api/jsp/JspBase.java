@@ -503,9 +503,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.makeHtmlId(s);
     }
 
-    public HtmlString generateReturnUrlFormField(URLHelper returnURL)
+    public HtmlString generateReturnUrlFormField(URLHelper returnUrl)
     {
-        return ReturnUrlForm.generateHiddenFormField(returnURL);
+        return ReturnUrlForm.generateHiddenFormField(returnUrl);
     }
 
     public HtmlString generateReturnUrlFormField(ReturnUrlForm form)

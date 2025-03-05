@@ -24,13 +24,11 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -51,16 +49,16 @@ public class PipelineQueryView extends QueryView
     private final ViewContext _context;
     private final Class<? extends ReadOnlyApiAction> _apiAction;
     private final PipelineService.PipelineButtonOption _buttonOption;
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
 
-    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ReadOnlyApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnURL)
+    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ReadOnlyApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnUrl)
     {
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
         _buttonOption = buttonOption;
         setSettings(createSettings(context));
         _context = context;
         _apiAction = apiAction;
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
 
         setShadeAlternatingRows(true);
         setShowBorders(true);
@@ -80,7 +78,7 @@ public class PipelineQueryView extends QueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        StatusDataRegion rgn = new StatusDataRegion(_apiAction, _returnURL);
+        StatusDataRegion rgn = new StatusDataRegion(_apiAction, _returnUrl);
         configureDataRegion(rgn);
         return rgn;
     }
@@ -134,7 +132,7 @@ public class PipelineQueryView extends QueryView
             if (showDeleteButton())
             {
                 ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
-                deleteURL.addReturnURL(_returnURL);
+                deleteURL.addReturnUrl(_returnUrl);
                 ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
                 deleteStatus.setIconCls("trash");
                 deleteStatus.setRequiresSelection(true);
@@ -158,7 +156,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
             ActionURL retryURL = new ActionURL(StatusController.RetryStatusAction.class, getContainer());
-            retryURL.addReturnURL(_returnURL);
+            retryURL.addReturnUrl(_returnUrl);
 
             ActionButton retryStatus = new ActionButton(retryURL, "Retry");
             retryStatus.setRequiresSelection(true);
@@ -167,7 +165,7 @@ public class PipelineQueryView extends QueryView
             bar.add(retryStatus);
 
             ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
-            cancelURL.addReturnURL(_returnURL);
+            cancelURL.addReturnUrl(_returnUrl);
             ActionButton cancelButton = new ActionButton(cancelURL, "Cancel");
             cancelButton.setRequiresSelection(true);
             cancelButton.setActionType(ActionButton.Action.POST);
@@ -175,7 +173,7 @@ public class PipelineQueryView extends QueryView
             bar.add(cancelButton);
 
             ActionURL completeURL = new ActionURL(StatusController.CompleteStatusAction.class, getContainer());
-            completeURL.addReturnURL(_returnURL);
+            completeURL.addReturnUrl(_returnUrl);
             ActionButton completeStatus = new ActionButton(completeURL, "Complete");
             completeStatus.setRequiresSelection(true);
             completeStatus.setActionType(ActionButton.Action.POST);
