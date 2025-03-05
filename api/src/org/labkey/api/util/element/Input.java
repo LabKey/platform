@@ -96,6 +96,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final String _id;
     private final String _label;
     private final String _labelClassName;
+    private final String _title;
     private final Layout _layout;
     private final String _list;
     private final String _max;
@@ -142,6 +143,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _id = builder._id;
         _label = builder._label;
         _labelClassName = builder._labelClassName;
+        _title = builder._title;
         _layout = builder._layout;
         _list = builder._dataList;
         _stateMessage = builder._stateMessage;
@@ -232,6 +234,11 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     public String getLabelClassName()
     {
         return _labelClassName;
+    }
+
+    public String getTitle()
+    {
+        return _title;
     }
 
     public Layout getLayout()
@@ -519,6 +526,8 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         var id = generateId("input");
 
         sb.append(" id=\"").append(h(id)).append("\"");
+        if (StringUtils.isNotEmpty(getTitle()))
+            sb.append(" title=\"").append(h(getTitle())).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
             sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
         if (getSize() != null)
@@ -725,6 +734,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private String _id;
         private String _label;
         private String _labelClassName = "control-label";
+        private String _title;
         private Layout _layout;
         private String _max;
         private Integer _maxLength;
@@ -806,6 +816,12 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         public T label(String label)
         {
             _label = label;
+            return (T)this;
+        }
+
+        public T title(String title)
+        {
+            _title = title;
             return (T)this;
         }
 

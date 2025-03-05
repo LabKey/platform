@@ -21,12 +21,12 @@ import org.labkey.api.view.template.PageConfig;
 
 public class ContextAction
 {
-    private String iconCls;
-    private String onClick;
-    private String onClose;
-    private String text;
-    private String tooltip;
-    private boolean closable;
+    private final String iconCls;
+    private final String onClick;
+    private final String onClose;
+    private final String text;
+    private final String tooltip;
+    private final boolean closable;
 
     private ContextAction(Builder builder)
     {

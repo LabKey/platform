@@ -24,10 +24,12 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -36,6 +38,11 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
 public abstract class AbstractNestableDataRegion extends DataRegion
@@ -69,22 +76,24 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
+    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
     {
         var page = HttpView.currentPageConfig();
-        String id = page.makeId("a_");
+        String madeId = page.makeId("a_");
         String value = getUniqueColumnValue(ctx);
-        out.write("<a id=\"" + id + "\">");
-        out.write("<img valign=\"middle\" id=\"");
-        out.write(getName());
-        out.write("-Handle");
-        out.write(value);
-        out.write("\" src=\"");
-        out.write(ctx.getViewContext().getContextPath());
-        out.write("/_images/");
-        out.write(_expanded ? "minus" : "plus");
-        out.write(".gif\"/></a>");
-        page.addHandler(id, "click", "return toggleNestedGrid(" + jsString(getName()) + "," + (_ajaxNestedGridURL == null ? "null" : jsString(_ajaxNestedGridURL + value)) + ", " + jsString(value) + ")");
+
+        DOM.A(
+            at(id, madeId),
+            IMG(
+                at(
+                    id, getName() + "-Handle" + value,
+                    valign, "middle",
+                    src, ctx.getViewContext().getContextPath() + "/_images/" + (_expanded ? "minus" : "plus") + ".gif"
+                )
+            )
+        ).appendTo(out);
+
+        page.addHandler(madeId, "click", "return toggleNestedGrid(" + jsString(getName()) + "," + (_ajaxNestedGridURL == null ? "null" : jsString(_ajaxNestedGridURL + value)) + ", " + jsString(value) + ")");
     }
 
     private String getUniqueColumnValue(RenderContext ctx)

@@ -49,6 +49,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -58,6 +59,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
@@ -69,6 +71,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -91,6 +94,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.cl;
 
 /** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
  * about buttons that might appear in the view, the columns to be shown, etc. */
@@ -913,14 +921,16 @@ public class DataRegion extends DisplayElement
     {
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
         _renderButtonBarNew(ctx, out, renderButtons);
-        _renderPaginationNew(ctx, out);
+        HtmlWriter writer = HtmlWriter.of(out);
+        DIV(cl("pull-right"), DIV("labkey-pagination")).appendTo(writer);
         out.write("</div>");
-        _renderDrawer(ctx, out);
-        _renderViewBar(ctx, out);
-        _renderContextBar(ctx, out);
+
+        _renderDrawer(writer);
+        _renderViewBar(writer);
+        _renderContextBar(writer);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
         JSONObject dataRegionJSON = toJSON(ctx);
 
@@ -929,12 +939,12 @@ public class DataRegion extends DisplayElement
             dataRegionJSON.put("messages", messages);
         }
 
-        StringWriter out = new StringWriter();
-        out.write(HttpView.currentPageConfig().getScriptTagStart().toString());
-        out.write("LABKEY.DataRegion.create(");
-        out.write(dataRegionJSON.toString(2));
-        out.write(");\n</script>\n");
-        writer.write(out.toString());
+        HtmlStringBuilder builder = HtmlStringBuilder.of(HttpView.currentPageConfig().getScriptTagStart())
+            .unsafeAppend("LABKEY.DataRegion.create(")
+            .unsafeAppend(dataRegionJSON.toString(2))
+            .unsafeAppend(");\n</script>\n");
+
+        writer.write(builder);
     }
 
     protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
@@ -994,7 +1004,7 @@ public class DataRegion extends DisplayElement
         {
             Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
             (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-            renderHeaderScript(ctx, out, Collections.emptyMap(), false);
+            renderHeaderScript(ctx, HtmlWriter.of(out), Collections.emptyMap(), false);
         }
         catch (IOException ioe)
         {
@@ -1059,7 +1069,7 @@ public class DataRegion extends DisplayElement
             renderHeader(ctx, out, renderButtons);
         }
 
-        renderMessages(ctx, out);
+        renderMessages(out);
 
         if (useTableWrap)
             out.write("</td></tr>");
@@ -1081,7 +1091,7 @@ public class DataRegion extends DisplayElement
                 _totalRows = getOffset() + _rowCount.intValue();
         }
 
-        renderHeaderScript(ctx, out, messages, showRecordSelectors);
+        renderHeaderScript(ctx, HtmlWriter.of(out), messages, showRecordSelectors);
         renderAnalyticsProvidersScripts(ctx, out);
 
         renderFormEnd(ctx, out);
@@ -1097,37 +1107,42 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void _renderDrawer(RenderContext ctx, Writer out) throws IOException
+    private void _renderDrawer(HtmlWriter out)
     {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-drawer")+ "\" class=\"lk-region-bar lk-region-drawer\" style=\"display:none;\"></div>");
+        DIV(cl("lk-region-bar lk-region-drawer").at(id, getDomId() + "-drawer", style, "display:none;")).appendTo(out);
     }
 
-    private void _renderBar(RenderContext ctx, Writer out, List<ContextAction> actions, String idSuffix) throws IOException
+    private void _renderBar(HtmlWriter out, List<ContextAction> actions, String idSuffix) throws IOException
     {
+        HtmlStringBuilder builder = HtmlStringBuilder.of();
         boolean isEmpty = actions == null || actions.isEmpty();
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-" + idSuffix) + "\" class=\"lk-region-bar lk-region-context-bar\"");
-        if (isEmpty)
-            out.write(" style=\"display:none;\">");
-        else
+        if (!isEmpty)
         {
-            out.write(">");
             for (ContextAction ca : actions)
-                out.write(ca.toString());
+                builder.unsafeAppend(ca.toString());
         }
-        out.write("</div>");
+
+        DIV(
+            cl("lk-region-bar lk-region-context-bar").
+            at(
+                id, getDomId() + "-" + idSuffix,
+                style, isEmpty ? "display:none;" : null
+            ),
+            builder
+        ).appendTo(out);
     }
 
-    private void _renderContextBar(RenderContext ctx, Writer out) throws IOException
+    private void _renderContextBar(HtmlWriter out) throws IOException
     {
-        _renderBar(ctx, out, _contextActions, "ctxbar");
+        _renderBar(out, _contextActions, "ctxbar");
     }
 
-    private void _renderViewBar(RenderContext ctx, Writer out) throws IOException
+    private void _renderViewBar(HtmlWriter out) throws IOException
     {
-        _renderBar(ctx, out, _viewActions, "viewbar");
+        _renderBar(out, _viewActions, "viewbar");
     }
 
-    protected void renderMessages(RenderContext ctx, Writer out) throws IOException
+    protected void renderMessages(Writer out) throws IOException
     {
         // The container <div> is written regardless of _messages being available
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
@@ -1156,13 +1171,6 @@ public class DataRegion extends DisplayElement
         out.write("</div>");
     }
 
-    private void _renderPaginationNew(RenderContext ctx, Writer out) throws IOException
-    {
-        out.write("<div class=\"pull-right\">");
-        out.write("<div class=\"labkey-pagination\"></div>"); // rendered by client
-        out.write("</div>");
-    }
-
     private void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
     {
         renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
@@ -1172,7 +1180,7 @@ public class DataRegion extends DisplayElement
 
         int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
         if (rows == 0)
-            renderNoRowsMessage(ctx, out, colCount);
+            renderNoRowsMessage(out, colCount);
 
         if (_aggregateRowConfig.getAggregateRowLast())
             renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
@@ -1404,7 +1412,7 @@ public class DataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    private void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
+    private void renderNoRowsMessage(Writer out, int colCount) throws IOException
     {
         out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><em>");
         out.write(getNoRowsMessage());
@@ -1739,41 +1747,34 @@ public class DataRegion extends DisplayElement
         return _recordSelectorValueColumns;
     }
 
-    private void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
+    private void renderRecordSelector(RenderContext ctx, HtmlWriter out) throws IOException
     {
-        out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
-        out.write(getRecordSelectorName(ctx));
-        out.write("\" ");
-        String id = getRecordSelectorId(ctx);
-        if (id != null)
-        {
-            out.write("id=\"");
-            out.write(id);
-            out.write("\" ");
-        }
-        out.write("value=\"");
         String checkboxValue = getRecordSelectorValue(ctx);
-        out.write(checkboxValue);
-        out.write("\"");
         boolean enabled = isRecordSelectorEnabled(ctx);
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
-        if (checked && enabled)
-        {
-            out.write(" checked");
-        }
 
-        if (!enabled)
-            out.write(" DISABLED");
-        out.write(">");
+        out.write(
+            new Input.InputBuilder()
+                .type("checkbox")
+                .title("Select/unselect row")
+                .name(getRecordSelectorName(ctx))
+                .id(getRecordSelectorId(ctx))
+                .value(checkboxValue)
+                .checked(checked && enabled)
+                .disabled(!enabled)
+        );
+
         renderExtraRecordSelectorContent(ctx, out);
     }
 
-    protected void renderActionColumn(RenderContext ctx, Writer out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
+    protected void renderActionColumn(RenderContext ctx, Writer writer, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
     {
         if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
             return;
 
-        out.write("<td class=\"labkey-selectors\" nowrap>");
+        HtmlWriter out = HtmlWriter.of(writer);
+
+        out.write(HtmlString.unsafe("<td class=\"labkey-selectors\" nowrap>"));
 
         if (showRecordSelectors)
             renderRecordSelector(ctx, out);
@@ -1782,17 +1783,17 @@ public class DataRegion extends DisplayElement
         if (detailsColumn != null)
             renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
 
-        out.write("</td>");
+        out.write(HtmlString.unsafe("</td>"));
     }
 
-    private void renderGridCellContents(RenderContext ctx, Writer out, DisplayColumn column, String iconCls) throws IOException
+    private void renderGridCellContents(RenderContext ctx, HtmlWriter out, DisplayColumn column, String iconCls) throws IOException
     {
         Object value = column.getValue(ctx);
         String url = column.renderURL(ctx);
 
         if (value != null && url != null)
         {
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()).toString());
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()));
         }
     }
 
@@ -1846,7 +1847,7 @@ public class DataRegion extends DisplayElement
         return true;
     }
 
-    protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
+    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
     {
     }
 
@@ -1907,7 +1908,7 @@ public class DataRegion extends DisplayElement
             }
 
             if (rowIndex == 0)
-                renderNoRowsMessage(ctx, out, 1);
+                renderNoRowsMessage(out, 1);
 
             out.write("</table>");
 
@@ -2195,9 +2196,9 @@ public class DataRegion extends DisplayElement
             // Note: valueMap != null, since we checked this above
 
             if (valueMap instanceof BoundMap)
-                renderOldValues(out, valueMap);
+                renderOldValues(HtmlWriter.of(out), valueMap);
             else
-                renderOldValues(out, valueMap, ctx.getFieldMap());
+                renderOldValues(HtmlWriter.of(out), valueMap, ctx.getFieldMap());
 
             TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
@@ -2217,14 +2218,12 @@ public class DataRegion extends DisplayElement
 
                     if (null != pkVal)
                     {
-                        out.write("<input type='hidden' name='");
-                        if (viewForm != null)
-                            out.write(PageFlowUtil.filter(viewForm.getFormFieldName(pkCol)));
-                        else
-                            out.write(PageFlowUtil.filter(pkColName));
-                        out.write("' value=\"");
-                        out.write(PageFlowUtil.filter(pkVal.toString()));
-                        out.write("\">");
+                        out.write(
+                            new Input.InputBuilder()
+                                .type("hidden")
+                                .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
+                                .value(pkVal.toString()).toString()
+                        );
                     }
                     renderedColumns.add(pkColName);
                 }
@@ -2411,21 +2410,22 @@ public class DataRegion extends DisplayElement
         return hasFileFields;
     }
 
-    private void renderOldValues(Writer out, Map<String, Object> values) throws IOException
+    private void renderOldValues(HtmlWriter out, Map<String, Object> values) throws IOException
     {
-        out.write("<input name=\"" + OLD_VALUES_NAME + "\" type=\"hidden\" value=\"");
         Map<String, Object> oldKeys = new HashMap<>();
         String versionColumnName = getTable().getVersionColumnName();
         if (versionColumnName != null)
             oldKeys.put(versionColumnName, values.get(versionColumnName));
         getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
-        out.write(PageFlowUtil.filter(new JSONObject(oldKeys).toString()));
-        out.write("\">");
+
+        out.write(
+            new Input.InputBuilder<>().type("hidden").name(OLD_VALUES_NAME).value(new JSONObject(oldKeys).toString())
+        );
     }
 
     // RowMap keys are the ResultSet alias names, which might be completely mangled.  So, create a new map
     // that's column name -> value and pass it to renderOldValues
-    private void renderOldValues(Writer out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap) throws IOException
+    private void renderOldValues(HtmlWriter out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap) throws IOException
     {
         Map<String, Object> map = new HashMap<>(valueMap.size());
 
