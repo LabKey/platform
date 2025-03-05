@@ -11,7 +11,7 @@ public class FieldsTable extends BaseFieldsTable
 {
     public FieldsTable(@NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
     {
-        super("Fields", userSchema, containerFilter);
+        super(ExpSchema.TableType.Fields.name(), userSchema, containerFilter);
         setDescription("Shows one row for each administrator-defined field in the selected folder(s). Rows are shown in " +
             "a folder or project only if the user has administrator permissions in that folder.");
 
