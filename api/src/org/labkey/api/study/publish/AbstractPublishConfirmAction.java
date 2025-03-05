@@ -127,7 +127,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         if (_allObjects == null) // On first post, this is empty, so use the current selection
             _allObjects = new ArrayList<>(_selectedObjects);
 
-        if (form.getReturnURLHelper() == null)
+        if (form.getReturnUrlHelper() == null)
             errors.reject(SpringActionController.ERROR_MSG, "No return URL configured for this form");
     }
 
@@ -209,12 +209,12 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         Map<String, Object> fields = new HashMap<>();
 
         fields.put("rowId", form.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
-        if (returnURL == null)
+        String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        if (returnUrl == null)
         {
-            returnURL = getViewContext().getActionURL().toString();
+            returnUrl = getViewContext().getActionURL().toString();
         }
-        fields.put(ActionURL.Param.returnUrl.name(), returnURL);
+        fields.put(ActionURL.Param.returnUrl.name(), returnUrl);
 
         return fields;
     }
@@ -254,11 +254,11 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 getHiddenPublishResultsCaptions(form));
 
         List<ActionButton> buttons = new ArrayList<>();
-        URLHelper returnURL = form.getReturnURLHelper();
-        if (null == returnURL)
+        URLHelper returnUrl = form.getReturnUrlHelper();
+        if (null == returnUrl)
         {
             // consider deleting in the future unless we can find legitimate cases where the return URL is not provided in the form bean
-//            returnURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
+//            returnUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol).addParameter("clearDataRegionSelectionKey", publishConfirmForm.getDataRegionSelectionKey());
         }
 
         ActionURL publishURL = getPublishHandlerURL(form);
@@ -300,7 +300,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             buttons.add(fromSpecimenButton);
         }
 
-        ActionButton cancelButton = new ActionButton("Cancel", returnURL);
+        ActionButton cancelButton = new ActionButton("Cancel", returnUrl);
         cancelButton.setScript("LABKEY.setSubmit(true);", true);
         buttons.add(cancelButton);
 

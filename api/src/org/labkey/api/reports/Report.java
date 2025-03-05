@@ -126,7 +126,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     String getRunReportTarget();
 
     @Nullable ActionURL getEditReportURL(ViewContext context);
-    @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL);
+    @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnUrl);
 
     /**
      * Allows source grid data to be downloaded for query based reports. This would be most

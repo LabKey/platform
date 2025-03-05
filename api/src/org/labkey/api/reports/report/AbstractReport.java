@@ -198,10 +198,10 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     // Callers should pass in the "after save" redirect location; report might not be able to figure this out
     // (e.g., when manage views call this method, context.getActionURL() is a JSON API action)
     @Override
-    public @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnURL)
+    public @Nullable ActionURL getEditReportURL(ViewContext context, ActionURL returnUrl)
     {
         ActionURL url = getEditReportURL(context);
-        return null != url ? url.addReturnURL(returnURL) : null;
+        return null != url ? url.addReturnUrl(returnUrl) : null;
     }
 
     @Override

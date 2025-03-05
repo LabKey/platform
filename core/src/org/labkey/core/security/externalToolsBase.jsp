@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     ReturnUrlForm form = ((JspView<ReturnUrlForm>) HttpView.currentView()).getModelBean();
-    ActionURL alternativeURL = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
-    ActionURL returnURL = form.getReturnActionURL(alternativeURL);
+    ActionURL alternativeUrl = urlProvider(ProjectUrls.class).getBeginURL(getContainer());
+    ActionURL returnUrl = form.getReturnActionURL(alternativeUrl);
 %>
-<%= button("Done").href(returnURL) %>
+<%= button("Done").href(returnUrl) %>

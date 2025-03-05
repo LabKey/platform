@@ -29,17 +29,17 @@
     }
 %>
 <%
-    JspView<NotificationsForm> me = (JspView<NotificationsForm>) HttpView.currentView();
+    JspView<NotificationsForm> me = HttpView.currentView();
     NotificationsForm form = me.getModelBean();
-    String returnURLString = form.getReturnUrl();
+    String returnUrlString = form.getReturnUrl();
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function()
     {
         var returnUrl = LABKEY.ActionURL.buildURL('project', 'begin', null, {'pageId' : 'study.DATA_ANALYSIS'});
-        <% if (null != returnURLString) {%>
-            returnUrl = <%=q(returnURLString)%>;
+        <% if (null != returnUrlString) {%>
+            returnUrl = <%=q(returnUrlString)%>;
         <%}%>
 
         Ext4.create('LABKEY.ext4.ReportNotificationPanel', {

@@ -145,18 +145,18 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return resolveReturnUrl(form == null ? getActionURLParam(ActionURL.Param.cancelUrl) : null, form);
     }
 
-    private ActionURL resolveReturnUrl(@Nullable ActionURL returnURL, QueryUpdateForm form)
+    private ActionURL resolveReturnUrl(@Nullable ActionURL returnUrl, QueryUpdateForm form)
     {
-        if (null == returnURL)
-            returnURL = getActionURLParam(ActionURL.Param.returnUrl);
-        if (null == returnURL)
+        if (null == returnUrl)
+            returnUrl = getActionURLParam(ActionURL.Param.returnUrl);
+        if (null == returnUrl)
         {
             if (_schema != null && _table != null)
-                returnURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+                returnUrl = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
             else
-                returnURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
+                returnUrl = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
         }
-        return returnURL;
+        return returnUrl;
     }
 
     public ActionURL getCancelURL(QueryUpdateForm form)

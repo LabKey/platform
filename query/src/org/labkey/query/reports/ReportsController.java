@@ -317,15 +317,15 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlAttachmentReport(Container c, ActionURL returnURL)
+        public ActionURL urlAttachmentReport(Container c, ActionURL returnUrl)
         {
-            return getCreateAttachmentReportURL(c, returnURL);
+            return getCreateAttachmentReportURL(c, returnUrl);
         }
 
         @Override
-        public ActionURL urlLinkReport(Container c, ActionURL returnURL)
+        public ActionURL urlLinkReport(Container c, ActionURL returnUrl)
         {
-            return getCreateLinkReportURL(c, returnURL);
+            return getCreateLinkReportURL(c, returnUrl);
         }
 
         @Override
@@ -1627,24 +1627,24 @@ public class ReportsController extends SpringActionController
         public static String getHelpTopic() { return "thumbnails"; }
     }
 
-    public static ActionURL getCreateAttachmentReportURL(Container c, ActionURL returnURL)
+    public static ActionURL getCreateAttachmentReportURL(Container c, ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(CreateAttachmentReportAction.class, c);
-        url.addReturnURL(returnURL);
+        url.addReturnUrl(returnUrl);
         return url;
     }
 
-    public static ActionURL getCreateLinkReportURL(Container c, ActionURL returnURL)
+    public static ActionURL getCreateLinkReportURL(Container c, ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(CreateLinkReportAction.class, c);
-        url.addReturnURL(returnURL);
+        url.addReturnUrl(returnUrl);
         return url;
     }
 
-    public static ActionURL getCreateQueryReportURL(Container c, ActionURL returnURL)
+    public static ActionURL getCreateQueryReportURL(Container c, ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(CreateQueryReportAction.class, c);
-        url.addReturnURL(returnURL);
+        url.addReturnUrl(returnUrl);
         return url;
     }
 

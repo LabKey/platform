@@ -734,7 +734,7 @@ public class ListDefinitionImpl implements ListDefinition
         if (returnAndCancelUrl != null)
         {
             url.addCancelURL(returnAndCancelUrl);
-            url.addReturnURL(returnAndCancelUrl);
+            url.addReturnUrl(returnAndCancelUrl);
         }
 
         return url;

@@ -268,7 +268,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
 
         if (name.startsWith("/"))
         {
-            Container project = ContainerManager.getForPath(name);
+            Container project = ContainerManager.resolveContainerPathAlias(name);
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))
             {
                 return new FolderSchemaProvider.FolderSchema(name, getUser(), project, DefaultSchema.get(getUser(), project));

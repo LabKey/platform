@@ -109,9 +109,9 @@
     ActionURL completionUrl = urlProvider(SecurityUrls.class).getCompleteUserReadURL(c);
     ActionURL cancelURL;
 
-    if (bean.getReturnURL() != null)
+    if (bean.getReturnUrl() != null)
     {
-        cancelURL = bean.getReturnURL();
+        cancelURL = bean.getReturnUrl();
     }
     else if (issue.getIssueId() > 0)
     {
@@ -439,9 +439,9 @@
         <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/><%
     }
 
-    if (bean.getReturnURL() != null)
+    if (bean.getReturnUrl() != null)
     {%>
-        <%= generateReturnUrlFormField(bean.getReturnURL()) %> <%
+        <%= generateReturnUrlFormField(bean.getReturnUrl()) %> <%
     }%>
     <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
     <input type="hidden" name="dirty" value="false">

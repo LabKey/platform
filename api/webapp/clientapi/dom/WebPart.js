@@ -211,10 +211,6 @@
                     _partConfig["webpart.title"] = _title;
                 if (_titleHref)
                     _partConfig["webpart.titleHref"] = _titleHref;
-                // Prefer using 'returnUrl' instead of 'returnURL'
-                if (_partConfig.returnURL) {
-                    throw new Error("Use 'returnUrl' instead of 'returnURL'");
-                }
 
                 if (!_errorCallback)
                     _errorCallback = handleLoadError;

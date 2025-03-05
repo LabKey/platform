@@ -548,9 +548,9 @@ public class AssayController extends SpringActionController
                 {
                     //if user doesn't have read permission to the target container, set the return URL to be
                     //the current container
-                    ActionURL returnURL = (c.hasPermission(user, ReadPermission.class)) ? projectUrls.getStartURL(c) : projectUrls.getStartURL(currentContainer);
+                    ActionURL returnUrl = (c.hasPermission(user, ReadPermission.class)) ? projectUrls.getStartURL(c) : projectUrls.getStartURL(currentContainer);
 
-                    ActionURL copyURL = urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnURL);
+                    ActionURL copyURL = urlProvider(AssayUrls.class).getDesignerURL(c, _protocol, true, returnUrl);
                     html.append("<a href=\"");
                     html.append(copyURL.getEncodedLocalURIString());
                     html.append("\">");
@@ -979,24 +979,24 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, @Nullable ActionURL returnURL)
+        public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, @Nullable ActionURL returnUrl)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            return getDesignerURL(container, provider, protocol, copy, returnURL);
+            return getDesignerURL(container, provider, protocol, copy, returnUrl);
         }
 
         @Override
-        public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
+        public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnUrl)
         {
             AssayProvider provider = AssayService.get().getProvider(providerName);
             if (provider == null)
             {
                 return null;
             }
-            return getDesignerURL(container, provider, null, false, returnURL);
+            return getDesignerURL(container, provider, null, false, returnUrl);
         }
 
-        private ActionURL getDesignerURL(Container container, @NotNull AssayProvider provider, @Nullable ExpProtocol protocol, boolean copy, ActionURL returnURL)
+        private ActionURL getDesignerURL(Container container, @NotNull AssayProvider provider, @Nullable ExpProtocol protocol, boolean copy, ActionURL returnUrl)
         {
             Class<? extends Controller> designerAction = provider.getDesignerAction();
             if (designerAction == null)
@@ -1006,8 +1006,8 @@ public class AssayController extends SpringActionController
             if (copy)
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
+            if (returnUrl != null)
+                url.addReturnUrl(returnUrl);
 
             return url;
         }
@@ -1265,7 +1265,7 @@ public class AssayController extends SpringActionController
             ActionURL url = new ActionURL(SetDefaultValuesAssayAction.class, container);
             url.addParameter("providerName", providerName);
             url.addParameter("domainId", domain.getTypeId());
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
 
             return url;
         }

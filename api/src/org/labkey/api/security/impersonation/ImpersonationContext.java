@@ -49,7 +49,7 @@ public interface ImpersonationContext extends Serializable
     User getAdminUser();
     String getCacheKey();  // Caching permission-related state is very tricky with impersonation; context provides a cache key suffix that captures the current impersonation state
     /** @return the URL to which the user should be returned when impersonation is over */
-    ActionURL getReturnURL();
+    ActionURL getReturnUrl();
     PrincipalArray getGroups(User user);
 
     /**

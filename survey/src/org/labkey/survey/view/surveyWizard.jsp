@@ -42,7 +42,7 @@
     String responsesPk = null;
     String surveyLabel = null;
     boolean submitted = false;
-    String returnURL = null;
+    String returnUrl = null;
     if (bean != null)
     {
         if (bean.getRowId() != null)
@@ -52,7 +52,7 @@
         responsesPk = bean.getResponsesPk();
         surveyLabel = bean.getLabel();
         submitted = bean.isSubmitted();
-        returnURL = bean.getReturnActionURL() != null ? bean.getReturnActionURL().getLocalURIString() : null;
+        returnUrl = bean.getReturnActionURL() != null ? bean.getReturnActionURL().getLocalURIString() : null;
     }
 
     Survey survey = SurveyManager.get().getSurvey(getContainer(), getUser(), rowId);
@@ -95,7 +95,7 @@
             renderTo        : <%=q(formRenderId)%>,
             headerRenderTo  : <%=q(headerRenderId)%>,
             footerRenderTo  : <%=q(footerRenderId)%>,
-            returnUrl       : <%=q(returnURL)%>,
+            returnUrl       : <%=q(returnUrl)%>,
             autosaveInterval: 60000
         });
 
