@@ -139,7 +139,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         crossTabURL.replaceParameter(QueryParam.viewName, settings.getViewName());
         crossTabURL.replaceParameter(QueryParam.dataRegionName, settings.getDataRegionName());
 
-        URLHelper returnUrl = settings.getReturnURLHelper(context.getActionURL());
+        URLHelper returnUrl = settings.getReturnUrlHelper(context.getActionURL());
         crossTabURL.addParameter(ActionURL.Param.redirectUrl, returnUrl.getLocalURIString());
 
         if (StudySchema.getInstance().getSchemaName().equals(settings.getSchemaName()))

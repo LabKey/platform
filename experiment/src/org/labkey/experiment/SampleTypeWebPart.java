@@ -19,7 +19,6 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
@@ -28,9 +27,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -95,7 +92,7 @@ public class SampleTypeWebPart extends QueryView
         super.populateButtonBar(view, bar);
 
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteSampleTypesAction.class, getContainer());
-        deleteURL.addReturnURL(getViewContext().getActionURL());
+        deleteURL.addReturnUrl(getViewContext().getActionURL());
 
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteSampleTypesAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
@@ -106,7 +103,7 @@ public class SampleTypeWebPart extends QueryView
         bar.add(deleteButton);
 
         ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleTypeAction.class, getContainer());
-        urlInsert.addReturnURL(getViewContext().getActionURL());
+        urlInsert.addReturnUrl(getViewContext().getActionURL());
         ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Type", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleTypePermission.class);
         createNewButton.setURL(urlInsert);

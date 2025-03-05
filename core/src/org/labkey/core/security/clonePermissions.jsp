@@ -78,7 +78,7 @@
                 <input type="hidden" name="targetUser" value="<%=target.getUserId()%>">
                 <%=ReturnUrlForm.generateHiddenFormField(form.getReturnActionURL())%>
                 <%=button("Clone Permissions").submit(true)%>
-                <%=button("Cancel").href(form.getReturnURLHelper())%>
+                <%=button("Cancel").href(form.getReturnUrlHelper())%>
             </td>
         </tr>
         <%

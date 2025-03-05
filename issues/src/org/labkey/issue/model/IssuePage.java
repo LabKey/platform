@@ -98,7 +98,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Set<String> _visible = Collections.emptySet();
     private Set<String> _readOnly = Collections.emptySet();
     private String _callbackURL;
-    private ActionURL _returnURL;
+    private ActionURL _returnUrl;
     private BindException _errors;
     private Issue.action _action;
     private String _body;
@@ -209,14 +209,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _callbackURL = callbackURL;
     }
 
-    public ActionURL getReturnURL()
+    public ActionURL getReturnUrl()
     {
-        return _returnURL;
+        return _returnUrl;
     }
 
-    public void setReturnURL(ActionURL returnURL)
+    public void setReturnUrl(ActionURL returnUrl)
     {
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
     }
 
     public BindException getErrors()

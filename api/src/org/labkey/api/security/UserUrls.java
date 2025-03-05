@@ -31,9 +31,9 @@ public interface UserUrls extends UrlProvider
     ActionURL getSiteUsersURL();
     ActionURL getProjectUsersURL(Container container);
     ActionURL getUserAccessURL(Container container, int userId);
-    ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnURL);
-    ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL);
-    ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId);
+    ActionURL getUserDetailsURL(Container container, int userId, @Nullable URLHelper returnUrl);
+    ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnUrl);
+    ActionURL getUserUpdateURL(Container c, URLHelper returnUrl, int userId);
     ActionURL getUserAttachmentDownloadURL(User user, String name);
 
     /**

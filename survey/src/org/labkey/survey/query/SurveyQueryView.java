@@ -63,7 +63,7 @@ public class SurveyQueryView extends QueryView
         {
             ActionURL insertURL = new ActionURL(SurveyController.UpdateSurveyAction.class, getContainer());
             insertURL.addParameter("surveyDesignId", _surveyDesignId);
-            insertURL.addReturnURL(getReturnURL());
+            insertURL.addReturnUrl(getReturnUrl());
 
             ActionButton insert = new ActionButton(insertURL, "Create Survey");
             insert.setActionType(ActionButton.Action.LINK);

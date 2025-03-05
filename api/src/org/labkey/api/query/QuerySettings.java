@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
@@ -87,7 +86,7 @@ public class QuerySettings
     private ShowRows _showRows = ShowRows.PAGINATED;
 
     PropertyValues _filterSort = null;
-    private ReturnURLString _returnURL = null;
+    private ReturnURLString _returnUrl = null;
 
     private String _containerFilterName;
     private List<AnalyticsProviderItem> _analyticsProviders = new ArrayList<>();
@@ -305,24 +304,12 @@ public class QuerySettings
             setContainerFilterName(containerFilterNameParam);
         }
 
-        String returnURL = _getParameter(ActionURL.Param.returnUrl.name());
-        if (returnURL == null)
-        {
-            returnURL = _getParameter("returnURL");
-            if (returnURL != null)
-                ReturnUrlForm.throwBadParam();
-        }
-        if (returnURL == null)
-        {
-            returnURL = _getParameter(QueryParam.srcURL.toString());
-            if (returnURL != null)
-                ReturnUrlForm.throwBadParam("srcURL");
-        }
-        if (returnURL != null)
+        String returnUrl = _getParameter(ActionURL.Param.returnUrl.name());
+        if (returnUrl != null)
         {
             try
             {
-                URLHelper url = new URLHelper(returnURL);
+                URLHelper url = new URLHelper(returnUrl);
                 url.setReadOnly();
                 setReturnUrl(new ReturnURLString(url));
             }
@@ -499,26 +486,26 @@ public class QuerySettings
      */
     public ReturnURLString getReturnUrl()
     {
-        return _returnURL;
+        return _returnUrl;
     }
 
-    public void setReturnUrl(ReturnURLString returnURL)
+    public void setReturnUrl(ReturnURLString returnUrl)
     {
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
     }
 
     /**
      * Returns the "returnUrl" parameter or null if none.
      * The url may not necessarily be an ActionURL, e.g. if served from a FileContent html page.
      */
-    public URLHelper getReturnURLHelper()
+    public URLHelper getReturnUrlHelper()
     {
-        return _returnURL == null ? null : _returnURL.getURLHelper();
+        return _returnUrl == null ? null : _returnUrl.getURLHelper();
     }
 
-    public URLHelper getReturnURLHelper(URLHelper defaultURL)
+    public URLHelper getReturnUrlHelper(URLHelper defaultURL)
     {
-        URLHelper url = getReturnURLHelper();
+        URLHelper url = getReturnUrlHelper();
         if (url == null)
             url = defaultURL;
         return url;
@@ -556,8 +543,7 @@ public class QuerySettings
         String queryName = getQueryName();
         if (queryName == null)
             return null;
-        TableInfo table = schema.getTableCFF(queryName, ContainerFilter.getType(getContainerFilterName()));
-        return table;
+        return schema.getTableCFF(queryName, ContainerFilter.getType(getContainerFilterName()));
     }
 
     public final QueryDefinition getQueryDef(UserSchema schema)
@@ -726,7 +712,7 @@ public class QuerySettings
 
     public void addSortFilters(Map<String, Object> filters)
     {
-        if (filters != null && filters.size() > 0)
+        if (filters != null && !filters.isEmpty())
         {
             // UNDONE: there should be an easier way to convert into a Filter than having to serialize them onto an ActionUrl and back out.
             // Issue 17411: Support multiple filters and aggregates on the same column.
@@ -854,7 +840,7 @@ public class QuerySettings
 
     // Always throws BadRequestException with our standard message. Use this for convenience and consistency. Also
     // helps address Issue 45567.
-    public static void throwParameterParseException(Enum parameterEnum)
+    public static void throwParameterParseException(Enum<?> parameterEnum)
     {
         throw new BadRequestException(String.format(parseError, parameterEnum.name()));
     }

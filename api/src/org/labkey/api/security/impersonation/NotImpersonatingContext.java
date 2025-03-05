@@ -69,7 +69,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public ActionURL getReturnURL()
+    public ActionURL getReturnUrl()
     {
         return null;
     }

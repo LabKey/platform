@@ -75,7 +75,7 @@
         if (canEdit)
         {
             ActionURL editUrl = urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
-            editUrl.addReturnURL(getActionURL());
+            editUrl.addReturnUrl(getActionURL());
 %>
             <%=link("Manage Treatments", editUrl)%><br/>
 <%

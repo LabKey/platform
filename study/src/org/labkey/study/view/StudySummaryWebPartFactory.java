@@ -147,7 +147,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         if(portalCtx.getContainer().hasPermission(portalCtx.getUser(), AdminPermission.class))
         {
             ActionURL editMetaDataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, portalCtx.getContainer());
-            editMetaDataURL.addReturnURL(portalCtx.getActionURL());
+            editMetaDataURL.addReturnUrl(portalCtx.getActionURL());
             NavTree edit = new NavTree("Edit", editMetaDataURL.toString(), null, "fa fa-pencil");
             v.addCustomMenu(edit);
         }

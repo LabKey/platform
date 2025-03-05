@@ -602,7 +602,7 @@ public class DatasetQueryView extends StudyQueryView
                 button.addSeparator();
             }
             ActionURL updateAction = new ActionURL(StudyController.UpdateQCStateAction.class, getContainer());
-            updateAction.addReturnURL(getViewContext().getActionURL());
+            updateAction.addReturnUrl(getViewContext().getActionURL());
             NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                     updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
             updateItem.setId("QCState:updateSelected");

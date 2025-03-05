@@ -60,7 +60,7 @@
 
     DataRegion accessRegion = new DataRegion();
     accessRegion.setName("access");
-    URLHelper returnURL = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
+    URLHelper returnUrl = getActionURL().clone().deleteParameter(ActionURL.Param.returnUrl);
 
     int cellPadding = 3;
 %>
@@ -108,7 +108,7 @@
 <%
         if (!bean.showUserCol())
         {
-            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer(), returnURL);
+            ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer(), returnUrl);
             ActionURL folderAccessLink = urlProvider(SecurityUrls.class).getFolderAccessURL(row.getContainer());
 %>
             <td><%= link("permissions", containerPermissionsLink) %></td>
@@ -119,7 +119,7 @@
         }
         else
         {
-            %><td><%= link("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), returnURL)) %></td>
+            %><td><%= link("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), returnUrl)) %></td>
             <td style='padding-left:"<%=cellPadding%>px;'><%
             if (isUser)
             {

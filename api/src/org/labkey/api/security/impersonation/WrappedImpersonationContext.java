@@ -74,9 +74,9 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public ActionURL getReturnURL()
+    public ActionURL getReturnUrl()
     {
-        return _delegate.getReturnURL();
+        return _delegate.getReturnUrl();
     }
 
     @Override
