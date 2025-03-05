@@ -35,7 +35,6 @@ import java.util.function.BiFunction;
 public interface DataIntegrationService
 {
     String MODULE_NAME = "DataIntegration";
-    String ETL_PREFIX = "ETL Job: ";
 
     static DataIntegrationService get()
     {
@@ -56,6 +55,11 @@ public interface DataIntegrationService
     Pair<Long, String> truncateTargets(Container c, User user, String transformId);
 
     RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
+
+    /**
+     * Returns the Set of transform job IDs for the container
+     */
+    Set<Integer> getTransformRunJobIds(Container c);
 
     /**
      * Execute an efficient reimport operation Create a dataIterator based on target.getQueryUpdateService()
