@@ -17,7 +17,6 @@ package org.labkey.api.studydesign.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -25,11 +24,9 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -39,15 +36,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.Role;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: cnathe
@@ -65,12 +59,7 @@ public class StudyDesignLookupBaseTable extends StudyDesignBaseTable
         {
             BuiltInColumnTypes type = BuiltInColumnTypes.findBuiltInType(col);
             if (type == BuiltInColumnTypes.Container)
-            {
-                BaseColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
-                containerCol.setConceptURI(BuiltInColumnTypes.CONTAINERID_CONCEPT_URI);
-
-                addColumn(containerCol);
-            }
+                addContainerColumn();
             else
             {
                 var newCol = addWrapColumn(col);
@@ -145,19 +134,6 @@ public class StudyDesignLookupBaseTable extends StudyDesignBaseTable
         }
     }
 
-/*
-    @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-    {
-        if (perm.equals(ReadPermission.class))
-            return hasPermissionOverridable(user, perm);
-        // These are editable in Dataspace, but not in a folder within a Dataspace
-        if (null == getContainer() || null == getContainer().getProject() || (getContainer().getProject().isDataspace() && !getContainer().isDataspace()))
-            return false;
-        return hasPermissionOverridable(user, perm);
-    }
-
-*/
     public boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
         // Only admins are allowed to insert into these tables at the project level
@@ -166,20 +142,4 @@ public class StudyDesignLookupBaseTable extends StudyDesignBaseTable
         else
             return checkContainerPermission(user, perm);
     }
-
-/*    protected boolean checkReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm, getContextualRoles()) ||
-                _userSchema.getContainer().hasPermission(user, AdminPermission.class, getContextualRoles());
-    }
-
-    protected Set<Role> getContextualRoles()
-    {
-        return getUserSchema().getContextualRoles();
-    }
-
-    protected boolean checkContainerPermission(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return _userSchema.getContainer().hasPermission(user, perm, getContextualRoles());
-    }*/
 }

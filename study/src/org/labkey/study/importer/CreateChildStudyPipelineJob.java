@@ -475,7 +475,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     private void importTreatmentVisitMapData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        if (importContext != null)
+        if (importContext != null && OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
         {
             new TreatmentVisitMapImporter().process(importContext, studyDir, errors);
 
