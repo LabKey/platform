@@ -187,8 +187,12 @@ public class TabLoader extends DataLoader
     private String _strDelimiter = String.valueOf(_chDelimiter);
     private String _lineDelimiter = null;
 
-    private String _strQuote = null;
-    private String _strQuoteQuote = null;
+    private static final char chQuote = '"';
+    private static final String _strQuote = String.valueOf(chQuote);
+    private static final String _strQuoteQuote =  new String(new char[] {chQuote, chQuote});
+    private static final Pattern _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
+    private static final Pattern _whitespacePattern = Pattern.compile("\\s*");
+
     private boolean _parseQuotes = true;
     private boolean _parseEnclosedQuotes = false; // only treat quote as quote if it comes in pairs, otherwise treat it as a regular character
     private boolean _unescapeBackslashes = true;
@@ -393,8 +397,6 @@ public class TabLoader extends DataLoader
         }
     }
 
-    Pattern _replaceDoubleQuotes = null;
-
     private String[] readFields(TabBufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
         CharSequence line = readLine(r, !isIncludeComments(), !isIncludeBlankLines());
@@ -435,13 +437,6 @@ public class TabLoader extends DataLoader
             else if (ch == chQuote)
             {
                 isDelimiterOrQuote = true;
-                if (_strQuote == null)
-                {
-                    _strQuote = String.valueOf(chQuote);
-                    _strQuoteQuote = new String(new char[] {chQuote, chQuote});
-                    _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
-                }
-
                 end = start;
                 boolean hasQuotes = false;
                 while (true)
@@ -466,10 +461,12 @@ public class TabLoader extends DataLoader
                     }
                     if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
                     {
+                        int fieldEnd = buf.indexOf(_strDelimiter, end);
                         // Issue 51056: pooling sample parents with single quote doesn't work
                         // " a, " b should be parsed as [" a, " b], not [a,  b]
-                        int fieldEnd = buf.indexOf(_strDelimiter, end);
-                        if (_parseEnclosedQuotes && end != buf.length() - 1 && (fieldEnd == -1 || !buf.substring(end+1, fieldEnd).matches("\\s*")))
+                        // if the next quote is before the end of the buffer and the next non-blank character is not the delimiter,
+                        // retain the quote as a mid-field value.
+                        if (_parseEnclosedQuotes && end != buf.length() - 1 && (fieldEnd == -1 || !_whitespacePattern.matcher(buf.substring(end+1, fieldEnd)).matches()))
                             isDelimiterOrQuote = false;
                         break;
                     }
@@ -495,11 +492,13 @@ public class TabLoader extends DataLoader
                     {
                         start = end;
                         end = buf.indexOf(_strDelimiter, end);
+                        boolean doTrim = -1 != end;
                         if (-1 == end)
                             end = buf.length();
-                        field = field + buf.substring(start, end).stripTrailing();
+                        field = field + buf.substring(start, end);
+                        if (doTrim)
+                            field = field.stripTrailing();
                     }
-
                 }
             }
 
@@ -1181,10 +1180,10 @@ public class TabLoader extends DataLoader
                 Name\tMulti-Line\tAge
                 Bob\t"with\ttab
                 with""quote"\t10
-                Bob\t"apple
+                Bob\t"apple \s
                 orange\tgrape"\t3
                 Bob\t"one
-                ""two""\tthree"
+                ""two""  \tthree"
                 \tred\\nblue\\tgreen\t4
                 Fred\t"quoted stuff" unquoted\t1""";
             data = data + "\nAlice\t\"\"\"quoted stuff\"\" unquoted";
@@ -1204,12 +1203,12 @@ public class TabLoader extends DataLoader
 
                 row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+                assertEquals("apple  \norange\tgrape", row.get("Multi-Line"));
                 assertEquals(3, row.get("Age"));
 
                 row = rows.get(2);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+                assertEquals("one\n\"two\"  \tthree", row.get("Multi-Line"));
                 assertNull(row.get("Age"));
 
                 row = rows.get(3);
@@ -1234,12 +1233,12 @@ public class TabLoader extends DataLoader
 
                 row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
+                assertEquals("apple  \norange\tgrape", row.get("Multi-Line"));
                 assertEquals(3, row.get("Age"));
 
                 row = rows.get(2);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
+                assertEquals("one\n\"two\"  \tthree", row.get("Multi-Line"));
                 assertNull(row.get("Age"));
 
                 row = rows.get(3);
