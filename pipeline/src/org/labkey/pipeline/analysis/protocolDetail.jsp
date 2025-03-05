@@ -77,7 +77,7 @@
             ActionURL urlBase = urlFor(AnalysisController.ProtocolManagementAction.class);
             urlBase.addParameter("taskId", form.getTaskId());
             urlBase.addParameter("name", form.getName());
-            urlBase.addReturnURL(returnUrl);
+            urlBase.addReturnUrl(returnUrl);
         %>
         <textarea id="xmlParameters"></textarea>
         <br/>

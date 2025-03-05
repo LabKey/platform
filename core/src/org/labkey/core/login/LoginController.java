@@ -190,7 +190,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message)
+        public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnUrl, @Nullable String message)
         {
             ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
             url.addParameter("userId", user.getUserId());
@@ -198,7 +198,7 @@ public class LoginController extends SpringActionController
             if (null != message)
                 url.addParameter("message", message);
 
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
 
             return url;
         }
@@ -210,28 +210,28 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getLoginURL(URLHelper returnURL)
+        public ActionURL getLoginURL(URLHelper returnUrl)
         {
-            // Use root as placeholder; extra path of returnURL determines the real login URL path
+            // Use root as placeholder; extra path of returnUrl determines the real login URL path
             ActionURL url = new ActionURL(LoginAction.class, ContainerManager.getRoot());
 
-            if (null == returnURL)
-                returnURL = AppProps.getInstance().getHomePageActionURL();
+            if (null == returnUrl)
+                returnUrl = AppProps.getInstance().getHomePageActionURL();
 
-            if (returnURL instanceof ActionURL)
-                url.setExtraPath(((ActionURL) returnURL).getExtraPath());
+            if (returnUrl instanceof ActionURL)
+                url.setExtraPath(((ActionURL) returnUrl).getExtraPath());
 
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL)
+        public ActionURL getLoginURL(Container c, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
 
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
+            if (null != returnUrl)
+                url.addReturnUrl(returnUrl);
 
             return url;
         }
@@ -243,34 +243,34 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getLogoutURL(Container c, URLHelper returnURL)
+        public ActionURL getLogoutURL(Container c, URLHelper returnUrl)
         {
             ActionURL url = getLogoutURL(c);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL)
+        public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(StopImpersonatingAction.class, c);
 
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
+            if (null != returnUrl)
+                url.addReturnUrl(returnUrl);
 
             return url;
         }
 
         @Override
-        public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL)
+        public ActionURL getAgreeToTermsURL(Container c, URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile)
+        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
             url.addParameter("configuration", configuration.getRowId());
@@ -278,12 +278,12 @@ public class LoginController extends SpringActionController
             {
                 url.addParameter("skipProfile", 1);
             }
-            if (null != returnURL)
+            if (null != returnUrl)
             {
-                String fragment = returnURL.getFragment();
-                if (!returnURL.isReadOnly())
-                    returnURL.setFragment(null);
-                url.addReturnURL(returnURL);
+                String fragment = returnUrl.getFragment();
+                if (!returnUrl.isReadOnly())
+                    returnUrl.setFragment(null);
+                url.addReturnUrl(returnUrl);
                 if (!StringUtils.isBlank(fragment))
                     url.replaceParameter("urlhash", "#" + fragment);
             }
@@ -315,7 +315,7 @@ public class LoginController extends SpringActionController
             try
             {
                 // Attempt authentication with all active form providers
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), true);
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, form.getEmail(), form.getPassword(), form.getReturnUrlHelper(), true);
                 AuthenticationStatus status = result.getStatus();
 
                 if (Success == status)
@@ -335,7 +335,7 @@ public class LoginController extends SpringActionController
                     else
                     {
                         // Pass in normalized email address, but only if user provided a full email address
-                        status.addUserErrorMessage(errors, result, form.getEmail().contains("@") ? email.getEmailAddress() : null, form.getReturnURLHelper());
+                        status.addUserErrorMessage(errors, result, form.getEmail().contains("@") ? email.getEmailAddress() : null, form.getReturnUrlHelper());
                     }
                 }
             }
@@ -563,11 +563,11 @@ public class LoginController extends SpringActionController
     {
         if (!getUser().isGuest())
         {
-            URLHelper returnURL = form.getReturnURLHelper();
+            URLHelper returnUrl = form.getReturnUrlHelper();
 
-            // Create LoginReturnProperties if we have a returnURL or skipProfile param
-            LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
-                    ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
+            // Create LoginReturnProperties if we have a returnUrl or skipProfile param
+            LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
+                    ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
 
             return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
         }
@@ -619,12 +619,12 @@ public class LoginController extends SpringActionController
         {
             HttpServletRequest request = getViewContext().getRequest();
 
-            // Store passed in returnURL and skipProfile param at the start of the login so we can redirect to it after
+            // Store passed in returnUrl and skipProfile param at the start of the login so we can redirect to it after
             // any password resets, secondary logins, profile updates, etc. have finished
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (null != returnURL || form.getSkipProfile())
+            URLHelper returnUrl = form.getReturnUrlHelper();
+            if (null != returnUrl || form.getSkipProfile())
             {
-                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
                 AuthenticationManager.setLoginReturnProperties(request, properties);
             }
 
@@ -756,7 +756,7 @@ public class LoginController extends SpringActionController
 
             if (isOldPasswordMatch(_user, oldPassword, errors))
             {
-                AuthenticationResult result = attemptSetPassword(_user, form.getReturnURLHelper(), "Changed password.", false, errors);
+                AuthenticationResult result = attemptSetPassword(_user, form.getReturnUrlHelper(), "Changed password.", false, errors);
                 if (result != null)
                     response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
             }
@@ -784,7 +784,7 @@ public class LoginController extends SpringActionController
                 User user = attemptVerification(form, errors);
                 if (user != null)
                 {
-                    AuthenticationResult result = attemptSetPassword(user, form.getReturnURLHelper(), "Verified and chose a password.", true, errors);
+                    AuthenticationResult result = attemptSetPassword(user, form.getReturnUrlHelper(), "Verified and chose a password.", true, errors);
                     if (result != null)
                         response.put(ActionURL.Param.returnUrl.name(), result.getRedirectURL());
                 }
@@ -988,12 +988,12 @@ public class LoginController extends SpringActionController
         public Object execute(LoginForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (null != returnURL && null != form.getUrlhash())
+            URLHelper returnUrl = form.getReturnUrlHelper();
+            if (null != returnUrl && null != form.getUrlhash())
             {
-                returnURL.setFragment(form.getUrlhash().replace("#", ""));
+                returnUrl.setFragment(form.getUrlhash().replace("#", ""));
             }
-            HtmlString otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
+            HtmlString otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnUrl);
             response.put("otherLoginMechanismsContent", null != otherLoginMechanisms ? otherLoginMechanisms.toString() : null);
             return response;
         }
@@ -1074,7 +1074,7 @@ public class LoginController extends SpringActionController
             // see if any of the SSO auth providers are set to autoRedirect from the login action
             SSOAuthenticationConfiguration<?> ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
             if (ssoAuthenticationConfiguration != null)
-                return HttpView.redirect(ssoAuthenticationConfiguration.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
+                return HttpView.redirect(ssoAuthenticationConfiguration.getLinkFactory().getURL(form.getReturnUrlHelper(), form.getSkipProfile()));
         }
 
         page.setTemplate(PageConfig.Template.Dialog);
@@ -1221,7 +1221,7 @@ public class LoginController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AgreeToTermsForm form)
         {
-            return form.getReturnURLHelper();
+            return form.getReturnUrlHelper();
         }
 
         @Override
@@ -1396,7 +1396,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL()));
             return true;
         }
 
@@ -1415,7 +1415,7 @@ public class LoginController extends SpringActionController
                     throw new RuntimeException(e);
                 }
             }
-            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
+            return form.getReturnUrlHelper(AuthenticationManager.getWelcomeURL());
         }
     }
 
@@ -1443,7 +1443,7 @@ public class LoginController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
+            return form.getReturnUrlHelper(AuthenticationManager.getWelcomeURL());
         }
     }
 
@@ -1480,7 +1480,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(ReturnUrlForm form, BindException errors)
         {
-            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL()));
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             if (null != redirectURL)
                 response.put("redirectUrl", redirectURL.getURIString());
@@ -1527,11 +1527,11 @@ public class LoginController extends SpringActionController
             if (!getUser().isGuest())
                 return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
 
-            // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (null != returnURL || form.getSkipProfile())
+            // If we have a returnUrl or skipProfile param then create and stash LoginReturnProperties
+            URLHelper returnUrl = form.getReturnUrlHelper();
+            if (null != returnUrl || form.getSkipProfile())
             {
-                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
@@ -1612,11 +1612,11 @@ public class LoginController extends SpringActionController
             page.setIncludeLoginLink(false);
             page.setIncludeSearch(false);
 
-            // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
-            URLHelper returnURL = form.getReturnURLHelper();
-            if (null != returnURL || form.getSkipProfile())
+            // If we have a returnUrl or skipProfile param then create and stash LoginReturnProperties
+            URLHelper returnUrl = form.getReturnUrlHelper();
+            if (null != returnUrl || form.getSkipProfile())
             {
-                LoginReturnProperties properties = new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile());
+                LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
                 AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
             }
 
@@ -1633,7 +1633,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
-            AuthenticationResult result = attemptSetPassword(_user, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
+            AuthenticationResult result = attemptSetPassword(_user, form.getReturnUrlHelper(), getAuditMessage(), clearVerification(), errors);
 
             if (errors.hasErrors())
                 return false;

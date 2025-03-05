@@ -55,6 +55,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
+import org.labkey.api.defaults.DomainIdForm;
 import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -73,7 +74,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateForm;
@@ -213,7 +213,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction<QueryForm>
+    public static class BeginAction extends SimpleViewAction<QueryForm>
     {
         @Override
         public ModelAndView getView(QueryForm queryForm, BindException errors)
@@ -409,7 +409,7 @@ public class ListController extends SpringActionController
         @Override @NotNull
         public URLHelper getSuccessURL(ListDeletionForm form)
         {
-            return form.getReturnURLHelper(getBeginURL(getContainer()));
+            return form.getReturnUrlHelper(getBeginURL(getContainer()));
         }
     }
 
@@ -542,10 +542,6 @@ public class ListController extends SpringActionController
                 {
                     url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
                 }
-                else if (value.getName().equalsIgnoreCase(ActionURL.Param.returnUrl.toString()))
-                {
-                    ReturnUrlForm.throwBadParam();
-                }
                 else
                     inputs.add(Pair.of(value.getName(), value.getValue().toString()));
             }
@@ -600,7 +596,7 @@ public class ListController extends SpringActionController
 
             if (form.isShowHistory())
             {
-                WebPartView linkView = new HtmlView(PageFlowUtil.link("hide item history").href(getViewContext().cloneActionURL().deleteParameter("showHistory")).build());
+                WebPartView<?> linkView = new HtmlView(PageFlowUtil.link("hide item history").href(getViewContext().cloneActionURL().deleteParameter("showHistory")).build());
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
 
@@ -820,7 +816,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    private String getUrlParam(Enum param)
+    private String getUrlParam(Enum<?> param)
     {
         String s = getViewContext().getActionURL().getParameter(param);
         ReturnUrlForm form = new ReturnUrlForm();
@@ -829,7 +825,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ListItemDetailsAction extends SimpleViewAction
+    public class ListItemDetailsAction extends SimpleViewAction<Object>
     {
         private ListDefinition _list;
 
@@ -865,8 +861,6 @@ public class ListController extends SpringActionController
                 String srcUrl = getUrlParam(ActionURL.Param.redirectUrl);
                 if (srcUrl == null)
                     srcUrl = getUrlParam(ActionURL.Param.returnUrl);
-                if (srcUrl == null)
-                    srcUrl = getUrlParam(QueryParam.srcURL);
                 if (srcUrl == null)
                     srcUrl = _list.urlFor(ListController.HistoryAction.class, getContainer()).getLocalURIString();
                 AuditChangesView view = new AuditChangesView(comment, oldData, newData);
@@ -914,7 +908,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
+    public static class DownloadAction extends BaseDownloadAction<ListAttachmentForm>
     {
         @Override
         public void validate(ListAttachmentForm form, BindException errors)
@@ -944,7 +938,7 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermission(DesignListPermission.class)
-    public class ExportListArchiveAction extends ExportAction<ListDefinitionForm>
+    public static class ExportListArchiveAction extends ExportAction<ListDefinitionForm>
     {
         @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
@@ -1067,7 +1061,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseListsAction extends ReadOnlyApiAction<Object>
+    public static class BrowseListsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1094,7 +1088,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(DesignListPermission.class)
-    public static class SetDefaultValuesListAction extends SetDefaultValuesAction
+    public static class SetDefaultValuesListAction extends SetDefaultValuesAction<DomainIdForm>
     {
     }
 

@@ -663,7 +663,7 @@ public class AuthenticationManager
         Success
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 throw new IllegalStateException("Shouldn't be adding an error message in success case");
             }
@@ -671,13 +671,13 @@ public class AuthenticationManager
         BadCredentials
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 String errorMessage = "The email address and password you entered did not match any accounts on file." + (DisplayLocation.WebUI == location ? "\nNote: Passwords are case sensitive; make sure your Caps Lock is off." : "");
                 errors.addError(new LabKeyError(errorMessage));
 
                 // Provide additional guidance on failed login, pointing user toward the SSO configuration(s) claiming their email domain
-                if (null != fullEmailAddress && null != returnURL && DisplayLocation.WebUI == location)
+                if (null != fullEmailAddress && null != returnUrl && DisplayLocation.WebUI == location)
                 {
                     String domain = fullEmailAddress.split("@")[1]; // Callers must ensure that fullEmailAddress includes @
                     Collection<SSOAuthenticationConfiguration> ssoConfigs = AuthenticationConfigurationCache.getActiveConfigurationsForDomain(domain).stream()
@@ -692,7 +692,7 @@ public class AuthenticationManager
                             .collect(Collectors.joining(" or ")) + ": ";
 
                         HtmlString logos = ssoConfigs.stream()
-                            .map(ac -> ac.getLinkFactory().getLink(returnURL, AuthLogoType.LOGIN_PAGE))
+                            .map(ac -> ac.getLinkFactory().getLink(returnUrl, AuthLogoType.LOGIN_PAGE))
                             .filter(Objects::nonNull) // Only those with a login page logo
                             .collect(LabKeyCollectors.joining(HtmlString.unsafe("&nbsp;&nbsp;")));
 
@@ -707,7 +707,7 @@ public class AuthenticationManager
         InactiveUser
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.addError(new ContactAnAdministratorError("Your account has been deactivated.", "to request reactivation of this account."));
             }
@@ -715,7 +715,7 @@ public class AuthenticationManager
         LoginDisabled
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 String errorMessage = result.getMessage() == null ? "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute." : result.getMessage();
                 errors.reject(ERROR_MSG, errorMessage);
@@ -724,7 +724,7 @@ public class AuthenticationManager
         LoginPaused
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
             }
@@ -732,7 +732,7 @@ public class AuthenticationManager
         UserCreationError
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.addError(new ContactAnAdministratorError("The server could not create your account.", "for assistance."));
             }
@@ -740,7 +740,7 @@ public class AuthenticationManager
         UserCreationNotAllowed
         {
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.addError(new ContactAnAdministratorError("This server is not configured to create new accounts automatically.", "to request a new account."));
             }
@@ -754,7 +754,7 @@ public class AuthenticationManager
             }
 
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.reject(ERROR_MSG, "Your password has expired; please choose a new password.");
             }
@@ -768,20 +768,20 @@ public class AuthenticationManager
             }
 
             @Override
-            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+            public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
             {
                 errors.reject(ERROR_MSG, "Your password does not meet the complexity requirements; please choose a new password.");
             }
         };
 
         // Add an appropriate error message to display to the user in the web UI
-        public final void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL)
+        public final void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl)
         {
-            addUserErrorMessage(errors, result, fullEmailAddress, returnURL, DisplayLocation.WebUI);
+            addUserErrorMessage(errors, result, fullEmailAddress, returnUrl, DisplayLocation.WebUI);
         }
 
         // Add an appropriate error message to show the user in the specified DisplayLocation
-        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnURL, DisplayLocation location)
+        public void addUserErrorMessage(BindException errors, PrimaryAuthenticationResult result, @Nullable String fullEmailAddress, @Nullable URLHelper returnUrl, DisplayLocation location)
         {
         }
 
@@ -919,7 +919,7 @@ public class AuthenticationManager
     }
 
 
-    public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
     {
         PrimaryAuthenticationResult result = null;
         try
@@ -927,7 +927,7 @@ public class AuthenticationManager
             result = _beforeAuthenticate(request, id, password);
             if (null != result)
                 return result;
-            result = _authenticate(request, id, password, returnURL, logFailures);
+            result = _authenticate(request, id, password, returnUrl, logFailures);
             return result;
         }
         finally
@@ -937,7 +937,7 @@ public class AuthenticationManager
     }
 
 
-    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
     {
         if (areNotBlank(id, password))
         {
@@ -950,7 +950,7 @@ public class AuthenticationManager
                 try
                 {
                     LoginFormAuthenticationProvider provider = configuration.getAuthenticationProvider();
-                    authResponse = provider.authenticate(configuration, id, password, returnURL);
+                    authResponse = provider.authenticate(configuration, id, password, returnUrl);
                 }
                 catch (RedirectException e)
                 {
@@ -1256,7 +1256,7 @@ public class AuthenticationManager
         throw new UnauthorizedException(message != null ? message : primaryResult.getStatusErrorMessage(DisplayLocation.API));
     }
 
-    public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnURL)
+    public static URLHelper logout(@NotNull User user, @NotNull HttpServletRequest request, URLHelper returnUrl)
     {
         URLHelper ret = null;
         HttpSession session = request.getSession(false);
@@ -1269,7 +1269,7 @@ public class AuthenticationManager
 
             if (null != configuration)
             {
-                ret = configuration.logout(request, returnURL);
+                ret = configuration.logout(request, returnUrl);
             }
         }
 
@@ -1567,23 +1567,23 @@ public class AuthenticationManager
         if (null == properties)
             properties = new LoginReturnProperties();
 
-        URLHelper returnURL;
+        URLHelper returnUrl;
 
         if (null != properties.getReturnUrl())
         {
-            returnURL = properties.getReturnUrl();
+            returnUrl = properties.getReturnUrl();
         }
         else
         {
-            // We don't have a returnURL. Try not to redirect to a folder where the user doesn't have permissions, #12947
+            // We don't have a returnUrl. Try not to redirect to a folder where the user doesn't have permissions, #12947
             Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
-            returnURL = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
+            returnUrl = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
         }
 
         // if not explicitly skipping profile page and some required field is blank, then go to update profile page
         if (!properties.isSkipProfile() && PageFlowUtil.urlProvider(UserUrls.class).requiresProfileUpdate(user))
         {
-            returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(current, returnURL, user.getUserId());
+            returnUrl = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(current, returnUrl, user.getUserId());
         }
 
         // if this is the users first login, reset the user cache
@@ -1594,10 +1594,10 @@ public class AuthenticationManager
 
         if (null != properties.getUrlhash())
         {
-            returnURL.setFragment(properties.getUrlhash().replace("#", ""));
+            returnUrl.setFragment(properties.getUrlhash().replace("#", ""));
         }
 
-        return returnURL;
+        return returnUrl;
     }
 
     public static void registerMetricsProvider()
@@ -1632,17 +1632,17 @@ public class AuthenticationManager
             _configuration = configuration;
         }
 
-        private @Nullable HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
+        private @Nullable HtmlString getLink(URLHelper returnUrl, AuthLogoType prefix)
         {
             HtmlString img = getImg(prefix);
 
-            return null != img ? new LinkBuilder(img).href(getURL(returnURL, false)).clearClasses().getHtmlString() : null;
+            return null != img ? new LinkBuilder(img).href(getURL(returnUrl, false)).clearClasses().getHtmlString() : null;
         }
 
         @SuppressWarnings("ConstantConditions")
-        public ActionURL getURL(URLHelper returnURL, boolean skipProfile)
+        public ActionURL getURL(URLHelper returnUrl, boolean skipProfile)
         {
-            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
+            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnUrl, skipProfile);
         }
 
         public HtmlString getImg(AuthLogoType logoType)

@@ -75,7 +75,7 @@
     String grant = bean.getGrant();
     List<Attachment> protocolDocs = bean.getProtocolDocuments();
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-    editMetadataURL.addReturnURL(bean.getCurrentURL());
+    editMetadataURL.addReturnUrl(bean.getCurrentURL());
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.requiresCss("editInPlaceElement.css");

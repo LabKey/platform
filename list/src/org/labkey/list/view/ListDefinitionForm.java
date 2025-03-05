@@ -58,12 +58,6 @@ public class ListDefinitionForm extends ViewForm
         return _listDef;
     }
 
-    // alias to support both returnUrl and srcURL parameters
-    public void setSrcURL(String srcUrl)
-    {
-        ReturnUrlForm.throwBadParam();
-    }
-
     public boolean isShowHistory()
     {
         return _showHistory;

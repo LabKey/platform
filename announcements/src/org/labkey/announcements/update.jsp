@@ -59,7 +59,7 @@
 <labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="rowId" value="<%=ann.getRowId()%>"/>
 <labkey:input type="hidden" name="entityId" value="<%=ann.getEntityId()%>"/>
-<%=generateReturnUrlFormField(bean.returnURL)%>
+<%=generateReturnUrlFormField(bean.returnUrl)%>
 <table><%
 
 if (settings.isTitleEditable())

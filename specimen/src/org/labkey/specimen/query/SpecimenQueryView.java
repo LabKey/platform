@@ -213,7 +213,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
     protected static ActionURL getHistoryLinkURL(ViewContext ctx, String containerId)
     {
         Container container = null != containerId ? ContainerManager.getForId(containerId) : ctx.getContainer();
-        return new ActionURL(SpecimenController.SpecimenEventsAction.class, container).addReturnURL(ctx.getActionURL());
+        return new ActionURL(SpecimenController.SpecimenEventsAction.class, container).addReturnUrl(ctx.getActionURL());
     }
 
     private class SpecimenRestrictedDataRegion extends SpecimenDataRegion

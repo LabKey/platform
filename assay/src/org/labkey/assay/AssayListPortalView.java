@@ -46,7 +46,7 @@ public class AssayListPortalView extends AssayListQueryView
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(view.getViewContext().getContainer());
-            insertURL.addReturnURL(getViewContext().getActionURL());
+            insertURL.addReturnUrl(getViewContext().getActionURL());
             bar.add(new ActionButton("New Assay Design", insertURL));
         }
         bar.add(new ActionButton("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer())));

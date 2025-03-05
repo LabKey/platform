@@ -34,10 +34,10 @@
     }
 %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
+    JspView<AssayRunUploadForm<?>> me = HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 
-    ActionURL returnURL = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getProtocol().getRowId())
+    ActionURL returnUrl = urlFor(AssayRunsAction.class).addParameter("rowId", bean.getProtocol().getRowId())
             .addParameter("uploadAttemptID", bean.getUploadAttemptID());
 
     if (bean.getTransformResult().getWarnings() != null)
@@ -64,7 +64,7 @@
 %>
         <br/>
         <%= button("Proceed").onClick("submitForm(getRegionForm()); return false;") %>
-        <%= button("Cancel").href(returnURL).style("margin: 0 0 0 10px;") %>
+        <%= button("Cancel").href(returnUrl).style("margin: 0 0 0 10px;") %>
 <%
     }
 %>

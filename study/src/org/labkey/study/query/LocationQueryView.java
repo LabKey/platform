@@ -64,7 +64,7 @@ public class LocationQueryView extends QueryView
             bar.add(createInsertButton());
             bar.add(createDeleteButton());
             ActionURL deleteUnusedURL = new ActionURL(StudyController.DeleteAllUnusedLocationsAction.class, getSchema().getContainer());
-            deleteUnusedURL.addReturnURL(getReturnURL());
+            deleteUnusedURL.addReturnUrl(getReturnUrl());
             ContainerFilter cFilter = getContainerFilter();
             if (null != cFilter)
             {
@@ -76,7 +76,7 @@ public class LocationQueryView extends QueryView
             ActionButton deleteAllUnused = new ActionButton(deleteUnusedURL, "Delete All Unused");
             deleteAllUnused.setActionType(ActionButton.Action.LINK);
             deleteAllUnused.setRequiresSelection(false, "Are you sure you want to delete the selected location?", "Are you sure you want to delete the selected locations?");
-            deleteUnusedURL.addReturnURL(getViewContext().getActionURL());
+            deleteUnusedURL.addReturnUrl(getViewContext().getActionURL());
             bar.add(deleteAllUnused);
         }
 
