@@ -162,57 +162,57 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        public ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnUrl)
         {
             ActionURL url = getCustomizeWebPartURL(c);
             url.addParameter("webPartId", String.valueOf(webPart.getRowId()));
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL)
+        public ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(MoveWebPartAction.class, c);
             url.addParameter("pageId", webPart.getPageId());
             url.addParameter("index", String.valueOf(webPart.getIndex()));
             url.addParameter("direction", String.valueOf(direction));
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnURL)
+        public ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(DeleteWebPartAction.class, c);
             url.addParameter("pageId", pageId);
             url.addParameter("index", index);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnURL)
+        public ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(HidePortalPageAction.class, c);
             url.addParameter("pageId", pageId);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnURL)
+        public ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(DeletePortalPageAction.class, c);
             url.addParameter("pageId", pageId);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
+        public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnUrl)
         {
-            return getDeleteWebPartURL(c, webPart.getPageId(), webPart.getIndex(), returnURL);
+            return getDeleteWebPartURL(c, webPart.getPageId(), webPart.getIndex(), returnUrl);
         }
 
         @Override
@@ -235,10 +235,10 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
-        public ActionURL getTogglePageAdminModeURL(Container c, ActionURL returnURL)
+        public ActionURL getTogglePageAdminModeURL(Container c, ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(TogglePageAdminModeAction.class, c);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
             return url;
         }
     }
@@ -546,7 +546,7 @@ public class ProjectController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomizePortletForm form)
         {
-            return form.getReturnURLHelper(beginURL());
+            return form.getReturnUrlHelper(beginURL());
         }
     }
 
@@ -574,7 +574,7 @@ public class ProjectController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomizePortletForm form)
         {
-            URLHelper successURL = form.getReturnURLHelper(beginURL());
+            URLHelper successURL = form.getReturnUrlHelper(beginURL());
             if (null != successURL)
             {
                 //Don't return to the deleted page
@@ -606,7 +606,7 @@ public class ProjectController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
         {
-            return movePortletForm.getReturnURLHelper(beginURL());
+            return movePortletForm.getReturnUrlHelper(beginURL());
         }
     }
 
@@ -650,10 +650,10 @@ public class ProjectController extends SpringActionController
                 return new ActionURL(CustomizeWebPartAction.class, getContainer())
                         .addParameter("pageId", form.getPageId())
                         .addParameter("index", "" + _newPart.getIndex())
-                        .addReturnURL(form.getReturnActionURL());
+                        .addReturnUrl(form.getReturnActionURL());
             }
             else
-                return form.getReturnURLHelper();
+                return form.getReturnUrlHelper();
         }
 
         @Override
@@ -929,7 +929,7 @@ public class ProjectController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
         {
-            return customizePortletForm.getReturnURLHelper(beginURL());
+            return customizePortletForm.getReturnUrlHelper(beginURL());
         }
 
         @Override
@@ -1873,7 +1873,7 @@ public class ProjectController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnURLHelper(beginURL());
+            return form.getReturnUrlHelper(beginURL());
         }
     }
 }

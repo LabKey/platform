@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -74,6 +73,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -369,14 +369,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         if (validator != null && validator.getExpressionValue() != null)
             expression = validator.getExpressionValue();
 
-        // split expression, trim choices, and remove duplicates
-        String[] choiceTokens = expression.split("\\|");
-        Set<String> choiceSet = Arrays.stream(choiceTokens).map(String::trim).collect(Collectors.toSet());
-
-        // remove empty strings and sort
-        return choiceSet.stream().filter(choice -> !StringUtils.isEmpty(choice))
-                .sorted()
-                .collect(Collectors.toList());
+        return PageFlowUtil.splitStringToValues(expression, '|');
     }
 
     @Override
@@ -812,6 +805,16 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             instance.setExpressionValue("a|c|d|b");
             choices = service.getTextChoiceValidatorOptions(instance);
             Assert.assertEquals(Arrays.asList("a", "b", "c", "d"), choices);
+
+            // escape pipe
+            instance.setExpressionValue("a|c\\|d|b| c\\|d |a\\|a|\\|test\\|");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a", "a|a", "b", "c|d", "|test|"), choices);
+
+            // escape the escape char
+            instance.setExpressionValue("a\\\\ | b\\|b | c");
+            choices = service.getTextChoiceValidatorOptions(instance);
+            Assert.assertEquals(Arrays.asList("a\\", "b|b", "c"), choices);
         }
 
         @Test

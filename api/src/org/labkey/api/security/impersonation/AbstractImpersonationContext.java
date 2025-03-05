@@ -33,14 +33,14 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     private final User _adminUser;
     private final @Nullable Container _project;
     @JsonIgnore // Can't be handled by remote pipelines
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
     private final ImpersonationContextFactory _factory;
 
-    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, ActionURL returnURL, ImpersonationContextFactory factory)
+    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, ActionURL returnUrl, ImpersonationContextFactory factory)
     {
         _adminUser = adminUser;
         _project = project;
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
         _factory = factory;
     }
 
@@ -63,15 +63,15 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     }
 
     @Override
-    public final ActionURL getReturnURL()
+    public final ActionURL getReturnUrl()
     {
-        return _returnURL;
+        return _returnUrl;
     }
 
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL());
+        ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnUrl());
         NavTree stop = new NavTree("Stop Impersonating", url).usePost();
         menu.addChild(stop);
     }

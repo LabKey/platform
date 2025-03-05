@@ -90,7 +90,7 @@ public class ProtocolManagementWebPart extends GridView
         for (AnalysisController.ProtocolTask action : AnalysisController.ProtocolTask.values())
         {
             ActionURL url = new ActionURL(AnalysisController.ProtocolManagementAction.class, getViewContext().getContainer());
-            url.addParameter("action", action.toString()).addReturnURL(getContextURLHelper());
+            url.addParameter("action", action.toString()).addReturnUrl(getContextURLHelper());
             ActionButton button = new ActionButton(url, action.toString());
             String confirmMessage = "Are you sure you want to " + action.toString() + " the selected ";
             button.setRequiresSelection(true, confirmMessage + "protocol?", confirmMessage + "protocols?");
@@ -112,7 +112,7 @@ public class ProtocolManagementWebPart extends GridView
             params.put("name", "name");
             params.put("archived", "archived");
             ActionURL actionURL = new ActionURL(AnalysisController.ProtocolDetailsAction.class, getViewContext().getContainer());
-            DetailsURL url = new DetailsURL(actionURL.addReturnURL(getContextURLHelper()), params);
+            DetailsURL url = new DetailsURL(actionURL.addReturnUrl(getContextURLHelper()), params);
             ((BaseColumnInfo)colInfos.get(1)).setURL(url);
             setResults(new ResultsImpl(rs, colInfos));
             getDataRegion().setColumns(colInfos);

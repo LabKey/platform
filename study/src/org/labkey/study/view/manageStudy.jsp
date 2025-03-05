@@ -176,7 +176,7 @@
                             if (p.hasPermission(user, AdminPermission.class))
                             {
                                 ActionURL editDefinition = new ActionURL(EditStudyDefinitionAction.class, p)
-                                    .addReturnURL(getActionURL());
+                                    .addReturnUrl(getActionURL());
                                 %><%=link("Define Custom Study Properties", editDefinition).usePost()%><%
 
                             }
@@ -263,7 +263,7 @@
                         <td class="lk-study-prop-desc">This study defines <%= getStudyProducts(user, null).size() %> study products</td>
                         <%
                             ActionURL manageStudyProductsURL = urlFor(ManageStudyProductsAction.class)
-                                .addReturnURL(getActionURL());
+                                .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Study Products", manageStudyProductsURL) %></td>
                     </tr>
@@ -272,7 +272,7 @@
                         <td class="lk-study-prop-desc">This study defines <%= getStudyTreatments(user).size() %> treatments</td>
                         <%
                             ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false)
-                                .addReturnURL(getActionURL());
+                                .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Treatments", manageTreatmentsURL) %></td>
                     </tr>
@@ -282,7 +282,7 @@
                         <%
                             boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
                             ActionURL assayScheduleURL = urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule)
-                                .addReturnURL(getActionURL());
+                                .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Assay Schedule", assayScheduleURL) %></td>
                     </tr>

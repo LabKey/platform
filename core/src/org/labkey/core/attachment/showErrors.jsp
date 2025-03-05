@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.core.attachment.AttachmentServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    AttachmentServiceImpl.ErrorView me = (AttachmentServiceImpl.ErrorView) HttpView.currentView();
+    AttachmentServiceImpl.ErrorView me = HttpView.currentView();
 %>
 <%=formatMissedErrors("form")%>
 <%=null != me.errorHtml ? me.errorHtml : HtmlString.EMPTY_STRING%>
-<br><br><%= button("Continue").href(me.returnURL) %>
+<br><br><%= button("Continue").href(me.returnUrl) %>

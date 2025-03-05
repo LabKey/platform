@@ -242,13 +242,13 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    public String getParameter(Enum key)
+    public String getParameter(Enum<?> key)
     {
         return getParameter(key.toString());
     }
 
     @Override
-    public ActionURL addParameter(Enum key, boolean value)
+    public ActionURL addParameter(Enum<?> key, boolean value)
     {
         return (ActionURL)super.addParameter(key, value);
     }
@@ -265,12 +265,12 @@ public class ActionURL extends URLHelper implements Cloneable
         return (ActionURL) super.addParameter(key, value);
     }
 
-    public ActionURL addParameter(Enum key, int value)
+    public ActionURL addParameter(Enum<?> key, int value)
     {
         return addParameter(key.name(), value);
     }
 
-    public ActionURL addParameter(Enum key, long value)
+    public ActionURL addParameter(Enum<?> key, long value)
     {
         return addParameter(key.name(), value);
     }
@@ -285,7 +285,7 @@ public class ActionURL extends URLHelper implements Cloneable
         return (ActionURL) super.addParameter(key, String.valueOf(value));
     }
 
-    public ActionURL addParameter(Enum e, String value)
+    public ActionURL addParameter(Enum<?> e, String value)
     {
         return addParameter(e.name(), value);
     }
@@ -366,7 +366,7 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     // Add url as a parameter using standard parameter name
-    public ActionURL addReturnURL(@NotNull URLHelper url)
+    public ActionURL addReturnUrl(@NotNull URLHelper url)
     {
         return replaceParameter(Param.returnUrl, url.getLocalURIString());
     }
@@ -384,15 +384,15 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
     @Nullable
-    public URLHelper getReturnURL()
+    public URLHelper getReturnUrl()
     {
-        String returnURLStr = getParameter(ActionURL.Param.returnUrl);
-        if (null == returnURLStr)
+        String returnUrlStr = getParameter(ActionURL.Param.returnUrl);
+        if (null == returnUrlStr)
             return null;
 
         try
         {
-            return new URLHelper(returnURLStr);
+            return new URLHelper(returnUrlStr);
         }
         catch (IllegalArgumentException | URISyntaxException e)
         {

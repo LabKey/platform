@@ -303,7 +303,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnURL)
+    public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl)
     {
         boolean hasErrors = null != errors && errors.hasErrors();
         HtmlString errorHtml = getErrorHtml(files);      // TODO: Get rid of getErrorHtml() -- use errors collection
@@ -313,7 +313,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         try
         {
-            return new ErrorView(errorHtml, errors, returnURL);
+            return new ErrorView(errorHtml, errors, returnUrl);
         }
         catch (Exception e)
         {
@@ -343,13 +343,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     public static class ErrorView extends JspView<Object>
     {
         public HtmlString errorHtml;
-        public URLHelper returnURL;
+        public URLHelper returnUrl;
 
-        private ErrorView(HtmlString errorHtml, BindException errors, URLHelper returnURL)
+        private ErrorView(HtmlString errorHtml, BindException errors, URLHelper returnUrl)
         {
             super("/org/labkey/core/attachment/showErrors.jsp", new Object(), errors);
             this.errorHtml = errorHtml;
-            this.returnURL = returnURL;
+            this.returnUrl = returnUrl;
         }
     }
 

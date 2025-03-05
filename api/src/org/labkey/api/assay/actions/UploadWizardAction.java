@@ -416,9 +416,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             view.getDataRegion().addHiddenFormField("reRunId", form.getReRunId().toString());
         }
-        if (form.getReturnURLHelper() != null)
+        if (form.getReturnUrlHelper() != null)
         {
-            view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnURLHelper());
+            view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrlHelper());
         }
 
         if (null != StudyPublishService.get())
@@ -492,8 +492,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addNextButton(bbar);
         addResetButton(runForm, insertView, bbar);
-        ActionURL returnURL = runForm.getReturnActionURL();
-        addCancelButton(bbar, returnURL);
+        ActionURL returnUrl = runForm.getReturnActionURL();
+        addCancelButton(bbar, returnUrl);
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
         JspView<AssayRunUploadForm<?>> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", runForm);
@@ -536,12 +536,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.add(cancelButton);
     }
 
-    protected void addCancelButton(ButtonBar bbar, String returnURL)
+    protected void addCancelButton(ButtonBar bbar, String returnUrl)
     {
         ActionURL link;
-        if (returnURL != null && !returnURL.equals(""))
+        if (returnUrl != null && !returnUrl.isEmpty())
         {
-            link = new ActionURL(returnURL);
+            link = new ActionURL(returnUrl);
         }
         else
         {
@@ -551,12 +551,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         bbar.add(cancelButton);
     }
 
-    protected void addCancelButton(ButtonBar bbar, ActionURL returnURL)
+    protected void addCancelButton(ButtonBar bbar, ActionURL returnUrl)
     {
         ActionURL link;
-        if (returnURL != null)
+        if (returnUrl != null)
         {
-            link = returnURL;
+            link = returnUrl;
         }
         else
         {
@@ -652,8 +652,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ButtonBar bbar = new ButtonBar();
         bbar.setStyle(ButtonBar.Style.separateButtons);
         addRunActionButtons(newRunForm, insertView, bbar);
-        ActionURL returnURL = newRunForm.getReturnActionURL();
-        addCancelButton(bbar, returnURL);
+        ActionURL returnUrl = newRunForm.getReturnActionURL();
+        addCancelButton(bbar, returnUrl);
 
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
         insertView.setTitle("Run Properties");

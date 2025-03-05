@@ -723,7 +723,7 @@ public class ExperimentController extends SpringActionController
                 {
                     ActionURL updateURL = new ActionURL(EditSampleTypeAction.class, _sampleType.getContainer());
                     updateURL.addParameter("RowId", _sampleType.getRowId());
-                    updateURL.addReturnURL(getViewContext().getActionURL());
+                    updateURL.addReturnUrl(getViewContext().getActionURL());
 
                     if (!getContainer().equals(_sampleType.getContainer()))
                     {
@@ -743,7 +743,7 @@ public class ExperimentController extends SpringActionController
 
                     ActionURL deleteURL = new ActionURL(DeleteSampleTypesAction.class, _sampleType.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _sampleType.getRowId());
-                    deleteURL.addReturnURL(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
+                    deleteURL.addReturnUrl(ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
                     ActionButton deleteButton = new ActionButton(deleteURL, "Delete Type", ActionButton.Action.LINK);
                     deleteButton.setDisplayPermission(DesignSampleTypePermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
@@ -753,7 +753,7 @@ public class ExperimentController extends SpringActionController
                     ActionURL editURL = domainKind.urlEditDefinition(_sampleType.getDomain(), new ViewBackgroundInfo(_sampleType.getContainer(), getUser(), getViewContext().getActionURL()));
                     if (editURL != null)
                     {
-                        editURL.addReturnURL(getViewContext().getActionURL());
+                        editURL.addReturnUrl(getViewContext().getActionURL());
                         ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
                         editTypeButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
@@ -770,7 +770,7 @@ public class ExperimentController extends SpringActionController
                     if (importURL != null)
                     {
                         importURL = importURL.clone();
-                        importURL.addReturnURL(getViewContext().getActionURL());
+                        importURL.addReturnUrl(getViewContext().getActionURL());
                         ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
@@ -1079,7 +1079,7 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
-                updateURL.addReturnURL(urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId()));
+                updateURL.addReturnUrl(urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId()));
 
                 if (inDefinitionContainer)
                 {
@@ -1099,7 +1099,7 @@ public class ExperimentController extends SpringActionController
 
                 ActionURL deleteURL = new ActionURL(DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
-                deleteURL.addReturnURL(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
+                deleteURL.addReturnUrl(ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
                 ActionButton deleteButton = new ActionButton(deleteURL, "Delete Data Class", ActionButton.Action.LINK);
 
                 if (inDefinitionContainer)
@@ -6701,19 +6701,19 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
+        public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnUrl)
         {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addReturnURL(returnURL);
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addReturnUrl(returnUrl);
         }
 
         @Override
-        public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL)
+        public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnUrl)
         {
             ActionURL result = new ActionURL(DeleteProtocolByRowIdsAction.class, protocol.getContainer());
             result.addParameter("singleObjectRowId", protocol.getRowId());
-            if (returnURL != null)
+            if (returnUrl != null)
             {
-                result.addReturnURL(returnURL);
+                result.addReturnUrl(returnUrl);
             }
             return result;
         }
@@ -6787,26 +6787,26 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
+        public ActionURL getDeleteDatasURL(Container c, URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
+            if (returnUrl != null)
+                url.addReturnUrl(returnUrl);
             return url;
         }
 
-        public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
+        public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnUrl)
         {
             ActionURL result = new ActionURL(DeleteSelectedExperimentsAction.class, c);
-            if (returnURL != null)
-                result.addReturnURL(returnURL);
+            if (returnUrl != null)
+                result.addReturnUrl(returnUrl);
             return result;
         }
 
         @Override
-        public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
+        public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnUrl)
         {
-            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
+            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnUrl(returnUrl);
         }
 
         public ActionURL getShowUpdateURL(ExpExperiment experiment)
@@ -6815,18 +6815,18 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
+        public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnUrl, ExpExperiment exp)
         {
-            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addReturnURL(returnURL).addParameter("expRowId", exp.getRowId());
+            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addReturnUrl(returnUrl).addParameter("expRowId", exp.getRowId());
         }
 
         @Override
-        public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
+        public ActionURL getCreateRunGroupURL(Container container, URLHelper returnUrl, boolean addSelectedRuns)
         {
             ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
-            if (returnURL != null)
+            if (returnUrl != null)
             {
-                result.addReturnURL(returnURL);
+                result.addReturnUrl(returnUrl);
             }
             if (addSelectedRuns)
             {

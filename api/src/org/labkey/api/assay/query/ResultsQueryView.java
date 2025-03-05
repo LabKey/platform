@@ -108,18 +108,18 @@ public class ResultsQueryView extends AssayBaseQueryView
         // Add a default sort to the end of any sorts that have already been specified (by a custom view, for example)
         sort.appendSortColumn(AssayService.get().getProvider(_protocol).getTableMetadata(_protocol).getResultRowIdFieldKey(), Sort.SortDirection.ASC, false);
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
 
-        if (returnURL == null)
+        if (returnUrl == null)
         {
-            // 27693: Respect returnURL from async webpart requests
-            if (getSettings().getReturnURLHelper() != null)
-                returnURL = getSettings().getReturnURLHelper().toString();
+            // 27693: Respect returnUrl from async webpart requests
+            if (getSettings().getReturnUrlHelper() != null)
+                returnUrl = getSettings().getReturnUrlHelper().toString();
             else
-                returnURL = getViewContext().getActionURL().toString();
+                returnUrl = getViewContext().getActionURL().toString();
         }
 
-        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnUrl);
 
         String redirectUrl = getViewContext().getRequest().getParameter(ActionURL.Param.redirectUrl.name());
         if (redirectUrl != null)

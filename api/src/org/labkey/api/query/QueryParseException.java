@@ -39,14 +39,11 @@ public class QueryParseException extends QueryException
         super(message, cause);
         _line = line;
         _column = column;
+        // we could almost just implement SkipMothershipLogging, but there are usages that are just wrapping RuntimeException
+        if (null == cause)
+            ExceptionUtil.decorateException(this, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
     }
 
-    public QueryParseException(String queryName, QueryParseException other)
-    {
-        super(queryName + ":" + other.getMessage(), other.getCause());
-        _line = other._line;
-        _column = other._column;
-    }
 
     public String getFieldName()
     {

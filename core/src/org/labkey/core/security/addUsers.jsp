@@ -125,12 +125,12 @@
     }
 %>
                 <%=submit%>
-                <% if (form.getReturnURLHelper() == null) { %>
+                <% if (form.getReturnUrlHelper() == null) { %>
                 <%= button("Done").href(urlFor(ShowUsersAction.class)) %>
                 <% }
                    else {
                 %>
-                <%= button("Done").href(form.getReturnURLHelper()) %>
+                <%= button("Done").href(form.getReturnUrlHelper()) %>
                 <% } %>
                 <%=generateReturnUrlFormField(form)%>
             </td>

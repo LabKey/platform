@@ -16,7 +16,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
 
     dirty : false,
 
-    returnURL : null,
+    returnUrl : null,
 
     initComponent : function()
     {
@@ -198,7 +198,7 @@ Ext4.define('LABKEY.VaccineDesign.StudyProductsPanel', {
     goToReturnURL : function()
     {
         this.setDirty(false);
-        window.location = this.returnURL;
+        window.location = this.returnUrl;
     },
 
     onFailure : function(text)
