@@ -1,5 +1,6 @@
 package org.labkey.test.pages.mothership;
 
+import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
@@ -8,9 +9,12 @@ import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementCache>
 {
@@ -40,43 +44,59 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
                 "the page did not become enabled", WAIT_FOR_JAVASCRIPT);
     }
 
-    public ClientExceptionPage clickInlineScriptError() throws Exception
+    public ClientExceptionPage clickInlineScriptError(boolean expectError) throws Exception
     {
-        waitForNewTimestamp();
+        var initialState = mothershipHelper.getOrderedStackTraces();
         elementCache().inlineScriptErrBtn.click();
+        if (expectError)
+            waitForNewTimestamp(initialState);
         return this;
     }
 
-    public ClientExceptionPage clickResourceScriptError() throws Exception
+    public ClientExceptionPage clickResourceScriptError(boolean expectError) throws Exception
     {
-        waitForNewTimestamp();
+        var initialState = mothershipHelper.getOrderedStackTraces();
         elementCache().resourceScriptErrBtn.click();
+        if (expectError)
+            waitForNewTimestamp(initialState);
         return this;
     }
 
-    public ClientExceptionPage clickNestedScriptError() throws Exception
+    public ClientExceptionPage clickNestedScriptError(boolean expectError) throws Exception
     {
-        waitForNewTimestamp();
+        var initialState = mothershipHelper.getOrderedStackTraces();
         elementCache().nestedScriptErrBtn.click();
+        if (expectError)
+            waitForNewTimestamp(initialState);
         return this;
     }
 
-    public ClientExceptionPage clickAsyncScriptError() throws Exception
+    public ClientExceptionPage clickAsyncScriptError(boolean expectError) throws Exception
     {
-        waitForNewTimestamp();
+        var initialState = mothershipHelper.getOrderedStackTraces();
         elementCache().asyncScriptErrBtn.click();
+        if (expectError)
+            waitForNewTimestamp(initialState);
         return this;
     }
 
-
-    private void waitForNewTimestamp() throws Exception
+    private void waitForNewTimestamp(List<Map<String, Object>> initialState) throws IOException, CommandException
     {
-        var stackTraces = mothershipHelper.getOrderedStackTraces();
-        if (stackTraces.isEmpty())
-            return;
-
-        var lastTimestamp = (Date)stackTraces.get(0).get("LastReport");
-        waitFor(()-> Instant.now().minus(Duration.ofSeconds(1)).isAfter(lastTimestamp.toInstant()), 2000);
+        waitFor(()-> {
+            try
+            {
+                sleep(250);
+                var latestTraces =  mothershipHelper.getOrderedStackTraces();
+                var lastTimestamp = (Date)initialState.get(0).get("LastReport");
+                if (initialState.isEmpty())
+                    return !latestTraces.isEmpty();
+                else
+                    return  !latestTraces.isEmpty() && ((Date)latestTraces.get(0).get("LastReport")).after(lastTimestamp);
+            } catch (Exception e)
+            {
+                return false;
+            }
+        }, "No new report appeared in Mothership", 2000);
     }
 
     @Override
