@@ -380,8 +380,8 @@ public class Portal implements ModuleChangeListener
             ActionURL ret = urlProvider().getCustomizeWebPartURL(container);
             ret.addParameter("pageId", getPageId());
             ret.addParameter("index", Integer.toString(getIndex()));
-            if (null != current.getReturnURL())
-                ret.addReturnURL(current.getReturnURL());
+            if (null != current.getReturnUrl())
+                ret.addReturnUrl(current.getReturnUrl());
             return ret;
         }
 

@@ -112,7 +112,7 @@ export class ListDesigner extends React.Component<Props, State> {
         const returnUrl = ActionURL.getReturnUrl();
         if (!returnUrl || !model) return returnUrl;
 
-        // Issue 47356: Rewrite returnURL in the event of a list name change
+        // Issue 47356: Rewrite returnUrl in the event of a list name change
         const { action, containerPath, controller } = ActionURL.getPathFromLocation(returnUrl);
         if (controller?.toLowerCase() === 'list' && action?.toLowerCase() === 'grid') {
             const parameters = ActionURL.getParameters(returnUrl);

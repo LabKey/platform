@@ -303,11 +303,11 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static ActionURL getAdminEmailURL(Container c, @Nullable URLHelper returnURL)
+    public static ActionURL getAdminEmailURL(Container c, @Nullable URLHelper returnUrl)
     {
         ActionURL url = urlProvider(AdminUrls.class).getNotificationsURL(c);
-        if (returnURL != null)
-            url.addReturnURL(returnURL);
+        if (returnUrl != null)
+            url.addReturnUrl(returnUrl);
 
         return url;
     }
@@ -381,7 +381,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public @NotNull URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
-            return form.getReturnURLHelper(new ActionURL(BeginAction.class, getContainer()));
+            return form.getReturnUrlHelper(new ActionURL(BeginAction.class, getContainer()));
         }
 
         @Override
@@ -461,7 +461,7 @@ public class AnnouncementsController extends SpringActionController
     {
         ActionURL url = new ActionURL(DeleteResponseAction.class, c);
         url.addParameter("entityId", entityId);
-        url.addReturnURL(returnUrl);
+        url.addReturnUrl(returnUrl);
 
         return url;
     }
@@ -693,7 +693,7 @@ public class AnnouncementsController extends SpringActionController
     {
         ActionURL url = new ActionURL(CustomizeAction.class, c);
         if (returnUrl != null)
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
 
         return url;
     }
@@ -705,7 +705,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(Settings form)
         {
-            return form.getReturnURLHelper();
+            return form.getReturnUrlHelper();
         }
 
         @Override
@@ -714,7 +714,7 @@ public class AnnouncementsController extends SpringActionController
             CustomizeBean bean = new CustomizeBean();
 
             bean.settings = getSettings();   // TODO: Just use form?
-            bean.returnURL = form.getReturnURLHelper();
+            bean.returnUrl = form.getReturnUrlHelper();
             bean.assignedToSelect = getAssignedToSelect(getContainer(), bean.settings.getDefaultAssignedTo(), "defaultAssignedTo", getUser());
 
             if (hasEditorPerm(Group.groupGuests))
@@ -751,7 +751,7 @@ public class AnnouncementsController extends SpringActionController
     public static class CustomizeBean
     {
         public Settings settings;
-        public URLHelper returnURL;    // TODO: Settings has a returnUrl
+        public URLHelper returnUrl;    // TODO: Settings has a returnUrl
         public String securityWarning;
         public SelectBuilder assignedToSelect;
     }
@@ -821,10 +821,10 @@ public class AnnouncementsController extends SpringActionController
                 return false;
             }
 
-            URLHelper returnURL = form.getReturnURLHelper();
+            URLHelper returnUrl = form.getReturnUrlHelper();
 
             // Null in insert/update message case, since we want to redirect to thread view anchoring to new post
-            if (null == returnURL)
+            if (null == returnUrl)
             {
                 AnnouncementModel thread = insert;
                 if (null != insert.getParent())
@@ -832,24 +832,24 @@ public class AnnouncementsController extends SpringActionController
 
                 if (form.isFromDiscussion() && null != thread.getDiscussionSrcIdentifier())
                 {
-                    returnURL = DiscussionServiceImpl.fromSaved(thread.getDiscussionSrcURL());
-                    returnURL.addParameter("discussion.id", "" + thread.getRowId());
-                    returnURL.addParameter("_anchor", "discussionArea");               // TODO: insert.getRowId() instead? -- target just inserted response
+                    returnUrl = DiscussionServiceImpl.fromSaved(thread.getDiscussionSrcURL());
+                    returnUrl.addParameter("discussion.id", "" + thread.getRowId());
+                    returnUrl.addParameter("_anchor", "discussionArea");               // TODO: insert.getRowId() instead? -- target just inserted response
                 }
                 else
                 {
                     String threadId = thread.getEntityId();
-                    returnURL = getThreadURL(c, threadId, insert.getRowId());
+                    returnUrl = getThreadURL(c, threadId, insert.getRowId());
                 }
             }
 
-            _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnURL);
+            _attachmentErrorView = AttachmentService.get().getErrorView(files, errors, returnUrl);
 
             boolean success = (null == _attachmentErrorView);
 
             // Can't use getSuccessURL since this is a URLHelper, not an ActionURL
             if (success)
-                throw new RedirectException(returnURL);
+                throw new RedirectException(returnUrl);
 
             return false;
         }
@@ -895,7 +895,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnURLHelper(), false, true);
+            InsertMessageView insertView = new InsertMessageView(form, "New " + settings.getConversationName(), errors, reshow, form.getReturnUrlHelper(), false, true);
             insertView.setShowTitle(false);
 
             getPageConfig().setFocusId("title");
@@ -956,7 +956,7 @@ public class AnnouncementsController extends SpringActionController
             ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
 
-            HttpView respondView = new RespondView(c, parent, form, form.getReturnURLHelper(), errors, reshow, false);
+            HttpView respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow, false);
 
             getPageConfig().setFocusId("body");
             _parent = parent;
@@ -1067,11 +1067,11 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static ActionURL getInsertURL(Container c, @Nullable ActionURL returnURL)
+    private static ActionURL getInsertURL(Container c, @Nullable ActionURL returnUrl)
     {
         ActionURL url = new ActionURL(InsertAction.class, c);
-        if (returnURL != null)
-            url.addReturnURL(returnURL);
+        if (returnUrl != null)
+            url.addReturnUrl(returnUrl);
 
         return url;
     }
@@ -1200,7 +1200,7 @@ public class AnnouncementsController extends SpringActionController
     {
         ActionURL url = new ActionURL(UpdateAction.class, c);
         url.addParameter("entityId", threadId);
-        url.addReturnURL(returnUrl);
+        url.addReturnUrl(returnUrl);
         return url;
     }
 
@@ -1288,7 +1288,7 @@ public class AnnouncementsController extends SpringActionController
 
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
-            URLHelper urlHelper = form.getReturnURLHelper();
+            URLHelper urlHelper = form.getReturnUrlHelper();
             if (null != urlHelper)
                 throw new RedirectException(urlHelper);
             else
@@ -1496,7 +1496,7 @@ public class AnnouncementsController extends SpringActionController
         ActionURL result = new ActionURL(EmailPreferencesAction.class, c);
         result.addParameter("srcIdentifier", srcIdentifier);
         if (returnUrl != null)
-            result.addReturnURL(returnUrl);
+            result.addReturnUrl(returnUrl);
 
         return result;
     }
@@ -2022,13 +2022,13 @@ public class AnnouncementsController extends SpringActionController
         {
             // This is set to the outer page URL in the case of rendering a dynamic webpart; use it instead of
             // the getWebPart URL.
-            String returnURL = (String)ctx.get(ActionURL.Param.returnUrl.name());
+            String returnUrl = (String)ctx.get(ActionURL.Param.returnUrl.name());
 
-            if (null != returnURL)
+            if (null != returnUrl)
             {
                 try
                 {
-                    return new ActionURL(returnURL);
+                    return new ActionURL(returnUrl);
                 }
                 catch (IllegalArgumentException x)
                 {
@@ -2371,7 +2371,7 @@ public class AnnouncementsController extends SpringActionController
             bean.message = null;
             bean.perm = perm;
             bean.isResponse = isResponse;
-            bean.messagesURL = getBeginURL(c);  // TODO: Used as returnURL after delete thread... should be messages or list, as appropriate
+            bean.messagesURL = getBeginURL(c);  // TODO: Used as returnUrl after delete thread... should be messages or list, as appropriate
             bean.listURL = getListURL(c);
             bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter(ActionURL.Param._print.name(), "1");
             bean.print = print;
@@ -2399,7 +2399,7 @@ public class AnnouncementsController extends SpringActionController
                         // Build up a link to unsubscribe from the thread
                         ActionURL url = new ActionURL(SubscribeThreadAction.class, c);
                         url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
-                        url.addReturnURL(getViewContext().getActionURL());
+                        url.addReturnUrl(getViewContext().getActionURL());
                         url.addParameter("unsubscribe", true);
                         buttons.addChild("unsubscribe", url).usePost();
                     }
@@ -2438,7 +2438,7 @@ public class AnnouncementsController extends SpringActionController
                             subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifier()));
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
-                            subscribeThreadURL.addReturnURL(getViewContext().getActionURL());
+                            subscribeThreadURL.addReturnUrl(getViewContext().getActionURL());
                             subscribeTree.addChild("thread", subscribeThreadURL).usePost();
                             buttons.addChild(subscribeTree);
                         }
@@ -2582,7 +2582,7 @@ public class AnnouncementsController extends SpringActionController
             public SelectBuilder statusSelect;
             public SelectBuilder renderAsSelect;
             public String memberList;
-            public URLHelper returnURL;
+            public URLHelper returnUrl;
 
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
             {
@@ -2595,7 +2595,7 @@ public class AnnouncementsController extends SpringActionController
                 statusSelect = getStatusSelect(ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 renderAsSelect = getRenderAsSelect(WikiRendererType.valueOf(ann.getRendererType()));
-                returnURL = form.getReturnURLHelper();
+                returnUrl = form.getReturnUrlHelper();
             }
         }
     }

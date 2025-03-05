@@ -16,7 +16,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
 
     dirty : false,
 
-    returnURL : null,
+    returnUrl : null,
 
     initComponent : function()
     {
@@ -213,7 +213,7 @@ Ext4.define('LABKEY.VaccineDesign.AssaySchedulePanel', {
     goToReturnURL : function()
     {
         this.setDirty(false);
-        window.location = this.returnURL;
+        window.location = this.returnUrl;
     },
 
     onFailure : function(text)

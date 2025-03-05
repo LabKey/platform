@@ -270,7 +270,7 @@ if (!bean.isResponse && !bean.print)
         else
         {
             ActionURL respond = announcementURL(c, RespondAction.class, "parentId", announcementModel.getEntityId());
-            respond.addReturnURL(bean.currentURL);
+            respond.addReturnUrl(bean.currentURL);
             %>
         <%= button("Respond").href(respond) %>&nbsp;<%
         }
@@ -282,11 +282,11 @@ if (!bean.isResponse && !bean.print)
         if (bean.embedded)
         {
             URLHelper redirect = bean.currentURL.clone().deleteScopeParameters("discussion");
-            deleteThread.addReturnURL(redirect);
+            deleteThread.addReturnUrl(redirect);
         }
         else
         {
-            deleteThread.addReturnURL(bean.messagesURL);
+            deleteThread.addReturnUrl(bean.messagesURL);
         }
         %>
         <%= button("Delete " + settings.getConversationName()).href(deleteThread) %>&nbsp;<%

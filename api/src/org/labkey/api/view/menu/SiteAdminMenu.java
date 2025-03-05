@@ -56,19 +56,19 @@ public class SiteAdminMenu extends NavTreeMenu
         if (user.hasRootPermission(TroubleshooterPermission.class))
             items.add(getAdminConsole(context));
 
-        URLHelper returnURL = context.getActionURL().getReturnURL() == null ? context.getActionURL() : context.getActionURL().getReturnURL();
+        URLHelper returnUrl = context.getActionURL().getReturnUrl() == null ? context.getActionURL() : context.getActionURL().getReturnUrl();
 
         if (user.hasSiteAdminPermission())
         {
-            items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators", returnURL)));
-            items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers", returnURL)));
+            items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators", returnUrl)));
+            items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers", returnUrl)));
         }
 
         if (user.hasRootPermission(UserManagementPermission.class))
         {
-            items.add(new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL().addReturnURL(returnURL)));
-            items.add(new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, returnURL)));
-            items.add(new NavTree("Site Permissions", securityUrls.getPermissionsURL(root, returnURL)));
+            items.add(new NavTree("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL().addReturnUrl(returnUrl)));
+            items.add(new NavTree("Site Groups", securityUrls.getSiteGroupsURL(root, returnUrl)));
+            items.add(new NavTree("Site Permissions", securityUrls.getPermissionsURL(root, returnUrl)));
         }
 
         if (user.hasRootAdminPermission())
@@ -92,10 +92,10 @@ public class SiteAdminMenu extends NavTreeMenu
         ActionURL consoleUrl = adminUrls.getAdminConsoleURL();
         if (null != context && null != context.getActionURL())
         {
-            if (null == context.getActionURL().getReturnURL())
-                consoleUrl.addReturnURL(context.getActionURL());
+            if (null == context.getActionURL().getReturnUrl())
+                consoleUrl.addReturnUrl(context.getActionURL());
             else
-                consoleUrl.addReturnURL(context.getActionURL().getReturnURL());
+                consoleUrl.addReturnUrl(context.getActionURL().getReturnUrl());
         }
 
         return new NavTree("Admin Console", consoleUrl);

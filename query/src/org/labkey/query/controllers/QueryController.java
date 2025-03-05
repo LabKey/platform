@@ -2392,7 +2392,7 @@ public class QueryController extends SpringActionController
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
                                                  boolean hidden, JSONObject jsonView,
-                                                 ActionURL srcURL,
+                                                 ActionURL returnUrl,
                                                  BindException errors)
     {
         User owner = getUser();
@@ -2480,7 +2480,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, srcURL, errors);
+                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, returnUrl, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2526,35 +2526,34 @@ public class QueryController extends SpringActionController
             }
         }
 
-        ActionURL returnURL = srcURL;
-        if (null == returnURL)
+        if (null == returnUrl)
         {
-            returnURL = getViewContext().cloneActionURL().setAction(ExecuteQueryAction.class);
+            returnUrl = getViewContext().cloneActionURL().setAction(ExecuteQueryAction.class);
         }
         else
         {
-            returnURL = returnURL.clone();
+            returnUrl = returnUrl.clone();
             if (name == null || !canEdit)
             {
-                returnURL.deleteParameter(regionName + "." + QueryParam.viewName);
+                returnUrl.deleteParameter(regionName + "." + QueryParam.viewName);
             }
             else if (!isHidden)
             {
-                returnURL.replaceParameter(regionName + "." + QueryParam.viewName, name);
+                returnUrl.replaceParameter(regionName + "." + QueryParam.viewName, name);
             }
-            returnURL.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
+            returnUrl.deleteParameter(regionName + "." + QueryParam.ignoreFilter.toString());
             if (saveFilter)
             {
-                for (String key : returnURL.getKeysByPrefix(regionName + "."))
+                for (String key : returnUrl.getKeysByPrefix(regionName + "."))
                 {
                     if (isFilterOrSort(regionName, key))
-                        returnURL.deleteFilterParameters(key);
+                        returnUrl.deleteFilterParameters(key);
                 }
             }
         }
 
         Map<String, Object> ret = new HashMap<>();
-        ret.put("redirect", returnURL);
+        ret.put("redirect", returnUrl);
         if (view != null)
             ret.put("view", CustomViewUtil.toMap(view, getUser(), true));
         return ret;

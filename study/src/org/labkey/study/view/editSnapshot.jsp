@@ -62,7 +62,7 @@
     <%= button("Update Snapshot").submit(true).onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")%>
     <% if (def != null && dsDef != null) {
         ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
-        ActionURL editDatasetURL = new ActionURL(StudyController.EditTypeAction.class, getContainer()).addParameter("datasetId", dsDef.getDatasetId()).addReturnURL(getActionURL());
+        ActionURL editDatasetURL = new ActionURL(StudyController.EditTypeAction.class, getContainer()).addParameter("datasetId", dsDef.getDatasetId()).addReturnUrl(getActionURL());
     %>
         <%= button("Delete Snapshot")
                 .href(deleteSnapshotURL)

@@ -27,7 +27,7 @@
     Collection<SpecimenTransform> specimenTransforms = SpecimenService.get().getSpecimenTransforms(c);
     specimenTransforms.removeIf(transform -> null == transform.getManageAction(c, user));
 
-    URLHelper cancelLink = getActionURL().getReturnURL();
+    URLHelper cancelLink = getActionURL().getReturnUrl();
     if (cancelLink == null)
         cancelLink = urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
     int numberOfTransforms = specimenTransforms.size();

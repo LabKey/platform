@@ -41,15 +41,15 @@ import java.sql.SQLException;
 public class StatusDataRegion extends DataRegion
 {
     private Class<? extends ReadOnlyApiAction> _apiAction;
-    private ActionURL _returnURL;
+    private ActionURL _returnUrl;
 
-    public StatusDataRegion(Class<? extends ReadOnlyApiAction> apiAction, ActionURL returnURL)
+    public StatusDataRegion(Class<? extends ReadOnlyApiAction> apiAction, ActionURL returnUrl)
     {
         setShowPagination(false);
         setAllowHeaderLock(false); // 13731: disabling header locking due to async rendering issues
         _apiAction = apiAction;
-        _returnURL = returnURL.clone();
-        _returnURL.deleteParameter(ActionURL.Param.returnUrl);
+        _returnUrl = returnUrl.clone();
+        _returnUrl.deleteParameter(ActionURL.Param.returnUrl);
     }
 
     private void renderTab(Writer out, String text, ActionURL url, boolean selected) throws IOException
@@ -84,7 +84,7 @@ public class StatusDataRegion extends DataRegion
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
                         "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
-                            "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
+                            "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnUrl.toString()) + ");\n" +
                         "LABKEY.pipeline.statusUpdateInstance.start();\n" +
                     "});\n" +
                 "});\n");

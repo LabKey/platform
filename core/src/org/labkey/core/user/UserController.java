@@ -226,36 +226,36 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public ActionURL getUserDetailsURL(Container c, int userId, @Nullable URLHelper returnURL)
+        public ActionURL getUserDetailsURL(Container c, int userId, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(DetailsAction.class, c);
             url.addParameter("userId", userId);
 
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
+            if (null != returnUrl)
+                url.addReturnUrl(returnUrl);
 
             return url;
         }
 
         @Override
-        public ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnURL)
+        public ActionURL getUserDetailsURL(Container c, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(DetailsAction.class, c);
 
-            if (null != returnURL)
-                url.addReturnURL(returnURL);
+            if (null != returnUrl)
+                url.addReturnUrl(returnUrl);
 
             return url;
         }
 
         @Override
-        public ActionURL getUserUpdateURL(Container c, URLHelper returnURL, int userId)
+        public ActionURL getUserUpdateURL(Container c, URLHelper returnUrl, int userId)
         {
             ActionURL url = new ActionURL(ShowUpdateAction.class, c);
             url.addParameter("userId", userId);
             url.addParameter(QueryParam.schemaName.toString(), CoreQuerySchema.NAME);
             url.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.USERS_TABLE_NAME);
-            url.addReturnURL(returnURL);
+            url.addReturnUrl(returnUrl);
 
             return url;
         }
@@ -302,7 +302,7 @@ public class UserController extends SpringActionController
         editURL.addParameter(QueryParam.schemaName.toString(), "core");
         editURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, CoreQuerySchema.SITE_USERS_TABLE_NAME);
         editURL.addParameter("userId", NumberUtils.toInt(currentURL.getParameter("userId")));
-        editURL.addReturnURL(currentURL);
+        editURL.addReturnUrl(currentURL);
 
         if (isOwnRecord || (getUser().hasRootPermission(UpdateUserPermission.class) && canManageDetailsUser))
         {
@@ -401,9 +401,9 @@ public class UserController extends SpringActionController
             if (domain != null)
             {
                 ActionURL url = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                ActionURL returnURL = getViewContext().getActionURL();
-                if (returnURL != null)
-                    url.addReturnURL(returnURL);
+                ActionURL returnUrl = getViewContext().getActionURL();
+                if (returnUrl != null)
+                    url.addReturnUrl(returnUrl);
 
                 if (canUpdateUser)
                 {
@@ -952,7 +952,7 @@ public class UserController extends SpringActionController
             if (domain != null)
             {
                 successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                successUrl.addReturnURL(getViewContext().getActionURL());
+                successUrl.addReturnUrl(getViewContext().getActionURL());
             }
 
             return successUrl;
@@ -1647,7 +1647,7 @@ public class UserController extends SpringActionController
                     // an alternate login, e.g., in case LDAP server goes down or configuration changes.
                     ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
                     resetURL.addParameter("userId", detailsUser.getUserId());
-                    resetURL.addReturnURL(currentUrl);
+                    resetURL.addReturnUrl(currentUrl);
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
                     bb.add(reset);
@@ -1656,7 +1656,7 @@ public class UserController extends SpringActionController
                     {
                         ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
                         deleteURL.addParameter("userId", detailsUser.getUserId());
-                        deleteURL.addReturnURL(currentUrl);
+                        deleteURL.addReturnUrl(currentUrl);
                         ActionButton delete = new ActionButton(deleteURL, "Delete Password");
                         delete.setActionType(ActionButton.Action.LINK);
                         bb.add(delete);
@@ -1685,7 +1685,7 @@ public class UserController extends SpringActionController
                     {
                         ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                         deactivateUrl.addParameter("userId", _detailsUserId);
-                        deactivateUrl.addReturnURL(currentUrl);
+                        deactivateUrl.addReturnUrl(currentUrl);
                         bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
                     }
 
@@ -1710,7 +1710,7 @@ public class UserController extends SpringActionController
             if (isProjectAdminOrBetter)
             {
                 ActionURL viewPermissionsURL = new UserUrlsImpl().getUserAccessURL(c, _detailsUserId);
-                viewPermissionsURL.addReturnURL(currentUrl);
+                viewPermissionsURL.addReturnUrl(currentUrl);
                 ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
                 bb.add(viewPermissions);
@@ -1742,7 +1742,7 @@ public class UserController extends SpringActionController
 
                 if (null != form.getReturnUrl())
                 {
-                    doneButton = new ActionButton("Done", form.getReturnURLHelper());
+                    doneButton = new ActionButton("Done", form.getReturnUrlHelper());
                     rgn.addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
                 }
                 else
@@ -1793,7 +1793,7 @@ public class UserController extends SpringActionController
         {
             ActionURL changeEmailURL = getChangeEmailURL(c, user);
             changeEmailURL.addParameter("isChangeEmailRequest", true);
-            changeEmailURL.addReturnURL(getViewContext().getActionURL());
+            changeEmailURL.addReturnUrl(getViewContext().getActionURL());
             ActionButton changeEmail = new ActionButton(changeEmailURL, "Change Email");
             changeEmail.setActionType(ActionButton.Action.LINK);
             return changeEmail;
@@ -2024,7 +2024,7 @@ public class UserController extends SpringActionController
                     }
 
                     String userEmail = userToChange.getEmail();
-                    boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnURL(), errors);
+                    boolean isAuthenticated = authenticate(userEmail, form.getPassword(), getViewContext().getActionURL().getReturnUrl(), errors);
                     if (isAuthenticated)
                     {
                         String verificationToken = LoginManager.createTempPassword();
@@ -2095,12 +2095,12 @@ public class UserController extends SpringActionController
                 }
                 else  // actually making self-service email change, so redirect to user details page
                 {
-                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), currentUser.getUserId(), form.getReturnURLHelper());
+                    return new UserUrlsImpl().getUserDetailsURL(getContainer(), currentUser.getUserId(), form.getReturnUrlHelper());
                 }
             }
             else  // admin email change, so redirect to user details page
             {
-                return new UserUrlsImpl().getUserDetailsURL(getContainer(), form.getUserId(), form.getReturnURLHelper());
+                return new UserUrlsImpl().getUserDetailsURL(getContainer(), form.getUserId(), form.getReturnUrlHelper());
             }
         }
 
@@ -2967,11 +2967,11 @@ public class UserController extends SpringActionController
             if (null == group)
                 return "Group doesn't exist";
 
-            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            ActionURL returnUrl = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
 
             try
             {
-                SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
+                SecurityManager.impersonateGroup(getViewContext(), group, returnUrl);
             }
             catch (UnauthorizedImpersonationException uie)
             {
@@ -3072,8 +3072,8 @@ public class UserController extends SpringActionController
                 newImpersonationRoles.add(role);
             }
 
-            ActionURL returnURL = context.isImpersonating() ? context.getReturnURL() : form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
-            SecurityManager.impersonateRoles(getViewContext(), newImpersonationRoles, currentImpersonationRoles, returnURL);
+            ActionURL returnUrl = context.isImpersonating() ? context.getReturnUrl() : form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            SecurityManager.impersonateRoles(getViewContext(), newImpersonationRoles, currentImpersonationRoles, returnUrl);
 
             return null;
         }

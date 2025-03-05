@@ -212,7 +212,7 @@ public class SecurityController extends SpringActionController
         {
             ActionURL url = new ActionURL(GroupAction.class, container);
             if (returnUrl != null)
-                url = url.addReturnURL(returnUrl);
+                url = url.addReturnUrl(returnUrl);
             return url.addParameter("group", groupName);
         }
 
@@ -223,12 +223,12 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getGroupPermissionURL(Container container, int id, @Nullable URLHelper returnURL)
+        public ActionURL getGroupPermissionURL(Container container, int id, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(GroupPermissionAction.class, container);
             url.addParameter("id", id);
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
+            if (returnUrl != null)
+                url.addReturnUrl(returnUrl);
             return url;
         }
 
@@ -245,21 +245,21 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public ActionURL getPermissionsURL(Container container, @Nullable URLHelper returnURL)
+        public ActionURL getPermissionsURL(Container container, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(PermissionsAction.class, container);
-            if (returnURL != null)
-               url.addReturnURL(returnURL);
+            if (returnUrl != null)
+               url.addReturnUrl(returnUrl);
             return url;
         }
 
         @Override
-        public ActionURL getSiteGroupsURL(Container container, @Nullable URLHelper returnURL)
+        public ActionURL getSiteGroupsURL(Container container, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(PermissionsAction.class, container);
             url.addParameter("t", "sitegroups");
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
+            if (returnUrl != null)
+                url.addReturnUrl(returnUrl);
             return url;
         }
 
@@ -312,7 +312,7 @@ public class SecurityController extends SpringActionController
 
         @Override
         @Nullable
-        public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
+        public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnUrl)
         {
             long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream()
                 .filter(externalToolsViewProvider -> !externalToolsViewProvider.getViews(user).isEmpty())
@@ -320,7 +320,7 @@ public class SecurityController extends SpringActionController
             if (viewCount > 0)
             {
                 ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
-                url.addReturnURL(returnURL);
+                url.addReturnUrl(returnUrl);
                 return url;
             }
             return null;
@@ -331,7 +331,7 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL(ClonePermissionsAction.class, ContainerManager.getRoot())
                 .addParameter("targetUser", targetUser.getUserId())
-                .addReturnURL(returnUrl);
+                .addReturnUrl(returnUrl);
         }
     }
 
@@ -1511,11 +1511,11 @@ public class SecurityController extends SpringActionController
             if (form.isSkipProfile())
                 extraParams.add(new Pair<>("skipProfile", "1"));
 
-            URLHelper returnURL = null;
+            URLHelper returnUrl = null;
             if (null != form.getReturnUrl())
             {
                 extraParams.add(new Pair<>(ActionURL.Param.returnUrl.name(), form.getReturnUrl()));
-                returnURL = form.getReturnURLHelper();
+                returnUrl = form.getReturnUrlHelper();
             }
 
             for (ValidEmail email : emails)
@@ -1531,7 +1531,7 @@ public class SecurityController extends SpringActionController
                 {
                     if (HtmlString.isBlank(result))
                     {
-                        ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), newUser.getUserId(), returnURL);
+                        ActionURL url = urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), newUser.getUserId(), returnUrl);
                         result = HtmlString.unsafe(PageFlowUtil.filter(email) + " was already a registered system user. Click <a href=\"" + url.getEncodedLocalURIString() + "\">here</a> to see this user's profile and history.");
                     }
                     else if (userToClone != null)
@@ -1932,7 +1932,7 @@ public class SecurityController extends SpringActionController
         @Override
         public @NotNull URLHelper getSuccessURL(UserForm form)
         {
-            return form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL());
+            return form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL());
         }
     }
 
@@ -1985,7 +1985,7 @@ public class SecurityController extends SpringActionController
                 PageFlowUtil.filter(affectedUser.getEmail()),
                 _loginExists ? "reset" : "created",
                 PageFlowUtil.filter(actionURL.getLocalURIString()),
-                PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
+                PageFlowUtil.button("Done").href(form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL()))
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -2010,7 +2010,7 @@ public class SecurityController extends SpringActionController
             builder.unsafeAppend("<p>")
                 .append(getErrorMessage(errors))
                 .unsafeAppend("</p>")
-                .append(PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL())));
+                .append(PageFlowUtil.button("Done").href(form.getReturnUrlHelper(AppProps.getInstance().getHomePageActionURL())));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             setTitle("Password Reset Failed");

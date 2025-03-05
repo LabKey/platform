@@ -56,7 +56,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final RoleSet _roles;
     private final RoleSet _previousRoles;
     @JsonIgnore // Can't be handled by remote pipelines
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
     private final String _cacheKey;
 
     @JsonCreator
@@ -72,15 +72,15 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         _adminUserId = adminUserId;
         _roles = roles;
         _previousRoles = previousRoles;
-        _returnURL = null;
+        _returnUrl = null;
         _cacheKey = cacheKey;
     }
     
-    public RoleImpersonationContextFactory(@Nullable Container project, User adminUser, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
+    public RoleImpersonationContextFactory(@Nullable Container project, User adminUser, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnUrl)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
 
         // Compute the navtree cache key based on role names + project: NavTree will be different for each role set + project combination
         StringBuilder cacheKey = new StringBuilder("/impersonationRole=");
@@ -106,7 +106,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new RoleImpersonationContext(project, getAdminUser(), _roles, _returnURL, this, _cacheKey);
+        return new RoleImpersonationContext(project, getAdminUser(), _roles, _returnUrl, this, _cacheKey);
     }
 
     @Override
@@ -214,11 +214,11 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
                 @Nullable Container project,
                 User adminUser,
                 RoleSet roles,
-                ActionURL returnURL,
+                ActionURL returnUrl,
                 ImpersonationContextFactory factory,
                 String cacheKey)
         {
-            super(adminUser, project, returnURL, factory);
+            super(adminUser, project, returnUrl, factory);
             _roles = roles;
             _cacheKey = cacheKey;
             verifyPermissions(project, adminUser, _roles.getRoles());
