@@ -184,7 +184,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 // the customize URL should always be for the current container (not the wiki webpart's container)
                 customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
                 customizeURL.addParameter("webPartId", _webPartId);
-                customizeURL.addReturnURL(getViewContext().getActionURL());
+                customizeURL.addReturnUrl(getViewContext().getActionURL());
             }
 
             if (perms.allowRead(wiki))

@@ -229,9 +229,9 @@ public class ReportViewProvider implements DataViewProvider
 
                         if (reportPermUrl != null)
                         {
-                            URLHelper returnUrl = context.getActionURL().getReturnURL();
+                            URLHelper returnUrl = context.getActionURL().getReturnUrl();
                             if (returnUrl != null)
-                                reportPermUrl.addReturnURL(returnUrl);
+                                reportPermUrl.addReturnUrl(returnUrl);
                         }
                     }
                 }

@@ -46,15 +46,15 @@ public interface ExperimentUrls extends UrlProvider
     default ActionURL getRunTextURL(Container c, int rowId) { return null; }
     default ActionURL getRunTextURL(ExpRun run) { return null; }
 
-    default ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL) { return null; }
+    default ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnUrl) { return null; }
 
-    default ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL) { return null; }
+    default ActionURL getDeleteExperimentsURL(Container container, URLHelper returnUrl) { return null; }
 
-    default ActionURL getDeleteDatasURL(Container container, URLHelper returnURL) { return null; }
+    default ActionURL getDeleteDatasURL(Container container, URLHelper returnUrl) { return null; }
 
     default ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment) { return null; }
 
-    default ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment expExperiment) { return null; }
+    default ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnUrl, ExpExperiment expExperiment) { return null; }
 
     default ActionURL getExportProtocolURL(Container container, ExpProtocol protocol) { return null; }
 
@@ -64,9 +64,9 @@ public interface ExperimentUrls extends UrlProvider
 
     default ActionURL getMoveRunsLocationURL(Container container) { return null; }
 
-    default ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL) { return null; }
+    default ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnUrl) { return null; }
 
-    default ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns) { return null; }
+    default ActionURL getCreateRunGroupURL(Container container, URLHelper returnUrl, boolean addSelectedRuns) { return null; }
 
     default ActionURL getShowRunsURL(Container c, ExperimentRunType type) { return null; }
 

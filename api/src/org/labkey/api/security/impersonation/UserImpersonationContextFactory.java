@@ -51,7 +51,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     private final int _adminUserId;
     private final int _impersonatedUserId;
     @JsonIgnore // Can't be handled by remote pipelines
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
 
     @JsonCreator
     protected UserImpersonationContextFactory(
@@ -63,15 +63,15 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         _projectId = projectId;
         _adminUserId = adminUserId;
         _impersonatedUserId = impersonatedUserId;
-        _returnURL = null;
+        _returnUrl = null;
     }
 
-    public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL)
+    public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnUrl)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
         _impersonatedUserId = impersonatedUser.getUserId();
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new UserImpersonationContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL, this);
+        return new UserImpersonationContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnUrl, this);
     }
 
     @Override
@@ -178,9 +178,9 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
             super(adminUser, project, null, factory);
         }
 
-        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnURL, ImpersonationContextFactory factory)
+        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, ActionURL returnUrl, ImpersonationContextFactory factory)
         {
-            super(adminUser, project, returnURL, factory);
+            super(adminUser, project, returnUrl, factory);
             verifyPermissions(project, impersonatedUser, adminUser);
         }
 

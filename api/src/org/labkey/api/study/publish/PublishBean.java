@@ -13,7 +13,7 @@ public class PublishBean
     private final boolean _nullStudies;
     private final boolean _insufficientPermissions;
     private final String _dataRegionSelectionKey;
-    private final ActionURL _returnURL;
+    private final ActionURL _returnUrl;
     private final ActionURL _successURL;
     private final String _containerFilterName;
     private final List<Integer> _batchIds;
@@ -22,7 +22,7 @@ public class PublishBean
 
     public PublishBean(ActionURL successURL,
                        List<Integer> ids, String dataRegionSelectionKey,
-                       Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, ActionURL returnURL,
+                       Set<Container> studies, boolean nullStudies, boolean insufficientPermissions, ActionURL returnUrl,
                        String containerFilterName, List<Integer> batchIds, String batchNoun, boolean autoLinkEnabled)
     {
         _successURL = successURL;
@@ -31,7 +31,7 @@ public class PublishBean
         _nullStudies = nullStudies;
         _ids = ids;
         _dataRegionSelectionKey = dataRegionSelectionKey;
-        _returnURL = returnURL;
+        _returnUrl = returnUrl;
         _containerFilterName = containerFilterName;
         _batchIds = batchIds;
         _batchNoun = batchNoun;
@@ -43,9 +43,9 @@ public class PublishBean
         return _successURL;
     }
 
-    public ActionURL getReturnURL()
+    public ActionURL getReturnUrl()
     {
-        return _returnURL;
+        return _returnUrl;
     }
 
     public List<Integer> getIds()

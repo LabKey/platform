@@ -71,19 +71,19 @@
             if (domainEvent != null)
             {
                 specimenEventUrl = domainEvent.getDomainKind().urlEditDefinition(domainEvent, getViewContext())
-                    .addReturnURL(getViewContext().getActionURL());
+                    .addReturnUrl(getViewContext().getActionURL());
             }
 
             if (domainVial != null)
             {
                 vialUrl = domainVial.getDomainKind().urlEditDefinition(domainVial, getViewContext())
-                    .addReturnURL(getViewContext().getActionURL());
+                    .addReturnUrl(getViewContext().getActionURL());
             }
 
             if (domainSpecimen != null)
             {
                 specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext())
-                    .addReturnURL(getViewContext().getActionURL());
+                    .addReturnUrl(getViewContext().getActionURL());
             }
 
 %>

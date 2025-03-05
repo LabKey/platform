@@ -169,13 +169,13 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     @Override
     public HttpView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
     {
-        _returnUrl = domainIdForm.getReturnURLHelper(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer()));
+        _returnUrl = domainIdForm.getReturnUrlHelper(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer()));
         Domain domain = getDomain(domainIdForm);
         List<? extends DomainProperty> properties = domain.getProperties();
         if (properties.isEmpty())
         {
             return HtmlView.unsafe("No fields are defined for this table.<br><br>" +
-                    PageFlowUtil.button("Cancel").href(domainIdForm.getReturnURLHelper()));
+                    PageFlowUtil.button("Cancel").href(domainIdForm.getReturnUrlHelper()));
         }
 
 
@@ -294,9 +294,9 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
         // Overrides to this method should call super, and then add any additional url parameters the entity type may need.
         ActionURL url = new ActionURL(this.getClass(), container);
-        URLHelper returnUrl = domainIdForm.getReturnURLHelper();
+        URLHelper returnUrl = domainIdForm.getReturnUrlHelper();
         if (returnUrl != null)
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
         url.addParameter("domainId", domainIdForm.getDomainId());
         return url;
     }

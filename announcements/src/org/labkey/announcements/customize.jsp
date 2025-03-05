@@ -33,7 +33,7 @@
     DiscussionService.Settings settings = bean.settings;
 
 %><labkey:form action="<%=urlFor(CustomizeAction.class)%>" method="post">
-<%=generateReturnUrlFormField(bean.returnURL)%>
+<%=generateReturnUrlFormField(bean.returnUrl)%>
 <table class="lk-fields-table">
     <tr>
         <td class="labkey-form-label">Board name</td>
@@ -168,8 +168,8 @@
         <td colspan=2>
             <br/>
             <%= button("Save").submit(true) %>
-            <% if (null != bean.returnURL) { %>
-                <%= button("Cancel").href(bean.returnURL) %>
+            <% if (null != bean.returnUrl) { %>
+                <%= button("Cancel").href(bean.returnUrl) %>
             <% } %>
         </td>
     </tr>
