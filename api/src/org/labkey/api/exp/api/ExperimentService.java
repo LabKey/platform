@@ -484,7 +484,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
             return false;
 
         String[] parts = columnName.split("[./]");
-        if (parts.length == 0) // if columnName consist of only '.'
+        if (parts.length == 0) // Issue 52305: if columnName consist of only '.' or '/'
             return false;
         String prefix = parts[0];
 

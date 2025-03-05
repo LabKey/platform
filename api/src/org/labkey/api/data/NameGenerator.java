@@ -43,6 +43,7 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
@@ -684,26 +685,34 @@ public class NameGenerator
         return errors;
     }
 
-    public static Stream<String> parentNames(Object value, String parentColName)
+    public static @Nullable Stream<String> parentNames(Object value, String parentColName)
+    {
+        TSVWriter tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
+        {
+            @Override
+            protected int write()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
+        Stream<String> values = parentNames(value, parentColName, tsvWriter, null);
+        if (values == null)
+            return values;
+        return values.map(String::trim)
+                .filter(s -> !s.isEmpty());
+    }
+
+    public static Stream<String> parentNames(Object value, String parentColName, TSVWriter tsvWriter, @Nullable BatchValidationException errors)
     {
         if (value == null)
             return Stream.empty();
 
-        Stream<String> values;
+        Stream<String> values = null;
         if (value instanceof String || value instanceof Number)
         {
             String valueStr = value instanceof String ? (String) value : value.toString();
             if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
-
-            TSVWriter tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
-            {
-                @Override
-                protected int write()
-                {
-                    throw new UnsupportedOperationException();
-                }
-            };
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
@@ -724,7 +733,10 @@ public class NameGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
+                    if (errors != null)
+                        errors.addRowError(new ValidationException("Unable to parse parent names from " + value, parentColName));
+                    else
+                        throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
                 }
             }
         }
@@ -739,12 +751,13 @@ public class NameGenerator
         }
         else
         {
-            throw new IllegalStateException("For parent values in naming pattern, expected string or collection for '" + parentColName + "': " + value);
+            if (errors != null)
+                errors.addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + value, parentColName));
+            else
+                throw new IllegalStateException("For parent values in naming pattern, expected string or collection for '" + parentColName + "': " + value);
         }
 
-        return values
-                .map(String::trim)
-                .filter(s -> !s.isEmpty());
+        return values;
     }
 
     public static boolean isParentInput(Object token, @Nullable Map<String, String> importAliases, @Nullable String currentDataTypeName, Container container, User user)
@@ -2452,7 +2465,11 @@ public class NameGenerator
             // Keep searching until we find a valid 'target' that's not preceeded by \ (for example, find ${, but exclude \${)
             while (index != -1)
             {
-                if (index == 0 || str.charAt(index - 1) != '\\')
+                if (index == 0)
+                    return index;
+                if (str.charAt(index - 1) != '\\')
+                    return index;
+                else if (index > 1 && str.charAt(index - 2) == '\\') // "\\{": the escape is for "\", not for "{"
                     return index;
 
                 // Otherwise, continue searching after the current occurrence of the target
@@ -2925,15 +2942,15 @@ public class NameGenerator
         public void testStringFormats()
         {
             Map<Object, Object> m = new HashMap<>();
-            m.put("a", "A");
-            m.put("b", " B ");
-            m.put("empty", "");
+            m.put("a/\\", "A");
+            m.put("\\b", " B ");
+            m.put("emp/ty", "");
             m.put("null", null);
             m.put("list", Arrays.asList("a", "b", "c"));
 
             {
                 StringExpression se = NameGenerationExpression.create(
-                        "${null:defaultValue('foo')}|${empty:defaultValue('bar')}|${a:defaultValue('blee')}", false);
+                        "${null:defaultValue('foo')}|${emp\\/ty:defaultValue('bar')}|${a\\/\\:defaultValue('blee')}", false);
 
                 String s = se.eval(m);
                 assertEquals("foo|bar|A", s);
@@ -2941,21 +2958,21 @@ public class NameGenerator
 
             {
                 StringExpression se = NameGenerationExpression.create(
-                        "${b}|${b:trim}|${empty:trim}|${null:trim}", false);
+                        "${\\\\b}|${\\\\b:trim}|${emp\\/ty:trim}|${null:trim}", false);
                 String s = se.eval(m);
                 assertEquals(" B |B||", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create(
-                        "${a:prefix('!')}|${a:suffix('?')}|${null:suffix('#')}|${empty:suffix('*')}|${empty:defaultValue('foo'):suffix('@')}", false);
+                        "${a\\/\\\\:prefix('!')}|${a\\/\\:suffix('?')}|${null:suffix('#')}|${emp\\/ty:suffix('*')}|${emp\\/ty:defaultValue('foo'):suffix('@')}", false);
                 String s = se.eval(m);
                 assertEquals("!A|A?|||foo@", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create(
-                        "${a:join('-')}|${list:join('-')}|${list:join('_'):prefix('['):suffix(']')}|${empty:join('-')}|${null:join('-')}", false);
+                        "${a\\/\\\\:join('-')}|${list:join('-')}|${list:join('_'):prefix('['):suffix(']')}|${emp\\/ty:join('-')}|${null:join('-')}", false);
                 String s = se.eval(m);
                 assertEquals("A|a-b-c|[a_b_c]||", s);
             }
@@ -3048,7 +3065,7 @@ public class NameGenerator
 
             Map<Object, Object> m = new HashMap<>();
             m.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-            m.put("SourceMeta", sourceMeta);
+            m.put("SourceMeta}", sourceMeta);
 
             Container c = JunitUtil.getTestContainer();
             resetCounter();
@@ -3069,7 +3086,7 @@ public class NameGenerator
 
             {
                 FieldKeyStringExpression se = NameGenerationExpression.create(
-                        "${${AliquotedFrom}.${SourceMeta}.:withCounter}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+                        "${${AliquotedFrom}.${SourceMeta\\}}.:withCounter}", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
 
                 ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
 
@@ -3084,7 +3101,7 @@ public class NameGenerator
 
                 Map<Object, Object> m2 = new HashMap<>();
                 m2.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                m2.put("SourceMeta", "mouse2");
+                m2.put("SourceMeta}", "mouse2");
 
                 s = se.eval(m2);
                 assertEquals("S100.mouse2.1", s);
@@ -3092,7 +3109,7 @@ public class NameGenerator
 
             {
                 FieldKeyStringExpression se = NameGenerationExpression.create(
-                        "${${AliquotedFrom}-:withCounter}-${SourceMeta}-suffix", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+                        "${${AliquotedFrom}-:withCounter}-${SourceMeta\\}}-suffix", false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
 
                 ArrayList<StringExpressionFactory.StringPart> parsedExpressions = se.getParsedExpression();
 
@@ -3223,6 +3240,27 @@ public class NameGenerator
             GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor("FieldA", "http://www.w3.org/2001/XMLSchema#string");
             List<GWTPropertyDescriptor> fields = Collections.singletonList(descriptor);
             validateNameResult("S-${FieldA}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+
+            descriptor = new GWTPropertyDescriptor("Field/A", "http://www.w3.org/2001/XMLSchema#string");
+            fields = Collections.singletonList(descriptor);
+            validateNameResult("S-${Field/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+
+            descriptor = new GWTPropertyDescriptor("FieldA\\", "http://www.w3.org/2001/XMLSchema#string");
+            fields = Collections.singletonList(descriptor);
+            validateNameResult("S-${FieldA\\}-${FieldB}", withErrors("No closing brace found for the substitution pattern starting at position 3."), null, fields);
+            validateNameResult("S-${FieldA\\\\}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+
+            descriptor = new GWTPropertyDescriptor("Field/A", "http://www.w3.org/2001/XMLSchema#string");
+            fields = Collections.singletonList(descriptor);
+            validateNameResult("S-${Field/A}", withErrors("Lookup field does not exist: Field/A"), null, fields);
+            validateNameResult("S-${Field\\/A}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+
+            descriptor = new GWTPropertyDescriptor("Field/A}", "http://www.w3.org/2001/XMLSchema#string");
+            fields = Collections.singletonList(descriptor);
+            validateNameResult("S-${Field/A}}", withErrors("Lookup field does not exist: Field/A"), null, fields);
+            validateNameResult("S-${Field\\/A\\}}-${FieldB}", withErrors("Invalid substitution token: ${FieldB}."), null, fields);
+
         }
 
         @Test
@@ -3375,21 +3413,21 @@ public class NameGenerator
 
             // with table columns
             GWTPropertyDescriptor stringField = new GWTPropertyDescriptor("FieldStr", "http://www.w3.org/2001/XMLSchema#string");
-            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("FieldInt", "http://www.w3.org/2001/XMLSchema#int");
-            GWTPropertyDescriptor dateField = new GWTPropertyDescriptor("FieldDate", "http://www.w3.org/2001/XMLSchema#date");
+            GWTPropertyDescriptor intField = new GWTPropertyDescriptor("F.i/e\\l&d}I~n,t", "http://www.w3.org/2001/XMLSchema#int");
+            GWTPropertyDescriptor dateField = new GWTPropertyDescriptor("FieldDate\\", "http://www.w3.org/2001/XMLSchema#date");
             List<GWTPropertyDescriptor> fields = new ArrayList<>();
             fields.add(stringField);
             fields.add(intField);
             fields.add(dateField);
-            verifyPreview("S-${FieldStr}-${FieldInt:number('00000')}", "S-FieldStrValue-00003", null, fields);
-            verifyPreview("S-${FieldStr}-${FieldInt:minValue(1234)}", "S-FieldStrValue-1234", null, fields);
-            verifyPreview("S-${FieldStr}-${FieldInt:minValue('5678')}", "S-FieldStrValue-5678", null, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:number('00000')}", "S-FieldStrValue-00003", null, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue(1234)}", "S-FieldStrValue-1234", null, fields);
+            verifyPreview("S-${FieldStr}-${F\\.i\\/e\\\\l\\&d\\}I\\~n\\,t:minValue('5678')}", "S-FieldStrValue-5678", null, fields);
 
-            verifyPreview("S-${FieldStr}-${FieldDate:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\:date('yyyy.MM.dd')}", "S-FieldStrValue-2021.04.28", null, fields);
             verifyPreview("${${FieldStr}-:withCounter}", "FieldStrValue-1", null, fields);
 
-            verifyPreview("S-${FieldStr}-${FieldDate:dailySampleCount}", "S-FieldStrValue-14", null, fields);
-            verifyPreview("S-${FieldStr}-${FieldDate:yearlySampleCount}", "S-FieldStrValue-412", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\\\:dailySampleCount}", "S-FieldStrValue-14", null, fields);
+            verifyPreview("S-${FieldStr}-${FieldDate\\:yearlySampleCount}", "S-FieldStrValue-412", null, fields);
             verifyPreview("S-${FieldStr}-${dailySampleCount}", "S-FieldStrValue-14", null, fields);
             verifyPreview("S-${FieldStr}-${yearlySampleCount}", "S-FieldStrValue-412", null, fields);
 

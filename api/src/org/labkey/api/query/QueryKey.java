@@ -60,6 +60,9 @@ import java.util.Objects;
             return null;
         String[] encodedParts = StringUtils.splitPreserveAllTokens(str, divider);
 
+        // Issue 52180: Naming Pattern cannot deal with special characters in fields
+        // Use backslash to escape QueryKey special characters in naming expression
+        // For example, use "${MaterialInputs/Blood\/Type}" for referencing "Blood/Type" parent input
         if (decodeBackslash)
         {
             List<String> parts = new ArrayList<>();
@@ -73,6 +76,9 @@ import java.util.Objects;
                     part = "";
                 }
             }
+
+            if (!StringUtils.isEmpty(part))
+                parts.add(part);
 
             T ret = null;
             for (String encodedPart : parts)
