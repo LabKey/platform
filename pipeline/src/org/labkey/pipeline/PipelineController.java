@@ -166,16 +166,16 @@ public class PipelineController extends SpringActionController
         return urlSetup(c, null);
     }
 
-    public static ActionURL urlSetup(Container c, ActionURL returnURL)
+    public static ActionURL urlSetup(Container c, ActionURL returnUrl)
     {
-        return urlSetup(c, returnURL, false, false);
+        return urlSetup(c, returnUrl, false, false);
     }
 
-    public static ActionURL urlSetup(Container c, ActionURL returnURL, boolean rootSet, boolean overrideRoot)
+    public static ActionURL urlSetup(Container c, ActionURL returnUrl, boolean rootSet, boolean overrideRoot)
     {
         ActionURL url = new ActionURL(SetupAction.class, c);
-        if (returnURL != null)
-            url.addReturnURL(returnURL);
+        if (returnUrl != null)
+            url.addReturnUrl(returnUrl);
         if (rootSet)
             url.addParameter(Params.rootset, "1");
         if (overrideRoot)
@@ -1509,7 +1509,7 @@ public class PipelineController extends SpringActionController
             {
                 _title = "Update Pipeline Trigger";
                 Integer rowId = form.getRowId();
-                String returnURL = form.getReturnUrl();
+                String returnUrl = form.getReturnUrl();
                 SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
                 filter.addCondition(FieldKey.fromParts("RowId"), form.getRowId());
                 PipelineTriggerForm savedForm = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).getObject(PipelineTriggerForm.class);
@@ -1518,7 +1518,7 @@ public class PipelineController extends SpringActionController
                 {
                     form = savedForm;
                     form.setRowId(rowId);
-                    form.setReturnUrl(returnURL);
+                    form.setReturnUrl(returnUrl);
                 }
                 else
                 {
@@ -1662,7 +1662,7 @@ public class PipelineController extends SpringActionController
             ActionURL url = new ActionURL(BrowseAction.class, container);
 
             if (null != returnUrl)
-                url.addReturnURL(returnUrl);
+                url.addReturnUrl(returnUrl);
 
             if (path != null)
                 url.addParameter(Params.path, path);
@@ -1734,7 +1734,7 @@ public class PipelineController extends SpringActionController
                 url.addParameter("pipelineTask", pipelineId);
 
             if (returnUrl != null)
-                url.addReturnURL(returnUrl);
+                url.addReturnUrl(returnUrl);
 
             return url;
         }

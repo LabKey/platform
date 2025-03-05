@@ -143,7 +143,7 @@ public class RunListQueryView extends ExperimentRunListView
             if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
             {
                 ActionURL updateAction = PageFlowUtil.urlProvider(AssayUrls.class).getUpdateQCStateURL(getContainer(), schema.getProtocol())
-                        .addReturnURL(getViewContext().getActionURL());
+                        .addReturnUrl(getViewContext().getActionURL());
                 NavTree updateItem = button.addMenuItem("Update state of selected rows", "if (verifySelected(" + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form, \"" +
                         updateAction.getLocalURIString() + "\", \"post\", \"rows\")) " + DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".form.submit()");
                 updateItem.setId("QCState:updateSelected");
@@ -154,7 +154,7 @@ public class RunListQueryView extends ExperimentRunListView
             if (protocolContainer.hasPermission(getUser(), AdminPermission.class))
             {
                 button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(protocolContainer)
-                        .addReturnURL(getViewContext().getActionURL()));
+                        .addReturnUrl(getViewContext().getActionURL()));
                 addButton = true;
             }
 

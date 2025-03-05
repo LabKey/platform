@@ -630,7 +630,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 if (user.isSearchUser())
                     return null;
 
-                URLHelper returnURL = null;
+                URLHelper returnUrl = null;
                 try
                 {
                     StringBuilder url = new StringBuilder(request.getRequestURL().toString());
@@ -639,7 +639,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                         url.append("?");
                         url.append(request.getQueryString());
                     }
-                    returnURL = new URLHelper(url.toString());
+                    returnUrl = new URLHelper(url.toString());
                 }
                 catch (URISyntaxException e)
                 {
@@ -656,11 +656,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
                         uae.setType(UnauthorizedException.Type.sendBasicAuth);
                         throw uae;
                     }
-                    return urlProvider(AdminUrls.class).getMaintenanceURL(returnURL);
+                    return urlProvider(AdminUrls.class).getMaintenanceURL(returnUrl);
                 }
                 else if (upgradeRequired || !startupComplete)
                 {
-                    return urlProvider(AdminUrls.class).getModuleStatusURL(returnURL);
+                    return urlProvider(AdminUrls.class).getModuleStatusURL(returnUrl);
                 }
             }
         }

@@ -67,18 +67,18 @@ public class SampleTypeContentsView extends QueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
+        String returnUrl = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
 
-        if (returnURL == null)
+        if (returnUrl == null)
         {
-            // 27693: Respect returnURL from async webpart requests
-            if (getSettings().getReturnURLHelper() != null)
-                returnURL = getSettings().getReturnURLHelper().toString();
+            // 27693: Respect returnUrl from async webpart requests
+            if (getSettings().getReturnUrlHelper() != null)
+                returnUrl = getSettings().getReturnUrlHelper().toString();
             else
-                returnURL = getViewContext().getActionURL().toString();
+                returnUrl = getViewContext().getActionURL().toString();
         }
 
-        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnUrl);
         view.getDataRegion().addHiddenFormField("rowId", String.valueOf(_source.getRowId()));
 
         return view;

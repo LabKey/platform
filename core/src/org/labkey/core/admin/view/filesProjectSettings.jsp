@@ -79,8 +79,8 @@
     String folderSetup = getActionURL().getParameter("folderSetup");
     boolean isFolderSetup = "true".equalsIgnoreCase(folderSetup);
     String cancelButtonText = isFolderSetup ? "Next" : "Cancel";
-    URLHelper cancelButtonUrl = isFolderSetup && getActionURL().getReturnURL() != null
-            ? getActionURL().getReturnURL()
+    URLHelper cancelButtonUrl = isFolderSetup && getActionURL().getReturnUrl() != null
+            ? getActionURL().getReturnUrl()
             : c.getStartURL(getUser());
     ActionURL redirectToPipeline = urlProvider(PipelineUrls.class).urlBegin(c);
     boolean isCurrentFileRootCloud = FileRootProp.cloudRoot.name().equals(bean.getFileRootOption());

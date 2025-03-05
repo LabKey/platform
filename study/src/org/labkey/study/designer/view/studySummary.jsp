@@ -47,7 +47,7 @@
     String grant = study.getGrant();
     List<Attachment> protocolDocs = study.getProtocolDocuments();
     ActionURL editMetadataURL = new ActionURL(StudyController.ManageStudyPropertiesAction.class, c);
-    editMetadataURL.addReturnURL(getActionURL());
+    editMetadataURL.addReturnUrl(getActionURL());
 %>
     <script type="text/javascript" nonce="<%=getScriptNonce()%>">
         LABKEY.requiresCss("editInPlaceElement.css");

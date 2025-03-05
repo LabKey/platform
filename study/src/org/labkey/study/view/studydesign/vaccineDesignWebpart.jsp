@@ -43,7 +43,7 @@
         if (container.hasPermission(user, UpdatePermission.class))
         {
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
-            editUrl.addReturnURL(getActionURL());
+            editUrl.addReturnUrl(getActionURL());
 %>
             <%=link("Manage Study Products", editUrl)%><br/>
 <%

@@ -84,7 +84,7 @@
                         disableEdit : <%=isDataspaceProject%>,
                         subjectNoun : <%=q(subjectNoun)%>,
                         visitNoun : <%=q(visitNoun)%>,
-                        returnURL : <%=q(returnUrl)%>,
+                        returnUrl : <%=q(returnUrl)%>,
                         productRoles: productRoles
                     });
                 }
@@ -128,7 +128,7 @@ Enter treatment information in the grids below.
             Use the manage study products page to change or update the set of available values.
             <%
                 ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
-                manageStudyProductsURL.addReturnURL(getActionURL());
+                manageStudyProductsURL.addReturnUrl(getActionURL());
             %>
             <%=link("Manage Study Products", manageStudyProductsURL)%>
         </li>
@@ -152,7 +152,7 @@ Enter treatment information in the grids below.
         {
 %>
             <li>Use the change visit order page to adjust the display order of visits in the treatment schedule table.
-            <%= link("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
+            <%= link("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnUrl(getActionURL())) %>
             </li>
 <%
         }

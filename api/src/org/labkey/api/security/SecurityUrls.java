@@ -24,19 +24,19 @@ import org.labkey.api.view.ActionURL;
 public interface SecurityUrls extends UrlProvider
 {
     ActionURL getBeginURL(Container container);
-    ActionURL getManageGroupURL(Container container, String groupName, URLHelper returnURL);
+    ActionURL getManageGroupURL(Container container, String groupName, URLHelper returnUrl);
     ActionURL getManageGroupURL(Container container, String groupName);
-    ActionURL getGroupPermissionURL(Container container, int id, URLHelper returnURL);
+    ActionURL getGroupPermissionURL(Container container, int id, URLHelper returnUrl);
     ActionURL getGroupPermissionURL(Container container, int id);
     ActionURL getPermissionsURL(Container container);
-    ActionURL getPermissionsURL(Container container, URLHelper returnURL);
-    ActionURL getSiteGroupsURL(Container container, URLHelper returnURL);
+    ActionURL getPermissionsURL(Container container, URLHelper returnUrl);
+    ActionURL getSiteGroupsURL(Container container, URLHelper returnUrl);
     ActionURL getContainerURL(Container container);
     ActionURL getShowRegistrationEmailURL(Container container, User user, String mailPrefix);
     ActionURL getAddUsersURL(Container container);
     ActionURL getFolderAccessURL(Container container);
-    ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL);
+    ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnUrl);
     ActionURL getCompleteUserURL(Container container);
     ActionURL getCompleteUserReadURL(Container container);
-    ActionURL getClonePermissionsURL(User targetUser, @NotNull ActionURL returnURL);
+    ActionURL getClonePermissionsURL(User targetUser, @NotNull ActionURL returnUrl);
 }

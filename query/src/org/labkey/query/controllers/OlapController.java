@@ -411,7 +411,7 @@ public class OlapController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomOlapDescriptorForm form)
         {
-            return form.getReturnURLHelper() != null ? form.getReturnActionURL() : new ActionURL(TestBrowserAction.class, getContainer());
+            return form.getReturnUrlHelper() != null ? form.getReturnActionURL() : new ActionURL(TestBrowserAction.class, getContainer());
         }
 
     }
@@ -515,8 +515,8 @@ public class OlapController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CustomOlapDescriptorForm form)
         {
-            return form.getReturnURLHelper() != null ?
-                    form.getReturnURLHelper() :
+            return form.getReturnUrlHelper() != null ?
+                    form.getReturnUrlHelper() :
                     new ActionURL(TestBrowserAction.class, getContainer());
         }
     }

@@ -53,7 +53,7 @@
         Ext4.create('LABKEY.VaccineDesign.StudyProductsPanel', {
             renderTo : 'study-products-panel',
             disableEdit : <%=isDataspaceProject%>,
-            returnURL : <%=q(returnUrl)%>
+            returnUrl : <%=q(returnUrl)%>
         });
     });
 </script>
@@ -62,7 +62,7 @@
 if (isDataspaceProject)
 {
     ActionURL projectManageProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer().getProject());
-    projectManageProductsURL.addReturnURL(getActionURL());
+    projectManageProductsURL.addReturnUrl(getActionURL());
 %>
 Vaccine design information is defined at the project level for Dataspace projects. The grids below are read-only.
 <div style="width: 850px;">
@@ -86,7 +86,7 @@ Enter vaccine design information in the grids below.
             Use the manage treatments page to describe the schedule of treatments and combinations of study products administered at each timepoint.
             <%
                 ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
-                manageTreatmentsURL.addReturnURL(getActionURL());
+                manageTreatmentsURL.addReturnUrl(getActionURL());
             %>
             <%=link("Manage Treatments", manageTreatmentsURL)%>
         </li>

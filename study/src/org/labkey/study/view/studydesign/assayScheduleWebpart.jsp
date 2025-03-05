@@ -57,7 +57,7 @@
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageAssayScheduleAction.class, getContainer());
             if (useAlternateLookupFields)
                 editUrl.addParameter("useAlternateLookupFields", true);
-            editUrl.addReturnURL(getActionURL());
+            editUrl.addReturnUrl(getActionURL());
 %>
             <%=link("Manage Assay Schedule", editUrl)%><br/>
 <%

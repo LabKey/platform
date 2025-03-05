@@ -906,7 +906,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
     @RequiresPermission(DeletePermission.class)
     public class DeleteSurveysAction extends FormHandlerAction<QueryForm>
     {
-        private ActionURL _returnURL;
+        private ActionURL _returnUrl;
 
         @Override
         public void validateCommand(QueryForm target, Errors errors)
@@ -916,7 +916,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public boolean handlePost(QueryForm form, BindException errors)
         {
-            _returnURL = form.getReturnActionURL();
+            _returnUrl = form.getReturnActionURL();
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -936,14 +936,14 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public URLHelper getSuccessURL(QueryForm form)
         {
-            return _returnURL;
+            return _returnUrl;
         }
     }
 
     @RequiresPermission(DeletePermission.class)
     public class DeleteSurveyDesignsAction extends FormHandlerAction<QueryForm>
     {
-        private ActionURL _returnURL;
+        private ActionURL _returnUrl;
 
         @Override
         public void validateCommand(QueryForm target, Errors errors)
@@ -953,7 +953,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public boolean handlePost(QueryForm form, BindException errors)
         {
-            _returnURL = form.getReturnActionURL();
+            _returnUrl = form.getReturnActionURL();
 
             DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -973,7 +973,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public URLHelper getSuccessURL(QueryForm form)
         {
-            return _returnURL;
+            return _returnUrl;
         }
     }
 

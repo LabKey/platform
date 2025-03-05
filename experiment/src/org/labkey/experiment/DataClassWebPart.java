@@ -119,7 +119,7 @@ public class DataClassWebPart extends QueryView
         super.populateButtonBar(view, bar);
 
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, getContainer());
-        deleteURL.addReturnURL(getViewContext().getActionURL());
+        deleteURL.addReturnUrl(getViewContext().getActionURL());
 
         ActionButton deleteButton = new ActionButton(ExperimentController.DeleteDataClassAction.class, "Delete", ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DesignDataClassPermission.class);
@@ -130,7 +130,7 @@ public class DataClassWebPart extends QueryView
         bar.add(deleteButton);
 
         ActionURL urlInsert = new ActionURL(ExperimentController.EditDataClassAction.class, getContainer());
-        urlInsert.addReturnURL(getViewContext().getActionURL());
+        urlInsert.addReturnUrl(getViewContext().getActionURL());
         Set<String> templates = DomainTemplateGroup.getTemplatesForDomainKind(getContainer(), DataClassDomainKind.NAME);
         if (templates.size() > 0)
         {
@@ -141,7 +141,7 @@ public class DataClassWebPart extends QueryView
             insertItem.setId("NewDataClass:fromDesigner");
 
             ActionURL urlTemplate = new ActionURL(ExperimentController.CreateDataClassFromTemplateAction.class, getContainer());
-            urlTemplate.addReturnURL(getViewContext().getActionURL());
+            urlTemplate.addReturnUrl(getViewContext().getActionURL());
             NavTree templateItem = createMenuButton.addMenuItem("Create from Template", urlTemplate);
             templateItem.setId("NewDataClass:fromTemplate");
 

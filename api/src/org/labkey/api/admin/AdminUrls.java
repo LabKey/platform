@@ -30,10 +30,10 @@ public interface AdminUrls extends UrlProvider
 {
     ActionURL getModuleErrorsURL();
     ActionURL getAdminConsoleURL();
-    ActionURL getModuleStatusURL(URLHelper returnURL);
+    ActionURL getModuleStatusURL(URLHelper returnUrl);
     ActionURL getCustomizeSiteURL();
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
-    ActionURL getMaintenanceURL(URLHelper returnURL);
+    ActionURL getMaintenanceURL(URLHelper returnUrl);
     ActionURL getModulesDetailsURL();
     ActionURL getDeleteModuleURL(String moduleName);
 
@@ -57,10 +57,10 @@ public interface AdminUrls extends UrlProvider
     ActionURL getProjectSettingsFileURL(Container c);
     ActionURL getFolderSettingsURL(Container c);
 
-    ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
-    ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
+    ActionURL getCreateProjectURL(@Nullable ActionURL returnUrl);
+    ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnUrl);
     ActionURL getMemTrackerURL();
-    ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnURL);
+    ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnUrl);
     ActionURL getFilesSiteSettingsURL(boolean upgrade);
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();

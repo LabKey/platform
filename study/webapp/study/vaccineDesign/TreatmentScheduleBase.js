@@ -14,7 +14,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanelBase', {
 
     dirty : false,
 
-    returnURL : null,
+    returnUrl : null,
 
     getButtonBar : function()
     {
@@ -135,7 +135,7 @@ Ext4.define('LABKEY.VaccineDesign.TreatmentSchedulePanelBase', {
     goToReturnURL : function()
     {
         this.setDirty(false);
-        window.location = this.returnURL;
+        window.location = this.returnUrl;
     },
 
     onFailure : function(text)
