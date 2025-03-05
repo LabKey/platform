@@ -15,6 +15,11 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -34,11 +39,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -587,9 +587,9 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
 
         @Override
-        protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws IOException
+        protected void renderInternal(Object model, PrintWriter out) throws IOException
         {
-            response.getWriter().print("<div class=\"labkey-bordered\">" + _name + "</div>");
+            out.print("<div class=\"labkey-bordered\">" + _name + "</div>");
         }
     }
 

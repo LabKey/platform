@@ -15,6 +15,9 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,9 +39,6 @@ import org.labkey.api.view.template.ClientDependency;
 import org.springframework.dao.DataAccessException;
 import org.springframework.validation.Errors;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -81,10 +82,7 @@ public abstract class DataView extends WebPartView<RenderContext>
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.addAll(super.getClientDependencies());
-
-        return resources;
+        return new LinkedHashSet<>(super.getClientDependencies());
     }
 
     public DataView(@Nullable DataRegion dataRegion, TableViewForm form, Errors errors)
@@ -145,8 +143,8 @@ public abstract class DataView extends WebPartView<RenderContext>
             dr.setTable(form.getTable());
             // Include both columns that are user-editable (i.e. not the system defined fields) and valueExpression columns (i.e. calculated fields) in the data view
             List<ColumnInfo> allCols = form.getTable().getColumns().stream()
-                    .filter(col -> col.isUserEditable() || col.isValueExpressionColumn())
-                    .toList();
+                .filter(col -> col.isUserEditable() || col.isValueExpressionColumn())
+                .toList();
             List<ColumnInfo> includedCols = new ArrayList<>();
             for (ColumnInfo col : allCols)
             {
@@ -224,7 +222,7 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
     /** TODO duplicated code in QueryView **/
-    protected void renderErrors(PrintWriter writer, String message, List<? extends Throwable> errors)
+    private void renderErrors(PrintWriter writer, String message, List<? extends Throwable> errors)
     {
         StringWriter out = new StringWriter();
         out.write("<p class=\"labkey-error\">");
@@ -259,7 +257,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                     if (user.hasSiteAdminPermission() || user.isPlatformDeveloper())
                     {
                         out.write("&nbsp;");
-                        out.write(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL).toString());
+                        out.write(PageFlowUtil.link(Objects.toString(resolveText, "resolve")).href(resolveURL).toString());
                     }
                 }
                 out.write("<br>");

@@ -1404,7 +1404,7 @@ public class DataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    protected void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
+    private void renderNoRowsMessage(RenderContext ctx, Writer out, int colCount) throws IOException
     {
         out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><em>");
         out.write(getNoRowsMessage());
@@ -1514,7 +1514,7 @@ public class DataRegion extends DisplayElement
         out.write("</tr></thead>");
     }
 
-    protected void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
+    private void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         // Issue 51036: load totalRows count async for DataRegions
         boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
@@ -1739,7 +1739,7 @@ public class DataRegion extends DisplayElement
         return _recordSelectorValueColumns;
     }
 
-    protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
+    private void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
         out.write(getRecordSelectorName(ctx));
@@ -1785,7 +1785,7 @@ public class DataRegion extends DisplayElement
         out.write("</td>");
     }
 
-    public void renderGridCellContents(RenderContext ctx, Writer out, DisplayColumn column, String iconCls) throws IOException
+    private void renderGridCellContents(RenderContext ctx, Writer out, DisplayColumn column, String iconCls) throws IOException
     {
         Object value = column.getValue(ctx);
         String url = column.renderURL(ctx);
@@ -2078,7 +2078,7 @@ public class DataRegion extends DisplayElement
             out.write(error.toString());
     }
 
-    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
+    private void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
     {
         Set<String> errors = getErrors(ctx, renderer);
 
