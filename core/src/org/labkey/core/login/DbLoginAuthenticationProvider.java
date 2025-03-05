@@ -109,7 +109,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnUrl) throws InvalidEmailException
     {
         // Check for API key first
         if (API_KEY.equals(id))
@@ -170,7 +170,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
                 if (!rule.isValidForLogin(password, user, messages))
                 {
-                    return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
+                    return getChangePasswordResponse(configuration, user, returnUrl, FailureReason.complexity);
                 }
                 else
                 {
@@ -179,7 +179,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
                     if (expiration.hasExpired(() -> LoginManager.getLastChanged(user2)))
                     {
-                        return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
+                        return getChangePasswordResponse(configuration, user, returnUrl, FailureReason.expired);
                     }
                 }
             }
@@ -225,7 +225,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
-    private AuthenticationResponse getChangePasswordResponse(DbLoginConfiguration configuration, User user, URLHelper returnURL, FailureReason failureReason)
+    private AuthenticationResponse getChangePasswordResponse(DbLoginConfiguration configuration, User user, URLHelper returnUrl, FailureReason failureReason)
     {
         ActionURL redirectURL = null;
 
@@ -242,11 +242,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                     // We have a container, so redirect to password change page
 
                     // Fall back plan is the home page
-                    if (null == returnURL)
-                        returnURL = AppProps.getInstance().getHomePageActionURL();
+                    if (null == returnUrl)
+                        returnUrl = AppProps.getInstance().getHomePageActionURL();
 
                     LoginUrls urls = PageFlowUtil.urlProvider(LoginUrls.class);
-                    redirectURL = urls.getChangePasswordURL(c, user, returnURL, "Your " + failureReason.getMessage() + "; please choose a new password.");
+                    redirectURL = urls.getChangePasswordURL(c, user, returnUrl, "Your " + failureReason.getMessage() + "; please choose a new password.");
                 }
             }
         }

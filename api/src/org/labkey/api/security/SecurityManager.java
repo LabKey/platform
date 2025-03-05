@@ -812,14 +812,14 @@ public class SecurityManager
         return newSession;
     }
 
-    public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnURL)
+    public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnUrl)
     {
-        URLHelper ret = AuthenticationManager.logout(user, request, returnURL);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
+        URLHelper ret = AuthenticationManager.logout(user, request, returnUrl);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
         SessionHelper.clearSession(request, true);
         return ret;
     }
 
-    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, ActionURL returnURL)
+    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, ActionURL returnUrl)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
@@ -827,16 +827,16 @@ public class SecurityManager
         if (user.hasRootAdminPermission())
             project = null;
 
-        impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnURL));
+        impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnUrl));
     }
 
-    public static void impersonateGroup(ViewContext viewContext, Group group, ActionURL returnURL)
+    public static void impersonateGroup(ViewContext viewContext, Group group, ActionURL returnUrl)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
-        impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnURL));
+        impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnUrl));
     }
 
-    public static void impersonateRoles(ViewContext viewContext, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnURL)
+    public static void impersonateRoles(ViewContext viewContext, Collection<Role> newImpersonationRoles, Set<Role> currentImpersonationRoles, ActionURL returnUrl)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
@@ -844,7 +844,7 @@ public class SecurityManager
         if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
             project = null;
 
-        impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
+        impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnUrl));
     }
 
     private static void impersonate(ViewContext viewContext, ImpersonationContextFactory factory)

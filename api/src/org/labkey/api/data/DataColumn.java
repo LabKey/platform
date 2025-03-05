@@ -751,7 +751,10 @@ public class DataColumn extends DisplayColumn
 
         // if the already saved strVal is not in the current choice set, add it (as it seems wrong to remove a value that the user hasn't explicitly touched)
         if (!StringUtils.isEmpty(strVal) && !choices.contains(strVal))
+        {
+            choices = new ArrayList<>(choices);
             choices.add(strVal);
+        }
 
         for (String choice : choices)
             options.put(new SimpleNamedObject(choice, choice));

@@ -133,20 +133,20 @@
             <labkey:input type="hidden" name="skipProfile" value="1"/>
         <% }
 
-        if (null != bean.form.getReturnURLHelper()) { %>
+        if (null != bean.form.getReturnUrlHelper()) { %>
             <%=generateReturnUrlFormField(bean.form)%>
         <% } %>
         </div>
 
         <div class="auth-item">
             <%= button(bean.buttonText).submit(true).name("set") %>
-            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(HomeAction.class, getContainer())).toString() : "")%>
+            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnUrlHelper() != null ? bean.form.getReturnUrlHelper() : new ActionURL(HomeAction.class, getContainer())).toString() : "")%>
         </div>
     <% }
        else
        {
             Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
-            URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(StartAction.class, c);
+            URLHelper homeURL = bean.form.getReturnUrlHelper() != null ? bean.form.getReturnUrlHelper() : new ActionURL(StartAction.class, c);
     %>
             <div class="auth-item">
                 <%= unsafe(button("Home").href(homeURL).toString()) %>

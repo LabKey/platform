@@ -57,7 +57,7 @@ public class AssayListQueryView extends QueryView
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(view.getViewContext().getContainer());
-            insertURL.addReturnURL(getViewContext().getActionURL());
+            insertURL.addReturnUrl(getViewContext().getActionURL());
             ActionButton insert = new ActionButton("New Assay Design", insertURL);
             insert.setActionType(ActionButton.Action.LINK);
             insert.setDisplayPermission(DesignAssayPermission.class);
@@ -87,7 +87,7 @@ public class AssayListQueryView extends QueryView
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL plateURL = PageFlowUtil.urlProvider(PlateUrls.class).getPlateListURL(getContainer());
-            plateURL.addReturnURL(getViewContext().getActionURL());
+            plateURL.addReturnUrl(getViewContext().getActionURL());
             ActionButton insert = new ActionButton("Configure Plates", plateURL);
             insert.setActionType(ActionButton.Action.LINK);
             insert.setDisplayPermission(DesignAssayPermission.class);

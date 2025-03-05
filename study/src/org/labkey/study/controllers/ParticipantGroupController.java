@@ -366,7 +366,7 @@ public class ParticipantGroupController extends BaseStudyController
      */
     public static class DeleteParticipantCategories extends FormHandlerAction<QueryForm>
     {
-        private ActionURL _returnURL;
+        private ActionURL _returnUrl;
 
         @Override
         public void validateCommand(QueryForm target, Errors errors)
@@ -376,7 +376,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            _returnURL = form.getReturnActionURL();
+            _returnUrl = form.getReturnActionURL();
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -398,7 +398,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(QueryForm form)
         {
-            return _returnURL;
+            return _returnUrl;
         }
     }
 
@@ -1286,7 +1286,7 @@ public class ParticipantGroupController extends BaseStudyController
      */
     public static class DeleteParticipantGroups extends FormHandlerAction<QueryForm>
     {
-        private ActionURL _returnURL;
+        private ActionURL _returnUrl;
 
         @Override
         public void validateCommand(QueryForm target, Errors errors)
@@ -1296,7 +1296,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            _returnURL = form.getReturnActionURL();
+            _returnUrl = form.getReturnActionURL();
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -1319,7 +1319,7 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(QueryForm form)
         {
-            return _returnURL;
+            return _returnUrl;
         }
     }
 

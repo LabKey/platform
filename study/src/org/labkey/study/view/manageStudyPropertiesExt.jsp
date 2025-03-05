@@ -35,7 +35,7 @@
     boolean canEdit = getContainer().hasPermission(getUser(), AdminPermission.class);
     boolean emptyStudy = getStudy().isEmptyStudy();
     TimepointType timepointType = getStudy().getTimepointType();
-    URLHelper cancelLink = getActionURL().getReturnURL();
+    URLHelper cancelLink = getActionURL().getReturnUrl();
     if (cancelLink == null)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, getContainer());
 %>

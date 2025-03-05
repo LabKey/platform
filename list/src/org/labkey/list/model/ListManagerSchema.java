@@ -155,7 +155,7 @@ public class ListManagerSchema extends UserSchema
                 private Button createImportListArchiveButton()
                 {
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
-                    urlImport.addReturnURL(getReturnURL());
+                    urlImport.addReturnUrl(getReturnUrl());
                     Button btnImport = new Button.ButtonBuilder("Import List Archive")
                             .href(urlImport)
                             .build();
@@ -167,7 +167,7 @@ public class ListManagerSchema extends UserSchema
                 public ActionButton createDeleteButton()
                 {
                     ActionURL urlDelete = new ActionURL(ListController.DeleteListDefinitionAction.class, getContainer());
-                    urlDelete.addReturnURL(getReturnURL());
+                    urlDelete.addReturnUrl(getReturnUrl());
                     ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
                     btnDelete.setIconCls("trash");
                     btnDelete.setActionType(ActionButton.Action.GET);

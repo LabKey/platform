@@ -142,7 +142,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<>();
-        URLHelper returnUrl = settings.getReturnURLHelper(context.getActionURL());
+        URLHelper returnUrl = settings.getReturnUrlHelper(context.getActionURL());
 
         if (ReportUtil.canCreateScript(context, "r") && RReport.isEnabled())
         {

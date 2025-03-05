@@ -56,7 +56,7 @@
     boolean isDateBased = study != null && study.getTimepointType() == TimepointType.DATE;
     String noun = isDateBased ? "Timepoint" : "Visit";
 
-    ActionURL returnURL = form.getReturnActionURL(urlFor(ManageVisitsAction.class));
+    ActionURL returnUrl = form.getReturnActionURL(urlFor(ManageVisitsAction.class));
 
     Map<VisitMapKey, VisitManager.VisitStatistics> visitSummaryMap = visitManager.getVisitSummary(getUser(), null, null, Collections.singleton(VisitManager.VisitStatistic.RowCount), true);
     Map<Integer, Integer> visitRowCountMap = new HashMap<>();
@@ -120,7 +120,7 @@
         "return true;" +
     "} " +
     "else return false;")%>
-<%= button("Cancel").href(returnURL) %>
+<%= button("Cancel").href(returnUrl) %>
 </labkey:form>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

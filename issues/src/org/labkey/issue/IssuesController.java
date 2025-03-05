@@ -625,7 +625,7 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(customColumnConfig);
             page.setBody(form.getComment() == null ? form.getBody() : form.getComment());
             page.setCallbackURL(form.getCallbackURL());
-            page.setReturnURL(form.getReturnActionURL());
+            page.setReturnUrl(form.getReturnActionURL());
             page.setVisibleFields(getVisibleFields(page.getAction(), customColumnConfig));
             page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
@@ -1310,7 +1310,7 @@ public class IssuesController extends SpringActionController
             page.setPrevIssue(prevIssue);
             page.setCustomColumnConfiguration(getColumnConfiguration());
             page.setBody(form.getComment());
-            page.setReturnURL(form.getReturnActionURL());
+            page.setReturnUrl(form.getReturnActionURL());
             page.setVisibleFields(getVisibleFields(page.getAction(), getColumnConfiguration()));
             page.setReadOnlyFields(getReadOnlyFields(page.getAction()));
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));

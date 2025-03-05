@@ -30,15 +30,15 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<CreateCrosstabBean> me = (JspView<CreateCrosstabBean>) HttpView.currentView();
+    JspView<CreateCrosstabBean> me = HttpView.currentView();
     CreateCrosstabBean bean = me.getModelBean();
 
-    ActionURL returnURL = urlProvider(ReportUrls.class).urlManageViews(getContainer());
+    ActionURL returnUrl = urlProvider(ReportUrls.class).urlManageViews(getContainer());
 %>
 <labkey:form action="<%=urlFor(ParticipantCrosstabAction.class)%>" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
-<input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">
+<input type="hidden" name="redirectUrl" value="<%=h(returnUrl)%>">
 <table>
     <tr>
         <td>Dataset</td>
@@ -75,7 +75,7 @@
         <td></td>
         <td>
             <%= button("Next").submit(true) %>
-            <%= button("Cancel").href(returnURL) %>
+            <%= button("Cancel").href(returnUrl) %>
         </td>
     </tr>
 </table>

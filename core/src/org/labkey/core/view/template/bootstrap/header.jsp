@@ -259,7 +259,7 @@
 
     if (user != null && user.isImpersonated())
     {
-        ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL());
+        ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnUrl());
 %>
             <li>
                 <%=link("Stop impersonating").href(stopUrl).clearClasses().addClass("btn btn-primary").usePost()%>

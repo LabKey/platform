@@ -39,7 +39,7 @@ import java.util.Objects;
  */
 public class ReturnURLString
 {
-    private static final Logger LOG = LogHelper.getLogger(ReturnURLString.class, "Validates that returnURL parameters are safe");
+    private static final Logger LOG = LogHelper.getLogger(ReturnURLString.class, "Validates that returnUrl parameters are safe");
 
     private final @Nullable URLHelper _url;
 

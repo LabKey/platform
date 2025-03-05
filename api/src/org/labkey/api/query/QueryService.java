@@ -51,6 +51,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
@@ -396,7 +397,7 @@ public interface QueryService
     }
 
 
-    class NamedParameterNotProvided extends RuntimeException
+    class NamedParameterNotProvided extends RuntimeException implements SkipMothershipLogging
     {
         public NamedParameterNotProvided(String name)
         {

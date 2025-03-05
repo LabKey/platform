@@ -60,7 +60,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         if (locationId != null)
             url.addParameter("locationId", locationId);
         if (returnUrl != null)
-            url.addReturnURL(returnUrl);
+            url.addReturnUrl(returnUrl);
 
         return url;
     }
