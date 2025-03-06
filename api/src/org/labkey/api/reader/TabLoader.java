@@ -187,8 +187,12 @@ public class TabLoader extends DataLoader
     private String _strDelimiter = String.valueOf(_chDelimiter);
     private String _lineDelimiter = null;
 
-    private String _strQuote = null;
-    private String _strQuoteQuote = null;
+    private static final char chQuote = '"';
+    private static final String _strQuote = String.valueOf(chQuote);
+    private static final String _strQuoteQuote =  new String(new char[] {chQuote, chQuote});
+    private static final Pattern _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
+    private static final Pattern _whitespacePattern = Pattern.compile("\\s*");
+
     private boolean _parseQuotes = true;
     private boolean _parseEnclosedQuotes = false; // only treat quote as quote if it comes in pairs, otherwise treat it as a regular character
     private boolean _unescapeBackslashes = true;
@@ -393,8 +397,6 @@ public class TabLoader extends DataLoader
         }
     }
 
-    Pattern _replaceDoubleQuotes = null;
-
     private String[] readFields(TabBufferedReader r, @Nullable ColumnDescriptor[] columns)
     {
         CharSequence line = readLine(r, !isIncludeComments(), !isIncludeBlankLines());
@@ -435,16 +437,8 @@ public class TabLoader extends DataLoader
             else if (ch == chQuote)
             {
                 isDelimiterOrQuote = true;
-                if (_strQuote == null)
-                {
-                    _strQuote = String.valueOf(chQuote);
-                    _strQuoteQuote = new String(new char[] {chQuote, chQuote});
-                    _replaceDoubleQuotes = Pattern.compile("\\" + chQuote + "\\" + chQuote);
-                }
-
                 end = start;
                 boolean hasQuotes = false;
-
                 while (true)
                 {
                     end = buf.indexOf(_strQuote, end + 1);
@@ -461,17 +455,18 @@ public class TabLoader extends DataLoader
                                 isDelimiterOrQuote = false;
                             break;
                         }
-
                         buf.append('\n');
                         buf.append(nextLine);
                         continue;
                     }
-
                     if (end == buf.length() - 1 || buf.charAt(end + 1) != chQuote)
                     {
+                        int fieldEnd = buf.indexOf(_strDelimiter, end);
                         // Issue 51056: pooling sample parents with single quote doesn't work
                         // " a, " b should be parsed as [" a, " b], not [a,  b]
-                        if (_parseEnclosedQuotes && end != buf.length() - 1 && buf.charAt(end + 1) != _chDelimiter)
+                        // if the next quote is before the end of the buffer and the next non-blank character is not the delimiter,
+                        // retain the quote as a mid-field value.
+                        if (_parseEnclosedQuotes && end != buf.length() - 1 && (fieldEnd == -1 || !_whitespacePattern.matcher(buf.substring(end+1, fieldEnd)).matches()))
                             isDelimiterOrQuote = false;
                         break;
                     }
@@ -497,11 +492,13 @@ public class TabLoader extends DataLoader
                     {
                         start = end;
                         end = buf.indexOf(_strDelimiter, end);
+                        boolean doTrim = -1 != end;
                         if (-1 == end)
                             end = buf.length();
                         field = field + buf.substring(start, end);
+                        if (doTrim)
+                            field = field.stripTrailing();
                     }
-
                 }
             }
 
@@ -875,6 +872,55 @@ public class TabLoader extends DataLoader
         }
 
         @Test
+        public void testWithQuotes() throws IOException
+        {
+            String quotedCsvData = """
+                    Header1,Header2,Header3
+                    "test1a","test1b"  ,3""";
+
+            File file = _createTempFile(quotedCsvData, ".csv");
+
+            try (TabLoader l = new TabLoader(file))
+            {
+                l.setDelimiterCharacter(',');
+                l.setParseEnclosedQuotes(true);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals("number of columns not as expected", 3, l.getColumns().length);
+                assertEquals("number of rows not as expected", 1, maps.size());
+
+                Map<String, Object> firstRow = maps.get(0);
+                assertEquals("test1a", firstRow.get("Header1"));
+                assertEquals("test1b", firstRow.get("Header2"));
+                assertEquals(3, firstRow.get("Header3"));
+            }
+
+            assertTrue(file.delete());
+        }
+
+        @Test
+        public void testWithInternalQuotes() throws IOException
+        {
+            String csvDataWithQuotes = """
+                Header1,Header2,Header3
+                "test1/a"/b,"test1b", 3""";
+            File file = _createTempFile(csvDataWithQuotes, ".csv");
+
+            try (TabLoader l = new TabLoader(file))
+            {
+                l.setDelimiterCharacter(',');
+                l.setParseEnclosedQuotes(true);
+                List<Map<String, Object>> maps = l.load();
+                assertEquals("Number of columns not as expected", 3, l.getColumns().length);
+                assertEquals("Number of rows not as expected", 1, maps.size());
+
+                Map<String, Object> firstRow = maps.get(0);
+                assertEquals("\"test1/a\"/b", firstRow.get("Header1"));
+                assertEquals("test1b", firstRow.get("Header2"));
+                assertEquals(3, firstRow.get("Header3"));
+            }
+        }
+
+        @Test
         public void testTSV() throws IOException
         {
             testTextFile(tsvData, ".tsv", t->{});
@@ -1130,14 +1176,17 @@ public class TabLoader extends DataLoader
         @Test
         public void testParseQuotes()
         {
-            final String data = """
+            String data = """
                 Name\tMulti-Line\tAge
-                Bob\t"apple
+                Bob\t"with\ttab
+                with""quote"\t10
+                Bob\t"apple \s
                 orange\tgrape"\t3
                 Bob\t"one
-                ""two""\tthree"
+                ""two""  \tthree"
                 \tred\\nblue\\tgreen\t4
                 Fred\t"quoted stuff" unquoted\t1""";
+            data = data + "\nAlice\t\"\"\"quoted stuff\"\" unquoted";
 
             try (TabLoader loader = new TabLoader(data, true))
             {
@@ -1145,19 +1194,24 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(true);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(4, rows.size());
+                assertEquals(6, rows.size());
 
                 Map<String, Object> row = rows.get(0);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
-                assertEquals(3, row.get("Age"));
+                assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
+                assertEquals(10, row.get("Age"));
 
                 row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
-                assertNull(row.get("Age"));
+                assertEquals("apple  \norange\tgrape", row.get("Multi-Line"));
+                assertEquals(3, row.get("Age"));
 
                 row = rows.get(2);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("one\n\"two\"  \tthree", row.get("Multi-Line"));
+                assertNull(row.get("Age"));
+
+                row = rows.get(3);
                 assertNull(row.get("Name"));
                 assertEquals("red\nblue\tgreen", row.get("Multi-Line"));
                 assertEquals(4, row.get("Age"));
@@ -1170,27 +1224,40 @@ public class TabLoader extends DataLoader
                 loader.setUnescapeBackslashes(false);
 
                 List<Map<String, Object>> rows = loader.load();
-                assertEquals(4, rows.size());
+                assertEquals(6, rows.size());
 
                 Map<String, Object> row = rows.get(0);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("apple\norange\tgrape", row.get("Multi-Line"));
-                assertEquals(3, row.get("Age"));
+                assertEquals("with\ttab\nwith\"quote", row.get("Multi-Line"));
+                assertEquals(10, row.get("Age"));
 
                 row = rows.get(1);
                 assertEquals("Bob", row.get("Name"));
-                assertEquals("one\n\"two\"\tthree", row.get("Multi-Line"));
-                assertNull(row.get("Age"));
+                assertEquals("apple  \norange\tgrape", row.get("Multi-Line"));
+                assertEquals(3, row.get("Age"));
 
                 row = rows.get(2);
+                assertEquals("Bob", row.get("Name"));
+                assertEquals("one\n\"two\"  \tthree", row.get("Multi-Line"));
+                assertNull(row.get("Age"));
+
+                row = rows.get(3);
                 assertNull(row.get("Name"));
                 assertEquals("red\\nblue\\tgreen", row.get("Multi-Line"));
                 assertEquals(4, row.get("Age"));
 
-                row = rows.get(3);
+                row = rows.get(4);
                 assertEquals("Fred", row.get("Name"));
+                // Issue 52095 (sort of). If a field value begins with a quote that is to be retained, 
+                // that field needs to be surrounded by quotes and the internal quotes doubled up.
                 assertEquals("quoted stuff unquoted", row.get("Multi-Line"));
                 assertEquals(1, row.get("Age"));
+
+                row = rows.get(5);
+                assertEquals("Alice", row.get("Name"));
+                // Issue 52095 (sort of). If a field value begins with a quote that is to be retained,
+                // that field needs to be surrounded by quotes and the internal quotes doubled up.
+                assertEquals("\"quoted stuff\" unquoted", row.get("Multi-Line"));
 
                 List<Map<String, Object>> rows2 = loader.stream()
                     .collect(Collectors.toList());

@@ -516,58 +516,15 @@ public abstract class ContainerFilter
         return Type.Current.create(cu);
     }
 
-    // Does not validate permissions!
-    @Deprecated // Use current(Container, User) or current(ContainerUser) instead. TODO: Remove
-    public static @NotNull ContainerFilter current(Container c)
-    {
-        return new CurrentContainerFilter(c);
-    }
-
-    private static class CurrentContainerFilter extends ContainerFilter
-    {
-        CurrentContainerFilter(Container c)
-        {
-            super(c,null);
-            Objects.requireNonNull(c);
-        }
-
-        @Override
-        public String getCacheKey()
-        {
-            return "CURRENT/" + _container.getEntityId();
-        }
-
-        @Override
-        public Collection<GUID> getIds()
-        {
-            return Collections.singleton(_container.getEntityId());
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Current Folder";
-        }
-
-        @Override
-        public Type getType()
-        {
-            return Type.Current;
-        }
-    };
-
     /** Use this with extreme caution - this doesn't check permissions */
     public static final ContainerFilter EVERYTHING_UNSAFE = new InternalNoContainerFilter();
-
-    @Deprecated // Alias old name temporarily. TODO: Remove shortly.
-    public static final ContainerFilter EVERYTHING = EVERYTHING_UNSAFE;
 
     public static class ContainerFilterWithPermission extends ContainerFilter
     {
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
-            assert user != null : "User is required for permissions check!";
+            Objects.requireNonNull(user);
         }
 
         @Override
@@ -1353,9 +1310,8 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            if (_filter instanceof ContainerFilterWithPermission)
+            if (_filter instanceof ContainerFilterWithPermission filter)
             {
-                ContainerFilterWithPermission filter = (ContainerFilterWithPermission) _filter;
                 return filter.getSQLFragment(_schema, _fieldKey, _permission, _roles);
             }
             return _filter.getSQLFragment(_schema, _fieldKey, columnMap);

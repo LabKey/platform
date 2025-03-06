@@ -15,6 +15,7 @@
  */
 package org.labkey.test.tests.search;
 
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -245,7 +246,15 @@ public abstract class SearchTest extends StudyBaseTest
 
         waitAndClick(Locator.radioButtonByNameAndValue("scope", "Project"));
         _searchHelper.searchFor(searchTerm);
-        waitForElement(Locator.tagWithText("div", "Found 6 results"));
+        List<String> results = getTexts(Locator.css(".labkey-search-result h4").findElements(getDriver()));
+        Assertions.assertThat(results).as("'Project' scoped search results").containsExactlyInAnyOrder(
+            "\"sample.txt\" attached to page \"Roquefort\"",
+            "pdf_sample.pdf",
+            "docx_sample.docx",
+            "InlineFile.html",
+            "verifyAssay"
+        );
+        waitForElement(Locator.tagWithText("div", "Found 5 results"));
 
         waitAndClick(Locator.radioButtonByNameAndValue("scope", "Folder"));
         _searchHelper.searchFor(searchTerm);
@@ -253,7 +262,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         waitAndClick(Locator.radioButtonByNameAndValue("scope", "FolderAndSubfolders"));
         _searchHelper.searchFor(searchTerm);
-        waitForElement(Locator.tagWithText("div", "Found 6 results"));
+        waitForElement(Locator.tagWithText("div", "Found 5 results"));
 
         //Now create subfolders:
         goToProjectHome();
