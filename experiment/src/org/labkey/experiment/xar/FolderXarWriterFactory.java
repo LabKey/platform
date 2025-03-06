@@ -107,7 +107,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
         private static class RunFilter implements Predicate<ExpRun>
         {
-            private Set<Integer> _transformRuns;
+            private final Set<Integer> _transformRuns;
 
             public RunFilter(Container c)
             {
