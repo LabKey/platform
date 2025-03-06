@@ -60,7 +60,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
@@ -96,10 +96,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.EM;
 import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
 /** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
@@ -107,19 +112,45 @@ import static org.labkey.api.util.DOM.cl;
 public class DataRegion extends DisplayElement
 {
     private static final Logger _log = LogManager.getLogger(DataRegion.class);
+    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
+    private static final String TOGGLE_CHECKBOX_NAME = ".toggle";
+
+    // TODO: Ever hear of an enum?
+    public static final int MODE_NONE = 0;
+    public static final int MODE_INSERT = 1;
+    public static final int MODE_UPDATE = 2;
+    public static final int MODE_GRID = 4;
+    public static final int MODE_DETAILS = 8;
+    public static final int MODE_UPDATE_MULTIPLE = 16;
+
+    public static final String LAST_FILTER_PARAM = ".lastFilter";
+    public static final String SELECT_CHECKBOX_NAME = ".select";
+    public static final String OLD_VALUES_NAME = ".oldValues";
+    public static final String CONTAINER_FILTER_NAME = ".containerFilterName";
+
+    public static final String DEFAULTTIME = "Time";
+    public static final String DEFAULTDATE = "Date";
+    public static final String DEFAULTDATETIME = "DateTime";
+
+    public static final String EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS = "dataregionAsyncTotalRows";
+
+    private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
+    private final List<FormField> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
+    private final List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
+    private final List<ContextAction> _contextActions = new ArrayList<>();
+    private final List<ContextAction> _viewActions = new ArrayList<>();
+    private final List<MessageSupplier> _messageSuppliers = new ArrayList<>();
+    private final List<GroupTable> _groupTables = new ArrayList<>();
 
     private String _name = null;
     private QuerySettings _settings = null;
     private boolean _allowHeaderLock = true;
-    private final String _domId = "lk-region-" + UniqueID.getServerSessionScopedUID(); // TODO: Consider using UniqueID.getRequestScopedUID(request) instead
-
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig();
     private TableInfo _table = null;
     private ActionURL _selectAllURL = null;
     private boolean _showRecordSelectors = false;
-    protected boolean _showSelectMessage = true;
     private boolean _showFilters = true;
     private boolean _sortable = true;
     private boolean _showFilterDescription = true;
@@ -129,54 +160,24 @@ public class DataRegion extends DisplayElement
     private ButtonBar _detailsButtonBar = new ButtonBar();
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
-    private final List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
-
-    private String _noRowsMessage = "No data to show.";
-
+    private HtmlString _noRowsMessage = HtmlString.of("No data to show.");
     private boolean _shadeAlternatingRows = true;
     private boolean _showBorders = true;
     private boolean _showSurroundingBorder = true;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
-
     private boolean _horizontalGroups = true;
     private boolean _errorCreatingResults = false;
-
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
-    private final List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
     private boolean _buttonBarRendered = false;
-
-    public static final int MODE_NONE = 0;
-    public static final int MODE_INSERT = 1;
-    public static final int MODE_UPDATE = 2;
-    public static final int MODE_GRID = 4;
-    public static final int MODE_DETAILS = 8;
-    public static final int MODE_UPDATE_MULTIPLE = 16;
-    public static final int MODE_ALL = MODE_INSERT + MODE_UPDATE + MODE_UPDATE_MULTIPLE + MODE_GRID + MODE_DETAILS;
-
-    public static final String LAST_FILTER_PARAM = ".lastFilter";
-    public static final String SELECT_CHECKBOX_NAME = ".select";
-    public static final String OLD_VALUES_NAME = ".oldValues";
-    public static final String CONTAINER_FILTER_NAME = ".containerFilterName";
-    protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
-
-    public static final String DEFAULTTIME = "Time";
-    public static final String DEFAULTDATE = "Date";
-    public static final String DEFAULTDATETIME = "DateTime";
-
-    private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
-
-    private final List<ContextAction> _contextActions = new ArrayList<>();
-    private final List<ContextAction> _viewActions = new ArrayList<>();
     private List<Message> _messages;
-    private final List<MessageSupplier> _messageSuppliers = new ArrayList<>();
 
-    public static final String EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS = "dataregionAsyncTotalRows";
+    protected boolean _showSelectMessage = true;
 
     private static class GroupTable
     {
@@ -198,7 +199,8 @@ public class DataRegion extends DisplayElement
             _groupHeadings = groupHeadings;
         }
     }
-    private final List<GroupTable> _groupTables = new ArrayList<>();
+
+    record FormField(String name, String value) {}
 
     /**
      * Messages that are displayed to the user and included in Query API responses.
@@ -426,7 +428,7 @@ public class DataRegion extends DisplayElement
         addHiddenFormField(urlParam.toString(), url.getLocalURIString());
     }
 
-    public void addHiddenFormField(Enum name, String value)
+    public void addHiddenFormField(Enum<?> name, String value)
     {
         addHiddenFormField(name.toString(), value);
     }
@@ -434,7 +436,7 @@ public class DataRegion extends DisplayElement
     public void addHiddenFormField(String name, String value)
     {
         if (null != value)
-            _hiddenFormFields.add(Pair.of(name, value));
+            _hiddenFormFields.add(new FormField(name, value));
     }
 
     public
@@ -1181,30 +1183,30 @@ public class DataRegion extends DisplayElement
         out.write("</div>");
     }
 
-    private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter writer, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
+    private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        Writer out = writer.unwrap();
+        Writer oldWriter = out.unwrap();
 
         try
         {
-            renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
+            renderGridHeaderColumns(ctx, oldWriter, showRecordSelectors, renderers);
 
             if (_aggregateRowConfig.getAggregateRowFirst())
-                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+                renderAggregatesTableRow(ctx, oldWriter, showRecordSelectors, renderers);
 
-            int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
+            int rows = renderTableContents(ctx, oldWriter, showRecordSelectors, renderers);
             if (rows == 0)
                 renderNoRowsMessage(out, colCount);
 
             if (_aggregateRowConfig.getAggregateRowLast())
-                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+                renderAggregatesTableRow(ctx, oldWriter, showRecordSelectors, renderers);
         }
         catch (IOException | SQLException e)
         {
             throw new RuntimeException(e);
         }
 
-        return writer;
+        return out;
     }
 
     private void renderDataTable(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
@@ -1226,6 +1228,7 @@ public class DataRegion extends DisplayElement
 
     protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
+        // For now, add lk-region-name AMD data-region-name attributes for test locators. TODO: Migrate to "data-*" only.
         TABLE(
             cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
             data("region-name", getName()).
@@ -1427,19 +1430,22 @@ public class DataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    private void renderNoRowsMessage(Writer out, int colCount) throws IOException
+    private void renderNoRowsMessage(HtmlWriter out, int colCount) throws IOException
     {
-        out.write("<tr><td colspan=\"" + colCount + "\" nowrap=\"true\"><em>");
-        out.write(getNoRowsMessage());
-        out.write("</em></td></tr>\n");
+        TR(
+            TD(
+                at(colspan, colCount, style, "white-space:nowrap;"),
+                EM(getNoRowsMessage())
+            )
+        ).appendTo(out);
     }
 
-    protected String getNoRowsMessage()
+    protected HtmlString getNoRowsMessage()
     {
         return _noRowsMessage;
     }
 
-    public void setNoRowsMessage(String noRowsMessage)
+    public void setNoRowsMessage(HtmlString noRowsMessage)
     {
         _noRowsMessage = noRowsMessage;
     }
@@ -1622,7 +1628,7 @@ public class DataRegion extends DisplayElement
     /**
      * @return number of rows rendered
      */
-    protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected int renderTableContents(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         Results results = ctx.getResults();
         int rowIndex = 0;
@@ -1634,7 +1640,7 @@ public class DataRegion extends DisplayElement
         while (rs.next())
         {
             ctx.setRow(factory.getRowMap(rs));
-            renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
+            renderTableRow(ctx, oldWriter, showRecordSelectors, renderers, rowIndex++);
         }
 
         return rowIndex;
@@ -1655,13 +1661,15 @@ public class DataRegion extends DisplayElement
 
     // Allows subclasses to do pre-row and post-row processing
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
-    protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
-        out.write("<tr");
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
+        oldWriter.write("<tr");
         String rowClass = getRowClass(ctx, rowIndex);
         if (rowClass != null)
-            out.write(" class=\"" + rowClass + "\"");
-        out.write(">");
+            oldWriter.write(" class=\"" + rowClass + "\"");
+        oldWriter.write(">");
 
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
@@ -1673,12 +1681,12 @@ public class DataRegion extends DisplayElement
             if (renderer.isVisible(ctx))
             {
                 if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
-                        continue;
+                    continue;
 
-                renderer.renderGridDataCell(ctx, out);
+                renderer.renderGridDataCell(ctx, oldWriter);
             }
 
-        out.write("</tr>\n");
+        oldWriter.write("</tr>\n");
     }
 
     protected DisplayColumn getDetailsUpdateColumn(RenderContext ctx, List<DisplayColumn> renderers, boolean getDetailsCol)
@@ -1696,54 +1704,59 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    protected void renderFormBegin(RenderContext ctx, Writer out, int mode) throws IOException
+    protected void renderFormBegin(RenderContext ctx, Writer oldWriter, int mode) throws IOException
     {
-        out.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
+        oldWriter.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
 
         String name = getName();
         if (name != null)
         {
-            out.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
+            // For now, add lk-region-form AND data-region-from attributes for test locators. TODO: Migrate to "data-*" only.
+            oldWriter.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" data-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
         }
 
         String cls = "form-horizontal";
         if (mode == MODE_DETAILS)
             cls += " form-mode-details";
 
-        out.write(" class=\"" + cls + "\" ");
+        oldWriter.write(" class=\"" + cls + "\" ");
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
-            case MODE_DETAILS -> out.write("action=\"begin\">");
+            case MODE_DETAILS -> oldWriter.write("action=\"begin\">");
             case MODE_INSERT, MODE_UPDATE ->
             {
                 if (isFileUploadForm())
-                    out.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
+                    oldWriter.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
                 else
-                    out.write("action=\"" + actionAttr + "\">");
+                    oldWriter.write("action=\"" + actionAttr + "\">");
             }
-            default -> out.write("action=\"\">");
+            default -> oldWriter.write("action=\"\">");
         }
 
         renderHiddenFormFields(ctx, out, mode);
     }
 
     // Output hidden params to be posted
-    protected void renderHiddenFormFields(RenderContext ctx, Writer out, int mode) throws IOException
+    protected void renderHiddenFormFields(RenderContext ctx, HtmlWriter out, int mode)
     {
         if (mode == MODE_GRID)
-            out.write("<input type=\"hidden\" name=\"" + DataRegionSelection.DATA_REGION_SELECTION_KEY + "\" value=\"" + PageFlowUtil.filter(getSelectionKey()) + "\">");
-        out.write(new CsrfInput(ctx.getViewContext()).toString());
-        for (Pair<String, Object> field : _hiddenFormFields)
+            out.write(new InputBuilder().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
+
+        out.write(new CsrfInput(ctx.getViewContext()));
+
+        for (FormField field : _hiddenFormFields)
         {
-            out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
+            out.write(new InputBuilder().type("hidden").name(field.name()).value(field.value()));
         }
 
         if (mode == MODE_UPDATE_MULTIPLE)
         {
-            out.write("<input type=\"hidden\" name=\"" + TableViewForm.DATA_SUBMIT_NAME + "\" value=\"true\">");
-            out.write("<input type=\"hidden\" name=\"" + TableViewForm.BULK_UPDATE_NAME + "\" value=\"true\">");
+            out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
+            out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
         }
     }
 
@@ -1769,7 +1782,7 @@ public class DataRegion extends DisplayElement
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
 
         out.write(
-            new Input.InputBuilder()
+            new InputBuilder()
                 .type("checkbox")
                 .title("Select/unselect row")
                 .name(getRecordSelectorName(ctx))
@@ -1782,12 +1795,12 @@ public class DataRegion extends DisplayElement
         renderExtraRecordSelectorContent(ctx, out);
     }
 
-    protected void renderActionColumn(RenderContext ctx, Writer writer, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
+    protected void renderActionColumn(RenderContext ctx, HtmlWriter out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
     {
         if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
             return;
 
-        HtmlWriter out = HtmlWriter.of(writer);
+        // TODO: Switch to DOM?
 
         out.write(HtmlString.unsafe("<td class=\"labkey-selectors\" nowrap>"));
 
@@ -1801,7 +1814,7 @@ public class DataRegion extends DisplayElement
         out.write(HtmlString.unsafe("</td>"));
     }
 
-    private void renderGridCellContents(RenderContext ctx, HtmlWriter out, DisplayColumn column, String iconCls) throws IOException
+    private void renderGridCellContents(RenderContext ctx, HtmlWriter out, DisplayColumn column, String iconCls)
     {
         Object value = column.getValue(ctx);
         String url = column.renderURL(ctx);
@@ -1881,18 +1894,20 @@ public class DataRegion extends DisplayElement
         return p.hasPermission(user, perm);
     }
 
-    private void renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
+    private void renderDetails(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
     {
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
         if (!hasPermission(ctx, ReadPermission.class))
         {
-            out.write("You do not have permission to read this data");
+            oldWriter.write("You do not have permission to read this data");
             return;
         }
 
         initDetailsResultSet(ctx);
         List<DisplayColumn> renderers = getDisplayColumns();
 
-        renderFormBegin(ctx, out, MODE_DETAILS);
+        renderFormBegin(ctx, oldWriter, MODE_DETAILS);
 
         RowMap<Object> rowMap = null;
         int rowIndex = 0;
@@ -1901,7 +1916,7 @@ public class DataRegion extends DisplayElement
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-            out.write("<table>");
+            oldWriter.write("<table>");
 
             while (rs.next())
             {
@@ -1913,24 +1928,24 @@ public class DataRegion extends DisplayElement
                 {
                     if (!renderer.isVisible(ctx))
                         continue;
-                    out.write("<tr>");
-                    renderer.renderDetailsCaptionCell(ctx, out, null);
-                    renderer.renderInputWrapperBegin(out);
-                    renderer.renderDetailsData(ctx, out);
-                    renderer.renderInputWrapperEnd(out);
-                    out.write("</tr>");
+                    oldWriter.write("<tr>");
+                    renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
+                    renderer.renderInputWrapperBegin(oldWriter);
+                    renderer.renderDetailsData(ctx, oldWriter);
+                    renderer.renderInputWrapperEnd(oldWriter);
+                    oldWriter.write("</tr>");
                 }
             }
 
             if (rowIndex == 0)
                 renderNoRowsMessage(out, 1);
 
-            out.write("</table>");
+            oldWriter.write("</table>");
 
             _detailsButtonBar.render(ctx, out);
         }
 
-        renderFormEnd(ctx, out);
+        renderFormEnd(ctx, oldWriter);
     }
 
 
@@ -2136,15 +2151,17 @@ public class DataRegion extends DisplayElement
         return errors;
     }
 
-    private void renderForm(RenderContext ctx, Writer out) throws IOException
+    private void renderForm(RenderContext ctx, Writer oldWriter) throws IOException
     {
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
         int action = ctx.getMode();
 
         //if user doesn't have read permissions, don't render anything
         if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
            ((action == MODE_UPDATE || action == MODE_UPDATE_MULTIPLE) && !hasPermission(ctx, UpdatePermission.class)))
         {
-            out.write("You do not have permission to " +
+            oldWriter.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
                     " data in this " + ctx.getContainer().getContainerNoun());
             return;
@@ -2155,7 +2172,7 @@ public class DataRegion extends DisplayElement
         // Check if we have any value to update
         if (action == MODE_UPDATE && valueMap == null)
         {
-            out.write("Could not find data row in " + ctx.getContainer().getContainerNoun());
+            oldWriter.write("Could not find data row in " + ctx.getContainer().getContainerNoun());
             return;
         }
 
@@ -2166,23 +2183,23 @@ public class DataRegion extends DisplayElement
         else
             buttonBar = _updateButtonBar;
 
-        renderFormBegin(ctx, out, action);
-        renderMainErrors(ctx, out);
+        renderFormBegin(ctx, oldWriter, action);
+        renderMainErrors(ctx, oldWriter);
 
-        out.write("<table>");
+        oldWriter.write("<table>");
         List<DisplayColumn> renderers = getDisplayColumns();
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
             String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
-            out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
+            oldWriter.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
         else
         {
             if (renderers.stream().anyMatch(dc -> shouldRender(dc, ctx) && null != dc.getColumnInfo() && !dc.getColumnInfo().isNullable()))
             {
                 String msg = "Fields marked with an asterisk * are required.";
-                out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
+                oldWriter.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
             }
         }
 
@@ -2198,7 +2215,7 @@ public class DataRegion extends DisplayElement
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, out, renderer);
+            renderFormField(ctx, oldWriter, renderer);
             if (null != renderer.getColumnInfo())
                 renderedColumns.add(renderer.getColumnInfo().getName());
         }
@@ -2206,14 +2223,14 @@ public class DataRegion extends DisplayElement
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
-            out.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
+            oldWriter.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
 
             // Note: valueMap != null, since we checked this above
 
             if (valueMap instanceof BoundMap)
-                renderOldValues(HtmlWriter.of(out), valueMap);
+                renderOldValues(out, valueMap);
             else
-                renderOldValues(HtmlWriter.of(out), valueMap, ctx.getFieldMap());
+                renderOldValues(out, valueMap, ctx.getFieldMap());
 
             TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
@@ -2234,29 +2251,29 @@ public class DataRegion extends DisplayElement
                     if (null != pkVal)
                     {
                         out.write(
-                            new Input.InputBuilder()
+                            new InputBuilder()
                                 .type("hidden")
                                 .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
-                                .value(pkVal.toString()).toString()
+                                .value(pkVal.toString())
                         );
                     }
                     renderedColumns.add(pkColName);
                 }
             }
 
-            out.write("</td></tr>");
+            oldWriter.write("</td></tr>");
         }
-        out.write("</table>");
+        oldWriter.write("</table>");
 
         if (!_groupTables.isEmpty())
         {
-            out.write("<table class=\"labkey-group-tables\">");
+            oldWriter.write("<table class=\"labkey-group-tables\">");
 
             for (GroupTable groupTable : _groupTables)
             {
                 List<DisplayColumnGroup> groups = groupTable.getGroups();
                 List<String> groupHeadings = groupTable.getGroupHeadings();
-                out.write("<tr><td></td>");
+                oldWriter.write("<tr><td></td>");
                 boolean hasCopyable = false;
 
                 for (DisplayColumnGroup group : groups)
@@ -2272,106 +2289,106 @@ public class DataRegion extends DisplayElement
                 {
                     if (hasCopyable)
                     {
-                        writeSameHeader(ctx, out, groups);
+                        writeSameHeader(ctx, oldWriter, groups);
                     }
                     else
                     {
-                        out.write("<td/>");
+                        oldWriter.write("<td/>");
                     }
 
                     for (String heading : groupHeadings)
                     {
-                        out.write("<td nowrap><label class=\"control-label\">");
-                        out.write(PageFlowUtil.filter(heading));
-                        out.write("</label></td>");
+                        oldWriter.write("<td nowrap><label class=\"control-label\">");
+                        oldWriter.write(PageFlowUtil.filter(heading));
+                        oldWriter.write("</label></td>");
                     }
                 }
                 else
                 {
                     for (DisplayColumnGroup group : groups)
-                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
-                    out.write("</tr>\n<tr>");
+                        writeColRenderDetailsCaptionCell(ctx, oldWriter, group.getColumns().get(0));
+                    oldWriter.write("</tr>\n<tr>");
                     if (hasCopyable)
                     {
-                        writeSameHeader(ctx, out, groups);
+                        writeSameHeader(ctx, oldWriter, groups);
                         for (DisplayColumnGroup group : groups)
                         {
                             if (group.isCopyable())
                             {
-                                group.writeSameCheckboxCell(ctx, out);
+                                group.writeSameCheckboxCell(ctx, oldWriter);
                             }
                             else
                             {
-                                out.write("<td/>");
+                                oldWriter.write("<td/>");
                             }
                         }
                     }
                     else
                     {
-                        out.write("<td/>");
+                        oldWriter.write("<td/>");
                     }
                 }
-                out.write("</tr>");
+                oldWriter.write("</tr>");
 
                 if (_horizontalGroups)
                 {
                     for (DisplayColumnGroup group : groups)
                     {
-                        out.write("<tr>");
-                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                        oldWriter.write("<tr>");
+                        writeColRenderDetailsCaptionCell(ctx, oldWriter, group.getColumns().get(0));
                         if (group.isCopyable() && hasCopyable)
                         {
-                            group.writeSameCheckboxCell(ctx, out);
+                            group.writeSameCheckboxCell(ctx, oldWriter);
                         }
                         else
                         {
-                            out.write("<td/>");
+                            oldWriter.write("<td/>");
                         }
                         for (DisplayColumn col : group.getColumns())
                         {
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out);
+                            col.renderInputCell(ctx, oldWriter);
                         }
-                        out.write("\t</tr>");
+                        oldWriter.write("\t</tr>");
                     }
                 }
                 else
                 {
                     for (int i = 0; i < groupHeadings.size(); i++)
                     {
-                        out.write("<tr");
+                        oldWriter.write("<tr");
                         String rowClass = getRowClass(ctx, i);
                         if (rowClass != null)
-                            out.write(" class=\"" + rowClass + "\"");
-                        out.write(">");
+                            oldWriter.write(" class=\"" + rowClass + "\"");
+                        oldWriter.write(">");
 
-                        out.write("<td nowrap><label class=\"control-label\">");
-                        out.write(PageFlowUtil.filter(groupHeadings.get(i)));
-                        out.write("</label></td>");
+                        oldWriter.write("<td nowrap><label class=\"control-label\">");
+                        oldWriter.write(PageFlowUtil.filter(groupHeadings.get(i)));
+                        oldWriter.write("</label></td>");
 
                         for (DisplayColumnGroup group : groups)
                         {
                             DisplayColumn col = group.getColumns().get(i);
                             if (!shouldRender(col, ctx))
                                 continue;
-                            col.renderInputCell(ctx, out);
+                            col.renderInputCell(ctx, oldWriter);
                         }
-                        out.write("\t</tr>");
+                        oldWriter.write("\t</tr>");
                     }
                 }
 
-                out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
+                oldWriter.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
                 for (DisplayColumnGroup group : groups)
-                    group.writeCopyableJavaScript(ctx, out);
-                out.write("</script>");
+                    group.writeCopyableJavaScript(ctx, oldWriter);
+                oldWriter.write("</script>");
             }
 
-            out.write("</table>");
+            oldWriter.write("</table>");
         }
 
         buttonBar.render(ctx, out);
-        renderFormEnd(ctx, out);
+        renderFormEnd(ctx, oldWriter);
     }
 
     private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer out, DisplayColumn col) throws IOException
@@ -2434,7 +2451,7 @@ public class DataRegion extends DisplayElement
         getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
 
         out.write(
-            new Input.InputBuilder<>().type("hidden").name(OLD_VALUES_NAME).value(new JSONObject(oldKeys).toString())
+            new InputBuilder<>().type("hidden").name(OLD_VALUES_NAME).value(new JSONObject(oldKeys).toString())
         );
     }
 

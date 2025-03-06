@@ -505,6 +505,7 @@ public class DOM
         }
 
         // TODO: Remove after "lk-" attributes are migrated to "data-"
+        @Deprecated
         public _Attributes lk(String lkKey, Object value)
         {
             if (null == expandos)

@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -90,7 +91,7 @@ public class RunListQueryView extends ExperimentRunListView
         DataView result = super.createDataView();
         if (_schema.getProvider().getImportURL(getContainer(), _schema.getProtocol()) != null && getContainer().hasPermission(getUser(), InsertPermission.class))
         {
-            result.getDataRegion().setNoRowsMessage("No runs to show. To add new runs, use the Import Data button.");
+            result.getDataRegion().setNoRowsMessage(HtmlString.of("No runs to show. To add new runs, use the Import Data button."));
         }
         SimpleFilter filter = (SimpleFilter) result.getRenderContext().getBaseFilter();
         if (filter == null)

@@ -94,9 +94,9 @@ public class PublishedRecordQueryView extends DatasetQueryView
         private int _count;
 
         @Override
-        protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
+        protected int renderTableContents(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
         {
-            _count = super.renderTableContents(ctx, out, showRecordSelectors, renderers);
+            _count = super.renderTableContents(ctx, oldWriter, showRecordSelectors, renderers);
             return _count;
         }
 
