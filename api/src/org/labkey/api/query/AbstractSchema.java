@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
@@ -40,7 +41,7 @@ abstract public class AbstractSchema implements QuerySchema
     protected final Container _container;
     protected boolean _hidden = false;
 
-    public AbstractSchema(DbSchema dbSchema, User user, Container container)
+    public AbstractSchema(DbSchema dbSchema, @NotNull User user, @NotNull Container container)
     {
         _dbSchema = dbSchema;
         _user = Objects.requireNonNull(user);
