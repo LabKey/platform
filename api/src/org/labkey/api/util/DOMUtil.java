@@ -23,12 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/*
-* User: Dave
-* Date: Jan 12, 2009
-* Time: 11:55:03 AM
-*/
-
 /**
  * Various DOM utility functions that are not in Xerxes
  */
@@ -41,15 +35,15 @@ public class DOMUtil
      */
     public static String getNodeText(Node node)
     {
-        if(null == node)
+        if (null == node)
             return null;
 
         NodeList children = node.getChildNodes();
-        if(null == children || children.getLength() == 0)
+        if (children.getLength() == 0)
             return node.getTextContent();
 
         StringBuilder text = new StringBuilder();
-        for(int idx = 0; idx < children.getLength(); ++idx)
+        for (int idx = 0; idx < children.getLength(); ++idx)
         {
             Node child = children.item(idx);
             if(child.getNodeType() == Node.TEXT_NODE || child.getNodeType() == Node.CDATA_SECTION_NODE)
@@ -126,11 +120,11 @@ public class DOMUtil
     public static List<Node> getChildNodesWithName(Node node, String name)
     {
         NodeList children = node.getChildNodes();
-        if(null == children || children.getLength() == 0)
+        if (children.getLength() == 0)
             return Collections.emptyList();
 
         List<Node> ret = new ArrayList<>();
-        for(int idx=0; idx < children.getLength(); ++idx)
+        for (int idx=0; idx < children.getLength(); ++idx)
         {
             Node child = children.item(idx);
             if(child.getNodeName().equalsIgnoreCase(name))
@@ -149,7 +143,7 @@ public class DOMUtil
     public static Node getFirstChildNodeWithName(Node node, String name)
     {
         List<Node> nodes = getChildNodesWithName(node, name);
-        return nodes.size() > 0 ? nodes.get(0) : null;
+        return !nodes.isEmpty() ? nodes.get(0) : null;
     }
 
     /**
@@ -160,6 +154,6 @@ public class DOMUtil
     public static Node getFirstChildElement(Node node)
     {
         List<Node> nodes = getChildNodes(node, Node.ELEMENT_NODE);
-        return nodes.size() > 0 ? nodes.get(0) : null;
+        return !nodes.isEmpty() ? nodes.get(0) : null;
     }
 }

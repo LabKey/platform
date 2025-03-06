@@ -423,10 +423,6 @@ public class DOM
         value,
         width,
         wrap,
-
-        /* Delete once 24.3 is merged to develop (panoramapublic/ExperimentAnnotationsTableInfo.java) */
-        @Deprecated
-        onclick,
         ;
 
         Appendable render(Appendable builder, Object value) throws IOException
@@ -505,6 +501,15 @@ public class DOM
                     expandos = new ArrayList<>();
                 expandos.add(new Pair<>("data-"+datakey,value));
             }
+            return this;
+        }
+
+        // TODO: Remove after "lk-" attributes are migrated to "data-"
+        public _Attributes lk(String lkKey, Object value)
+        {
+            if (null == expandos)
+                expandos = new ArrayList<>();
+            expandos.add(new Pair<>("lk-" + lkKey, value));
             return this;
         }
 
@@ -594,12 +599,17 @@ public class DOM
             }
             else
             {
-                if (!(k instanceof String))
+                if (!(k instanceof String sk))
                     throw new IllegalStateException("expected Attribute or String");
-                if (((String)k).startsWith("data-"))
-                    ret.data(((String)k).substring("data-".length()), v);
+                if (sk.startsWith("data-"))
+                    ret.data(sk.substring("data-".length()), v);
+                // Temporary allow arbitrary "lk-" attributes. TODO: Switch all to "data-", however, there are MANY tests
+                // looking for "lk-*", so the approach is for the product to add both "data-" and "lk-" to keep tests
+                // passing for now but migrate them to check "data-"
+                else if (sk.startsWith("lk-"))
+                    ret.lk(sk.substring("lk-".length()), v);
                 else
-                    ret.at(Attribute.valueOf((String)k), v);
+                    ret.at(Attribute.valueOf(sk), v);
             }
         });
         return ret;
@@ -959,8 +969,6 @@ public class DOM
         }
         return builder;
     }
-
-
 
 
     //-- generated code here --

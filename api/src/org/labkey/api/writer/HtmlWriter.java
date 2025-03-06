@@ -59,9 +59,16 @@ public class HtmlWriter implements Appendable
         _writer.write(array.toString());
     }
 
-    public void write(String s) throws IOException
+    public void write(String s)
     {
-        _writer.write(PageFlowUtil.filter(s));
+        try
+        {
+            _writer.write(PageFlowUtil.filter(s));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

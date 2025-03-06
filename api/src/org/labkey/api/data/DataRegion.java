@@ -99,6 +99,7 @@ import java.util.stream.Collectors;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.cl;
 
 /** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
@@ -927,9 +928,9 @@ public class DataRegion extends DisplayElement
             DIV(cl("pull-right"), DIV(cl("labkey-pagination")))
         ).appendTo(out);
 
-        _renderDrawer(out);
-        _renderViewBar(out);
-        _renderContextBar(out);
+        renderDrawer(out);
+        renderViewBar(out);
+        renderContextBar(out);
     }
 
     protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
@@ -985,11 +986,11 @@ public class DataRegion extends DisplayElement
 
             if (showParameterForm)
             {
-                _renderParameterForm(ctx, out);
+                renderParameterForm(ctx, out);
             }
             else
             {
-                _renderTableNew(ctx, out, results);
+                renderTableNew(ctx, out, results);
             }
         }
         finally
@@ -998,7 +999,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
+    private void renderParameterForm(RenderContext ctx, Writer out) throws IOException
     {
         _allowHeaderLock = false;
 
@@ -1018,7 +1019,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void _renderTableNew(RenderContext ctx, Writer out, ResultSet rs) throws IOException, SQLException
+    private void renderTableNew(RenderContext ctx, Writer out, ResultSet rs) throws IOException
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -1079,7 +1080,7 @@ public class DataRegion extends DisplayElement
         {
             if (useTableWrap)
                 out.write("<tr><td>");
-            _renderDataTableNew(ctx, out, showRecordSelectors, renderers, colCount);
+            renderDataTable(ctx, HtmlWriter.of(out), showRecordSelectors, renderers, colCount);
             if (useTableWrap)
                 out.write("</td></tr>");
         }
@@ -1103,29 +1104,26 @@ public class DataRegion extends DisplayElement
     {
         if (renderButtons)
         {
-            DIV(cl("pull-left"), (DOM.Renderable) ret -> renderButtons(ctx, out)).appendTo(out);
-//            out.write(HtmlString.unsafe("<div class=\"pull-left\">"));
-//            renderButtons(ctx, out);
-//            out.write(HtmlString.unsafe("</div>"));
+            DIV(
+                cl("pull-left"),
+                (DOM.Renderable) ret -> renderButtons(ctx, out)
+            ).appendTo(out);
         }
 
         return out;
     }
 
-    private void _renderDrawer(HtmlWriter out)
+    private void renderDrawer(HtmlWriter out)
     {
-        DIV(cl("lk-region-bar lk-region-drawer").at(id, getDomId() + "-drawer", style, "display:none;")).appendTo(out);
+        DIV(
+            cl("lk-region-bar lk-region-drawer").
+            at(id, getDomId() + "-drawer", style, "display:none;")
+        ).appendTo(out);
     }
 
-    private void _renderBar(HtmlWriter out, List<ContextAction> actions, String idSuffix)
+    private void renderBar(HtmlWriter out, List<ContextAction> actions, String idSuffix)
     {
-        HtmlStringBuilder builder = HtmlStringBuilder.of();
         boolean isEmpty = actions == null || actions.isEmpty();
-        if (!isEmpty)
-        {
-            for (ContextAction ca : actions)
-                builder.unsafeAppend(ca.toString());
-        }
 
         DIV(
             cl("lk-region-bar lk-region-context-bar").
@@ -1133,18 +1131,25 @@ public class DataRegion extends DisplayElement
                 id, getDomId() + "-" + idSuffix,
                 style, isEmpty ? "display:none;" : null
             ),
-            builder
+            (DOM.Renderable) ret -> {
+                if (!isEmpty)
+                {
+                    for (ContextAction ca : actions)
+                        ca.render(out);
+                }
+                return ret;
+            }
         ).appendTo(out);
     }
 
-    private void _renderContextBar(HtmlWriter out)
+    private void renderContextBar(HtmlWriter out)
     {
-        _renderBar(out, _contextActions, "ctxbar");
+        renderBar(out, _contextActions, "ctxbar");
     }
 
-    private void _renderViewBar(HtmlWriter out)
+    private void renderViewBar(HtmlWriter out)
     {
-        _renderBar(out, _viewActions, "viewbar");
+        renderBar(out, _viewActions, "viewbar");
     }
 
     protected void renderMessages(Writer out) throws IOException
@@ -1176,58 +1181,61 @@ public class DataRegion extends DisplayElement
         out.write("</div>");
     }
 
-    private void renderTableContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter writer, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
+        Writer out = writer.unwrap();
 
-        if (_aggregateRowConfig.getAggregateRowFirst())
-            renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+        try
+        {
+            renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
-        int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
-        if (rows == 0)
-            renderNoRowsMessage(out, colCount);
+            if (_aggregateRowConfig.getAggregateRowFirst())
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
-        if (_aggregateRowConfig.getAggregateRowLast())
-            renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+            int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
+            if (rows == 0)
+                renderNoRowsMessage(out, colCount);
+
+            if (_aggregateRowConfig.getAggregateRowLast())
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
+        }
+        catch (IOException | SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return writer;
     }
 
-    private void _renderDataTableNew(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    private void renderDataTable(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        out.write("<div class=\"lk-region-ct\">");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-n") + "\" class=\"lk-region-bar lk-region-section north\"></div>");
-
-        // center section
-        out.write("<div class=\"lk-region-section center\" style=\"display: block;\">");
-        renderCenterContent(ctx, out, showRecordSelectors, renderers, colCount);
-        out.write("</div>");
-        // end center section
-
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-w") + "\" class=\"lk-region-bar lk-region-section west\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-e") + "\" class=\"lk-region-bar lk-region-section east\"></div>");
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-section-s") + "\" class=\"lk-region-bar lk-region-section south\"></div>");
-        out.write("</div>");
+        DIV(
+            cl("lk-region-ct"),
+            DIV(
+                cl("lk-region-bar lk-region-section north").id(getDomId() + "-section-n")
+            ),
+            DIV(
+                cl("lk-region-section center").at(style, "display: block;"),
+                (DOM.Renderable) ret -> renderCenterContent(ctx, out, showRecordSelectors, renderers, colCount)
+            ),
+            DIV(cl("lk-region-bar lk-region-section west").id(getDomId() + "-section-w")),
+            DIV(cl("lk-region-bar lk-region-section east").id(getDomId() + "-section-e")),
+            DIV(cl("lk-region-bar lk-region-section south").id(getDomId() + "-section-s"))
+        ).appendTo(out);
     }
 
-    protected void renderCenterContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException, SQLException
+    protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        // declare table
-        out.write("<table id=\"" + PageFlowUtil.filter(getDomId()) + "\"");
+        TABLE(
+            cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
+            data("region-name", getName()).
+            lk("region-name", getName()). // TODO: Remove this after all tests check for the "data-" attribute instead of "lk-"
+            cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
+            id(getDomId()),
+            (DOM.Renderable) ret -> renderTableContent(ctx, out, showRecordSelectors, renderers, colCount)
+        ).appendTo(out);
 
-        String name = getName();
-        String tableCls = "table-condensed labkey-data-region";
-        if (name != null)
-            out.write(" lk-region-name=\"" + PageFlowUtil.filter(name) + "\"");
-
-        if (isShowBorders())
-            tableCls += " table-bordered";
-
-        out.write("class=\"" + tableCls + "\">");
-
-        // table content
-        renderTableContent(ctx, out, showRecordSelectors, renderers, colCount);
-
-        out.write("</table>");
-        // end declare table
+        return out;
     }
 
     private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException

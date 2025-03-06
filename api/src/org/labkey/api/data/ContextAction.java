@@ -15,9 +15,11 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
 public class ContextAction
 {
@@ -67,6 +69,14 @@ public class ContextAction
     {
         return closable;
     }
+
+    public HtmlWriter render(HtmlWriter out)
+    {
+        out.write(HtmlString.unsafe(toString()));
+        return out;
+    }
+
+    // TODO: Convert to use DOM
 
     @Override
     public String toString()
