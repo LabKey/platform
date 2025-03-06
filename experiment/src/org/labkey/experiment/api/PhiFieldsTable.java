@@ -10,11 +10,11 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.query.ExpSchema;
 
-public class PhiFieldsTable extends BaseFieldNamesTable
+public class PhiFieldsTable extends BaseFieldsTable
 {
     public PhiFieldsTable(@NotNull ExpSchema userSchema, @Nullable ContainerFilter containerFilter)
     {
-        super("PHIFields", userSchema, containerFilter);
+        super(ExpSchema.TableType.PhiFields.name(), userSchema, containerFilter);
         setDescription("Shows one row for each PHI-annotated field in the selected folder(s). Rows are shown in " +
             "a folder or project only if the user has administrator permissions in that folder.");
 

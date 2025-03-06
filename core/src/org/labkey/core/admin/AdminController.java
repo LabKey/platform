@@ -10300,14 +10300,20 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetFolderTabsAction extends ReadOnlyApiAction
+    public static class GetFolderTabsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object form, BindException errors) throws Exception
         {
-            return getContainer().getFolderType().getAppBar(getViewContext(), getPageConfig()).getButtons()
-                    .stream().map(this::getProperties)
-                    .collect(Collectors.toList());
+            var data = getContainer()
+                    .getFolderType()
+                    .getAppBar(getViewContext(), getPageConfig())
+                    .getButtons()
+                    .stream()
+                    .map(this::getProperties)
+                    .toList();
+
+            return success(data);
         }
 
         private Map<String, Object> getProperties(NavTree navTree)
@@ -10438,7 +10444,6 @@ public class AdminController extends SpringActionController
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(shortURLRecord));
                 // Add a role assignment to let another group manage the URL. This grants permission to the journal
                 // to change where the URL redirects you to after they copy the data
-//                policy.addRoleAssignment(org.labkey.api.security.SecurityManager.getGroupId(c, "SomeGroup"));
                 SecurityPolicyManager.savePolicy(policy, getUser());
             }
             return true;
