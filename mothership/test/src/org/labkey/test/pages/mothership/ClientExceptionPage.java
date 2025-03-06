@@ -1,5 +1,6 @@
 package org.labkey.test.pages.mothership;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
@@ -46,7 +47,7 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
 
     public ClientExceptionPage clickInlineScriptError(boolean expectError) throws Exception
     {
-        var initialState = mothershipHelper.getOrderedStackTraces();
+        var initialState = mothershipHelper.getLatestStackTrace();
         elementCache().inlineScriptErrBtn.click();
         if (expectError)
             waitForNewTimestamp(initialState);
@@ -55,7 +56,7 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
 
     public ClientExceptionPage clickResourceScriptError(boolean expectError) throws Exception
     {
-        var initialState = mothershipHelper.getOrderedStackTraces();
+        var initialState = mothershipHelper.getLatestStackTrace();
         elementCache().resourceScriptErrBtn.click();
         if (expectError)
             waitForNewTimestamp(initialState);
@@ -64,7 +65,7 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
 
     public ClientExceptionPage clickNestedScriptError(boolean expectError) throws Exception
     {
-        var initialState = mothershipHelper.getOrderedStackTraces();
+        var initialState = mothershipHelper.getLatestStackTrace();
         elementCache().nestedScriptErrBtn.click();
         if (expectError)
             waitForNewTimestamp(initialState);
@@ -73,30 +74,31 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
 
     public ClientExceptionPage clickAsyncScriptError(boolean expectError) throws Exception
     {
-        var initialState = mothershipHelper.getOrderedStackTraces();
+        var initialState = mothershipHelper.getLatestStackTrace();
         elementCache().asyncScriptErrBtn.click();
         if (expectError)
             waitForNewTimestamp(initialState);
         return this;
     }
 
-    private void waitForNewTimestamp(List<Map<String, Object>> initialState) throws IOException, CommandException
+    private void waitForNewTimestamp(@Nullable Map<String, Object> initialState) throws Exception
     {
-        waitFor(()-> {
+        waitFor(() -> {
             try
             {
-                sleep(250);
-                var latestTraces =  mothershipHelper.getOrderedStackTraces();
-                var lastTimestamp = (Date)initialState.get(0).get("LastReport");
-                if (initialState.isEmpty())
-                    return !latestTraces.isEmpty();
+                sleep(500); // half a second between iterations to avoid spamming the server
+                var latestStackTrace = mothershipHelper.getLatestStackTrace();
+                if (null != initialState)
+                    return latestStackTrace != null;
                 else
-                    return  !latestTraces.isEmpty() && ((Date)latestTraces.get(0).get("LastReport")).after(lastTimestamp);
-            } catch (Exception e)
+                    return latestStackTrace != null && ((Date) latestStackTrace.get("LastReport"))
+                            .after((Date) initialState.get("LastReport"));
+            }
+            catch (Exception e)
             {
                 return false;
             }
-        }, "No new report appeared in Mothership", 2000);
+        }, "No new report appeared in Mothership", 4000);
     }
 
     @Override

@@ -288,20 +288,20 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testInlineScriptClientError() throws Exception
     {
-        var initialStackTraces = _mothershipHelper.getOrderedStackTraces();
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
 
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickInlineScriptError(true);
         var url = getURL();
 
-        var testException = _mothershipHelper.getOrderedStackTraces().get(0);
+        var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
         var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
 
-        if (!initialStackTraces.isEmpty())
+        if (initialStackTrace != null)
             checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
                     .as("expect this result to occur after the most-recent previous report")
-                    .isAfter((Date)initialStackTraces.get(0).get("LastReport")));
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
         checker().verifyEquals("Expect confirmation that the controller is mothership",
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
@@ -321,21 +321,21 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testResourceScriptClientError() throws Exception
     {
-        var initialStackTraces = _mothershipHelper.getOrderedStackTraces();
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
 
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickResourceScriptError(true);
         var url = getURL();
         checkExpectedErrors(1);
 
-        var testException = _mothershipHelper.getOrderedStackTraces().get(0);
+        var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
         var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
 
-        if (!initialStackTraces.isEmpty())
+        if (initialStackTrace != null)
             checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
                     .as("expect this result to occur after the most-recent previous report")
-                    .isAfter((Date)initialStackTraces.get(0).get("LastReport")));
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
         checker().verifyEquals("Expect confirmation that the controller is mothership",
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
@@ -355,20 +355,20 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testNestedResourceScriptClientError() throws Exception
     {
-        var initialStackTraces = _mothershipHelper.getOrderedStackTraces();
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
 
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickNestedScriptError(true);
         var url = getURL();
 
-        var testException = _mothershipHelper.getOrderedStackTraces().get(0);
+        var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
         var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
 
-        if (!initialStackTraces.isEmpty())
+        if (initialStackTrace != null)
             checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
                     .as("expect this result to occur after the most-recent previous report")
-                    .isAfter((Date)initialStackTraces.get(0).get("LastReport")));
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
         checker().verifyEquals("Expect confirmation that the controller is mothership",
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is app",
@@ -388,21 +388,20 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
     @Test
     public void testAsyncScriptClientError() throws Exception
     {
-        var initialStackTraces = _mothershipHelper.getOrderedStackTraces();
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
 
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickAsyncScriptError(true);
-        sleep(1000); // give it a chance to happen
         var url = getURL();
 
-        var testException = _mothershipHelper.getOrderedStackTraces().get(0);
+        var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
         var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
 
-        if (!initialStackTraces.isEmpty())
+        if (initialStackTrace != null)
             checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
                     .as("expect this result to occur after the most-recent previous report")
-                    .isAfter((Date)initialStackTraces.get(0).get("LastReport")));
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
         checker().verifyEquals("Expect confirmation that the controller is mothership",
                 "mothership", rowMap.get("PageflowName"));
         checker().verifyEquals("Expect confirmation that the action is deepException",
