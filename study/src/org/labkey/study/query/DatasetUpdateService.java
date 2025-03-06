@@ -19,13 +19,20 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -45,6 +52,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
@@ -55,13 +63,19 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.security.StudySecurityEscalator;
+import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -121,7 +135,6 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private final Set<String> _potentiallyNewParticipants = new HashSet<>();
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
-    private Set<Role> _contextualRoles = Set.of();
 
     /** Mapping for MV column names */
     private Map<String, String> _columnMapping = Collections.emptyMap();
@@ -312,6 +325,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return result;
     }
 
+    @Override
     protected DataIteratorBuilder preTriggerDataIterator(DataIteratorBuilder in, DataIteratorContext context)
     {
         // If we're using a managed GUID as a key, wire it up here so that it's available to trigger scripts
@@ -488,7 +502,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             PurgeParticipantCommitTask that = (PurgeParticipantCommitTask) o;
 
-            if (_container != null ? !_container.equals(that._container) : that._container != null) return false;
+            if (!Objects.equals(_container, that._container)) return false;
 
             return true;
         }
@@ -785,4 +799,103 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
         else return lsids[0];
     }
+
+
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        TestContext _context = null;
+        User _user = null;
+        Container _container = null;
+        StudyImpl _junitStudy = null;
+        StudyManager _manager = StudyManager.getInstance();
+        String longName = "this is a very long name (with punctuation) that raises many questions \"?\" about your database design choices";
+
+        @Test
+        public void updateRow() throws Exception
+        {
+            var dsd = new DatasetDefinition(_junitStudy, 1001, "DS1", "DS1", null, null, null);
+            _manager.createDatasetDefinition(_user, dsd);
+            dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
+            assertNotNull(dsd);
+            dsd.getStorageTableInfo();
+            var domain = dsd.getDomain();
+            assertNotNull(domain);
+            domain.addProperty(new PropertyStorageSpec("Field1", JdbcType.VARCHAR));
+            domain.addProperty(new PropertyStorageSpec("SELECT", JdbcType.VARCHAR));    // keyword
+            domain.addProperty(new PropertyStorageSpec(longName, JdbcType.VARCHAR));    // keyword
+            domain.save(_user);
+
+            TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
+            assertNotNull(t);
+            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias()));
+            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias()));
+            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias()));
+            var up = t.getUpdateService();
+            assertNotNull(up);
+            var errors = new BatchValidationException();
+
+            var result = up.insertRows(_user, _container,
+                    List.of(Map.of("subjectid", "S1", "SequenceNum", "1.2345", "Field1", "f", "SELECT", "s", longName, "l")),
+                    errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getMessage());
+            assertFalse(errors.hasErrors());
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            var map = result.get(0);
+            assertEquals("S1", map.get("SubjectId"));
+            assertEquals("f", map.get("Field1"));
+            assertEquals("s", map.get("SELECT"));
+            assertEquals("l", map.get(longName));
+            assertNotNull(map.get("lsid"));
+            assertTrue(((String)map.get("lsid")).endsWith(":1001.S1.1.2345"));
+            String lsid = (String)map.get("lsid");
+
+            result = up.updateRows(_user, _container,
+                    List.of(Map.of("subjectid", "S2")),
+                    List.of(Map.of("lsid", lsid)),
+                    errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getMessage());
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            map = result.get(0);
+            assertEquals("S2", map.get("SubjectId"));
+            assertEquals("f", map.get("Field1"));
+            assertEquals("s", map.get("SELECT"));
+            assertEquals("l", map.get(longName));
+            assertTrue(((String)map.get("lsid")).contains(":1001.S2.1.2345"));
+        }
+
+        @Before
+        public void createStudy()
+        {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+            String name = GUID.makeHash();
+            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
+            StudyImpl s = new StudyImpl(c, "Junit Study");
+            s.setTimepointType(TimepointType.VISIT);
+            s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
+            s.setSubjectColumnName("SubjectID");
+            s.setSubjectNounPlural("Subjects");
+            s.setSubjectNounSingular("Subject");
+            s.setSecurityType(SecurityType.BASIC_WRITE);
+            _junitStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+            _user = _context.getUser();
+            _container = _junitStudy.getContainer();
+        }
+
+        @After
+        public void tearDown()
+        {
+            if (null != _junitStudy)
+            {
+                assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
+            }
+        }
+    }
+
 }
