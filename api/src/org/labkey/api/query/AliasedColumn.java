@@ -37,6 +37,8 @@ public class AliasedColumn extends BaseColumnInfo
     {
         super(key, parent);
         copyAttributesFrom(column);
+        // property URI should be unique, and certainly within one table
+        setPropertyURI(null);
 
         Map<FieldKey, FieldKey> remap = new HashMap<>();
         remap.put(column.getFieldKey(), key);

@@ -660,11 +660,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             transaction.commit();
         }
 
-        //update the lsid and return
-        row.put("lsid", newLsid);
-        row = getRow(user, container, row);
+        // return updated row
+        var returnRow = getRow(user, container, Map.of(DatasetDomainKind.LSID, newLsid));
 
-        String newParticipant = getParticipant(row, user, container);
+        String newParticipant = getParticipant(returnRow, user, container);
         if (!oldParticipant.equals(newParticipant))
         {
             // Participant has changed - might be a reference to a new participant, or removal of the last reference to
@@ -681,14 +680,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             String columnName = StudyManager.getInstance().getStudy(container).getTimepointType().isVisitBased() ?
                     "SequenceNum" : "Date";
             Object oldTimepoint = oldRow.get(columnName);
-            Object newTimepoint = row.get(columnName);
+            Object newTimepoint = returnRow.get(columnName);
             if (!Objects.equals(oldTimepoint, newTimepoint))
             {
                 _participantVisitResyncRequired = true;
             }
         }
 
-        return row;
+        return returnRow;
     }
 
     @Override

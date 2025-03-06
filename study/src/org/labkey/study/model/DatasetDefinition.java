@@ -1682,6 +1682,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+
+            if (!DatasetDomainKind.PARTICIPANTID.equalsIgnoreCase(_study.getSubjectColumnName()))
+                m.put(DatasetDomainKind.PARTICIPANTID, _study.getSubjectColumnName());
             
             // why did I add an underscore to the stored mv indicators???
             for (ColumnInfo col : getColumns())
@@ -2749,38 +2752,40 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             ((ArrayListMap)datas.get(0)).getFindMap().remove("_key");
         }
 
-        List<Map<String, Object>> canonicalDatas = new ArrayList<>(datas.size());
+        // results should not be sensitive to the column aliases, convert aliases to column names
+        CaseInsensitiveHashMap<String> aliasToColumnNames = new CaseInsensitiveHashMap<>();
+        List<ColumnInfo> columns = tInfo.getColumns();
+        for (ColumnInfo col : columns)
+        {
+            var name = col.getName();
+            // NOTE: case of columns in tInfo and queryTableInfo seem to match except for QCstate, leaving for now
+            var queryCol = queryTableInfo.getColumn(name);
+            if (null != queryCol)
+                name = queryCol.getName();
+            aliasToColumnNames.put(col.getAlias(), name);
+        }
 
+        List<Map<String, Object>> canonicalDatas = new ArrayList<>(datas.size());
         for (Map<String, Object> data : datas)
         {
-            canonicalDatas.add(canonicalizeDatasetRow(data, queryTableInfo.getColumns()));
+            canonicalDatas.add(canonicalizeDatasetRow(data, aliasToColumnNames));
         }
 
         return canonicalDatas;
     }
 
         // change a map's keys to have proper casing just like the list of columns
-    private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
+    private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, Map<String,String> aliasToColumnNames)
     {
-        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<>();
-        for (ColumnInfo col : columns)
-        {
-            keyNames.put(col.getName(), col.getName());
-        }
-
         Map<String,Object> result = new CaseInsensitiveHashMap<>();
-
         for (Map.Entry<String,Object> entry : source.entrySet())
         {
             String key = entry.getKey();
-            String newKey = keyNames.get(key);
-            if (newKey != null)
-                key = newKey;
-            else if ("_row".equals(key))
+            if ("_row".equals(key))
                 continue;
+            key = aliasToColumnNames.getOrDefault(key, key);
             result.put(key, entry.getValue());
         }
-
         return result;
     }
 
