@@ -27,9 +27,16 @@ public class HtmlWriter implements Appendable
         return _writer;
     }
 
-    public void write(SafeToRender safeToRender) throws IOException
+    public void write(SafeToRender safeToRender)
     {
-        _writer.write(safeToRender.toString());
+        try
+        {
+            _writer.write(safeToRender.toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void write(Number number) throws IOException

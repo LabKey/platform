@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
@@ -917,17 +918,18 @@ public class DataRegion extends DisplayElement
     {
     }
 
-    private void renderHeader(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    private void renderHeader(RenderContext ctx, HtmlWriter out, boolean renderButtons)
     {
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-headerbar") + "\" class=\"lk-region-bar lk-region-header-bar\">");
-        _renderButtonBarNew(ctx, out, renderButtons);
-        HtmlWriter writer = HtmlWriter.of(out);
-        DIV(cl("pull-right"), DIV(cl("labkey-pagination"))).appendTo(writer);
-        out.write("</div>");
+        DIV(
+            cl("lk-region-bar lk-region-header-bar").
+            id(getDomId() + "-headerbar"),
+            (DOM.Renderable) ret -> renderButtonBar(ctx, out, renderButtons),
+            DIV(cl("pull-right"), DIV(cl("labkey-pagination")))
+        ).appendTo(out);
 
-        _renderDrawer(writer);
-        _renderViewBar(writer);
-        _renderContextBar(writer);
+        _renderDrawer(out);
+        _renderViewBar(out);
+        _renderContextBar(out);
     }
 
     protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
@@ -1066,7 +1068,7 @@ public class DataRegion extends DisplayElement
             out.write("<table><tbody><tr><td>");
         if (shouldRenderHeader(renderButtons))
         {
-            renderHeader(ctx, out, renderButtons);
+            renderHeader(ctx, HtmlWriter.of(out), renderButtons);
         }
 
         renderMessages(out);
@@ -1097,14 +1099,17 @@ public class DataRegion extends DisplayElement
         renderFormEnd(ctx, out);
     }
 
-    private void _renderButtonBarNew(RenderContext ctx, Writer out, boolean renderButtons) throws IOException
+    private HtmlWriter renderButtonBar(RenderContext ctx, HtmlWriter out, boolean renderButtons)
     {
         if (renderButtons)
         {
-            out.write("<div class=\"pull-left\">");
-            renderButtons(ctx, out);
-            out.write("</div>");
+            DIV(cl("pull-left"), (DOM.Renderable) ret -> renderButtons(ctx, out)).appendTo(out);
+//            out.write(HtmlString.unsafe("<div class=\"pull-left\">"));
+//            renderButtons(ctx, out);
+//            out.write(HtmlString.unsafe("</div>"));
         }
+
+        return out;
     }
 
     private void _renderDrawer(HtmlWriter out)
@@ -1112,7 +1117,7 @@ public class DataRegion extends DisplayElement
         DIV(cl("lk-region-bar lk-region-drawer").at(id, getDomId() + "-drawer", style, "display:none;")).appendTo(out);
     }
 
-    private void _renderBar(HtmlWriter out, List<ContextAction> actions, String idSuffix) throws IOException
+    private void _renderBar(HtmlWriter out, List<ContextAction> actions, String idSuffix)
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of();
         boolean isEmpty = actions == null || actions.isEmpty();
@@ -1132,12 +1137,12 @@ public class DataRegion extends DisplayElement
         ).appendTo(out);
     }
 
-    private void _renderContextBar(HtmlWriter out) throws IOException
+    private void _renderContextBar(HtmlWriter out)
     {
         _renderBar(out, _contextActions, "ctxbar");
     }
 
-    private void _renderViewBar(HtmlWriter out) throws IOException
+    private void _renderViewBar(HtmlWriter out)
     {
         _renderBar(out, _viewActions, "viewbar");
     }
@@ -1290,7 +1295,7 @@ public class DataRegion extends DisplayElement
                 || (_showPagination && _buttonBarPosition.atTop()));
     }
 
-    protected void renderButtons(RenderContext ctx, Writer out) throws IOException
+    protected HtmlWriter renderButtons(RenderContext ctx, HtmlWriter out)
     {
         //adjust position if bbar supplies a position value
         if (_gridButtonBar.getConfiguredPosition() != null)
@@ -1301,6 +1306,8 @@ public class DataRegion extends DisplayElement
             _gridButtonBar.render(ctx, out);
             _buttonBarRendered = true;
         }
+
+        return out;
     }
 
     /**

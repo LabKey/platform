@@ -29,6 +29,8 @@ import org.labkey.api.view.ViewContext;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.labkey.api.writer.HtmlWriter;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
@@ -94,11 +96,14 @@ public class ReportDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderButtons(RenderContext ctx, Writer out) throws IOException
+    protected HtmlWriter renderButtons(RenderContext ctx, HtmlWriter out)
     {
         ButtonBar buttonBar = getButtonBar(MODE_GRID);
+
         if (buttonBar != null)
             buttonBar.render(ctx, out);
+
+        return out;
     }
 
     @Override

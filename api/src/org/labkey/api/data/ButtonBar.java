@@ -17,17 +17,20 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.DisplayElement;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * A set of buttons that are displayed as a unit. Typically, but not always,
@@ -114,28 +117,23 @@ public class ButtonBar extends DisplayElement
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         if (!shouldRender(ctx))
             return;
 
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
-        out.write("<div");
-        if (getStyle() == Style.toolbar)
-            out.write(" class=\"labkey-button-bar\"");
-        else if (getStyle() == Style.separateButtons)
-            out.write(" class=\"labkey-button-bar-separate\"");
-        out.write(">");
-        for (DisplayElement el : getList())
-        {
-            // This is redundant with shouldRender check in ActionButton.render, but we don't want to output <td></td> if button is not visible
-            if (el.shouldRender(ctx))
-            {
-                el.render(ctx, out);
+        DIV(
+            cl(getStyle() == Style.toolbar ? "labkey-button-bar" : getStyle() == Style.separateButtons ? "labkey-button-separate" : null),
+            (DOM.Renderable) ret -> {
+                getList().forEach(el -> {
+                    if (el.shouldRender(ctx))
+                        el.render(ctx, out);
+                });
+                return ret;
             }
-        }
-        out.write("</div>");
+        ).appendTo(out);
     }
 
     /**
@@ -162,7 +160,7 @@ public class ButtonBar extends DisplayElement
     @Nullable
     public DataRegion.ButtonBarPosition getConfiguredPosition()
     {
-        if (_configs != null && _configs.size() > 0)
+        if (_configs != null && !_configs.isEmpty())
             return _configs.get(_configs.size() - 1).getPosition();
         return null;
     }
