@@ -58,6 +58,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -190,17 +191,22 @@ public class StatementDataIterator extends AbstractDataIterator
             ParameterMapStatement stmt = _stmts[set];
             // map from source to target
             ArrayList<Triple> bindings = new ArrayList<>(stmt.size());
+            IdentityHashMap<Parameter,ColumnInfo> boundParametersMap = new IdentityHashMap<>();
             // by name
             for (int i=1 ; i<=_data.getColumnCount() ; i++)
             {
                 ColumnInfo col = _data.getColumnInfo(i);
-                Parameter to = null;
-                if (null != col.getPropertyURI())
+                Parameter to = stmt.getParameter(col.getName());
+                if (null == to && null != col.getPropertyURI())
                     to = stmt.getParameter(col.getPropertyURI());
-                if (to == null)
-                    to = stmt.getParameter(col.getName());
                 if (null != to)
                 {
+                    var prev = boundParametersMap.put(to,col);
+                    if (null != prev)
+                    {
+                        throw new IllegalStateException("Two columns mapped to target column '" + to.getName() + "'." +
+                                " Found '" + prev.getName() + "' and '" + col.getName() + "'.");
+                    }
                     FieldKey mvName = col.getMvColumnName();
                     bindings.add(new Triple(_data.getSupplier(i), to,
                                             (null != mvName ? getMvParameter(stmt, mvName) : null)));
