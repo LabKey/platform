@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 
 public class PipelineJobServiceImpl implements PipelineJobService
@@ -285,7 +286,20 @@ public class PipelineJobServiceImpl implements PipelineJobService
         {
             for (Process p : processes)
             {
-                p.destroyForcibly();
+                // First try a normal shutdown
+                p.destroy();
+                try
+                {
+                    // Wait in the hopes it will terminate gracefully
+                    p.waitFor(5, TimeUnit.SECONDS);
+
+                    // Make sure it dies
+                    if (p.isAlive())
+                    {
+                        p.destroyForcibly();
+                    }
+                }
+                catch (InterruptedException ignored) {}
             }
         }
 
