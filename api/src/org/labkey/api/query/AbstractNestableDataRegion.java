@@ -62,7 +62,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     }
 
     @Override
-    public void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    public void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
     {
         if (_expanded)
         {
@@ -71,12 +71,12 @@ public abstract class AbstractNestableDataRegion extends DataRegion
             displayColumnList.add(new EmptyDisplayColumn());
         }
 
-        super.renderTable(ctx, out);
+        super.renderTable(ctx, oldWriter);
         ResultSetUtil.close(_groupedRS);
     }
 
     @Override
-    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
+    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
     {
         var page = HttpView.currentPageConfig();
         String madeId = page.makeId("a_");
@@ -119,10 +119,9 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         _nestedRegion.setShowPagination(false);
     }
 
-    protected void renderNestedGrid(Writer out, RenderContext ctx, ResultSet nestedRS, int rowIndex)
-        throws IOException
+    protected void renderNestedGrid(HtmlWriter out, RenderContext ctx, ResultSet nestedRS, int rowIndex) throws IOException
     {
-        renderRowStart(rowIndex, out, ctx);
+        renderRowStart(rowIndex, out.unwrap(), ctx);
 
         RenderContext nestedCtx = new RenderContext(ctx.getViewContext());
         if (_nestedFieldMap == null)
@@ -171,7 +170,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
                 throw new RuntimeSQLException(e);
             }
         }
-        renderRowEnd(out);
+        renderRowEnd(out.unwrap());
     }
 
     private void renderRowEnd(Writer out)

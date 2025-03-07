@@ -952,11 +952,13 @@ public class DataRegion extends DisplayElement
         writer.write(builder);
     }
 
-    protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
     {
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
         if (!hasPermission(ctx, ReadPermission.class))
         {
-            out.write("You do not have permission to read this data");
+            oldWriter.write("You do not have permission to read this data");
             return;
         }
         Results results = null;
@@ -992,7 +994,7 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                renderTableNew(ctx, out, results);
+                renderTableNew(ctx, oldWriter, results);
             }
         }
         finally
@@ -1001,7 +1003,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderParameterForm(RenderContext ctx, Writer out) throws IOException
+    private void renderParameterForm(RenderContext ctx, HtmlWriter out) throws IOException
     {
         _allowHeaderLock = false;
 
@@ -1009,7 +1011,7 @@ public class DataRegion extends DisplayElement
         {
             Collection<QueryService.ParameterDecl> params = getTable().getNamedParameters();
             (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
-            renderHeaderScript(ctx, HtmlWriter.of(out), Collections.emptyMap(), false);
+            renderHeaderScript(ctx, out, Collections.emptyMap(), false);
         }
         catch (IOException ioe)
         {
@@ -1021,7 +1023,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderTableNew(RenderContext ctx, Writer out, ResultSet rs) throws IOException
+    private void renderTableNew(RenderContext ctx, Writer oldWriter, ResultSet rs) throws IOException
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -1065,29 +1067,31 @@ public class DataRegion extends DisplayElement
 
         Map<String, String> messages = prepareMessages(ctx);
 
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+
         renderFormBegin(ctx, out, ctx.getMode());
 
         if (useTableWrap)
-            out.write("<table><tbody><tr><td>");
+            oldWriter.write("<table><tbody><tr><td>");
         if (shouldRenderHeader(renderButtons))
         {
-            renderHeader(ctx, HtmlWriter.of(out), renderButtons);
+            renderHeader(ctx, out, renderButtons);
         }
 
-        renderMessages(out);
+        renderMessages(oldWriter);
 
         if (useTableWrap)
-            out.write("</td></tr>");
+            oldWriter.write("</td></tr>");
         if (!_errorCreatingResults)
         {
             if (useTableWrap)
-                out.write("<tr><td>");
-            renderDataTable(ctx, HtmlWriter.of(out), showRecordSelectors, renderers, colCount);
+                oldWriter.write("<tr><td>");
+            renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
             if (useTableWrap)
-                out.write("</td></tr>");
+                oldWriter.write("</td></tr>");
         }
         if (useTableWrap)
-            out.write("</tbody></table>");
+            oldWriter.write("</tbody></table>");
 
         if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
         {
@@ -1096,8 +1100,8 @@ public class DataRegion extends DisplayElement
                 _totalRows = getOffset() + _rowCount.intValue();
         }
 
-        renderHeaderScript(ctx, HtmlWriter.of(out), messages, showRecordSelectors);
-        renderAnalyticsProvidersScripts(ctx, out);
+        renderHeaderScript(ctx, out, messages, showRecordSelectors);
+        renderAnalyticsProvidersScripts(ctx, oldWriter);
 
         renderFormEnd(ctx, out);
     }
@@ -1154,10 +1158,10 @@ public class DataRegion extends DisplayElement
         renderBar(out, _viewActions, "viewbar");
     }
 
-    protected void renderMessages(Writer out) throws IOException
+    protected void renderMessages(Writer oldWriter) throws IOException
     {
         // The container <div> is written regardless of _messages being available
-        out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
+        oldWriter.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
         if (_messages != null)
         {
             for (Message message : _messages)
@@ -1167,20 +1171,20 @@ public class DataRegion extends DisplayElement
                 boolean isThemed = isError || isWarning;
 
                 // If this is modified, update the client-side renderer in DataRegion.js MsgProto.render()
-                out.write("<div class=\"lk-region-bar" + (isThemed ? " lk-msg-bar" : "") + "\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
+                oldWriter.write("<div class=\"lk-region-bar" + (isThemed ? " lk-msg-bar" : "") + "\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
 
                 if (isThemed)
-                    out.write("<div class=\"alert alert-" + (isError ? "danger" : "warning") + "\">");
+                    oldWriter.write("<div class=\"alert alert-" + (isError ? "danger" : "warning") + "\">");
 
-                out.write(PageFlowUtil.filter(message.getContent()));
+                oldWriter.write(PageFlowUtil.filter(message.getContent()));
 
                 if (isThemed)
-                    out.write("</div>");
+                    oldWriter.write("</div>");
 
-                out.write("</div>");
+                oldWriter.write("</div>");
             }
         }
-        out.write("</div>");
+        oldWriter.write("</div>");
     }
 
     private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
@@ -1194,7 +1198,7 @@ public class DataRegion extends DisplayElement
             if (_aggregateRowConfig.getAggregateRowFirst())
                 renderAggregatesTableRow(ctx, oldWriter, showRecordSelectors, renderers);
 
-            int rows = renderTableContents(ctx, oldWriter, showRecordSelectors, renderers);
+            int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
             if (rows == 0)
                 renderNoRowsMessage(out, colCount);
 
@@ -1241,7 +1245,7 @@ public class DataRegion extends DisplayElement
         return out;
     }
 
-    private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer writer) throws IOException
+    private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer oldWriter) throws IOException
     {
         AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
         boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
@@ -1269,7 +1273,7 @@ public class DataRegion extends DisplayElement
                     out.write(script + "\n");
                 }
                 out.write("</script>\n");
-                writer.write(out.toString());
+                oldWriter.write(out.toString());
             }
         }
     }
@@ -1450,18 +1454,18 @@ public class DataRegion extends DisplayElement
         _noRowsMessage = noRowsMessage;
     }
 
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        out.write("<thead>");
-        out.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" class=\"labkey-col-header-row\">");
+        oldWriter.write("<thead>");
+        oldWriter.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" class=\"labkey-col-header-row\">");
 
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
         if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
         {
-            out.write(" <th class=\"labkey-column-header labkey-selectors\"");
+            oldWriter.write(" <th class=\"labkey-column-header labkey-selectors\"");
 
             int width = 0;
             if (showRecordSelectors)
@@ -1470,7 +1474,7 @@ public class DataRegion extends DisplayElement
                 width += 15;
             if (updateColumn != null)
                 width += 15;
-            out.write(" style=\"width:" + width + "px;\">");
+            oldWriter.write(" style=\"width:" + width + "px;\">");
 
             if (showRecordSelectors)
             {
@@ -1516,17 +1520,17 @@ public class DataRegion extends DisplayElement
                     navtree.addChild(showAll);
                 }
 
-                out.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-                out.write(TOGGLE_CHECKBOX_NAME);
-                out.write("\">");
+                oldWriter.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
+                oldWriter.write(TOGGLE_CHECKBOX_NAME);
+                oldWriter.write("\">");
 
-                out.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
-                out.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
-                PopupMenuView.renderTree(navtree, out);
-                out.write("</ul>");
+                oldWriter.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
+                oldWriter.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
+                PopupMenuView.renderTree(navtree, oldWriter);
+                oldWriter.write("</ul>");
             }
 
-            out.write("</th>");
+            oldWriter.write("</th>");
         }
 
         for (DisplayColumn renderer : renderers)
@@ -1536,14 +1540,14 @@ public class DataRegion extends DisplayElement
                 if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                     continue;
 
-                renderer.renderGridHeaderCell(ctx, out);
+                renderer.renderGridHeaderCell(ctx, oldWriter);
             }
         }
 
-        out.write("</tr></thead>");
+        oldWriter.write("</tr></thead>");
     }
 
-    private void renderAggregatesTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
+    private void renderAggregatesTableRow(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         // Issue 51036: load totalRows count async for DataRegions
         boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
@@ -1553,14 +1557,14 @@ public class DataRegion extends DisplayElement
 
         if (!aggregateResults.isEmpty())
         {
-            out.write("<tr class=\"labkey-col-total labkey-row\">");
+            oldWriter.write("<tr class=\"labkey-col-total labkey-row\">");
 
             DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
             DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
             if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
             {
-                out.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
+                oldWriter.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
             }
 
             for (DisplayColumn renderer : renderers)
@@ -1570,10 +1574,10 @@ public class DataRegion extends DisplayElement
                     if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                         continue;
 
-                    out.write("<td nowrap ");
+                    oldWriter.write("<td nowrap ");
                     if (renderer.getTextAlign() != null)
-                        out.write(" align=\"" + renderer.getTextAlign() + "\"");
-                    out.write(">");
+                        oldWriter.write(" align=\"" + renderer.getTextAlign() + "\"");
+                    oldWriter.write(">");
 
                     ColumnInfo col = renderer.getColumnInfo();
 
@@ -1591,36 +1595,36 @@ public class DataRegion extends DisplayElement
                             String statLabel = r.getAggregate().getDisplayString();
                             Aggregate.Type type = r.getAggregate().getType();
 
-                            out.write("<div>");
-                            out.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel));
+                            oldWriter.write("<div>");
+                            oldWriter.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel));
                             if (type.getDescription() != null)
-                                PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()).appendTo(out);
-                            out.write(":</span>&nbsp;");
+                                PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()).appendTo(oldWriter);
+                            oldWriter.write(":</span>&nbsp;");
                             Pair<String, Boolean> value = r.getFormattedValue(renderer, ctx.getContainer());
                             boolean error = value.second;
                             if (error)
-                                out.write("<span class=\"labkey-error\">");
-                            out.write(PageFlowUtil.filter(value.first));
+                                oldWriter.write("<span class=\"labkey-error\">");
+                            oldWriter.write(PageFlowUtil.filter(value.first));
                             if (error)
-                                out.write("</span>");
-                            out.write("</div>");
+                                oldWriter.write("</span>");
+                            oldWriter.write("</div>");
                         }
                     }
                     else
                     {
-                        out.write("&nbsp;");
+                        oldWriter.write("&nbsp;");
                     }
 
-                    out.write("</td>");
+                    oldWriter.write("</td>");
                 }
             }
-            out.write("</tr>");
+            oldWriter.write("</tr>");
         }
     }
 
-    protected void renderFormEnd(RenderContext ctx, Writer out) throws IOException
+    protected void renderFormEnd(RenderContext ctx, HtmlWriter out)
     {
-        out.write("</form>");
+        out.write(HtmlString.unsafe("</form>"));
     }
 
     // Allows subclasses to add table rows at the beginning or end of the table
@@ -1628,7 +1632,7 @@ public class DataRegion extends DisplayElement
     /**
      * @return number of rows rendered
      */
-    protected int renderTableContents(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected int renderTableContents(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         Results results = ctx.getResults();
         int rowIndex = 0;
@@ -1640,7 +1644,7 @@ public class DataRegion extends DisplayElement
         while (rs.next())
         {
             ctx.setRow(factory.getRowMap(rs));
-            renderTableRow(ctx, oldWriter, showRecordSelectors, renderers, rowIndex++);
+            renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
         }
 
         return rowIndex;
@@ -1661,32 +1665,31 @@ public class DataRegion extends DisplayElement
 
     // Allows subclasses to do pre-row and post-row processing
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
-    protected void renderTableRow(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
-        HtmlWriter out = HtmlWriter.of(oldWriter);
-
-        oldWriter.write("<tr");
-        String rowClass = getRowClass(ctx, rowIndex);
-        if (rowClass != null)
-            oldWriter.write(" class=\"" + rowClass + "\"");
-        oldWriter.write(">");
-
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-        if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
-            renderActionColumn(ctx, out, rowIndex, showRecordSelectors, updateColumn, detailsColumn);
+        TR(
+            cl(getRowClass(ctx, rowIndex)),
+            (DOM.Renderable) ret -> {
+                if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
+                    renderActionColumn(ctx, out, rowIndex, showRecordSelectors, updateColumn, detailsColumn);
 
-        for (DisplayColumn renderer : renderers)
-            if (renderer.isVisible(ctx))
-            {
-                if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
-                    continue;
+                for (DisplayColumn renderer : renderers)
+                {
+                    if (renderer.isVisible(ctx))
+                    {
+                        if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
+                            continue;
 
-                renderer.renderGridDataCell(ctx, oldWriter);
+                        renderer.renderGridDataCell(ctx, out);
+                    }
+                }
+
+                return ret;
             }
-
-        oldWriter.write("</tr>\n");
+        ).appendTo(out);
     }
 
     protected DisplayColumn getDetailsUpdateColumn(RenderContext ctx, List<DisplayColumn> renderers, boolean getDetailsCol)
@@ -1704,9 +1707,9 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    protected void renderFormBegin(RenderContext ctx, Writer oldWriter, int mode) throws IOException
+    protected void renderFormBegin(RenderContext ctx, HtmlWriter out, int mode) throws IOException
     {
-        HtmlWriter out = HtmlWriter.of(oldWriter);
+        Writer oldWriter = out.unwrap();
 
         oldWriter.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
 
@@ -1775,7 +1778,7 @@ public class DataRegion extends DisplayElement
         return _recordSelectorValueColumns;
     }
 
-    private void renderRecordSelector(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderRecordSelector(RenderContext ctx, HtmlWriter out)
     {
         String checkboxValue = getRecordSelectorValue(ctx);
         boolean enabled = isRecordSelectorEnabled(ctx);
@@ -1795,7 +1798,7 @@ public class DataRegion extends DisplayElement
         renderExtraRecordSelectorContent(ctx, out);
     }
 
-    protected void renderActionColumn(RenderContext ctx, HtmlWriter out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn) throws IOException
+    protected void renderActionColumn(RenderContext ctx, HtmlWriter out, int rowIndex, boolean showRecordSelectors, @Nullable DisplayColumn updateColumn, @Nullable DisplayColumn detailsColumn)
     {
         if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
             return;
@@ -1875,7 +1878,7 @@ public class DataRegion extends DisplayElement
         return true;
     }
 
-    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
+    protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
     {
     }
 
@@ -1907,7 +1910,7 @@ public class DataRegion extends DisplayElement
         initDetailsResultSet(ctx);
         List<DisplayColumn> renderers = getDisplayColumns();
 
-        renderFormBegin(ctx, oldWriter, MODE_DETAILS);
+        renderFormBegin(ctx, out, MODE_DETAILS);
 
         RowMap<Object> rowMap = null;
         int rowIndex = 0;
@@ -1945,7 +1948,7 @@ public class DataRegion extends DisplayElement
             _detailsButtonBar.render(ctx, out);
         }
 
-        renderFormEnd(ctx, oldWriter);
+        renderFormEnd(ctx, out);
     }
 
 
@@ -1975,7 +1978,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderInputForm(RenderContext ctx, Writer out) throws IOException
+    private void renderInputForm(RenderContext ctx, Writer oldWriter) throws IOException
     {
         Map<String, Object> rowMap = ctx.getRow();
         //For inserts, just treat the posted strings as the rowmap
@@ -1985,10 +1988,10 @@ public class DataRegion extends DisplayElement
             if (null != form)
                 ctx.setRow((Map) form.getStrings());
         }
-        renderForm(ctx, out);
+        renderForm(ctx, oldWriter);
     }
 
-    private void renderUpdateForm(RenderContext ctx, Writer out) throws IOException
+    private void renderUpdateForm(RenderContext ctx, Writer oldWriter) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
@@ -2020,7 +2023,7 @@ public class DataRegion extends DisplayElement
             ctx.setRow(valueMap);
         }
 
-        renderForm(ctx, out);
+        renderForm(ctx, oldWriter);
     }
 
     /**
@@ -2030,7 +2033,7 @@ public class DataRegion extends DisplayElement
      * that value will be passed through, otherwise, the field is resolved as empty and it is left to the UI to convey
      * that there were multiple values available for that field.
      */
-    private void renderMultipleUpdateForm(RenderContext ctx, Writer out) throws IOException
+    private void renderMultipleUpdateForm(RenderContext ctx, Writer oldWriter) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
@@ -2099,35 +2102,35 @@ public class DataRegion extends DisplayElement
 
         ctx.setRow(rowMap);
 
-        renderForm(ctx, out);
+        renderForm(ctx, oldWriter);
     }
 
-    protected void renderMainErrors(RenderContext ctx, Writer out) throws IOException
+    protected void renderMainErrors(RenderContext ctx, HtmlWriter out)
     {
         HtmlString error = ctx.getErrors("main");
         if (null != error)
-            out.write(error.toString());
+            out.write(error);
     }
 
-    private void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
+    private void renderFormField(RenderContext ctx, Writer oldWriter, DisplayColumn renderer) throws IOException
     {
         Set<String> errors = getErrors(ctx, renderer);
 
-        out.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
+        oldWriter.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
 
-        renderer.renderDetailsCaptionCell(ctx, out, null);
+        renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
 
         if (renderer.isEditable())
-            renderer.renderInputCell(ctx, out);
+            renderer.renderInputCell(ctx, oldWriter);
         else
         {
-            renderer.renderInputWrapperBegin(out);
-            renderer.renderDetailsData(ctx, out);
-            renderer.renderInputWrapperEnd(out);
+            renderer.renderInputWrapperBegin(oldWriter);
+            renderer.renderDetailsData(ctx, oldWriter);
+            renderer.renderInputWrapperEnd(oldWriter);
         }
 
         //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
-        out.write("</tr>");
+        oldWriter.write("</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
@@ -2161,7 +2164,7 @@ public class DataRegion extends DisplayElement
         if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
            ((action == MODE_UPDATE || action == MODE_UPDATE_MULTIPLE) && !hasPermission(ctx, UpdatePermission.class)))
         {
-            oldWriter.write("You do not have permission to " +
+            out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
                     " data in this " + ctx.getContainer().getContainerNoun());
             return;
@@ -2172,7 +2175,7 @@ public class DataRegion extends DisplayElement
         // Check if we have any value to update
         if (action == MODE_UPDATE && valueMap == null)
         {
-            oldWriter.write("Could not find data row in " + ctx.getContainer().getContainerNoun());
+            out.write("Could not find data row in " + ctx.getContainer().getContainerNoun());
             return;
         }
 
@@ -2183,8 +2186,8 @@ public class DataRegion extends DisplayElement
         else
             buttonBar = _updateButtonBar;
 
-        renderFormBegin(ctx, oldWriter, action);
-        renderMainErrors(ctx, oldWriter);
+        renderFormBegin(ctx, out, action);
+        renderMainErrors(ctx, out);
 
         oldWriter.write("<table>");
         List<DisplayColumn> renderers = getDisplayColumns();
@@ -2388,30 +2391,30 @@ public class DataRegion extends DisplayElement
         }
 
         buttonBar.render(ctx, out);
-        renderFormEnd(ctx, oldWriter);
+        renderFormEnd(ctx, out);
     }
 
-    private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer out, DisplayColumn col) throws IOException
+    private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer oldWriter, DisplayColumn col) throws IOException
     {
-        col.renderDetailsCaptionCell(ctx, out, "control-header-label");
+        col.renderDetailsCaptionCell(ctx, oldWriter, "control-header-label");
     }
 
-    private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups) throws IOException
+    private void writeSameHeader(RenderContext ctx, Writer oldWriter, List<DisplayColumnGroup> groups) throws IOException
     {
-        out.write("<td nowrap><label class=\"control-label\">");
+        oldWriter.write("<td nowrap><label class=\"control-label\">");
 
         PageConfig pageConfig = HttpView.currentPageConfig();
         String id = pageConfig.makeId("selectAll_");
-        out.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"~~SELECTALL~~\" />");
+        oldWriter.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"~~SELECTALL~~\" />");
         StringBuilder onChange = new StringBuilder();
         for (DisplayColumnGroup group : groups)
         {
             group.appendCopyableOnChangeHandler(ctx, onChange);
         }
         pageConfig.addHandler(id, "change", onChange.toString());
-        out.write("Same" + PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same"));
+        oldWriter.write("Same" + PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same"));
 
-        out.write("</label></td>");
+        oldWriter.write("</label></td>");
     }
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
@@ -2505,7 +2508,7 @@ public class DataRegion extends DisplayElement
      * after setting some state
      */
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, Writer oldWriter) throws IOException
     {
         int mode = MODE_GRID;
         if (ctx.getMode() != MODE_NONE)
@@ -2522,11 +2525,11 @@ public class DataRegion extends DisplayElement
         {
             switch (mode)
             {
-                case MODE_INSERT -> renderInputForm(ctx, out);
-                case MODE_UPDATE -> renderUpdateForm(ctx, out);
-                case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, out);
-                case MODE_DETAILS -> renderDetails(ctx, out);
-                default -> renderTable(ctx, out);
+                case MODE_INSERT -> renderInputForm(ctx, oldWriter);
+                case MODE_UPDATE -> renderUpdateForm(ctx, oldWriter);
+                case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, oldWriter);
+                case MODE_DETAILS -> renderDetails(ctx, oldWriter);
+                default -> renderTable(ctx, oldWriter);
             }
         }
         catch (SQLException x)

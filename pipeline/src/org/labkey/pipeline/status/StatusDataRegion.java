@@ -67,11 +67,11 @@ public class StatusDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
     {
         if (_apiAction == null)
         {
-            super.renderTable(ctx, out);
+            super.renderTable(ctx, oldWriter);
             return;
         }
 
@@ -79,8 +79,8 @@ public class StatusDataRegion extends DataRegion
         String action = SpringActionController.getActionName(_apiAction);
         PageConfig config = HttpView.currentPageConfig();
 
-        out.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">\n");
-        out.write(
+        oldWriter.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">\n");
+        oldWriter.write(
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
                     "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
                         "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
@@ -88,21 +88,21 @@ public class StatusDataRegion extends DataRegion
                         "LABKEY.pipeline.statusUpdateInstance.start();\n" +
                     "});\n" +
                 "});\n");
-        out.write("</script>\n");
+        oldWriter.write("</script>\n");
 
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
         ActionURL urlFilter = ctx.getSortFilterURLHelper();
         SimpleFilter filters = new SimpleFilter(urlFilter, getName());
 
-        out.write("<table style=\"margin-bottom:10px;\">");
-        out.write("<tr><td>Show:</td>");
+        oldWriter.write("<table style=\"margin-bottom:10px;\">");
+        oldWriter.write("<tr><td>Show:</td>");
 
         String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();
         String value = PipelineJob.TaskStatus.complete.toString() + ";" + PipelineJob.TaskStatus.cancelled.toString() + ";" + PipelineJob.TaskStatus.error.toString();
         url.deleteParameters();
         url.addParameter(name, value);
         boolean selected = value.equals(urlFilter.getParameter(name)) || PipelineQueryView.createCompletedFilter().equals(ctx.getBaseFilter());
-        renderTab(out, "Running", url, selected);
+        renderTab(oldWriter, "Running", url, selected);
         boolean selSeen = selected;
 
         name = "StatusFiles.Status~eq";
@@ -110,25 +110,25 @@ public class StatusDataRegion extends DataRegion
         url.deleteParameters();
         url.addParameter(name, value);
         selected = !selSeen && value.equals(urlFilter.getParameter(name));
-        renderTab(out, "Errors", url, selected);
+        renderTab(oldWriter, "Errors", url, selected);
 
         name = "StatusFiles.Status~eq";
         value = PipelineJob.TaskStatus.cancelled.toString();
         url.deleteParameters();
         url.addParameter(name, value);
         selected = !selSeen && value.equals(urlFilter.getParameter(name));
-        renderTab(out, "Cancelled", url, selected);
+        renderTab(oldWriter, "Cancelled", url, selected);
 
         selSeen = selSeen || selected;
         url.deleteParameters();
-        renderTab(out, "All", url, filters.getClauses().isEmpty() && !selSeen);
+        renderTab(oldWriter, "All", url, filters.getClauses().isEmpty() && !selSeen);
 
-        out.write("</tr></table>\n");
-        out.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
-        out.write("<div id=\"statusRegionDiv\">");
+        oldWriter.write("</tr></table>\n");
+        oldWriter.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
+        oldWriter.write("<div id=\"statusRegionDiv\">");
 
-        super.renderTable(ctx, out);
+        super.renderTable(ctx, oldWriter);
 
-        out.write("</div>");
+        oldWriter.write("</div>");
     }
 }

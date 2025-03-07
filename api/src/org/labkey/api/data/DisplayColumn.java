@@ -43,6 +43,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -1041,6 +1042,18 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     boolean foundHoverContent = false;
+
+    public void renderGridDataCell(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderGridDataCell(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {

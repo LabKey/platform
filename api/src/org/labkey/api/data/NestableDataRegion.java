@@ -19,9 +19,9 @@ package org.labkey.api.data;
 import org.labkey.api.query.AbstractNestableDataRegion;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -82,7 +82,7 @@ public class NestableDataRegion extends AbstractNestableDataRegion
     }
 
     @Override
-    protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
     {
         super.renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex);
 

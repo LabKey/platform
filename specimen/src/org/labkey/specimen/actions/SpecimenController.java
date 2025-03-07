@@ -145,6 +145,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.AmbiguousLocationException;
 import org.labkey.specimen.RequestEventType;
 import org.labkey.specimen.RequestedSpecimens;
@@ -3331,7 +3332,7 @@ public class SpecimenController extends SpringActionController
             private int i = 0;
 
             @Override
-            protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+            protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
             {
                 // This is so we don't show rows that have no attachments
                 SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(ctx.getRow());

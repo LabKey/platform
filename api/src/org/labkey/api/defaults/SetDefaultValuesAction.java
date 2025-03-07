@@ -47,6 +47,7 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -111,15 +112,17 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
     }
 
-    protected class DefaultValueDataRegion extends DataRegion
+    protected static class DefaultValueDataRegion extends DataRegion
     {
         @Override
-        public void render(RenderContext ctx, Writer out) throws IOException
+        public void render(RenderContext ctx, Writer oldWriter) throws IOException
         {
+            HtmlWriter out = HtmlWriter.of(oldWriter);
+
             renderFormBegin(ctx, out, MODE_INSERT);
             renderMainErrors(ctx, out);
-            out.write("<table class=\"lk-fields-table\">");
-            out.write("<tr>" +
+            oldWriter.write("<table class=\"lk-fields-table\">");
+            oldWriter.write("<tr>" +
                     "<td class=\"lk-form-label lk-form-col-label\"><label>Field</label></td>" +
                     "<td class=\"lk-form-label lk-form-col-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
                     "<td class=\"lk-form-label lk-form-col-label\"><label>Default type</label></td>" +
@@ -129,31 +132,31 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
                     continue;
                 boolean isFile = ((DefaultableDisplayColumn) renderer).getJavaType() == File.class;
-                out.write("<tr>");
+                oldWriter.write("<tr>");
 
-                renderer.renderDetailsCaptionCell(ctx, out, "control-label lk-form-row-label");
+                renderer.renderDetailsCaptionCell(ctx, oldWriter, "control-label lk-form-row-label");
 
                 if (isFile)
-                    out.write("<td></td>"); // No input for file
+                    oldWriter.write("<td></td>"); // No input for file
                 else
-                    renderer.renderInputCell(ctx, out);
+                    renderer.renderInputCell(ctx, oldWriter);
 
-                out.write("<td>");
+                oldWriter.write("<td>");
                 if (isFile)
-                    out.write("Defaults cannot be set for file fields.");
+                    oldWriter.write("Defaults cannot be set for file fields.");
                 else
                 {
                     DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
                     if (defaultType == null)
                         defaultType = DefaultValueType.FIXED_EDITABLE;
-                    out.write(PageFlowUtil.filter(defaultType.getLabel()));
-                    PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()).appendTo(out);
+                    oldWriter.write(PageFlowUtil.filter(defaultType.getLabel()));
+                    PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()).appendTo(oldWriter);
                 }
-                out.write("</td>");
+                oldWriter.write("</td>");
 
-                out.write("</tr>");
+                oldWriter.write("</tr>");
             }
-            out.write("</table>");
+            oldWriter.write("</table>");
             ButtonBar bbar = getButtonBar(MODE_INSERT);
             bbar.setStyle(ButtonBar.Style.separateButtons);
             bbar.render(ctx, out);

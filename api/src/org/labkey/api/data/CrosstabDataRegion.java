@@ -53,20 +53,20 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
+    protected void renderGridHeaderColumns(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
         if (_numMemberMeasures > 0)
         {
             //add a row for the column axis label if there is one
-            out.write("<thead><tr>");
-            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
-            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out, false);
-            out.write("</tr></thead>");
+            oldWriter.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), oldWriter, false);
+            oldWriter.write("</tr></thead>");
 
             //add an extra row for the column dimension members
-            out.write("<thead><tr>");
-            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
+            oldWriter.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
 
             List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
@@ -86,7 +86,7 @@ public class CrosstabDataRegion extends DataRegion
                 {
                     if (_numMeasures != _numMemberMeasures || colDim.getMemberUrl(currentMember) != null)
                     {
-                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), out, alternate);
+                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), oldWriter, alternate);
                     }
                 }
 
@@ -105,11 +105,11 @@ public class CrosstabDataRegion extends DataRegion
             }
 
             //end the col dimension member header row
-            out.write("</tr></thead>");
+            oldWriter.write("</tr></thead>");
         }
 
         //call the base class to finish rendering the headers
-        super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
+        super.renderGridHeaderColumns(ctx, oldWriter, showRecordSelectors, renderers);
     }
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)

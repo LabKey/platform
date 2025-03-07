@@ -178,7 +178,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
+        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
         {
             if (!isAvailable(ctx))
             {
@@ -240,7 +240,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out) throws IOException
+        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
         {
             if (!isAvailable(ctx))
             {
