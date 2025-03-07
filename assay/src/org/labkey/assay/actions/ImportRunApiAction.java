@@ -63,6 +63,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -594,26 +595,35 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         @Override
         public @NotNull BindException bindParameters(PropertyValues m)
         {
+            MutablePropertyValues propertyValues = new MutablePropertyValues();
             for (PropertyValue pv : m.getPropertyValues())
             {
                 String name = pv.getName();
+                propertyValues.add(name, pv.getValue());
+
                 if (name.endsWith("]"))
                 {
                     if (name.startsWith("properties["))
                     {
                         String key = parsePropertiesKey(name.substring("properties[".length(), name.length() - 1));
                         if (key != null)
+                        {
                             getProperties().put(key, pv.getValue());
+                            propertyValues.removePropertyValue(name);
+                        }
                     }
                     else if (name.startsWith("batchProperties["))
                     {
                         String key = parsePropertiesKey(name.substring("batchProperties[".length(), name.length()-1));
                         if (key != null)
+                        {
                             getBatchProperties().put(key, pv.getValue());
+                            propertyValues.removePropertyValue(name);
+                        }
                     }
                 }
             }
-            return springBindParameters(this, "form", m);
+            return springBindParameters(this, "form", propertyValues);
         }
 
         private String parsePropertiesKey(String key)
