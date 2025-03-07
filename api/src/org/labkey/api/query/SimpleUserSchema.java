@@ -78,7 +78,7 @@ public class SimpleUserSchema extends UserSchema
     private final Set<String> _available = new CaseInsensitiveTreeSet();
     protected Set<String> _visible;
 
-    public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
+    public SimpleUserSchema(String name, @Nullable String description, @NotNull User user, @NotNull Container container, DbSchema dbschema)
     {
         super(name, description, user, container, dbschema);
         if (dbschema != null)
