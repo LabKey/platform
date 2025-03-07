@@ -57,6 +57,11 @@ public interface DataIntegrationService
     RemoteConnection getRemoteConnection(String name, Container c, @Nullable Logger log);
 
     /**
+     * Returns the Set of transform job IDs for the container
+     */
+    Set<Integer> getTransformRunJobIds(Container c);
+
+    /**
      * Execute an efficient reimport operation Create a dataIterator based on target.getQueryUpdateService()
      * using a diffing merge operation e.g. ignore unchanged rows in import
      *
