@@ -107,11 +107,6 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
         return new ElementCache();
     }
 
-    @Override
-    protected ElementCache elementCache()
-    {
-        return (ElementCache) super.elementCache();
-    }
 
     protected class ElementCache extends LabKeyPage<ElementCache>.ElementCache
     {

@@ -293,6 +293,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickInlineScriptError(true);
         var url = getURL();
+        checkExpectedErrors(1);
 
         var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
@@ -315,7 +316,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         checker().verifyEquals("Expect instance count to be the same in the page",
                 testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
         checker().screenShotIfNewError("unexpected_record_data");
-        resetErrors();
     }
 
     @Test
@@ -349,7 +349,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         checker().verifyEquals("Expect instance count to be the same in the page",
                 testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
         checker().screenShotIfNewError("unexpected_record_data");
-        resetErrors();
     }
 
     @Test
@@ -360,6 +359,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickNestedScriptError(true);
         var url = getURL();
+        checkExpectedErrors(1);
 
         var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
@@ -382,7 +382,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         checker().verifyEquals("Expect instance count to be the same in the page",
                 testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
         checker().screenShotIfNewError("unexpected_record_data");
-        resetErrors();
     }
 
     @Test
@@ -393,6 +392,7 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         var exceptionPage = ClientExceptionPage.beginAt(this);
         exceptionPage.clickAsyncScriptError(true);
         var url = getURL();
+        checkExpectedErrors(1);
 
         var testException = _mothershipHelper.getLatestStackTrace();
         var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
@@ -418,7 +418,6 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         checker().verifyEquals("Expect instance count to be the same in the page",
                 testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
         checker().screenShotIfNewError("unexpected_record_data");
-        resetErrors();
     }
 
     private String getErrorCode()
