@@ -24,6 +24,9 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.study.StudyUtils;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -31,7 +34,6 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.writer.StudyArchiveDataTypes;
 import org.labkey.study.writer.StudyPropertiesWriter;
 import org.labkey.study.xml.ExportDirType;
-import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,6 +50,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     private final Map<Object, Object> _objectiveIdMap = new HashMap<>();
     private final SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
     private final SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
+    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     private String getDataType()
     {
@@ -81,10 +84,10 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudyImpl(), ctx.getUser());
                     StudyQuerySchema projectSchema = isDataspaceProject ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
-                    if (!isDataspaceProject)
+                    if (!isDataspaceProject && _studyDesignEnabled)
                     {
                         // objective is cross-container and thus not supported for dataspace import
-                        StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME, null);
+                        StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME, null);
                         importTableData(ctx, vf, objectiveTablePackage, _objectiveTableMapBuilder,
                                 new PreserveExistingProjectData(ctx.getUser(), objectiveTablePackage.getTableInfo(), "Label", "RowId", _objectiveIdMap));
                     }
@@ -92,15 +95,18 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME, null);
                     importTableData(ctx, vf, propertiesTablePackage, null, new StudyPropertiesTransform());
 
-                    StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME, null);
-                    importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
-                            new PersonnelTableTransform(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
+                    if (_studyDesignEnabled)
+                    {
+                        StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.PERSONNEL_TABLE_NAME, null);
+                        importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
+                                new PersonnelTableTransform(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
+
+                        ctx.addTableIdMap("Personnel", _personnelIdMap);
+                        ctx.addTableIdMap("Objective", _objectiveIdMap);
+                    }
 
                     transaction.commit();
                 }
-
-                ctx.addTableIdMap("Personnel", _personnelIdMap);
-                ctx.addTableIdMap("Objective", _objectiveIdMap);
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

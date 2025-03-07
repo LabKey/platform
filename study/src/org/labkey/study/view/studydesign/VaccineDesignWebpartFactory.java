@@ -16,7 +16,6 @@
 package org.labkey.study.view.studydesign;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;

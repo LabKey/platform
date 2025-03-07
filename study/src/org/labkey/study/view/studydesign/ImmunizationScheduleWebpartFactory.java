@@ -19,8 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -29,7 +29,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyManager;
-import org.labkey.api.study.security.permissions.ManageStudyPermission;
 
 /**
  * User: cnathe

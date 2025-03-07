@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 import React, { FC } from 'react';
-import { APIKeysPanel, AppContextProvider, ServerContextProvider, withAppUser, } from '@labkey/components';
+import { APIKeysPanel, AppContextProvider, ServerContextProvider, withAppUser } from '@labkey/components';
 import { getServerContext } from '@labkey/api';
 
 import '../DomainDesigner.scss';
 
-export const App: FC<any> = () => {
+export const App: FC = () => {
     const serverContext = withAppUser(getServerContext());
 
     return (
         <ServerContextProvider initialContext={serverContext}>
             <AppContextProvider>
-                <APIKeysPanel includeSessionKeys={true} />
+                <APIKeysPanel includeSessionKeys />
             </AppContextProvider>
         </ServerContextProvider>
     );

@@ -21,6 +21,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -81,10 +82,10 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
 
                     // study design tables
                     List<String> studyDesignTableNames = new ArrayList<>();
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+                    studyDesignTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
 
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
                     for (String studyDesignTableName : studyDesignTableNames)

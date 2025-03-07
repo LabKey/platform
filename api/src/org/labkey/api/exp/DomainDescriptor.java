@@ -20,9 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -55,8 +57,8 @@ public final class DomainDescriptor
     private final String name;
     private final String _domainURI;
     private final String _description;
-    private final Container _container;
-    private final Container _project;
+    // DomainDescriptor is cached, so don't hold onto container object see DOMAIN_DESC_BY_ID_CACHE DOMAIN_PROPERTIES_CACHE
+    private final GUID _containerId;
     private final int _titlePropertyId;
     private final TemplateInfo _templateInfo;
 
@@ -70,7 +72,7 @@ public final class DomainDescriptor
     private final String _systemFieldConfig;
 
     private DomainDescriptor(
-            String domainURI, Container c, Container p, String name,
+            String domainURI, Container c, String name,
             int domainId, String description, String storageTableName, String storageSchemaName,
             int titlePropertyId, Object ts,
             @Nullable TemplateInfo templateInfo,
@@ -101,22 +103,7 @@ public final class DomainDescriptor
         }
         this.name = _name;
 
-        _container = c;
-
-        if (null != p)
-        {
-            _project = p;
-        }
-        else if (null != _container)
-        {
-            // root container would return a null for project
-            _project = _container.getProject() != null ? _container.getProject() : _container;
-        }
-        else
-        {
-            _project = null /* container is null */;
-        }
-
+        _containerId = c.getEntityId();
         _storageTableName = storageTableName;
         _storageSchemaName = storageSchemaName;
         _titlePropertyId = titlePropertyId;
@@ -139,8 +126,7 @@ public final class DomainDescriptor
             _domainId = 0;
 
         name = (String) map.get("Name");
-        _container = ContainerManager.getForId((String) map.get("Container"));
-        _project = ContainerManager.getForId((String) map.get("Project"));
+        _containerId = (GUID)JdbcType.GUID.convert(map.get("Container"));
         _description = (String) map.get("Description");
         _storageSchemaName = (String) map.get("StorageSchemaName");
         _storageTableName = (String) map.get("StorageTableName");
@@ -166,7 +152,7 @@ public final class DomainDescriptor
         return _domainKind;
     }
 
-    public void setDomainKind(DomainKind kind)
+    public void setDomainKind(DomainKind<?> kind)
     {
         _domainKind = kind;
     }
@@ -178,7 +164,7 @@ public final class DomainDescriptor
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public String getDescription()
@@ -201,9 +187,11 @@ public final class DomainDescriptor
         return _domainURI;
     }
 
+    // Project is used by a database index
     public Container getProject()
     {
-        return _project;
+        var c = getContainer();
+        return null==c ? null : c.getProject();
     }
 
     public int getTitlePropertyId()
@@ -242,7 +230,8 @@ public final class DomainDescriptor
     @Override
     public String toString()
     {
-        return _domainURI + " name=" + name + " project=" + (_project == null ? "null" : _project.getPath()) + " container=" + (_container == null ? "null" : _container.getPath());
+        var c = getContainer();
+        return _domainURI + " name=" + name + " container=" + (c == null ? "null" : c.getPath());
     }
 
     @Override
@@ -286,7 +275,6 @@ public final class DomainDescriptor
                 Objects.equals(getName(), d.getName()) &&
                 Objects.equals(getStorageTableName(), d.getStorageTableName()) &&
                 Objects.equals(getStorageSchemaName(), d.getStorageSchemaName()) &&
-                Objects.equals(getProject(), d.getProject()) &&
                 Objects.equals(getTitlePropertyId(), d.getTitlePropertyId()) &&
                 Objects.equals(getDomainURI(), d.getDomainURI()) &&
                 Objects.equals(getDescription(), d.getDescription()) &&
@@ -300,6 +288,7 @@ public final class DomainDescriptor
         return _storageSchemaName != null && _storageTableName != null;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public static class Builder implements org.labkey.api.data.Builder<DomainDescriptor>
     {
         private Object _ts;
@@ -308,7 +297,6 @@ public final class DomainDescriptor
         private String domainURI;
         private String description;
         private Container container;
-        private Container project;
         private int titlePropertyId=0;
         private String storageTableName;
         private String storageSchemaName;
@@ -331,7 +319,6 @@ public final class DomainDescriptor
             setTs(dd.get_Ts());
 
             setContainer(dd.getContainer());
-            setProject(dd.getProject());
 
             setDomainURI(dd.getDomainURI());
             setDomainId(dd.getDomainId());
@@ -351,7 +338,7 @@ public final class DomainDescriptor
         public DomainDescriptor build()
         {
             return new DomainDescriptor(
-                    domainURI, container, project, name, domainId,
+                    domainURI, container, name, domainId,
                     description, storageTableName, storageSchemaName,
                     titlePropertyId, _ts, templateInfo, systemFieldConfig
             );
@@ -384,12 +371,6 @@ public final class DomainDescriptor
         public Builder setContainer(Container container)
         {
             this.container = container;
-            return this;
-        }
-
-        public Builder setProject(Container project)
-        {
-            this.project = project;
             return this;
         }
 

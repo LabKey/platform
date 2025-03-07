@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -75,10 +76,10 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
 
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<String> designTableNames = new HashSet<>();
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
 
         writeTableData(ctx, vf, designTableNames, schema, projectSchema, containerFilter);
     }
