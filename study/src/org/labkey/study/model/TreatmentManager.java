@@ -39,6 +39,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -87,13 +89,13 @@ public class TreatmentManager
         if (rowId != null)
             filter.addCondition(FieldKey.fromParts("RowId"), rowId);
 
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductImpl.class);
     }
 
     public List<ProductImpl> getFilteredStudyProducts(Container container, User user, List<Integer> filterRowIds)
     {
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
         SimpleFilter filter = new SimpleFilter();
@@ -108,13 +110,13 @@ public class TreatmentManager
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("ProductId"), productId);
 
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(ProductAntigenImpl.class);
     }
 
     public List<ProductAntigenImpl> getFilteredStudyProductAntigens(Container container, User user, @NotNull Integer productId, List<Integer> filterRowIds)
     {
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
         SimpleFilter filter = new SimpleFilter();
@@ -127,21 +129,21 @@ public class TreatmentManager
 
     public Integer saveTreatment(Container container, User user, TreatmentImpl treatment) throws Exception
     {
-        TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
         return saveStudyDesignRow(container, user, treatmentTable, treatment.serialize(), treatment.isNew() ? null : treatment.getRowId(), "RowId");
     }
 
     public List<TreatmentImpl> getStudyTreatments(Container container, User user)
     {
         SimpleFilter filter = new SimpleFilter();
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
         return new TableSelector(ti, filter, new Sort("RowId")).getArrayList(TreatmentImpl.class);
     }
 
     public TreatmentImpl getStudyTreatmentByRowId(Container container, User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
         TreatmentImpl treatment = new TableSelector(ti, filter, null).getObject(TreatmentImpl.class);
 
         // attach the associated study products to the treatment object
@@ -168,7 +170,7 @@ public class TreatmentManager
         List<Integer> filterRowIds = new ArrayList<>();
         filterRowIds.addAll(definedTreatmentIds);
         filterRowIds.addAll(usedTreatmentIds);
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
         SimpleFilter filter = new SimpleFilter().addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
@@ -178,7 +180,7 @@ public class TreatmentManager
 
     public Integer saveTreatmentProductMapping(Container container, User user, TreatmentProductImpl treatmentProduct) throws Exception
     {
-        TableInfo treatmentProductTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        TableInfo treatmentProductTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         return saveStudyDesignRow(container, user, treatmentProductTable, treatmentProduct.serialize(), treatmentProduct.isNew() ? null : treatmentProduct.getRowId(), "RowId");
     }
 
@@ -191,13 +193,13 @@ public class TreatmentManager
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("TreatmentId"), treatmentId);
 
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         return new TableSelector(ti, filter, sort).getArrayList(TreatmentProductImpl.class);
     }
 
     public List<TreatmentProductImpl> getFilteredTreatmentProductMappings(Container container, User user, @NotNull Integer treatmentId, List<Integer> filterRowIds)
     {
-        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        TableInfo ti = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
         //Using a user schema so containerFilter will be created for us later (so don't need SimpleFilter.createContainerFilter)
         SimpleFilter filter = new SimpleFilter();
@@ -214,14 +216,14 @@ public class TreatmentManager
         if (cohortId != null)
             filter.addCondition(FieldKey.fromParts("CohortId"), cohortId);
 
-        TableInfo ti = StudySchema.getInstance().getTableInfoTreatmentVisitMap();
+        TableInfo ti = StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap();
         return new TableSelector(ti, filter, new Sort("CohortId")).getArrayList(TreatmentVisitMapImpl.class);
     }
 
     public List<VisitImpl> getVisitsForTreatmentSchedule(Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoTreatmentVisitMap(),
+        List<Integer> visitRowIds = new TableSelector(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(),
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
 
         return StudyManager.getInstance().getSortedVisitsByRowIds(container, visitRowIds);
@@ -235,21 +237,21 @@ public class TreatmentManager
         newMapping.setVisitId(visitId);
         newMapping.setTreatmentId(treatmentId);
 
-        return Table.insert(user, StudySchema.getInstance().getTableInfoTreatmentVisitMap(), newMapping);
+        return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(), newMapping);
     }
 
     public void deleteTreatmentVisitMapForCohort(Container container, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("CohortId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
     }
 
     public void deleteTreatmentVisitMapForVisit(Container container, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
     }
 
     public void deleteTreatment(Container container, User user, int rowId)
@@ -261,7 +263,7 @@ public class TreatmentManager
             // delete the usages of this treatment in the TreatmentVisitMap
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("TreatmentId"), rowId);
-            Table.delete(schema.getTableInfoTreatmentVisitMap(), filter);
+            Table.delete(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(), filter);
 
             // delete the associated treatment study product mappings (provision table)
             filter = SimpleFilter.createContainerFilter(container);
@@ -269,7 +271,7 @@ public class TreatmentManager
             deleteTreatmentProductMap(container, user, filter);
 
             // finally delete the record from the Treatment  (provision table)
-            TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+            TableInfo treatmentTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
             if (treatmentTable != null)
             {
                 QueryUpdateService qus = treatmentTable.getUpdateService();
@@ -297,7 +299,7 @@ public class TreatmentManager
             deleteProductAntigens(container, user, rowId);
 
             // delete the associated doses and routes for this product
-            Table.delete(StudySchema.getInstance().getTableInfoDoseAndRoute(), new SimpleFilter(FieldKey.fromParts("ProductId"), rowId));
+            Table.delete(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), new SimpleFilter(FieldKey.fromParts("ProductId"), rowId));
 
             // delete the associated treatment study product mappings (provision table)
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -305,7 +307,7 @@ public class TreatmentManager
             deleteTreatmentProductMap(container, user, filter);
 
             // finally delete the record from the Products  (provision table)
-            TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+            TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
             if (productTable != null)
             {
                 QueryUpdateService qus = productTable.getUpdateService();
@@ -315,7 +317,7 @@ public class TreatmentManager
                 qus.deleteRows(user, container, keys, null, null);
             }
             else
-                throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_TABLE_NAME);
+                throw new IllegalStateException("Could not find table: " + StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
 
             transaction.commit();
         }
@@ -327,28 +329,28 @@ public class TreatmentManager
 
     public Integer saveStudyProduct(Container container, User user, ProductImpl product) throws Exception
     {
-        TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+        TableInfo productTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
         return saveStudyDesignRow(container, user, productTable, product.serialize(), product.isNew() ? null : product.getRowId(), "RowId");
     }
 
     public Integer saveStudyProductAntigen(Container container, User user, ProductAntigenImpl antigen) throws Exception
     {
-        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         return saveStudyDesignRow(container, user, productAntigenTable, antigen.serialize(), antigen.isNew() ? null : antigen.getRowId(), "RowId");
     }
 
     public DoseAndRoute saveStudyProductDoseAndRoute(Container container, User user, DoseAndRoute doseAndRoute)
     {
         if (doseAndRoute.isNew())
-            return Table.insert(user, StudySchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
+            return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
         else
-            return Table.update(user, StudySchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
+            return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
     }
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProductId"), productId);
-        return new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
+        return new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
     }
 
     @Nullable
@@ -363,7 +365,7 @@ public class TreatmentManager
             filter.addCondition(FieldKey.fromParts("Route"), route);
         else
             filter.addCondition(FieldKey.fromParts("Route"), null, CompareType.ISBLANK);
-        Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
+        Collection<DoseAndRoute> doseAndRoutes = new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
 
         if (!doseAndRoutes.isEmpty())
         {
@@ -444,7 +446,7 @@ public class TreatmentManager
 
     public void deleteStudyProductAntigen(Container container, User user, int rowId) throws Exception
     {
-        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         if (productAntigenTable != null)
         {
             QueryUpdateService qus = productAntigenTable.getUpdateService();
@@ -454,15 +456,15 @@ public class TreatmentManager
                 qus.deleteRows(user, container, keys, null, null);
             }
             else
-                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+                throw new IllegalStateException("Could not find query update service for table: " + StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         }
         else
-            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+            throw new IllegalStateException("Could not find table: " + StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
     }
 
     public void deleteProductAntigens(Container container, User user, int productId) throws Exception
     {
-        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        TableInfo productAntigenTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         if (productAntigenTable != null)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -483,27 +485,27 @@ public class TreatmentManager
                 qus.deleteRows(user, container, keys, null, null);
             }
             else
-                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+                throw new IllegalStateException("Could not find query update service for table: " + StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         }
         else
-            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+            throw new IllegalStateException("Could not find table: " + StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
     }
 
     public void deleteTreatmentProductMap(Container container, User user, SimpleFilter filter) throws Exception
     {
-        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         if (productMapTable != null)
         {
             TableSelector selector = new TableSelector(productMapTable, Collections.singleton("RowId"), filter, null);
             deleteTreatmentProductMap(container, user, selector.getArrayList(Integer.class));
         }
         else
-            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            throw new IllegalStateException("Could not find table: " + StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
     }
 
     public void deleteTreatmentProductMap(Container container, User user, List<Integer> rowIds) throws Exception
     {
-        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        TableInfo productMapTable = QueryService.get().getUserSchema(user, container, StudyQuerySchema.SCHEMA_NAME).getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         if (productMapTable != null)
         {
             QueryUpdateService qus = productMapTable.getUpdateService();
@@ -517,10 +519,10 @@ public class TreatmentManager
                 qus.deleteRows(user, container, keys, null, null);
             }
             else
-                throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                throw new IllegalStateException("Could not find query update service for table: " + StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
         }
         else
-            throw new IllegalStateException("Could not find table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            throw new IllegalStateException("Could not find table: " + StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
     }
 
     public void deleteAssaySpecimen(Container container, User user, int rowId)
@@ -546,22 +548,22 @@ public class TreatmentManager
 
     public String getStudyDesignRouteLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignRoutes(), name);
     }
 
     public String getStudyDesignImmunogenTypeLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
     }
 
     public String getStudyDesignGeneLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignGenes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignGenes(), name);
     }
 
     public String getStudyDesignSubTypeLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
+        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
     }
 
     public void updateTreatmentProducts(int treatmentId, List<TreatmentProductImpl> treatmentProducts, Container container, User user) throws Exception
@@ -749,7 +751,7 @@ public class TreatmentManager
 
         private void populateTreatments()
         {
-            TableInfo treatmentTable = _schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
+            TableInfo treatmentTable = _schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
             if (treatmentTable != null)
             {
                 TableInfo ti = ((FilteredTable)treatmentTable).getRealTable();
@@ -770,7 +772,7 @@ public class TreatmentManager
 
         private void addProductsForTreatment(int treatmentId)
         {
-            TableInfo treatmentProductTable = _schema.getTable(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            TableInfo treatmentProductTable = _schema.getTable(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
             if (treatmentProductTable != null)
             {
                 TableInfo ti = ((FilteredTable)treatmentProductTable).getRealTable();
@@ -789,7 +791,7 @@ public class TreatmentManager
 
         private void populateStudyProducts()
         {
-            TableInfo productTable = _schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
+            TableInfo productTable = _schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
             if (productTable != null)
             {
                 TableInfo ti = ((FilteredTable)productTable).getRealTable();
@@ -817,7 +819,7 @@ public class TreatmentManager
 
         private void addAntigenToProduct(int productId)
         {
-            TableInfo productAntigenTable = _schema.getTable(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+            TableInfo productAntigenTable = _schema.getTable(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
             if (productAntigenTable != null)
             {
                 TableInfo ti = ((FilteredTable)productAntigenTable).getRealTable();
@@ -838,28 +840,28 @@ public class TreatmentManager
 
             data.put("Name", name = "Test Immunogen Type");
             data.put("Label", label = "Test Immunogen Type Label");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), data);
             assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignImmunogenTypeLabelByName(_container, name));
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignImmunogenTypeLabelByName(_container, "UNK"));
             _lookups.put("ImmunogenType", name);
 
             data.put("Name", name = "Test Gene");
             data.put("Label", label = "Test Gene Label");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignGenes(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignGenes(), data);
             assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignGeneLabelByName(_container, name));
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignGeneLabelByName(_container, "UNK"));
             _lookups.put("Gene", name);
 
             data.put("Name", name = "Test SubType");
             data.put("Label", label = "Test SubType Label");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignSubTypes(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignSubTypes(), data);
             assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignSubTypeLabelByName(_container, name));
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignSubTypeLabelByName(_container, "UNK"));
             _lookups.put("SubType", name);
 
             data.put("Name", name = "Test Route");
             data.put("Label", label = "Test Route Label");
-            Table.insert(_user, StudySchema.getInstance().getTableInfoStudyDesignRoutes(), data);
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignRoutes(), data);
             assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignRouteLabelByName(_container, name));
             assertNull("Unexpected study design lookup label", _manager.getStudyDesignRouteLabelByName(_container, "UNK"));
             _lookups.put("Route", name);

@@ -39,6 +39,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -499,7 +500,7 @@ public class StudyDesignController extends BaseStudyController
                 {
                     SimpleFilter filter = new SimpleFilter();
                     filter.addInClause(FieldKey.fromParts("RowId"), existingDoseAndRoutes);
-                    Table.delete(StudySchema.getInstance().getTableInfoDoseAndRoute(), filter);
+                    Table.delete(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter);
                 }
                 transaction.commit();
             }

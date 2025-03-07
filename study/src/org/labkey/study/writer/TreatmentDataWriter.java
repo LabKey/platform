@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -63,11 +64,11 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
         // add the treatment specific tables
-        treatmentTableNames.add(StudyQuerySchema.PRODUCT_TABLE_NAME);
-        treatmentTableNames.add(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
-        treatmentTableNames.add(StudyQuerySchema.TREATMENT_TABLE_NAME);
-        treatmentTableNames.add(StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
-        treatmentTableNames.add(StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
+        treatmentTableNames.add(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+        treatmentTableNames.add(StudyDesignQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+        treatmentTableNames.add(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
+        treatmentTableNames.add(StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+        treatmentTableNames.add(StudyDesignQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
 
         // write the table infos and data rows
         writeTableInfos(ctx, vf, treatmentTableNames, schema, projectSchema, SCHEMA_FILENAME);
@@ -82,11 +83,11 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         // study designs can have lookup data stored at both the project and folder level
         ContainerFilter containerFilter = ContainerFilter.Type.CurrentPlusProject.create(ctx.getContainer(), ctx.getUser());
 
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
-        designTableNames.add(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_CHALLENGE_TYPES_TABLE_NAME);
+        designTableNames.add(StudyDesignQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
 
         writeTableData(ctx, vf, designTableNames, schema, projectSchema, containerFilter);
     }
@@ -94,7 +95,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
     private void writeTreatmentVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
-        TableInfo tableInfo = schema.getTable(StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
+        TableInfo tableInfo = schema.getTable(StudyDesignQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
 
         List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());
 

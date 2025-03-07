@@ -21,6 +21,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
@@ -83,7 +84,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
                     // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
-                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME, null);
+                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyDesignQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
 
                     transaction.commit();
