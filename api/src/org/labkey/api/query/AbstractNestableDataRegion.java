@@ -62,7 +62,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     }
 
     @Override
-    public void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
+    public void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
     {
         if (_expanded)
         {
@@ -71,7 +71,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
             displayColumnList.add(new EmptyDisplayColumn());
         }
 
-        super.renderTable(ctx, oldWriter);
+        super.renderTable(ctx, out);
         ResultSetUtil.close(_groupedRS);
     }
 

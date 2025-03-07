@@ -99,7 +99,6 @@ import java.util.stream.Collectors;
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.style;
-import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.EM;
 import static org.labkey.api.util.DOM.LABEL;
@@ -920,7 +919,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+    protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx)
     {
     }
 
@@ -938,7 +937,7 @@ public class DataRegion extends DisplayElement
         renderContextBar(out);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors)
+    protected void renderHeaderScript(RenderContext ctx, HtmlWriter out, Map<String, String> messages, boolean showRecordSelectors)
     {
         JSONObject dataRegionJSON = toJSON(ctx);
 
@@ -952,13 +951,11 @@ public class DataRegion extends DisplayElement
             .unsafeAppend(dataRegionJSON.toString(2))
             .unsafeAppend(");\n</script>\n");
 
-        writer.write(builder);
+        out.write(builder);
     }
 
-    protected void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
     {
-        HtmlWriter out = HtmlWriter.of(oldWriter);
-
         if (!hasPermission(ctx, ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
@@ -997,7 +994,7 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                renderTable(ctx, oldWriter, results);
+                renderTable(ctx, out, results);
             }
         }
         finally
@@ -1006,7 +1003,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderParameterForm(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderParameterForm(RenderContext ctx, HtmlWriter out)
     {
         _allowHeaderLock = false;
 
@@ -1016,17 +1013,13 @@ public class DataRegion extends DisplayElement
             (new ParameterView(params, null)).render(ctx.getViewContext().getRequest(), ctx.getViewContext().getResponse());
             renderHeaderScript(ctx, out, Collections.emptyMap(), false);
         }
-        catch (IOException ioe)
-        {
-            throw ioe;
-        }
         catch (Exception ex)
         {
             throw new RuntimeException(ex);
         }
     }
 
-    private void renderTable(RenderContext ctx, Writer oldWriter, ResultSet rs) throws IOException
+    private void renderTable(RenderContext ctx, HtmlWriter out, ResultSet rs) throws IOException
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -1070,7 +1063,7 @@ public class DataRegion extends DisplayElement
 
         Map<String, String> messages = prepareMessages(ctx);
 
-        HtmlWriter out = HtmlWriter.of(oldWriter);
+        Writer oldWriter = out.unwrap();
 
         renderFormBegin(ctx, out, ctx.getMode());
 
@@ -1201,21 +1194,19 @@ public class DataRegion extends DisplayElement
 
     private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        Writer oldWriter = out.unwrap();
-
         try
         {
-            renderGridHeaderColumns(ctx, oldWriter, showRecordSelectors, renderers);
+            renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
             if (_aggregateRowConfig.getAggregateRowFirst())
-                renderAggregatesTableRow(ctx, oldWriter, showRecordSelectors, renderers);
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
 
             int rows = renderTableContents(ctx, out, showRecordSelectors, renderers);
             if (rows == 0)
                 renderNoRowsMessage(out, colCount);
 
             if (_aggregateRowConfig.getAggregateRowLast())
-                renderAggregatesTableRow(ctx, oldWriter, showRecordSelectors, renderers);
+                renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
         }
         catch (IOException | SQLException e)
         {
@@ -1257,7 +1248,7 @@ public class DataRegion extends DisplayElement
         return out;
     }
 
-    private void renderAnalyticsProvidersScripts(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderAnalyticsProvidersScripts(RenderContext ctx, HtmlWriter out)
     {
         AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
         boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
@@ -1462,9 +1453,11 @@ public class DataRegion extends DisplayElement
         _noRowsMessage = noRowsMessage;
     }
 
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers)
+    protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
+        Writer oldWriter = out.unwrap();
+
         oldWriter.write("<thead>");
         oldWriter.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" class=\"labkey-col-header-row\">");
 
@@ -1555,7 +1548,7 @@ public class DataRegion extends DisplayElement
         oldWriter.write("</tr></thead>");
     }
 
-    private void renderAggregatesTableRow(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
+    private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
     {
         // Issue 51036: load totalRows count async for DataRegions
         boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
@@ -1565,6 +1558,8 @@ public class DataRegion extends DisplayElement
 
         if (!aggregateResults.isEmpty())
         {
+            Writer oldWriter = out.unwrap();
+
             oldWriter.write("<tr class=\"labkey-col-total labkey-row\">");
 
             DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
@@ -2116,7 +2111,7 @@ public class DataRegion extends DisplayElement
             out.write(error);
     }
 
-    private void renderFormField(RenderContext ctx, HtmlWriter out, DisplayColumn renderer) throws IOException
+    private void renderFormField(RenderContext ctx, HtmlWriter out, DisplayColumn renderer)
     {
         Writer oldWriter = out.unwrap();
         Set<String> errors = getErrors(ctx, renderer);
@@ -2427,7 +2422,7 @@ public class DataRegion extends DisplayElement
         col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
 
-    private void writeSameHeader(RenderContext ctx, HtmlWriter out, List<DisplayColumnGroup> groups) throws IOException
+    private void writeSameHeader(RenderContext ctx, HtmlWriter out, List<DisplayColumnGroup> groups)
     {
         PageConfig pageConfig = HttpView.currentPageConfig();
         String madeId = pageConfig.makeId("selectAll_");
@@ -2496,7 +2491,7 @@ public class DataRegion extends DisplayElement
 
     // RowMap keys are the ResultSet alias names, which might be completely mangled.  So, create a new map
     // that's column name -> value and pass it to renderOldValues
-    private void renderOldValues(HtmlWriter out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap) throws IOException
+    private void renderOldValues(HtmlWriter out, Map<String, Object> valueMap, Map<FieldKey, ColumnInfo> fieldMap)
     {
         Map<String, Object> map = new HashMap<>(valueMap.size());
 
@@ -2565,7 +2560,7 @@ public class DataRegion extends DisplayElement
                 case MODE_UPDATE -> renderUpdateForm(ctx, out);
                 case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, out);
                 case MODE_DETAILS -> renderDetails(ctx, out);
-                default -> renderTable(ctx, out.unwrap());
+                default -> renderTable(ctx, out);
             }
         }
         catch (SQLException x)
@@ -2799,7 +2794,7 @@ public class DataRegion extends DisplayElement
         return StringUtils.join(clauseParts, " AND ");
     }
 
-    public Map<String, String> prepareMessages(RenderContext ctx) throws IOException
+    public Map<String, String> prepareMessages(RenderContext ctx)
     {
         StringBuilder headerMsg = new StringBuilder();
 

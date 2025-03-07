@@ -16,11 +16,10 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -28,20 +27,14 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Used in conjunction with the CrosstabView class to override rendering of
- * the column headers.
- *
- * User: Dave
- * Date: Jan 25, 2008
- * Time: 10:09:00 AM
+ * Used in conjunction with the CrosstabView class to override rendering of the column headers.
  */
 public class CrosstabDataRegion extends DataRegion
 {
-    private static final Logger _log = LogManager.getLogger(CrosstabDataRegion.class);
-    private CrosstabSettings _settings;
-    private int _numRowAxisCols;
-    private int _numMeasures;
-    private int _numMemberMeasures;
+    private final CrosstabSettings _settings;
+    private final int _numRowAxisCols;
+    private final int _numMeasures;
+    private final int _numMemberMeasures;
 
     public CrosstabDataRegion(CrosstabSettings settings, int numRowAxisCols, int numMeasures, int numMemberMeasures)
     {
@@ -53,11 +46,13 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer oldWriter, boolean showRecordSelectors, List<DisplayColumn> renderers)
+    protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
         if (_numMemberMeasures > 0)
         {
+            Writer oldWriter = out.unwrap();
+
             //add a row for the column axis label if there is one
             oldWriter.write("<thead><tr>");
             renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
@@ -109,7 +104,7 @@ public class CrosstabDataRegion extends DataRegion
         }
 
         //call the base class to finish rendering the headers
-        super.renderGridHeaderColumns(ctx, oldWriter, showRecordSelectors, renderers);
+        super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
     }
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)

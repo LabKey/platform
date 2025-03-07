@@ -26,24 +26,18 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 
-/**
- * StatusDataRegion class
- * <p/>
- * Created: Mar 22, 2006
- *
- * @author bmaclean
- */
 public class StatusDataRegion extends DataRegion
 {
-    private Class<? extends ReadOnlyApiAction> _apiAction;
-    private ActionURL _returnUrl;
+    private final Class<? extends ReadOnlyApiAction<?>> _apiAction;
+    private final ActionURL _returnUrl;
 
-    public StatusDataRegion(Class<? extends ReadOnlyApiAction> apiAction, ActionURL returnUrl)
+    public StatusDataRegion(Class<? extends ReadOnlyApiAction<?>> apiAction, ActionURL returnUrl)
     {
         setShowPagination(false);
         setAllowHeaderLock(false); // 13731: disabling header locking due to async rendering issues
@@ -67,17 +61,19 @@ public class StatusDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderTable(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
     {
         if (_apiAction == null)
         {
-            super.renderTable(ctx, oldWriter);
+            super.renderTable(ctx, out);
             return;
         }
 
         String controller = SpringActionController.getControllerName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
         PageConfig config = HttpView.currentPageConfig();
+
+        Writer oldWriter = out.unwrap();
 
         oldWriter.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">\n");
         oldWriter.write(
@@ -127,7 +123,7 @@ public class StatusDataRegion extends DataRegion
         oldWriter.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
         oldWriter.write("<div id=\"statusRegionDiv\">");
 
-        super.renderTable(ctx, oldWriter);
+        super.renderTable(ctx, out);
 
         oldWriter.write("</div>");
     }
