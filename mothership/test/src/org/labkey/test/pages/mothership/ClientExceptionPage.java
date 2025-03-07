@@ -88,7 +88,7 @@ public class ClientExceptionPage extends LabKeyPage<ClientExceptionPage.ElementC
             {
                 sleep(500); // half a second between iterations to avoid spamming the server
                 var latestStackTrace = mothershipHelper.getLatestStackTrace();
-                if (null != initialState)
+                if (null == initialState)
                     return latestStackTrace != null;
                 else
                     return latestStackTrace != null && ((Date) latestStackTrace.get("LastReport"))
