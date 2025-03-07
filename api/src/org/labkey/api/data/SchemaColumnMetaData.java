@@ -59,6 +59,7 @@ public class SchemaColumnMetaData
 {
     private final SchemaTableInfo _tinfo;
     private final List<ColumnInfo> _columns = new ArrayList<>();
+    private AliasManager _aliasManager;
 
     private Map<String, ColumnInfo> _colMap = null;
     private @NotNull List<String> _pkColumnNames = new ArrayList<>();
@@ -89,14 +90,14 @@ public class SchemaColumnMetaData
         loadColumnsFromXml(_tinfo, xmlTable);
     }
 
-    private AliasManager getAliasManager(AliasManager aliasManager)
+    private AliasManager getAliasManager()
     {
-        if (null == aliasManager)
+        if (null == _aliasManager)
         {
-            aliasManager = new AliasManager(_tinfo.getSchema());
-            aliasManager.claimAliases(_columns);
+            _aliasManager = new AliasManager(_tinfo.getSchema());
+            _aliasManager.claimAliases(_columns);
         }
-        return aliasManager;
+        return _aliasManager;
     }
 
     private void loadColumnsFromXml(SchemaTableInfo tinfo, TableType xmlTable)
@@ -153,8 +154,7 @@ public class SchemaColumnMetaData
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
-                aliasManager = getAliasManager(aliasManager);
-                aliasManager.ensureAlias(colInfo);
+                getAliasManager().ensureAlias(colInfo);
                 addColumn(colInfo);
             }
         }
@@ -198,8 +198,7 @@ public class SchemaColumnMetaData
                 exprColumn.getAlias();
                 assert exprColumn.isAliasSet();
                 // now reserve that alias
-                aliasManager = getAliasManager(aliasManager);
-                aliasManager.ensureAlias(exprColumn);
+                getAliasManager().ensureAlias(exprColumn);
                 addColumn(exprColumn);
             }
             catch (QueryParseException qpe)
@@ -422,9 +421,14 @@ public class SchemaColumnMetaData
         if (!column.isAliasSet())
         {
             if (null != column.getMetaDataName())
+            {
                 column.setAlias(column.getMetaDataName());
+                getAliasManager().claimAlias(column);
+            }
             else
-                column.setAlias(column.getName());
+            {
+                getAliasManager().ensureAlias(column);
+            }
         }
         _colMap = null;
     }
