@@ -474,7 +474,7 @@ public class ListImporter
     {
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
         {
-            if (columnXml.getColumnName().equals(keyName))
+            if (columnXml.getColumnName().equalsIgnoreCase(keyName))
             {
                 String datatype = columnXml.getDatatype();
 
