@@ -189,7 +189,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
 
     /** use StudyQuerySchema.createSchema() */
-    protected StudyQuerySchema(@NotNull StudyImpl study, User user, @Nullable Role contextualRole)
+    protected StudyQuerySchema(@NotNull StudyImpl study, @NotNull User user, @Nullable Role contextualRole)
     {
         this(study, study.getContainer(), user, contextualRole);
 
@@ -207,7 +207,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     /**
      * This c-tor is for schemas that have no study defined -- _study is null!
      */
-    private StudyQuerySchema(@Nullable StudyImpl study, Container c, User user, @Nullable Role contextualRole)
+    private StudyQuerySchema(@Nullable StudyImpl study, @NotNull Container c, @NotNull User user, @Nullable Role contextualRole)
     {
         this(SchemaKey.fromParts(SCHEMA_NAME), SCHEMA_DESCRIPTION, study, c, user, contextualRole);
     }
@@ -215,7 +215,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     /**
      * This c-tor is for nested study schemas
      */
-    protected StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, Container c, User user, @Nullable Role contextualRole)
+    protected StudyQuerySchema(SchemaKey path, String description, @Nullable StudyImpl study, @NotNull Container c, @NotNull User user, @Nullable Role contextualRole)
     {
         super(path, description, user, c, StudySchema.getInstance().getSchema(), null);
         _study = study;

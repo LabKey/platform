@@ -78,12 +78,12 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     protected java.util.function.Predicate<TableInfo> _getTableAcceptor = (t) -> true;
 
-    public UserSchema(@NotNull String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
+    public UserSchema(@NotNull String name, @Nullable String description, @NotNull User user, @NotNull Container container, DbSchema dbSchema)
     {
         this(SchemaKey.fromParts(name), description, user, container, dbSchema, null);
     }
 
-    public UserSchema(@NotNull SchemaKey path, @Nullable String description, User user, Container container, DbSchema dbSchema, Collection<UserSchemaCustomizer> schemaCustomizers)
+    public UserSchema(@NotNull SchemaKey path, @Nullable String description, @NotNull User user, @NotNull Container container, DbSchema dbSchema, Collection<UserSchemaCustomizer> schemaCustomizers)
     {
         super(dbSchema, user, container);
         _name = path.getName();
