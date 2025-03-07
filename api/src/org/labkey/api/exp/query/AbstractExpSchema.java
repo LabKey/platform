@@ -31,7 +31,7 @@ public abstract class AbstractExpSchema extends UserSchema
 {
     protected ContainerFilter _containerFilter = null;
 
-    public AbstractExpSchema(String name, String description, User user, Container container, DbSchema dbSchema)
+    public AbstractExpSchema(String name, String description, @NotNull User user, @NotNull Container container, DbSchema dbSchema)
     {
         this(SchemaKey.fromParts(name), description, user, container, dbSchema);
     }

@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.28.0",
+    "@labkey/components": "6.29.0",
     "@labkey/themes": "1.4.1"
   },
   "devDependencies": {

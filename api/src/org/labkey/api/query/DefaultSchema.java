@@ -207,7 +207,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         return schema;
     }
 
-    private DefaultSchema(User user, Container container)
+    private DefaultSchema(@NotNull User user, @NotNull Container container)
     {
         super(null, user, container);
         MemTracker.getInstance().put(this);
@@ -268,7 +268,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
 
         if (name.startsWith("/"))
         {
-            Container project = ContainerManager.getForPath(name);
+            Container project = ContainerManager.resolveContainerPathAlias(name);
             if (project != null && project.hasPermission(getUser(), ReadPermission.class))
             {
                 return new FolderSchemaProvider.FolderSchema(name, getUser(), project, DefaultSchema.get(getUser(), project));
