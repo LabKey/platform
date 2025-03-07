@@ -40,6 +40,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -107,11 +108,13 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
         private static class RunFilter implements Predicate<ExpRun>
         {
-            private final Set<Integer> _transformRuns;
+            private Set<Integer> _transformRuns = Collections.emptySet();
 
             public RunFilter(Container c)
             {
-                _transformRuns = DataIntegrationService.get().getTransformRunJobIds(c);
+                DataIntegrationService svc = DataIntegrationService.get();
+                if (svc != null)
+                    _transformRuns = svc.getTransformRunJobIds(c);
             }
 
             @Override
