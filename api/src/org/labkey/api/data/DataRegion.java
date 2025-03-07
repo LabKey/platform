@@ -51,6 +51,7 @@ import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -75,7 +76,6 @@ import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -101,6 +101,7 @@ import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.EM;
+import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
@@ -935,7 +936,7 @@ public class DataRegion extends DisplayElement
         renderContextBar(out);
     }
 
-    protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, HtmlWriter writer, Map<String, String> messages, boolean showRecordSelectors)
     {
         JSONObject dataRegionJSON = toJSON(ctx);
 
@@ -958,7 +959,7 @@ public class DataRegion extends DisplayElement
 
         if (!hasPermission(ctx, ReadPermission.class))
         {
-            oldWriter.write("You do not have permission to read this data");
+            out.write("You do not have permission to read this data");
             return;
         }
         Results results = null;
@@ -994,7 +995,7 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                renderTableNew(ctx, oldWriter, results);
+                renderTable(ctx, oldWriter, results);
             }
         }
         finally
@@ -1023,7 +1024,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderTableNew(RenderContext ctx, Writer oldWriter, ResultSet rs) throws IOException
+    private void renderTable(RenderContext ctx, Writer oldWriter, ResultSet rs) throws IOException
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -1078,7 +1079,7 @@ public class DataRegion extends DisplayElement
             renderHeader(ctx, out, renderButtons);
         }
 
-        renderMessages(oldWriter);
+        renderMessages(out);
 
         if (useTableWrap)
             oldWriter.write("</td></tr>");
@@ -1101,7 +1102,7 @@ public class DataRegion extends DisplayElement
         }
 
         renderHeaderScript(ctx, out, messages, showRecordSelectors);
-        renderAnalyticsProvidersScripts(ctx, oldWriter);
+        renderAnalyticsProvidersScripts(ctx, out);
 
         renderFormEnd(ctx, out);
     }
@@ -1158,33 +1159,42 @@ public class DataRegion extends DisplayElement
         renderBar(out, _viewActions, "viewbar");
     }
 
-    protected void renderMessages(Writer oldWriter) throws IOException
+    protected void renderMessages(HtmlWriter out)
     {
         // The container <div> is written regardless of _messages being available
-        oldWriter.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-msgbox") + "\">");
-        if (_messages != null)
-        {
-            for (Message message : _messages)
+        DIV(at(id, getDomId() + "-msgbox"), (DOM.Renderable) ret -> {
+            if (_messages != null)
             {
-                boolean isError = MessageType.ERROR.equals(message.getType());
-                boolean isWarning = MessageType.WARNING.equals(message.getType());
-                boolean isThemed = isError || isWarning;
+                for (Message message : _messages)
+                {
+                    boolean isError = MessageType.ERROR.equals(message.getType());
+                    boolean isWarning = MessageType.WARNING.equals(message.getType());
+                    boolean isThemed = isError || isWarning;
 
-                // If this is modified, update the client-side renderer in DataRegion.js MsgProto.render()
-                oldWriter.write("<div class=\"lk-region-bar" + (isThemed ? " lk-msg-bar" : "") + "\" data-msgpart=\"" + PageFlowUtil.filter(message.getArea()) + "\">");
+                    // If this is modified, update the client-side renderer in DataRegion.js MsgProto.render()
+                    DIV(
+                        cl("lk-region-bar" + (isThemed ? " lk-msg-bar" : "")).
+                        data("msgpart", message.getArea()),
+                        (DOM.Renderable) ren -> {
+                            if (isThemed)
+                            {
+                                DIV(
+                                    cl("alert alert-" + (isError ? "danger" : "warning")),
+                                    message.getContent()
+                                ).appendTo(out);
+                            }
+                            else
+                            {
+                                out.write(message.getContent());
+                            }
 
-                if (isThemed)
-                    oldWriter.write("<div class=\"alert alert-" + (isError ? "danger" : "warning") + "\">");
-
-                oldWriter.write(PageFlowUtil.filter(message.getContent()));
-
-                if (isThemed)
-                    oldWriter.write("</div>");
-
-                oldWriter.write("</div>");
+                            return ren;
+                        }
+                    ).appendTo(out);
+                }
             }
-        }
-        oldWriter.write("</div>");
+            return ret;
+        }).appendTo(out);
     }
 
     private HtmlWriter renderTableContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
@@ -1245,7 +1255,7 @@ public class DataRegion extends DisplayElement
         return out;
     }
 
-    private void renderAnalyticsProvidersScripts(RenderContext ctx, Writer oldWriter) throws IOException
+    private void renderAnalyticsProvidersScripts(RenderContext ctx, HtmlWriter out) throws IOException
     {
         AnalyticsProviderRegistry registry = AnalyticsProviderRegistry.get();
         boolean disableAnalytics = BooleanUtils.toBoolean(ctx.getViewContext().getActionURL().getParameter(ctx.getCurrentRegion().getName() + ".disableAnalytics"));
@@ -1266,14 +1276,10 @@ public class DataRegion extends DisplayElement
 
             if (!scripts.isEmpty())
             {
-                StringWriter out = new StringWriter();
-                out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-                for (String script : scripts)
-                {
-                    out.write(script + "\n");
-                }
-                out.write("</script>\n");
-                oldWriter.write(out.toString());
+                SCRIPT((DOM.Renderable) ret -> {
+                    scripts.forEach(script -> out.write(JavaScriptFragment.unsafe(script)));
+                    return ret;
+                }).appendTo(out);
             }
         }
     }
@@ -1784,16 +1790,14 @@ public class DataRegion extends DisplayElement
         boolean enabled = isRecordSelectorEnabled(ctx);
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
 
-        out.write(
-            new InputBuilder()
-                .type("checkbox")
-                .title("Select/unselect row")
-                .name(getRecordSelectorName(ctx))
-                .id(getRecordSelectorId(ctx))
-                .value(checkboxValue)
-                .checked(checked && enabled)
-                .disabled(!enabled)
-        );
+        new InputBuilder()
+            .type("checkbox")
+            .title("Select/unselect row")
+            .name(getRecordSelectorName(ctx))
+            .id(getRecordSelectorId(ctx))
+            .value(checkboxValue)
+            .checked(checked && enabled)
+            .disabled(!enabled).appendTo(out);
 
         renderExtraRecordSelectorContent(ctx, out);
     }
@@ -1897,13 +1901,11 @@ public class DataRegion extends DisplayElement
         return p.hasPermission(user, perm);
     }
 
-    private void renderDetails(RenderContext ctx, Writer oldWriter) throws SQLException, IOException
+    private void renderDetails(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
     {
-        HtmlWriter out = HtmlWriter.of(oldWriter);
-
         if (!hasPermission(ctx, ReadPermission.class))
         {
-            oldWriter.write("You do not have permission to read this data");
+            out.write("You do not have permission to read this data");
             return;
         }
 
@@ -1912,7 +1914,7 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, MODE_DETAILS);
 
-        RowMap<Object> rowMap = null;
+        Writer oldWriter = out.unwrap();
         int rowIndex = 0;
 
         try (ResultSet rs = ctx.getResults())
@@ -1924,7 +1926,7 @@ public class DataRegion extends DisplayElement
             while (rs.next())
             {
                 rowIndex++;
-                rowMap = factory.getRowMap(rs);
+                RowMap<Object> rowMap = factory.getRowMap(rs);
                 ctx.setRow(rowMap);
 
                 for (DisplayColumn renderer : renderers)
@@ -1978,7 +1980,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderInputForm(RenderContext ctx, Writer oldWriter) throws IOException
+    private void renderInputForm(RenderContext ctx, HtmlWriter out) throws IOException
     {
         Map<String, Object> rowMap = ctx.getRow();
         //For inserts, just treat the posted strings as the rowmap
@@ -1988,10 +1990,10 @@ public class DataRegion extends DisplayElement
             if (null != form)
                 ctx.setRow((Map) form.getStrings());
         }
-        renderForm(ctx, oldWriter);
+        renderForm(ctx, out);
     }
 
-    private void renderUpdateForm(RenderContext ctx, Writer oldWriter) throws IOException
+    private void renderUpdateForm(RenderContext ctx, HtmlWriter out) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
@@ -2023,7 +2025,7 @@ public class DataRegion extends DisplayElement
             ctx.setRow(valueMap);
         }
 
-        renderForm(ctx, oldWriter);
+        renderForm(ctx, out);
     }
 
     /**
@@ -2033,7 +2035,7 @@ public class DataRegion extends DisplayElement
      * that value will be passed through, otherwise, the field is resolved as empty and it is left to the UI to convey
      * that there were multiple values available for that field.
      */
-    private void renderMultipleUpdateForm(RenderContext ctx, Writer oldWriter) throws IOException
+    private void renderMultipleUpdateForm(RenderContext ctx, HtmlWriter out) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
@@ -2102,7 +2104,7 @@ public class DataRegion extends DisplayElement
 
         ctx.setRow(rowMap);
 
-        renderForm(ctx, oldWriter);
+        renderForm(ctx, out);
     }
 
     protected void renderMainErrors(RenderContext ctx, HtmlWriter out)
@@ -2154,10 +2156,8 @@ public class DataRegion extends DisplayElement
         return errors;
     }
 
-    private void renderForm(RenderContext ctx, Writer oldWriter) throws IOException
+    private void renderForm(RenderContext ctx, HtmlWriter out) throws IOException
     {
-        HtmlWriter out = HtmlWriter.of(oldWriter);
-
         int action = ctx.getMode();
 
         //if user doesn't have read permissions, don't render anything
@@ -2188,6 +2188,8 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, action);
         renderMainErrors(ctx, out);
+
+        Writer oldWriter = out.unwrap();
 
         oldWriter.write("<table>");
         List<DisplayColumn> renderers = getDisplayColumns();
@@ -2309,7 +2311,7 @@ public class DataRegion extends DisplayElement
                 else
                 {
                     for (DisplayColumnGroup group : groups)
-                        writeColRenderDetailsCaptionCell(ctx, oldWriter, group.getColumns().get(0));
+                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
                     oldWriter.write("</tr>\n<tr>");
                     if (hasCopyable)
                     {
@@ -2338,7 +2340,7 @@ public class DataRegion extends DisplayElement
                     for (DisplayColumnGroup group : groups)
                     {
                         oldWriter.write("<tr>");
-                        writeColRenderDetailsCaptionCell(ctx, oldWriter, group.getColumns().get(0));
+                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
                         if (group.isCopyable() && hasCopyable)
                         {
                             group.writeSameCheckboxCell(ctx, oldWriter);
@@ -2394,9 +2396,9 @@ public class DataRegion extends DisplayElement
         renderFormEnd(ctx, out);
     }
 
-    private void writeColRenderDetailsCaptionCell(RenderContext ctx, Writer oldWriter, DisplayColumn col) throws IOException
+    private void writeColRenderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, DisplayColumn col) throws IOException
     {
-        col.renderDetailsCaptionCell(ctx, oldWriter, "control-header-label");
+        col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
 
     private void writeSameHeader(RenderContext ctx, Writer oldWriter, List<DisplayColumnGroup> groups) throws IOException
@@ -2445,7 +2447,7 @@ public class DataRegion extends DisplayElement
         return hasFileFields;
     }
 
-    private void renderOldValues(HtmlWriter out, Map<String, Object> values) throws IOException
+    private void renderOldValues(HtmlWriter out, Map<String, Object> values)
     {
         Map<String, Object> oldKeys = new HashMap<>();
         String versionColumnName = getTable().getVersionColumnName();
@@ -2508,7 +2510,7 @@ public class DataRegion extends DisplayElement
      * after setting some state
      */
     @Override
-    public void render(RenderContext ctx, Writer oldWriter) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         int mode = MODE_GRID;
         if (ctx.getMode() != MODE_NONE)
@@ -2525,16 +2527,20 @@ public class DataRegion extends DisplayElement
         {
             switch (mode)
             {
-                case MODE_INSERT -> renderInputForm(ctx, oldWriter);
-                case MODE_UPDATE -> renderUpdateForm(ctx, oldWriter);
-                case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, oldWriter);
-                case MODE_DETAILS -> renderDetails(ctx, oldWriter);
-                default -> renderTable(ctx, oldWriter);
+                case MODE_INSERT -> renderInputForm(ctx, out);
+                case MODE_UPDATE -> renderUpdateForm(ctx, out);
+                case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, out);
+                case MODE_DETAILS -> renderDetails(ctx, out);
+                default -> renderTable(ctx, out.unwrap());
             }
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
         finally
         {
@@ -2739,12 +2745,12 @@ public class DataRegion extends DisplayElement
         String jsObject = getJavaScriptObjectReference();
 
         return new ContextAction.Builder()
-                .iconCls("filter")
-                .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(filterKey.toString()) + ", arguments[0]); return false;")
-                .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
-                .text(caption)
-                .tooltip(tooltip)
-                .build();
+            .iconCls("filter")
+            .onClick(jsObject + "._openFilter(" + PageFlowUtil.jsString(filterKey.toString()) + ", arguments[0]); return false;")
+            .onClose(jsObject + ".clearFilter(" + PageFlowUtil.jsString(filterKey.toString()) + "); return false;")
+            .text(caption)
+            .tooltip(tooltip)
+            .build();
     }
 
     private String prepareFilterLabel(List<SimpleFilter.FilterClause> clauses, SimpleFilter.ColumnNameFormatter formatter)

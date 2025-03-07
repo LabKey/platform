@@ -57,12 +57,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
- * User: brittp
- * Date: Jan 27, 2009
- * Time: 4:52:21 PM
- */
-
 @RequiresPermission(AdminPermission.class)
 public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
@@ -115,48 +109,56 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     protected static class DefaultValueDataRegion extends DataRegion
     {
         @Override
-        public void render(RenderContext ctx, Writer oldWriter) throws IOException
+        public void render(RenderContext ctx, HtmlWriter out)
         {
-            HtmlWriter out = HtmlWriter.of(oldWriter);
+            Writer oldWriter = out.unwrap();
 
-            renderFormBegin(ctx, out, MODE_INSERT);
-            renderMainErrors(ctx, out);
-            oldWriter.write("<table class=\"lk-fields-table\">");
-            oldWriter.write("<tr>" +
-                    "<td class=\"lk-form-label lk-form-col-label\"><label>Field</label></td>" +
-                    "<td class=\"lk-form-label lk-form-col-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
-                    "<td class=\"lk-form-label lk-form-col-label\"><label>Default type</label></td>" +
-                    "</tr>");
-            for (DisplayColumn renderer : getDisplayColumns())
+            try
             {
-                if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
-                    continue;
-                boolean isFile = ((DefaultableDisplayColumn) renderer).getJavaType() == File.class;
-                oldWriter.write("<tr>");
-
-                renderer.renderDetailsCaptionCell(ctx, oldWriter, "control-label lk-form-row-label");
-
-                if (isFile)
-                    oldWriter.write("<td></td>"); // No input for file
-                else
-                    renderer.renderInputCell(ctx, oldWriter);
-
-                oldWriter.write("<td>");
-                if (isFile)
-                    oldWriter.write("Defaults cannot be set for file fields.");
-                else
+                renderFormBegin(ctx, out, MODE_INSERT);
+                renderMainErrors(ctx, out);
+                oldWriter.write("<table class=\"lk-fields-table\">");
+                oldWriter.write("<tr>" +
+                        "<td class=\"lk-form-label lk-form-col-label\"><label>Field</label></td>" +
+                        "<td class=\"lk-form-label lk-form-col-label\" style=\"text-align: left;\"><label>Initial/Default Value</label></td>" +
+                        "<td class=\"lk-form-label lk-form-col-label\"><label>Default type</label></td>" +
+                        "</tr>");
+                for (DisplayColumn renderer : getDisplayColumns())
                 {
-                    DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
-                    if (defaultType == null)
-                        defaultType = DefaultValueType.FIXED_EDITABLE;
-                    oldWriter.write(PageFlowUtil.filter(defaultType.getLabel()));
-                    PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()).appendTo(oldWriter);
-                }
-                oldWriter.write("</td>");
+                    if (!shouldRender(renderer, ctx) || !(renderer instanceof DefaultableDisplayColumn))
+                        continue;
+                    boolean isFile = ((DefaultableDisplayColumn) renderer).getJavaType() == File.class;
+                    oldWriter.write("<tr>");
 
-                oldWriter.write("</tr>");
+                    renderer.renderDetailsCaptionCell(ctx, oldWriter, "control-label lk-form-row-label");
+
+                    if (isFile)
+                        oldWriter.write("<td></td>"); // No input for file
+                    else
+                        renderer.renderInputCell(ctx, oldWriter);
+
+                    oldWriter.write("<td>");
+                    if (isFile)
+                        oldWriter.write("Defaults cannot be set for file fields.");
+                    else
+                    {
+                        DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
+                        if (defaultType == null)
+                            defaultType = DefaultValueType.FIXED_EDITABLE;
+                        oldWriter.write(PageFlowUtil.filter(defaultType.getLabel()));
+                        PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()).appendTo(oldWriter);
+                    }
+                    oldWriter.write("</td>");
+
+                    oldWriter.write("</tr>");
+                }
+                oldWriter.write("</table>");
             }
-            oldWriter.write("</table>");
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+
             ButtonBar bbar = getButtonBar(MODE_INSERT);
             bbar.setStyle(ButtonBar.Style.separateButtons);
             bbar.render(ctx, out);

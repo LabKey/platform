@@ -1184,6 +1184,11 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
+    public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls) throws IOException
+    {
+        renderDetailsCaptionCell(ctx, out.unwrap(), cls);
+    }
+
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
