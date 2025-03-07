@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.Pair;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.util.DOM.DIV;
@@ -41,14 +43,26 @@ public class ButtonBar extends DisplayElement
     /** Dictates how the ButtonBar is styled when it's rendered */
     public enum Style
     {
-        toolbar,
-        separateButtons
+        toolbar("labkey-button-bar"),
+        separateButtons("labkey-button-bar-separate");
+
+        private final String _className;
+
+        Style(String className)
+        {
+            _className = className;
+        }
+
+        private String getClassName()
+        {
+            return _className;
+        }
     }
 
     private final List<String> _missingOriginalCaptions = new ArrayList<>();
 
     private List<DisplayElement> _elementList = new ArrayList<>();
-    private Style _style = Style.toolbar;
+    private @NotNull Style _style = Style.toolbar;
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a
     private List<ButtonBarConfig> _configs = null;
@@ -125,7 +139,7 @@ public class ButtonBar extends DisplayElement
         // Write out an empty column so that we can easily write a display element that wraps to the next line
         // by closing the current cell, closing the table, opening a new table, and opening an empty cell
         DIV(
-            cl(getStyle() == Style.toolbar ? "labkey-button-bar" : getStyle() == Style.separateButtons ? "labkey-button-separate" : null),
+            cl(getStyle().getClassName()),
             (DOM.Renderable) ret -> {
                 getList().forEach(el -> {
                     if (el.shouldRender(ctx))
@@ -165,7 +179,7 @@ public class ButtonBar extends DisplayElement
         return null;
     }
 
-    public Style getStyle()
+    public @NotNull Style getStyle()
     {
         return _style;
     }
@@ -174,6 +188,7 @@ public class ButtonBar extends DisplayElement
     {
         if (_locked)
             throw new IllegalStateException("Button bar is locked.");
+        Objects.requireNonNull(style);
         _style = style;
     }
 

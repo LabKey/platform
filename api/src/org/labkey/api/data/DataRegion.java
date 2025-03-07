@@ -99,8 +99,10 @@ import java.util.stream.Collectors;
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.EM;
+import static org.labkey.api.util.DOM.LABEL;
 import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
@@ -2114,25 +2116,49 @@ public class DataRegion extends DisplayElement
             out.write(error);
     }
 
-    private void renderFormField(RenderContext ctx, Writer oldWriter, DisplayColumn renderer) throws IOException
+    private void renderFormField(RenderContext ctx, HtmlWriter out, DisplayColumn renderer) throws IOException
     {
+        Writer oldWriter = out.unwrap();
         Set<String> errors = getErrors(ctx, renderer);
 
-        oldWriter.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
+        TR(
+            cl("form-group" + (!errors.isEmpty() ? " has-error" : "")),
+            (DOM.Renderable) ret -> {
+                try
+                {
+                    renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
+                    if (renderer.isEditable())
+                        renderer.renderInputCell(ctx, oldWriter);
+                    else
+                    {
+                        renderer.renderInputWrapperBegin(oldWriter);
+                        renderer.renderDetailsData(ctx, oldWriter);
+                        renderer.renderInputWrapperEnd(oldWriter);
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                return ret;
+            }
+        ).appendTo(out);
 
-        renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
-
-        if (renderer.isEditable())
-            renderer.renderInputCell(ctx, oldWriter);
-        else
-        {
-            renderer.renderInputWrapperBegin(oldWriter);
-            renderer.renderDetailsData(ctx, oldWriter);
-            renderer.renderInputWrapperEnd(oldWriter);
-        }
-
-        //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
-        oldWriter.write("</tr>");
+////        oldWriter.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
+//
+//        renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
+//
+//        if (renderer.isEditable())
+//            renderer.renderInputCell(ctx, oldWriter);
+//        else
+//        {
+//            renderer.renderInputWrapperBegin(oldWriter);
+//            renderer.renderDetailsData(ctx, oldWriter);
+//            renderer.renderInputWrapperEnd(oldWriter);
+//        }
+//
+//        //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
+//        oldWriter.write("</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
@@ -2220,7 +2246,7 @@ public class DataRegion extends DisplayElement
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, oldWriter, renderer);
+            renderFormField(ctx, out, renderer);
             if (null != renderer.getColumnInfo())
                 renderedColumns.add(renderer.getColumnInfo().getName());
         }
@@ -2294,7 +2320,7 @@ public class DataRegion extends DisplayElement
                 {
                     if (hasCopyable)
                     {
-                        writeSameHeader(ctx, oldWriter, groups);
+                        writeSameHeader(ctx, out, groups);
                     }
                     else
                     {
@@ -2315,7 +2341,7 @@ public class DataRegion extends DisplayElement
                     oldWriter.write("</tr>\n<tr>");
                     if (hasCopyable)
                     {
-                        writeSameHeader(ctx, oldWriter, groups);
+                        writeSameHeader(ctx, out, groups);
                         for (DisplayColumnGroup group : groups)
                         {
                             if (group.isCopyable())
@@ -2401,22 +2427,30 @@ public class DataRegion extends DisplayElement
         col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
 
-    private void writeSameHeader(RenderContext ctx, Writer oldWriter, List<DisplayColumnGroup> groups) throws IOException
+    private void writeSameHeader(RenderContext ctx, HtmlWriter out, List<DisplayColumnGroup> groups) throws IOException
     {
-        oldWriter.write("<td nowrap><label class=\"control-label\">");
-
         PageConfig pageConfig = HttpView.currentPageConfig();
-        String id = pageConfig.makeId("selectAll_");
-        oldWriter.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"~~SELECTALL~~\" />");
+        String madeId = pageConfig.makeId("selectAll_");
+
+        TD(
+            at(style, "white-space:nowrap;"),
+            LABEL(cl("control-label"),
+                new InputBuilder()
+                    .type("checkbox")
+                    .id(madeId)
+                    .name("~~SELECTALL~~")
+                    .build(),
+                    "Same",
+                    PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same")
+            )
+        ).appendTo(out);
+
         StringBuilder onChange = new StringBuilder();
         for (DisplayColumnGroup group : groups)
         {
             group.appendCopyableOnChangeHandler(ctx, onChange);
         }
-        pageConfig.addHandler(id, "change", onChange.toString());
-        oldWriter.write("Same" + PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same"));
-
-        oldWriter.write("</label></td>");
+        pageConfig.addHandler(madeId, "change", onChange.toString());
     }
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
