@@ -401,6 +401,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             addContainerColumn(true);
 
         var autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
+        autoJoinColumn.setPropertyURI(null); // not a #participantid column
         autoJoinColumn.setDescription("Contains lookups to each Dataset that can be joined by the " + _dsd.getLabel() + " Dataset's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
