@@ -211,7 +211,9 @@ public class AliasManager
         // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
 
         // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
-        return useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
+        int max =  useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
+        // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
+        return Math.min(100, max);
     }
 
     public static String truncate(String str, int to)
