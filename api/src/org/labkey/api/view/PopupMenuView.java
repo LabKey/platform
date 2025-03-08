@@ -16,9 +16,11 @@
 
 package org.labkey.api.view;
 
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -81,6 +83,12 @@ public class PopupMenuView extends HttpView<PopupMenu>
     public boolean hasChildren()
     {
         return getNavTree().hasChildren();
+    }
+
+    @SneakyThrows
+    public static void renderTree(NavTree tree, HtmlWriter out)
+    {
+        renderTree(tree, out.unwrap());
     }
 
     public static void renderTree(NavTree tree, Writer out) throws IOException

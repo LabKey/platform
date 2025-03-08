@@ -676,9 +676,16 @@ public abstract class DisplayColumn extends RenderColumn
         return "";
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
     {
-        renderGridHeaderCell(ctx, out, null);
+        try
+        {
+            renderGridHeaderCell(ctx, out.unwrap(), null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean hasFilterKey(FieldKey fieldKey)

@@ -28,6 +28,8 @@ import org.labkey.api.view.ViewContext;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.labkey.api.writer.HtmlWriter;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.text.Format;
@@ -377,7 +379,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
     {
         _column.renderGridHeaderCell(ctx, out);
     }

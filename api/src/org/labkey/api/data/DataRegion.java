@@ -31,6 +31,7 @@ import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.Aggregate.Result.FormattedValue;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
@@ -54,7 +55,6 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -98,14 +98,22 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.EM;
+import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.LABEL;
 import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
+import static org.labkey.api.util.DOM.THEAD;
 import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
@@ -1456,96 +1464,107 @@ public class DataRegion extends DisplayElement
     protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        Writer oldWriter = out.unwrap();
-
-        oldWriter.write("<thead>");
-        oldWriter.write("<tr id=\"" + PageFlowUtil.filter(getDomId() + "-column-header-row") + "\" class=\"labkey-col-header-row\">");
-
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
+        int width = getFirstColumnWidth(showRecordSelectors, detailsColumn, updateColumn);
 
-        if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
+        List<Object> body = new ArrayList<>();
+        if (width > 0)
         {
-            oldWriter.write(" <th class=\"labkey-column-header labkey-selectors\"");
+            body.add(
+                TH(
+                    cl("labkey-column-header labkey-selectors").at(style, "width:" + width + "px;"),
+                    showRecordSelectors ?
+                        new Object[] {INPUT(
+                            at(type, "checkbox", title, "Select/unselect all on current page", name, TOGGLE_CHECKBOX_NAME)
+                        ),
+                        SPAN(
+                            cl("dropdown-toggle").data("toggle", "dropdown")
+                        ),
+                        UL(
+                            cl("dropdown-menu dropdown-menu-left"),
+                            (DOM.Renderable) ret -> renderNavTree(out)
+                        )} :
+                    null
+                )
+            );
+        }
+        body.add((DOM.Renderable) ret -> {
+            renderers.stream()
+                .filter(renderer -> renderer.isVisible(ctx))
+                .filter(renderer -> !(renderer instanceof DetailsColumn) && !(renderer instanceof UpdateColumn))
+                .forEach(renderer -> renderer.renderGridHeaderCell(ctx, out));
+            return ret;
+        });
 
-            int width = 0;
-            if (showRecordSelectors)
-                width += 45; // account for drop menu
-            if (detailsColumn != null)
-                width += 15;
-            if (updateColumn != null)
-                width += 15;
-            oldWriter.write(" style=\"width:" + width + "px;\">");
+        THEAD(
+            TR(
+                cl("labkey-col-header-row").id(getDomId() + "-column-header-row"),
+                body.toArray()
+            )
+        ).appendTo(out);
+    }
 
-            if (showRecordSelectors)
-            {
-                final String jsObject = getJavaScriptObjectReference();
-                NavTree navtree = new NavTree();
+    private int getFirstColumnWidth(boolean showRecordSelectors, DisplayColumn detailsColumn, DisplayColumn updateColumn)
+    {
+        int width = 0;
+        if (showRecordSelectors)
+            width += 45; // account for drop menu
+        if (detailsColumn != null)
+            width += 15;
+        if (updateColumn != null)
+            width += 15;
 
-                NavTree selectAll = new NavTree("Select All");
-                selectAll.setScript(jsObject + ".selectAll();");
-                navtree.addChild(selectAll);
+        return width;
+    }
 
-                NavTree selectNone = new NavTree("Select None");
-                selectNone.setScript(jsObject + ".selectNone();");
-                navtree.addChild(selectNone);
+    private HtmlWriter renderNavTree(HtmlWriter out)
+    {
+        final String jsObject = getJavaScriptObjectReference();
+        NavTree navtree = new NavTree();
 
-                navtree.addSeparator();
+        NavTree selectAll = new NavTree("Select All");
+        selectAll.setScript(jsObject + ".selectAll();");
+        navtree.addChild(selectAll);
 
-                if (getShowRows() != ShowRows.PAGINATED)
-                {
-                    NavTree showPaginated = new NavTree("Show Paginated");
-                    showPaginated.setScript(jsObject + ".showPaged();");
-                    navtree.addChild(showPaginated);
-                }
+        NavTree selectNone = new NavTree("Select None");
+        selectNone.setScript(jsObject + ".selectNone();");
+        navtree.addChild(selectNone);
 
-                if (getShowRows() != ShowRows.SELECTED)
-                {
-                    NavTree showSelected = new NavTree("Show Selected");
-                    showSelected.setScript(jsObject + ".showSelected();");
-                    navtree.addChild(showSelected);
-                }
+        navtree.addSeparator();
 
-                if (getShowRows() != ShowRows.UNSELECTED)
-                {
-                    NavTree showUnselected = new NavTree("Show Unselected");
-                    showUnselected.setScript(jsObject + ".showUnselected();");
-                    navtree.addChild(showUnselected);
-                }
-
-                // NOTE: This is replicated in the Paging Widget (Dataregion.js)
-                if (getShowRows() != ShowRows.ALL)
-                {
-                    NavTree showAll = new NavTree("Show All");
-                    showAll.setScript(jsObject + ".showAll();");
-                    navtree.addChild(showAll);
-                }
-
-                oldWriter.write("<input type=\"checkbox\" title=\"Select/unselect all on current page\" name=\"");
-                oldWriter.write(TOGGLE_CHECKBOX_NAME);
-                oldWriter.write("\">");
-
-                oldWriter.write("<span class=\"dropdown-toggle\" data-toggle=\"dropdown\"></span>");
-                oldWriter.write("<ul class=\"dropdown-menu dropdown-menu-left\">");
-                PopupMenuView.renderTree(navtree, oldWriter);
-                oldWriter.write("</ul>");
-            }
-
-            oldWriter.write("</th>");
+        if (getShowRows() != ShowRows.PAGINATED)
+        {
+            NavTree showPaginated = new NavTree("Show Paginated");
+            showPaginated.setScript(jsObject + ".showPaged();");
+            navtree.addChild(showPaginated);
         }
 
-        for (DisplayColumn renderer : renderers)
+        if (getShowRows() != ShowRows.SELECTED)
         {
-            if (renderer.isVisible(ctx))
-            {
-                if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
-                    continue;
-
-                renderer.renderGridHeaderCell(ctx, oldWriter);
-            }
+            NavTree showSelected = new NavTree("Show Selected");
+            showSelected.setScript(jsObject + ".showSelected();");
+            navtree.addChild(showSelected);
         }
 
-        oldWriter.write("</tr></thead>");
+        if (getShowRows() != ShowRows.UNSELECTED)
+        {
+            NavTree showUnselected = new NavTree("Show Unselected");
+            showUnselected.setScript(jsObject + ".showUnselected();");
+            navtree.addChild(showUnselected);
+        }
+
+        // NOTE: This is replicated in the Paging Widget (Dataregion.js)
+        if (getShowRows() != ShowRows.ALL)
+        {
+            NavTree showAll = new NavTree("Show All");
+            showAll.setScript(jsObject + ".showAll();");
+            navtree.addChild(showAll);
+        }
+
+        PopupMenuView.renderTree(navtree, out);
+
+        return out;
     }
 
     private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
@@ -1565,7 +1584,7 @@ public class DataRegion extends DisplayElement
             DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
             DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-            if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
+            if (showRecordSelectors || detailsColumn != null || updateColumn != null)
             {
                 oldWriter.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
             }
@@ -1577,45 +1596,45 @@ public class DataRegion extends DisplayElement
                     if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
                         continue;
 
-                    oldWriter.write("<td nowrap ");
-                    if (renderer.getTextAlign() != null)
-                        oldWriter.write(" align=\"" + renderer.getTextAlign() + "\"");
-                    oldWriter.write(">");
-
                     ColumnInfo col = renderer.getColumnInfo();
 
                     List<Aggregate.Result> result = null;
+
                     if (col != null)
                     {
                         result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
                         if (result == null)
                             aggregateResults.get(renderer.getColumnInfo().getAlias());
                     }
+
+                    oldWriter.write("<td nowrap ");
+                    if (renderer.getTextAlign() != null)
+                        oldWriter.write(" align=\"" + renderer.getTextAlign() + "\"");
+                    oldWriter.write(">");
+
                     if (result != null)
                     {
                         for (Aggregate.Result r : result)
                         {
                             String statLabel = r.getAggregate().getDisplayString();
                             Aggregate.Type type = r.getAggregate().getType();
+                            FormattedValue value = r.getFormattedValue(renderer, ctx.getContainer());
+                            String description = type.getDescription();
 
-                            oldWriter.write("<div>");
-                            oldWriter.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel));
-                            if (type.getDescription() != null)
-                                PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()).appendTo(oldWriter);
-                            oldWriter.write(":</span>&nbsp;");
-                            Pair<String, Boolean> value = r.getFormattedValue(renderer, ctx.getContainer());
-                            boolean error = value.second;
-                            if (error)
-                                oldWriter.write("<span class=\"labkey-error\">");
-                            oldWriter.write(PageFlowUtil.filter(value.first));
-                            if (error)
-                                oldWriter.write("</span>");
-                            oldWriter.write("</div>");
+                            DIV(
+                                SPAN(
+                                    cl("summary-stat-label"),
+                                    statLabel,
+                                    description != null ? PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()) : null
+                                ),
+                                HtmlString.NBSP,
+                                value.error() ? SPAN(cl("labkey-error"), value.value()) : value.value()
+                            ).appendTo(out);
                         }
                     }
                     else
                     {
-                        oldWriter.write("&nbsp;");
+                        out.write(HtmlString.NBSP);
                     }
 
                     oldWriter.write("</td>");
@@ -2113,6 +2132,9 @@ public class DataRegion extends DisplayElement
 
     private void renderFormField(RenderContext ctx, HtmlWriter out, DisplayColumn renderer)
     {
+        // TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
+        // Note: Unclear if this comment is still true and relevant to this method
+
         Writer oldWriter = out.unwrap();
         Set<String> errors = getErrors(ctx, renderer);
 
@@ -2123,7 +2145,9 @@ public class DataRegion extends DisplayElement
                 {
                     renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
                     if (renderer.isEditable())
+                    {
                         renderer.renderInputCell(ctx, oldWriter);
+                    }
                     else
                     {
                         renderer.renderInputWrapperBegin(oldWriter);
@@ -2138,22 +2162,6 @@ public class DataRegion extends DisplayElement
                 return ret;
             }
         ).appendTo(out);
-
-////        oldWriter.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
-//
-//        renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
-//
-//        if (renderer.isEditable())
-//            renderer.renderInputCell(ctx, oldWriter);
-//        else
-//        {
-//            renderer.renderInputWrapperBegin(oldWriter);
-//            renderer.renderDetailsData(ctx, oldWriter);
-//            renderer.renderInputWrapperEnd(oldWriter);
-//        }
-//
-//        //TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
-//        oldWriter.write("</tr>");
     }
 
     private Set<String> getErrors(RenderContext ctx, DisplayColumn... renderers)
