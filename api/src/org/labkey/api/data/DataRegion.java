@@ -79,7 +79,7 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.HtmlWriter.AttributeValue;
 
 import java.io.IOException;
-import java.io.Writer;
+import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -2334,125 +2334,156 @@ public class DataRegion extends DisplayElement
 
         if (!_groupTables.isEmpty())
         {
-            Writer oldWriter = out.unwrap();
-            oldWriter.write("<table class=\"labkey-group-tables\">");
+            TABLE(
+                cl("labkey-group-tables"),
+                (Renderable) app -> {
 
-            for (GroupTable groupTable : _groupTables)
-            {
-                List<DisplayColumnGroup> groups = groupTable.getGroups();
-                List<String> groupHeadings = groupTable.getGroupHeadings();
-                oldWriter.write("<tr><td></td>");
-                boolean hasCopyable = false;
+                    for (GroupTable groupTable : _groupTables)
+                    {
+                        List<DisplayColumnGroup> groups = groupTable.getGroups();
+                        List<String> groupHeadings = groupTable.getGroupHeadings();
 
-                for (DisplayColumnGroup group : groups)
-                {
-                    if (group.isCopyable() && group.getColumns().size() > 1)
-                    {
-                        hasCopyable = true;
-                        break;
-                    }
-                }
+                        boolean hasCopyable = false;
 
-                if (_horizontalGroups)
-                {
-                    if (hasCopyable)
-                    {
-                        writeSameHeader(ctx, out, groups);
-                    }
-                    else
-                    {
-                        oldWriter.write("<td/>");
-                    }
-
-                    for (String heading : groupHeadings)
-                    {
-                        oldWriter.write("<td nowrap><label class=\"control-label\">");
-                        oldWriter.write(PageFlowUtil.filter(heading));
-                        oldWriter.write("</label></td>");
-                    }
-                }
-                else
-                {
-                    for (DisplayColumnGroup group : groups)
-                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
-                    oldWriter.write("</tr>\n<tr>");
-                    if (hasCopyable)
-                    {
-                        writeSameHeader(ctx, out, groups);
                         for (DisplayColumnGroup group : groups)
                         {
-                            if (group.isCopyable())
+                            if (group.isCopyable() && group.getColumns().size() > 1)
                             {
-                                group.writeSameCheckboxCell(ctx, oldWriter);
-                            }
-                            else
-                            {
-                                oldWriter.write("<td/>");
+                                hasCopyable = true;
+                                break;
                             }
                         }
-                    }
-                    else
-                    {
-                        oldWriter.write("<td/>");
-                    }
-                }
-                oldWriter.write("</tr>");
 
-                if (_horizontalGroups)
-                {
-                    for (DisplayColumnGroup group : groups)
-                    {
-                        oldWriter.write("<tr>");
-                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
-                        if (group.isCopyable() && hasCopyable)
+                        if (_horizontalGroups)
                         {
-                            group.writeSameCheckboxCell(ctx, oldWriter);
+                            TR(
+                                TD(),
+                                hasCopyable ? (Renderable) ret -> writeSameHeader(ctx, out, groups) : TD(),
+                                (Renderable) ret -> {
+                                    for (String heading : groupHeadings)
+                                    {
+                                        TD(
+                                            at(style, "white-space:nowrap;"),
+                                            LABEL(
+                                                cl("control-label"),
+                                                heading
+                                            )
+                                        ).appendTo(out);
+                                    }
+                                    return ret;
+                                }
+                            ).appendTo(out);
                         }
                         else
                         {
-                            oldWriter.write("<td/>");
+                            TR(
+                                TD(),
+                                (Renderable) ret -> {
+                                    for (DisplayColumnGroup group : groups)
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                    return ret;
+                                }
+                            ).appendTo(out);
+
+                            TR(
+                                hasCopyable ? (Renderable) ret -> {
+                                    writeSameHeader(ctx, out, groups);
+                                    for (DisplayColumnGroup group : groups)
+                                    {
+                                        if (group.isCopyable())
+                                        {
+                                            group.writeSameCheckboxCell(ctx, out);
+                                        }
+                                        else
+                                        {
+                                            TD().appendTo(out);
+                                        }
+                                    }
+                                    return ret;
+                                } :
+                                TD()
+                            ).appendTo(out);
                         }
-                        for (DisplayColumn col : group.getColumns())
+
+                        if (_horizontalGroups)
                         {
-                            if (!shouldRender(col, ctx))
-                                continue;
-                            col.renderInputCell(ctx, oldWriter);
+                            boolean hasCopyableFinal = hasCopyable;
+
+                            for (DisplayColumnGroup group : groups)
+                            {
+                                TR(
+                                    (Renderable) ret -> {
+                                        writeColRenderDetailsCaptionCell(ctx, out, group.getColumns().get(0));
+                                        if (group.isCopyable() && hasCopyableFinal)
+                                        {
+                                            group.writeSameCheckboxCell(ctx, out);
+                                        }
+                                        else
+                                        {
+                                            TD().appendTo(out);
+                                        }
+                                        for (DisplayColumn col : group.getColumns())
+                                        {
+                                            if (!shouldRender(col, ctx))
+                                                continue;
+                                            col.renderInputCell(ctx, out);
+                                        }
+
+                                        return ret;
+                                    }
+                                ).appendTo(out);
+                            }
                         }
-                        oldWriter.write("\t</tr>");
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < groupHeadings.size(); i++)
-                    {
-                        oldWriter.write("<tr");
-                        String rowClass = getRowClass(ctx, i);
-                        if (rowClass != null)
-                            oldWriter.write(" class=\"" + rowClass + "\"");
-                        oldWriter.write(">");
+                        else
+                        {
+                            for (int i = 0; i < groupHeadings.size(); i++)
+                            {
+                                int index = i; // Effectively final for lambda below
+                                TR(
+                                    cl(getRowClass(ctx, i)),
+                                    TD(
+                                        at(style, "white-space:nowrap;"),
+                                        LABEL(
+                                            cl("control-label"),
+                                            groupHeadings.get(i)
+                                        )
+                                    ),
+                                    (Renderable) ret -> {
+                                        for (DisplayColumnGroup group : groups)
+                                        {
+                                            DisplayColumn col = group.getColumns().get(index);
+                                            if (!shouldRender(col, ctx))
+                                                continue;
+                                            col.renderInputCell(ctx, out);
+                                        }
+                                        return ret;
+                                    }
+                                ).appendTo(out);
+                            }
+                        }
 
-                        oldWriter.write("<td nowrap><label class=\"control-label\">");
-                        oldWriter.write(PageFlowUtil.filter(groupHeadings.get(i)));
-                        oldWriter.write("</label></td>");
+                        out.write(HtmlStringBuilder.of(HttpView.currentPageConfig().getScriptTagStart()));
 
+                        StringWriter sw = new StringWriter();
                         for (DisplayColumnGroup group : groups)
                         {
-                            DisplayColumn col = group.getColumns().get(i);
-                            if (!shouldRender(col, ctx))
-                                continue;
-                            col.renderInputCell(ctx, oldWriter);
+                            try
+                            {
+                                group.writeCopyableJavaScript(ctx, sw);
+                            }
+                            catch (IOException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
                         }
-                        oldWriter.write("\t</tr>");
+
+                        out.write(JavaScriptFragment.unsafe(sw.toString()));
+                        out.writeElementEnd(DOM.Element.script);
                     }
+
+                    return app;
                 }
-
-                oldWriter.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
-                for (DisplayColumnGroup group : groups)
-                    group.writeCopyableJavaScript(ctx, oldWriter);
-                oldWriter.write("</script>");
-            }
-
-            oldWriter.write("</table>");
+            ).appendTo(out);
         }
 
         buttonBar.render(ctx, out);
@@ -2464,7 +2495,7 @@ public class DataRegion extends DisplayElement
         col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
 
-    private void writeSameHeader(RenderContext ctx, HtmlWriter out, List<DisplayColumnGroup> groups)
+    private HtmlWriter writeSameHeader(RenderContext ctx, HtmlWriter out, List<DisplayColumnGroup> groups)
     {
         PageConfig pageConfig = HttpView.currentPageConfig();
         String madeId = pageConfig.makeId("selectAll_");
@@ -2488,6 +2519,8 @@ public class DataRegion extends DisplayElement
             group.appendCopyableOnChangeHandler(ctx, onChange);
         }
         pageConfig.addHandler(madeId, "change", onChange.toString());
+
+        return out;
     }
 
     protected static boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
@@ -2906,9 +2939,9 @@ public class DataRegion extends DisplayElement
         if (view != null && view.getLabel() != null && (!isDefaultView(ctx) || view.isSession()) && getSettings().getAllowChooseView())
         {
             ContextAction.Builder action = new ContextAction.Builder()
-                    .iconCls("table")
-                    .onClick(getJavaScriptObjectReference() + ".showCustomizeView(); return false;")
-                    .text(view.getLabel());
+                .iconCls("table")
+                .onClick(getJavaScriptObjectReference() + ".showCustomizeView(); return false;")
+                .text(view.getLabel());
             _viewActions.add(action.build());
         }
     }

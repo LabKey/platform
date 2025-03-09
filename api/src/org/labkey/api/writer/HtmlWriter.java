@@ -63,16 +63,10 @@ public class HtmlWriter implements Appendable
         _writer.write(array.toString());
     }
 
+    // Outputs an HTML encoded version of the input string
     public void write(String s)
     {
-        try
-        {
-            _writer.write(PageFlowUtil.filter(s));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        write(HtmlString.of(s));
     }
 
     public static class AttributeValue
