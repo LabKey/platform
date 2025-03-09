@@ -355,12 +355,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderColTag(Writer out, boolean isLast) throws IOException
-    {
-        _column.renderColTag(out, isLast);
-    }
-
-    @Override
     protected String getHoverContent(RenderContext ctx)
     {
         return _column.getHoverContent(ctx);

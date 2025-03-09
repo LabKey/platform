@@ -666,11 +666,6 @@ public abstract class DisplayColumn extends RenderColumn
         return _gridHeaderClass;
     }
 
-    public void renderColTag(Writer out, boolean isLast) throws IOException
-    {
-        out.write("<col />");
-    }
-
     public String getDefaultHeaderStyle()
     {
         return "";

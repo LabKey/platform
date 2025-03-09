@@ -3132,7 +3132,6 @@ public class DataRegion extends DisplayElement
     }
 
 
-
     public static class TestCase extends Assert
     {
         // test that we aren't generating extraneous joins to core.container

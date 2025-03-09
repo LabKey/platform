@@ -343,7 +343,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             String propName = ColumnInfo.propNameFromName(property.getName());
             String value = encodePropertyValues(domainIdForm, propName);
             PropertyType type = property.getPropertyDescriptor().getPropertyType();
-            if (value != null && value.length() > 0)
+            if (value != null && !value.isEmpty())
             {
                 try
                 {
@@ -364,7 +364,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
         try
         {
-            if (values.size() > 0)
+            if (!values.isEmpty())
                 DefaultValueService.get().setDefaultValues(domainIdForm.getContainer(), values);
         }
         catch (ExperimentException e)
