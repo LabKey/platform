@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -96,6 +97,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.Attribute.align;
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.name;
@@ -1441,7 +1443,7 @@ public class DataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    private void renderNoRowsMessage(HtmlWriter out, int colCount) throws IOException
+    private void renderNoRowsMessage(HtmlWriter out, int colCount)
     {
         TR(
             TD(
@@ -1577,71 +1579,74 @@ public class DataRegion extends DisplayElement
 
         if (!aggregateResults.isEmpty())
         {
-            Writer oldWriter = out.unwrap();
-
-            oldWriter.write("<tr class=\"labkey-col-total labkey-row\">");
-
             DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
             DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
 
-            if (showRecordSelectors || detailsColumn != null || updateColumn != null)
-            {
-                oldWriter.write("<td nowrap class=\"labkey-selectors\">&nbsp;</td>");
-            }
-
-            for (DisplayColumn renderer : renderers)
-            {
-                if (renderer.isVisible(ctx))
-                {
-                    if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
-                        continue;
-
-                    ColumnInfo col = renderer.getColumnInfo();
-
-                    List<Aggregate.Result> result = null;
-
-                    if (col != null)
-                    {
-                        result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
-                        if (result == null)
-                            aggregateResults.get(renderer.getColumnInfo().getAlias());
-                    }
-
-                    oldWriter.write("<td nowrap ");
-                    if (renderer.getTextAlign() != null)
-                        oldWriter.write(" align=\"" + renderer.getTextAlign() + "\"");
-                    oldWriter.write(">");
-
-                    if (result != null)
-                    {
-                        for (Aggregate.Result r : result)
-                        {
-                            String statLabel = r.getAggregate().getDisplayString();
-                            Aggregate.Type type = r.getAggregate().getType();
-                            FormattedValue value = r.getFormattedValue(renderer, ctx.getContainer());
-                            String description = type.getDescription();
-
-                            DIV(
-                                SPAN(
-                                    cl("summary-stat-label"),
-                                    statLabel,
-                                    description != null ? PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()) : null
-                                ),
-                                HtmlString.NBSP,
-                                value.error() ? SPAN(cl("labkey-error"), value.value()) : value.value()
-                            ).appendTo(out);
-                        }
-                    }
-                    else
-                    {
-                        out.write(HtmlString.NBSP);
-                    }
-
-                    oldWriter.write("</td>");
-                }
-            }
-            oldWriter.write("</tr>");
+            TR(
+                cl("labkey-col-total labkey-row"),
+                showRecordSelectors || detailsColumn != null || updateColumn != null ? TD(cl("labkey-selectors"), HtmlString.NBSP) : null,
+                (DOM.Renderable) app -> renderAllAggregateResults(aggregateResults, renderers, ctx, app)
+            ).appendTo(out);
         }
+    }
+
+    // Render the aggregate results for all columns
+    private Appendable renderAllAggregateResults(Map<String, List<Aggregate.Result>> aggregateResults, List<DisplayColumn> renderers, RenderContext ctx, Appendable app)
+    {
+        for (DisplayColumn renderer : renderers)
+        {
+            if (renderer.isVisible(ctx))
+            {
+                if (renderer instanceof DetailsColumn || renderer instanceof UpdateColumn)
+                    continue;
+
+                ColumnInfo col = renderer.getColumnInfo();
+
+                final List<Aggregate.Result> result;
+
+                if (col != null)
+                {
+                    result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
+                    if (result == null)
+                        aggregateResults.get(renderer.getColumnInfo().getAlias());
+                }
+                else
+                {
+                    result = null;
+                }
+
+                TD(
+                    at(style, "white-space:nowrap;", align, renderer.getTextAlign()),
+                    result != null ? (DOM.Renderable) rend -> renderAggregateResults(renderer, result, ctx.getContainer(), rend) : HtmlString.NBSP
+                ).appendTo(app);
+            }
+        }
+
+        return app;
+    }
+
+    // Render the aggregate results for a single column
+    private Appendable renderAggregateResults(DisplayColumn renderer, @NotNull List<Aggregate.Result> result, Container c, Appendable app)
+    {
+        for (Aggregate.Result r : result)
+        {
+            String statLabel = r.getAggregate().getDisplayString();
+            Aggregate.Type type = r.getAggregate().getType();
+            FormattedValue value = r.getFormattedValue(renderer, c);
+            String description = type.getDescription();
+
+            DIV(
+                SPAN(
+                    cl("summary-stat-label"),
+                    statLabel,
+                    description != null ? PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()) : null
+                ),
+                HtmlString.NBSP,
+                value.error() ? SPAN(cl("labkey-error"), value.value()) : value.value()
+            ).appendTo(app);
+        }
+
+        return app;
     }
 
     protected void renderFormEnd(RenderContext ctx, HtmlWriter out)
@@ -1930,38 +1935,49 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, MODE_DETAILS);
 
-        Writer oldWriter = out.unwrap();
-        int rowIndex = 0;
-
         try (ResultSet rs = ctx.getResults())
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            final MutableInt rowIndex = new MutableInt(0);
 
-            oldWriter.write("<table>");
+            TABLE(
+                (DOM.Renderable) ret -> {
+                    try
+                    {
+                        while (rs.next())
+                        {
+                            rowIndex.increment();
+                            RowMap<Object> rowMap = factory.getRowMap(rs);
+                            ctx.setRow(rowMap);
 
-            while (rs.next())
-            {
-                rowIndex++;
-                RowMap<Object> rowMap = factory.getRowMap(rs);
-                ctx.setRow(rowMap);
+                            for (DisplayColumn renderer : renderers)
+                            {
+                                if (!renderer.isVisible(ctx))
+                                    continue;
 
-                for (DisplayColumn renderer : renderers)
-                {
-                    if (!renderer.isVisible(ctx))
-                        continue;
-                    oldWriter.write("<tr>");
-                    renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
-                    renderer.renderInputWrapperBegin(oldWriter);
-                    renderer.renderDetailsData(ctx, oldWriter);
-                    renderer.renderInputWrapperEnd(oldWriter);
-                    oldWriter.write("</tr>");
+                                TR(
+                                    (DOM.Renderable) rend -> {
+                                        renderer.renderDetailsCaptionCell(ctx, out, null);
+                                        renderer.renderInputWrapperBegin(out);
+                                        renderer.renderDetailsData(ctx, out);
+                                        renderer.renderInputWrapperEnd(out);
+                                        return rend;
+                                    }
+                                ).appendTo(out);
+                            }
+                        }
+
+                        if (rowIndex.getValue() == 0)
+                            renderNoRowsMessage(out, 1);
+
+                        return ret;
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
                 }
-            }
-
-            if (rowIndex == 0)
-                renderNoRowsMessage(out, 1);
-
-            oldWriter.write("</table>");
+            ).appendTo(out);
 
             _detailsButtonBar.render(ctx, out);
         }
@@ -2135,29 +2151,21 @@ public class DataRegion extends DisplayElement
         // TODO: fix bug where first user-defined field is marked as a key and therefore hidden + editable
         // Note: Unclear if this comment is still true and relevant to this method
 
-        Writer oldWriter = out.unwrap();
         Set<String> errors = getErrors(ctx, renderer);
 
         TR(
             cl("form-group" + (!errors.isEmpty() ? " has-error" : "")),
             (DOM.Renderable) ret -> {
-                try
+                renderer.renderDetailsCaptionCell(ctx, out, null);
+                if (renderer.isEditable())
                 {
-                    renderer.renderDetailsCaptionCell(ctx, oldWriter, null);
-                    if (renderer.isEditable())
-                    {
-                        renderer.renderInputCell(ctx, oldWriter);
-                    }
-                    else
-                    {
-                        renderer.renderInputWrapperBegin(oldWriter);
-                        renderer.renderDetailsData(ctx, oldWriter);
-                        renderer.renderInputWrapperEnd(oldWriter);
-                    }
+                    renderer.renderInputCell(ctx, out);
                 }
-                catch (IOException e)
+                else
                 {
-                    throw new RuntimeException(e);
+                    renderer.renderInputWrapperBegin(out);
+                    renderer.renderDetailsData(ctx, out);
+                    renderer.renderInputWrapperEnd(out);
                 }
                 return ret;
             }
@@ -2425,7 +2433,7 @@ public class DataRegion extends DisplayElement
         renderFormEnd(ctx, out);
     }
 
-    private void writeColRenderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, DisplayColumn col) throws IOException
+    private void writeColRenderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, DisplayColumn col)
     {
         col.renderDetailsCaptionCell(ctx, out, "control-header-label");
     }
