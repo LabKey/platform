@@ -2,11 +2,15 @@ package org.labkey.api.writer;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HtmlWriter implements Appendable
 {
@@ -69,6 +73,51 @@ public class HtmlWriter implements Appendable
         {
             throw new RuntimeException(e);
         }
+    }
+
+    public static class AttributeValue
+    {
+        private final String _name;
+        private final String _value;
+
+        private AttributeValue(String name, String value)
+        {
+            _name = name;
+            _value = value;
+        }
+
+        public static AttributeValue of(DOM.Attribute attribute, String value)
+        {
+            return new AttributeValue(attribute.name(), value);
+        }
+
+        public static AttributeValue of(String name, String value)
+        {
+            // TODO: eliminate "lk-" option after tests are migrated to use "data-" only
+            if (!name.equals("class") && !name.startsWith("data-") && !name.startsWith("lk-"))
+                throw new IllegalStateException("Illegal attribute name: " + name);
+
+            return new AttributeValue(name, value);
+        }
+
+        private String name()
+        {
+            return _name;
+        }
+
+        private String value()
+        {
+            return _value;
+        }
+    }
+
+    // Use DOM instead. This is useful only for methods that don't close their elements.
+    public void writeElementStart(DOM.Element el, List<AttributeValue> attributes)
+    {
+        write(HtmlString.unsafe("<" + el.name() + (!attributes.isEmpty() ? " " +
+            attributes.stream()
+                .map(a -> a.name() +  "=\"" + PageFlowUtil.filter(a.value()) + "\"")
+                .collect(Collectors.joining(" ")) : "") + ">"));
     }
 
     @Override

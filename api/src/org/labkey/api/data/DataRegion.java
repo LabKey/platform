@@ -50,6 +50,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -75,6 +76,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.writer.HtmlWriter;
+import org.labkey.api.writer.HtmlWriter.AttributeValue;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -1759,36 +1761,40 @@ public class DataRegion extends DisplayElement
 
     protected void renderFormBegin(RenderContext ctx, HtmlWriter out, int mode) throws IOException
     {
-        Writer oldWriter = out.unwrap();
-
-        oldWriter.write("<form method=\"post\" id=\"" + PageFlowUtil.filter(getDomId() + "-form") + "\" ");
+        List<AttributeValue> attributes = new LinkedList<>();
+        attributes.add(AttributeValue.of(DOM.Attribute.method, "post"));
+        attributes.add(AttributeValue.of(DOM.Attribute.id, getDomId() + "-form"));
 
         String name = getName();
         if (name != null)
         {
             // For now, add lk-region-form AND data-region-from attributes for test locators. TODO: Migrate to "data-*" only.
-            oldWriter.write(" lk-region-form=\"" + PageFlowUtil.filter(name) + "\" data-region-form=\"" + PageFlowUtil.filter(name) + "\" ");
+            attributes.add(AttributeValue.of("lk-region-form", name));
+            attributes.add(AttributeValue.of("data-region-form", name));
         }
 
-        String cls = "form-horizontal";
-        if (mode == MODE_DETAILS)
-            cls += " form-mode-details";
-
-        oldWriter.write(" class=\"" + cls + "\" ");
+        attributes.add(AttributeValue.of("class", "form-horizontal" + (mode == MODE_DETAILS ? " form-mode-details" : "")));
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
-            case MODE_DETAILS -> oldWriter.write("action=\"begin\">");
+            case MODE_DETAILS -> attributes.add(AttributeValue.of(DOM.Attribute.action, "begin"));
             case MODE_INSERT, MODE_UPDATE ->
             {
                 if (isFileUploadForm())
-                    oldWriter.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
+                {
+                    attributes.add(AttributeValue.of(DOM.Attribute.enctype, "multipart/form-data"));
+                    attributes.add(AttributeValue.of(DOM.Attribute.action, actionAttr));
+                }
                 else
-                    oldWriter.write("action=\"" + actionAttr + "\">");
+                {
+                    attributes.add(AttributeValue.of(DOM.Attribute.action, actionAttr));
+                }
             }
-            default -> oldWriter.write("action=\"\">");
+            default -> attributes.add(AttributeValue.of(DOM.Attribute.action, ""));
         }
+
+        out.writeElementStart(DOM.Element.form, attributes);
 
         renderHiddenFormFields(ctx, out, mode);
     }
