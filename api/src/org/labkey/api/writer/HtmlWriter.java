@@ -120,6 +120,12 @@ public class HtmlWriter implements Appendable
                 .collect(Collectors.joining(" ")) : "") + ">"));
     }
 
+    // Use DOM instead. This is useful only for methods that don't open their elements.
+    public void writeElementEnd(DOM.Element el)
+    {
+        write(HtmlString.unsafe("</" + el.name() + ">"));
+    }
+
     @Override
     public Appendable append(CharSequence csq) throws IOException
     {

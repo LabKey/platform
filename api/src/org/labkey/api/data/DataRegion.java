@@ -1676,7 +1676,7 @@ public class DataRegion extends DisplayElement
 
     protected void renderFormEnd(RenderContext ctx, HtmlWriter out)
     {
-        out.write(HtmlString.unsafe("</form>"));
+        out.writeElementEnd(DOM.Element.form);
     }
 
     // Allows subclasses to add table rows at the beginning or end of the table
@@ -2255,89 +2255,86 @@ public class DataRegion extends DisplayElement
         renderFormBegin(ctx, out, action);
         renderMainErrors(ctx, out);
 
-        Writer oldWriter = out.unwrap();
-
-        oldWriter.write("<table>");
         List<DisplayColumn> renderers = getDisplayColumns();
 
-        if (action == MODE_UPDATE_MULTIPLE)
-        {
-            String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
-            oldWriter.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
-        }
-        else
-        {
-            if (renderers.stream().anyMatch(dc -> shouldRender(dc, ctx) && null != dc.getColumnInfo() && !dc.getColumnInfo().isNullable()))
-            {
-                String msg = "Fields marked with an asterisk * are required.";
-                oldWriter.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
-            }
-        }
+        TABLE(
+            action == MODE_UPDATE_MULTIPLE ? TR(TD(at(colspan, 3)), "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row")) :
+                renderers.stream().anyMatch(dc -> shouldRender(dc, ctx) && null != dc.getColumnInfo() && !dc.getColumnInfo().isNullable()) ? TR(TD(at(colspan, 3)), "Fields marked with an asterisk * are required.") : null,
 
-        int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
-            1 :
-            (_horizontalGroups ?
-                _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
-                _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+            (Renderable) app -> {
+                Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
 
-        Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
-
-        for (DisplayColumn renderer : renderers)
-        {
-            if (!shouldRender(renderer, ctx))
-                continue;
-            renderFormField(ctx, out, renderer);
-            if (null != renderer.getColumnInfo())
-                renderedColumns.add(renderer.getColumnInfo().getName());
-        }
-
-        //Make sure all pks are included
-        if (action == MODE_UPDATE)
-        {
-            oldWriter.write("<tr><td colspan=\"" + (span + 1) + "\" align=\"left\">");
-
-            // Note: valueMap != null, since we checked this above
-
-            if (valueMap instanceof BoundMap)
-                renderOldValues(out, valueMap);
-            else
-                renderOldValues(out, valueMap, ctx.getFieldMap());
-
-            TableViewForm viewForm = ctx.getForm();
-            List<ColumnInfo> pkCols = getTable().getPkColumns();
-            for (ColumnInfo pkCol : pkCols)
-            {
-                String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName))
+                for (DisplayColumn renderer : renderers)
                 {
-                    Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenever someone
-                    //posts? I tend to think so.
-                    if (null != viewForm)
-                        pkVal = viewForm.get(pkColName);
-
-                    if (pkVal == null)
-                        pkVal = valueMap.get(pkColName);
-
-                    if (null != pkVal)
-                    {
-                        out.write(
-                            new InputBuilder()
-                                .type("hidden")
-                                .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
-                                .value(pkVal.toString())
-                        );
-                    }
-                    renderedColumns.add(pkColName);
+                    if (!shouldRender(renderer, ctx))
+                        continue;
+                    renderFormField(ctx, out, renderer);
+                    if (null != renderer.getColumnInfo())
+                        renderedColumns.add(renderer.getColumnInfo().getName());
                 }
-            }
 
-            oldWriter.write("</td></tr>");
-        }
-        oldWriter.write("</table>");
+                //Make sure all pks are included
+                if (action == MODE_UPDATE)
+                {
+                    int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
+                        1 :
+                        (_horizontalGroups ?
+                            _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
+                            _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+
+                    TR(
+                        TD(
+                            at(colspan, span + 1, align, "left"),
+                            (Renderable) ret -> {
+                                // Note: valueMap != null, since we checked this above
+
+                                if (valueMap instanceof BoundMap)
+                                    renderOldValues(out, valueMap);
+                                else
+                                    renderOldValues(out, valueMap, ctx.getFieldMap());
+
+                                TableViewForm viewForm = ctx.getForm();
+                                List<ColumnInfo> pkCols = getTable().getPkColumns();
+                                for (ColumnInfo pkCol : pkCols)
+                                {
+                                    String pkColName = pkCol.getName();
+                                    if (!renderedColumns.contains(pkColName))
+                                    {
+                                        Object pkVal = null;
+                                        //UNDONE: Should we require a viewForm whenever someone
+                                        //posts? I tend to think so.
+                                        if (null != viewForm)
+                                            pkVal = viewForm.get(pkColName);
+
+                                        if (pkVal == null)
+                                            pkVal = valueMap.get(pkColName);
+
+                                        if (null != pkVal)
+                                        {
+                                            out.write(
+                                                new InputBuilder()
+                                                    .type("hidden")
+                                                    .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
+                                                    .value(pkVal.toString())
+                                            );
+                                        }
+                                        renderedColumns.add(pkColName);
+                                    }
+                                }
+
+                                return ret;
+                            }
+                        )
+                    ).appendTo(out);
+                }
+
+                return app;
+            }
+        ).appendTo(out);
 
         if (!_groupTables.isEmpty())
         {
+            Writer oldWriter = out.unwrap();
             oldWriter.write("<table class=\"labkey-group-tables\">");
 
             for (GroupTable groupTable : _groupTables)
@@ -2493,7 +2490,7 @@ public class DataRegion extends DisplayElement
         pageConfig.addHandler(madeId, "change", onChange.toString());
     }
 
-    protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
+    protected static boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
     {
         return renderer.isVisible(ctx);
     }
