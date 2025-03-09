@@ -50,7 +50,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
@@ -111,6 +111,7 @@ import static org.labkey.api.util.DOM.LABEL;
 import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TBODY;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TH;
 import static org.labkey.api.util.DOM.THEAD;
@@ -938,7 +939,7 @@ public class DataRegion extends DisplayElement
         DIV(
             cl("lk-region-bar lk-region-header-bar").
             id(getDomId() + "-headerbar"),
-            (DOM.Renderable) ret -> renderButtonBar(ctx, out, renderButtons),
+            (Renderable) ret -> renderButtonBar(ctx, out, renderButtons),
             DIV(cl("pull-right"), DIV(cl("labkey-pagination")))
         ).appendTo(out);
 
@@ -1046,8 +1047,8 @@ public class DataRegion extends DisplayElement
 
         List<DisplayColumn> renderers = getDisplayColumns();
 
-        //determine number of HTML table columns...watch out for hidden display columns
-        //and include one extra if showing record selectors
+        // determine number of HTML table columns, watching out for hidden display columns
+        // and including one extra if showing record selectors
         int colCount = 0;
 
         for (DisplayColumn col : renderers)
@@ -1058,6 +1059,8 @@ public class DataRegion extends DisplayElement
 
         if (showRecordSelectors)
             colCount++;
+
+        int columnCount = colCount; // Make effectively final for lambda below
 
         // TODO: This needs to be migrated to new UI
 //        if (!_showPagination && rs instanceof TableResultSet)
@@ -1073,31 +1076,49 @@ public class DataRegion extends DisplayElement
 
         Map<String, String> messages = prepareMessages(ctx);
 
-        Writer oldWriter = out.unwrap();
-
         renderFormBegin(ctx, out, ctx.getMode());
 
-        if (useTableWrap)
-            oldWriter.write("<table><tbody><tr><td>");
-        if (shouldRenderHeader(renderButtons))
-        {
-            renderHeader(ctx, out, renderButtons);
-        }
+        boolean shouldRenderHeader = shouldRenderHeader(renderButtons);
 
-        renderMessages(out);
-
+        // Note: Keep the two arms of this if statement in sync
         if (useTableWrap)
-            oldWriter.write("</td></tr>");
-        if (!_errorCreatingResults)
         {
-            if (useTableWrap)
-                oldWriter.write("<tr><td>");
-            renderDataTable(ctx, out, showRecordSelectors, renderers, colCount);
-            if (useTableWrap)
-                oldWriter.write("</td></tr>");
+            TABLE(
+                TBODY(
+                    TR(
+                        TD(
+                            (Renderable) ret -> {
+                                if (shouldRenderHeader)
+                                    renderHeader(ctx, out, renderButtons);
+                                renderMessages(out);
+                                return ret;
+                            }
+                        )
+                    ),
+                        !_errorCreatingResults ?
+                        TR(
+                           TD(
+                               (Renderable) ret -> renderDataTable(ctx, out, showRecordSelectors, renderers, columnCount)
+                           )
+                        ) :
+                        null
+                )
+            ).appendTo(out);
         }
-        if (useTableWrap)
-            oldWriter.write("</tbody></table>");
+        else
+        {
+            if (shouldRenderHeader)
+            {
+                renderHeader(ctx, out, renderButtons);
+            }
+
+            renderMessages(out);
+
+            if (!_errorCreatingResults)
+            {
+                renderDataTable(ctx, out, showRecordSelectors, renderers, columnCount);
+            }
+        }
 
         if (usesResultSet() && rs instanceof TableResultSet && ((TableResultSet) rs).getSize() != -1)
         {
@@ -1118,7 +1139,7 @@ public class DataRegion extends DisplayElement
         {
             DIV(
                 cl("pull-left"),
-                (DOM.Renderable) ret -> renderButtons(ctx, out)
+                (Renderable) ret -> renderButtons(ctx, out)
             ).appendTo(out);
         }
 
@@ -1143,7 +1164,7 @@ public class DataRegion extends DisplayElement
                 id, getDomId() + "-" + idSuffix,
                 style, isEmpty ? "display:none;" : null
             ),
-            (DOM.Renderable) ret -> {
+            (Renderable) ret -> {
                 if (!isEmpty)
                 {
                     for (ContextAction ca : actions)
@@ -1167,7 +1188,7 @@ public class DataRegion extends DisplayElement
     protected void renderMessages(HtmlWriter out)
     {
         // The container <div> is written regardless of _messages being available
-        DIV(at(id, getDomId() + "-msgbox"), (DOM.Renderable) ret -> {
+        DIV(at(id, getDomId() + "-msgbox"), (Renderable) ret -> {
             if (_messages != null)
             {
                 for (Message message : _messages)
@@ -1180,7 +1201,7 @@ public class DataRegion extends DisplayElement
                     DIV(
                         cl("lk-region-bar" + (isThemed ? " lk-msg-bar" : "")).
                         data("msgpart", message.getArea()),
-                        (DOM.Renderable) ren -> {
+                        (Renderable) ren -> {
                             if (isThemed)
                             {
                                 DIV(
@@ -1226,7 +1247,7 @@ public class DataRegion extends DisplayElement
         return out;
     }
 
-    private void renderDataTable(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
+    private HtmlWriter renderDataTable(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
         DIV(
             cl("lk-region-ct"),
@@ -1235,12 +1256,14 @@ public class DataRegion extends DisplayElement
             ),
             DIV(
                 cl("lk-region-section center").at(style, "display: block;"),
-                (DOM.Renderable) ret -> renderCenterContent(ctx, out, showRecordSelectors, renderers, colCount)
+                (Renderable) ret -> renderCenterContent(ctx, out, showRecordSelectors, renderers, colCount)
             ),
             DIV(cl("lk-region-bar lk-region-section west").id(getDomId() + "-section-w")),
             DIV(cl("lk-region-bar lk-region-section east").id(getDomId() + "-section-e")),
             DIV(cl("lk-region-bar lk-region-section south").id(getDomId() + "-section-s"))
         ).appendTo(out);
+
+        return out;
     }
 
     protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
@@ -1252,7 +1275,7 @@ public class DataRegion extends DisplayElement
             lk("region-name", getName()). // TODO: Remove this after all tests check for the "data-" attribute instead of "lk-"
             cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
             id(getDomId()),
-            (DOM.Renderable) ret -> renderTableContent(ctx, out, showRecordSelectors, renderers, colCount)
+            (Renderable) ret -> renderTableContent(ctx, out, showRecordSelectors, renderers, colCount)
         ).appendTo(out);
 
         return out;
@@ -1279,7 +1302,7 @@ public class DataRegion extends DisplayElement
 
             if (!scripts.isEmpty())
             {
-                SCRIPT((DOM.Renderable) ret -> {
+                SCRIPT((Renderable) ret -> {
                     scripts.forEach(script -> out.write(JavaScriptFragment.unsafe(script)));
                     return ret;
                 }).appendTo(out);
@@ -1485,13 +1508,13 @@ public class DataRegion extends DisplayElement
                         ),
                         UL(
                             cl("dropdown-menu dropdown-menu-left"),
-                            (DOM.Renderable) ret -> renderNavTree(out)
+                            (Renderable) ret -> renderNavTree(out)
                         )} :
                     null
                 )
             );
         }
-        body.add((DOM.Renderable) ret -> {
+        body.add((Renderable) ret -> {
             renderers.stream()
                 .filter(renderer -> renderer.isVisible(ctx))
                 .filter(renderer -> !(renderer instanceof DetailsColumn) && !(renderer instanceof UpdateColumn))
@@ -1585,7 +1608,7 @@ public class DataRegion extends DisplayElement
             TR(
                 cl("labkey-col-total labkey-row"),
                 showRecordSelectors || detailsColumn != null || updateColumn != null ? TD(cl("labkey-selectors"), HtmlString.NBSP) : null,
-                (DOM.Renderable) app -> renderAllAggregateResults(aggregateResults, renderers, ctx, app)
+                (Renderable) app -> renderAllAggregateResults(aggregateResults, renderers, ctx, app)
             ).appendTo(out);
         }
     }
@@ -1617,7 +1640,7 @@ public class DataRegion extends DisplayElement
 
                 TD(
                     at(style, "white-space:nowrap;", align, renderer.getTextAlign()),
-                    result != null ? (DOM.Renderable) rend -> renderAggregateResults(renderer, result, ctx.getContainer(), rend) : HtmlString.NBSP
+                    result != null ? (Renderable) rend -> renderAggregateResults(renderer, result, ctx.getContainer(), rend) : HtmlString.NBSP
                 ).appendTo(app);
             }
         }
@@ -1699,7 +1722,7 @@ public class DataRegion extends DisplayElement
 
         TR(
             cl(getRowClass(ctx, rowIndex)),
-            (DOM.Renderable) ret -> {
+            (Renderable) ret -> {
                 if (showRecordSelectors || (detailsColumn != null || updateColumn != null))
                     renderActionColumn(ctx, out, rowIndex, showRecordSelectors, updateColumn, detailsColumn);
 
@@ -1941,7 +1964,7 @@ public class DataRegion extends DisplayElement
             final MutableInt rowIndex = new MutableInt(0);
 
             TABLE(
-                (DOM.Renderable) ret -> {
+                (Renderable) ret -> {
                     try
                     {
                         while (rs.next())
@@ -1956,7 +1979,7 @@ public class DataRegion extends DisplayElement
                                     continue;
 
                                 TR(
-                                    (DOM.Renderable) rend -> {
+                                    (Renderable) rend -> {
                                         renderer.renderDetailsCaptionCell(ctx, out, null);
                                         renderer.renderInputWrapperBegin(out);
                                         renderer.renderDetailsData(ctx, out);
@@ -2155,7 +2178,7 @@ public class DataRegion extends DisplayElement
 
         TR(
             cl("form-group" + (!errors.isEmpty() ? " has-error" : "")),
-            (DOM.Renderable) ret -> {
+            (Renderable) ret -> {
                 renderer.renderDetailsCaptionCell(ctx, out, null);
                 if (renderer.isEditable())
                 {
