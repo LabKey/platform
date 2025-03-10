@@ -94,7 +94,7 @@
         ExternalSourcesForm form = (ExternalSourcesForm)getModelBean();
         Directive directive = EnumUtils.getEnum(Directive.class, form.getNewDirective());
 %>
-<labkey:form method="post">
+<labkey:form method="post" name="addNewHost">
     <table>
         <tr>
             <td><label class="labkey-form-label">Directive</label></td>

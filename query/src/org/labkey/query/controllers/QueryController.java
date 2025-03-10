@@ -4411,6 +4411,11 @@ public class QueryController extends SpringActionController
 
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction) throws Exception
         {
+            return executeJson(json, commandType, allowTransaction, errors, isNestedTransaction, null);
+        }
+
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction, @Nullable Integer commandIndex) throws Exception
+        {
             JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
@@ -4473,7 +4478,7 @@ public class QueryController extends SpringActionController
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
-                        addRowAttachments(rowMap, idx);
+                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4625,23 +4630,36 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex)
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
                 for (Map.Entry<String, MultipartFile> fileEntry : getFileMap().entrySet())
                 {
-                    // allow for the fileMap key to include the row index for defining which row to attach this file to
-                    // ex: "FileField::0", "FieldField::1"
+                    // Allow for the fileMap key to include the row index, and optionally command index, for defining
+                    // which row to attach this file to
                     String fieldKey = fileEntry.getKey();
                     int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
                     if (delimIndex > -1)
                     {
-                        String fieldRowIndex = fieldKey.substring(delimIndex + 2);
-                        if (!fieldRowIndex.equals(rowIndex+""))
-                            continue;
+                        String[] parts = fileEntry.getKey().split(ROW_ATTACHMENT_INDEX_DELIM);
 
-                        fieldKey = fieldKey.substring(0, delimIndex);
+                        if (commandIndex == null)
+                        {
+                            // Single command, so we're parsing file names in the format of: FileField::0
+                            fieldKey = parts[0];
+                            String fieldRowIndex = parts[1];
+                            if (!fieldRowIndex.equals(rowIndex+"")) continue;
+                        }
+                        else
+                        {
+                            // Multi-command, so we're parsing file names in the format of: FileField::0::1
+                            fieldKey = parts[0];
+                            String fieldCommandIndex = parts[1];
+                            String fieldRowIndex = parts[2];
+                            if (!fieldCommandIndex.equals(commandIndex+"") || !fieldRowIndex.equals(rowIndex+""))
+                                continue;
+                        }
                     }
 
                     SpringAttachmentFile file = new SpringAttachmentFile(fileEntry.getValue());
@@ -4878,6 +4896,12 @@ public class QueryController extends SpringActionController
         }
 
         @Override
+        protected boolean allowRowAttachments()
+        {
+            return true;
+        }
+
+        @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
             // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more
@@ -4961,7 +4985,7 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted, i);
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;

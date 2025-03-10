@@ -41,12 +41,12 @@ public abstract class AssaySchema extends UserSchema
     @Nullable
     protected Container _targetStudy;
 
-    public AssaySchema(String name, User user, Container container, DbSchema dbSchema, @Nullable Container targetStudy)
+    public AssaySchema(String name, @NotNull User user, @NotNull Container container, DbSchema dbSchema, @Nullable Container targetStudy)
     {
         this(SchemaKey.fromParts(name), DESCR, user, container, dbSchema, targetStudy);
     }
 
-    protected AssaySchema(SchemaKey path, String description, User user, Container container, DbSchema dbSchema, @Nullable Container targetStudy)
+    protected AssaySchema(SchemaKey path, String description, @NotNull User user, @NotNull Container container, DbSchema dbSchema, @Nullable Container targetStudy)
     {
         super(path, description, user, container, dbSchema, null);
         _targetStudy = targetStudy;

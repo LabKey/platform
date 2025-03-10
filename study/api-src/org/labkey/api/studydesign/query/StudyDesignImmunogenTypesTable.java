@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 LabKey Corporation
+ * Copyright (c) 2013-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.query.studydesign;
+package org.labkey.api.studydesign.query;
 
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.study.StudySchema;
-import org.labkey.study.query.StudyQuerySchema;
 
-public class StudyDesignChallengeTypesTable extends StudyDesignLookupBaseTable
+/**
+ * User: cnathe
+ * Date: 7/22/13
+ */
+public class StudyDesignImmunogenTypesTable extends StudyDesignLookupBaseTable
 {
-    public StudyDesignChallengeTypesTable(StudyQuerySchema schema, ContainerFilter filter)
+    // TODO: this should be renamed to StudyDesignProductTypesTable
+    public StudyDesignImmunogenTypesTable(StudyDesignQuerySchema schema, ContainerFilter filter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoStudyDesignChallengeTypes(), filter);
-        setName("StudyDesignChallengeTypes");
+        super(schema, StudyDesignSchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), filter);
+        setName("StudyDesignImmunogenTypes");
     }
 }

@@ -43,6 +43,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
@@ -102,13 +103,14 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
+        OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
         initTest.initializeFolder();
         initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
         initTest.clickFolder(initTest.getFolderName()); // navigate to StudyVerifyProject/Manually Created Study
         // click button to create manual study
         initTest.clickButton("Create Study");
-        // use all of the default study settings
+        // use all the default study settings
         initTest.clickButton("Create Study");
         // populate study with one dataset, one ptid, and one visit
         initTest.createSimpleDataset();
@@ -170,6 +172,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         super.doCleanup(afterTest);
         TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
+        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Test
