@@ -1277,7 +1277,6 @@ public class DataRegion extends DisplayElement
             cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
             data("region-name", getName()).
             lk("region-name", getName()). // TODO: Remove this after all tests check for the "data-" attribute instead of "lk-"
-            cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
             id(getDomId()),
             (Renderable) ret -> renderTableContent(ctx, out, showRecordSelectors, renderers, colCount)
         ).appendTo(out);
@@ -1860,7 +1859,7 @@ public class DataRegion extends DisplayElement
             return;
 
         TD(
-            cl("labkey-selectors"),
+            cl("labkey-selectors").
             at(style, "white-space:nowrap;"),
             (Renderable) ret -> {
                 if (showRecordSelectors)
