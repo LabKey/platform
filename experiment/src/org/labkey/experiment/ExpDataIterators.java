@@ -912,6 +912,9 @@ public class ExpDataIterators
 
     static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
     {
+        if (parentObj instanceof String parentStr && parentStr.trim().isEmpty())
+            return Arrays.asList(((String) parentObj).trim()); // This is needed to remove existing lineage
+
         Stream<String> values = NameGenerator.parentNames(parentObj, fieldName, tsvWriter, errors);
         return values == null ? null : values.collect(Collectors.toList());
     }
