@@ -99,9 +99,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.Attribute.action;
 import static org.labkey.api.util.DOM.Attribute.align;
 import static org.labkey.api.util.DOM.Attribute.colspan;
+import static org.labkey.api.util.DOM.Attribute.enctype;
 import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
@@ -302,7 +305,7 @@ public class DataRegion extends DisplayElement
         _messageSuppliers.add(supplier);
     }
 
-    public void addDisplayColumn(@NotNull  DisplayColumn col)
+    public void addDisplayColumn(@NotNull DisplayColumn col)
     {
         assert null != col;
         if (null == col)
@@ -765,9 +768,8 @@ public class DataRegion extends DisplayElement
      * @param ctx The RenderContext
      * @return A new Results or the existing Results in the RenderContext or null if no READ permission.
      * @throws SQLException SQLException
-     * @throws IOException  IOException
      */
-    final public Results getResults(RenderContext ctx) throws SQLException, IOException
+    final public Results getResults(RenderContext ctx) throws SQLException
     {
         if (!hasPermission(ctx, ReadPermission.class))
             throw new UnauthorizedException();
@@ -810,7 +812,7 @@ public class DataRegion extends DisplayElement
     }
 
 
-    protected Results getResults(RenderContext ctx, boolean async) throws SQLException, IOException
+    protected Results getResults(RenderContext ctx, boolean async) throws SQLException
     {
         return ctx.getResults(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
@@ -822,7 +824,7 @@ public class DataRegion extends DisplayElement
     }
 
     @NotNull
-    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx, boolean showPaginationCount) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx, boolean showPaginationCount)
     {
         if (_aggregateResults == null)
         {
@@ -967,7 +969,7 @@ public class DataRegion extends DisplayElement
         out.write(builder);
     }
 
-    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException
     {
         if (!hasPermission(ctx, ReadPermission.class))
         {
@@ -1032,7 +1034,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderTable(RenderContext ctx, HtmlWriter out, ResultSet rs) throws IOException
+    private void renderTable(RenderContext ctx, HtmlWriter out, ResultSet rs)
     {
         // renderButtons gets passed down all the things...
         boolean renderButtons = _gridButtonBar.shouldRender(ctx);
@@ -1241,7 +1243,7 @@ public class DataRegion extends DisplayElement
             if (_aggregateRowConfig.getAggregateRowLast())
                 renderAggregatesTableRow(ctx, out, showRecordSelectors, renderers);
         }
-        catch (IOException | SQLException e)
+        catch (SQLException e)
         {
             throw new RuntimeException(e);
         }
@@ -1270,7 +1272,7 @@ public class DataRegion extends DisplayElement
 
     protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        // For now, add lk-region-name AMD data-region-name attributes for test locators. TODO: Migrate to "data-*" only.
+        // For now, add lk-region-name AND data-region-name attributes for test locators. TODO: Migrate to "data-*" only.
         TABLE(
             cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
             data("region-name", getName()).
@@ -1489,7 +1491,7 @@ public class DataRegion extends DisplayElement
     }
 
     protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
-            throws IOException, SQLException
+            throws SQLException
     {
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
@@ -1594,7 +1596,7 @@ public class DataRegion extends DisplayElement
         return out;
     }
 
-    private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws IOException
+    private void renderAggregatesTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
     {
         // Issue 51036: load totalRows count async for DataRegions
         boolean asyncTotalRows = AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS);
@@ -1684,7 +1686,7 @@ public class DataRegion extends DisplayElement
     /**
      * @return number of rows rendered
      */
-    protected int renderTableContents(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
+    protected int renderTableContents(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException
     {
         Results results = ctx.getResults();
         int rowIndex = 0;
@@ -1717,7 +1719,7 @@ public class DataRegion extends DisplayElement
 
     // Allows subclasses to do pre-row and post-row processing
     // CONSIDER: Separate as renderTableRow and renderTableRowContents?
-    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException
     {
         DisplayColumn detailsColumn = getDetailsUpdateColumn(ctx, renderers, true);
         DisplayColumn updateColumn = getDetailsUpdateColumn(ctx, renderers, false);
@@ -1759,11 +1761,11 @@ public class DataRegion extends DisplayElement
         return null;
     }
 
-    protected void renderFormBegin(RenderContext ctx, HtmlWriter out, int mode) throws IOException
+    protected void renderFormBegin(RenderContext ctx, HtmlWriter out, int mode)
     {
         List<AttributeValue> attributes = new LinkedList<>();
-        attributes.add(AttributeValue.of(DOM.Attribute.method, "post"));
-        attributes.add(AttributeValue.of(DOM.Attribute.id, getDomId() + "-form"));
+        attributes.add(AttributeValue.of(method, "post"));
+        attributes.add(AttributeValue.of(id, getDomId() + "-form"));
 
         String name = getName();
         if (name != null)
@@ -1778,20 +1780,20 @@ public class DataRegion extends DisplayElement
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
-            case MODE_DETAILS -> attributes.add(AttributeValue.of(DOM.Attribute.action, "begin"));
+            case MODE_DETAILS -> attributes.add(AttributeValue.of(action, "begin"));
             case MODE_INSERT, MODE_UPDATE ->
             {
                 if (isFileUploadForm())
                 {
-                    attributes.add(AttributeValue.of(DOM.Attribute.enctype, "multipart/form-data"));
-                    attributes.add(AttributeValue.of(DOM.Attribute.action, actionAttr));
+                    attributes.add(AttributeValue.of(enctype, "multipart/form-data"));
+                    attributes.add(AttributeValue.of(action, actionAttr));
                 }
                 else
                 {
-                    attributes.add(AttributeValue.of(DOM.Attribute.action, actionAttr));
+                    attributes.add(AttributeValue.of(action, actionAttr));
                 }
             }
-            default -> attributes.add(AttributeValue.of(DOM.Attribute.action, ""));
+            default -> attributes.add(AttributeValue.of(action, ""));
         }
 
         out.writeElementStart(DOM.Element.form, attributes);
@@ -1815,7 +1817,7 @@ public class DataRegion extends DisplayElement
         if (mode == MODE_UPDATE_MULTIPLE)
         {
             out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
-            out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
+            out.write(new InputBuilder().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
         }
     }
 
@@ -1857,18 +1859,20 @@ public class DataRegion extends DisplayElement
         if (!showRecordSelectors && updateColumn == null && detailsColumn == null)
             return;
 
-        // TODO: Switch to DOM?
+        TD(
+            cl("labkey-selectors"),
+            at(style, "white-space:nowrap;"),
+            (Renderable) ret -> {
+                if (showRecordSelectors)
+                    renderRecordSelector(ctx, out);
+                if (updateColumn != null)
+                    renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
+                if (detailsColumn != null)
+                    renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
 
-        out.write(HtmlString.unsafe("<td class=\"labkey-selectors\" nowrap>"));
-
-        if (showRecordSelectors)
-            renderRecordSelector(ctx, out);
-        if (updateColumn != null)
-            renderGridCellContents(ctx, out, updateColumn, "fa fa-pencil lk-dr-action-icon");
-        if (detailsColumn != null)
-            renderGridCellContents(ctx, out, detailsColumn, "fa fa-info-circle lk-dr-action-icon");
-
-        out.write(HtmlString.unsafe("</td>"));
+                return ret;
+            }
+        ).appendTo(out);
     }
 
     private void renderGridCellContents(RenderContext ctx, HtmlWriter out, DisplayColumn column, String iconCls)
@@ -1951,7 +1955,7 @@ public class DataRegion extends DisplayElement
         return p.hasPermission(user, perm);
     }
 
-    private void renderDetails(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
+    private void renderDetails(RenderContext ctx, HtmlWriter out) throws SQLException
     {
         if (!hasPermission(ctx, ReadPermission.class))
         {
@@ -2041,7 +2045,7 @@ public class DataRegion extends DisplayElement
         }
     }
 
-    private void renderInputForm(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderInputForm(RenderContext ctx, HtmlWriter out)
     {
         Map<String, Object> rowMap = ctx.getRow();
         //For inserts, just treat the posted strings as the rowmap
@@ -2054,7 +2058,7 @@ public class DataRegion extends DisplayElement
         renderForm(ctx, out);
     }
 
-    private void renderUpdateForm(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderUpdateForm(RenderContext ctx, HtmlWriter out)
     {
         TableViewForm viewForm = ctx.getForm();
         Map<String, Object> valueMap = ctx.getRow();
@@ -2096,7 +2100,7 @@ public class DataRegion extends DisplayElement
      * that value will be passed through, otherwise, the field is resolved as empty and it is left to the UI to convey
      * that there were multiple values available for that field.
      */
-    private void renderMultipleUpdateForm(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderMultipleUpdateForm(RenderContext ctx, HtmlWriter out)
     {
         TableViewForm viewForm = ctx.getForm();
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
@@ -2222,7 +2226,7 @@ public class DataRegion extends DisplayElement
         return errors;
     }
 
-    private void renderForm(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderForm(RenderContext ctx, HtmlWriter out)
     {
         int action = ctx.getMode();
 
@@ -2471,7 +2475,7 @@ public class DataRegion extends DisplayElement
                             {
                                 group.writeCopyableJavaScript(ctx, sw);
                             }
-                            catch (IOException e)
+                            catch (IOException e) // TODO: Get rid of this in the writeCopyableJavaScript() migration
                             {
                                 throw new RuntimeException(e);
                             }
@@ -2641,10 +2645,6 @@ public class DataRegion extends DisplayElement
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
         }
         finally
         {

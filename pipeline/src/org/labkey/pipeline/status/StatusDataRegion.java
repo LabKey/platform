@@ -61,7 +61,7 @@ public class StatusDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
+    protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException
     {
         if (_apiAction == null)
         {
@@ -75,15 +75,17 @@ public class StatusDataRegion extends DataRegion
 
         Writer oldWriter = out.unwrap();
 
+        try
+        {
         oldWriter.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">\n");
         oldWriter.write(
                 "LABKEY.requiresExt4Sandbox(function() {\n" +
-                    "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
+                        "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
                         "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
-                            "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnUrl.toString()) + ");\n" +
+                        "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnUrl.toString()) + ");\n" +
                         "LABKEY.pipeline.statusUpdateInstance.start();\n" +
-                    "});\n" +
-                "});\n");
+                        "});\n" +
+                        "});\n");
         oldWriter.write("</script>\n");
 
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
@@ -126,5 +128,10 @@ public class StatusDataRegion extends DataRegion
         super.renderTable(ctx, out);
 
         oldWriter.write("</div>");
+        }
+        catch(IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

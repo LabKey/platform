@@ -69,7 +69,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     }
 
     @Override
-    public void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException, IOException
+    public void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException
     {
         if (_expanded)
         {
@@ -126,7 +126,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         _nestedRegion.setShowPagination(false);
     }
 
-    protected void renderNestedGrid(HtmlWriter out, RenderContext ctx, ResultSet nestedRS, int rowIndex) throws IOException
+    protected void renderNestedGrid(HtmlWriter out, RenderContext ctx, ResultSet nestedRS, int rowIndex)
     {
         RenderContext nestedCtx = new RenderContext(ctx.getViewContext());
         if (_nestedFieldMap == null)

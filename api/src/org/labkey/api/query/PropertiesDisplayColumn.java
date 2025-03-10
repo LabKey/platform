@@ -149,10 +149,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             {
                 throw new RuntimeSQLException(x);
             }
-            catch (IOException x)
-            {
-                throw new RuntimeException(x);
-            }
         }
     }
 

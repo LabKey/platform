@@ -50,7 +50,7 @@ public class NestableDataRegion extends AbstractNestableDataRegion
     }
 
     @Override
-    public Results getResults(RenderContext ctx, boolean async) throws SQLException, IOException
+    public Results getResults(RenderContext ctx, boolean async) throws SQLException
     {
         List<DisplayColumn> realColumns = getDisplayColumns();
         setDisplayColumns(_allColumns);
@@ -82,7 +82,7 @@ public class NestableDataRegion extends AbstractNestableDataRegion
     }
 
     @Override
-    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+    protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException
     {
         super.renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex);
 

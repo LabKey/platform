@@ -46,13 +46,14 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers)
-            throws IOException, SQLException
+    protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException
     {
         if (_numMemberMeasures > 0)
         {
             Writer oldWriter = out.unwrap();
 
+            try
+            {
             //add a row for the column axis label if there is one
             oldWriter.write("<thead><tr>");
             renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
@@ -93,7 +94,7 @@ public class CrosstabDataRegion extends DataRegion
                     {
                         String memberCaption = currentMember.getCaption();
                         String innerCaption = renderer.getCaption(ctx);
-                        if (StringUtils.startsWith(innerCaption,memberCaption))
+                        if (StringUtils.startsWith(innerCaption, memberCaption))
                             renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
                     }
                 }
@@ -101,6 +102,11 @@ public class CrosstabDataRegion extends DataRegion
 
             //end the col dimension member header row
             oldWriter.write("</tr></thead>");
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
         //call the base class to finish rendering the headers

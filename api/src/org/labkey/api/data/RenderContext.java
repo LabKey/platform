@@ -39,7 +39,6 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -310,7 +309,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return columnInfos;
     }
 
-    public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException
     {
         ActionURL url;
         if (null != settings)
@@ -330,7 +329,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     }
 
     @NotNull
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async) throws IOException
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -536,7 +535,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         filter.addClause(clause);
     }
 
-    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException
     {
         TableSelector selector = new TableSelector(table, columns, filter, sort)
             .setJdbcCaching(getCache())  // #39888
