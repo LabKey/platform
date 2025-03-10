@@ -149,6 +149,15 @@ public class MothershipHelper extends LabKeySiteWrapper
 
     public int getLatestStackTraceId()
     {
+        Map<String, Object> lastStackTrace = getLatestStackTrace();
+        if (lastStackTrace == null)
+            return 0;
+
+        return (Integer) lastStackTrace.get(ID_COLUMN);
+    }
+
+    public @Nullable Map<String, Object> getLatestStackTrace()
+    {
         Connection connection = createDefaultConnection();
         SelectRowsCommand command = new SelectRowsCommand("mothership", "ExceptionStackTrace");
         command.addSort("LastReport", Sort.Direction.DESCENDING);
@@ -156,9 +165,9 @@ public class MothershipHelper extends LabKeySiteWrapper
         try
         {
             SelectRowsResponse response = command.execute(connection, MOTHERSHIP_PROJECT);
-            if (response.getRows().isEmpty())
-                return 0;
-            return (Integer) response.getRows().get(0).get(ID_COLUMN);
+             if (response.getRows().isEmpty())
+                 return null;
+             return response.getRows().get(0);
         }
         catch (IOException|CommandException e)
         {

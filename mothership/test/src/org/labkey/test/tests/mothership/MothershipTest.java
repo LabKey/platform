@@ -16,11 +16,13 @@
 package org.labkey.test.tests.mothership;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -29,6 +31,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.issues.InsertPage;
+import org.labkey.test.pages.mothership.ClientExceptionPage;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage;
 import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataRegion;
@@ -43,6 +46,7 @@ import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -279,6 +283,141 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         ExceptionActions.illegalState.beginAt(this);
         assertNull("Shouldn't generate an error code when exception reporting is disabled", getErrorCode());
         resetErrors();
+    }
+
+    @Test
+    public void testInlineScriptClientError() throws Exception
+    {
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
+
+        var exceptionPage = ClientExceptionPage.beginAt(this);
+        exceptionPage.clickInlineScriptError(true);
+        var url = getURL();
+        checkExpectedErrors(1);
+
+        var testException = _mothershipHelper.getLatestStackTrace();
+        var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
+        var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
+
+        if (initialStackTrace != null)
+            checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
+                    .as("expect this result to occur after the most-recent previous report")
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
+        checker().verifyEquals("Expect confirmation that the controller is mothership",
+                "mothership", rowMap.get("PageflowName"));
+        checker().verifyEquals("Expect confirmation that the action is app",
+                "clientException", rowMap.get("PageflowAction"));
+        checker().verifyEquals("Unexpected exception message",
+                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyEquals("Expect confirmation that the user is correct",
+                getCurrentUser(), rowMap.get("Username"));
+        checker().verifyEquals("expext the referring URL to be the page from which we caused this",
+                url.toString(), rowMap.get("ReferrerURL"));
+        checker().verifyEquals("Expect instance count to be the same in the page",
+                testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
+        checker().screenShotIfNewError("unexpected_record_data");
+    }
+
+    @Test
+    public void testResourceScriptClientError() throws Exception
+    {
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
+
+        var exceptionPage = ClientExceptionPage.beginAt(this);
+        exceptionPage.clickResourceScriptError(true);
+        var url = getURL();
+        checkExpectedErrors(1);
+
+        var testException = _mothershipHelper.getLatestStackTrace();
+        var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
+        var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
+
+        if (initialStackTrace != null)
+            checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
+                    .as("expect this result to occur after the most-recent previous report")
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
+        checker().verifyEquals("Expect confirmation that the controller is mothership",
+                "mothership", rowMap.get("PageflowName"));
+        checker().verifyEquals("Expect confirmation that the action is app",
+                "clientException", rowMap.get("PageflowAction"));
+        checker().verifyEquals("Unexpected exception message",
+                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyEquals("Expect confirmation that the user is correct",
+                getCurrentUser(), rowMap.get("Username"));
+        checker().verifyEquals("expext the referring URL to be the page from which we caused this",
+                url.toString(), rowMap.get("ReferrerURL"));
+        checker().verifyEquals("Expect instance count to be the same in the page",
+                testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
+        checker().screenShotIfNewError("unexpected_record_data");
+    }
+
+    @Test
+    public void testNestedResourceScriptClientError() throws Exception
+    {
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
+
+        var exceptionPage = ClientExceptionPage.beginAt(this);
+        exceptionPage.clickNestedScriptError(true);
+        var url = getURL();
+        checkExpectedErrors(1);
+
+        var testException = _mothershipHelper.getLatestStackTrace();
+        var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
+        var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
+
+        if (initialStackTrace != null)
+            checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
+                    .as("expect this result to occur after the most-recent previous report")
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
+        checker().verifyEquals("Expect confirmation that the controller is mothership",
+                "mothership", rowMap.get("PageflowName"));
+        checker().verifyEquals("Expect confirmation that the action is app",
+                "clientException", rowMap.get("PageflowAction"));
+        checker().verifyEquals("Unexpected exception message",
+                "TypeError: x is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyEquals("Expect confirmation that the user is correct",
+                getCurrentUser(), rowMap.get("Username"));
+        checker().verifyEquals("expext the referring URL to be the page from which we caused this",
+                url.toString(), rowMap.get("URL"));
+        checker().verifyEquals("Expect instance count to be the same in the page",
+                testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
+        checker().screenShotIfNewError("unexpected_record_data");
+    }
+
+    @Test
+    public void testAsyncScriptClientError() throws Exception
+    {
+        var initialStackTrace = _mothershipHelper.getLatestStackTrace();
+
+        var exceptionPage = ClientExceptionPage.beginAt(this);
+        exceptionPage.clickAsyncScriptError(true);
+        var url = getURL();
+        checkExpectedErrors(1);
+
+        var testException = _mothershipHelper.getLatestStackTrace();
+        var stackTraceDetailPage = StackTraceDetailsPage.beginAt(this, _mothershipHelper.getLatestStackTraceId());
+        var rowMap = stackTraceDetailPage.getExceptionReports().getRowDataAsMap(0);
+
+        if (initialStackTrace != null)
+            checker().wrapAssertion(()-> Assertions.assertThat((Date)testException.get("LastReport"))
+                    .as("expect this result to occur after the most-recent previous report")
+                    .isAfter((Date)initialStackTrace.get("LastReport")));
+        checker().verifyEquals("Expect confirmation that the controller is mothership",
+                "mothership", rowMap.get("PageflowName"));
+        checker().verifyEquals("Expect confirmation that the action is deepException",
+                "deepException", rowMap.get("PageflowAction"));
+        checker().verifyEquals("Unexpected exception message",
+                "TypeError: result.does is undefined", rowMap.get("ExceptionMessage"));
+        checker().verifyEquals("Expect confirmation that the user is correct",
+                getCurrentUser(), rowMap.get("Username"));
+        checker().verifyEquals("expect the referring URL to be the page from which we caused this",
+                url.toString(), rowMap.get("ReferrerURL"));
+        checker().wrapAssertion(()-> Assertions.assertThat(rowMap.get("URL"))
+                .as("expect url to be some line in deepException.js")
+                .contains("mothership/deepException.js?"));
+        checker().verifyEquals("Expect instance count to be the same in the page",
+                testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
+        checker().screenShotIfNewError("unexpected_record_data");
     }
 
     private String getErrorCode()
