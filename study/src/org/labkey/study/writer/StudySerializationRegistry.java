@@ -15,6 +15,8 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriter;
@@ -27,8 +29,8 @@ import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
-import org.labkey.study.importer.StudySecurityPolicyImporter;
 import org.labkey.study.importer.StudyQcStatesImporter;
+import org.labkey.study.importer.StudySecurityPolicyImporter;
 import org.labkey.study.importer.StudyViewsImporter;
 import org.labkey.study.importer.TopLevelStudyPropertiesImporter;
 import org.labkey.study.importer.TreatmentDataImporter;
@@ -36,13 +38,43 @@ import org.labkey.study.importer.TreatmentVisitMapImporter;
 import org.labkey.study.importer.VisitCohortAssigner;
 import org.labkey.study.importer.VisitImporter;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class StudySerializationRegistry
 {
     private static final StudySerializationRegistry INSTANCE = new StudySerializationRegistry();
+    private static final List<InternalStudyWriter> _baseInternalWriters = List.of(
+            new AssayDatasetData(),
+            new AssayDatasetDefinition(),
+            new SampleTypeDatasetData(),
+            new SampleTypeDatasetDefinition(),
+            new StudyDatasetData(),
+            new StudyDatasetDefinition(),
+            new CohortWriter(),
+            new ParticipantCommentWriter(),
+            new ParticipantGroupWriter(),
+            new ProtocolDocumentWriter(),
+            new VisitMapWriter(),
+            new StudyViewsWriter(),
+            new StudySecurityPolicyWriter()
+    );
+
+    private static final List<InternalStudyImporter> _baseInternalImporters = List.of(
+            new CohortImporter(),
+            new DatasetDefinitionImporter(),
+            new DatasetCohortAssigner(),
+            new ParticipantCommentImporter(),
+            new ParticipantGroupImporter(),
+            new ProtocolDocumentImporter(),
+            new StudyQcStatesImporter(),
+            new VisitImporter(),
+            new VisitCohortAssigner(),
+            new StudyViewsImporter(),
+            new StudySecurityPolicyImporter(),
+            new TopLevelStudyPropertiesImporter()
+    );
 
     private StudySerializationRegistry()
     {
@@ -56,25 +88,16 @@ public class StudySerializationRegistry
     // These writers are internal to study. They have access to study internals.
     public Collection<InternalStudyWriter> getInternalStudyWriters()
     {
-        // New up the writers every time since these classes can be stateful
-        return List.of(
-            new AssayDatasetData(),
-            new AssayDatasetDefinition(),
-            new SampleTypeDatasetData(),
-            new SampleTypeDatasetDefinition(),
-            new StudyDatasetData(),
-            new StudyDatasetDefinition(),
-            new AssayScheduleWriter(),
-            new CohortWriter(),
-            new ParticipantCommentWriter(),
-            new ParticipantGroupWriter(),
-            new ProtocolDocumentWriter(),
-            new TreatmentDataWriter(),
-            new VisitMapWriter(),
-            new StudyViewsWriter(),
-            new StudySecurityPolicyWriter(),
-            new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
-        );
+        List<InternalStudyWriter> writers = new ArrayList<>(_baseInternalWriters);
+
+        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        {
+            writers.add(new TreatmentDataWriter());
+            writers.add(new AssayScheduleWriter());
+        }
+        // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
+        writers.add(new StudyXmlWriter());
+        return writers;
     }
 
     // These writers are related to study and serialize into the /study subfolder of a folder archive, but are registered by other modules
@@ -85,23 +108,15 @@ public class StudySerializationRegistry
 
     public Collection<InternalStudyImporter> getInternalStudyImporters()
     {
-        return Arrays.asList(
-            new AssayScheduleImporter(),
-            new CohortImporter(),
-            new DatasetDefinitionImporter(),
-            new DatasetCohortAssigner(),
-            new ParticipantCommentImporter(),
-            new ParticipantGroupImporter(),
-            new ProtocolDocumentImporter(),
-            new StudyQcStatesImporter(),
-            new TreatmentDataImporter(),
-            new TreatmentVisitMapImporter(),
-            new VisitImporter(),
-            new VisitCohortAssigner(),
-            new StudyViewsImporter(),
-            new StudySecurityPolicyImporter(),
-            new TopLevelStudyPropertiesImporter()
-        );
+        List<InternalStudyImporter> importers = new ArrayList<>(_baseInternalImporters);
+
+        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        {
+            importers.add(new TreatmentDataImporter());
+            importers.add(new TreatmentVisitMapImporter());
+            importers.add(new AssayScheduleImporter());
+        }
+        return importers;
     }
 
     public Collection<SimpleStudyImporter> getSimpleStudyImporters()

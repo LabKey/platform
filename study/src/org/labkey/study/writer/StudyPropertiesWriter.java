@@ -19,6 +19,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.study.StudyUtils;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -36,6 +39,7 @@ import java.util.Set;
 public class StudyPropertiesWriter extends DefaultStudyDesignWriter
 {
     public static final String SCHEMA_FILENAME = "study_metadata.xml";
+    private final boolean _studyDesignEnabled = OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
 
     /**
      * Exports additional study related properties into the properties sub folder
@@ -46,20 +50,24 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, ctx.getUser());
         StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
-        studyTableNames.add(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+        if (_studyDesignEnabled)
+            studyTableNames.add(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);
         studyTableNames.add(StudyQuerySchema.PROPERTIES_TABLE_NAME);
         writeTableInfos(ctx, dir, studyTableNames, schema, projectSchema, SCHEMA_FILENAME);
 
-        studyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
-        studyTableNames.remove(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+        if (_studyDesignEnabled)
+        {
+            studyTableNames.add(StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME);
+            studyTableNames.remove(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);
+            writePersonnelData(ctx, dir);
+        }
         writeTableData(ctx, dir, studyTableNames, schema, projectSchema, null);
-        writePersonnelData(ctx, dir);
     }
 
     private void writePersonnelData(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
-        TableInfo tableInfo = schema.getTable(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+        TableInfo tableInfo = schema.getTable(StudyDesignQuerySchema.PERSONNEL_TABLE_NAME);
 
         // we want to include the user display name so we can resolve during import
         FieldKey fieldKey = FieldKey.fromParts("userId", "displayName");

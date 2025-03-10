@@ -71,6 +71,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -97,6 +98,12 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
+import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
+import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
+import org.labkey.api.studydesign.query.StudyProductDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -168,13 +175,8 @@ import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.QueryDatasetQueryChangeListener;
-import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
@@ -267,7 +269,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
-        PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
 
         // specimen-related domain kinds
         PropertyService.get().registerDomainKind(new AdditiveTypeDomainKind());
@@ -284,6 +285,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new StudyProductAntigenDomainKind());
         PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
         PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
+        PropertyService.get().registerDomainKind(new StudyPersonnelDomainKind());
 
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
@@ -523,24 +525,27 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     .count();
                 metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
 
-                // Count the studies that use products and treatments
-                MutableInt hasProducts = new MutableInt(0);
-                MutableInt hasTreatments = new MutableInt(0);
+                if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+                {
+                    // Count the studies that use products and treatments
+                    MutableInt hasProducts = new MutableInt(0);
+                    MutableInt hasTreatments = new MutableInt(0);
 
-                allStudies.stream()
-                    .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                    .forEach(schema->{
-                        TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
-                        if (new TableSelector(products).exists())
-                            hasProducts.increment();
+                    allStudies.stream()
+                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                            .forEach(schema->{
+                                TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
+                                if (new TableSelector(products).exists())
+                                    hasProducts.increment();
 
-                        TableInfo treatments = schema.getTable(StudyQuerySchema.TREATMENT_TABLE_NAME);
-                        if (new TableSelector(treatments).exists())
-                            hasTreatments.increment();
-                    });
+                                TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
+                                if (new TableSelector(treatments).exists())
+                                    hasTreatments.increment();
+                            });
 
-                metric.put("studyProducts", hasProducts.intValue());
-                metric.put("studyTreatments", hasTreatments.intValue());
+                    metric.put("studyProducts", hasProducts.intValue());
+                    metric.put("studyTreatments", hasTreatments.intValue());
+                }
 
                 return metric;
             });
@@ -768,17 +773,32 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return Set.of(
-            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-            ParticipantGroupManager.ParticipantGroupTestCase.class,
-            StudyImpl.ProtocolDocumentTestCase.class,
-            StudyManager.AssayScheduleTestCase.class,
-            StudyManager.StudySnapshotTestCase.class,
-            StudyManager.VisitCreationTestCase.class,
-            StudyModule.TestCase.class,
-            TreatmentManager.TreatmentDataTestCase.class,
-            VisitImpl.TestCase.class
-        );
+        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        {
+            return Set.of(
+                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                    ParticipantGroupManager.ParticipantGroupTestCase.class,
+                    StudyImpl.ProtocolDocumentTestCase.class,
+                    StudyManager.AssayScheduleTestCase.class,
+                    StudyManager.StudySnapshotTestCase.class,
+                    StudyManager.VisitCreationTestCase.class,
+                    StudyModule.TestCase.class,
+                    TreatmentManager.TreatmentDataTestCase.class,
+                    VisitImpl.TestCase.class
+            );
+        }
+        else
+        {
+            return Set.of(
+                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                    ParticipantGroupManager.ParticipantGroupTestCase.class,
+                    StudyImpl.ProtocolDocumentTestCase.class,
+                    StudyManager.StudySnapshotTestCase.class,
+                    StudyManager.VisitCreationTestCase.class,
+                    StudyModule.TestCase.class,
+                    VisitImpl.TestCase.class
+            );
+        }
     }
 
     @Override
