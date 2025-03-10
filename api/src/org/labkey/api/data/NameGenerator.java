@@ -92,8 +92,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.data.NameGenerator.NameGenerationExpression.findFirstOpenOrCloseTag;
+import static org.labkey.api.data.NameGenerator.State.toFieldKeyMap;
 import static org.labkey.api.exp.api.ExpRunItem.INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALIAS_PREFIX;
 import static org.labkey.api.util.SubstitutionFormat.dailySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.monthlySampleCount;
 import static org.labkey.api.util.SubstitutionFormat.weeklySampleCount;
@@ -265,8 +269,8 @@ public class NameGenerator
     // extracted from name expression after parsing
     private ExpressionSummary _expressionSummary;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
-    private Map<String, List<String>> _expParentLookupFields = new CaseInsensitiveHashMap<>();
-    private Map<String/*part field key*/, NameExpressionAncestorPartOption> _partAncestorOptions;
+    private Map<FieldKey, List<String>> _expParentLookupFields = new HashMap<>();
+    private Map<FieldKey, NameExpressionAncestorPartOption> _partAncestorOptions;
 
     private final Map<String, ExpSampleType> _sampleTypes = new HashMap<>();
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
@@ -716,7 +720,7 @@ public class NameGenerator
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            boolean likelyAlreadyQuoted = valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r");
+            boolean likelyAlreadyQuoted = valueStr.contains(",") || valueStr.contains("\n") || valueStr.contains("\r") || (valueStr.startsWith("\"") && valueStr.endsWith("\""));
             String quotedStr = likelyAlreadyQuoted ? valueStr : tsvWriter.quoteValue(valueStr); // if value contains comma, no need to quote again
             try (TabLoader tabLoader = new TabLoader(quotedStr))
             {
@@ -1010,6 +1014,24 @@ public class NameGenerator
         return pt;
     }
 
+    private Map<String, FieldKey> getParentImportAliasFieldKeys(@Nullable Map<String, String> parentImportAliases)
+    {
+        if (parentImportAliases == null)
+            return null;
+
+        Map<String, FieldKey> parentImportAliasFieldKeys = new CaseInsensitiveHashMap<>();
+        for (Map.Entry<String, String> aliasField : parentImportAliases.entrySet())
+        {
+            String alias = aliasField.getKey();
+            String dataType = aliasField.getValue();
+            boolean isParentSamples = dataType.toLowerCase().startsWith(MATERIAL_INPUTS_ALIAS_PREFIX.toLowerCase());
+            String prefix = isParentSamples ? MATERIAL_INPUTS : DATA_INPUTS;
+            String dataTypeName = dataType.substring(prefix.length() + 1);
+            parentImportAliasFieldKeys.put(alias, FieldKey.fromParts(prefix, dataTypeName));
+        }
+        return parentImportAliasFieldKeys;
+    }
+
     // Inspect the expression looking for:
     //   (a) any sample counter formats bound to a column, e.g. ${column:dailySampleCount}
     //   (b) any parent input tokens
@@ -1018,6 +1040,7 @@ public class NameGenerator
     {
         assert _parsedNameExpression != null;
 
+        Map<String, FieldKey> importAliasFieldKeys = getParentImportAliasFieldKeys(importAliases);
         boolean hasDateBasedSampleCounterFormat = false;
         boolean hasParentInputs = false;
         boolean hasParentLookup = false;
@@ -1025,7 +1048,7 @@ public class NameGenerator
         boolean hasProjectSampleCounter = false;
         boolean hasProjectSampleRootCounter = false;
         List<FieldKey> lookups = new ArrayList<>();
-        Map<String, List<String>> parentLookupFields = new CaseInsensitiveHashMap<>();
+        Map<FieldKey, List<String>> parentLookupFields = new HashMap<>();
         Set<String> substitutionValues = new CaseInsensitiveHashSet();
         for (SubstitutionValue value : SubstitutionValue.values())
         {
@@ -1044,16 +1067,16 @@ public class NameGenerator
         if (_validateSyntax)
         {
             previewCtx.putAll(SubstitutionValue.getPreviewMap());
-            if (importAliases != null)
+            if (importAliasFieldKeys != null)
             {
-                for (String alias : importAliases.keySet())
+                for (String alias : importAliasFieldKeys.keySet())
                 {
                     previewCtx.put(alias, SubstitutionValue.Inputs.getPreviewValue());
                 }
             }
         }
 
-        Map<String, NameExpressionAncestorPartOption> partAncestorOptions = new HashMap<>();
+        Map<FieldKey, NameExpressionAncestorPartOption> partAncestorOptions = new HashMap<>();
 
         Map<String, String> dataClassLSIDs = new CaseInsensitiveHashMap<>();
         Map<String, String> dataClassNames = new CaseInsensitiveHashMap<>();
@@ -1105,9 +1128,9 @@ public class NameGenerator
                         continue;
                     List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = null;
                     NameExpressionAncestorPartOption ancestorPartOption = null;
-                    if (partAncestorOptions.containsKey(fkTok.encode()))
+                    if (partAncestorOptions.containsKey(fkTok))
                     {
-                        ancestorPartOption = partAncestorOptions.get(fkTok.encode());
+                        ancestorPartOption = partAncestorOptions.get(fkTok);
                         ancestorPaths = ancestorPartOption.ancestorPaths();
                     }
 
@@ -1165,7 +1188,7 @@ public class NameGenerator
                     if (isParentLookup || isAncestorSearch)
                     {
                         String alias = fieldParts.get(0);
-                        boolean isParentAlias = importAliases != null && importAliases.containsKey(isAncestorSearch ? alias.substring(1) : alias);
+                        boolean isParentAlias = importAliasFieldKeys != null && importAliasFieldKeys.containsKey(isAncestorSearch ? alias.substring(1) : alias);
 
                         Object lookupValuePreview = null;
                         hasParentLookup = true;
@@ -1173,12 +1196,11 @@ public class NameGenerator
                         {
                             String lookupField = fieldParts.get(1);
                             // alias/lookup
-                            String dataTypeToken = importAliases.get(alias);
+                            FieldKey parentFieldKey = importAliasFieldKeys.get(alias);
                             if (!isAncestorSearch)
-                                parentLookupFields.computeIfAbsent(dataTypeToken, (s) -> new ArrayList<>()).add(fieldParts.get(1));
+                                parentLookupFields.computeIfAbsent(parentFieldKey, (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
-                            String[] inputParts = dataTypeToken.split("/", 2);
-                            lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, inputParts[0], inputParts[1], ancestorPartOption, lookupField, user, dataClassNames, sampleTypeNames);
+                            lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, parentFieldKey.getParent().getName(), parentFieldKey.getName(), ancestorPartOption, lookupField, user, dataClassNames, sampleTypeNames);
                         }
                         else if (!isParentAlias && fieldParts.size() <= 3)
                         {
@@ -1186,7 +1208,7 @@ public class NameGenerator
                             {
                                 // Inputs/lookup, MaterialInputs/lookup, DataInputs/lookup, MaterialInputs/SampleType1
                                 if (!isAncestorSearch)
-                                    parentLookupFields.computeIfAbsent(fieldParts.get(0), (s) -> new ArrayList<>()).add(fieldParts.get(1));
+                                    parentLookupFields.computeIfAbsent(FieldKey.fromParts(fieldParts.get(0)), (s) -> new ArrayList<>()).add(fieldParts.get(1));
 
                                 lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), null, ancestorPartOption, fieldParts.get(1), user, dataClassNames, sampleTypeNames);
                             }
@@ -1194,7 +1216,7 @@ public class NameGenerator
                             {
                                 // MaterialInputs/SampleType/lookup, DataInputs/DataClass/lookup
                                 if (!isAncestorSearch)
-                                    parentLookupFields.computeIfAbsent(fieldParts.get(0) + "/" + fieldParts.get(1), (s) -> new ArrayList<>()).add(fieldParts.get(2));
+                                    parentLookupFields.computeIfAbsent(FieldKey.fromParts(fieldParts.get(0), fieldParts.get(1)), (s) -> new ArrayList<>()).add(fieldParts.get(2));
 
                                 lookupValuePreview = getParentLookupTokenPreview(_currentDataTypeName, fkTok, fieldParts.get(0), fieldParts.get(1), ancestorPartOption, fieldParts.get(2), user, dataClassNames, sampleTypeNames);
                             }
@@ -1378,7 +1400,7 @@ public class NameGenerator
             _previewName = _parsedNameExpression.eval(previewCtx);
     }
 
-    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs, @Nullable Map<String, String> importAliases, User user)
+    private List<String> processFieldParts(FieldKey fkTok, Map<FieldKey, NameExpressionAncestorPartOption> partAncestorOptions, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs, @Nullable Map<String, String> importAliases, User user)
     {
         List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = new ArrayList<>();
         List<String> allFieldParts = fkTok.getParts();
@@ -1424,7 +1446,7 @@ public class NameGenerator
             {
                 String dataTypeLsid = isMaterialAncestor ? sampleTypeLSIDs.get(typeStr) : dataClassLSIDs.get(typeStr);
                 Pair<ExpLineageOptions.LineageExpType, String> ancestorType = new Pair<>(isMaterialAncestor ? ExpLineageOptions.LineageExpType.Material : ExpLineageOptions.LineageExpType.Data, dataTypeLsid);
-                partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, null, ancestorType, null, fieldParts.get(fieldParts.size() - 1)));
+                partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, null, ancestorType, null, fieldParts.get(fieldParts.size() - 1)));
             }
             else
             {
@@ -1500,7 +1522,7 @@ public class NameGenerator
                 parentTypeName = parentParts.get(1);
             }
 
-            partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, parentTypeName, null, ancestorPaths, allFieldParts.get(allFieldParts.size() - 1)));
+            partAncestorOptions.put(fkTok, new NameExpressionAncestorPartOption(options, parentTypeName, null, ancestorPaths, allFieldParts.get(allFieldParts.size() - 1)));
         }
 
         return fieldParts;
@@ -1849,7 +1871,7 @@ public class NameGenerator
             }
 
             // Add extra context variables
-            Map<String, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps);
+            Map<FieldKey, Object> ctx = additionalContext(rowMap, parentDatas, parentSamples, sampleCounts, extraProps);
 
             // allow using alternative expression for evaluation.
             // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
@@ -1922,20 +1944,20 @@ public class NameGenerator
 
         private void addParentLookupValues(String parentTypeName,
                                            boolean isMaterialParent,
-                                           @Nullable Map<String, String> parentImportAliases,
+                                           @Nullable Map<String, FieldKey> parentImportAliases,
                                            ExpObject parentObject,
-                                           Map<String, ArrayList<Object>> inputLookupValues)
+                                           Map<FieldKey, ArrayList<Object>> inputLookupValues)
         {
             String inputType = isMaterialParent ? ExpMaterial.MATERIAL_INPUT_PARENT : ExpData.DATA_INPUT_PARENT;
-            String inputCol = inputType + "/" + parentTypeName;
+            FieldKey inputFK = FieldKey.fromParts(inputType, parentTypeName);
 
             Set<String> fieldNames = new HashSet<>();
-            if (_expParentLookupFields.containsKey(inputCol))
-                fieldNames.addAll(_expParentLookupFields.get(inputCol));
-            if (_expParentLookupFields.containsKey(inputType))
-                fieldNames.addAll(_expParentLookupFields.get(inputType));
-            if (_expParentLookupFields.containsKey(INPUT_PARENT))
-                fieldNames.addAll(_expParentLookupFields.get(INPUT_PARENT));
+            if (_expParentLookupFields.containsKey(inputFK))
+                fieldNames.addAll(_expParentLookupFields.get(inputFK));
+            if (_expParentLookupFields.containsKey(FieldKey.fromParts(inputType)))
+                fieldNames.addAll(_expParentLookupFields.get(FieldKey.fromParts(inputType)));
+            if (_expParentLookupFields.containsKey(FieldKey.fromParts(INPUT_PARENT)))
+                fieldNames.addAll(_expParentLookupFields.get(FieldKey.fromParts(INPUT_PARENT)));
 
             for (String fieldName : fieldNames)
             {
@@ -1944,7 +1966,7 @@ public class NameGenerator
                     continue;
 
                 // add to Input/<LookupField>
-                inputLookupValues.computeIfAbsent(INPUT_PARENT + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                inputLookupValues.computeIfAbsent(FieldKey.fromParts(INPUT_PARENT, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
 
                 // add to importAlias/<LookupField>
                 if (parentImportAliases != null)
@@ -1952,22 +1974,22 @@ public class NameGenerator
                     parentImportAliases
                             .entrySet()
                             .stream()
-                            .filter(entry -> inputCol.equalsIgnoreCase(entry.getValue()))
-                            .forEach(entry -> inputLookupValues.computeIfAbsent(entry.getKey() + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue));
+                            .filter(entry -> inputFK.equals(entry.getValue()))
+                            .forEach(entry -> inputLookupValues.computeIfAbsent(FieldKey.fromParts(entry.getKey(), fieldName), (s) -> new ArrayList<>()).add(lookupValue));
                 }
 
                 // add to <Type>Inputs/<LookupField>
-                inputLookupValues.computeIfAbsent(inputType + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
                 // add to <Type>Inputs/<TypeName>/<LookupField>
-                inputLookupValues.computeIfAbsent(inputCol + "/" + fieldName, (s) -> new ArrayList<>()).add(lookupValue);
+                inputLookupValues.computeIfAbsent(FieldKey.fromParts(inputType, parentTypeName, fieldName), (s) -> new ArrayList<>()).add(lookupValue);
             }
         }
 
-        private void addAncestorLookupValues(ExpRunItem parentObject, Map<String, ArrayList<Object>> inputLookupValues)
+        private void addAncestorLookupValues(ExpRunItem parentObject, Map<FieldKey, ArrayList<Object>> inputLookupValues)
         {
             String parentLsid = parentObject.getLSID();
 
-            for (String ancestorFieldKey : _partAncestorOptions.keySet())
+            for (FieldKey ancestorFieldKey : _partAncestorOptions.keySet())
             {
                 NameExpressionAncestorPartOption ancestorOptions = _partAncestorOptions.get(ancestorFieldKey);
                 if (ancestorOptions != null)
@@ -1986,7 +2008,7 @@ public class NameGenerator
                                 continue;
                         }
                     }
-                    String ancestorKey = ancestorFieldKey + "-" + parentObject.getObjectId();
+                    String ancestorKey = ancestorFieldKey.encode() + "-" + parentObject.getObjectId();
 
                     ArrayList<Object> ancestorLookupValues = new ArrayList<>();
 
@@ -2054,28 +2076,28 @@ public class NameGenerator
         private void addParentLookupContext(String parentTypeName/* already decoded */,
                                             String parentName,
                                             boolean isMaterialParent,
-                                            @Nullable Map<String, String> parentImportAliases,
-                                            Map<String, ArrayList<Object>> inputLookupValues)
+                                            @Nullable Map<String, FieldKey> parentImportAliases,
+                                            Map<FieldKey, ArrayList<Object>> inputLookupValues)
         {
             if (!_expressionSummary.hasParentLookup || StringUtils.isEmpty(parentTypeName) || StringUtils.isEmpty(parentName))
                 return;
 
-            boolean hasTypeLookup = _expParentLookupFields.containsKey(INPUT_PARENT);
+            boolean hasTypeLookup = _expParentLookupFields.containsKey(FieldKey.fromParts(INPUT_PARENT));
 
             if (!hasTypeLookup)
             {
                 if (isMaterialParent)
                 {
-                    if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT))
+                    if (_expParentLookupFields.containsKey(FieldKey.fromParts(ExpMaterial.MATERIAL_INPUT_PARENT)))
                         hasTypeLookup = true;
-                    else if (_expParentLookupFields.containsKey(ExpMaterial.MATERIAL_INPUT_PARENT + "/" + parentTypeName))
+                    else if (_expParentLookupFields.containsKey(FieldKey.fromParts(ExpMaterial.MATERIAL_INPUT_PARENT, parentTypeName)))
                         hasTypeLookup = true;
                 }
                 else
                 {
-                    if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT))
+                    if (_expParentLookupFields.containsKey(FieldKey.fromParts(ExpData.DATA_INPUT_PARENT)))
                         hasTypeLookup = true;
-                    else if (_expParentLookupFields.containsKey(ExpData.DATA_INPUT_PARENT + "/" + parentTypeName))
+                    else if (_expParentLookupFields.containsKey(FieldKey.fromParts(ExpData.DATA_INPUT_PARENT, parentTypeName)))
                         hasTypeLookup = true;
                 }
             }
@@ -2108,24 +2130,33 @@ public class NameGenerator
             }
         }
 
-        private Map<String, Object> additionalContext(@NotNull Map<String, Object> rowMap,
+        public static <T> Map<FieldKey, T> toFieldKeyMap(Map<String, T> ctx)
+        {
+            Map<FieldKey, T> fieldKeyCtx = new HashMap<>();
+            for (Map.Entry<String, T> entry : ctx.entrySet())
+                fieldKeyCtx.put(FieldKey.fromParts(entry.getKey()) /*always assume single part*/, entry.getValue());
+            return fieldKeyCtx;
+        }
+
+        private Map<FieldKey, Object> additionalContext(@NotNull Map<String, Object> rowMap,
                                                       Set<ExpData> parentDatas,
                                                       Set<ExpMaterial> parentSamples,
                                                       @Nullable Map<String, Long> sampleCounts,
                                                       @Nullable Map<String, Object> extraProps)
         {
-            Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
-            ctx.putAll(_batchExpressionContext);
-            ctx.put("_rowNumber", _rowNumber);
-            ctx.put("RandomId", StringUtilsLabKey.getUniquifier(4));
+            Map<FieldKey, Object> ctx = new HashMap<>();
+            ctx.putAll(toFieldKeyMap(_batchExpressionContext));
+            ctx.put(FieldKey.fromParts("_rowNumber"), _rowNumber);
+            ctx.put(FieldKey.fromParts("RandomId"), StringUtilsLabKey.getUniquifier(4));
             if (sampleCounts != null)
-                ctx.putAll(sampleCounts);
+                ctx.putAll(toFieldKeyMap(sampleCounts));
             if (extraProps != null)
-                ctx.putAll(extraProps);
-            ctx.putAll(rowMap);
-            if (!ctx.containsKey("container") && _container != null)
-                ctx.put("container", _container.getName());
+                ctx.putAll(toFieldKeyMap(extraProps));
+            ctx.putAll(toFieldKeyMap(rowMap));
+            if (!ctx.containsKey(FieldKey.fromParts("container")) && _container != null)
+                ctx.put(FieldKey.fromParts("container"), _container.getName());
 
+            // TODO: is this still applicable?
             // UploadSamplesHelper uses propertyURIs in the rowMap -- add short column names to the map
             if (_parentTable != null)
             {
@@ -2133,29 +2164,29 @@ public class NameGenerator
                 {
                    String propURI = col.getPropertyURI();
                    if (rowMap.containsKey(propURI))
-                       ctx.put(col.getName(), rowMap.get(propURI));
+                       ctx.put(FieldKey.fromParts(col.getName()), rowMap.get(propURI));
                 }
             }
 
             // If needed, add the parent names to the replacement map
             if (_expressionSummary.hasParentLookup || _expressionSummary.hasParentInputs)
             {
-                Map<String, Set<String>> inputs = new HashMap<>();
-                Map<String, ArrayList<Object>> inputLookupValues = new CaseInsensitiveHashMap<>();
+                Map<FieldKey, Set<String>> inputs = new HashMap<>();
+                Map<FieldKey, ArrayList<Object>> inputLookupValues = new HashMap<>();
 
-                inputs.put(INPUT_PARENT, new LinkedHashSet<>());
-                inputs.put(ExpData.DATA_INPUT_PARENT, new LinkedHashSet<>());
-                inputs.put(ExpMaterial.MATERIAL_INPUT_PARENT, new LinkedHashSet<>());
+                inputs.put(FieldKey.fromParts(INPUT_PARENT), new LinkedHashSet<>());
+                inputs.put(FieldKey.fromParts(ExpData.DATA_INPUT_PARENT), new LinkedHashSet<>());
+                inputs.put(FieldKey.fromParts(ExpMaterial.MATERIAL_INPUT_PARENT), new LinkedHashSet<>());
 
-                Map<String, String> parentImportAliases = (Map<String, String>) ctx.get(PARENT_IMPORT_ALIAS_MAP_PROP);
+                Map<String, FieldKey> parentImportAliasFieldKeys = getParentImportAliasFieldKeys((Map<String, String>) ctx.get(FieldKey.fromParts(PARENT_IMPORT_ALIAS_MAP_PROP)));
 
                 if (parentDatas != null)
                 {
                     if (_expressionSummary.hasParentInputs)
                     {
                         parentDatas.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
-                            inputs.get(INPUT_PARENT).add(parentName);
-                            inputs.get(ExpData.DATA_INPUT_PARENT).add(parentName);
+                            inputs.get(FieldKey.fromParts(INPUT_PARENT)).add(parentName);
+                            inputs.get(FieldKey.fromParts(ExpData.DATA_INPUT_PARENT)).add(parentName);
                         });
                     }
 
@@ -2163,7 +2194,7 @@ public class NameGenerator
                     {
                         for (ExpData parentObject : parentDatas)
                         {
-                            addParentLookupValues(parentObject.getDataClass(_user).getName(), false, parentImportAliases, parentObject, inputLookupValues);
+                            addParentLookupValues(parentObject.getDataClass(_user).getName(), false, parentImportAliasFieldKeys, parentObject, inputLookupValues);
                             addAncestorLookupValues(parentObject, inputLookupValues);
                         }
                     }
@@ -2174,15 +2205,15 @@ public class NameGenerator
                     if (_expressionSummary.hasParentInputs)
                     {
                         parentSamples.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
-                            inputs.get(INPUT_PARENT).add(parentName);
-                            inputs.get(ExpMaterial.MATERIAL_INPUT_PARENT).add(parentName);
+                            inputs.get(FieldKey.fromParts(INPUT_PARENT)).add(parentName);
+                            inputs.get(FieldKey.fromParts(ExpMaterial.MATERIAL_INPUT_PARENT)).add(parentName);
                         });
                     }
                     if (_expressionSummary.hasParentLookup)
                     {
                         for (ExpMaterial parentObject : parentSamples)
                         {
-                            addParentLookupValues(parentObject.getSampleType().getName(), true, parentImportAliases, parentObject, inputLookupValues);
+                            addParentLookupValues(parentObject.getSampleType().getName(), true, parentImportAliasFieldKeys, parentObject, inputLookupValues);
                             addAncestorLookupValues(parentObject, inputLookupValues);
                         }
                     }
@@ -2195,13 +2226,13 @@ public class NameGenerator
                         continue;
 
                     if (_expressionSummary.hasParentInputs)
-                        addInputs(colName, value, inputs, parentImportAliases);
+                        addInputs(colName, value, inputs, parentImportAliasFieldKeys);
                     if (_expressionSummary.hasParentLookup)
-                        addParentLookupInput(colName, value, parentImportAliases, inputLookupValues);
+                        addParentLookupInput(colName, value, parentImportAliasFieldKeys, inputLookupValues);
                 }
 
                 // if a single input or lookup is found, return the object, not the list
-                Map<String, Object> inputValues = new HashMap<>();
+                Map<FieldKey, Object> inputValues = new HashMap<>();
                 inputs.forEach((key, value) -> {
                     Object inputValue = value;
                     if (value.size() == 1)
@@ -2212,7 +2243,7 @@ public class NameGenerator
                 });
                 ctx.putAll(inputValues);
 
-                Map<String, Object> lookupValues = new HashMap<>();
+                Map<FieldKey, Object> lookupValues = new HashMap<>();
                 inputLookupValues.forEach((key, value) -> lookupValues.put(key, value.size() > 1 ? value : (value.size() == 1 ? value.get(0) : null)));
                 ctx.putAll(lookupValues);
             }
@@ -2225,8 +2256,9 @@ public class NameGenerator
                     FieldKey fieldKey = pair.getKey();
                     TableInfo lookupTable = pair.getValue();
 
-                    String rootName = fieldKey.getRootName();
-                    Object rootValue = ctx.get(rootName);
+                    FieldKey rootFieldKey = fieldKey.getRootFieldKey();
+                    String rootName = rootFieldKey.getName();
+                    Object rootValue = ctx.get(rootFieldKey);
                     if (rootValue != null)
                     {
                         List<ColumnInfo> pkCols = lookupTable.getPkColumns();
@@ -2278,7 +2310,7 @@ public class NameGenerator
                             return null;
                         });
 
-                        ctx.put(fieldKey.toString(), value);
+                        ctx.put(fieldKey, value);
                     }
                 }
             }
@@ -2288,21 +2320,35 @@ public class NameGenerator
 
         private void addParentLookupInput(String colName,
                                           Object value,
-                                          @Nullable Map<String, String> parentImportAliases,
-                                          Map<String, ArrayList<Object>> inputLookupValues)
+                                          @Nullable Map<String, FieldKey> parentImportAliases,
+                                          Map<FieldKey, ArrayList<Object>> inputLookupValues)
         {
-            String[] parts = colName.split("/", 2);
+            String prefix = null;
+            String dataType = null;
             if (parentImportAliases != null && parentImportAliases.containsKey(colName))
-                parts = parentImportAliases.get(colName).split("/", 2);
-
-            if (parts.length == 2)
             {
-                boolean isMaterialParent = parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
-                boolean isDataParent = parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
+                FieldKey aliasField = parentImportAliases.get(colName);
+                prefix = aliasField.getParent().getName();
+                dataType = aliasField.getName();
+            }
+            else
+            {
+                String[] parts = colName.split("/", 2);
+                if (parts.length == 2)
+                {
+                    prefix = parts[0];
+                    dataType = QueryKey.decodePart(parts[1]);
+                }
+            }
+
+            if (prefix != null && dataType != null)
+            {
+                boolean isMaterialParent = prefix.equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT);
+                boolean isDataParent = prefix.equalsIgnoreCase(ExpData.DATA_INPUT_PARENT);
                 if (isMaterialParent || isDataParent)
                 {
                     for (String parent : parentNames(value, colName))
-                        addParentLookupContext(QueryKey.decodePart(parts[1]), parent, isMaterialParent, parentImportAliases, inputLookupValues);
+                        addParentLookupContext(dataType, parent, isMaterialParent, parentImportAliases, inputLookupValues);
                 }
             }
         }
@@ -2314,46 +2360,57 @@ public class NameGenerator
 
         private void addInputs(String colName,
                                Object value,
-                               Map<String, Set<String>> inputs,
-                               @Nullable Map<String, String> parentImportAliases)
+                               Map<FieldKey, Set<String>> inputs,
+                               @Nullable Map<String, FieldKey> parentImportAliases)
         {
             String[] parts = colName.split("/", 2);
+            String prefix = null;
+            String decodedDataType = null;
             if (parts.length == 1 && parentImportAliases != null && parentImportAliases.containsKey(colName))
-                parts = parentImportAliases.get(colName).split("/", 2);
+            {
+                FieldKey aliasField = parentImportAliases.get(colName);
+                prefix = aliasField.getParent().getName();
+                decodedDataType = aliasField.getName();
+            }
+            else if (parts.length == 2)
+            {
+                prefix = parts[0];
+                decodedDataType = QueryKey.decodePart(parts[1]);  // data might come in as encoded or decoded
+            }
 
-            if (parts.length == 2)
+            if (prefix != null && decodedDataType != null)
             {
                 String inputsCategory = null;
-                if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                if (prefix.equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                     inputsCategory = ExpData.DATA_INPUT_PARENT;
-                else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                else if (prefix.equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                     inputsCategory = ExpMaterial.MATERIAL_INPUT_PARENT;
+
                 if (inputsCategory != null)
                 {
-                    String dataType = parts[1];
-                    String decodedDataType = QueryKey.decodePart(dataType); // data might come in as encoded or decoded
+                    FieldKey inputField = FieldKey.fromParts(prefix, decodedDataType);
                     Collection<String> parents = parentNames(value, colName);
-                    inputs.get(INPUT_PARENT).addAll(parents);
-                    inputs.get(inputsCategory).addAll(parents);
+                    inputs.get(FieldKey.fromParts(INPUT_PARENT)).addAll(parents);
+                    inputs.get(FieldKey.fromParts(inputsCategory)).addAll(parents);
 
                     Set<String> dataTypeAltNames = new HashSet<>();
                     dataTypeAltNames.add(decodedDataType);
                     dataTypeAltNames.add(QueryKey.encodePart(decodedDataType)); // add encoded form in case the original parents column in as encoded but parentValues needs to be updated (for example, strip quotes for comma)
                     for (String dataTypeAltName : dataTypeAltNames)
                     {
-                        inputs.computeIfAbsent(INPUT_PARENT + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
+                        inputs.computeIfAbsent(FieldKey.fromParts(INPUT_PARENT, dataTypeAltName),  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
                         if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
-                            inputs.computeIfAbsent(parts[0] + "/" + dataTypeAltName,  (s) -> new LinkedHashSet<>()).addAll(parents);
+                            inputs.computeIfAbsent(FieldKey.fromParts(parts[0], dataTypeAltName),  (s) -> new LinkedHashSet<>()).addAll(parents);
                     }
 
                     // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
                     if (parentImportAliases != null)
                     {
                         if (parentImportAliases.containsKey(colName))
-                            inputs.computeIfAbsent(colName,  (s) -> new LinkedHashSet<>()).addAll(parents);
-                        Optional<Map.Entry<String, String>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(colName)).findFirst();
+                            inputs.computeIfAbsent(inputField,  (s) -> new LinkedHashSet<>()).addAll(parents);
+                        Optional<Map.Entry<String, FieldKey>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equals(inputField)).findFirst();
                         aliasEntry.ifPresent(entry -> {
-                            inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
+                            inputs.computeIfAbsent(FieldKey.fromParts(entry.getKey()),  (s) -> new LinkedHashSet<>()).addAll(parents);
                         });
                     }
                 }
@@ -2803,14 +2860,17 @@ public class NameGenerator
             Date d = new GregorianCalendar(2011, 11, 3, 8, 30, 15).getTime();
             java.sql.Date donly = new java.sql.Date(d.getTime());
             Time t = new Time(d.getTime());
-            Map<Object, Object> m = new HashMap<>();
+            Map<String, Object> m = new HashMap<>();
             m.put("d", d);
             m.put("donly", donly);
             m.put("t", t);
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
 
             {
                 StringExpression se = NameGenerationExpression.create("${d}", false);
                 String s = se.eval(m);
+                assertEquals("2011-12-03 08:30:15", s);
+                s = se.eval(fm);
                 assertEquals("2011-12-03 08:30:15", s);
             }
 
@@ -2818,11 +2878,15 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:date}", false);
                 String s = se.eval(m);
                 assertEquals("20111203", s);
+                s = se.eval(fm);
+                assertEquals("20111203", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:date('yy-MM-dd')}", false);
                 String s = se.eval(m);
+                assertEquals("11-12-03", s);
+                s = se.eval(fm);
                 assertEquals("11-12-03", s);
             }
 
@@ -2830,11 +2894,15 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:date('& yy-MM-dd'):htmlEncode}", false);
                 String s = se.eval(m);
                 assertEquals("&amp; 11-12-03", s);
+                s = se.eval(fm);
+                assertEquals("&amp; 11-12-03", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:date('ISO_ORDINAL_DATE')}", false);
                 String s = se.eval(m);
+                assertEquals("2011-337", s);
+                s = se.eval(fm);
                 assertEquals("2011-337", s);
             }
 
@@ -2843,11 +2911,15 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:date('yyy-MMMMM-dd')}", false);
                 String s = se.eval(m);
                 assertEquals("2011-D-03", s);
+                s = se.eval(fm);
+                assertEquals("2011-D-03", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${donly}", false);
                 String s = se.eval(m);
+                assertEquals("20111203", s);
+                s = se.eval(fm);
                 assertEquals("20111203", s);
             }
 
@@ -2855,11 +2927,15 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${donly:date('yy-MM-dd')}", false);
                 String s = se.eval(m);
                 assertEquals("11-12-03", s);
+                s = se.eval(fm);
+                assertEquals("11-12-03", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:date('HHmm')}", false);
                 String s = se.eval(m);
+                assertEquals("0830", s);
+                s = se.eval(fm);
                 assertEquals("0830", s);
             }
 
@@ -2867,11 +2943,15 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${t}", false);
                 String s = se.eval(m);
                 assertEquals("08:30:15", s);
+                s = se.eval(fm);
+                assertEquals("08:30:15", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${t:date('HHmm')}", false);
                 String s = se.eval(m);
+                assertEquals("0830", s);
+                s = se.eval(fm);
                 assertEquals("0830", s);
             }
 
@@ -2879,15 +2959,34 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${t:date('HH:mm')}", false);
                 String s = se.eval(m);
                 assertEquals("08:30", s);
+                s = se.eval(fm);
+                assertEquals("08:30", s);
             }
 
             {
                 // parse a non date value
                 StringExpression se = NameGenerationExpression.create("${d:date('yyy-MM-dd')}", false);
-                Map<Object, Object> m2 = new HashMap<>();
-                m.put("d", "Not a date");
-                String s = se.eval(m2);
-                assertNull(s);
+                Map<String, Object> m2 = new HashMap<>();
+                m2.put("d", "Not a date");
+                try
+                {
+                    se.eval(m2);
+                    fail("Expected exception");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // ok
+                }
+
+                try
+                {
+                    se.eval(toFieldKeyMap(m2));
+                    fail("Expected exception");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // ok
+                }
             }
 
         }
@@ -2896,18 +2995,23 @@ public class NameGenerator
         public void testNumberFormats()
         {
             Double d = 123456.789;
-            Map<Object, Object> m = new HashMap<>();
+            Map<String, Object> m = new HashMap<>();
             m.put("d", d);
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:number('0.0000')}", false);
                 String s = se.eval(m);
+                assertEquals("123456.7890", s);
+                s = se.eval(fm);
                 assertEquals("123456.7890", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:number('000000000')}", false);
                 String s = se.eval(m);
+                assertEquals("000123457", s);
+                s = se.eval(fm);
                 assertEquals("000123457", s);
             }
 
@@ -2916,18 +3020,31 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:number('abcde')}", false);
                 String s = se.eval(m);
                 assertEquals("abcde123457", s);
+                s = se.eval(fm);
+                assertEquals("abcde123457", s);
 
             }
 
             {
+                Map<String, Object> m2 = new HashMap<>();
+                m2.put("d", "not a number");
+
+                StringExpression se = NameGenerationExpression.create("${d:number('0.00')}", false);
+
                 // parse a non number
                 try
                 {
-                    Map<Object, Object> m2 = new HashMap<>();
-                    m2.put("d", "not a number");
-
-                    StringExpression se = NameGenerationExpression.create("${d:number('0.00')}", false);
                     se.eval(m2);
+                    fail("Expected exception");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // ok
+                }
+
+                try
+                {
+                    se.eval(toFieldKeyMap(m2));
                     fail("Expected exception");
                 }
                 catch (IllegalArgumentException e)
@@ -2941,18 +3058,22 @@ public class NameGenerator
         @Test
         public void testStringFormats()
         {
-            Map<Object, Object> m = new HashMap<>();
+            Map<String, Object> m = new HashMap<>();
             m.put("a/\\", "A");
             m.put("\\b", " B ");
             m.put("emp/ty", "");
             m.put("null", null);
             m.put("list", Arrays.asList("a", "b", "c"));
 
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
+
             {
                 StringExpression se = NameGenerationExpression.create(
                         "${null:defaultValue('foo')}|${emp\\/ty:defaultValue('bar')}|${a\\/\\:defaultValue('blee')}", false);
 
                 String s = se.eval(m);
+                assertEquals("foo|bar|A", s);
+                s = se.eval(fm);
                 assertEquals("foo|bar|A", s);
             }
 
@@ -2961,12 +3082,16 @@ public class NameGenerator
                         "${\\\\b}|${\\\\b:trim}|${emp\\/ty:trim}|${null:trim}", false);
                 String s = se.eval(m);
                 assertEquals(" B |B||", s);
+                s = se.eval(fm);
+                assertEquals(" B |B||", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create(
                         "${a\\/\\\\:prefix('!')}|${a\\/\\:suffix('?')}|${null:suffix('#')}|${emp\\/ty:suffix('*')}|${emp\\/ty:defaultValue('foo'):suffix('@')}", false);
                 String s = se.eval(m);
+                assertEquals("!A|A?|||foo@", s);
+                s = se.eval(fm);
                 assertEquals("!A|A?|||foo@", s);
             }
 
@@ -2975,17 +3100,21 @@ public class NameGenerator
                         "${a\\/\\\\:join('-')}|${list:join('-')}|${list:join('_'):prefix('['):suffix(']')}|${emp\\/ty:join('-')}|${null:join('-')}", false);
                 String s = se.eval(m);
                 assertEquals("A|a-b-c|[a_b_c]||", s);
+                s = se.eval(fm);
+                assertEquals("A|a-b-c|[a_b_c]||", s);
             }
         }
 
         @Test
         public void testCollectionFormats()
         {
-            Map<Object, Object> m = new HashMap<>();
+            Map<String, Object> m = new HashMap<>();
             m.put("a", "A");
             m.put("empty", Collections.emptyList());
             m.put("null", null);
             m.put("list", Arrays.asList("a", "b", "c"));
+
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
 
             // CONSIDER: We may want to allow empty string to pass through the collection methods untouched
             {
@@ -2993,12 +3122,16 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("A", s);
+                s = se.eval(m);
+                assertEquals("A", s);
             }
 
             {
                 StringExpression se = NameGenerationExpression.create("${null:first}|${empty:first}|${list:first}", false);
 
                 String s = se.eval(m);
+                assertEquals("||a", s);
+                s = se.eval(fm);
                 assertEquals("||a", s);
             }
 
@@ -3008,6 +3141,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("||b-c", s);
+                s = se.eval(fm);
+                assertEquals("||b-c", s);
             }
 
             {
@@ -3016,6 +3151,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("||c", s);
+                s = se.eval(fm);
+                assertEquals("||c", s);
             }
         }
 
@@ -3023,14 +3160,14 @@ public class NameGenerator
         {
             Container c = JunitUtil.getTestContainer();
 
-            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '.');
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + ".");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "..");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "...");
-            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '.' + sourceMeta + ".");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "." + sourceMeta + ".");
             DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + ".mouse2.");
-            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-');
-            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '-' + sourceMeta + "-");
-            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + '_');
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "-");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "-" + sourceMeta + "-");
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + aliquotedFrom + "-");
         }
 
         @Test
@@ -3063,9 +3200,10 @@ public class NameGenerator
         public void testWithCounter()
         {
 
-            Map<Object, Object> m = new HashMap<>();
+            Map<String, Object> m = new HashMap<>();
             m.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
             m.put("SourceMeta}", sourceMeta);
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
 
             Container c = JunitUtil.getTestContainer();
             resetCounter();
@@ -3082,6 +3220,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100.1", s);
+                s = se.eval(fm);
+                assertEquals("S100.2", s);
             }
 
             {
@@ -3098,13 +3238,19 @@ public class NameGenerator
                 assertEquals("S100.mouse1.1", s);
                 s = se.eval(m);
                 assertEquals("S100.mouse1.2", s);
+                s = se.eval(fm);
+                assertEquals("S100.mouse1.3", s);
+                s = se.eval(fm);
+                assertEquals("S100.mouse1.4", s);
 
-                Map<Object, Object> m2 = new HashMap<>();
+                Map<String, Object> m2 = new HashMap<>();
                 m2.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 m2.put("SourceMeta}", "mouse2");
 
                 s = se.eval(m2);
                 assertEquals("S100.mouse2.1", s);
+                s = se.eval(toFieldKeyMap(m2));
+                assertEquals("S100.mouse2.2", s);
             }
 
             {
@@ -3121,6 +3267,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100-1-mouse1-suffix", s);
+                s = se.eval(fm);
+                assertEquals("S100-2-mouse1-suffix", s);
             }
 
             {
@@ -3137,6 +3285,8 @@ public class NameGenerator
                 assertEquals("S100_1", s);
                 s = se.eval(m);
                 assertEquals("S100_2", s);
+                s = se.eval(fm);
+                assertEquals("S100_3", s);
             }
 
             {
@@ -3153,6 +3303,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100..101", s);
+                s = se.eval(fm);
+                assertEquals("S100..102", s);
             }
 
             {
@@ -3167,6 +3319,8 @@ public class NameGenerator
 
                 String s = se.eval(m);
                 assertEquals("S100...0111", s);
+                s = se.eval(fm);
+                assertEquals("S100...0112", s);
             }
 
         }

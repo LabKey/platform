@@ -1079,10 +1079,8 @@ public class StringExpressionFactory
                 // next, check key.toString(), which calls QueryKey.encodePart
                 if (!map.containsKey(lookupKey))
                     lookupKey = _key.toString();
-                if (!map.containsKey(lookupKey))
+                if (!map.containsKey(lookupKey)) // TODO: this might no longer be needed
                     lookupKey = PageFlowUtil.decode(_key.getParent() == null ? _key.getName() : _key.encode());
-                if (!map.containsKey(lookupKey))
-                    lookupKey = QueryKey.decodePart(_key.getParent() == null ? _key.getName() : _key.toString());
             }
 
             String result = applyFormats(map.get(lookupKey));
