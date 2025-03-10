@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.LogManager;
@@ -38,13 +39,11 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
