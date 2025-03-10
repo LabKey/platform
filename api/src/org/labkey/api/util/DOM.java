@@ -595,9 +595,9 @@ public class DOM
                     throw new IllegalStateException("expected Attribute or String");
                 if (sk.startsWith("data-"))
                     ret.data(sk.substring("data-".length()), v);
-                // Temporary allow arbitrary "lk-" attributes. TODO: Switch all to "data-", however, there are MANY tests
-                // looking for "lk-*", so the approach is for the product to add both "data-" and "lk-" to keep tests
-                // passing for now but migrate them to check "data-"
+                // Temporarily allow arbitrary "lk-" attributes. TODO: Switch all to "data-", however, there are MANY
+                // tests looking for "lk-*", so the approach is for the product to add both "data-" and "lk-" to keep
+                // tests passing for now but migrate them to check "data-"
                 else if (sk.startsWith("lk-"))
                     ret.lk(sk.substring("lk-".length()), v);
                 else

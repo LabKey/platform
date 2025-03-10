@@ -32,12 +32,12 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.align;
 import static org.labkey.api.util.DOM.Attribute.colspan;
 import static org.labkey.api.util.DOM.Attribute.id;
@@ -49,6 +49,7 @@ import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
 public abstract class AbstractNestableDataRegion extends DataRegion
@@ -88,8 +89,8 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         String madeId = page.makeId("a_");
         String value = getUniqueColumnValue(ctx);
 
-        DOM.A(
-            at(id, madeId),
+        A(
+            id(madeId),
             IMG(
                 at(
                     id, getName() + "-Handle" + value,
@@ -146,7 +147,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
 
         TR(
             cl(isShadeAlternatingRows() && rowIndex % 2 == 0, "labkey-alternate-row")
-            .at(!_expanded, style, "display:none")
+            .at(!_expanded, style, "display:none;")
             .id(getName() + "-Row" + value),
             TD(),
             TD(
@@ -192,63 +193,6 @@ public abstract class AbstractNestableDataRegion extends DataRegion
                 return ret;
             }
         ).appendTo(out);
-//        oldWriter.write("<tr");
-//        if (isShadeAlternatingRows() && rowIndex % 2 == 0)
-//        {
-//            oldWriter.write(" class=\"labkey-alternate-row\"");
-//        }
-//        if (!_expanded)
-//        {
-//            oldWriter.write(" style=\"display:none\"");
-//        }
-//        oldWriter.write(" id=\"");
-//        oldWriter.write(getName());
-//        oldWriter.write("-Row");
-//        oldWriter.write(value);
-//        oldWriter.write("\"><td></td><td colspan=\"");
-//        oldWriter.write(Long.toString(colCount));
-//        oldWriter.write("\" align=\"left\" id=\"");
-//        oldWriter.write(getName());
-//        oldWriter.write("-Content");
-//        oldWriter.write(value);
-//        oldWriter.write("\">");
-
-        // We need to make sure that we've rendered at least one nested grid because it contains JavaScript that needs
-        // to be evaluated with the initial page rendering - we can't send it down later. So, regardless of the
-        // expansion state, always render the nested grid. If we're not expanded, the CSS will still prevent it from
-        // being shown, and the browser will detect that it already has it so it won't make a separate request for it.
-
-//        if (!_renderedInnerGrid)
-//        {
-//            JspView<String> scriptView = new JspView<>("/org/labkey/api/data/nestedGridScript.jsp", getName());
-//            try
-//            {
-//                scriptView.render(ctx.getRequest(), ctx.getViewContext().getResponse());
-//            }
-//            catch (Exception e)
-//            {
-//                throw new IOException(e);
-//            }
-//        }
-//
-//        if (_expanded || !_renderedInnerGrid)
-//        {
-//            _nestedRegion.render(nestedCtx, out);
-//            _renderedInnerGrid = true;
-//        }
-//        else
-//        {
-//            try
-//            {
-//                while(nestedRS.next());
-//            }
-//            catch (SQLException e)
-//            {
-//                throw new RuntimeSQLException(e);
-//            }
-//        }
-//
-//        oldWriter.write("</td></tr>\n");
     }
 
     private static class EmptyDisplayColumn extends SimpleDisplayColumn
