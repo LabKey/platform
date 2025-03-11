@@ -31,7 +31,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -152,46 +151,46 @@ public abstract class AbstractNestableDataRegion extends DataRegion
             TD(),
             TD(
                 at(colspan, colCount, align, "left")
-                .id(getName() + "-Content" + value)
-            ),
-            (DOM.Renderable) ret -> {
-                // We need to make sure that we've rendered at least one nested grid because it contains JavaScript that needs
-                // to be evaluated with the initial page rendering - we can't send it down later. So, regardless of the
-                // expansion state, always render the nested grid. If we're not expanded, the CSS will still prevent it from
-                // being shown, and the browser will detect that it already has it so it won't make a separate request for it.
+                .id(getName() + "-Content" + value),
+                (DOM.Renderable) ret -> {
+                    // We need to make sure that we've rendered at least one nested grid because it contains JavaScript that needs
+                    // to be evaluated with the initial page rendering - we can't send it down later. So, regardless of the
+                    // expansion state, always render the nested grid. If we're not expanded, the CSS will still prevent it from
+                    // being shown, and the browser will detect that it already has it so it won't make a separate request for it.
 
-                if (!_renderedInnerGrid)
-                {
-                    JspView<String> scriptView = new JspView<>("/org/labkey/api/data/nestedGridScript.jsp", getName());
-                    try
+                    if (!_renderedInnerGrid)
                     {
-                        scriptView.render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                        JspView<String> scriptView = new JspView<>("/org/labkey/api/data/nestedGridScript.jsp", getName());
+                        try
+                        {
+                            scriptView.render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
 
-                if (_expanded || !_renderedInnerGrid)
-                {
-                    _nestedRegion.render(nestedCtx, out);
-                    _renderedInnerGrid = true;
-                }
-                else
-                {
-                    try
+                    if (_expanded || !_renderedInnerGrid)
                     {
-                        while(nestedRS.next());
+                        _nestedRegion.render(nestedCtx, out);
+                        _renderedInnerGrid = true;
                     }
-                    catch (SQLException e)
+                    else
                     {
-                        throw new RuntimeSQLException(e);
+                        try
+                        {
+                            while(nestedRS.next());
+                        }
+                        catch (SQLException e)
+                        {
+                            throw new RuntimeSQLException(e);
+                        }
                     }
-                }
 
-                return ret;
-            }
+                    return ret;
+                }
+            )
         ).appendTo(out);
     }
 
