@@ -5179,6 +5179,9 @@ public class ExperimentController extends SpringActionController
             }
 
             obj.setComment(getUser(), form.getComment());
+            if (obj instanceof ExpDataImpl expData)
+                expData.index(null, null);
+
             return true;
         }
 
