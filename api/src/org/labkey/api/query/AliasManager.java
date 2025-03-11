@@ -68,11 +68,11 @@ public class AliasManager
     {
         if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
             return true;
+        if (!first && ch >= '0' && ch <= '9')
+            return true;
         if (null == dialect || dialect.isOracle())
-        {
-            return !first && (ch >= '0' && ch <= '9' || ch == '_');
-        }
-        return ch >= '0' && ch <= '9' || ch == '_' || Character.isAlphabetic(ch);
+            return !first && ch == '_';
+        return ch == '_' || Character.isAlphabetic(ch);
     }
 
     public static boolean isLegalName(String str)
