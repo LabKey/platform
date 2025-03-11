@@ -152,7 +152,7 @@ public class AliasManager
             }
         }
         var ret = sb.toString();
-        assert isLegalName(ret);
+        assert isLegalName(ret, dialect);
         return ret;
     }
 
