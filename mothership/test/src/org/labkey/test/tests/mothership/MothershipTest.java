@@ -404,8 +404,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
                     .isAfter((Date)initialStackTrace.get("LastReport")));
         checker().verifyEquals("Expect confirmation that the controller is mothership",
                 "mothership", rowMap.get("PageflowName"));
-        checker().verifyEquals("Expect confirmation that the action is deepException",
-                "deepException", rowMap.get("PageflowAction"));
+        checker().verifyEquals("Expect confirmation that the action is clientException",
+                "clientException", rowMap.get("PageflowAction"));
         checker().verifyEquals("Unexpected exception message",
                 "TypeError: result.does is undefined", rowMap.get("ExceptionMessage"));
         checker().verifyEquals("Expect confirmation that the user is correct",
@@ -413,8 +413,8 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         checker().verifyEquals("expect the referring URL to be the page from which we caused this",
                 url.toString(), rowMap.get("ReferrerURL"));
         checker().wrapAssertion(()-> Assertions.assertThat(rowMap.get("URL"))
-                .as("expect url to be some line in deepException.js")
-                .contains("mothership/deepException.js?"));
+                .as("expect url to reflect a source in mothership-clientException")
+                .endsWith("_mothership/mothership-clientException.view"));
         checker().verifyEquals("Expect instance count to be the same in the page",
                 testException.get("Instances"), stackTraceDetailPage.getExceptionReports().getDataRowCount());
         checker().screenShotIfNewError("unexpected_record_data");
