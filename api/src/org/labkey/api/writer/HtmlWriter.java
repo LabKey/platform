@@ -35,7 +35,10 @@ public class HtmlWriter implements Appendable
     {
         try
         {
-            _writer.write(safeToRender.toString());
+            if (safeToRender instanceof DOM.Renderable r)
+                r.appendTo(_writer);
+            else
+                _writer.write(safeToRender.toString());
         }
         catch (IOException e)
         {
