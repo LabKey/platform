@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
@@ -105,7 +106,7 @@ public class CrosstabDataRegion extends DataRegion
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw UnexpectedException.wrap(e);
             }
         }
 
