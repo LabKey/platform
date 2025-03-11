@@ -61,26 +61,42 @@ public class AliasManager
      */
     public static boolean isLegalNameChar(char ch, boolean first)
     {
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
-            return true;
-        if (first)
-            return false;
-        return ch >= '0' && ch <= '9' || ch == '_';
+        return isLegalNameChar(ch, first, null);
     }
 
+    public static boolean isLegalNameChar(char ch, boolean first, @Nullable SqlDialect dialect)
+    {
+        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
+            return true;
+        if (null == dialect || dialect.isOracle())
+        {
+            return !first && (ch >= '0' && ch <= '9' || ch == '_');
+        }
+        return ch >= '0' && ch <= '9' || ch == '_' || Character.isAlphabetic(ch);
+    }
 
     public static boolean isLegalName(String str)
+    {
+        return isLegalName(str, null);
+    }
+
+    public static boolean isLegalName(String str, SqlDialect dialect)
     {
         int length = str.length();
         for (int i = 0; i < length; i ++)
         {
-            if (!isLegalNameChar(str.charAt(i), i == 0))
+            if (!isLegalNameChar(str.charAt(i), i == 0, dialect))
                 return false;
         }
         return true;
     }
 
     public static String legalNameFromName(String str)
+    {
+        return legalNameFromName(str);
+    }
+
+    public static String legalNameFromName(String str, SqlDialect dialect)
     {
         int i;
         char ch=0;
@@ -89,7 +105,7 @@ public class AliasManager
         for (i = 0; i < length; i ++)
         {
             ch = str.charAt(i);
-            if (!isLegalNameChar(ch, i==0))
+            if (!isLegalNameChar(ch, i==0, dialect))
                 break;
         }
         if (i==length)
@@ -170,7 +186,7 @@ public class AliasManager
 
     private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength, int reserveCount)
     {
-        String ret = legalNameFromName(str);
+        String ret = legalNameFromName(str, dialect);
         if (null != dialect && dialect.isReserved(ret))
             ret = ret + "_";
         int length = ret.length();
@@ -184,7 +200,7 @@ public class AliasManager
         if (maxLength < 5)
             throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
         ret = (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
-        assert isLegalName(ret);
+        assert isLegalName(ret, dialect);
         return ret;
     }
 
@@ -198,11 +214,11 @@ public class AliasManager
         for (String part : key.getParts())
         {
             sb.append(connector);
-            sb.append(legalNameFromName(part));
+            sb.append(legalNameFromName(part, dialect));
             connector = "_";
         }
         var ret = truncate(sb.toString(), getMaxLength(dialect, useLegacyMaxLength));
-        assert isLegalName(ret);
+        assert isLegalName(ret, dialect);
         return ret;
     }
 
@@ -211,7 +227,7 @@ public class AliasManager
         // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
 
         // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
-        int max =  useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
+        int max = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
         // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
         return Math.min(100, max);
     }

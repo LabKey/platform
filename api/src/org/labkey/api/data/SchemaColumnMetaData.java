@@ -82,7 +82,7 @@ public class SchemaColumnMetaData
     }
 
     /* This constructor is used only to create a virtual/fake SchemaTableInfo */
-    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable) throws SQLException
+    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable)
     {
         _tinfo = tinfo;
         for (var col : cols)
@@ -118,13 +118,12 @@ public class SchemaColumnMetaData
         {
             String pkColumnName = xmlTable.getPkColumnName();
 
-            if (null != pkColumnName && pkColumnName.length() > 0)
+            if (null != pkColumnName && !pkColumnName.isEmpty())
             {
                 setPkColumnNames(Arrays.asList(pkColumnName.split(",")));
             }
         }
 
-        AliasManager aliasManager = null; // We're making an effort to be lazy about initializing.  Most SchemaTableInfo only have "real" columns.
         List<ColumnType> wrappedColumns = new ArrayList<>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
@@ -417,18 +416,14 @@ public class SchemaColumnMetaData
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
-        // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
         if (!column.isAliasSet())
         {
-            if (null != column.getMetaDataName())
-            {
-                column.setAlias(column.getMetaDataName());
-                getAliasManager().claimAlias(column);
-            }
-            else
-            {
-                getAliasManager().ensureAlias(column);
-            }
+            // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
+            if (AliasManager.isLegalName(column.getName(), column.getSqlDialect()))
+                column.setAlias(column.getName());
+            else if (null != column.getMetaDataName() && column.getMetaDataName().equalsIgnoreCase(column.getName()))
+                column.setAlias(column.getName());
+            getAliasManager().ensureAlias(column);  // claim alias
         }
         _colMap = null;
     }

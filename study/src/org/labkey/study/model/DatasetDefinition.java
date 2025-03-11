@@ -31,7 +31,6 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -1798,8 +1797,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             else if (existingRecord != null && existingRecord.size() > 0)
             {
-                var extraAuditFields = Set.of(this._dataset.getStudy().getSubjectColumnName());
-                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, extraAuditFields, tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
+                Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
                 oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
@@ -2706,88 +2704,71 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
 
+    private static final Set<String> _alwaysIncludedColumns = CaseInsensitiveHashSet.of("created", "createdby", "lsid", "sourcelsid", "QCState");
+
     @NotNull
     @Override
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids)
     {
-        // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
-        // and one to get the data.  We should eventually be able to convert to using Query completely.
         TableInfo queryTableInfo = getTableInfo(u);
 
-        DatasetSchemaTableInfo tInfo = getDatasetSchemaTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 
-        Set<String> selectColumns = new TreeSet<>();
-        List<ColumnInfo> alwaysIncludedColumns = tInfo.getColumns("created", "createdby", "lsid", "sourcelsid", "QCState");
+        Set<String> selectColumnNames = new TreeSet<>();
+        List<ColumnInfo> selectColumns = new ArrayList<>();
 
-        for (ColumnInfo col : tInfo.getColumns())
+        for (ColumnInfo col : queryTableInfo.getColumns())
         {
             // special handling for lsids and keys -- they're not user-editable,
             // but we want to display them
             if (!col.isUserEditable())
             {
-                if (!(alwaysIncludedColumns.contains(col) ||
+                if (!(_alwaysIncludedColumns.contains(col.getName()) ||
                         col.isKeyField() ||
                         col.getName().equalsIgnoreCase(getKeyPropertyName())))
                 {
                     continue;
                 }
             }
-            selectColumns.add(col.getName());
+            if (selectColumnNames.add(col.getName()))
+                selectColumns.add(col);
             if (col.isMvEnabled())
             {
                 // include the indicator column for MV enabled fields
-                selectColumns.add(col.getMvColumnName().getName());
+                var mvColumn = queryTableInfo.getColumn(col.getMvColumnName().getName());
+                if (null != mvColumn && selectColumnNames.add(mvColumn.getName()))
+                    selectColumns.add(mvColumn);
             }
         }
 
-        List<Map<String, Object>> datas = new ArrayList<>(new TableSelector(tInfo, selectColumns, filter, null).getMapCollection());
+        // we don't expect selectColumns to contain RawValue for a column that supports MV
+        assert queryTableInfo.getColumns().stream().filter(ColumnInfo::isMvEnabled)
+                .noneMatch(col -> selectColumnNames.contains(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX));
+        // we do expect selectColumns to contain MVIndicator for columns that supports MV
+        assert queryTableInfo.getColumns().stream().filter(ColumnInfo::isMvEnabled)
+                .allMatch(col -> selectColumnNames.contains(col.getMvColumnName().getName()));
 
-        if (datas.isEmpty())
+        try (var rs = new TableSelector(queryTableInfo, selectColumns, filter, null).getResults(false,false))
+        {
+            // Results gives us key=ColumnInfo.getFieldKey(), but we need key=ColumnInfo.getName()
+            // there are many ways to do this (we could use ResultSet and col.getValue(rs))
+            var datas = new ArrayList<Map<String,Object>>(lsids.size());
+            while (rs.next())
+            {
+                Map<FieldKey,Object> row = rs.getFieldKeyRowMap();
+                Map<String,Object> data = new HashMap<>();
+                row.entrySet().stream().filter(e -> e.getKey().getParent()==null)
+                        .forEach(e -> data.put(e.getKey().getName(), e.getValue()));
+                datas.add(data);
+            }
             return datas;
-
-        if (datas.get(0) instanceof ArrayListMap)
-        {
-            ((ArrayListMap)datas.get(0)).getFindMap().remove("_key");
         }
-
-        // results should not be sensitive to the column aliases, convert aliases to column names
-        CaseInsensitiveHashMap<String> aliasToColumnNames = new CaseInsensitiveHashMap<>();
-        List<ColumnInfo> columns = tInfo.getColumns();
-        for (ColumnInfo col : columns)
+        catch (SQLException sqlx)
         {
-            var name = col.getName();
-            // NOTE: case of columns in tInfo and queryTableInfo seem to match except for QCstate, leaving for now
-            var queryCol = queryTableInfo.getColumn(name);
-            if (null != queryCol)
-                name = queryCol.getName();
-            aliasToColumnNames.put(col.getAlias(), name);
+            throw new RuntimeSQLException(sqlx);
         }
-
-        List<Map<String, Object>> canonicalDatas = new ArrayList<>(datas.size());
-        for (Map<String, Object> data : datas)
-        {
-            canonicalDatas.add(canonicalizeDatasetRow(data, aliasToColumnNames));
-        }
-
-        return canonicalDatas;
-    }
-
-        // change a map's keys to have proper casing just like the list of columns
-    private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, Map<String,String> aliasToColumnNames)
-    {
-        Map<String,Object> result = new CaseInsensitiveHashMap<>();
-        for (Map.Entry<String,Object> entry : source.entrySet())
-        {
-            String key = entry.getKey();
-            if ("_row".equals(key))
-                continue;
-            key = aliasToColumnNames.getOrDefault(key, key);
-            result.put(key, entry.getValue());
-        }
-        return result;
     }
 
     private void deleteProvenance(Container c, User u, Collection<String> lsids)
