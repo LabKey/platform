@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -48,6 +49,18 @@ public class DisplayColumnGroup
     public boolean isCopyable()
     {
         return _copyable;
+    }
+
+    public void writeSameCheckboxCell(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            writeSameCheckboxCell(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void writeSameCheckboxCell(RenderContext ctx, Writer out) throws IOException

@@ -17,17 +17,16 @@ package org.labkey.api.view;
 
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Lays out child {@link ModelAndView} horizontally */
-public class HBox extends VBox
+public class HBox extends AbstractViewBox
 {
-    private Map<ModelAndView, String> _widths = new HashMap<>();
-    private String _tableWidth="100%";
+    private final Map<ModelAndView, String> _widths = new HashMap<>();
+
+    private String _tableWidth = "100%";
 
     public HBox(ModelAndView... views)
     {
@@ -46,10 +45,8 @@ public class HBox extends VBox
     }
 
     @Override
-    public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderView(Object model, PrintWriter out) throws Exception
     {
-        PrintWriter out = response.getWriter();
-
         if (_views != null && !_views.isEmpty())
         {
             out.write("<table width=\"" + _tableWidth + "\"><tr>");

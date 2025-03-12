@@ -335,13 +335,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
-    public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws IOException, SQLException
+    public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
         AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
         setAsyncRequest(asyncRequest);
 
-        return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
+        try
+        {
+            return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -502,7 +509,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         });
     }
 
-    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response) throws IOException
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
         AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
@@ -515,6 +522,10 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         catch (SQLException e)
         {
             throw getExceptionFramework().translate(getScope(), "TableSelector.getAggregatesAsync()", e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

@@ -40,24 +40,21 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A subset of all of the information about a custom view. Split out because in some cases the full info
+ * A subset of all the information about a custom view. Split out because in some cases the full info
  * is expensive to retrieve, and some usages only require this subset that is faster to make available.
- *
- * User: klum
- * Date: Jun 17, 2009
  */
 public interface CustomViewInfo
 {
     String FILTER_PARAM_PREFIX = "filter";
     String CONTAINER_FILTER_NAME = "containerFilterName";
     String AGGREGATE_PARAM_PREFIX = "agg";
-    String ANALYTICSPROVIDER_PARAM_PREFIX = "analytics";
+    String ANALYTICS_PROVIDER_PARAM_PREFIX = "analytics";
 
     enum ColumnProperty
     {
         columnTitle(PropertyName.COLUMN_TITLE);
 
-        private PropertyName.Enum _xmlEnum;
+        private final PropertyName.Enum _xmlEnum;
 
         ColumnProperty(PropertyName.Enum xmlEnum)
         {
@@ -79,10 +76,11 @@ public interface CustomViewInfo
 
     class FilterAndSort
     {
-        private List<FilterInfo> filter = new ArrayList<>();
+        private final List<FilterInfo> filter = new ArrayList<>();
+        private final List<AnalyticsProviderItem> analyticsProviders = new ArrayList<>();
+
         private List<Sort.SortField> sort = new ArrayList<>();
         private List<String> containerFilterNames = Collections.emptyList();
-        private List<AnalyticsProviderItem> analyticsProviders = new ArrayList<>();
 
         public List<FilterInfo> getFilter()
         {
@@ -162,7 +160,7 @@ public interface CustomViewInfo
 
     static String getAnalyticsProviderParamKey(String dataRegionName, String colName)
     {
-        return dataRegionName + "." + ANALYTICSPROVIDER_PARAM_PREFIX + "." + colName;
+        return dataRegionName + "." + ANALYTICS_PROVIDER_PARAM_PREFIX + "." + colName;
     }
 
     static List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> decodeProperties(String value)

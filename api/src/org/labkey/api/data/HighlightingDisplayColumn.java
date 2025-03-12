@@ -20,6 +20,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -102,7 +103,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
     {
         super.renderGridHeaderCell(ctx, out);
 

@@ -75,12 +75,12 @@
 
         <%-- Used by button handlers --%>
         window.getRegionForm = function() {
-            var form = $('form[lk-region-form="Runs"]');
+            var form = $('form[data-region-form="Runs"]');
             if (form.length == 1) {
                 return form[0];
             }
             else {
-                throw new Error('Unable to resolve region form. Did the "lk-region-form" selector change?');
+                throw new Error('Unable to resolve region form. Did the "data-region-form" selector change?');
             }
         };
 

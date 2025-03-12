@@ -16,6 +16,8 @@
 package org.labkey.api.query;
 
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.ButtonBar;
@@ -26,11 +28,9 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 public class ReportDataRegion extends DataRegion
@@ -75,7 +75,7 @@ public class ReportDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderCenterContent(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount) throws IOException
+    protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
         try
         {
@@ -83,8 +83,10 @@ public class ReportDataRegion extends DataRegion
         }
         catch (Exception e)
         {
-            throw new IOException(e);
+            throw new RuntimeException(e);
         }
+
+        return out;
     }
 
     @Override
@@ -94,11 +96,14 @@ public class ReportDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderButtons(RenderContext ctx, Writer out) throws IOException
+    protected HtmlWriter renderButtons(RenderContext ctx, HtmlWriter out)
     {
         ButtonBar buttonBar = getButtonBar(MODE_GRID);
+
         if (buttonBar != null)
             buttonBar.render(ctx, out);
+
+        return out;
     }
 
     @Override

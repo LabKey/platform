@@ -15,8 +15,10 @@
  */
 package org.labkey.api.view;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -31,14 +33,12 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -77,18 +78,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
     }
 
-
     public static final int DEFAULT_WEB_PART_ID = -1;
+    private static final Logger LOG = LogHelper.getLogger(WebPartView.class, "renderView() warnings");
 
     protected final FrameConfig _frameConfig = new FrameConfig();
-
-    private Throwable _prepareException = null;
-    private boolean _isPrepared = false;
-    private final boolean _devMode = AppProps.getInstance().isDevMode();
     protected String _debugViewDescription = null;
 
-    private static final Logger LOG = LogManager.getLogger(WebPartView.class);
-
+    private final boolean _devMode = AppProps.getInstance().isDevMode();
+    private Throwable _prepareException = null;
+    private boolean _isPrepared = false;
 
     @Override
     public boolean isEmpty()
@@ -242,7 +240,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public void setIsOnlyWebPartOnPage(boolean b)
     {
-        /* by default we don't care */
+        /* by default, we don't care */
     }
 
     public int getWebPartRowId()
@@ -376,7 +374,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         Throwable exceptionToRender = _prepareException;
         HtmlString errorHtml = null;
 
-        String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
+        String name = Objects.toString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing ignored = MiniProfiler.step(name))
         {
             boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
@@ -395,12 +393,12 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 }
                 catch (RedirectException x)
                 {
-                    LogManager.getLogger(WebPartView.class).warn("Shouldn't throw redirect during renderView()", x);
+                    LOG.warn("Shouldn't throw redirect during renderView()", x);
                     throw x;
                 }
                 catch (UnauthorizedException x)
                 {
-                    LogManager.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
+                    LOG.warn("Shouldn't throw unauthorized during renderView()", x);
                     errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
                 catch (NotFoundException x)
@@ -482,18 +480,14 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
     }
 
-
-    protected void prepareWebPart(ModelBean model)
-            throws ServletException
+    protected void prepareWebPart(ModelBean model) throws ServletException
     {
     }
-
 
     protected void renderView(ModelBean model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         renderView(model, response.getWriter());
     }
-
 
     protected void renderView(ModelBean model, PrintWriter out) throws Exception
     {
@@ -512,8 +506,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     protected static class WebPartCollapsible implements Collapsible
     {
+        private final String _id;
+
         private boolean _collapsed;
-        private String _id;
 
         public WebPartCollapsible(String id)
         {

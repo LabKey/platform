@@ -56,7 +56,7 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
         topEl.addCls(this.regionCtCls);
 
         if (topEl) {
-            var targetHTML = '<div id="' + renderTarget + '" class="' + this.ctCls + '" lk-region-facet-name="' + config.dataRegion.name + '"></div>';
+            var targetHTML = '<div id="' + renderTarget + '" class="' + this.ctCls + '" data-region-facet-name="' + config.dataRegion.name + '"></div>';
             topEl.insertHtml('beforeBegin', targetHTML);
         }
 

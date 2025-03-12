@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomView;
@@ -25,19 +26,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: Sep 7, 2010
- * Time: 9:56:18 AM
- */
 public class RenderContextDecorator extends RenderContext
 {
     private final RenderContext _ctx;
@@ -142,7 +136,7 @@ public class RenderContextDecorator extends RenderContext
 
     @Override
     public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
-            throws SQLException, IOException
+            throws SQLException
     {
         return _ctx.getResults(fieldMap, displayColumns, tinfo, settings, parameters, maxRows, offset, name, async);
     }
@@ -151,7 +145,6 @@ public class RenderContextDecorator extends RenderContext
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName,
                                                              List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
-            throws IOException
     {
         return _ctx.getAggregates(displayColumns, tinfo, settings, dataRegionName, aggregatesIn, parameters, async);
     }
@@ -176,7 +169,7 @@ public class RenderContextDecorator extends RenderContext
 
     @Override
     public Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
-            throws SQLException, IOException
+            throws SQLException
     {
         return _ctx.select(table, columns, parameters, filter, sort, maxRows, offset, async);
     }
