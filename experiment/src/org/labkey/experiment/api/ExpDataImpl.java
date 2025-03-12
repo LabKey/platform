@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -179,8 +180,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public void setComment(User user, String comment) throws ValidationException
     {
+        setComment(user, comment, true);
+    }
+
+    @Override
+    public void setComment(User user, String comment, boolean index) throws ValidationException
+    {
         super.setComment(user, comment);
-        index(null, null);
+
+        if (index)
+            index(null, null);
     }
 
     @Override
@@ -498,31 +507,33 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         JSONObject jsonData
     )
     {
+        CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
+        for (ExpDataClassDataTable.Column column : ExpDataClassDataTable.Column.values())
+            skipColumns.add(column.name());
+        skipColumns.add("Ancestors");
+        skipColumns.add("Container");
+
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
-            // skip the base-columns - they will be added to the index separately
-            final String name = col.getName();
-            try
-            {
-                ExpDataClassDataTable.Column x = ExpDataClassDataTable.Column.valueOf(name);
+            // skip the base-columns - they will be added to the index separately and/or we don't want to index them (Issue 52467)
+            if (skipColumns.contains(col.getName()))
                 return false;
-            }
-            catch (IllegalArgumentException ex)
-            {
-                // ok
-            }
 
             // skip non-text columns or columns that aren't lookups
             if (!(col.getJdbcType().isText() || col.getFk() != null))
                 return false;
 
-            if (name.equalsIgnoreCase("container") || name.equalsIgnoreCase("folder"))
+            // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
+            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
                 return false;
 
             return true;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
 
-        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(FieldKey.fromParts("rowId"), getRowId()), null);
+        if (columns.isEmpty())
+            return;
+
+        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(ExpDataClassDataTable.Column.RowId.fieldKey(), getRowId()), null);
         ts.setForDisplay(true);
         try (Results r = ts.getResults())
         {
@@ -555,7 +566,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                     if (searchProperty != null)
                     {
                         // Fow now only add indexed field values to search jsonData
-                        if (values.size() > 0)
+                        if (!values.isEmpty())
                         {
                             if (values.size() == 1)
                                 jsonData.put(fieldKey.toString(), values.get(0));
