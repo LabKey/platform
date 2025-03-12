@@ -31,6 +31,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -2755,10 +2756,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // Results gives us key=ColumnInfo.getFieldKey(), but we need key=ColumnInfo.getName()
             // there are many ways to do this (we could use ResultSet and col.getValue(rs))
             var datas = new ArrayList<Map<String,Object>>(lsids.size());
+            var findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
             while (rs.next())
             {
                 Map<FieldKey,Object> row = rs.getFieldKeyRowMap();
-                Map<String,Object> data = new HashMap<>();
+                Map<String,Object> data = new ArrayListMap(findMap);
                 row.entrySet().stream().filter(e -> e.getKey().getParent()==null)
                         .forEach(e -> data.put(e.getKey().getName(), e.getValue()));
                 datas.add(data);
