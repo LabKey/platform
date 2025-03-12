@@ -16,7 +16,9 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -95,7 +97,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         return String.class;
     }
@@ -165,12 +167,9 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+    public @NotNull HtmlString getTitle(RenderContext ctx)
     {
-        if (null != _caption)
-            _caption.render(out, ctx);
-        else
-            out.write("&nbsp;");
+        return null != _caption ? HtmlString.of(_caption) : HtmlString.NBSP;
     }
 
     @Override
@@ -182,7 +181,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        renderTitle(ctx, out);
+        out.write(getTitle(ctx).toString());
         if (null != _caption)
             out.write(" ");
         renderDetailsCellContents(ctx, out);

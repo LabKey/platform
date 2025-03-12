@@ -239,7 +239,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         if (null == innerDisplayColumn)
             return String.class;
@@ -247,7 +247,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         if (null == innerDisplayColumn)
             return String.class;

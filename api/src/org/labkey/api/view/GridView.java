@@ -20,6 +20,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Sort;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
@@ -59,7 +60,7 @@ public class GridView extends DataView
     }
 
     @Override
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+    protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
     {
         ctx.setMode(DataRegion.MODE_GRID);
         //Force through bottleneck

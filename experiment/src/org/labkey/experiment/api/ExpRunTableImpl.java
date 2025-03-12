@@ -700,7 +700,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         // Issue 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
         @Override
-        public Class<?> getDisplayValueClass()
+        public Class<String> getDisplayValueClass()
         {
             return String.class;
         }

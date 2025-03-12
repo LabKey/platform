@@ -62,6 +62,8 @@ import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * A column in a grid, details, insert, update, or similar view. May wrap a column from the underlying database,
@@ -132,12 +134,21 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderDetailsCellContents(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
 
-    @Deprecated
-    public abstract void renderTitle(RenderContext ctx, Writer out) throws IOException;
-
-    public String getTitle(RenderContext ctx)
+    public @Nullable HtmlString getTitle(RenderContext ctx)
     {
         return null;
     }
@@ -153,11 +164,6 @@ public abstract class DisplayColumn extends RenderColumn
     public abstract void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException;
 
     public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
-
-    // Do nothing by default
-    public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
-    {
-    }
 
     public String renderURL(RenderContext ctx)
     {
@@ -192,7 +198,6 @@ public abstract class DisplayColumn extends RenderColumn
         _url = null;
         _urlCompiled = null;
     }
-
 
     public StringExpression getURLExpression()
     {
@@ -318,7 +323,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract Object getValue(RenderContext ctx);
 
-    public abstract Class getValueClass();
+    public abstract Class<?> getValueClass();
 
     public Object getJsonValue(RenderContext ctx)
     {
@@ -629,7 +634,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getValue(ctx);
     }
 
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         return getValueClass();
     }
@@ -821,7 +826,9 @@ public abstract class DisplayColumn extends RenderColumn
         }
         out.write(">");
 
-        renderTitle(ctx, out);
+        HtmlString title = getTitle(ctx);
+        if (title != null)
+            out.write(title.toString());
 
         out.write("<span class=\"fa fa-filter\"></span>");
         out.write("<span class=\"fa fa-sort-up\"></span>");
@@ -889,9 +896,9 @@ public abstract class DisplayColumn extends RenderColumn
             }
 
             return (null != this.getColumnInfo() &&
-                    (filteredColSet.contains(this.getColumnInfo().getFieldKey())) ||
-                        (this.getColumnInfo().getDisplayField() != null &&
-                        filteredColSet.contains(this.getColumnInfo().getDisplayField().getFieldKey())));
+                (filteredColSet.contains(this.getColumnInfo().getFieldKey())) ||
+                    (this.getColumnInfo().getDisplayField() != null &&
+                    filteredColSet.contains(this.getColumnInfo().getDisplayField().getFieldKey())));
         }
         return false;
     }
@@ -1029,20 +1036,6 @@ public abstract class DisplayColumn extends RenderColumn
         return null != getSortColumn(userSort);
     }
 
-    public String getGridDataCell(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderGridDataCell(ctx, writer);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
-    }
-
     boolean foundHoverContent = false;
 
     public void renderGridDataCell(RenderContext ctx, HtmlWriter out)
@@ -1057,7 +1050,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
+    private void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
         if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
         {
@@ -1153,7 +1146,9 @@ public abstract class DisplayColumn extends RenderColumn
             StringWriter writer = new StringWriter();
             try
             {
-                renderTitle(ctx, writer);
+                HtmlString title = getTitle(ctx);
+                if (title != null)
+                    writer.write(title.toString());
             }
             catch (Exception e)
             {
@@ -1169,21 +1164,6 @@ public abstract class DisplayColumn extends RenderColumn
             return _caption.eval(ctx);
 
         return _caption.getSource();
-    }
-
-
-    public String getDetailsCaptionCell(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderDetailsCaptionCell(ctx, writer, null);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
     }
 
     public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls)
@@ -1203,54 +1183,10 @@ public abstract class DisplayColumn extends RenderColumn
         if (null == _caption)
             return;
 
-        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-        renderTitle(ctx, out);
-        out.write("</td>");
-    }
-
-    public String getDetailsData(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderDetailsData(ctx, writer);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
-    }
-
-    public void renderDetailsData(RenderContext ctx, HtmlWriter out)
-    {
-        try
-        {
-            renderDetailsData(ctx, out.unwrap());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
-    {
-        renderDetailsCellContents(ctx, out);
-    }
-
-    public String getInputCell(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderInputCell(ctx, writer);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
+        TD(
+            cl("lk-form-label"),
+            getTitle(ctx)
+        ).appendTo(out);
     }
 
     /** Get typed value or string value if form type conversion failed. */
@@ -1282,25 +1218,6 @@ public abstract class DisplayColumn extends RenderColumn
         if (ctx.getForm() != null && getColumnInfo() != null)
             return ctx.getForm().getFormFieldName(getColumnInfo());
         return getName();
-    }
-
-    protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
-    {
-        out.write(" name=\"");
-        out.write(PageFlowUtil.filter(formFieldName));
-        out.write("\"");
-
-        String setFocusId = (String)ctx.get("setFocusId");
-        if (null != setFocusId)
-        {
-            out.write(" id=\"" + PageFlowUtil.filter(setFocusId) + "\"");
-            ctx.remove("setFocusId");
-        }
-    }
-
-    public void renderHiddenFormInput(RenderContext ctx, Writer out) throws IOException
-    {
-        renderHiddenFormInput(ctx, out, getFormFieldName(ctx), getInputValue(ctx));
     }
 
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
@@ -1392,21 +1309,6 @@ public abstract class DisplayColumn extends RenderColumn
     public String getClearSortScript(RenderContext ctx)
     {
         return "";
-    }
-
-    public String getInputHtml(RenderContext ctx)
-    {
-        Object value = getInputValue(ctx);
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderInputHtml(ctx, writer, value);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
     }
 
     public boolean getRequiresHtmlFiltering()

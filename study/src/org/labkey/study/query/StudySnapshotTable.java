@@ -129,9 +129,9 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 }
 
                 @Override
-                public void renderTitle(RenderContext ctx, Writer out)
+                public HtmlString getTitle(RenderContext ctx)
                 {
-                    // no title
+                    return null; // no title
                 }
 
                 @Override

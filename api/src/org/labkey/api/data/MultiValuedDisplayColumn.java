@@ -32,9 +32,6 @@ import java.util.stream.Collectors;
 /**
  * Wraps any DisplayColumn and causes it to render each value separately. Often used in conjunction with
  * MultiValuedLookupColumn
- *
- * User: adam
- * Date: Sep 14, 2010
  */
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements IMultiValuedDisplayColumn
 {
@@ -155,13 +152,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
-    {
-        renderGridCellContents(ctx, out);
-    }
-
-    @Override
-    public Class getDisplayValueClass()
+    public Class<String> getDisplayValueClass()
     {
         return String.class;
     }

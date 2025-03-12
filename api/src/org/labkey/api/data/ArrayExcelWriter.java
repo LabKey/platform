@@ -2,6 +2,7 @@ package org.labkey.api.data;
 
 import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Writer;
@@ -88,7 +89,7 @@ public class ArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderTitle(RenderContext ctx, Writer out)
+        public HtmlString getTitle(RenderContext ctx)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

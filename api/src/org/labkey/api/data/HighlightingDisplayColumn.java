@@ -136,11 +136,10 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         out.write("</span>");
     }
 
-    @Override
+    // Note: Nobody calls this method! It must have been orphaned in DisplayColumn / DataColumn a while back. Leaving
+    // the code in place in case we want to restore it...
     public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
-        super.renderGridEnd(ctx, out);
-
         String styleMapName = "styleMap" + _uid;
         String lockedStylesName = "lockedStyles" + _uid;
 

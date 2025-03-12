@@ -36,13 +36,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.dao.DataAccessException;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -202,13 +202,13 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
 
-    protected abstract void _renderDataRegion(RenderContext ctx, Writer out) throws IOException;
+    protected abstract void _renderDataRegion(RenderContext ctx, HtmlWriter out);
 
 
     @Override
     public void renderView(RenderContext model, PrintWriter out) throws IOException
     {
-        _renderDataRegion(getRenderContext(), out);
+        _renderDataRegion(getRenderContext(), HtmlWriter.of(out));
     }
 
     public String createVerifySelectedScript(ActionURL url, String objectsDescription)

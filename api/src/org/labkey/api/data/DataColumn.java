@@ -312,13 +312,13 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         return _boundColumn.getJavaClass();
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         return _displayColumn.getJavaClass();
     }
@@ -924,22 +924,13 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+    public @Nullable HtmlString getTitle(RenderContext ctx)
     {
-        String title = PageFlowUtil.filter(getTitle(ctx));
-        if (title.isEmpty())
-        {
-            title = "&nbsp;";
-        }
-        out.write(title);
-    }
-
-    @Override
-    public String getTitle(RenderContext ctx)
-    {
+        // TODO: Treat null and empty the same instead?
         if (_caption == null)
             return null;
-        return _caption.eval(ctx);
+        String title = _caption.eval(ctx);
+        return title.isEmpty() ? HtmlString.NBSP : HtmlString.of(title);
     }
 
     @Override
@@ -950,7 +941,9 @@ public class DataColumn extends DisplayColumn
 
         out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
 
-        renderTitle(ctx, out);
+        HtmlString title = getTitle(ctx);
+        if (title != null)
+            out.write(title.toString());
         if (ctx.getMode() == DataRegion.MODE_DETAILS)
             out.write(":");
         int mode = ctx.getMode();

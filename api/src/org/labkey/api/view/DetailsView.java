@@ -24,10 +24,9 @@ import org.labkey.api.data.PkFilter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -63,7 +62,7 @@ public class DetailsView extends DataView
     }
 
     @Override
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+    protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
     {
         ctx.setMode(DataRegion.MODE_DETAILS);
         if (ctx.getResults() == null)

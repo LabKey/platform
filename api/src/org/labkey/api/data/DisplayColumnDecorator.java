@@ -36,10 +36,6 @@ import java.text.Format;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: Nov 20, 2008 4:25:54 PM
- */
 public class DisplayColumnDecorator extends DisplayColumn
 {
     protected DisplayColumn _column;
@@ -62,21 +58,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
-    {
-        _column.renderTitle(ctx, out);
-    }
-
-    @Override
-    public String getTitle(RenderContext ctx)
+    public HtmlString getTitle(RenderContext ctx)
     {
         return _column.getTitle(ctx);
-    }
-
-    @Override
-    public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
-    {
-        _column.renderGridEnd(ctx, out);
     }
 
     @Override
@@ -319,7 +303,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         return _column.getDisplayValueClass();
     }
@@ -390,12 +374,6 @@ public class DisplayColumnDecorator extends DisplayColumn
         return _column.isUserSort(ctx);
     }
 
-    @Override
-    public String getGridDataCell(RenderContext ctx)
-    {
-        return _column.getGridDataCell(ctx);
-    }
-
     @NotNull
     @Override
     public String getCssStyle(RenderContext ctx)
@@ -422,33 +400,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public String getDetailsCaptionCell(RenderContext ctx)
-    {
-        return _column.getDetailsCaptionCell(ctx);
-    }
-
-    @Override
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         _column.renderDetailsCaptionCell(ctx, out, cls);
-    }
-
-    @Override
-    public String getDetailsData(RenderContext ctx)
-    {
-        return _column.getDetailsData(ctx);
-    }
-
-    @Override
-    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
-    {
-        _column.renderDetailsData(ctx, out);
-    }
-
-    @Override
-    public String getInputCell(RenderContext ctx)
-    {
-        return _column.getInputCell(ctx);
     }
 
     @Override
@@ -461,18 +415,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     public String getFormFieldName(RenderContext ctx)
     {
         return _column.getFormFieldName(ctx);
-    }
-
-    @Override
-    protected void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
-    {
-        _column.outputName(ctx, out, formFieldName);
-    }
-
-    @Override
-    public void renderHiddenFormInput(RenderContext ctx, Writer out) throws IOException
-    {
-        _column.renderHiddenFormInput(ctx, out);
     }
 
     @Override
@@ -509,12 +451,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     public String getClearSortScript(RenderContext ctx)
     {
         return _column.getClearSortScript(ctx);
-    }
-
-    @Override
-    public String getInputHtml(RenderContext ctx)
-    {
-        return _column.getInputHtml(ctx);
     }
 
     @Override

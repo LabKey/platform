@@ -21,10 +21,10 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * Provides a view to update a single row from a {@link DataRegion} in a simple HTML form.
@@ -50,7 +50,7 @@ public class UpdateView extends DataView
     }
 
     @Override
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+    protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
     {
         if (null != getRenderContext().getForm())
         {
@@ -60,7 +60,7 @@ public class UpdateView extends DataView
         else
         {
             out.write("No values to _render");
-            _log.info("No values or pk specified for data region " + getDataRegion().getName());
+            _log.info("No values or pk specified for data region {}", getDataRegion().getName());
         }
     }
 }

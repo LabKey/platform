@@ -23,6 +23,7 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Writer;
@@ -104,7 +105,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderTitle(RenderContext ctx, Writer out)
+        public HtmlString getTitle(RenderContext ctx)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

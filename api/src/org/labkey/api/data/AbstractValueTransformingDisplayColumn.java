@@ -17,13 +17,11 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 
 /**
  * Base class for transforming a raw DB column into a completely transformed value. An example is wrapping a RowId
  * column in the real table and showing a value that's calculated in Java code instead based on looking up other
  * data. Provides one simple method to implement to handle returning that value in HTML, exports, client API requests, etc.
- * Created by Josh on 5/17/2017.
  */
 public abstract class AbstractValueTransformingDisplayColumn<RawDataType, TransformedDataType> extends DataColumn
 {

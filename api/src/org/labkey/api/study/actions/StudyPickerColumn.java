@@ -72,7 +72,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
             return;
 
         out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-        renderTitle(ctx, out);
+        out.write(getTitle(ctx).toString());
         int mode = ctx.getMode();
         if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
         {

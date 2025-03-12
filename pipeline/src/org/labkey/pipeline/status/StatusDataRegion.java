@@ -20,17 +20,28 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
+
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
 
 public class StatusDataRegion extends DataRegion
 {
@@ -46,18 +57,16 @@ public class StatusDataRegion extends DataRegion
         _returnUrl.deleteParameter(ActionURL.Param.returnUrl);
     }
 
-    private void renderTab(Writer out, String text, ActionURL url, boolean selected) throws IOException
+    private void renderTab(HtmlWriter out, String text, ActionURL url, boolean selected)
     {
-        String selectStyle = "";
-        if (selected)
-            selectStyle = " class=\"labkey-frame\"";
-        out.write("<td");
-        out.write(selectStyle);
-        out.write(">&nbsp;&nbsp;<a href=\"");
-        out.write(url.getEncodedLocalURIString());
-        out.write("\">");
-        out.write(text);
-        out.write("</a>&nbsp;&nbsp;</td>\n");
+        TD(
+            cl(selected, "labkey-frame"),
+            HtmlString.NBSP,
+            HtmlString.NBSP,
+            new Link.LinkBuilder(text).href(url),
+            HtmlString.NBSP,
+            HtmlString.NBSP
+        ).appendTo(out);
     }
 
     @Override
@@ -71,67 +80,76 @@ public class StatusDataRegion extends DataRegion
 
         String controller = SpringActionController.getControllerName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
-        PageConfig config = HttpView.currentPageConfig();
 
-        Writer oldWriter = out.unwrap();
-
-        try
-        {
-        oldWriter.write("<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">\n");
-        oldWriter.write(
-                "LABKEY.requiresExt4Sandbox(function() {\n" +
-                        "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
-                        "if (!LABKEY.pipeline.statusUpdateInstance)\n" +
-                        "LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnUrl.toString()) + ");\n" +
-                        "LABKEY.pipeline.statusUpdateInstance.start();\n" +
-                        "});\n" +
-                        "});\n");
-        oldWriter.write("</script>\n");
+        SCRIPT(JavaScriptFragment.unsafe(
+            "LABKEY.requiresExt4Sandbox(function() {\n" +
+            "   LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
+            "       if (!LABKEY.pipeline.statusUpdateInstance)\n" +
+            "           LABKEY.pipeline.statusUpdateInstance = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnUrl.toString()) + ");\n" +
+            "       LABKEY.pipeline.statusUpdateInstance.start();\n" +
+            "   });\n" +
+            "});\n")
+        ).appendTo(out);
 
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
         ActionURL urlFilter = ctx.getSortFilterURLHelper();
         SimpleFilter filters = new SimpleFilter(urlFilter, getName());
 
-        oldWriter.write("<table style=\"margin-bottom:10px;\">");
-        oldWriter.write("<tr><td>Show:</td>");
+        TABLE(
+            at(style, "margin-bottom:10px;"),
+            TR(
+                TD("Show:"),
+                (DOM.Renderable) ret -> {
+                    String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();
+                    String value = PipelineJob.TaskStatus.complete + ";" + PipelineJob.TaskStatus.cancelled + ";" + PipelineJob.TaskStatus.error;
+                    url.deleteParameters();
+                    url.addParameter(name, value);
+                    boolean selected = value.equals(urlFilter.getParameter(name)) || PipelineQueryView.createCompletedFilter().equals(ctx.getBaseFilter());
+                    renderTab(out, "Running", url, selected);
+                    boolean selSeen = selected;
 
-        String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();
-        String value = PipelineJob.TaskStatus.complete.toString() + ";" + PipelineJob.TaskStatus.cancelled.toString() + ";" + PipelineJob.TaskStatus.error.toString();
-        url.deleteParameters();
-        url.addParameter(name, value);
-        boolean selected = value.equals(urlFilter.getParameter(name)) || PipelineQueryView.createCompletedFilter().equals(ctx.getBaseFilter());
-        renderTab(oldWriter, "Running", url, selected);
-        boolean selSeen = selected;
+                    name = "StatusFiles.Status~eq";
+                    value = PipelineJob.TaskStatus.error.toString();
+                    url.deleteParameters();
+                    url.addParameter(name, value);
+                    selected = !selSeen && value.equals(urlFilter.getParameter(name));
+                    renderTab(out, "Errors", url, selected);
 
-        name = "StatusFiles.Status~eq";
-        value = PipelineJob.TaskStatus.error.toString();
-        url.deleteParameters();
-        url.addParameter(name, value);
-        selected = !selSeen && value.equals(urlFilter.getParameter(name));
-        renderTab(oldWriter, "Errors", url, selected);
+                    name = "StatusFiles.Status~eq";
+                    value = PipelineJob.TaskStatus.cancelled.toString();
+                    url.deleteParameters();
+                    url.addParameter(name, value);
+                    selected = !selSeen && value.equals(urlFilter.getParameter(name));
+                    renderTab(out, "Cancelled", url, selected);
 
-        name = "StatusFiles.Status~eq";
-        value = PipelineJob.TaskStatus.cancelled.toString();
-        url.deleteParameters();
-        url.addParameter(name, value);
-        selected = !selSeen && value.equals(urlFilter.getParameter(name));
-        renderTab(oldWriter, "Cancelled", url, selected);
+                    selSeen = selSeen || selected;
+                    url.deleteParameters();
+                    renderTab(out, "All", url, filters.getClauses().isEmpty() && !selSeen);
 
-        selSeen = selSeen || selected;
-        url.deleteParameters();
-        renderTab(oldWriter, "All", url, filters.getClauses().isEmpty() && !selSeen);
+                    return ret;
+                }
+            )
+        ).appendTo(out);
 
-        oldWriter.write("</tr></table>\n");
-        oldWriter.write("<div id=\"statusFailureDiv\" class=\"labkey-error\" style=\"display: none\"></div>");
-        oldWriter.write("<div id=\"statusRegionDiv\">");
+        DIV(
+            id("statusFailureDiv").
+            cl("labkey-error").
+            at(style, "display: none")
+        ).appendTo(out);
 
-        super.renderTable(ctx, out);
-
-        oldWriter.write("</div>");
-        }
-        catch(IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        DIV(
+            id("statusRegionDiv"),
+            (DOM.Renderable) ret -> {
+                try
+                {
+                    super.renderTable(ctx, out);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+                return ret;
+            }
+        ).appendTo(out);
     }
 }

@@ -203,4 +203,18 @@ public class MVDisplayColumn extends DataColumn
         //if (isDisabledInput())
         //    renderHiddenFormInput(ctx, out, formFieldName, value);
     }
+
+    private void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
+    {
+        out.write(" name=\"");
+        out.write(PageFlowUtil.filter(formFieldName));
+        out.write("\"");
+
+        String setFocusId = (String)ctx.get("setFocusId");
+        if (null != setFocusId)
+        {
+            out.write(" id=\"" + PageFlowUtil.filter(setFocusId) + "\"");
+            ctx.remove("setFocusId");
+        }
+    }
 }

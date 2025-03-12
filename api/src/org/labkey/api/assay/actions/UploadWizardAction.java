@@ -75,6 +75,7 @@ import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -92,6 +93,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -115,6 +117,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.FONT;
+import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtml;
 
@@ -1128,31 +1131,33 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+        protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
         {
             // may want to just put this in a js file and include it in all the wizard pages
-            out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-            out.write("""
-                        function uploadWizard_showPopup(elem, txtTitle, txtMsg)
-                          {
-                            var win = new Ext.Window({
-                               title: txtTitle,
-                               border: false,
-                               constrain: true,
-                               html: txtMsg,
-                               closeAction:'close',
-                               autoScroll: true,
-                               modal: true,
-                               buttons: [{
-                                 text: 'Close',
-                                 id: 'btn_cancel',
-                                 handler: function(){win.close();}
-                               }]
-                            });
-                            win.show(elem);
-                          }
-                    """);
-            out.write("</script>\n");
+            String script ="""
+                    function uploadWizard_showPopup(elem, txtTitle, txtMsg)
+                    {
+                        var win = new Ext.Window({
+                            title: txtTitle,
+                            border: false,
+                            constrain: true,
+                            html: txtMsg,
+                            closeAction:'close',
+                            autoScroll: true,
+                            modal: true,
+                            buttons: [{
+                                text: 'Close',
+                                id: 'btn_cancel',
+                                handler: function(){win.close();}
+                            }]
+                        });
+                        win.show(elem);
+                    }
+                """;
+
+            SCRIPT(
+                JavaScriptFragment.unsafe(script)
+            ).appendTo(out);
 
             super._renderDataRegion(ctx, out);
         }
