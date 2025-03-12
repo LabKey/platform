@@ -28,7 +28,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 
 import java.io.Serializable;
 import java.util.Map;

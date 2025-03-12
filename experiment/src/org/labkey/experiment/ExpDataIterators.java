@@ -801,7 +801,7 @@ public class ExpDataIterators
                             if (sample == null)
                                 sample = ExperimentService.get().getExpMaterial(lsid);
                             if (sample != null)
-                                sample.setComment(_user, flag);
+                                sample.setComment(_user, flag, false);
                         }
                         else
                         {
@@ -815,7 +815,7 @@ public class ExpDataIterators
                             if (data == null)
                                 data = ExperimentService.get().getExpData(lsid);
                             if (data != null)
-                                data.setComment(_user, flag);
+                                data.setComment(_user, flag, false);
                         }
                     }
                     catch (ValidationException e)

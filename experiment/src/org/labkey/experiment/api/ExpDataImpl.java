@@ -58,6 +58,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
@@ -174,6 +175,21 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public ExpDataImpl(Data data)
     {
         super(data);
+    }
+
+    @Override
+    public void setComment(User user, String comment) throws ValidationException
+    {
+        setComment(user, comment, true);
+    }
+
+    @Override
+    public void setComment(User user, String comment, boolean index) throws ValidationException
+    {
+        super.setComment(user, comment);
+
+        if (index)
+            index(null, null);
     }
 
     @Override
@@ -499,16 +515,15 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
         // collect the set of columns to index
         Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
-            final String name = col.getName();
-
             // skip the base-columns - they will be added to the index separately and/or we don't want to index them (Issue 52467)
-            if (skipColumns.contains(name))
+            if (skipColumns.contains(col.getName()))
                 return false;
 
             // skip non-text columns or columns that aren't lookups
             if (!(col.getJdbcType().isText() || col.getFk() != null))
                 return false;
 
+            // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
             if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
                 return false;
 
