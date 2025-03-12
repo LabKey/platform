@@ -25,17 +25,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: Mark Igra
- * Date: May 4, 2007
- * Time: 3:08:34 PM
- */
 public class MapArrayExcelWriter extends ExcelWriter
 {
     private final List<Map<String,Object>> maps;
@@ -63,14 +59,14 @@ public class MapArrayExcelWriter extends ExcelWriter
 
     public class MapArrayDisplayColumn extends DisplayColumn
     {
-        Class valueClass;
+        Class<?> valueClass;
 
-        public MapArrayDisplayColumn(String name, Class valueClass)
+        public MapArrayDisplayColumn(String name, Class<?> valueClass)
         {
             this(name, name, valueClass);
         }
 
-        public MapArrayDisplayColumn(String name, String caption, Class valueClass)
+        public MapArrayDisplayColumn(String name, String caption, Class<?> valueClass)
         {
             setName(name);
             setCaption(caption);
@@ -85,7 +81,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public Class getValueClass()
+        public Class<?> getValueClass()
         {
             return valueClass; 
         }
@@ -129,7 +125,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderFilterOnClick(RenderContext ctx, Writer out)
+        public String getFilterOnClick(RenderContext ctx)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
@@ -177,7 +173,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void render(RenderContext ctx, Writer out)
+        public void render(RenderContext ctx, HtmlWriter out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

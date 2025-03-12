@@ -1986,9 +1986,7 @@ public class DataRegion extends DisplayElement
                                 TR(
                                     (Renderable) rend -> {
                                         renderer.renderDetailsCaptionCell(ctx, out, null);
-                                        renderer.renderInputWrapperBegin(out);
-                                        renderer.renderDetailsCellContents(ctx, out);
-                                        renderer.renderInputWrapperEnd(out);
+                                        renderer.renderDetailsCell(ctx, out);
                                         return rend;
                                     }
                                 ).appendTo(out);
@@ -2191,9 +2189,7 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
-                    renderer.renderInputWrapperBegin(out);
-                    renderer.renderDetailsCellContents(ctx, out);
-                    renderer.renderInputWrapperEnd(out);
+                    renderer.renderDetailsCell(ctx, out);
                 }
                 return ret;
             }

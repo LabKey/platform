@@ -4,6 +4,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -46,15 +47,15 @@ public class ArrayExcelWriter extends ExcelWriter
 
     public class ArrayDisplayColumn extends DisplayColumn
     {
-        Class valueClass;
+        Class<?> valueClass;
         int position;
 
-        public ArrayDisplayColumn(String name, Class valueClass, int position)
+        public ArrayDisplayColumn(String name, Class<?> valueClass, int position)
         {
             this(name, name, valueClass, position);
         }
 
-        public ArrayDisplayColumn(String name, String caption, Class valueClass, int position)
+        public ArrayDisplayColumn(String name, String caption, Class<?> valueClass, int position)
         {
             setName(name);
             setCaption(caption);
@@ -69,11 +70,10 @@ public class ArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public Class getValueClass()
+        public Class<?> getValueClass()
         {
             return valueClass; 
         }
-
 
         //NOTE: Methods beyond here are unimplemented, just abstract in base class
         @Override
@@ -113,7 +113,7 @@ public class ArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void renderFilterOnClick(RenderContext ctx, Writer out)
+        public String getFilterOnClick(RenderContext ctx)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
@@ -161,7 +161,7 @@ public class ArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public void render(RenderContext ctx, Writer out)
+        public void render(RenderContext ctx, HtmlWriter out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

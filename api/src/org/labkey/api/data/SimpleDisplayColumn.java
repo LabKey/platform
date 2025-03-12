@@ -117,7 +117,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderFilterOnClick(RenderContext ctx, Writer out)
+    public String getFilterOnClick(RenderContext ctx)
     {
         throw new UnsupportedOperationException("Non Bound columns not filterable");
     }

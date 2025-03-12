@@ -312,13 +312,13 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public Class<?> getValueClass()
+    public Class getValueClass()
     {
         return _boundColumn.getJavaClass();
     }
 
     @Override
-    public Class<?> getDisplayValueClass()
+    public Class getDisplayValueClass()
     {
         return _displayColumn.getJavaClass();
     }
@@ -341,14 +341,15 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
+    public String getFilterOnClick(RenderContext ctx)
     {
         if (_filterColumn == null)
-            return;
+            return "";
 
         String regionName = ctx.getCurrentRegion().getName();
         String columnName = PageFlowUtil.jsString(_boundColumn.getFieldKey().toString());
-        out.write(DataRegion.getJavaScriptObjectReference(regionName) + "._openFilter(" + columnName + ");");
+
+        return DataRegion.getJavaScriptObjectReference(regionName) + "._openFilter(" + columnName + ");";
     }
 
     @Override
@@ -727,8 +728,8 @@ public class DataColumn extends DisplayColumn
         {
             String entryName = entry.getName();
             OptionBuilder option = new OptionBuilder()
-                    .selected(isSelectInputSelected(entryName, value, strVal))
-                    .value(entryName);
+                .selected(isSelectInputSelected(entryName, value, strVal))
+                .value(entryName);
 
             if (null != entry.getObject())
                 option.label(getSelectInputDisplayValue(entry));

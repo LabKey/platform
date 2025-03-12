@@ -20,9 +20,6 @@ import java.io.Writer;
 
 /**
  * Renders a bound ColumnInfo as an HTML form input in a grid view.
- *
- * User: kevink
- * Date: 10/21/12
  */
 public class InputColumn extends DataColumn
 {

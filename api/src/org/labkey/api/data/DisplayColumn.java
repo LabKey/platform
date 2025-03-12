@@ -29,6 +29,7 @@ import org.labkey.api.ontology.Concept;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
@@ -63,6 +64,7 @@ import java.util.Set;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
 /**
@@ -160,8 +162,6 @@ public abstract class DisplayColumn extends RenderColumn
     public abstract boolean isFilterable();
 
     public abstract boolean isEditable();
-
-    public abstract void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException;
 
     public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
 
@@ -676,18 +676,6 @@ public abstract class DisplayColumn extends RenderColumn
         return "";
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
-    {
-        try
-        {
-            renderGridHeaderCell(ctx, out.unwrap(), null);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public boolean hasFilterKey(FieldKey fieldKey)
     {
         FieldKey fk = getFilterKey();
@@ -716,7 +704,24 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
+    {
+        renderGridHeaderCell(ctx, out, null);
+    }
+
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out, String headerClass)
+    {
+        try
+        {
+            renderGridHeaderCell(ctx, out.unwrap(), headerClass);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
     {
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
@@ -1036,64 +1041,61 @@ public abstract class DisplayColumn extends RenderColumn
         return null != getSortColumn(userSort);
     }
 
-    boolean foundHoverContent = false;
+    private boolean foundHoverContent = false;
 
     public void renderGridDataCell(RenderContext ctx, HtmlWriter out)
     {
         try
         {
-            renderGridDataCell(ctx, out.unwrap());
+            if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
+            {
+                // An earlier row has covered this cell with a rowspan so no need to render any HTML
+                return;
+            }
+
+            Writer oldWriter = out.unwrap();
+            oldWriter.write("<td");
+            String displayClass = getDisplayClass(ctx);
+            String hoverContent = getHoverContent(ctx);
+            if (!isBlank(displayClass) || !isBlank(hoverContent))
+            {
+                var cssClass = trimToEmpty(displayClass) + (!isBlank(hoverContent) ? " lk-column-tt" : "");
+                oldWriter.write(" class='" + cssClass + "'");
+            }
+            if (_textAlign != null)
+            {
+                oldWriter.write(" align=" + _textAlign);
+            }
+            String style = getCssStyle(ctx);
+            if (!style.isEmpty())
+            {
+                oldWriter.write(" style='" + style + "'");
+            }
+            int rowSpan = _rowSpanner.getRowSpan(ctx);
+            if (rowSpan > 1)
+            {
+                oldWriter.write(" rowspan=\"" + rowSpan + "\"");
+            }
+            if (hoverContent != null)
+            {
+                oldWriter.write(" data-columntiptitle=\"" + PageFlowUtil.filter(getHoverTitle(ctx)) + "\"");
+                oldWriter.write(" data-columntipcontent=\"" + PageFlowUtil.filter(hoverContent) + "\"");
+                if (!foundHoverContent)
+                {
+                    foundHoverContent=true;
+                    HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseover",
+                            "showHelpDivDelay(this, this.dataset['columntiptitle'], this.dataset['columntipcontent'], null, 1000);");
+                    HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseout", "return hideHelpDivDelay();");
+                }
+            }
+            oldWriter.write(">");
+            renderGridCellContents(ctx, oldWriter);
+            oldWriter.write("</td>");
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-    }
-
-    private void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
-    {
-        if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
-        {
-            // An earlier row has covered this cell with a rowspan so no need to render any HTML
-            return;
-        }
-        out.write("<td");
-        String displayClass = getDisplayClass(ctx);
-        String hoverContent = getHoverContent(ctx);
-        if (!isBlank(displayClass) || !isBlank(hoverContent))
-        {
-            var cssClass = trimToEmpty(displayClass) + (!isBlank(hoverContent) ? " lk-column-tt" : "");
-            out.write(" class='" + cssClass + "'");
-        }
-        if (_textAlign != null)
-        {
-            out.write(" align=" + _textAlign);
-        }
-        String style = getCssStyle(ctx);
-        if (!style.isEmpty())
-        {
-            out.write(" style='" + style + "'");
-        }
-        int rowSpan = _rowSpanner.getRowSpan(ctx);
-        if (rowSpan > 1)
-        {
-            out.write(" rowspan=\"" + rowSpan + "\"");
-        }
-        if (hoverContent != null)
-        {
-            out.write(" data-columntiptitle=\"" + PageFlowUtil.filter(getHoverTitle(ctx)) + "\"");
-            out.write(" data-columntipcontent=\"" + PageFlowUtil.filter(hoverContent) + "\"");
-            if (!foundHoverContent)
-            {
-                foundHoverContent=true;
-                HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseover",
-                        "showHelpDivDelay(this, this.dataset['columntiptitle'], this.dataset['columntipcontent'], null, 1000);");
-                HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseout", "return hideHelpDivDelay();");
-            }
-        }
-        out.write(">");
-        renderGridCellContents(ctx, out);
-        out.write("</td>");
     }
 
     protected String getHoverContent(RenderContext ctx)
@@ -1229,57 +1231,38 @@ public abstract class DisplayColumn extends RenderColumn
             .toString());
     }
 
-    public void renderInputWrapperBegin(HtmlWriter out)
+    public DOM._Attributes getInputAttributes()
     {
-        try
-        {
-            renderInputWrapperBegin(out.unwrap());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void renderInputWrapperBegin(Writer out) throws IOException
-    {
-        out.write("<td>");
-    }
-
-    public void renderInputWrapperEnd(HtmlWriter out)
-    {
-        try
-        {
-            renderInputWrapperEnd(out.unwrap());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void renderInputWrapperEnd(Writer out) throws IOException
-    {
-        out.write("</td>");
+        return at();
     }
 
     public void renderInputCell(RenderContext ctx, HtmlWriter out)
     {
-        try
-        {
-            renderInputCell(ctx, out.unwrap());
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        TD(
+            getInputAttributes(),
+            (DOM.Renderable) ret -> {
+                try
+                {
+                    renderInputHtml(ctx, out.unwrap(), getInputValue(ctx));
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                return ret;
+            }
+        ).appendTo(out);
     }
 
-    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCell(RenderContext ctx, HtmlWriter out)
     {
-        renderInputWrapperBegin(out);
-        renderInputHtml(ctx, out, getInputValue(ctx));
-        renderInputWrapperEnd(out);
+        TD(
+            getInputAttributes(),
+            (DOM.Renderable) ret -> {
+                renderDetailsCellContents(ctx, out);
+                return ret;
+            }
+        ).appendTo(out);
     }
 
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
@@ -1287,19 +1270,7 @@ public abstract class DisplayColumn extends RenderColumn
         return "";
     }
 
-    public String getFilterOnClick(RenderContext ctx)
-    {
-        StringWriter writer = new StringWriter();
-        try
-        {
-            renderFilterOnClick(ctx, writer);
-        }
-        catch (Exception e)
-        {
-            writer.write(e.getMessage());
-        }
-        return writer.toString();
-    }
+    public abstract String getFilterOnClick(RenderContext ctx);
 
     public String getClearFilter(RenderContext ctx)
     {

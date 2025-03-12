@@ -76,21 +76,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
-
-/**
- * User: Karl Lum
- * Date: Aug 31, 2006
- * Time: 1:07:36 PM
- */
 public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 {
     private final Container _c;
     private final User _user;
+    private final Map<String, Object> _renderContextDefaultValues = new CaseInsensitiveHashMap<>();
+
     private IssueObject _issue;
     private IssueObject _prevIssue;
     private Set<String> _issueIds = Collections.emptySet();
@@ -111,7 +106,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     private IssueListDef _issueListDef;
     private Map<String, Object> _renderContextRow;
-    private Map<String, Object> _renderContextDefaultValues = new CaseInsensitiveHashMap<>();
 
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
@@ -358,8 +352,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             if (table != null)
             {
                 List<DisplayColumn> displayColumns = table.getColumns().stream()
-                        .map(ColumnInfo::getRenderer)
-                        .collect(Collectors.toUnmodifiableList());
+                    .map(ColumnInfo::getRenderer)
+                    .toList();
                 List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, table);
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
 

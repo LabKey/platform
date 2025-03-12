@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
@@ -25,9 +27,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
@@ -79,12 +78,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     public boolean isEditable()
     {
         return _column.isEditable();
-    }
-
-    @Override
-    public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
-    {
-        _column.renderFilterOnClick(ctx, out);
     }
 
     @Override
@@ -363,7 +356,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out, String headerClass)
     {
         _column.renderGridHeaderCell(ctx, out, headerClass);
     }
@@ -424,9 +417,15 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
+    public void renderInputCell(RenderContext ctx, HtmlWriter out)
     {
         _column.renderInputCell(ctx, out);
+    }
+
+    @Override
+    public void renderDetailsCell(RenderContext ctx, HtmlWriter out)
+    {
+        _column.renderDetailsCell(ctx, out);
     }
 
     @Override
