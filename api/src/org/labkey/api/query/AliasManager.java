@@ -93,7 +93,7 @@ public class AliasManager
 
     public static String legalNameFromName(String str)
     {
-        return legalNameFromName(str);
+        return legalNameFromName(str, null);
     }
 
     public static String legalNameFromName(String str, SqlDialect dialect)
