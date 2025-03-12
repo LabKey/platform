@@ -66,10 +66,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -178,7 +178,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
+        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
         {
             if (!isAvailable(ctx))
             {
@@ -191,7 +191,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                     .append(PageFlowUtil.link("[history]", getHistoryLink(ctx)).clearClasses())
                     .append(" for more information.");
 
-                PageFlowUtil.popupHelp(builder.getHtmlString(), "Specimen Unavailable").appendTo(out);
+                out.write(PageFlowUtil.popupHelp(builder.getHtmlString(), "Specimen Unavailable"));
             }
         }
 
@@ -240,13 +240,13 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
+        protected void renderExtraRecordSelectorContent(RenderContext ctx, HtmlWriter out)
         {
             if (!isAvailable(ctx))
             {
-                PageFlowUtil.popupHelp(HtmlString.of("No vials of this primary specimen are available. All " +
+                out.write(PageFlowUtil.popupHelp(HtmlString.of("No vials of this primary specimen are available. All " +
                     "vials are either part of an active specimen request, locked by an administrator, or not " +
-                    "currently held by a repository."), "Specimens Unavailable").appendTo(out);
+                    "currently held by a repository."), "Specimens Unavailable"));
             }
         }
 

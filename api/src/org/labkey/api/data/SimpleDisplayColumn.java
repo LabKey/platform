@@ -33,7 +33,6 @@ import java.util.Set;
 public class SimpleDisplayColumn extends DisplayColumn
 {
     private StringExpression _displayHTML = null;
-    private StringExpression _url = null;
 
     public SimpleDisplayColumn()
     {

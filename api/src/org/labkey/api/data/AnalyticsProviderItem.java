@@ -130,7 +130,7 @@ public class AnalyticsProviderItem
     private static List<AnalyticsProviderItem> fromURL(List<Pair<String, Object>> paramPairs, String regionName)
     {
         String aggPrefix = regionName + "." + CustomViewInfo.AGGREGATE_PARAM_PREFIX + ".";
-        String apPrefix = regionName + "." + CustomViewInfo.ANALYTICSPROVIDER_PARAM_PREFIX + ".";
+        String apPrefix = regionName + "." + CustomViewInfo.ANALYTICS_PROVIDER_PARAM_PREFIX + ".";
 
         List<AnalyticsProviderItem> analyticsProviderItems = new LinkedList<>();
 

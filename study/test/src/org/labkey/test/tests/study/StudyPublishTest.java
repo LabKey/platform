@@ -48,6 +48,7 @@ import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
 import org.labkey.test.util.StudyHelper;
@@ -164,6 +165,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String SUB_FOLDER_NAME = "PublishedSubStudy";
     private static final String PUBLISH_FOLDER_ADMIN = "publish_admin@study.test";
     private static final String PUBLISH_SUB_FOLDER_ADMIN = "publishsub_admin@study.test";
+    private Boolean _studyDesignPreviouslyEnabled;
 
     // enum to help determine the study publish location
     public enum PublishLocation
@@ -180,6 +182,8 @@ public class StudyPublishTest extends StudyPHIExportTest
         _containerHelper.deleteProject(PUB2_NAME, afterTest, 1000000);
 
         _userHelper.deleteUsers(false, PUBLISH_FOLDER_ADMIN, PUBLISH_SUB_FOLDER_ADMIN);
+        if (_studyDesignPreviouslyEnabled != null)
+            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
     }
 
     @Override
@@ -188,6 +192,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // fail fast if R is not configured
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
+        _studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
 
         importStudy();
         if (_studyHelper.isSpecimenModulePresent())

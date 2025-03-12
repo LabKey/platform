@@ -328,9 +328,11 @@ public class Aggregate
             return _aggregate.getDisplayString() + ": " + _value;
         }
 
+        public record FormattedValue(String value, boolean error) {}
+
         /** @return the value to show (not HTML encoded),
          * and whether it's an error condition, like trying to apply an aggregate to the wrong type */
-        public Pair<String, Boolean> getFormattedValue(DisplayColumn renderer, Container container)
+        public FormattedValue getFormattedValue(DisplayColumn renderer, Container container)
         {
             // Issue 16570: Formatter is only applicable if the aggregate return type is
             // similar to the input jdbcType.  For example, don't apply a date format
@@ -356,30 +358,30 @@ public class Aggregate
                 if (value == null)
                 {
                     // no values to aggregate
-                    return Pair.of("n/a", false);
+                    return new FormattedValue("n/a", false);
                 }
                 else if (formatter != null &&
                         (inputType == returnType ||
                                 (inputType.isInteger() && returnType.isInteger()) ||
                                 (inputType.isReal() && returnType.isReal())))
                 {
-                    return Pair.of(formatter.format(value), false);
+                    return new FormattedValue(formatter.format(value), false);
                 }
                 else if (inputType.isNumeric())
                 {
-                    return Pair.of(Formats.commaf3.format(value), false);
+                    return new FormattedValue(Formats.commaf3.format(value), false);
                 }
                 else if (returnType.isDateOrTime())
                 {
-                    return Pair.of(DateUtil.formatDateInfer(container, (Date)value), false);
+                    return new FormattedValue(DateUtil.formatDateInfer(container, (Date)value), false);
                 }
                 else
                 {
-                    return Pair.of(value.toString(), false);
+                    return new FormattedValue(value.toString(), false);
                 }
             }
 
-            return Pair.of("Not valid for type '" + col.getFriendlyTypeName() + "'", true);
+            return new FormattedValue("Not valid for type '" + col.getFriendlyTypeName() + "'", true);
         }
     }
 

@@ -108,12 +108,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * A child schema of AssayProviderSchema. Scoped to a single assay design (AKA ExpProtocol).
  * Exposes tables for Runs, Batches, etc.
- * User: kevink
- * Date: 9/15/12
  */
 public abstract class AssayProtocolSchema extends AssaySchema implements UserSchema.HasContextualRoles
 {
@@ -725,34 +722,27 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                                 final int rowCount = r.countAll();
 
                                 baseQueryView.setMessageSupplier(dataRegion -> {
-                                    try
-                                    {
-                                        // Get a fresh set of aggregates from the render context. We're applying
-                                        // a different set of filters based on QC state than the main DataRegion
-                                        Aggregate countAgg = Aggregate.createCountStar();
-                                        Map<String, List<Aggregate.Result>> allAggResults = renderContext.getAggregates(dataRegion.getDisplayColumns(), dataRegion.getTable(), dataRegion.getSettings(), dataRegion.getName(), Collections.singletonList(countAgg), dataRegion.getQueryParameters(), dataRegion.isAllowAsync());
-                                        List<Aggregate.Result> aggResults = allAggResults.get(countAgg.getFieldKey().toString());
-                                        assert aggResults.size() == 1 : "Expected a single aggregate result but got " + aggResults.size();
-                                        int totalRows = ((Number)aggResults.get(0).getValue()).intValue();
+                                    // Get a fresh set of aggregates from the render context. We're applying
+                                    // a different set of filters based on QC state than the main DataRegion
+                                    Aggregate countAgg = Aggregate.createCountStar();
+                                    Map<String, List<Aggregate.Result>> allAggResults = renderContext.getAggregates(dataRegion.getDisplayColumns(), dataRegion.getTable(), dataRegion.getSettings(), dataRegion.getName(), Collections.singletonList(countAgg), dataRegion.getQueryParameters(), dataRegion.isAllowAsync());
+                                    List<Aggregate.Result> aggResults = allAggResults.get(countAgg.getFieldKey().toString());
+                                    assert aggResults.size() == 1 : "Expected a single aggregate result but got " + aggResults.size();
+                                    int totalRows = ((Number)aggResults.get(0).getValue()).intValue();
 
-                                        if (totalRows < rowCount)
-                                        {
-                                            long count = rowCount - totalRows;
-                                            String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
-                                                    : "There is one row not shown due to unapproved QC state.";
-                                            DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                            return Collections.singletonList(drm);
-                                        }
-                                        return Collections.emptyList();
-                                    }
-                                    catch(IOException e)
+                                    if (totalRows < rowCount)
                                     {
-                                        throw UnexpectedException.wrap(e);
+                                        long count = rowCount - totalRows;
+                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                : "There is one row not shown due to unapproved QC state.";
+                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                        return Collections.singletonList(drm);
                                     }
+                                    return Collections.emptyList();
                                 });
                             }
                         }
-                        catch (SQLException | IOException e)
+                        catch (SQLException e)
                         {
                             if (errors == null)
                             {

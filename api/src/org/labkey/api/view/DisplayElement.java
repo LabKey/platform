@@ -26,6 +26,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.web.servlet.View;
 
 import java.io.IOException;
@@ -165,7 +166,26 @@ public abstract class DisplayElement implements View, Cloneable
         render(ctx, out);
     }
 
-    public abstract void render(RenderContext ctx, Writer out) throws IOException;
+    // WARNING: Every subclass must implement one of the render() methods... otherwise hello stack overflow
+
+    @Deprecated
+    public void render(RenderContext ctx, Writer out) throws IOException
+    {
+        render(ctx, HtmlWriter.of(out));
+    }
+
+    // Make abstract once all subclasses implement this variant
+    public void render(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            render(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void lock()
     {

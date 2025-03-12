@@ -26,8 +26,8 @@ import org.labkey.api.data.NestableDataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -147,7 +147,7 @@ public class QueryNestingOption
         DataRegion nestedRgn = new DataRegion()
         {
             @Override
-            protected void renderHeaderScript(RenderContext ctx, Writer out,  Map<String, String> messages, boolean showRecordSelectors)
+            protected void renderHeaderScript(RenderContext ctx, HtmlWriter out, Map<String, String> messages, boolean showRecordSelectors)
             {
                 // Issue 11405: customized grid does not work MS2 query based views.
                 // Nested DataRegions don't need to re-render the "new LABKEY.DataRegion(...)" script.
