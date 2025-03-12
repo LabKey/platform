@@ -1203,7 +1203,7 @@ public class DataRegion extends DisplayElement
 
                     // If this is modified, update the client-side renderer in DataRegion.js MsgProto.render()
                     DIV(
-                        cl("lk-region-bar" + (isThemed ? " lk-msg-bar" : "")).
+                        cl("lk-region-bar").cl(isThemed, "lk-msg-bar").
                         data("msgpart", message.getArea()),
                         (Renderable) ren -> {
                             if (isThemed)
@@ -1274,7 +1274,7 @@ public class DataRegion extends DisplayElement
     {
         // For now, add lk-region-name AND data-region-name attributes for test locators. TODO: Migrate to "data-*" only.
         TABLE(
-            cl("table-condensed labkey-data-region" + (isShowBorders() ? " table-bordered" : "")).
+            cl("table-condensed labkey-data-region").cl(isShowBorders(), "table-bordered").
             data("region-name", getName()).
             lk("region-name", getName()). // TODO: Remove this after all tests check for the "data-" attribute instead of "lk-"
             id(getDomId()),
@@ -2186,7 +2186,7 @@ public class DataRegion extends DisplayElement
         Set<String> errors = getErrors(ctx, renderer);
 
         TR(
-            cl("form-group" + (!errors.isEmpty() ? " has-error" : "")),
+            cl("form-group").cl(!errors.isEmpty(), "has-error"),
             (Renderable) ret -> {
                 renderer.renderDetailsCaptionCell(ctx, out, null);
                 if (renderer.isEditable())
@@ -2362,19 +2362,15 @@ public class DataRegion extends DisplayElement
                             TR(
                                 TD(),
                                 hasCopyable ? (Renderable) ret -> writeSameHeader(ctx, out, groups) : TD(),
-                                (Renderable) ret -> {
-                                    for (String heading : groupHeadings)
-                                    {
-                                        TD(
-                                            at(style, "white-space:nowrap;"),
-                                            LABEL(
-                                                cl("control-label"),
-                                                heading
-                                            )
-                                        ).appendTo(out);
-                                    }
-                                    return ret;
-                                }
+                                groupHeadings.stream().map(heading ->
+                                    TD(
+                                        at(style, "white-space:nowrap;"),
+                                        LABEL(
+                                            cl("control-label"),
+                                            heading
+                                        )
+                                    )
+                                )
                             ).appendTo(out);
                         }
                         else
