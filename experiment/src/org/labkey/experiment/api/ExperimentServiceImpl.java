@@ -963,7 +963,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result;
     }
 
-    private static final int INDEXING_LIMIT = 10_000;
+    private static final int INDEXING_LIMIT = 1_000;
 
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
@@ -1025,7 +1025,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         selector.setJdbcCaching(false);
         MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
-        int rowCount = selector.forEach(Material.class, m -> {
+        // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
+        List<Material> materials = selector.getArrayList(Material.class);
+        materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             var doc = expMaterial.createIndexDocument();
             if (doc != null)
@@ -1035,7 +1037,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
-        if (rowCount == INDEXING_LIMIT)
+        if (materials.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
             task.addRunnable(() -> indexMaterials(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
@@ -1064,13 +1066,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         selector.setJdbcCaching(false);
         MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
-        int rowCount = selector.forEach(Data.class, d -> {
+        // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
+        List<Data> data = selector.getArrayList(Data.class);
+        data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
-        if (rowCount == INDEXING_LIMIT)
+        if (data.size() == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
             task.addRunnable(() -> indexData(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
@@ -1585,9 +1589,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf)
+    public FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf)
     {
-        return new FieldNamesTable(expSchema, cf);
+        return new FieldsTable(expSchema, cf);
     }
 
     @Override
