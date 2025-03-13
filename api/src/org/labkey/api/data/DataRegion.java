@@ -1661,7 +1661,8 @@ public class DataRegion extends DisplayElement
                 SPAN(
                     cl("summary-stat-label"),
                     statLabel,
-                    description != null ? PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()) : null
+                    description != null ? PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()) : null,
+                    ":"
                 ),
                 HtmlString.NBSP,
                 value.error() ? SPAN(cl("labkey-error"), value.value()) : value.value()
