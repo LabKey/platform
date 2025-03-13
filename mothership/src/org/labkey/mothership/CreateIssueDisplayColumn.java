@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -38,14 +39,14 @@ public class CreateIssueDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        _saveButton.render(ctx, out);
-        out.write("\t");
+        _saveButton.render(ctx, oldWriter);
+        oldWriter.write("\t");
         PageFlowUtil.button("Create Issue")
             .onClick("document.forms.CreateIssue.elements['assignedTo'].value = document.forms[" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getFormId()) +
                 "].elements['assignedTo'].value; document.forms.CreateIssue.submit();")
-            .appendTo(out);
+            .appendTo(oldWriter);
     }
 }

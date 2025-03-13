@@ -49,15 +49,15 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
+        renderIconAndFilename(ctx, oldWriter, (String)getValue(ctx), true, true);
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
+        renderIconAndFilename(ctx, oldWriter, (String)getValue(ctx), true, true);
     }
 
     /** @return the short name of the file (not including full path) */

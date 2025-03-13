@@ -142,12 +142,11 @@ public abstract class DisplayColumn extends RenderColumn
 
     private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
 
-    public HtmlWriter renderGridCellContents(RenderContext ctx, HtmlWriter out)
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         try
         {
-            renderGridCellContents(ctx, out.unwrap());
-            return out;
+            renderGridCellContents(ctx, out.unwrap(), out);
         }
         catch (IOException e)
         {
@@ -155,13 +154,17 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
+    // No callers (other than just above)
+    protected void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    {
+        throw new IllegalStateException("Must override renderGridCellContents()");
+    }
 
     public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         try
         {
-            renderDetailsCellContents(ctx, out.unwrap());
+            renderDetailsCellContents(ctx, out.unwrap(), out);
         }
         catch (IOException e)
         {
@@ -169,20 +172,11 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    protected abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
-
-    public @Nullable HtmlString getTitle(RenderContext ctx)
+    // No callers (other than just above)
+    protected void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        return null;
+        throw new IllegalStateException("Must override renderDetailsCellContents()");
     }
-
-    /** @return whether the underlying column knows how to sort the query that was executed (via SQL ORDER BY) */
-    public abstract boolean isSortable();
-
-    /** @return whether the underlying column knows how to filter the query that was executed (via SQL WHERE) */
-    public abstract boolean isFilterable();
-
-    public abstract boolean isEditable();
 
     public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
@@ -197,11 +191,24 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    // No callers (other than just above and DisplayColumnDecorator)
+    // No callers (other than just above)
     protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         throw new IllegalStateException("Must override renderInputHtml()");
     }
+
+    public @Nullable HtmlString getTitle(RenderContext ctx)
+    {
+        return null;
+    }
+
+    /** @return whether the underlying column knows how to sort the query that was executed (via SQL ORDER BY) */
+    public abstract boolean isSortable();
+
+    /** @return whether the underlying column knows how to filter the query that was executed (via SQL WHERE) */
+    public abstract boolean isFilterable();
+
+    public abstract boolean isEditable();
 
     public String renderURL(RenderContext ctx)
     {
@@ -305,7 +312,6 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     public abstract boolean isQueryColumn();
-
 
     /** return a set of FieldKeys that this DisplayColumn depends on */
     public void addQueryFieldKeys(Set<FieldKey> keys)
@@ -1051,7 +1057,10 @@ public abstract class DisplayColumn extends RenderColumn
             at(align, _textAlign).at(!style.isEmpty(), DOM.Attribute.style, style).at(rowSpan > 1, rowspan, rowSpan).
             data(hoverContent != null, "columntiptitle", getHoverTitle(ctx)).
             data(hoverContent != null, "columntipcontent", hoverContent),
-            (DOM.Renderable) ret -> renderGridCellContents(ctx, out)
+            (DOM.Renderable) ret -> {
+                renderGridCellContents(ctx, out);
+                return ret;
+            }
         ).appendTo(out);
 
         if (hoverContent != null && !foundHoverContent)

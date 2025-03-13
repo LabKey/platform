@@ -24,11 +24,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.model.ExtensibleStudyEntity;
 import org.labkey.study.model.StudyImpl;
 
-import java.io.IOException;
 import java.io.Writer;
 
 /**
@@ -80,10 +80,10 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out)
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
         {
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
-            PageFlowUtil.link("edit").href(actionURL).appendTo(out);
+            PageFlowUtil.link("edit").href(actionURL).appendTo(oldWriter);
         }
     }
 }

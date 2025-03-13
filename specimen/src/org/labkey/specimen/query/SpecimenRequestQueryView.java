@@ -38,6 +38,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
@@ -97,7 +98,7 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             StringBuilder content = new StringBuilder();
             // Use a div to set spacing around the buttons- otherwise they overlap the edges of their data grid cells:

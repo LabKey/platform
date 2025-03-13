@@ -186,32 +186,32 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         updateInnerContext(ctx);
 
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            out.write("<table>");
-            out.write("<table class='table-condensed labkey-data-region table-bordered'>");
-            out.write("<thead>");
-            out.write("<tr>");
+            oldWriter.write("<table>");
+            oldWriter.write("<table class='table-condensed labkey-data-region table-bordered'>");
+            oldWriter.write("<thead>");
+            oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridHeaderCell(innerCtx, HtmlWriter.of(out));
+                pair.second.renderGridHeaderCell(innerCtx, HtmlWriter.of(oldWriter));
             }
-            out.write("</tr>");
-            out.write("</thead>");
+            oldWriter.write("</tr>");
+            oldWriter.write("</thead>");
 
-            out.write("<tbody>");
-            out.write("<tr>");
+            oldWriter.write("<tbody>");
+            oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridDataCell(innerCtx, HtmlWriter.of(out));
+                pair.second.renderGridDataCell(innerCtx, HtmlWriter.of(oldWriter));
             }
-            out.write("</tr>");
-            out.write("</tbody>");
-            out.write("</table>");
+            oldWriter.write("</tr>");
+            oldWriter.write("</tbody>");
+            oldWriter.write("</table>");
         }
     }
 

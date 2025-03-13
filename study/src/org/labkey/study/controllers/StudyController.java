@@ -220,6 +220,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
@@ -2836,10 +2837,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer out)
+                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    PageFlowUtil.link("Download Data File").href(url).appendTo(out);
+                    PageFlowUtil.link("Download Data File").href(url).appendTo(oldWriter);
                 }
             };
             dr.addDisplayColumn(dc);

@@ -310,6 +310,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
@@ -6855,7 +6856,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
 
@@ -6873,7 +6874,7 @@ public class AdminController extends SpringActionController
                         delim = ",<br>";
                     }
                 }
-                out.write(sb.toString());
+                oldWriter.write(sb.toString());
             }
         }
     }

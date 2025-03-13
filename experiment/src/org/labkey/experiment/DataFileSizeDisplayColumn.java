@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -39,20 +40,20 @@ public class DataFileSizeDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (_data == null)
         {
-            out.write("");
+            oldWriter.write("");
         }
         else if (_data.getFile() == null || !_data.getFile().exists())
         {
-            out.write("File not found");
+            oldWriter.write("File not found");
         }
         else
         {
             long size = _data.getFile().length();
-            out.write(FileUtils.byteCountToDisplaySize(size));
+            oldWriter.write(FileUtils.byteCountToDisplaySize(size));
         }
     }
 

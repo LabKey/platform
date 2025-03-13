@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -39,12 +40,12 @@ public class UrlColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object value = getValue(ctx);
         String url = renderURL(ctx);
 
         if (value != null && url != null)
-            out.write(PageFlowUtil.link(value.toString()).href(url).target(_linkTarget).toString());
+            oldWriter.write(PageFlowUtil.link(value.toString()).href(url).target(_linkTarget).toString());
     }
 }

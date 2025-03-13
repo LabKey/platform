@@ -89,13 +89,13 @@ public class MapArrayExcelWriter extends ExcelWriter
 
         //NOTE: Methods beyond here are unimplemented, just abstract in base class!
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out)
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }
 
         @Override
-        public void renderDetailsCellContents(RenderContext ctx, Writer out)
+        public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

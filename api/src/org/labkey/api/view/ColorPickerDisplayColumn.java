@@ -37,12 +37,12 @@ public class ColorPickerDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object value = getValue(ctx);
         if (value != null)
         {
-            out.write("<div style=\"height: 20px; width: 20px; background: #" + PageFlowUtil.filter(value.toString()) + "\"></div>");
+            oldWriter.write("<div style=\"height: 20px; width: 20px; background: #" + PageFlowUtil.filter(value.toString()) + "\"></div>");
         }
     }
 

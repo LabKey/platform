@@ -72,6 +72,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -798,7 +799,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             if (_editable)
             {
@@ -808,8 +809,8 @@ public class PublishResultsQueryView extends QueryView
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
                         // TODO: Use the same code as AutoCompleteTag.java
-                        out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-                        out.write("""
+                        oldWriter.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                        oldWriter.write("""
                                 +function() {
                                     let isReady = false;
                                     
@@ -831,7 +832,7 @@ public class PublishResultsQueryView extends QueryView
                                     });
                                 }();
                                 """);
-                        out.write("</script>");
+                        oldWriter.write("</script>");
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
 
@@ -854,17 +855,17 @@ public class PublishResultsQueryView extends QueryView
                     // the div we will lazily wire up completions to (needs to be a sibling to the input)
                     sb.append("<div id=\"").append(PageFlowUtil.filter(completionId)).append("\">");
 
-                    out.write(sb.toString());
+                    oldWriter.write(sb.toString());
                 }
                 else
                 {
-                    out.write("<input type=\"text\" name=\"" + _formElementName +
+                    oldWriter.write("<input type=\"text\" name=\"" + _formElementName +
                             "\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
                 }
             }
             else
             {
-                out.write("<input type=\"hidden\" name=\"" + _formElementName +
+                oldWriter.write("<input type=\"hidden\" name=\"" + _formElementName +
                         "\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
             }
         }
@@ -956,7 +957,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Object visitObject = _visitColumn.calculateValue(ctx);
             Object dateObject = _dateColumn.calculateValue(ctx);
@@ -981,7 +982,7 @@ public class PublishResultsQueryView extends QueryView
 
             visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
 
-            out.write(visit == null ? "" : visit.getDisplayString());
+            oldWriter.write(visit == null ? "" : visit.getDisplayString());
         }
     }
 

@@ -27,7 +27,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -39,9 +39,6 @@ import java.util.Set;
 
 /**
  * Uses LABKEY.Ext.CalloutTip to provide additional details, summoned via AJAX
- *
- * User: jeckels
- * Date: May 14, 2012
  */
 public class AJAXDetailsDisplayColumn extends DataColumn
 {
@@ -79,7 +76,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String evaluatedURL = null;
         if (_detailsURL != null)
@@ -106,9 +103,9 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             props.put("autoLoad", autoLoadProp);
             props.put("target", divId);
 
-            out.write("<span id=\"" + divId + "\">");
+            oldWriter.write("<span id=\"" + divId + "\">");
             super.renderGridCellContents(ctx, out);
-            out.write("</span>");
+            oldWriter.write("</span>");
             HttpView.currentPageConfig().addDocumentLoadHandler(JavaScriptFragment.unsafe(
                 "    Ext.onReady(function () { \n" +
                 "    var config = " + props.toString(0) + ";\n" +

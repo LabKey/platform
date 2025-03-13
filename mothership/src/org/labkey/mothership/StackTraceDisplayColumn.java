@@ -51,9 +51,9 @@ public class StackTraceDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        renderContents(ctx, out, Integer.MAX_VALUE);
+        renderContents(ctx, oldWriter, Integer.MAX_VALUE);
     }
 
     private void renderContents(RenderContext ctx, Writer out, int maxLines) throws IOException
@@ -89,8 +89,8 @@ public class StackTraceDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        renderContents(ctx, out, MAX_LINES_TO_SHOW);
+        renderContents(ctx, oldWriter, MAX_LINES_TO_SHOW);
     }
 }

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -122,7 +123,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         try
         {
@@ -136,7 +137,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 Object o = getValue(mvCtx);
                 if (o != null)
                 {
-                    out.append(sep);
+                    oldWriter.append(sep);
                     super.renderGridCellContents(mvCtx, out);
                     sep = ", ";
                 }

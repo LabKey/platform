@@ -325,7 +325,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         // By default, use the same rendering for both the details and grid views
         renderGridCellContents(ctx, out);
@@ -373,7 +373,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object o = getValue(ctx);
 
@@ -417,15 +417,15 @@ public class DataColumn extends DisplayColumn
                     link.style(css);
                 }
 
-                link.build().appendTo(out);
+                link.build().appendTo(oldWriter);
             }
             else
             {
-                formattedValue.appendTo(out);
+                formattedValue.appendTo(oldWriter);
             }
         }
         else
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
     }
 
     protected String renderURLorValueURL(RenderContext ctx)

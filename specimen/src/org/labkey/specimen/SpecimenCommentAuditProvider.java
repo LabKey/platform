@@ -33,6 +33,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.Link;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
 
 import java.io.IOException;
@@ -125,7 +126,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                 }
 
                                 @Override
-                                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
                                 {
                                     Object containerId = containerColumn.getValue(ctx);
                                     String globalUniqueId = (String) getValue(ctx);
@@ -135,12 +136,12 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                     Container container = ContainerManager.getForId(containerId.toString());
                                     if (container == null)
                                     {
-                                        out.write(globalUniqueId);
+                                        oldWriter.write(globalUniqueId);
                                         return;
                                     }
 
                                     ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
-                                    out.write(new Link.LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
+                                    oldWriter.write(new Link.LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
                                 }
                             };
                         }

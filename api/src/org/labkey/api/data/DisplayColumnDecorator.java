@@ -45,19 +45,13 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         _column.renderGridCellContents(ctx, out);
     }
 
     @Override
     public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
-    {
-        _column.renderDetailsCellContents(ctx, out);
-    }
-
-    @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderDetailsCellContents(ctx, out);
     }

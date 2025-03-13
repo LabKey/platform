@@ -69,7 +69,7 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String mvIndicator = getMvIndicator(ctx);
         if (mvIndicator != null)
@@ -83,9 +83,9 @@ public class MVDisplayColumn extends DataColumn
                     .append(value)
                     .unsafeAppend("'.</p>");
 
-            out.write("<font class=\"labkey-mv\">");
-            PageFlowUtil.popupHelp(popupText, "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(out);
-            out.write("</font>");
+            oldWriter.write("<font class=\"labkey-mv\">");
+            PageFlowUtil.popupHelp(popupText, "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(oldWriter);
+            oldWriter.write("</font>");
         }
         else
         {

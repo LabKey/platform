@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,7 +47,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         List<Path> files = null;
 
@@ -66,7 +67,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
 
         if (files == null || files.isEmpty())
         {
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
         }
         else
         {
@@ -76,21 +77,21 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 String fileName = file.getFileName().toString();
                 if (Files.isReadable(file))
                 {
-                    out.write("<a href=\"");
-                    out.write(PageFlowUtil.filter(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString()));
-                    out.write("\">");
-                    out.write(PageFlowUtil.filter(fileName));
-                    out.write("</a>\n");
+                    oldWriter.write("<a href=\"");
+                    oldWriter.write(PageFlowUtil.filter(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false).getLocalURIString()));
+                    oldWriter.write("\">");
+                    oldWriter.write(PageFlowUtil.filter(fileName));
+                    oldWriter.write("</a>\n");
 
-                    out.write("&nbsp;&nbsp;");
-                    PageFlowUtil.link("view").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)).appendTo(out);
-                    PageFlowUtil.link("download").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)).appendTo(out);
-                    out.write("<br>\n");
+                    oldWriter.write("&nbsp;&nbsp;");
+                    PageFlowUtil.link("view").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)).appendTo(oldWriter);
+                    PageFlowUtil.link("download").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)).appendTo(oldWriter);
+                    oldWriter.write("<br>\n");
                 }
                 else
                 {
-                    out.write(PageFlowUtil.filter(fileName));
-                    out.write("<br>\n");
+                    oldWriter.write(PageFlowUtil.filter(fileName));
+                    oldWriter.write("<br>\n");
                 }
             }
         }

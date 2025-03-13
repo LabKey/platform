@@ -189,21 +189,21 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                     }
 
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
                     {
                         Container c = getContainer(ctx);
                         if (c != null)
                         {
                             if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
                             {
-                                out.write("<a href=\"");
-                                out.write(PageFlowUtil.filter(c.getStartURL(getUserSchema().getUser()).getLocalURIString()));
-                                out.write("\">");
-                                out.write(PageFlowUtil.filter(c.getName()));
-                                out.write("</a>");
+                                oldWriter.write("<a href=\"");
+                                oldWriter.write(PageFlowUtil.filter(c.getStartURL(getUserSchema().getUser()).getLocalURIString()));
+                                oldWriter.write("\">");
+                                oldWriter.write(PageFlowUtil.filter(c.getName()));
+                                oldWriter.write("</a>");
                             }
                             else
-                                out.write(PageFlowUtil.filter(c.getName()));
+                                oldWriter.write(PageFlowUtil.filter(c.getName()));
                         }
                         else
                             super.renderGridCellContents(ctx, out);

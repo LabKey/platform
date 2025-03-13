@@ -24,6 +24,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -42,13 +43,13 @@ abstract class DataLinkColumn extends DataColumn
     protected abstract ActionURL getURL(ExpData data);
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         ExpData data = getData(ctx);
 
         if (data != null)
         {
-            renderData(out, data);
+            renderData(oldWriter, data);
         }
     }
 

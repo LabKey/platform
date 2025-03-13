@@ -104,7 +104,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         this.renderInputHtml(ctx, HtmlWriter.of(oldWriter), getValue(ctx));
     }

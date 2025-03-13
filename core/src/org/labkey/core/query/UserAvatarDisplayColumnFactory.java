@@ -58,22 +58,22 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             }
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
             {
                 String renderUrl = renderURL(ctx);
                 if (renderUrl != null)
                 {
-                    out.write(getImageTagStr(renderUrl, 32));
+                    oldWriter.write(getImageTagStr(renderUrl, 32));
                 }
             }
 
             @Override
-            public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+            public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
             {
                 String renderUrl = renderURL(ctx);
                 if (renderUrl != null)
                 {
-                    out.write(getImageTagStr(renderUrl, null));
+                    oldWriter.write(getImageTagStr(renderUrl, null));
                 }
             }
 

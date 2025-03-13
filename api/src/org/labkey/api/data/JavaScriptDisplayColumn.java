@@ -23,6 +23,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -63,7 +64,7 @@ public class JavaScriptDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object o = getValue(ctx);
 
@@ -74,10 +75,10 @@ public class JavaScriptDisplayColumn extends DataColumn
             if (_onClickExpression != null)
                 onClick = StringUtils.trim(_onClickExpression.eval(ctx));
 
-            renderLink(out, getFormattedHtml(ctx), onClick, _linkClassName);
+            renderLink(oldWriter, getFormattedHtml(ctx), onClick, _linkClassName);
         }
         else
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
     }
 
     protected void renderLink(Writer out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)

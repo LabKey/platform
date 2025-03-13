@@ -110,11 +110,11 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object value = getValue(ctx);
         if (value != null)
-            out.write(value.toString());
+            oldWriter.write(value.toString());
     }
 
     @Override
@@ -124,41 +124,41 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String url = renderURL(ctx);
         if (null != url)
         {
-            out.write("<a href='");
-            out.write(PageFlowUtil.filter(url));
+            oldWriter.write("<a href='");
+            oldWriter.write(PageFlowUtil.filter(url));
 
             String linkTarget = getLinkTarget();
             if (null != linkTarget)
             {
-                out.write("' target='");
-                out.write(linkTarget);
-                out.write("' rel='noopener noreferrer'");
+                oldWriter.write("' target='");
+                oldWriter.write(linkTarget);
+                oldWriter.write("' rel='noopener noreferrer'");
             }
 
             String linkCls = getLinkCls();
             if (null != linkCls)
             {
-                out.write("' class='");
-                out.write(linkCls);
+                oldWriter.write("' class='");
+                oldWriter.write(linkCls);
             }
 
-            out.write("'>");
+            oldWriter.write("'>");
         }
         Object value = getDisplayValue(ctx);
         if (value == null)
-            out.write("");
+            oldWriter.write("");
         else if (null == _format)
-            out.write(getDisplayValue(ctx).toString());
+            oldWriter.write(getDisplayValue(ctx).toString());
         else
-            out.write(_format.format(getDisplayValue(ctx)));
+            oldWriter.write(_format.format(getDisplayValue(ctx)));
 
         if (null != url)
-            out.write("</a>");
+            oldWriter.write("</a>");
     }
 
     @Override

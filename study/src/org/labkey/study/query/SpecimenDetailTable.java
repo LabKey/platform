@@ -45,6 +45,7 @@ import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -325,7 +326,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object value = getBoundColumn().getValue(ctx);
             if (value == null)

@@ -31,7 +31,7 @@ public class InputColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         renderInputHtml(ctx, HtmlWriter.of(oldWriter), getInputValue(ctx));
     }

@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -70,14 +71,14 @@ public class IconDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         ActionURL linkURL = _linkURL.clone();
         Object value = ctx.getRow().get(getColumnInfo().getAlias());
         if (value != null)
         {
             linkURL.addParameter(_parameterName, value.toString());
-            out.write("<a href=\"" + linkURL.getLocalURIString() + "\" title=\"" + PageFlowUtil.filter(_imageTitle) + "\"><img src=\"" + _imageURL + "\" height=\"" + _height + "\" width=\"" + _width + "\"/></a>");
+            oldWriter.write("<a href=\"" + linkURL.getLocalURIString() + "\" title=\"" + PageFlowUtil.filter(_imageTitle) + "\"><img src=\"" + _imageURL + "\" height=\"" + _height + "\" width=\"" + _width + "\"/></a>");
         }
     }
 }

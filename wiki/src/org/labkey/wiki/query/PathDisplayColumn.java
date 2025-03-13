@@ -26,15 +26,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
 /**
- * User: kevink
- * Date: 7/2/15
- *
  * Renders the wiki "Path" column as a set of '/' parts with links to the wiki
  * page for each part. Since '/' is a legal character in wiki names, we split
  * the "PathParts" column value using an unlikely value delimiter and use it
@@ -108,7 +106,7 @@ public class PathDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (!_hasPathPartsDisplayCol)
         {
@@ -119,14 +117,14 @@ public class PathDisplayColumn extends DataColumn
         String[] parts = getPathParts(ctx);
         if (parts == null)
         {
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
             return;
         }
 
         StringExpression s = compileExpression(ctx.getViewContext());
         if (s == null)
         {
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
             return;
         }
 
@@ -137,7 +135,7 @@ public class PathDisplayColumn extends DataColumn
             for (int i = 0; i < parts.length; i++)
             {
                 if (i > 0)
-                    out.write("/");
+                    oldWriter.write("/");
 
                 String part = parts[i];
                 newRow.put("Part", part);
@@ -145,15 +143,15 @@ public class PathDisplayColumn extends DataColumn
                 String url = s.eval(newRow);
                 if (url != null)
                 {
-                    out.write("<a href='");
-                    out.write(PageFlowUtil.filter(url));
-                    out.write("'>");
-                    out.write(PageFlowUtil.filter(part));
-                    out.write("</a>");
+                    oldWriter.write("<a href='");
+                    oldWriter.write(PageFlowUtil.filter(url));
+                    oldWriter.write("'>");
+                    oldWriter.write(PageFlowUtil.filter(part));
+                    oldWriter.write("</a>");
                 }
                 else
                 {
-                    out.write(PageFlowUtil.filter(part));
+                    oldWriter.write(PageFlowUtil.filter(part));
                 }
             }
         }

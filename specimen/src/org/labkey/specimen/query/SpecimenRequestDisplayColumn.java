@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,7 +47,7 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String hash = (String) ctx.getRow().get("SpecimenHash");
         String globalUniqueId = (String) ctx.getRow().get("GlobalUniqueId");
@@ -66,33 +67,33 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
         boolean available = (!vialView && count > 0) || (vialView && StudyUtils.isFieldTrue(ctx, "Available"));
         boolean showCart = _showCartLinks && available;
         String script = null;
-        out.write("<center>");
+        oldWriter.write("<center>");
         if (showCart)
         {
             script = globalUniqueId == null ? "requestByHash('" + hash + "'); return false;"
                         : "requestByGlobalUniqueId('" + globalUniqueId + "'); return false;";
-            out.write("<span id=\"" + (globalUniqueId != null ? globalUniqueId : hash) + "\">");
+            oldWriter.write("<span id=\"" + (globalUniqueId != null ? globalUniqueId : hash) + "\">");
         }
 
         if (_showOneVialIndicator && count == 1)
         {
-            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.png\">",
+            oldWriter.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.png\">",
                     "One Vial Available", "Only one vial of this primary specimen is available.", script));
         }
         else if (_showZeroVialIndicator && count == 0)
         {
-            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/zero.png\">",
+            oldWriter.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/zero.png\">",
                     "Zero Vials Available", "No vials of this primary specimen are currently available for request.", null));
         }
         else
         {
-            out.write(getVialCountHtml(ctx, "<div style='color:gray'>" + String.valueOf(count)  + "</div>",
+            oldWriter.write(getVialCountHtml(ctx, "<div style='color:gray'>" + String.valueOf(count)  + "</div>",
                     count + " Vials Available", count + " vials of this primary specimen are currently available for new requests.", script));
         }
 
         if (showCart)
-            out.write("</a></span>");
-        out.write("</center>");
+            oldWriter.write("</a></span>");
+        oldWriter.write("</center>");
     }
 
     private String getVialCountHtml(RenderContext ctx, String cellHtml, String popupTitle, String popupBody, String requestScript)

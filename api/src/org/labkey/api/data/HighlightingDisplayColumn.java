@@ -115,7 +115,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (!handlersAdded)
         {
@@ -131,9 +131,9 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         }
 
         String styleClass = getStyleClass(ctx);
-        out.write("<span class=\"" + styleClass + " " + _cssEventSelector + "\">");
+        oldWriter.write("<span class=\"" + styleClass + " " + _cssEventSelector + "\">");
         super.renderGridCellContents(ctx, out);
-        out.write("</span>");
+        oldWriter.write("</span>");
     }
 
     // Note: Nobody calls this method! It must have been orphaned in DisplayColumn / DataColumn a while back. Leaving
