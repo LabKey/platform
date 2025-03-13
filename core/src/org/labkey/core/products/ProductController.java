@@ -56,7 +56,7 @@ public class ProductController extends SpringActionController
         @Override
         public Object execute(UserMenuSectionForm form, BindException errors) throws Exception
         {
-            return ProductRegistry.get().getUserMenuSection(getViewContext(), form.getProductId());
+            return success(ProductRegistry.get().getUserMenuSection(getViewContext(), form.getProductId()));
         }
     }
 
@@ -99,7 +99,7 @@ public class ProductController extends SpringActionController
         @Override
         public Object execute(MenuItemsForm menuItemsForm, BindException errors) throws Exception
         {
-            return ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds);
+            return success(ProductRegistry.get().getProductMenuSections(getViewContext(), _productIds));
         }
     }
 
@@ -135,7 +135,7 @@ public class ProductController extends SpringActionController
         @Override
         public Object execute(Object form, BindException errors) throws Exception
         {
-            return ProductRegistry.get().getRegisteredProducts();
+            return success(ProductRegistry.get().getRegisteredProducts());
         }
     }
 }

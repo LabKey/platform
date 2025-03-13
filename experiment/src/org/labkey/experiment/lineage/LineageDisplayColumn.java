@@ -139,10 +139,6 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
             {
                 throw new RuntimeSQLException(x);
             }
-            catch (IOException x)
-            {
-                throw new RuntimeException(x);
-            }
         }
     }
 

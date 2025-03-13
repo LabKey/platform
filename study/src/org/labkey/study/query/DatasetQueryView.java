@@ -728,7 +728,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         @Override
-        protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+        protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx)
         {
             super.addHeaderMessage(headerMessage, ctx);
 
@@ -770,7 +770,7 @@ public class DatasetQueryView extends StudyQueryView
                 ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(dqs.getContainer(), dqs.getUser(), ctx.getViewContext().getRequest());
                 if (sessionGroup != null)
                 {
-                    if (msg.length() > 0)
+                    if (!msg.isEmpty())
                         msg.append("  ");
                     msg.append("Selected " + dqs.getStudy().getSubjectNounPlural() + ": ");
                     msg.append(sessionGroup.getParticipantIds().length);

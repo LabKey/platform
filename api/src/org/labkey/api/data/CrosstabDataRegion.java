@@ -16,11 +16,11 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -28,20 +28,14 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Used in conjunction with the CrosstabView class to override rendering of
- * the column headers.
- *
- * User: Dave
- * Date: Jan 25, 2008
- * Time: 10:09:00 AM
+ * Used in conjunction with the CrosstabView class to override rendering of the column headers.
  */
 public class CrosstabDataRegion extends DataRegion
 {
-    private static final Logger _log = LogManager.getLogger(CrosstabDataRegion.class);
-    private CrosstabSettings _settings;
-    private int _numRowAxisCols;
-    private int _numMeasures;
-    private int _numMemberMeasures;
+    private final CrosstabSettings _settings;
+    private final int _numRowAxisCols;
+    private final int _numMeasures;
+    private final int _numMemberMeasures;
 
     public CrosstabDataRegion(CrosstabSettings settings, int numRowAxisCols, int numMeasures, int numMemberMeasures)
     {
@@ -53,20 +47,23 @@ public class CrosstabDataRegion extends DataRegion
     }
 
     @Override
-    protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
-            throws IOException, SQLException
+    protected void renderGridHeaderColumns(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException
     {
         if (_numMemberMeasures > 0)
         {
+            Writer oldWriter = out.unwrap();
+
+            try
+            {
             //add a row for the column axis label if there is one
-            out.write("<thead><tr>");
-            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
-            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), out, false);
-            out.write("</tr></thead>");
+            oldWriter.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols, _settings.getColumnAxis().getCaption(), oldWriter, false);
+            oldWriter.write("</tr></thead>");
 
             //add an extra row for the column dimension members
-            out.write("<thead><tr>");
-            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, false);
+            oldWriter.write("<thead><tr>");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), oldWriter, false);
 
             List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
@@ -86,7 +83,7 @@ public class CrosstabDataRegion extends DataRegion
                 {
                     if (_numMeasures != _numMemberMeasures || colDim.getMemberUrl(currentMember) != null)
                     {
-                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), out, alternate);
+                        renderColumnGroupHeader(memberColumns.size(), getMemberCaptionWithUrl(colDim, currentMember), oldWriter, alternate);
                     }
                 }
 
@@ -98,14 +95,19 @@ public class CrosstabDataRegion extends DataRegion
                     {
                         String memberCaption = currentMember.getCaption();
                         String innerCaption = renderer.getCaption(ctx);
-                        if (StringUtils.startsWith(innerCaption,memberCaption))
+                        if (StringUtils.startsWith(innerCaption, memberCaption))
                             renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
                     }
                 }
             }
 
             //end the col dimension member header row
-            out.write("</tr></thead>");
+            oldWriter.write("</tr></thead>");
+            }
+            catch (IOException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
         }
 
         //call the base class to finish rendering the headers

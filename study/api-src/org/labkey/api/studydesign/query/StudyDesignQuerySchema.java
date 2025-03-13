@@ -180,14 +180,14 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = ensureDomain(domainKind, StudyDesignQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return StudyTreatmentProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
+            return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = ensureDomain(domainKind, TREATMENT_TABLE_NAME);
 
-            return StudyTreatmentTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
+            return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -218,6 +218,15 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
             throw new IllegalStateException("Could not find a domain for " + tableName + " in " + getContainer().getPath());
         }
         return result;
+    }
+
+    /**
+     * This only gets overridden in the DataspaceQuerySchema, we should be able to delete this and other support
+     * for dataspace in the study design schema when we confirm there are no clients who use that combination.
+     */
+    public boolean isDataspace()
+    {
+        return false;
     }
 
     public boolean isDataspaceProject()

@@ -23,6 +23,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -148,10 +149,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             {
                 throw new RuntimeSQLException(x);
             }
-            catch (IOException x)
-            {
-                throw new RuntimeException(x);
-            }
         }
     }
 
@@ -201,7 +198,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             out.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridHeaderCell(innerCtx, out);
+                pair.second.renderGridHeaderCell(innerCtx, HtmlWriter.of(out));
             }
             out.write("</tr>");
             out.write("</thead>");
@@ -210,7 +207,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             out.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridDataCell(innerCtx, out);
+                pair.second.renderGridDataCell(innerCtx, HtmlWriter.of(out));
             }
             out.write("</tr>");
             out.write("</tbody>");

@@ -251,6 +251,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     public void verifyDatasetFieldValidators()
     {
         log("Field Validators: export study folder to the pipeline as individual files");
+        goToProjectHome();
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("Field Validators: import study into subfolder");

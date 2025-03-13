@@ -19,19 +19,13 @@ import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * User: klum
- * Date: 10/21/12
- */
-public class AuditChangesView extends HttpView
+public class AuditChangesView extends HttpView<Object>
 {
-    private String _comment;
+    private final String _comment;
     private final Map<String,String> oldData;
     private final Map<String,String> newData;
     private String _returnUrl;
@@ -58,10 +52,9 @@ public class AuditChangesView extends HttpView
     }
 
     @Override
-    protected void renderInternal(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         int modified = 0;
-        PrintWriter out = response.getWriter();
 
         out.write("<table class=\"lk-fields-table\">\n");
         out.write("<tr class=\"labkey-wp-header\"><th colspan=\"2\" align=\"left\">Item Changes</th></tr>");

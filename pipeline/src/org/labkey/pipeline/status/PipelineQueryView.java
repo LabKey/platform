@@ -40,18 +40,14 @@ import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.springframework.validation.BindException;
 
-/**
- * User: jeckels
- * Date: Dec 21, 2009
- */
 public class PipelineQueryView extends QueryView
 {
     private final ViewContext _context;
-    private final Class<? extends ReadOnlyApiAction> _apiAction;
+    private final Class<? extends ReadOnlyApiAction<?>> _apiAction;
     private final PipelineService.PipelineButtonOption _buttonOption;
     private final ActionURL _returnUrl;
 
-    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ReadOnlyApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnUrl)
+    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ReadOnlyApiAction<?>> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnUrl)
     {
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
         _buttonOption = buttonOption;

@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -549,15 +550,15 @@ public class ExceptionUtil
         {
             String message = "Client exception detected";
             if (null != errorCode)
-            {
                 message += " and logged to mothership with error code " + errorCode + " ";
-            }
-            LOG.error(message + "\n" +
-                    requestURL + "\n" +
-                    referrerURL + "\n" +
-                    browser + "\n" +
-                    stackTrace.stackTrace
-            );
+
+            message += "\nrequestURL: " + requestURL;
+            if (null != referrerURL && !referrerURL.equals(requestURL))
+                message += "\nreferrerURL: " + referrerURL;
+            message += "\nbrowser: " + browser;
+            message += "\n" + stackTrace.stackTrace;
+
+            LOG.error(message);
         }
 
         return errorCode;

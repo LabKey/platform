@@ -43,6 +43,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -665,19 +666,21 @@ public abstract class DisplayColumn extends RenderColumn
         return _gridHeaderClass;
     }
 
-    public void renderColTag(Writer out, boolean isLast) throws IOException
-    {
-        out.write("<col />");
-    }
-
     public String getDefaultHeaderStyle()
     {
         return "";
     }
 
-    public void renderGridHeaderCell(RenderContext ctx, Writer out) throws IOException
+    public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out)
     {
-        renderGridHeaderCell(ctx, out, null);
+        try
+        {
+            renderGridHeaderCell(ctx, out.unwrap(), null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean hasFilterKey(FieldKey fieldKey)
@@ -1042,6 +1045,18 @@ public abstract class DisplayColumn extends RenderColumn
 
     boolean foundHoverContent = false;
 
+    public void renderGridDataCell(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderGridDataCell(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
         if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
@@ -1171,6 +1186,18 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
+    public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls)
+    {
+        try
+        {
+            renderDetailsCaptionCell(ctx, out.unwrap(), cls);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
@@ -1193,6 +1220,18 @@ public abstract class DisplayColumn extends RenderColumn
             writer.write(e.getMessage());
         }
         return writer.toString();
+    }
+
+    public void renderDetailsData(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderDetailsData(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
@@ -1273,14 +1312,50 @@ public abstract class DisplayColumn extends RenderColumn
             .toString());
     }
 
+    public void renderInputWrapperBegin(HtmlWriter out)
+    {
+        try
+        {
+            renderInputWrapperBegin(out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void renderInputWrapperBegin(Writer out) throws IOException
     {
         out.write("<td>");
     }
 
+    public void renderInputWrapperEnd(HtmlWriter out)
+    {
+        try
+        {
+            renderInputWrapperEnd(out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void renderInputWrapperEnd(Writer out) throws IOException
     {
         out.write("</td>");
+    }
+
+    public void renderInputCell(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderInputCell(ctx, out.unwrap());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void renderInputCell(RenderContext ctx, Writer out) throws IOException

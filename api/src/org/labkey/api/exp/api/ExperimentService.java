@@ -645,7 +645,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
-    FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf);
+    FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createPhiFieldsTable(ExpSchema expSchema, ContainerFilter cf);
 
