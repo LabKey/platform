@@ -63,6 +63,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -274,22 +275,11 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
                 var fileObject = createFile(protocol, dir, "tmp");
 
-                // Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                 List<String> columns = provider.getResultsDomain(protocol).getProperties().stream().map(DomainProperty::getName).collect(Collectors.toList());
-                if (!columns.isEmpty() && columns.get(0).startsWith("#"))
-                {
-                    String firstColumn = columns.get(0);
-                    String newFirstColumn = firstColumn.substring(1);
-                    columns.set(0, newFirstColumn);
-                    for (Map<String, Object> row : rawData)
-                    {
-                        if (row.containsKey(firstColumn))
-                            row.put(newFirstColumn, row.remove(firstColumn));
-                    }
-                }
 
                 try (TSVMapWriter tsvWriter = saveMatchingColumnDataOnly ? new TSVMapWriter(columns, rawData) : new TSVMapWriter(columns, rawData, true))
                 {
+                    tsvWriter.setAdditionalQuotedChars("#"); //Issue 50719: If the first column name starts with a #, the data loader will treat the header row as a comment
                     tsvWriter.write(fileObject.toNioPathForWrite().toFile());
                     factory.setRawData(null);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, fileObject));
@@ -605,26 +595,35 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         @Override
         public @NotNull BindException bindParameters(PropertyValues m)
         {
+            MutablePropertyValues propertyValues = new MutablePropertyValues();
             for (PropertyValue pv : m.getPropertyValues())
             {
                 String name = pv.getName();
+                propertyValues.add(name, pv.getValue());
+
                 if (name.endsWith("]"))
                 {
                     if (name.startsWith("properties["))
                     {
                         String key = parsePropertiesKey(name.substring("properties[".length(), name.length() - 1));
                         if (key != null)
+                        {
                             getProperties().put(key, pv.getValue());
+                            propertyValues.removePropertyValue(name);
+                        }
                     }
                     else if (name.startsWith("batchProperties["))
                     {
                         String key = parsePropertiesKey(name.substring("batchProperties[".length(), name.length()-1));
                         if (key != null)
+                        {
                             getBatchProperties().put(key, pv.getValue());
+                            propertyValues.removePropertyValue(name);
+                        }
                     }
                 }
             }
-            return springBindParameters(this, "form", m);
+            return springBindParameters(this, "form", propertyValues);
         }
 
         private String parsePropertiesKey(String key)
