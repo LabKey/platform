@@ -411,9 +411,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
+    protected void renderHiddenFormInput(HtmlWriter out, String formFieldName, Object value)
     {
-        _column.renderHiddenFormInput(ctx, out, formFieldName, value);
+        _column.renderHiddenFormInput(out, formFieldName, value);
     }
 
     @Override

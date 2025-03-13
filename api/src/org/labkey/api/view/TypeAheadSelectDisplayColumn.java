@@ -83,7 +83,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
     public static class Factory implements DisplayColumnFactory

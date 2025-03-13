@@ -643,7 +643,7 @@ public class DataColumn extends DisplayColumn
 
         if (_boundColumn.isAutoIncrement())
         {
-            renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
             if (null != value)
             {
                 out.write(PageFlowUtil.filter(strVal));
@@ -651,7 +651,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("disabled"))
         {
-            renderTextFormInput(ctx, out, formFieldName, value, strVal, true);
+            renderTextFormInput(out, formFieldName, value, strVal, true);
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
@@ -665,15 +665,15 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            renderTextAreaFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderTextAreaFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            renderFileFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderFileFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
-            renderCheckboxFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderCheckboxFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else
         {
@@ -685,9 +685,9 @@ public class DataColumn extends DisplayColumn
             {
                 IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
-                    renderTextChoiceFormInput(ctx, out, formFieldName, value, strVal, disabledInput, textChoiceValidator);
+                    renderTextChoiceFormInput(out, formFieldName, value, strVal, disabledInput, textChoiceValidator);
                 else
-                    renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+                    renderTextFormInput(out, formFieldName, value, strVal, disabledInput);
             }
         }
 
@@ -710,7 +710,7 @@ public class DataColumn extends DisplayColumn
     }
 
     private void renderSelectFormInput(
-            RenderContext ctx, Writer out, String formFieldName, Object value, String strVal,
+            Writer out, String formFieldName, Object value, String strVal,
             boolean disabledInput, NamedObjectList entryList
     ) throws IOException
     {
@@ -741,10 +741,10 @@ public class DataColumn extends DisplayColumn
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
-    private void renderTextChoiceFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
+    private void renderTextChoiceFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
             throws IOException
     {
         NamedObjectList options = new NamedObjectList();
@@ -760,7 +760,7 @@ public class DataColumn extends DisplayColumn
         for (String choice : choices)
             options.put(new SimpleNamedObject(choice, choice));
 
-        renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, options);
+        renderSelectFormInput(out, formFieldName, value, strVal, disabledInput, options);
     }
 
     protected void renderSelectFormInputFromFk(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
@@ -782,15 +782,15 @@ public class DataColumn extends DisplayColumn
                 displayValue = getDisplayValue(ctx);
             String textInputValue = Objects.toString(displayValue, strVal);
 
-            renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
+            renderTextFormInput(out, formFieldName, value, textInputValue, disabledInput);
         }
         else
         {
-            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput, entryList);
+            renderSelectFormInput(out, formFieldName, value, strVal, disabledInput, entryList);
         }
     }
 
-    protected void renderFileFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderFileFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         var input = new Input.InputBuilder<>()
@@ -802,7 +802,7 @@ public class DataColumn extends DisplayColumn
         out.write(input.build().toString());
     }
 
-    protected void renderCheckboxFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderCheckboxFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
@@ -831,10 +831,10 @@ public class DataColumn extends DisplayColumn
         out.write("\" value=\"1\">");
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
+            renderHiddenFormInput(out, formFieldName, checked ? "1" : "");
     }
 
-    protected void renderTextAreaFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderTextAreaFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
@@ -848,10 +848,10 @@ public class DataColumn extends DisplayColumn
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
-    protected void renderTextFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderTextFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         var input = new Input.InputBuilder<>()
@@ -865,7 +865,7 @@ public class DataColumn extends DisplayColumn
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
     protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, @NotNull ActionURL autoCompleteURLPrefix)

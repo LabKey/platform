@@ -49,7 +49,7 @@ public class ColorPickerDisplayColumn extends DataColumn
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         String name = getFormFieldName(ctx);
-        renderHiddenFormInput(ctx, out, name, value);
+        renderHiddenFormInput(out, name, value);
 
         String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 

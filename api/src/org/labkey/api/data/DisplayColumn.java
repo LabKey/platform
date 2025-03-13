@@ -44,6 +44,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
@@ -63,7 +64,14 @@ import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.labkey.api.util.DOM.Attribute.align;
+import static org.labkey.api.util.DOM.Attribute.rowspan;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
+import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
@@ -133,6 +141,19 @@ public abstract class DisplayColumn extends RenderColumn
     };
 
     private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
+
+    public HtmlWriter renderGridCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        try
+        {
+            renderGridCellContents(ctx, out.unwrap());
+            return out;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -711,18 +732,6 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridHeaderCell(RenderContext ctx, HtmlWriter out, String headerClass)
     {
-        try
-        {
-            renderGridHeaderCell(ctx, out.unwrap(), headerClass);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void renderGridHeaderCell(RenderContext ctx, Writer out, String headerClass) throws IOException
-    {
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
@@ -732,33 +741,6 @@ public abstract class DisplayColumn extends RenderColumn
 
         NavTree navTree = getPopupNavTree(ctx, baseId, sort, filtered);
         boolean hasMenu = navTree != null;
-
-        out.write("<th class=\"labkey-column-header ");
-        if (hasMenu)
-            out.write("dropdown dropdown-rollup ");
-        out.write(getGridHeaderClass());
-        if (sortField != null)
-        {
-            if (sortField.getSortDirection() == Sort.SortDirection.ASC)
-                out.write(" labkey-sort-asc");
-            else
-                out.write(" labkey-sort-desc");
-        }
-        if (filtered)
-            out.write(" labkey-filtered");
-        if (headerClass != null)
-        {
-            out.write(" " + headerClass);
-        }
-        if (_displayClass != null)
-        {
-            out.write(" " + _displayClass);
-        }
-        if (isPhiProtected())
-        {
-            out.write(" labkey-phi-protected");
-        }
-        out.write("\""); // end of "class"
 
         StringBuilder tooltip = new StringBuilder();
         if (null != getDescription())
@@ -803,58 +785,49 @@ public abstract class DisplayColumn extends RenderColumn
             }
         }
 
-        if (!tooltip.isEmpty())
-        {
-            out.write(" title=\"");
-            out.write(PageFlowUtil.filter(tooltip.toString()));
-            out.write("\"");
-        }
-
-        out.write(" column-name=\"");
-        out.write(PageFlowUtil.filter(ctx.getCurrentRegion().getName() + ":" + columnName));
-        out.write("\">");
-
         String style = getDefaultHeaderStyle();
         if (style == null)
             style = "";
 
         // 34871: Support for column display width
         if (!isBlank(getWidth()))
-            style += ";width:" + getWidth() + "px;";
+            style += "; width:" + getWidth() + "px;";
 
-        out.write("<div ");
-        if (!style.isEmpty())
-        {
-            out.write("style=\"");
-            out.write(style);
-            out.write("\"");
-        }
-        out.write(">");
+        TH(
+            cl("labkey-column-header " + getGridHeaderClass()).
+            cl(hasMenu, "dropdown dropdown-rollup").
+            cl(sortField != null, () -> "labkey-sort-" + (sortField.getSortDirection() == Sort.SortDirection.ASC ? "asc" : "desc")).
+            cl(filtered, "labkey-filtered").
+            cl(headerClass).
+            cl(_displayClass).
+            cl(isPhiProtected(), "labkey-phi-protected").
+            at(!tooltip.isEmpty(), title, tooltip).
+            data("column-name", ctx.getCurrentRegion().getName() + ":" + columnName),
 
-        HtmlString title = getTitle(ctx);
-        if (title != null)
-            out.write(title.toString());
-
-        out.write("<span class=\"fa fa-filter\"></span>");
-        out.write("<span class=\"fa fa-sort-up\"></span>");
-        out.write("<span class=\"fa fa-sort-down\"></span>");
-
-        if (hasMenu)
-        {
-            out.write("<span class=\"fa fa-chevron-circle-down\"></span>");
-
-            // 31304: click target should fill the entire cell
-            out.write("<div class=\"dropdown-toggle\" data-toggle=\"dropdown\"></div>");
-            out.write("<ul class=\"dropdown-menu\"");
-            if (!tooltip.isEmpty()) // 36050
-                out.write(" title=\"\"");
-            out.write(">");
-            PopupMenuView.renderTree(navTree, out);
-            out.write("</ul>");
-        }
-
-        out.write("</div>");
-        out.write("</th>");
+            DIV(
+                at(!style.isEmpty(), DOM.Attribute.style, style),
+                getTitle(ctx),
+                SPAN(cl("fa fa-filter")),
+                SPAN(cl("fa fa-up")),
+                SPAN(cl("fa fa-down")),
+                (DOM.Renderable) ret -> {
+                    if (hasMenu)
+                    {
+                        SPAN(
+                            cl("fa fa-chevron-circle-down")
+                        ).appendTo(out);
+                        DIV(
+                            cl("dropdown-toggle").data("toggle", "dropdown")
+                        ).appendTo(out);
+                        UL(
+                            cl("dropdown-menu").at(!tooltip.isEmpty(), title, ""),
+                            (DOM.Renderable) rend -> PopupMenuView.renderTree(navTree, out)
+                        ).appendTo(out);
+                    }
+                    return ret;
+                }
+            )
+        ).appendTo(out);
     }
 
     private Sort getSort(RenderContext ctx)
@@ -1045,56 +1018,32 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderGridDataCell(RenderContext ctx, HtmlWriter out)
     {
-        try
+        if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
         {
-            if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
-            {
-                // An earlier row has covered this cell with a rowspan so no need to render any HTML
-                return;
-            }
-
-            Writer oldWriter = out.unwrap();
-            oldWriter.write("<td");
-            String displayClass = getDisplayClass(ctx);
-            String hoverContent = getHoverContent(ctx);
-            if (!isBlank(displayClass) || !isBlank(hoverContent))
-            {
-                var cssClass = trimToEmpty(displayClass) + (!isBlank(hoverContent) ? " lk-column-tt" : "");
-                oldWriter.write(" class='" + cssClass + "'");
-            }
-            if (_textAlign != null)
-            {
-                oldWriter.write(" align=" + _textAlign);
-            }
-            String style = getCssStyle(ctx);
-            if (!style.isEmpty())
-            {
-                oldWriter.write(" style='" + style + "'");
-            }
-            int rowSpan = _rowSpanner.getRowSpan(ctx);
-            if (rowSpan > 1)
-            {
-                oldWriter.write(" rowspan=\"" + rowSpan + "\"");
-            }
-            if (hoverContent != null)
-            {
-                oldWriter.write(" data-columntiptitle=\"" + PageFlowUtil.filter(getHoverTitle(ctx)) + "\"");
-                oldWriter.write(" data-columntipcontent=\"" + PageFlowUtil.filter(hoverContent) + "\"");
-                if (!foundHoverContent)
-                {
-                    foundHoverContent=true;
-                    HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseover",
-                            "showHelpDivDelay(this, this.dataset['columntiptitle'], this.dataset['columntipcontent'], null, 1000);");
-                    HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseout", "return hideHelpDivDelay();");
-                }
-            }
-            oldWriter.write(">");
-            renderGridCellContents(ctx, oldWriter);
-            oldWriter.write("</td>");
+            // An earlier row has covered this cell with a rowspan so no need to render any HTML
+            return;
         }
-        catch (IOException e)
+
+        String displayClass = getDisplayClass(ctx);
+        String hoverContent = getHoverContent(ctx);
+        String style = getCssStyle(ctx);
+        int rowSpan = _rowSpanner.getRowSpan(ctx);
+
+        TD(
+            cl(!isBlank(displayClass) || !isBlank(hoverContent), trimToEmpty(displayClass) + (!isBlank(hoverContent) ? " lk-column-tt" : "")).
+            at(align, _textAlign).at(!style.isEmpty(), DOM.Attribute.style, style).at(rowSpan > 1, rowspan, rowSpan).
+            data(hoverContent != null, "columntiptitle", getHoverTitle(ctx)).
+            data(hoverContent != null, "columntipcontent", hoverContent),
+            (DOM.Renderable) ret -> renderGridCellContents(ctx, out)
+        ).appendTo(out);
+
+        if (hoverContent != null && !foundHoverContent)
         {
-            throw new RuntimeException(e);
+            PageConfig pageConfig = HttpView.currentPageConfig();
+            pageConfig.addHandlerForQuerySelector("TD.lk-column-tt", "mouseover",
+                    "showHelpDivDelay(this, this.dataset['columntiptitle'], this.dataset['columntipcontent'], null, 1000);");
+            pageConfig.addHandlerForQuerySelector("TD.lk-column-tt", "mouseout", "return hideHelpDivDelay();");
+            foundHoverContent = true;
         }
     }
 
@@ -1222,13 +1171,17 @@ public abstract class DisplayColumn extends RenderColumn
         return getName();
     }
 
-    protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
+    protected void renderHiddenFormInput(Writer out, String formFieldName, Object value)
+    {
+        renderHiddenFormInput(HtmlWriter.of(out), formFieldName, value);
+    }
+
+    protected void renderHiddenFormInput(HtmlWriter out, String formFieldName, Object value)
     {
         out.write(new Input.InputBuilder()
             .name(formFieldName)
             .type("hidden")
-            .value(null != value ? value.toString() : null)
-            .toString());
+            .value(null != value ? value.toString() : null));
     }
 
     public DOM._Attributes getInputAttributes()

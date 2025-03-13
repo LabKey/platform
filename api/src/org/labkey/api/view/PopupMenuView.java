@@ -86,9 +86,10 @@ public class PopupMenuView extends HttpView<PopupMenu>
     }
 
     @SneakyThrows
-    public static void renderTree(NavTree tree, HtmlWriter out)
+    public static HtmlWriter renderTree(NavTree tree, HtmlWriter out)
     {
         renderTree(tree, out.unwrap());
+        return out;
     }
 
     public static void renderTree(NavTree tree, Writer out) throws IOException
