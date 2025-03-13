@@ -80,7 +80,8 @@ public class AliasManager
         return isLegalName(str, null);
     }
 
-    public static boolean isLegalName(String str, SqlDialect dialect)
+    public static boolean isLegalName(String str, @Nullable SqlDialect dialect)
+
     {
         int length = str.length();
         for (int i = 0; i < length; i ++)
