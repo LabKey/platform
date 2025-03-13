@@ -483,7 +483,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
         if (StringUtils.isBlank(columnName))
             return false;
 
-        String prefix = columnName.split("[./]")[0];
+        String[] parts = columnName.split("[./]");
+        if (parts.length == 0) // Issue 52305: if columnName consist of only '.' or '/'
+            return false;
+        String prefix = parts[0];
 
         return ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(prefix) ||
                ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(prefix) ||

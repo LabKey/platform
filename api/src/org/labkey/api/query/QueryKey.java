@@ -40,14 +40,52 @@ import java.util.Objects;
         T create(T parent, String name);
     }
 
+    public static final String[] DECODED = {"\\", "$", "/", "&", "}", "~", ",", "."};
+    public static final String[] ENCODED = {"\\\\", "\\$", "\\/", "\\&", "\\}", "\\~", "\\,", "\\."};
+    public static String decodeBackslash(String encoded)
+    {
+        return StringUtils.replaceEach(encoded, ENCODED, DECODED);
+    }
+
+    static protected <T extends QueryKey<T>> T decode(Factory<T> factory, String divider, String str)
+    {
+        return decode(factory, divider, str, false);
+    }
     /**
      * same as fromString() but URL encoded
      */
-    static protected <T extends QueryKey<T>> T decode(Factory<T> factory, String divider, String str)
+    static protected <T extends QueryKey<T>> T decode(Factory<T> factory, String divider, String str, boolean decodeBackslash)
     {
         if (str == null)
             return null;
         String[] encodedParts = StringUtils.splitPreserveAllTokens(str, divider);
+
+        // Issue 52180: Naming Pattern cannot deal with special characters in fields
+        // Use backslash to escape QueryKey special characters in naming expression
+        // For example, use "${MaterialInputs/Blood\/Type}" for referencing "Blood/Type" parent input
+        if (decodeBackslash)
+        {
+            List<String> parts = new ArrayList<>();
+            String part = "";
+            for (String encodedPart : encodedParts)
+            {
+                part = part + (StringUtils.isEmpty(part) ? "" : divider) + encodedPart;
+                if (!part.endsWith("\\"))
+                {
+                    parts.add(part);
+                    part = "";
+                }
+            }
+
+            if (!StringUtils.isEmpty(part))
+                parts.add(part);
+
+            T ret = null;
+            for (String encodedPart : parts)
+                ret = factory.create(ret, decodeBackslash(PageFlowUtil.decode(encodedPart)));
+            return ret;
+        }
+
         T ret = null;
         for (String encodedPart : encodedParts)
             ret = factory.create(ret, PageFlowUtil.decode(encodedPart));

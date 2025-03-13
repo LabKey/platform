@@ -58,7 +58,12 @@ public class FieldKey extends QueryKey<FieldKey>
      */
     static public FieldKey decode(String str)
     {
-        return QueryKey.decode(FACTORY, DIVIDER, str);
+        return decode(str, false);
+    }
+
+    static public FieldKey decode(String str, boolean decodeBackslash)
+    {
+        return QueryKey.decode(FACTORY, DIVIDER, str, decodeBackslash);
     }
 
 
