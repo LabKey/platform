@@ -97,7 +97,8 @@ public class AliasManager
         return legalNameFromName(str, null);
     }
 
-    public static String legalNameFromName(String str, SqlDialect dialect)
+    public static String legalNameFromName(String str, @Nullable SqlDialect dialect)
+
     {
         int i;
         char ch=0;
