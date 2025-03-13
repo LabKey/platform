@@ -1240,15 +1240,17 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if(null!=constraints && !constraints.isEmpty())
         {
             statements = constraints.stream().map(constraint ->
-                    String.format("DO $$\n " +
-                            "BEGIN\n " +
-                            "IF NOT EXISTS\n" +
-                            "(SELECT 1 FROM information_schema.constraint_column_usage\n " +
-                            "WHERE table_name = '%s'  and constraint_name = '%s') THEN\n" +
-                            "ALTER TABLE %s ADD CONSTRAINT %s %s (%s);\n" +
-                            "END IF;\n" +
-                            "END$$;",
-                            change.getSchemaName() + "." + change.getTableName(), constraint.getName(),
+                    String.format("""
+                                    DO $$
+                                    BEGIN
+                                    IF NOT EXISTS
+                                    (SELECT 1 FROM information_schema.constraint_column_usage
+                                    WHERE table_name = %s and constraint_name = %s) THEN
+                                    ALTER TABLE %s ADD CONSTRAINT %s %s (%s);
+                                    END IF;
+                                    END$$;""",
+                            getStringHandler().quoteStringLiteral(change.getSchemaName() + "." + change.getTableName()),
+                            getStringHandler().quoteStringLiteral(constraint.getName()),
                             change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
                             StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
 
@@ -1316,20 +1318,21 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("DO $$\n" +
-                            "BEGIN\n" +
-                            "IF NOT EXISTS (\n" +
-                            "    SELECT 1\n" +
-                            "    FROM   pg_class c\n" +
-                            "    JOIN   pg_namespace n ON n.oid = c.relnamespace\n" +
-                            "    WHERE  c.relname = '%s'\n" +
-                            "    AND    n.nspname = '%s'\n" +
-                            "    ) THEN \n" +
-                            "       CREATE %s INDEX %s ON %s (%s);\n" +
-                            "END IF;\n" +
-                            "END$$",
-                    nameIndex(change.getTableName(), index.columnNames),
-                    change.getSchemaName(),
+            statements.add(String.format("""
+                            DO $$
+                            BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1
+                                FROM   pg_class c
+                                JOIN   pg_namespace n ON n.oid = c.relnamespace
+                                WHERE  c.relname = %s
+                                AND    n.nspname = %s
+                                ) THEN\s
+                                   CREATE %s INDEX %s ON %s (%s);
+                            END IF;
+                            END$$""",
+                    getStringHandler().quoteStringLiteral(nameIndex(change.getTableName(), index.columnNames)),
+                    getStringHandler().quoteStringLiteral(change.getSchemaName()),
                     index.isUnique ? "UNIQUE" : "",
                     nameIndex(change.getTableName(), index.columnNames),
                     makeTableIdentifier(change),
