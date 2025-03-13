@@ -939,9 +939,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                             "Field1", "fUpdated",
                             "SELECT", "sUpdated",
                             longName, "lUpdated",
-                            "value1", "NA",              // 1.0 -> NA
-                            "value2", "2.0",                // NA -> 2.0
-                            "value3", "QA")                 // NA -> QA
+                            "value1", "NA",                         // 1.0 -> NA
+                            "value2", "2.0",                            // NA -> 2.0
+                            "value3", "QA")                             // NA -> QA
                     ),
                     List.of(Map.of("lsid", lsid)),
                     errors, null, null);
@@ -956,9 +956,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             assertEquals("lUpdated", map.get(longName));
             assertNull(map.get("value1"));        // NA
             assertEquals("NA", map.get("Value1MVIndicator"));
-            assertEquals(2.0d, map.get("value2"));         // 2.0
+            assertEquals(2.0d, map.get("value2"));                 // 2.0
             assertNull(map.get("Value2MVIndicator"));
-            assertNull(map.get("value3"));                                 // QA
+            assertNull(map.get("value3"));                                  // QA
             assertEquals("QA", map.get("value3mVindicator"));
             assertNotNull(map.get("lsid"));
             // unchanged
