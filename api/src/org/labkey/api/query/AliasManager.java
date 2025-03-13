@@ -66,13 +66,18 @@ public class AliasManager
 
     public static boolean isLegalNameChar(char ch, boolean first, @Nullable SqlDialect dialect)
     {
+        // quick check
         if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
             return true;
         if (!first && ch >= '0' && ch <= '9')
             return true;
+
+        // oracle doesn't allow leading underscore
         if (null == dialect || dialect.isOracle())
             return !first && ch == '_';
-        return ch == '_' || Character.isAlphabetic(ch);
+
+        // TODO be more lenient here (allow more unicode characters as "legal")
+        return ch == '_';
     }
 
     public static boolean isLegalName(String str)
