@@ -64,7 +64,7 @@ public interface AuditHandler
         for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
             String key = entry.getKey();
-            // getDatasetRows() (at least) should returns key==column.getName(), expect getColumn(name) to work
+            // getDatasetRows() (at least) should return key==column.getName(), expect getColumn(name) to work
             ColumnInfo col = null==table ? null : table.getColumn(key);
             String nameFromAlias = null != col
                     ? col.getName()
