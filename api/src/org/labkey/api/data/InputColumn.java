@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.writer.HtmlWriter;
+
 import java.io.IOException;
 import java.io.Writer;
 
@@ -29,13 +31,13 @@ public class InputColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter) throws IOException
     {
-        renderInputHtml(ctx, out, getInputValue(ctx));
+        renderInputHtml(ctx, HtmlWriter.of(oldWriter), getInputValue(ctx));
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         renderInputHtml(ctx, out, getInputValue(ctx));
     }

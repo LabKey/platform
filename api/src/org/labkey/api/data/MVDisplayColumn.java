@@ -20,10 +20,15 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.at;
 
 /**
  * Column type that renders an indicator if there is an associated missing value indicator to accompany the normal
@@ -168,37 +173,47 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        out.write("<div style=\"margin-top:5px\"></div>");
+        DIV(at(style,"margin-top:5px")).appendTo(out);
         super.renderInputHtml(ctx, out, value);
-        renderMVPicker(ctx, out);
+        try
+        {
+            renderMVPicker(ctx, out);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return out;
     }
 
-    private void renderMVPicker(RenderContext ctx, Writer out) throws IOException
+    private void renderMVPicker(RenderContext ctx, HtmlWriter out) throws IOException
     {
+        Writer oldWriter = out.unwrap();
         String formFieldName = ctx.getForm().getFormFieldName(mvIndicatorColumn);
         String selectedMvIndicator = getMvIndicator(ctx);
         Set<String> mvIndicators = MvUtil.getMvIndicators(ctx.getContainer());
-        out.write("Missing Value Indicator:&nbsp;");
-        out.write("<select style=\"margin-bottom:5px; margin-top:2px\"");
-        outputName(ctx, out, formFieldName);
+        oldWriter.write("Missing Value Indicator:&nbsp;");
+        oldWriter.write("<select style=\"margin-bottom:5px; margin-top:2px\"");
+        outputName(ctx, oldWriter, formFieldName);
         if (isDisabledInput())
-            out.write(" DISABLED");
-        out.write(">\n");
-        out.write("<option value=\"\"></option>");
+            oldWriter.write(" DISABLED");
+        oldWriter.write(">\n");
+        oldWriter.write("<option value=\"\"></option>");
         for (String mvIndicator : mvIndicators)
         {
-            out.write("  <option value=\"");
-            out.write(mvIndicator);
-            out.write("\"");
+            oldWriter.write("  <option value=\"");
+            oldWriter.write(mvIndicator);
+            oldWriter.write("\"");
             if (null != selectedMvIndicator && mvIndicator.equals(selectedMvIndicator))
-                out.write(" selected ");
-            out.write(" >");
-            out.write(mvIndicator);
-            out.write("</option>\n");
+                oldWriter.write(" selected ");
+            oldWriter.write(" >");
+            oldWriter.write(mvIndicator);
+            oldWriter.write("</option>\n");
         }
-        out.write("</select>");
+        oldWriter.write("</select>");
         // disabled inputs are not posted with the form, so we output a hidden form element:
         //if (isDisabledInput())
         //    renderHiddenFormInput(ctx, out, formFieldName, value);

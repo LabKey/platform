@@ -20,6 +20,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,15 +47,15 @@ public class ColorPickerDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         String name = getFormFieldName(ctx);
         renderHiddenFormInput(out, name, value);
 
         String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
-        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-        out.write(
+        oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        oldWriter.write(
                 "   LABKEY.requiresExt4Sandbox(function(){\n" +
                 "      Ext4.onReady(function(){\n" +
                 "        Ext4.create('Ext.picker.Color', {\n" +
@@ -68,9 +69,9 @@ public class ColorPickerDisplayColumn extends DataColumn
                 "        });\n" +
                 "      });\n" +
                 "   });\n");
-        out.write("</script>");
-        out.write("<div id='");
-        out.write(PageFlowUtil.filter(renderId));
-        out.write("'></div>");
+        oldWriter.write("</script>");
+        oldWriter.write("<div id='");
+        oldWriter.write(PageFlowUtil.filter(renderId));
+        oldWriter.write("'></div>");
     }
 }

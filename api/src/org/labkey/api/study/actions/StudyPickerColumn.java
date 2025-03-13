@@ -28,8 +28,10 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -66,26 +68,34 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     }
 
     @Override
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls)
     {
         if (null == _caption)
             return;
 
-        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-        out.write(getTitle(ctx).toString());
-        int mode = ctx.getMode();
-        if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
+        Writer oldWriter = out.unwrap();
+        try
         {
-            if (_colInfo != null)
+            oldWriter.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
+            oldWriter.write(getTitle(ctx).toString());
+            int mode = ctx.getMode();
+            if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
             {
-                String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
-                    ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
-                PageFlowUtil.popupHelp(HtmlString.of(helpPopupText), _colInfo.getName());
-                if (!_colInfo.isNullable())
-                    out.write(" *");
+                if (_colInfo != null)
+                {
+                    String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
+                        ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
+                    PageFlowUtil.popupHelp(HtmlString.of(helpPopupText), _colInfo.getName());
+                    if (!_colInfo.isNullable())
+                        oldWriter.write(" *");
+                }
             }
+            oldWriter.write("</td>");
         }
-        out.write("</td>");
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     protected boolean isDisabledInput()
@@ -94,13 +104,13 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter) throws IOException
     {
-        this.renderInputHtml(ctx, out, getValue(ctx));
+        this.renderInputHtml(ctx, HtmlWriter.of(oldWriter), getValue(ctx));
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         Set<Study> studies = StudyPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
 
@@ -119,10 +129,13 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
                 .selected(container.getId().equals(value))
             );
         }
-        out.write(select.toString());
-        
+
+        out.write(select);
+
         if (disabled)
-            out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");
+            out.write(new Input.InputBuilder<>().type("hidden").name(_inputName).value(HtmlString.of(value)));
+
+        return out;
     }
 
     @Override

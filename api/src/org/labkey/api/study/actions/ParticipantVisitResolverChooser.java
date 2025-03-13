@@ -24,6 +24,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -59,11 +60,11 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         if (_resolvers.isEmpty())
         {
-            out.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\"/>None available<br/> ");
+            oldWriter.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\"/>None available<br/> ");
             return;
         }
 
@@ -83,13 +84,13 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
 
         // Keep track of listeners that want to know when the resolver selection has changed
-        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-        out.write("var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n");
-        out.write("</script>");
+        oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        oldWriter.write("var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n");
+        oldWriter.write("</script>");
 
         if (_resolvers.size() < 2)
         {
-            out.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
+            oldWriter.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
             try
             {
                 selected.render(ctx);
@@ -101,8 +102,8 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
         else
         {
-            out.write("<table>\n");
-            out.write("<tr><td colspan=\"2\">My data is identified by:</td></tr>");
+            oldWriter.write("<table>\n");
+            oldWriter.write("<tr><td colspan=\"2\">My data is identified by:</td></tr>");
 
             for (ParticipantVisitResolverType resolver : _resolvers)
             {
@@ -119,8 +120,8 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                 script += "for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ";
                 HttpView.currentPageConfig().addHandler("RadioBtn-" + resolver.getName(), "click", script);
 
-                out.write("<tr><td>");
-                out.write("<input type=\"radio\" " +
+                oldWriter.write("<tr><td>");
+                oldWriter.write("<input type=\"radio\" " +
                         "name=\"" + PageFlowUtil.filter(_typeInputName) + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +
                         "value=\"" + PageFlowUtil.filter(resolver.getName()) + "\"" +
@@ -128,15 +129,15 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                         (disabledInput ? " DISABLED" : "") +
                         ">");
                 
-                out.write("</td><td>");
-                out.write(PageFlowUtil.filter(resolver.getDescription()));
-                out.write("</td></tr>");
+                oldWriter.write("</td><td>");
+                oldWriter.write(PageFlowUtil.filter(resolver.getDescription()));
+                oldWriter.write("</td></tr>");
 
                 if (renderSubs != RenderSubSelectors.NONE)
                 {
 
-                    out.write("<tr><td></td><td>");
-                    out.write("<div id=\"ResolverDiv-" + resolver.getName() + "\"" + (selected == resolver ? "" : "style=\"display:none\"") +  ">");
+                    oldWriter.write("<tr><td></td><td>");
+                    oldWriter.write("<div id=\"ResolverDiv-" + resolver.getName() + "\"" + (selected == resolver ? "" : "style=\"display:none\"") +  ">");
                     try
                     {
                         ctx.put(RenderSubSelectors.class.getSimpleName(), renderSubs);
@@ -146,13 +147,13 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                     {
                         throw (IOException)new IOException().initCause(e);
                     }
-                    out.write("</div>");
+                    oldWriter.write("</div>");
                     if (disabledInput)
-                        out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\">");
-                    out.write("</td></tr>");
+                        oldWriter.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\">");
+                    oldWriter.write("</td></tr>");
                 }
             }
-            out.write("</table>");
+            oldWriter.write("</table>");
         }
     }
 

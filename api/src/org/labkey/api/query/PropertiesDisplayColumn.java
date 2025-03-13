@@ -279,7 +279,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value)
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value)
     {
         // no-op
     }

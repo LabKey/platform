@@ -22,6 +22,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -161,7 +162,13 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    {
+        throw new UnsupportedOperationException("Non Bound columns not editable");
+    }
+
+    @Override
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         throw new UnsupportedOperationException("Non Bound columns not editable");
     }
@@ -179,9 +186,9 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
-        out.write(getTitle(ctx).toString());
+        out.write(getTitle(ctx));
         if (null != _caption)
             out.write(" ");
         renderDetailsCellContents(ctx, out);

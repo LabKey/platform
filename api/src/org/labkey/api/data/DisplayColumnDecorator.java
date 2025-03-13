@@ -51,6 +51,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        _column.renderDetailsCellContents(ctx, out);
+    }
+
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         _column.renderDetailsCellContents(ctx, out);
@@ -81,9 +87,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        _column.renderInputHtml(ctx, out, value);
+        return _column.renderInputHtml(ctx, out, value);
     }
 
     @Override
@@ -393,7 +399,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
+    public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls)
     {
         _column.renderDetailsCaptionCell(ctx, out, cls);
     }

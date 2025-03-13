@@ -169,7 +169,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    public abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
+    protected abstract void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException;
 
     public @Nullable HtmlString getTitle(RenderContext ctx)
     {
@@ -184,7 +184,24 @@ public abstract class DisplayColumn extends RenderColumn
 
     public abstract boolean isEditable();
 
-    public abstract void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException;
+    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    {
+        try
+        {
+            renderInputHtml(ctx, out.unwrap(), out, value);
+            return out;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // No callers (other than just above and DisplayColumnDecorator)
+    protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    {
+        throw new IllegalStateException("Must override renderInputHtml()");
+    }
 
     public String renderURL(RenderContext ctx)
     {
@@ -1119,18 +1136,6 @@ public abstract class DisplayColumn extends RenderColumn
 
     public void renderDetailsCaptionCell(RenderContext ctx, HtmlWriter out, @Nullable String cls)
     {
-        try
-        {
-            renderDetailsCaptionCell(ctx, out.unwrap(), cls);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
-    {
         if (null == _caption)
             return;
 
@@ -1171,11 +1176,6 @@ public abstract class DisplayColumn extends RenderColumn
         return getName();
     }
 
-    protected void renderHiddenFormInput(Writer out, String formFieldName, Object value)
-    {
-        renderHiddenFormInput(HtmlWriter.of(out), formFieldName, value);
-    }
-
     protected void renderHiddenFormInput(HtmlWriter out, String formFieldName, Object value)
     {
         out.write(new Input.InputBuilder()
@@ -1193,17 +1193,7 @@ public abstract class DisplayColumn extends RenderColumn
     {
         TD(
             getInputAttributes(),
-            (DOM.Renderable) ret -> {
-                try
-                {
-                    renderInputHtml(ctx, out.unwrap(), getInputValue(ctx));
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
-                return ret;
-            }
+            (DOM.Renderable) ret -> renderInputHtml(ctx, out, getInputValue(ctx))
         ).appendTo(out);
     }
 

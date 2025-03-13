@@ -37,7 +37,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -162,9 +164,10 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                     }
 
                     @Override
-                    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+                    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
                     {
-                        out.write("<input type=\"text\" class=\"form-control\" name=\"quf_AbsoluteFilePath\" size=\"40\">");
+                        out.write(new Input.InputBuilder().type("text").className("form-control").name("quf_AbsoluteFilePath").size(40));
+                        return out;
                     }
 
                     @Override

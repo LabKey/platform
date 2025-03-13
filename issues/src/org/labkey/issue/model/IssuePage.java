@@ -58,6 +58,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueObject.CommentObject;
@@ -447,7 +448,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        dc.renderDetailsCaptionCell(renderContext, writer, "lk-form-label");
+                        dc.renderDetailsCaptionCell(renderContext, HtmlWriter.of(writer), "lk-form-label");
                         sb.append(writer);
                     }
                     return HtmlString.unsafe(sb.toString());

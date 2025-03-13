@@ -23,6 +23,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,7 +80,7 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             @Override
             protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl,  boolean link, boolean thumbnail) throws IOException
             {
-                renderDetailsCellContents(ctx, out);
+                renderDetailsCellContents(ctx, HtmlWriter.of(out));
             }
 
             @Override

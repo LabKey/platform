@@ -55,6 +55,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.InsertIssueDefAction;
@@ -342,30 +343,30 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object val) throws IOException
+        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object val) throws IOException
         {
             String formFieldName = ctx.getForm().getFormFieldName(getColumnInfo());
 
-            out.write("<select name='");
-            out.write(formFieldName);
-            out.write("'>\n");
+            oldWriter.write("<select name='");
+            oldWriter.write(formFieldName);
+            oldWriter.write("'>\n");
 
-            if (_values.size() > 0)
+            if (!_values.isEmpty())
             {
                 for (Pair<String, String> value : _values)
                 {
-                    out.write("<option value='");
-                    out.write(PageFlowUtil.filter(value.first));
-                    out.write("'>");
-                    out.write(PageFlowUtil.filter(value.second));
-                    out.write("</option>\n");
+                    oldWriter.write("<option value='");
+                    oldWriter.write(PageFlowUtil.filter(value.first));
+                    oldWriter.write("'>");
+                    oldWriter.write(PageFlowUtil.filter(value.second));
+                    oldWriter.write("</option>\n");
                 }
             }
             else
             {
-                out.write("<option value=''/>");
+                oldWriter.write("<option value=''/>");
             }
-            out.write("</select>\n");
+            oldWriter.write("</select>\n");
         }
 
         @Override

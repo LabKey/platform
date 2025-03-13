@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ReexecutableDataregion;
 import org.labkey.api.query.ReexecutableRenderContext;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -234,7 +235,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value)
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value)
     {
     }
 

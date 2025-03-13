@@ -24,6 +24,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,13 +47,13 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         ForeignKey fk = getBoundColumn().getFk();
         // currently only supported for lookup columns with a defined schema/query
         if (fk == null)
         {
-            out.write("TypeAheadSelectDisplayColumn can only be used with a lookup column.");
+            oldWriter.write("TypeAheadSelectDisplayColumn can only be used with a lookup column.");
             return;
         }
 
@@ -79,7 +80,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         sb.append("});\n");
         sb.append("</script>\n");
         sb.append("<div id=").append(PageFlowUtil.jsString(renderId)).append("></div>");
-        out.write(sb.toString());
+        oldWriter.write(sb.toString());
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
