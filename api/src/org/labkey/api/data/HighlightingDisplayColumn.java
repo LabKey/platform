@@ -132,7 +132,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
         String styleClass = getStyleClass(ctx);
         oldWriter.write("<span class=\"" + styleClass + " " + _cssEventSelector + "\">");
-        super.renderGridCellContents(ctx, out);
+        super.renderGridCellContents(ctx, oldWriter, out);
         oldWriter.write("</span>");
     }
 

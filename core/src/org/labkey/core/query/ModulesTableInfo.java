@@ -270,7 +270,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
                     if (null == o)
                     {
-                        super.renderGridCellContents(ctx, out);
+                        super.renderGridCellContents(ctx, oldWriter, out);
                     }
                     else
                     {

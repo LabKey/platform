@@ -104,7 +104,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             props.put("target", divId);
 
             oldWriter.write("<span id=\"" + divId + "\">");
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
             oldWriter.write("</span>");
             HttpView.currentPageConfig().addDocumentLoadHandler(JavaScriptFragment.unsafe(
                 "    Ext.onReady(function () { \n" +
@@ -118,12 +118,12 @@ public class AJAXDetailsDisplayColumn extends DataColumn
         {
             StringExpression url = getURLExpression();
             setURLExpression(null);
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
             setURLExpression(url);
         }
         else
         {
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
         }
     }
 

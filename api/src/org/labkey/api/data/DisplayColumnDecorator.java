@@ -81,9 +81,9 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        return _column.renderInputHtml(ctx, out, value);
+        _column.renderInputHtml(ctx, out, value);
     }
 
     @Override

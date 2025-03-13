@@ -110,7 +110,7 @@ public class PathDisplayColumn extends DataColumn
     {
         if (!_hasPathPartsDisplayCol)
         {
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
             return;
         }
 

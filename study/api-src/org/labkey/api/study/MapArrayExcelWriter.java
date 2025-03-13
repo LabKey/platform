@@ -131,7 +131,7 @@ public class MapArrayExcelWriter extends ExcelWriter
         }
 
         @Override
-        public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
         {
             throw new UnsupportedOperationException("This is for excel only.");
         }

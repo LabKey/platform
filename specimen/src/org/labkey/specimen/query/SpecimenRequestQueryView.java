@@ -140,7 +140,7 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
             }
             content.append("</div>");
             setDisplayHtml(content.toString());
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
         }
 
         @Override

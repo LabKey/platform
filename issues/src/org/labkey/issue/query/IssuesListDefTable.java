@@ -206,7 +206,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                                 oldWriter.write(PageFlowUtil.filter(c.getName()));
                         }
                         else
-                            super.renderGridCellContents(ctx, out);
+                            super.renderGridCellContents(ctx, oldWriter, out);
                     }
                 };
             }

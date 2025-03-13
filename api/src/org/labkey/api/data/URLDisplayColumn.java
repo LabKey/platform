@@ -21,10 +21,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 
 /**
  * URLDisplayColumn allows for a grid cell to render a thumbnail image and/or a popup tooltip image, both via
@@ -109,7 +108,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
     {
         Object value = getValue(ctx);
         String url = renderURL(ctx);

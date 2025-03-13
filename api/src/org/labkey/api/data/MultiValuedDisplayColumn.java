@@ -138,7 +138,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 if (o != null)
                 {
                     oldWriter.append(sep);
-                    super.renderGridCellContents(mvCtx, out);
+                    super.renderGridCellContents(mvCtx, oldWriter, out);
                     sep = ", ";
                 }
             }

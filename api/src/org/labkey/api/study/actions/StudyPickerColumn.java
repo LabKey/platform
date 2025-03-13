@@ -104,13 +104,13 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        this.renderInputHtml(ctx, HtmlWriter.of(oldWriter), getValue(ctx));
+        this.renderInputHtml(ctx, out, getValue(ctx));
     }
 
     @Override
-    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         Set<Study> studies = StudyPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
 
@@ -134,8 +134,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 
         if (disabled)
             out.write(new Input.InputBuilder<>().type("hidden").name(_inputName).value(HtmlString.of(value)));
-
-        return out;
     }
 
     @Override

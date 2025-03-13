@@ -25,9 +25,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
+
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 
 public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
 {
@@ -58,29 +62,21 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
             }
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
             {
-                String renderUrl = renderURL(ctx);
-                if (renderUrl != null)
-                {
-                    oldWriter.write(getImageTagStr(renderUrl, 32));
-                }
+                renderImageTag(out, ctx, 32);
             }
 
             @Override
-            public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+            public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
             {
-                String renderUrl = renderURL(ctx);
-                if (renderUrl != null)
-                {
-                    oldWriter.write(getImageTagStr(renderUrl, null));
-                }
+                renderImageTag(out, ctx, null);
             }
 
             @Override
-            protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl,  boolean link, boolean thumbnail) throws IOException
+            protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl,  boolean link, boolean thumbnail)
             {
-                renderDetailsCellContents(ctx, HtmlWriter.of(out));
+                renderDetailsCellContents(ctx, out);
             }
 
             @Override
@@ -96,9 +92,15 @@ public class UserAvatarDisplayColumnFactory implements DisplayColumnFactory
                 return null;
             }
 
-            private String getImageTagStr(String renderUrl, Integer size)
+            private void renderImageTag(HtmlWriter out, RenderContext ctx, Integer size)
             {
-                return "<img src=\"" + renderUrl + "\"" + (size != null ? " height=\"" + size + "\" width=\"" + size + "\"" : "") + "/>";
+                String renderUrl = renderURL(ctx);
+                if (renderUrl != null)
+                {
+                    IMG(
+                        at(src, renderUrl).at(size != null, height, size).at(size != null, width, size)
+                    ).appendTo(out);
+                }
             }
 
             @Nullable

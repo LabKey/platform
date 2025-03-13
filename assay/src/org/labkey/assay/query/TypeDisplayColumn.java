@@ -66,7 +66,7 @@ public class TypeDisplayColumn extends DataColumn
         if (providerName != null)
         {
             // We successfully matched an AssayProvider so render normally.
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
             return;
         }
         else

@@ -89,7 +89,7 @@ public class MVDisplayColumn extends DataColumn
         }
         else
         {
-            super.renderGridCellContents(ctx, out);
+            super.renderGridCellContents(ctx, oldWriter, out);
         }
     }
 
@@ -119,8 +119,8 @@ public class MVDisplayColumn extends DataColumn
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        // For non-mv-aware clients, we need to return null
-        // if we have an mv indicator
+        // For non-MV-aware clients, we need to return null
+        // if we have an MV indicator
         if (getMvIndicator(ctx) != null)
         {
             return null;
@@ -173,7 +173,7 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
-    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         DIV(at(style,"margin-top:5px")).appendTo(out);
         super.renderInputHtml(ctx, out, value);
@@ -185,8 +185,6 @@ public class MVDisplayColumn extends DataColumn
         {
             throw new RuntimeException(e);
         }
-
-        return out;
     }
 
     private void renderMVPicker(RenderContext ctx, HtmlWriter out) throws IOException

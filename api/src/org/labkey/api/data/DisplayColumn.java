@@ -154,7 +154,8 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    // No callers (other than just above)
+    // No outside callers (called only by 11 overridden methods)
+    @Deprecated
     protected void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         throw new IllegalStateException("Must override renderGridCellContents()");
@@ -173,17 +174,17 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     // No callers (other than just above)
+    @Deprecated
     protected void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         throw new IllegalStateException("Must override renderDetailsCellContents()");
     }
 
-    public HtmlWriter renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         try
         {
             renderInputHtml(ctx, out.unwrap(), out, value);
-            return out;
         }
         catch (IOException e)
         {
@@ -192,6 +193,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     // No callers (other than just above)
+    @Deprecated
     protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         throw new IllegalStateException("Must override renderInputHtml()");
@@ -1202,7 +1204,10 @@ public abstract class DisplayColumn extends RenderColumn
     {
         TD(
             getInputAttributes(),
-            (DOM.Renderable) ret -> renderInputHtml(ctx, out, getInputValue(ctx))
+            (DOM.Renderable) ret -> {
+                renderInputHtml(ctx, out, getInputValue(ctx));
+                return ret;
+            }
         ).appendTo(out);
     }
 

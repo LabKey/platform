@@ -47,6 +47,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -360,7 +361,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
     {
         Object value = getValue(ctx);
         String s = value == null ? null : StringUtils.trimToNull(value.toString());
