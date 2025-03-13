@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
@@ -28,11 +29,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-/*
-* User: adam
-* Date: Dec 19, 2010
-* Time: 8:38:17 PM
-*/
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.cl;
+
 public class HighlightingDisplayColumn extends DisplayColumnDecorator
 {
     private final LinkedHashMap<List<Object>, String> _distinctValuesToClass = new LinkedHashMap<>();
@@ -115,7 +114,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (!handlersAdded)
         {
@@ -131,13 +130,17 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         }
 
         String styleClass = getStyleClass(ctx);
-        oldWriter.write("<span class=\"" + styleClass + " " + _cssEventSelector + "\">");
-        super.renderGridCellContents(ctx, oldWriter, out);
-        oldWriter.write("</span>");
+        SPAN(
+            cl(styleClass, _cssEventSelector),
+            (DOM.Renderable) ret -> {
+                super.renderGridCellContents(ctx, out);
+                return ret;
+            }
+        ).appendTo(out);
     }
 
-    // Note: Nobody calls this method! It must have been orphaned in DisplayColumn / DataColumn a while back. Leaving
-    // the code in place in case we want to restore it...
+    // Note: Nobody calls this method! It must have been orphaned in DisplayColumn / DataColumn a while back.
+    // I'm leaving the code in place in case we want to restore it...
     public void renderGridEnd(RenderContext ctx, Writer out) throws IOException
     {
         String styleMapName = "styleMap" + _uid;

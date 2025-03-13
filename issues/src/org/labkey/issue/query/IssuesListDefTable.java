@@ -17,8 +17,6 @@ package org.labkey.issue.query;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -52,6 +50,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -70,14 +69,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by klum on 4/10/16.
- */
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
-    private static final Logger LOG = LogManager.getLogger(IssuesListDefTable.class);
-
     private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
+
     static
     {
         Set<String> autoPopulatedCols = new CaseInsensitiveHashSet(Table.AUTOPOPULATED_COLUMN_NAMES);
@@ -189,24 +184,24 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                     }
 
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                     {
                         Container c = getContainer(ctx);
                         if (c != null)
                         {
                             if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
                             {
-                                oldWriter.write("<a href=\"");
-                                oldWriter.write(PageFlowUtil.filter(c.getStartURL(getUserSchema().getUser()).getLocalURIString()));
-                                oldWriter.write("\">");
-                                oldWriter.write(PageFlowUtil.filter(c.getName()));
-                                oldWriter.write("</a>");
+                                out.write(new Link.LinkBuilder(c.getName()).href(c.getStartURL(getUserSchema().getUser())).clearClasses());
                             }
                             else
-                                oldWriter.write(PageFlowUtil.filter(c.getName()));
+                            {
+                                out.write(c.getName());
+                            }
                         }
                         else
-                            super.renderGridCellContents(ctx, oldWriter, out);
+                        {
+                            super.renderGridCellContents(ctx, out);
+                        }
                     }
                 };
             }
@@ -332,7 +327,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
     }
 
-    public class MultiValueInputColumn extends DataColumn
+    public static class MultiValueInputColumn extends DataColumn
     {
         private final List<Pair<String, String>> _values;
 

@@ -46,15 +46,8 @@ import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
 import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Apr 20, 2007
- * Time: 2:49:42 PM
- */
 public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 {
     private NavTree[] _extraLinks;
@@ -98,7 +91,7 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             StringBuilder content = new StringBuilder();
             // Use a div to set spacing around the buttons- otherwise they overlap the edges of their data grid cells:
@@ -140,7 +133,7 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
             }
             content.append("</div>");
             setDisplayHtml(content.toString());
-            super.renderGridCellContents(ctx, oldWriter, out);
+            super.renderGridCellContents(ctx, out);
         }
 
         @Override

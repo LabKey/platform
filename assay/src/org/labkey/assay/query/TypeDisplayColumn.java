@@ -33,8 +33,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
 /**
@@ -60,13 +58,13 @@ public class TypeDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         String providerName = (String)getColumnInfo().getValue(ctx);
         if (providerName != null)
         {
             // We successfully matched an AssayProvider so render normally.
-            super.renderGridCellContents(ctx, oldWriter, out);
+            super.renderGridCellContents(ctx, out);
             return;
         }
         else
@@ -79,25 +77,25 @@ public class TypeDisplayColumn extends DataColumn
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
-                    LOG.warn("Failed to match AssayProvider '" + provider.getName() + "' using pattern '" + provider.getProtocolPattern() + "' for LSID: " + lsid);
-                    oldWriter.write(PageFlowUtil.filter(provider.getName()));
+                    LOG.warn("Failed to match AssayProvider '{}' using pattern '{}' for LSID: {}", provider.getName(), provider.getProtocolPattern(), lsid);
+                    out.write(provider.getName());
                     return;
                 }
                 else if (protocol != null)
                 {
-                    oldWriter.write(PageFlowUtil.filter("<Unknown>"));
+                    out.write("<Unknown>");
                     // We won't be showing our normal UI that lets an admin delete the design, so let the user do it directly
                     // from here
                     if (protocol.getContainer().hasPermissions(ctx.getViewContext().getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class)))
                     {
-                        oldWriter.write(" ");
-                        PageFlowUtil.link("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))).appendTo(oldWriter);
+                        out.write(" ");
+                        out.write(PageFlowUtil.link("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));
                     }
                     return;
                 }
             }
         }
 
-        oldWriter.write(PageFlowUtil.filter("<AssayProvider Not Found>"));
+        out.write("<AssayProvider Not Found>");
     }
 }

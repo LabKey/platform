@@ -28,7 +28,9 @@ import java.util.Set;
 
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.FONT;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * Column type that renders an indicator if there is an associated missing value indicator to accompany the normal
@@ -69,7 +71,7 @@ public class MVDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         String mvIndicator = getMvIndicator(ctx);
         if (mvIndicator != null)
@@ -83,13 +85,14 @@ public class MVDisplayColumn extends DataColumn
                     .append(value)
                     .unsafeAppend("'.</p>");
 
-            oldWriter.write("<font class=\"labkey-mv\">");
-            PageFlowUtil.popupHelp(popupText, "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(oldWriter);
-            oldWriter.write("</font>");
+            FONT(
+                cl("labkey-mv"),
+                PageFlowUtil.popupHelp(popupText, "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator))
+            ).appendTo(out);
         }
         else
         {
-            super.renderGridCellContents(ctx, oldWriter, out);
+            super.renderGridCellContents(ctx, out);
         }
     }
 

@@ -154,7 +154,7 @@ public abstract class DisplayColumn extends RenderColumn
         }
     }
 
-    // No outside callers (called only by 11 overridden methods)
+    // No callers (other than just above)
     @Deprecated
     protected void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {

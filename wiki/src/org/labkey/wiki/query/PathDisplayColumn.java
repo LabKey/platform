@@ -24,12 +24,11 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Map;
 
 /**
@@ -106,25 +105,25 @@ public class PathDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (!_hasPathPartsDisplayCol)
         {
-            super.renderGridCellContents(ctx, oldWriter, out);
+            super.renderGridCellContents(ctx, out);
             return;
         }
 
         String[] parts = getPathParts(ctx);
         if (parts == null)
         {
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
             return;
         }
 
         StringExpression s = compileExpression(ctx.getViewContext());
         if (s == null)
         {
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
             return;
         }
 
@@ -135,7 +134,7 @@ public class PathDisplayColumn extends DataColumn
             for (int i = 0; i < parts.length; i++)
             {
                 if (i > 0)
-                    oldWriter.write("/");
+                    out.write("/");
 
                 String part = parts[i];
                 newRow.put("Part", part);
@@ -143,15 +142,11 @@ public class PathDisplayColumn extends DataColumn
                 String url = s.eval(newRow);
                 if (url != null)
                 {
-                    oldWriter.write("<a href='");
-                    oldWriter.write(PageFlowUtil.filter(url));
-                    oldWriter.write("'>");
-                    oldWriter.write(PageFlowUtil.filter(part));
-                    oldWriter.write("</a>");
+                    out.write(new Link.LinkBuilder(part).href(url).clearClasses());
                 }
                 else
                 {
-                    oldWriter.write(PageFlowUtil.filter(part));
+                    out.write(part);
                 }
             }
         }

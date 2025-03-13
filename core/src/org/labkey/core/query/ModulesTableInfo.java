@@ -36,8 +36,6 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 /**
@@ -264,18 +262,18 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
                 }
 
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     Object o = getValue(ctx);
 
                     if (null == o)
                     {
-                        super.renderGridCellContents(ctx, oldWriter, out);
+                        super.renderGridCellContents(ctx, out);
                     }
                     else
                     {
                         String formatted = ModuleContext.formatVersion((double)o);
-                        oldWriter.write(formatted);
+                        out.write(formatted);
                     }
                 }
             };
