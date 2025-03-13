@@ -733,7 +733,7 @@ public class MothershipController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresPermission(ReadPermission.class)
+    @RequiresNoPermission
     public static class ClientExceptionAction extends SimpleViewAction<Object>
     {
         @Override
