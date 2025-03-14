@@ -36,7 +36,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -1189,7 +1189,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     protected void renderHiddenFormInput(HtmlWriter out, String formFieldName, Object value)
     {
-        out.write(new Input.InputBuilder()
+        out.write(new InputBuilder<>()
             .name(formFieldName)
             .type("hidden")
             .value(null != value ? value.toString() : null));

@@ -65,7 +65,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         if (study.isAdvancedCohorts())
         {
             CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-            Input.InputBuilder input = new Input.InputBuilder()
+            Input.InputBuilder<?> input = new Input.InputBuilder<>()
                 .type("hidden")
                 .value("0")
                 .name(Params.cohortId.name());

@@ -286,7 +286,7 @@ public class InputTag extends SimpleTagBase
         else if ("displayfield".equalsIgnoreCase(type))
             input = new DisplayField.DisplayFieldBuilder();
         else
-            input = new Input.InputBuilder().type(type);
+            input = new Input.InputBuilder<>().type(type);
 
         if (null == forceSmallContext)
             forceSmallContext = false;

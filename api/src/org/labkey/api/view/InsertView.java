@@ -27,8 +27,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

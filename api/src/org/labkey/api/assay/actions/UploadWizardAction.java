@@ -904,7 +904,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         @Override
         public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
         {
-            out.write(new Input.InputBuilder().type("text").name(_inputName).value(value == null ? null : value.toString()));
+            out.write(new Input.InputBuilder<>().type("text").name(_inputName).value(value == null ? null : value.toString()));
         }
 
         @Override

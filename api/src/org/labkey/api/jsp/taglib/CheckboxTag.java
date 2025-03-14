@@ -35,7 +35,7 @@ public class CheckboxTag extends SimpleTagBase
     public void doTag() throws IOException
     {
         // TODO: We need a CheckBoxBuilder
-        InputBuilder checkbox = new InputBuilder()
+        InputBuilder<?> checkbox = new InputBuilder<>()
             .type("checkbox")
             .id(_id)
             .name(_name)
@@ -52,7 +52,7 @@ public class CheckboxTag extends SimpleTagBase
 
         getOut().print(checkbox);
 
-        InputBuilder springMarker = new InputBuilder()
+        InputBuilder<?> springMarker = new InputBuilder<>()
             .type("hidden")
             .name(SpringActionController.FIELD_MARKER + _name);
 

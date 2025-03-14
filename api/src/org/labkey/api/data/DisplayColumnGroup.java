@@ -17,7 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.DOM;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -61,7 +61,7 @@ public class DisplayColumnGroup
             isCopyable() ? (DOM.Renderable) ret -> {
 
                 String id = getGroupFormFieldName(ctx) + "CheckBox";
-                new Input.InputBuilder().type("checkbox").name(id).id(id).appendTo(out);
+                new InputBuilder<>().type("checkbox").name(id).id(id).appendTo(out);
                 StringBuilder onChange = new StringBuilder("b = this.checked;");
 
                 getColumns().forEach(col -> {

@@ -525,12 +525,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return writeInput(field, value, builder->builder.tabIndex(tabIndex));
     }
 
-    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder> builderModifier)
+    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder<?>> builderModifier)
     {
         if (!isVisible(field))
             return HtmlString.unsafe(filter(value, false, true));
 
-        Input.InputBuilder builder = new Input.InputBuilder()
+        Input.InputBuilder<?> builder = new Input.InputBuilder<>()
             .name(field)
             .value(value)
             .onChange("LABKEY.setDirty(true);return true;")

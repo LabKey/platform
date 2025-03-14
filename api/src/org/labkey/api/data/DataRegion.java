@@ -1801,19 +1801,19 @@ public class DataRegion extends DisplayElement
     protected void renderHiddenFormFields(RenderContext ctx, HtmlWriter out, int mode)
     {
         if (mode == MODE_GRID)
-            out.write(new InputBuilder().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
+            out.write(new InputBuilder<>().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
 
         out.write(new CsrfInput(ctx.getViewContext()));
 
         for (FormField field : _hiddenFormFields)
         {
-            out.write(new InputBuilder().type("hidden").name(field.name()).value(field.value()));
+            out.write(new InputBuilder<>().type("hidden").name(field.name()).value(field.value()));
         }
 
         if (mode == MODE_UPDATE_MULTIPLE)
         {
-            out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
-            out.write(new InputBuilder().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
+            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
+            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
         }
     }
 
@@ -1838,7 +1838,7 @@ public class DataRegion extends DisplayElement
         boolean enabled = isRecordSelectorEnabled(ctx);
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
 
-        new InputBuilder()
+        new InputBuilder<>()
             .type("checkbox")
             .title("Select/unselect row")
             .name(getRecordSelectorName(ctx))
@@ -2308,7 +2308,7 @@ public class DataRegion extends DisplayElement
                                         if (null != pkVal)
                                         {
                                             out.write(
-                                                new InputBuilder()
+                                                new InputBuilder<>()
                                                     .type("hidden")
                                                     .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
                                                     .value(pkVal.toString())
@@ -2494,7 +2494,7 @@ public class DataRegion extends DisplayElement
         TD(
             at(style, "white-space:nowrap;"),
             LABEL(cl("control-label"),
-                new InputBuilder()
+                new InputBuilder<>()
                     .type("checkbox")
                     .id(madeId)
                     .name("~~SELECTALL~~")
