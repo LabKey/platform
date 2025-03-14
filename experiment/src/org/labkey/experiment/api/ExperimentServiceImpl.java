@@ -3713,44 +3713,52 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private void deleteRun(ExpRunImpl run, List<ExpDataImpl> datasToDelete, User user, String userComment)
     {
-        for (ExperimentListener listener : _listeners)
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
-            listener.beforeRunDelete(run.getProtocol(), run, user);
-        }
+            for (ExperimentListener listener : _listeners)
+            {
+                listener.beforeRunDelete(run.getProtocol(), run, user);
+            }
 
-        // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
-        // so other cases can be added in the future
-        AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
+            // Note: At the moment, FlowRun is the only example of an ExpRun attachment parent, but we're keeping this general
+            // so other cases can be added in the future
+            AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
-        // remove edges prior to deleting protocol applications
-        // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
-        // eventually calls AbstractAssayTsvDataHandler.beforeDeleteData() to clean up any assay results
-        // as well as the exp.object for the assay result rows.  The assay result rows will have an
-        // output exp.edge created by the provenance module.
-        removeEdgesForRun(run.getRowId());
+            // remove edges prior to deleting protocol applications
+            // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
+            // eventually calls AbstractAssayTsvDataHandler.beforeDeleteData() to clean up any assay results
+            // as well as the exp.object for the assay result rows.  The assay result rows will have an
+            // output exp.edge created by the provenance module.
+            removeEdgesForRun(run.getRowId());
 
-        run.deleteProtocolApplications(datasToDelete, user);
+            run.deleteProtocolApplications(datasToDelete, user);
 
-        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?").add(run.getRowId()).appendEOS();
-        sql.append("\nUPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").add(run.getRowId()).appendEOS();
-        sql.append("\nDELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?").add(run.getRowId()).appendEOS();
-        sql.append("\nDELETE FROM exp.ExperimentRun WHERE RowId = ?").add(run.getRowId()).appendEOS();
+            SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?").add(run.getRowId()).appendEOS();
+            sql.append("\nUPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?").add(run.getRowId()).appendEOS();
+            sql.append("\nDELETE FROM ").append(getTinfoEdge()).append(" WHERE runId = ?").add(run.getRowId()).appendEOS();
+            sql.append("\nDELETE FROM exp.ExperimentRun WHERE RowId = ?").add(run.getRowId()).appendEOS();
 
-        new SqlExecutor(getExpSchema()).execute(sql);
+            new SqlExecutor(getExpSchema()).execute(sql);
 
-        // delete run properties and all children
-        OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
+            // delete run properties and all children
+            OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
 
-        ExpProtocolImpl protocol = run.getProtocol();
-        if (protocol == null)
-        {
-            throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID() );
-        }
-        auditRunEvent(user, protocol, run, null, "Run deleted", userComment);
+            final ExpProtocolImpl protocol = run.getProtocol();
+            if (protocol == null)
+            {
+                throw new IllegalStateException("Could not resolve protocol for run LSID " + run.getLSID() + " with protocol LSID " + run.getDataObject().getProtocolLSID());
+            }
+            auditRunEvent(user, protocol, run, null, "Run deleted", userComment);
 
-        for (ExperimentListener listener : _listeners)
-        {
-            listener.afterRunDelete(run.getProtocol(), run, user);
+            for (ExperimentListener listener : _listeners)
+            {
+                transaction.addCommitTask(() ->
+                    listener.afterRunDelete(protocol, run, user),
+                    listener.afterRunDeleteCommitOption()
+                );
+            }
+
+            transaction.commit();
         }
     }
 
@@ -5388,7 +5396,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     documentIds.add(data.getDocumentId());
                 }
-                ss.deleteResources(documentIds);
+
+                transaction.addCommitTask(() -> ss.deleteResources(documentIds),POSTCOMMIT);
             }
 
             transaction.commit();
@@ -5452,7 +5461,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             for (ExperimentListener listener : _listeners)
             {
-                listener.afterExperimentDeleted(c, user, experiment);
+                t.addCommitTask(() ->
+                    listener.afterExperimentDeleted(c, user, experiment),
+                    listener.afterExperimentDeleteCommitOption()
+                );
             }
 
             t.commit();

@@ -33,8 +33,10 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.Directory;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.search.SearchModule;
 import org.quartz.DateBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
@@ -194,7 +196,10 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
             else
-                throw e;  //TODO Should we just ignore this --  it is typically caused by either the server shutting down or the index being deleted.
+            {
+                _log.error("Indexing error deleting {} indexer is already closed", StringUtils.trimToEmpty(currentId), e);
+                SimpleMetricsService.get().increment(SearchModule.NAME,"Delete", "IndexAlreadyClosed");
+            }
         }
         catch (Throwable e)
         {
