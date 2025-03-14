@@ -22,19 +22,13 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.view.JspView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Jan 30, 2009
- */
 public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
 {
-    private BulkPropertiesUploadForm _form;
-    private ColumnInfo _col;
     public static final String PROPERTIES_FIELD_NAME = "__bulkProperties";
     public static final String ENABLED_FIELD_NAME = "__enableBulkProperties";
+
+    private BulkPropertiesUploadForm _form;
+    private final ColumnInfo _col;
 
     public BulkPropertiesDisplayColumn(BulkPropertiesUploadForm form)
     {
@@ -59,7 +53,7 @@ public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         JspView<BulkPropertiesUploadForm> view = new JspView<>("/org/labkey/api/assay/bulkPropertiesInput.jsp", _form);
         try
@@ -68,7 +62,7 @@ public class BulkPropertiesDisplayColumn extends SimpleDisplayColumn
         }
         catch (Exception e)
         {
-            throw (IOException)new IOException().initCause(e);
+            throw new RuntimeException(e);
         }
     }
 }

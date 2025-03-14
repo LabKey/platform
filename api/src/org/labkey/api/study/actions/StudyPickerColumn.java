@@ -37,10 +37,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
 
-/**
-* User: jeckels
-* Date: Aug 30, 2010
-*/
 public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 {
     ColumnInfo _colInfo;

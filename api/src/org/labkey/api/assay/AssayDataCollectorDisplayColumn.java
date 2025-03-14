@@ -28,9 +28,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
 {
     private final AssayRunUploadForm _form;
@@ -64,7 +61,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
         JspView view = new JspView<>("/org/labkey/assay/view/dataUpload.jsp", _form);
@@ -78,7 +75,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         }
         catch (Exception e)
         {
-            throw (IOException)new IOException().initCause(e);
+            throw new RuntimeException(e);
         }
     }
 }

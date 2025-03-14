@@ -102,8 +102,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -902,7 +900,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
         {
             out.write(new Input.InputBuilder<>().type("text").name(_inputName).value(value == null ? null : value.toString()));
         }

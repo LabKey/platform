@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.plate;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
@@ -47,7 +48,6 @@ import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -346,51 +346,59 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             }
 
             @Override
-            public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+            public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
             {
-                if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
+                Writer oldWriter = out.unwrap();
+                try
                 {
-                    String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
-                    String nounV2 = includesViruses ? "Sample and virus" : "Sample";
+                    if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
+                    {
+                        String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
+                        String nounV2 = includesViruses ? "Sample and virus" : "Sample";
 
-                    oldWriter.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
-                    PageFlowUtil.link("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)).appendTo(oldWriter);
-                    oldWriter.write("<br>");
-                    if (reshowFile != null)
-                    {
-                        PageConfig pageConfig = HttpView.currentPageConfig();
-                        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
-                        String filePath = PageFlowUtil.filter(pipelineRoot.relativePath(reshowFile).replace('\\', '/'));
-                        String updateInputFn = "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">" +
-                                "function showMetadataPicker(showFilePicker) {\n" +
-                                "document.getElementById('previousMetadataFileName').style.display = (showFilePicker ? 'none' : 'block');\n" +
-                                "document.getElementById('newMetadataFileName').style.display = (!showFilePicker ? 'none' : 'block');\n" +
-                                "}" +
-                                "</script>";
-                        oldWriter.write(updateInputFn);
-                        oldWriter.write("\n<table><tr>");
-                        oldWriter.write("\n<td><input type=\"radio\" id=\"optionPrevUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_PREVUPLOAD + "\" checked></td>");
-                        pageConfig.addHandler("optionPrevUpload", "change", "showMetadataPicker(!this.checked);");
-                        oldWriter.write("\n<td>Use the metadata that was already uploaded to the server</td>");
-                        oldWriter.write("\n</tr><tr>");
-                        oldWriter.write("\n<td></td><td><div id=\"previousMetadataFileName\" style=\"display:block\">" + PageFlowUtil.filter(reshowFile.getName()) + "</div></td>");
-                        oldWriter.write("\n</tr><tr>");
-                        oldWriter.write("\n<td><input type=\"hidden\" name=\"" + METADATA_PREVUPLOAD_LOCATION + "\" value=\"" + filePath  + "\">");
-                        oldWriter.write("\n<input type=\"radio\" id=\"optionNewUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\"></td>");
-                        pageConfig.addHandler("optionNewUpload", "change", "showMetadataPicker(this.checked);");
-                        oldWriter.write("\n<td>Upload a data file</td>");
-                        oldWriter.write("\n</tr><tr>");
-                        oldWriter.write("\n<td></td><td><div id=\"newMetadataFileName\" style=\"display:none\"><input type=\"file\" id=\"" +
-                                SAMPLE_FILE_INPUT_NAME + "\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\"></div></td>");
-                        oldWriter.write("\n</tr></table>");
+                        oldWriter.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
+                        PageFlowUtil.link("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)).appendTo(oldWriter);
+                        oldWriter.write("<br>");
+                        if (reshowFile != null)
+                        {
+                            PageConfig pageConfig = HttpView.currentPageConfig();
+                            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
+                            String filePath = PageFlowUtil.filter(pipelineRoot.relativePath(reshowFile).replace('\\', '/'));
+                            String updateInputFn = "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">" +
+                                    "function showMetadataPicker(showFilePicker) {\n" +
+                                    "document.getElementById('previousMetadataFileName').style.display = (showFilePicker ? 'none' : 'block');\n" +
+                                    "document.getElementById('newMetadataFileName').style.display = (!showFilePicker ? 'none' : 'block');\n" +
+                                    "}" +
+                                    "</script>";
+                            oldWriter.write(updateInputFn);
+                            oldWriter.write("\n<table><tr>");
+                            oldWriter.write("\n<td><input type=\"radio\" id=\"optionPrevUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_PREVUPLOAD + "\" checked></td>");
+                            pageConfig.addHandler("optionPrevUpload", "change", "showMetadataPicker(!this.checked);");
+                            oldWriter.write("\n<td>Use the metadata that was already uploaded to the server</td>");
+                            oldWriter.write("\n</tr><tr>");
+                            oldWriter.write("\n<td></td><td><div id=\"previousMetadataFileName\" style=\"display:block\">" + PageFlowUtil.filter(reshowFile.getName()) + "</div></td>");
+                            oldWriter.write("\n</tr><tr>");
+                            oldWriter.write("\n<td><input type=\"hidden\" name=\"" + METADATA_PREVUPLOAD_LOCATION + "\" value=\"" + filePath  + "\">");
+                            oldWriter.write("\n<input type=\"radio\" id=\"optionNewUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\"></td>");
+                            pageConfig.addHandler("optionNewUpload", "change", "showMetadataPicker(this.checked);");
+                            oldWriter.write("\n<td>Upload a data file</td>");
+                            oldWriter.write("\n</tr><tr>");
+                            oldWriter.write("\n<td></td><td><div id=\"newMetadataFileName\" style=\"display:none\"><input type=\"file\" id=\"" +
+                                    SAMPLE_FILE_INPUT_NAME + "\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\"></div></td>");
+                            oldWriter.write("\n</tr></table>");
+                        }
+                        else
+                        {
+                            oldWriter.write("<table><tr><td></td><td>" +
+                                    "<input type=\"hidden\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\">" +
+                                    "<input type=\"file\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\">" +
+                                    "</td></tr></table>");
+                        }
                     }
-                    else
-                    {
-                        oldWriter.write("<table><tr><td></td><td>" +
-                                "<input type=\"hidden\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\">" +
-                                "<input type=\"file\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\">" +
-                                "</td></tr></table>");
-                    }
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
                 }
             }
         });
