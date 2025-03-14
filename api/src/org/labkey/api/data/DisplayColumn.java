@@ -92,22 +92,23 @@ public abstract class DisplayColumn extends RenderColumn
     protected String _excelFormatString = null;
     protected Format _format = null;
     protected Format _tsvFormat = null;
-    private StringExpression _textExpression = null;
-    private StringExpression _textExpressionCompiled = null;
     protected String _gridHeaderClass = "labkey-col-header-filter";
-    private String _description = null;
     protected boolean _requiresHtmlFiltering = true;
-    private String _displayClass;
+    protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
     // for URL generation
     private String _url;
     private StringExpression _urlExpression;
     private StringExpression _urlCompiled;
 
+    private StringExpression _textExpression = null;
+    private StringExpression _textExpressionCompiled = null;
     private StringExpression _urlTitle = null;
     private StringExpression _urlTitleCompiled = null;
+    private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
+    private String _description = null;
+    private String _displayClass;
 
-    protected Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
     /** Handles spanning multiple rows in a grid. A separate interface to allow for easier mixing and matching with DisplayColumn implementations. */
@@ -140,7 +141,14 @@ public abstract class DisplayColumn extends RenderColumn
         }
     };
 
-    private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
+    /*
+        Note: DataRegion plus its subclasses and the vast majority of DisplayColumn (and subclasses) have been rewritten
+        to use HtmlWriter, DOM, and builders instead of String-based HTML generation. They also no longer throw
+        IOException. The three deprecated methods below that take both Writer and HtmlWriter are temporary, present only
+        until their overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to override the
+        corresponding non-Writer variant. Once migrated, the deprecated methods will be removed and the non-deprecated
+        variants will be made abstract.
+     */
 
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {

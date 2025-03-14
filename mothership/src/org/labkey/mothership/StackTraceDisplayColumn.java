@@ -19,25 +19,24 @@ package org.labkey.mothership;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: jeckels
- * Date: Apr 24, 2006
- */
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.PRE;
+import static org.labkey.api.util.DOM.at;
+
 public class StackTraceDisplayColumn extends DataColumn
 {
     private static final int MAX_LINES_TO_SHOW = 10;
 
-    //Careful, a renderer without a resultset is only good for input forms
+    //Careful, a renderer without a ResultSet is only good for input forms
     public StackTraceDisplayColumn(ColumnInfo col)
     {
         super(col);
@@ -45,52 +44,59 @@ public class StackTraceDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        renderContents(ctx, oldWriter, Integer.MAX_VALUE);
+        renderContents(ctx, out, Integer.MAX_VALUE);
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderContents(ctx, oldWriter, Integer.MAX_VALUE);
+        renderContents(ctx, out, Integer.MAX_VALUE);
     }
 
-    private void renderContents(RenderContext ctx, Writer out, int maxLines) throws IOException
+    @Override
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        renderContents(ctx, out, MAX_LINES_TO_SHOW);
+    }
+
+    private void renderContents(RenderContext ctx, HtmlWriter out, int maxLines)
     {
         String stackTrace = (String)getValue(ctx);
-        out.write("<pre style=\"margin: 4px 0px\">");
-        StringBuilder sb = new StringBuilder();
         LineNumberReader reader = new LineNumberReader(new StringReader(stackTrace));
         List<String> lines = new ArrayList<>();
-        String line;
-        while ((line = reader.readLine()) != null)
+        try
         {
-            lines.add(line);
-        }
-
-        for (int i = 0; i < lines.size(); i++)
-        {
-            if (i < maxLines)
+            String line;
+            while ((line = reader.readLine()) != null)
             {
-                sb.append(lines.get(i));
-                sb.append("\n");
+                lines.add(line);
             }
         }
-
-        if (reader.getLineNumber() >= maxLines)
+        catch (IOException e)
         {
-            sb.append("... (");
-            sb.append(reader.getLineNumber());
-            sb.append(" lines total)");
+            throw new RuntimeException(e);
         }
-        out.write(PageFlowUtil.filter(sb.toString()));
-        out.write("</pre>");
-    }
 
-    @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
-    {
-        renderContents(ctx, oldWriter, MAX_LINES_TO_SHOW);
+        PRE(
+            at(style, "margin: 4px 0px"),
+            (DOM.Renderable) ret -> {
+                for (int i = 0; i < lines.size(); i++)
+                {
+                    if (i < maxLines)
+                    {
+                        out.write(lines.get(i) + "\n");
+                    }
+                }
+
+                if (reader.getLineNumber() >= maxLines)
+                {
+                    out.write("... (" + reader.getLineNumber() + " lines total)");
+                }
+
+                return ret;
+            }
+        ).appendTo(out);
     }
 }
