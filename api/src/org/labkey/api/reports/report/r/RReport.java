@@ -47,7 +47,6 @@ import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -58,6 +57,8 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 
 import javax.script.Bindings;
@@ -65,7 +66,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -607,7 +607,8 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
-        File reportDir = getReportDir(context.getContainer().getId());
+        FileLike reportDirFileLike = getReportDirFileLike(context.getContainer().getId());
+        File reportDir = FileSystemLike.toFile(reportDirFileLike);
         RScriptEngine rengine = (RScriptEngine)engine;
         String localPath = getLocalPath(reportDir);
         String remoteRoot = rengine.getRemotePath(localPath);
@@ -624,7 +625,7 @@ public class RReport extends ExternalScriptEngineReport
     public String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters, isRStudio);
-        File inputData = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
+        FileLike inputData = getReportDirFileLike(context.getContainer().getId()).resolveChild(DATA_INPUT);
 
         /*
           for each included script, the source script is processed for input/output replacements
@@ -644,17 +645,13 @@ public class RReport extends ExternalScriptEngineReport
                     final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final String rExtension = ((RReport) report).getScriptFileExtension();
-                    final File rScriptFile = new File(getReportDir(context.getContainer().getId()), rName + rExtension);
+                    final FileLike rScriptFile = getReportDirFileLike(context.getContainer().getId()).resolveChild(rName + rExtension);
 
-                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters, false, isRStudio);
+                    String includedScript = processScript(engine, context, rScript, FileSystemLike.toFile(inputData), outputSubst, inputParameters, false, isRStudio);
 
-                    try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile))
+                    try (PrintWriter pw = PrintWriters.getPrintWriter(rScriptFile.toNioPathForWrite()))
                     {
                         pw.write(includedScript);
-                    }
-                    catch(IOException e)
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
                     }
                 }
             }
@@ -695,6 +692,20 @@ public class RReport extends ExternalScriptEngineReport
             reportDir = super.getReportDir(executingContainerId);
 
          return reportDir;
+    }
+
+    @Override
+    public FileLike getReportDirFileLike(@NotNull String executingContainerId)
+    {
+        File reportDir = null;
+
+        if (getKnitrFormat() != RReportDescriptor.KnitrFormat.None)
+            reportDir = getCacheDir(executingContainerId);
+
+        if (reportDir != null)
+            return FileSystemLike.wrapFile(reportDir);
+
+        return super.getReportDirFileLike(executingContainerId);
     }
 
     @Override

@@ -29,11 +29,11 @@ import org.labkey.api.query.QueryService.NamedParameterNotProvided;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
-import org.labkey.api.reports.report.r.RConnectionHolder;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.RConnectionHolder;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
@@ -53,6 +53,8 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -281,16 +283,17 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     {
         if (null != output)
         {
-            File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
+            FileLike console = getReportDirFileLike(context.getContainer().getId()).resolveChild(CONSOLE_OUTPUT);
+            File consoleFile = FileSystemLike.toFile(console);
 
-            try (PrintWriter pw = PrintWriters.getPrintWriter(console))
+            try (PrintWriter pw = PrintWriters.getPrintWriter(consoleFile))
             {
                 pw.write(output.toString());
             }
 
             ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
             param.setName("console");
-            param.addFile(console);
+            param.addFile(consoleFile);
             outputSubst.add(param);
         }
     }
@@ -300,7 +303,8 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      */
     protected void saveAdditionalFileOutput(List<ParamReplacement> outputSubst, @NotNull ContainerUser context)
     {
-        File reportDir = getReportDir(context.getContainer().getId());
+        FileLike reportDirFileLike = getReportDirFileLike(context.getContainer().getId());
+        File reportDir = FileSystemLike.toFile(reportDirFileLike);
         if (reportDir != null && reportDir.exists())
         {
             Set<String> boundFiles = new CaseInsensitiveHashSet();
@@ -342,7 +346,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         try (TransformSession session = SecurityManager.createTransformSession(context))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).getPath());
 
             Map<String, String> paramMap = new HashMap<>();
             DataTransformService.get().addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);
