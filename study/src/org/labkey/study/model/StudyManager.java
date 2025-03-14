@@ -2557,75 +2557,81 @@ public class StudyManager
      */
     public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync)
     {
-        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
+        try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            if (!ds.canDeleteDefinition(user))
+                throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        if (!ds.canDeleteDefinition(user))
-            throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+            // When the dataset is deleted, the provenance rows should be cleaned up
+            ProvenanceService pvs = ProvenanceService.get();
 
-        // When the dataset is deleted, the provenance rows should be cleaned up
-        ProvenanceService pvs = ProvenanceService.get();
+            Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(user, ds);
 
-        Collection<String> allDatasetLsids = pvs.getDatasetProvenanceLsids(user, ds);
+            allDatasetLsids.forEach(lsid -> {
+                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
 
-        allDatasetLsids.forEach(lsid -> {
-            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+                if (null != expObject)
+                {
+                    pvs.deleteObjectProvenance(expObject.getObjectId());
+                }
 
-            OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
-            if (null != expObject)
+                if (!protocolApplications.isEmpty())
+                {
+                    ExperimentService expService = ExperimentService.get();
+                    protocolApplications.forEach(protocolApp -> {
+                        ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
+                        expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
+                    });
+                }
+            });
+
+
+            deleteDatasetType(study, user, ds);
+            try
             {
-                pvs.deleteObjectProvenance(expObject.getObjectId());
+                QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), StudySchema.getInstance().getSchemaName(), ds.getName());
+                if (def != null)
+                    def.delete(user);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + SCHEMA.getTableInfoVisitMap() + "\n" +
+                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
+
+            // UNDONE: This is broken
+            // _datasetHelper.delete(ds);
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataset() + "\n" +
+                    "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
+            _datasetHelper.clearCache(study.getContainer());
+
+            SecurityPolicyManager.deletePolicy(ds);
+
+            if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
+                CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.emptyMap());
+
+            if (performStudyResync)
+            {
+                // This dataset may have contained the only references to some subjects or visits; as a result, we need
+                // to re-sync the participant and participant/visit tables.  (Issue 12447)
+                // Don't provide the deleted dataset in the list of modified datasets; deletion doesn't count as a modification
+                // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
+                getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
             }
 
-            if (!protocolApplications.isEmpty())
-            {
-                ExperimentService expService = ExperimentService.get();
-                protocolApplications.forEach(protocolApp -> {
-                    ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
-                    expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
-                });
-            }
-        });
+            SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
+            QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
+            new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(), null);
 
+            transaction.addCommitTask(() ->
+                unindexDataset(ds),
+                CommitTaskOption.POSTCOMMIT
+            );
 
-        deleteDatasetType(study, user, ds);
-        try
-        {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), StudySchema.getInstance().getSchemaName(), ds.getName());
-            if (def != null)
-                def.delete(user);
+            transaction.commit();
         }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + SCHEMA.getTableInfoVisitMap() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
-
-        // UNDONE: This is broken
-        // _datasetHelper.delete(ds);
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataset() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
-        _datasetHelper.clearCache(study.getContainer());
-
-        SecurityPolicyManager.deletePolicy(ds);
-
-        if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
-            CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.emptyMap());
-
-        if (performStudyResync)
-        {
-            // This dataset may have contained the only references to some subjects or visits; as a result, we need
-            // to re-sync the participant and participant/visit tables.  (Issue 12447)
-            // Don't provide the deleted dataset in the list of modified datasets; deletion doesn't count as a modification
-            // within VisitManager, and passing in the empty set ensures that all subject/visit info will be recalculated.
-            getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
-        }
-
-        SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
-        QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
-        new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(),null);
-
-        unindexDataset(ds);
     }
 
     /** delete a dataset type and data
