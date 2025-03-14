@@ -346,7 +346,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         try (TransformSession session = SecurityManager.createTransformSession(context))
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).getPath());
+            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
 
             Map<String, String> paramMap = new HashMap<>();
             DataTransformService.get().addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);

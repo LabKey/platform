@@ -118,7 +118,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("viewContext", context);
                 bindings.put("consoleOut", consolePw);
 
-                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).getPath());
+                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
 
                 SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, "Internal-" + engine.getFactory().getEngineName());
 
