@@ -1184,7 +1184,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     list = errors.getGlobalErrors();
                 else
                     list = errors.getFieldErrors(paramName);
-                if (list == null || list.size() == 0)
+                if (list == null || list.isEmpty())
                     return HtmlString.EMPTY_STRING;
 
                 Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
@@ -1223,12 +1223,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else if (errors != null && "main".equals(paramName) && errors.getFieldError("transform") != null)
             {
                 return createHtml(
-                        DIV(
-                            FONT(cl("labkey-error"),
-                                DIV("Transform Script Error"),
-                                BR(),
-                                DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))),
-                                BR()));
+                    DIV(
+                        FONT(
+                            cl("labkey-error"),
+                            DIV("Transform Script Error"),
+                            BR(),
+                            DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))
+                        ),
+                        BR()
+                    )
+                );
 
             }
             else

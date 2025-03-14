@@ -164,13 +164,13 @@ public class SimpleDisplayColumn extends DisplayColumn
     @Override
     public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        throw new UnsupportedOperationException("Non Bound columns not editable");
+        throw new UnsupportedOperationException("Non Bound columns not editable for " + this);
     }
 
     @Override
     public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
-        throw new UnsupportedOperationException("Non Bound columns not editable");
+        throw new UnsupportedOperationException("Non Bound columns not editable for " + this);
     }
 
     @Override
