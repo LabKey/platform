@@ -28,6 +28,7 @@ import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
@@ -208,7 +209,8 @@ public class WikiVersion
         _rendererType = rendererType;
     }
 
-    public WikiRenderer getRenderer(String hrefPrefix,
+    public WikiRenderer getRenderer(SubstitutionMode substitutionMode,
+                                    String hrefPrefix,
                                     String attachPrefix,
                                     Map<String, String> nameTitleMap,
                                     Collection<? extends Attachment> attachments,
@@ -217,7 +219,7 @@ public class WikiVersion
         if (_rendererType == null)
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return WikiRenderingService.get().getRenderer(_rendererType, true, hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
+        return WikiRenderingService.get().getRenderer(_rendererType, substitutionMode, hrefPrefix, attachPrefix, nameTitleMap, attachments, sourceDescription);
     }
 
     // Cache the rendered wiki content by default; set to false to avoid caching

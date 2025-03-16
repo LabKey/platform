@@ -10,6 +10,7 @@ import org.labkey.api.util.CspUtils;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiTree;
 import org.w3c.dom.Document;
@@ -62,7 +63,7 @@ public class WikiValidationProviderFactory implements SiteValidationProviderFact
                         String title = nameTitleMap.get(wiki.getName());
                         try
                         {
-                            FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
+                            FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion(), SubstitutionMode.Remove);
                             Collection<String> errors = new LinkedList<>();
                             Document doc = JSoupUtil.convertHtmlToDocument(html.getHtml().toString(), false, errors);
                             errors.forEach(error -> addResult(list, wiki, title, "error while converting HTML to Document, \"" + error + "\""));

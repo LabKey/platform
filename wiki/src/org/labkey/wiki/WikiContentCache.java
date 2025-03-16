@@ -18,16 +18,11 @@ package org.labkey.wiki;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-/**
- * User: adam
- * Date: Oct 8, 2010
- * Time: 7:55:26 PM
- */
 public class WikiContentCache
 {
     private static final Cache<String, FormattedHtml> CONTENT_CACHE = CacheManager.getStringKeyCache(5000, CacheManager.DAY, "Wiki Content");
@@ -35,14 +30,14 @@ public class WikiContentCache
     public static FormattedHtml getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {
         if (!cache)
-            return WikiManager.get().formatWiki(c, wiki, version);
+            return WikiManager.get().formatWiki(c, wiki, version, SubstitutionMode.Substitute);
 
         String key = c.getId() + "/" + wiki.getName() + "/" + version.getVersion();
         FormattedHtml html = CONTENT_CACHE.get(key);
 
         if (null == html)
         {
-            html = WikiManager.get().formatWiki(c, wiki, version);
+            html = WikiManager.get().formatWiki(c, wiki, version, SubstitutionMode.Substitute);
 
             if (!html.isVolatile())
                 CONTENT_CACHE.put(key, html);

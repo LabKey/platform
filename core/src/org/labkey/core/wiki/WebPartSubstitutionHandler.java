@@ -38,11 +38,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Stack;
 
-/**
- * User: adam
- * Date: Jun 27, 2007
- * Time: 2:53:12 AM
- */
 public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
     private static final Logger LOG = LogManager.getLogger(WebPartSubstitutionHandler.class);
@@ -113,7 +108,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             {
                 // Let's at least log these exceptions in dev mode
                 if (AppProps.getInstance().isDevMode())
-                    LOG.error("Error substituting " + partName, e);
+                    LOG.error("Error substituting {}", partName, e);
 
                 // Return HTML with error
                 return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error substituting " + PageFlowUtil.filter(partName) + ": " + PageFlowUtil.filter(e.getMessage()) + "</font>"));
