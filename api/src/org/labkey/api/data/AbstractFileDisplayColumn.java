@@ -23,7 +23,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;

@@ -198,7 +198,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridHeaderCell(innerCtx, HtmlWriter.of(oldWriter));
+                pair.second.renderGridHeaderCell(innerCtx, out);
             }
             oldWriter.write("</tr>");
             oldWriter.write("</thead>");
@@ -207,7 +207,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
-                pair.second.renderGridDataCell(innerCtx, HtmlWriter.of(oldWriter));
+                pair.second.renderGridDataCell(innerCtx, out);
             }
             oldWriter.write("</tr>");
             oldWriter.write("</tbody>");
