@@ -18,9 +18,9 @@ public interface WikiRenderingService
     // How should substitutions be handled? Substitutions are allowed in HTML wikis only.
     enum SubstitutionMode
     {
-        Ignore,
-        Remove,
-        Substitute
+        Ignore, // Don't substitute, leaving any substitution tokens as-is
+        Remove, // Substitute with blanks, ensuring that all substitution tokens are removed
+        Substitute // Substitute normally, swapping substitution tokens with their replacements
     }
 
     static @NotNull WikiRenderingService get()

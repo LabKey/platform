@@ -278,9 +278,10 @@ public class HtmlRenderer implements WikiRenderer
             String substitutionType = substitutionMatcher.group(1);          // type
             String params = substitutionMatcher.group(2).replace(",", "");
             // Parse the parameters with the symbols in parseWith, they can be used in any order
-            // as long as they are the same symbol starts and completes a parameter value
+            // as long as the same symbol starts and completes a parameter value
             List<String> paramList = new ArrayList<>();
             paramList.add(params);
+            // Support either HTML encoded or unencoded apostrophe
             String[] parseWith = {"&#39;", "'"};
             for (String parser : parseWith)
             {
