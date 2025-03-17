@@ -6,6 +6,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentListener;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -15,13 +16,10 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterExperimentDeleted(Container c, User user, ExpExperiment experiment)
     {
-        AssayManager.get().deindexAssayBatches(List.of(experiment));
-    }
-
-    @Override
-    public CommitTaskOption afterExperimentDeleteCommitOption()
-    {
-        return CommitTaskOption.POSTCOMMIT;
+        ExperimentService.get().getSchema().getScope().getCurrentTransaction().addCommitTask(() ->
+            AssayManager.get().deindexAssayBatches(List.of(experiment)),
+            CommitTaskOption.POSTCOMMIT
+        );
     }
 
     @Override
@@ -33,13 +31,10 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterRunDelete(ExpProtocol protocol, ExpRun run, User user)
     {
-        AssayManager.get().deindexAssayRuns(List.of(run));
-    }
-
-    @Override
-    public CommitTaskOption afterRunDeleteCommitOption()
-    {
-        return CommitTaskOption.POSTCOMMIT;
+        ExperimentService.get().getSchema().getScope().getCurrentTransaction().addCommitTask(() ->
+            AssayManager.get().deindexAssayRuns(List.of(run)),
+            CommitTaskOption.POSTCOMMIT
+        );
     }
 
     @Override

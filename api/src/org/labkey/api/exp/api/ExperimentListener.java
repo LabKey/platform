@@ -16,7 +16,6 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 
@@ -24,14 +23,8 @@ import java.util.List;
 
 public interface ExperimentListener
 {
-    /** Called after an experiment is deleted */
+    /** Called after an experiment is deleted (in-transaction). */
     default void afterExperimentDeleted(Container c, User user, ExpExperiment experiment) { }
-
-    /** Allows the listener to determine when the action should be executed relative to the transaction */
-    default CommitTaskOption afterExperimentDeleteCommitOption()
-    {
-        return CommitTaskOption.IMMEDIATE;
-    }
 
     /** Called after an experiment is saved (post-transaction). */
     default void afterExperimentSaved(Container c, User user, ExpExperiment experiment) { }
@@ -41,14 +34,8 @@ public interface ExperimentListener
 
     default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols) { }
 
-    /** Called after an experiment run is deleted. */
+    /** Called after an experiment run is deleted (in-transaction). */
     default void afterRunDelete(ExpProtocol protocol, ExpRun run, User user) { }
-
-    /** Allows the listener to determine when the action should be executed relative to the transaction */
-    default CommitTaskOption afterRunDeleteCommitOption()
-    {
-        return CommitTaskOption.IMMEDIATE;
-    }
 
     /** Called after an experiment run is saved (post-transaction). */
     default void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run) { }
