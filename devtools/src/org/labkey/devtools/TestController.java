@@ -17,6 +17,7 @@
 package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormArrayList;
@@ -178,6 +179,127 @@ public class TestController extends SpringActionController
         }
     }
 
+    private static Thread longRunningJob;
+
+    static class LongRunnable implements Runnable {
+        private final Logger logger;
+        private final int maxTime;
+        private final long stepTime;
+
+        LongRunnable(Logger logger, int maxTime, int stepTime)
+        {
+            this.logger = logger;
+            this.maxTime = maxTime;
+            this.stepTime = stepTime;
+        }
+
+        @Override
+        public void run() {
+            try {
+                int loops = 0;
+                int remaining = maxTime;
+                logger.info("Long runner starting...");
+                while (!Thread.currentThread().isInterrupted() && remaining > 0) {
+                    logger.debug("Long runner working... loop [{}], remaining [{}s]", loops, remaining/1000);
+                    Thread.sleep(stepTime); // Let the thread run for a while
+                    remaining -= stepTime;
+                }
+            } catch (InterruptedException e) {
+                // Thread was interrupted during sleep
+                logger.info("Long runner interrupted.");
+            }
+            logger.info("Long runner finished.");
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class CancelLongRunningAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return null;
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            if (longRunningJob !=null && !longRunningJob.isInterrupted())
+            {
+                logger.info("Interrupting the long-running action");
+                longRunningJob.interrupt();
+                logger.info("Successfully interrupted the long-running action");
+            }
+
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class LongRunningAction extends FormViewAction<Object>
+    {
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            return null;
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            synchronized (LongRunningAction.class)
+            {
+                LongRunnable lr = new LongRunnable(logger, 300000, 15000);
+                longRunningJob = new Thread(lr);
+                longRunningJob.start();
+                longRunningJob.join(); // Wait for the thread to finish
+                if (longRunningJob.isInterrupted())
+                    logger.info("Long running post interrupted.");
+                else
+                    logger.info("Long running post finished.");
+
+                longRunningJob = null;
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class SimpleFormAction extends FormViewAction<SimpleForm>
