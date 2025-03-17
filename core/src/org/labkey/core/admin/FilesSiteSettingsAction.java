@@ -54,9 +54,6 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
     @Override
     public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
-        if (form.isUpgrade())
-            getPageConfig().setTemplate(PageConfig.Template.Dialog);
-
         if (!reshow)
         {
             File root = _svc.getSiteDefaultRoot();
@@ -76,10 +73,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
     @Override
     public ActionURL getSuccessURL(FileSettingsForm form)
     {
-        if (form.isUpgrade())
-            return PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL(true);
-        else
-            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
     }
 
     @Override
@@ -97,8 +91,6 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
             User user = TestContext.get().getUser();
             assertTrue(user.hasSiteAdminPermission());
 
-            // @AdminConsoleAction
-            // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
                 new FilesSiteSettingsAction()
             );
