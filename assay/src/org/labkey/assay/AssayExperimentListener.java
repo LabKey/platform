@@ -1,6 +1,7 @@
 package org.labkey.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -16,7 +17,7 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterExperimentDeleted(Container c, User user, ExpExperiment experiment)
     {
-        ExperimentService.get().getSchema().getScope().getCurrentTransaction().addCommitTask(() ->
+        DbScope.getLabKeyScope().addCommitTask(() ->
             AssayManager.get().deindexAssayBatches(List.of(experiment)),
             CommitTaskOption.POSTCOMMIT
         );
@@ -31,7 +32,7 @@ public class AssayExperimentListener implements ExperimentListener
     @Override
     public void afterRunDelete(ExpProtocol protocol, ExpRun run, User user)
     {
-        ExperimentService.get().getSchema().getScope().getCurrentTransaction().addCommitTask(() ->
+        DbScope.getLabKeyScope().addCommitTask(() ->
             AssayManager.get().deindexAssayRuns(List.of(run)),
             CommitTaskOption.POSTCOMMIT
         );
