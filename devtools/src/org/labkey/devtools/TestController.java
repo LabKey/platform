@@ -213,6 +213,32 @@ public class TestController extends SpringActionController
     }
 
 
+    public static class LongRunningJobForm
+    {
+        private int maxTimeMS;
+        private int stepTimeMS;
+
+        public void setMaxTimeMS(int maxTimeMS)
+        {
+            this.maxTimeMS = maxTimeMS;
+        }
+
+        public void setStepTimeMS(int stepTimeMS)
+        {
+            this.stepTimeMS = stepTimeMS;
+        }
+
+        public int getMaxTimeMS()
+        {
+            return maxTimeMS;
+        }
+
+        public int getStepTimeMS()
+        {
+            return stepTimeMS;
+        }
+    }
+
     @RequiresSiteAdmin
     public class CancelLongRunningAction extends FormViewAction<Object>
     {
@@ -254,27 +280,27 @@ public class TestController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class LongRunningAction extends FormViewAction<Object>
+    public class LongRunningAction extends FormViewAction<LongRunningJobForm>
     {
 
         @Override
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(LongRunningJobForm form, Errors errors)
         {
 
         }
 
         @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(LongRunningJobForm form, boolean reshow, BindException errors) throws Exception
         {
             return null;
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(LongRunningJobForm form, BindException errors) throws Exception
         {
             synchronized (LongRunningAction.class)
             {
-                LongRunnable lr = new LongRunnable(logger, 300000, 15000);
+                LongRunnable lr = new LongRunnable(logger, form.getMaxTimeMS(), form.getStepTimeMS());
                 longRunningJob = new Thread(lr);
                 longRunningJob.start();
                 longRunningJob.join(); // Wait for the thread to finish
@@ -290,7 +316,7 @@ public class TestController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getSuccessURL(LongRunningJobForm form)
         {
             return null;
         }
