@@ -250,6 +250,10 @@ public class HtmlRenderer implements WikiRenderer
         return SUBSTITUTION_PATTERN.matcher(text);
     }
 
+    // TODO: Since the Remove option is used by the Wiki validation provider, it may be more appropriate for this
+    // method to parse and verify the substitution & parameter syntax before removing them, reporting errors as
+    // appropriate. This would mean executing most of handleSubstitutions() before doing the replacement and wiring
+    // up a way to report errors to the validator (i.e., not just write errors into the rendered HTML).
     private FormattedHtml removeSubstitutions(String text)
     {
         text = getSubstitutionMatcher(text).replaceAll("");
