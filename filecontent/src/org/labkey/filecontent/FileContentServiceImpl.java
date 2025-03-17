@@ -1674,7 +1674,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     {
         if (_problematicFileRootMessage != null && context != null && ContainerManager.getRoot().hasPermission(context.getUser(), AdminOperationsPermission.class))
         {
-            warnings.add(DOM.createHtmlFragment(_problematicFileRootMessage, " ", DOM.A(at(href, PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL(false)), "Configure File System Access")));
+            warnings.add(DOM.createHtmlFragment(_problematicFileRootMessage, " ", DOM.A(at(href, PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL()), "Configure File System Access")));
         }
         else if (showAllWarnings)
         {
