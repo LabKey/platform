@@ -843,14 +843,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getFilesSiteSettingsURL(boolean upgrade)
+        public ActionURL getFilesSiteSettingsURL()
         {
-            ActionURL url = new ActionURL(FilesSiteSettingsAction.class, ContainerManager.getRoot());
-
-            if (upgrade)
-                url.addParameter("upgrade", true);
-
-            return url;
+            return new ActionURL(FilesSiteSettingsAction.class, ContainerManager.getRoot());
         }
 
         @Override

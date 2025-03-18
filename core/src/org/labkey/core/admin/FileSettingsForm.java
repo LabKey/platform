@@ -18,7 +18,6 @@ package org.labkey.core.admin;
 public class FileSettingsForm
 {
     private String _rootPath;
-    private boolean _upgrade;
     private boolean _webfilesEnabled;
     private boolean _fileUploadDisabled;
     private boolean _invalidUploadBlocked;
@@ -32,16 +31,6 @@ public class FileSettingsForm
     public void setRootPath(String rootPath)
     {
         _rootPath = rootPath;
-    }
-
-    public boolean isUpgrade()
-    {
-        return _upgrade;
-    }
-
-    public void setUpgrade(boolean upgrade)
-    {
-        _upgrade = upgrade;
     }
 
     public boolean isWebfilesEnabled()
