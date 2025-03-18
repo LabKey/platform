@@ -118,8 +118,7 @@ public class HtmlWriter implements Appendable
 
         public static AttributeValue of(String name, String value)
         {
-            // TODO: eliminate "lk-" option after tests are migrated to use "data-" only
-            if (!name.equals("class") && !name.startsWith("data-") && !name.startsWith("lk-"))
+            if (!name.equals("class") && !name.startsWith("data-"))
                 throw new IllegalStateException("Illegal attribute name: " + name);
 
             return new AttributeValue(name, value);
