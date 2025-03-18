@@ -46,6 +46,6 @@ public class RenderedWikiResource extends WikiWebdavProvider.WikiPageResource
     {
         WikiRenderingService service = WikiRenderingService.get();
 
-        return service.getFormattedHtml(type, body, "Wiki WebDav '" + getName() + "' in " + _c.getPath(), true, null, null);
+        return service.getFormattedHtml(type, body, "Wiki WebDav '" + getName() + "' in " + _c.getPath(), WikiRenderingService.SubstitutionMode.Substitute, null, null);
     }
 }

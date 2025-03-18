@@ -15,6 +15,14 @@ public interface WikiRenderingService
     HtmlString WIKI_PREFIX = HtmlString.unsafe("<div class=\"labkey-wiki\">");
     HtmlString WIKI_SUFFIX = HtmlString.unsafe("</div>");
 
+    // How should substitutions be handled? Substitutions are allowed in HTML wikis only.
+    enum SubstitutionMode
+    {
+        Ignore, // Don't substitute, leaving any substitution tokens as-is
+        Remove, // Substitute with blanks, ensuring that all substitution tokens are removed
+        Substitute // Substitute normally, swapping substitution tokens with their replacements
+    }
+
     static @NotNull WikiRenderingService get()
     {
         return Objects.requireNonNull(ServiceRegistry.get().getService(WikiRenderingService.class));
@@ -39,16 +47,16 @@ public interface WikiRenderingService
 
     /**
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
-     * @param handleSubstitutions allow webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}})
+     * @param substitutionMode determines how webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}} are handled)
      */
     HtmlString getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String sourceDescription,
-                                boolean handleSubstitutions, String attachPrefix, Collection<? extends Attachment> attachments);
+                                SubstitutionMode substitutionMode, String attachPrefix, Collection<? extends Attachment> attachments);
 
     /**
      * @param sourceDescription info on where the text came from for debugging purposes. For example: Announcement 6654 in /MyContainer
-     * @param handleSubstitutions allow webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}})
+     * @param substitutionMode determines how webpart and dependency substitutions ({@code ${labkey.webPart}} and {@code ${labkey.dependency}} are handled)
      */
-    WikiRenderer getRenderer(WikiRendererType rendererType, boolean handleSubstitutions, String hrefPrefix,
+    WikiRenderer getRenderer(WikiRendererType rendererType, SubstitutionMode substitutionMode, String hrefPrefix,
                              String attachPrefix, Map<String, String> nameTitleMap,
                              Collection<? extends Attachment> attachments,
                              String sourceDescription);
