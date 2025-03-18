@@ -2560,7 +2560,7 @@ public class StudyManager
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
             if (!ds.canDeleteDefinition(user))
-                throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+                throw new UnauthorizedException("Can't delete dataset: " + ds.getName());
 
             // When the dataset is deleted, the provenance rows should be cleaned up
             ProvenanceService pvs = ProvenanceService.get();
