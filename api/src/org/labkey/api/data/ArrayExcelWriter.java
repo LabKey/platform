@@ -2,11 +2,7 @@ package org.labkey.api.data;
 
 import org.apache.poi.ss.usermodel.Sheet;
 import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.writer.HtmlWriter;
 
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,125 +41,20 @@ public class ArrayExcelWriter extends ExcelWriter
         }
     }
 
-    public class ArrayDisplayColumn extends DisplayColumn
+    public class ArrayDisplayColumn extends AbstractExcelDisplayColumn
     {
-        Class<?> valueClass;
-        int position;
+        private final int _position;
 
         public ArrayDisplayColumn(String name, Class<?> valueClass, int position)
         {
-            this(name, name, valueClass, position);
-        }
-
-        public ArrayDisplayColumn(String name, String caption, Class<?> valueClass, int position)
-        {
-            setName(name);
-            setCaption(caption);
-            this.valueClass = valueClass;
-            this.position = position;
+            super(name, name, valueClass);
+            _position = position;
         }
 
         @Override
         public Object getValue(RenderContext ctx)
         {
-            return data.get(currentRow)[position];
-        }
-
-        @Override
-        public Class<?> getValueClass()
-        {
-            return valueClass; 
-        }
-
-        //NOTE: Methods beyond here are unimplemented, just abstract in base class
-        @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public HtmlString getTitle(RenderContext ctx)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public boolean isSortable()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isFilterable()
-        {
-            return false;
-        }
-
-        @Override
-        public boolean isEditable()
-        {
-            return false;
-        }
-
-        @Override
-        public String getFilterOnClick(RenderContext ctx)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void setURL(ActionURL url)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public void setURL(String url)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
-        }
-
-        @Override
-        public String getURL()
-        {
-            return null;
-        }
-
-        @Override
-        public String renderURL(RenderContext ctx)
-        {
-            return null;
-        }
-
-        @Override
-        public boolean isQueryColumn()
-        {
-            return false;
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo()
-        {
-            return null;
-        }
-
-        @Override
-        public void render(RenderContext ctx, HtmlWriter out)
-        {
-            throw new UnsupportedOperationException("This is for excel only.");
+            return data.get(currentRow)[_position];
         }
     }
 }

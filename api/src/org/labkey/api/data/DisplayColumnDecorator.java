@@ -57,6 +57,12 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+    {
+        _column.renderInputHtml(ctx, out, value);
+    }
+
+    @Override
     public HtmlString getTitle(RenderContext ctx)
     {
         return _column.getTitle(ctx);
@@ -78,12 +84,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     public boolean isEditable()
     {
         return _column.isEditable();
-    }
-
-    @Override
-    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
-    {
-        _column.renderInputHtml(ctx, out, value);
     }
 
     @Override
