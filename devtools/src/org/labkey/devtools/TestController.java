@@ -213,7 +213,6 @@ public class TestController extends SpringActionController
         }
     }
 
-
     public static class LongRunningJobForm
     {
         private int maxTimeMS;
@@ -267,6 +266,8 @@ public class TestController extends SpringActionController
         {
             if (form.stepTimeMS <= 0)
                 errors.rejectValue("stepTimeMS", "Step time must be greater than zero");
+            if (form.stepTimeMS > form.maxTimeMS)
+                errors.rejectValue("stepTimeMS", "Step time must be less than or equal to Max Time.");
             if (form.maxTimeMS <= 0)
                 errors.rejectValue("maxTimeMS", "Max time must be greater than zero");
         }
