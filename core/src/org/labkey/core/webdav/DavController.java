@@ -3835,7 +3835,7 @@ public class DavController extends SpringActionController
             WebdavResource dest = resolvePath(destinationPath);
             if (null == dest || dest.getPath().equals(src.getPath()))
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
-            checkAllowedFileName(dest.getName(), !dest.isCollection());
+            checkAllowedFileName(dest.getName(), !src.isCollection());
 
             boolean overwrite = getOverwriteParameter(false);
             boolean exists = dest.exists();
