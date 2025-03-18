@@ -2196,7 +2196,7 @@ public class QueryController extends SpringActionController
                     .setIncludeColumns(form.getIncludeColumns())
                     .setExcludeColumns(form.getExcludeColumns())
                     .setRenamedColumns(form.getRenameColumnMap())
-                    .setPrefix(form.getFilenamePrefix() + "_Template") // Issue 48028: Change template file names
+                    .setPrefix((StringUtils.isEmpty(form.getFilenamePrefix()) ? "Import" : form.getFilenamePrefix()) + "_Template") // Issue 48028: Change template file names
             );
         }
     }
