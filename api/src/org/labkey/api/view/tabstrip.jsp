@@ -34,7 +34,7 @@
     <%
         for (NavTree tab : tabs)
         {
-            if (null != tab.getText() && tab.getText().length() > 0)
+            if (null != tab.getText() && !tab.getText().isEmpty())
             {
             %>
             <li class="<%=h(tab.getId().equalsIgnoreCase(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=h(view._prefix + "tab" + tab.getId())%>"><%

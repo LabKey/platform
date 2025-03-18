@@ -29,6 +29,7 @@ import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.model.CohortImpl;
@@ -121,7 +122,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Integer rowId = (Integer)rowIdColumn.getValue(ctx);
             Container folder = ContainerManager.getForId((String) folderColumn.getValue(ctx));
@@ -136,11 +137,11 @@ public class CohortQueryView extends ExtensibleObjectQueryView
                         ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
                         actionURL.addParameter("rowId", rowId.toString());
 
-                        out.write(new LinkBuilder("delete").href(actionURL).usePost().toString());
+                        oldWriter.write(new LinkBuilder("delete").href(actionURL).usePost().toString());
                     }
                     else
                     {
-                        out.write("in use");
+                        oldWriter.write("in use");
                     }
                 }
             }

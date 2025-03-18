@@ -16,21 +16,18 @@
 
 package org.labkey.api.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Aug 3, 2007
- */
 public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
 {
     private final AssayRunUploadForm _form;
@@ -40,16 +37,15 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     {
         _form = form;
         setCaption("Run Data");
-        var col  = new BaseColumnInfo("Run Data");
+        var col = new BaseColumnInfo("Run Data");
         col.setInputType("file");
         _col = col;
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+    public @NotNull HtmlString getTitle(RenderContext ctx)
     {
-        super.renderTitle(ctx, out);
-        out.write(" *");
+        return HtmlStringBuilder.of(super.getTitle(ctx)).append(" *").getHtmlString();
     }
 
     @Override
@@ -65,7 +61,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
         JspView view = new JspView<>("/org/labkey/assay/view/dataUpload.jsp", _form);
@@ -79,7 +75,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         }
         catch (Exception e)
         {
-            throw (IOException)new IOException().initCause(e);
+            throw new RuntimeException(e);
         }
     }
 }

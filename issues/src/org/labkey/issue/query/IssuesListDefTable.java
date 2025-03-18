@@ -17,8 +17,6 @@ package org.labkey.issue.query;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -52,9 +50,11 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.InsertIssueDefAction;
@@ -69,14 +69,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by klum on 4/10/16.
- */
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
-    private static final Logger LOG = LogManager.getLogger(IssuesListDefTable.class);
-
     private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
+
     static
     {
         Set<String> autoPopulatedCols = new CaseInsensitiveHashSet(Table.AUTOPOPULATED_COLUMN_NAMES);
@@ -188,24 +184,24 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                     }
 
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                     {
                         Container c = getContainer(ctx);
                         if (c != null)
                         {
                             if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
                             {
-                                out.write("<a href=\"");
-                                out.write(PageFlowUtil.filter(c.getStartURL(getUserSchema().getUser()).getLocalURIString()));
-                                out.write("\">");
-                                out.write(PageFlowUtil.filter(c.getName()));
-                                out.write("</a>");
+                                out.write(new Link.LinkBuilder(c.getName()).href(c.getStartURL(getUserSchema().getUser())).clearClasses());
                             }
                             else
-                                out.write(PageFlowUtil.filter(c.getName()));
+                            {
+                                out.write(c.getName());
+                            }
                         }
                         else
+                        {
                             super.renderGridCellContents(ctx, out);
+                        }
                     }
                 };
             }
@@ -331,7 +327,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
     }
 
-    public class MultiValueInputColumn extends DataColumn
+    public static class MultiValueInputColumn extends DataColumn
     {
         private final List<Pair<String, String>> _values;
 
@@ -342,30 +338,30 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object val) throws IOException
+        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object val) throws IOException
         {
             String formFieldName = ctx.getForm().getFormFieldName(getColumnInfo());
 
-            out.write("<select name='");
-            out.write(formFieldName);
-            out.write("'>\n");
+            oldWriter.write("<select name='");
+            oldWriter.write(formFieldName);
+            oldWriter.write("'>\n");
 
-            if (_values.size() > 0)
+            if (!_values.isEmpty())
             {
                 for (Pair<String, String> value : _values)
                 {
-                    out.write("<option value='");
-                    out.write(PageFlowUtil.filter(value.first));
-                    out.write("'>");
-                    out.write(PageFlowUtil.filter(value.second));
-                    out.write("</option>\n");
+                    oldWriter.write("<option value='");
+                    oldWriter.write(PageFlowUtil.filter(value.first));
+                    oldWriter.write("'>");
+                    oldWriter.write(PageFlowUtil.filter(value.second));
+                    oldWriter.write("</option>\n");
                 }
             }
             else
             {
-                out.write("<option value=''/>");
+                oldWriter.write("<option value=''/>");
             }
-            out.write("</select>\n");
+            oldWriter.write("</select>\n");
         }
 
         @Override

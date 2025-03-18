@@ -23,8 +23,9 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,13 +49,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         renderIconAndFilename(ctx, out, (String)getValue(ctx), true, true);
     }
@@ -69,7 +70,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected abstract InputStream getFileContents(RenderContext ctx, Object value) throws FileNotFoundException;
 
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link, boolean thumbnail) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, boolean link, boolean thumbnail)
     {
         renderIconAndFilename(ctx, out, filename, null, null, link, thumbnail);
     }
@@ -82,67 +83,75 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 || filename.toLowerCase().endsWith(".gif");
     }
 
-    protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail) throws IOException
+    protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
     {
-        if (null != filename && !StringUtils.isEmpty(filename))
+        Writer oldWriter = out.unwrap();
+        try
         {
-            // equivalent of DisplayColumn.renderURL.
-            // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
-            StringExpression s = compileExpression(ctx.getViewContext());
-            String url = null == s ? null : s.eval(ctx);
-
-            if (link)
+            if (null != filename && !StringUtils.isEmpty(filename))
             {
-                if (null != url)
+                // equivalent of DisplayColumn.renderURL.
+                // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
+                StringExpression s = compileExpression(ctx.getViewContext());
+                String url = null == s ? null : s.eval(ctx);
+
+                if (link)
                 {
-                    out.write("<a title=\"Download attached file\"");
-                    if (getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename))
+                    if (null != url)
                     {
-                        out.write(" target=\"");
-                        out.write(PageFlowUtil.filter(getLinkTarget()));
-                        out.write("\"");
+                        oldWriter.write("<a title=\"Download attached file\"");
+                        if (getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename))
+                        {
+                            oldWriter.write(" target=\"");
+                            oldWriter.write(PageFlowUtil.filter(getLinkTarget()));
+                            oldWriter.write("\"");
+                        }
+                        oldWriter.write(" href=\"");
+                        oldWriter.write(PageFlowUtil.filter(url));
+                        oldWriter.write("\">");
                     }
-                    out.write(" href=\"");
-                    out.write(PageFlowUtil.filter(url));
-                    out.write("\">");
                 }
-            }
 
-            String displayName = getFileName(ctx, filename, true);
-            boolean isImage = isImage(filename);
+                String displayName = getFileName(ctx, filename, true);
+                boolean isImage = isImage(filename);
 
-            FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
+                FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
 
-            if ((url != null || fileIconUrl != null) && thumbnail && isImage)
-            {
-                // controls whether to render a popup image on hover, otherwise just render an image with a click handler
-                // to navigate to the url
-                if (renderHelper.renderPopupImage())
-                    PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
+                if ((url != null || fileIconUrl != null) && thumbnail && isImage)
+                {
+                    // controls whether to render a popup image on hover, otherwise just render an image with a click handler
+                    // to navigate to the url
+                    if (renderHelper.renderPopupImage())
+                        PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
+                    else
+                        PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
+                }
                 else
-                    PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
+                {
+                    if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
+                    {
+                        if (renderHelper.renderPopupImage())
+                            PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
+                        else
+                            PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
+                    }
+                    else
+                        oldWriter.write(renderHelper.createThumbnailImage());
+                }
+
+                if (link && null != url)
+                {
+                    oldWriter.write("</a>");
+                }
             }
             else
             {
-                if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
-                {
-                    if (renderHelper.renderPopupImage())
-                        PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
-                    else
-                        PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
-                }
-                else
-                    out.write(renderHelper.createThumbnailImage());
-            }
-
-            if (link && null != url)
-            {
-                out.write("</a>");
+                oldWriter.write("&nbsp;");
             }
         }
-        else
+        catch (IOException e)
         {
-            out.write("&nbsp;");
+            throw new RuntimeException(e);
         }
     }
 
@@ -257,14 +266,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         if (hasFileInputHtml())
         {
             String filename = getFileName(ctx, value);
             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
-            Input.InputBuilder input = new Input.InputBuilder()
+            InputBuilder<?> input = new InputBuilder<>()
                     .type("file")
                     .name(formFieldName)
                     .disabled(isDisabledInput(ctx))
@@ -294,15 +303,24 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return "Previous file " + filename + " will be removed.";
     }
 
-    private void renderThumbnailAndRemoveLink(Writer out, RenderContext ctx, String filename, String filePicker) throws IOException
+    // TODO: filePicker should be a builder or HtmlString or something sensible like that
+    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, String filePicker)
     {
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;
 
-        out.write("<div id=\"" + divId + "\">");
-        renderIconAndFilename(ctx, out, filename, false, false);
-        out.write("&nbsp;[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
-        out.write("</div>\n");
+        Writer oldWriter = out.unwrap();
+        try
+        {
+            oldWriter.write("<div id=\"" + divId + "\">");
+            renderIconAndFilename(ctx, out, filename, false, false);
+            oldWriter.write("&nbsp;[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
+            oldWriter.write("</div>\n");
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
         String innerHtml = filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>";
         HttpView.currentPageConfig().addHandler(linkId, "click", "document.getElementById(" + jsString(divId) + ").innerHTML = " + jsString(innerHtml));
     }

@@ -53,7 +53,6 @@ import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -961,12 +960,9 @@ public class DataRegion extends DisplayElement
             dataRegionJSON.put("messages", messages);
         }
 
-        HtmlStringBuilder builder = HtmlStringBuilder.of(HttpView.currentPageConfig().getScriptTagStart())
-            .unsafeAppend("LABKEY.DataRegion.create(")
-            .unsafeAppend(dataRegionJSON.toString(2))
-            .unsafeAppend(");\n</script>\n");
-
-        out.write(builder);
+        SCRIPT(
+            JavaScriptFragment.unsafe("LABKEY.DataRegion.create(" + dataRegionJSON.toString(2) + ");\n")
+        ).appendTo(out);
     }
 
     protected void renderTable(RenderContext ctx, HtmlWriter out) throws SQLException
@@ -1805,19 +1801,19 @@ public class DataRegion extends DisplayElement
     protected void renderHiddenFormFields(RenderContext ctx, HtmlWriter out, int mode)
     {
         if (mode == MODE_GRID)
-            out.write(new InputBuilder().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
+            out.write(new InputBuilder<>().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
 
         out.write(new CsrfInput(ctx.getViewContext()));
 
         for (FormField field : _hiddenFormFields)
         {
-            out.write(new InputBuilder().type("hidden").name(field.name()).value(field.value()));
+            out.write(new InputBuilder<>().type("hidden").name(field.name()).value(field.value()));
         }
 
         if (mode == MODE_UPDATE_MULTIPLE)
         {
-            out.write(new InputBuilder().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
-            out.write(new InputBuilder().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
+            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
+            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
         }
     }
 
@@ -1842,7 +1838,7 @@ public class DataRegion extends DisplayElement
         boolean enabled = isRecordSelectorEnabled(ctx);
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
 
-        new InputBuilder()
+        new InputBuilder<>()
             .type("checkbox")
             .title("Select/unselect row")
             .name(getRecordSelectorName(ctx))
@@ -1991,9 +1987,7 @@ public class DataRegion extends DisplayElement
                                 TR(
                                     (Renderable) rend -> {
                                         renderer.renderDetailsCaptionCell(ctx, out, null);
-                                        renderer.renderInputWrapperBegin(out);
-                                        renderer.renderDetailsData(ctx, out);
-                                        renderer.renderInputWrapperEnd(out);
+                                        renderer.renderDetailsCell(ctx, out);
                                         return rend;
                                     }
                                 ).appendTo(out);
@@ -2196,9 +2190,7 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
-                    renderer.renderInputWrapperBegin(out);
-                    renderer.renderDetailsData(ctx, out);
-                    renderer.renderInputWrapperEnd(out);
+                    renderer.renderDetailsCell(ctx, out);
                 }
                 return ret;
             }
@@ -2316,7 +2308,7 @@ public class DataRegion extends DisplayElement
                                         if (null != pkVal)
                                         {
                                             out.write(
-                                                new InputBuilder()
+                                                new InputBuilder<>()
                                                     .type("hidden")
                                                     .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
                                                     .value(pkVal.toString())
@@ -2462,8 +2454,6 @@ public class DataRegion extends DisplayElement
                             }
                         }
 
-                        out.write(HtmlStringBuilder.of(HttpView.currentPageConfig().getScriptTagStart()));
-
                         StringWriter sw = new StringWriter();
                         for (DisplayColumnGroup group : groups)
                         {
@@ -2477,8 +2467,9 @@ public class DataRegion extends DisplayElement
                             }
                         }
 
-                        out.write(JavaScriptFragment.unsafe(sw.toString()));
-                        out.writeElementEnd(DOM.Element.script);
+                        SCRIPT(
+                            JavaScriptFragment.unsafe(sw.toString())
+                        ).appendTo(out);
                     }
 
                     return app;
@@ -2503,7 +2494,7 @@ public class DataRegion extends DisplayElement
         TD(
             at(style, "white-space:nowrap;"),
             LABEL(cl("control-label"),
-                new InputBuilder()
+                new InputBuilder<>()
                     .type("checkbox")
                     .id(madeId)
                     .name("~~SELECTALL~~")
@@ -2835,8 +2826,8 @@ public class DataRegion extends DisplayElement
             @Override
             public String format(FieldKey fieldKey)
             {
-                // TODO: Make sure implementors of DisplayColumn override getTitle(ctx)
-                return column.getTitle(ctx);
+                // TODO: getTitle() returns HtmlString... format() should as well?
+                return column.getTitle(ctx).toString();
             }
         });
 

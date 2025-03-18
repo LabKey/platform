@@ -32,6 +32,7 @@ import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.core.admin.AdminController;
 
 import java.io.IOException;
@@ -218,7 +219,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Integer pid = ctx.get(getBoundColumn().getFieldKey(), Integer.class);
             List<Thread> threads = new ArrayList<>();
@@ -235,10 +236,10 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
             String separator = "";
             for (Thread thread : threads)
             {
-                out.write(separator);
+                oldWriter.write(separator);
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
-                out.write(new Link.LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
+                oldWriter.write(new Link.LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
                 separator = "\n<br/>";
 
                 // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them
@@ -249,8 +250,8 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 }
                 if (request != null)
                 {
-                    out.write(separator);
-                    out.write( PageFlowUtil.filter(request));
+                    oldWriter.write(separator);
+                    oldWriter.write( PageFlowUtil.filter(request));
                 }
             }
         }

@@ -24,15 +24,12 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
 /**
  * Serves the dual purpose of adding a hidden <input> element for the object id and showing a link to the originating source
- * User: jgarms
- * Date: Dec 19, 2008
  */
 public class SourceDataLinkDisplayColumn extends DataInputColumn
 {
@@ -58,7 +55,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
     }
     
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (null != _objectIdCol)
             super.renderGridCellContents(ctx, out);
@@ -70,7 +67,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                 case Assay -> {
                     ActionURL runURL = new ActionURL(AssayDetailRedirectAction.class, ctx.getContainer());
                     runURL.addParameter("runId", sourceId);
-                    out.write(PageFlowUtil.link("View Run").href(runURL).toString());
+                    out.write(PageFlowUtil.link("View Run").href(runURL));
                 }
                 case SampleType -> {
                     ExpObject expObject = _publishSource.resolvePublishSource(sourceId);
@@ -80,7 +77,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                         // by default the container is where the sample definition lives, use the current container instead so
                         // the user is returned to the original folder that the link was attempted from.
                         url.setContainer(ctx.getContainer());
-                        out.write(PageFlowUtil.link("View Sample Type").href(url).toString());
+                        out.write(PageFlowUtil.link("View Sample Type").href(url));
                     }
                 }
             }

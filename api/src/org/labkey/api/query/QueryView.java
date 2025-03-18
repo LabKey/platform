@@ -2315,7 +2315,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         // make sure table has been instantiated
         getTable();
         List<QueryException> errors = getParseErrors();
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             renderErrors(out, "Query '" + getQueryDef().getName() + "' has errors", errors);
             return;

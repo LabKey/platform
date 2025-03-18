@@ -32,22 +32,16 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/*
-  User: klum
-  Date: Feb 2, 2011
-  Time: 1:38:38 PM
- */
-
 /**
  * Table of users and their associated messaging preferences. This may not be the best place for this table
- * its here because it contains all of the columns of the users table plus columns for messaging preferences.
+ * its here because it contains all the columns of the users table plus columns for messaging preferences.
  *
  * Only exposes folder-level user settings, not subforum subscriptions.
  */
@@ -171,12 +165,12 @@ public class UsersMsgPrefTable extends UsersTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object value = getValue(ctx);
 
             if (value == null)
-                out.write("&lt;folder&nbsp;default&gt;");
+                out.write(HtmlString.unsafe("&lt;folder&nbsp;default&gt;"));
             else
                 super.renderGridCellContents(ctx, out);
         }

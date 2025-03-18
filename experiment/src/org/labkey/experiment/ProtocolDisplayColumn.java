@@ -19,6 +19,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -44,17 +45,17 @@ public class ProtocolDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (_protocol == null)
         {
-            out.write("(Unknown)");
+            oldWriter.write("(Unknown)");
         }
         else
         {
             ActionURL url = new ActionURL(ExperimentController.ProtocolDetailsAction.class, ctx.getContainer());
             url.addParameter("rowId", Integer.toString(_protocol.getRowId()));
-            out.write("<a href=\"" + url.toString() + "\">" + _protocol.getName() + "</a>");
+            oldWriter.write("<a href=\"" + url.toString() + "\">" + _protocol.getName() + "</a>");
         }
     }
 

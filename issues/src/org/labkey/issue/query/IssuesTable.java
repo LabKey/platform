@@ -74,6 +74,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.Tuple3;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.model.IssueListDef;
@@ -836,7 +837,7 @@ class NotifyListDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object o = getValue(ctx);
         if (o != null)
@@ -850,7 +851,7 @@ class NotifyListDisplayColumn extends DataColumn
                     usernames.add(notifyUser);
             }
 
-            out.write(StringUtils.join(usernames, DELIM));
+            oldWriter.write(StringUtils.join(usernames, DELIM));
         }
     }
 
@@ -891,7 +892,7 @@ class PullRequestsDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object o = getValue(ctx);
         if (o != null)
@@ -902,7 +903,7 @@ class PullRequestsDisplayColumn extends DataColumn
             {
                 if (i > 0)
                 {
-                    out.write("<br>");
+                    oldWriter.write("<br>");
                 }
 
                 String url = split[i];
@@ -933,11 +934,11 @@ class PullRequestsDisplayColumn extends DataColumn
                             .clearClasses()
                             .target("_blank")
                             .rel("noopener noreferrer");
-                    link.build().appendTo(out);
+                    link.build().appendTo(oldWriter);
                 }
                 else
                 {
-                    out.write(PageFlowUtil.filter(url));
+                    oldWriter.write(PageFlowUtil.filter(url));
                 }
             }
         }

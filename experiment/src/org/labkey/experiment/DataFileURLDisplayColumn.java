@@ -20,6 +20,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.io.Writer;
  */
 public class DataFileURLDisplayColumn extends SimpleDisplayColumn
 {
-    private ExpData _data;
+    private final ExpData _data;
 
     public DataFileURLDisplayColumn(ExpData data)
     {
@@ -41,12 +42,12 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String dataFileURL = _data.getDataFileUrl();
-        if (dataFileURL == null || dataFileURL.trim().length() == 0)
+        if (dataFileURL == null || dataFileURL.trim().isEmpty())
         {
-            out.write("(Unknown)<br>\n");
+            oldWriter.write("(Unknown)<br>\n");
             return;
         }
 
@@ -58,16 +59,16 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
 
         if (contentURL != null)
         {
-            out.write("<a href=\"");
-            out.write(contentURL.toString());
-            out.write("\">");
+            oldWriter.write("<a href=\"");
+            oldWriter.write(contentURL.toString());
+            oldWriter.write("\">");
         }
-        out.write(PageFlowUtil.filter(dataFileURL));
-        out.write("</a>");
+        oldWriter.write(PageFlowUtil.filter(dataFileURL));
+        oldWriter.write("</a>");
 
         if (!_data.isFileOnDisk())
         {
-            out.write(" (Not available on disk)\n");
+            oldWriter.write(" (Not available on disk)\n");
         }
     }
 }

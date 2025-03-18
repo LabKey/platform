@@ -43,6 +43,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.list.controllers.ListController;
 import org.springframework.validation.BindException;
 
@@ -194,12 +195,12 @@ public class ListManagerSchema extends UserSchema
                         ret.add(new SimpleDisplayColumn()
                         {
                             @Override
-                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                             {
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("Design").href(designUrl).toString());
+                                out.write(PageFlowUtil.link("Design").href(designUrl));
                             }
                         });
                     }
@@ -209,12 +210,12 @@ public class ListManagerSchema extends UserSchema
                         ret.add(new SimpleDisplayColumn()
                         {
                             @Override
-                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                             {
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
                                 historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("View History").href(historyUrl).toString());
+                                out.write(PageFlowUtil.link("View History").href(historyUrl));
                             }
                         });
                     }

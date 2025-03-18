@@ -3305,7 +3305,7 @@ public class SpecimenController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Map<String, Object> cols = ctx.getRow();
             SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
@@ -3315,14 +3315,14 @@ public class SpecimenController extends SpringActionController
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
-                    out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
-                    out.write(PageFlowUtil.filter(attachment.getName()));
-                    out.write("</a><br>");
+                    oldWriter.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
+                    oldWriter.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
+                    oldWriter.write(PageFlowUtil.filter(attachment.getName()));
+                    oldWriter.write("</a><br>");
                 }
             }
             else
-                out.write("&nbsp;");
+                oldWriter.write("&nbsp;");
         }
     }
 

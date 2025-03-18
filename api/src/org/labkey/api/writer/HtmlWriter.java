@@ -46,24 +46,52 @@ public class HtmlWriter implements Appendable
         }
     }
 
-    public void write(Number number) throws IOException
+    public void write(Number number)
     {
-        _writer.write(number.toString());
+        try
+        {
+            _writer.write(number.toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void write(boolean b) throws IOException
+    public void write(boolean b)
     {
-        _writer.write(Boolean.toString(b));
+        try
+        {
+            _writer.write(Boolean.toString(b));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void write(JSONObject json) throws IOException
+    public void write(JSONObject json)
     {
-        _writer.write(json.toString());
+        try
+        {
+            _writer.write(json.toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void write(JSONArray array) throws IOException
+    public void write(JSONArray array)
     {
-        _writer.write(array.toString());
+        try
+        {
+            _writer.write(array.toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     // Outputs an HTML encoded version of the input string

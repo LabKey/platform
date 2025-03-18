@@ -11,6 +11,7 @@ import org.labkey.api.view.UnauthorizedException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.Set;
@@ -19,7 +20,7 @@ import java.util.Set;
  * Used to assert that a character sequence is valid, properly encoded JavaScript. Similar to HtmlString, though this class
  * is just a simple wrapper; it doesn't (yet) provide filtering, a builder, or other useful mechanisms of HtmlString.
  */
-public class JavaScriptFragment implements SafeToRender
+public class JavaScriptFragment implements SafeToRender, DOM.Renderable
 {
     public static final JavaScriptFragment EMPTY = new JavaScriptFragment("");
     public static final JavaScriptFragment EMPTY_STRING = JavaScriptFragment.unsafe("''");
@@ -140,5 +141,18 @@ public class JavaScriptFragment implements SafeToRender
     public String toString()
     {
         return _s;
+    }
+
+    @Override
+    public Appendable appendTo(Appendable sb)
+    {
+        try
+        {
+            return sb.append(toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 }

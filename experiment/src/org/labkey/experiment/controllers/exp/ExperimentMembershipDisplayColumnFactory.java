@@ -30,6 +30,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -105,13 +106,13 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             if (!_renderedFunction)
             {
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
-                out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-                out.write(
+                oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                oldWriter.write(
                         "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
                         "{\n" +
                         "    var config = { \n" +
@@ -122,12 +123,12 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                         "    }\n" +
                         "    LABKEY.Ajax.request(config); \n" +
                         "};\n");
-                out.write("</script>");
+                oldWriter.write("</script>");
                 _renderedFunction = true;
             }
 
             String id = HttpView.currentPageConfig().makeId("checkbox");
-            out.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"experimentMembership\" ");
+            oldWriter.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"experimentMembership\" ");
             int currentExpId = getExpId(ctx);
             int currentExpRunId = getRunId(ctx);
             ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
@@ -141,14 +142,14 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
             else
             {
-                out.write("disabled=\"true\" ");
+                oldWriter.write("disabled=\"true\" ");
             }
             Boolean checked = (Boolean)getDisplayColumn().getValue(ctx);
             if (Boolean.TRUE.equals(checked))
             {
-                out.write("checked=\"true\" ");
+                oldWriter.write("checked=\"true\" ");
             }
-            out.write("/>");
+            oldWriter.write("/>");
         }
 
         private int getExpId(RenderContext ctx)

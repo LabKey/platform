@@ -30,6 +30,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -57,7 +58,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         // RunId and ProtocolId may not be available if we are in a custom query
         Number runId = _runIdColumnInfo == null ? null : (Number)_runIdColumnInfo.getValue(ctx);
@@ -76,17 +77,17 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             {
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, _containerFilter, runId.intValue());
 
-                out.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
+                oldWriter.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
                         PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
             }
             else
             {
-                out.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
+                oldWriter.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
             }
         }
         else
         {
-            out.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
+            oldWriter.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
         }
     }
 

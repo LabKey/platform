@@ -19,6 +19,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -44,16 +45,16 @@ public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (_run == null)
         {
-            out.write("(Unknown)");
+            oldWriter.write("(Unknown)");
         }
         else
         {
             ActionURL url = ExperimentController.getRunGraphURL(ctx.getContainer(), _run.getRowId());
-            out.write("<a href=\"" + url.toString() + "\">" + _run.getName() + "</a>");
+            oldWriter.write("<a href=\"" + url.toString() + "\">" + _run.getName() + "</a>");
         }
     }
 }

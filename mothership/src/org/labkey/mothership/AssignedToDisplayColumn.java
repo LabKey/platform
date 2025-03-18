@@ -22,6 +22,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -39,29 +40,29 @@ public class AssignedToDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         List<User> list = MothershipManager.get().getAssignedToList(_container);
 
-        out.write("<select name=\"");
-        out.write(PageFlowUtil.filter(getColumnInfo().getPropertyName()));
-        out.write("\">\n");
-        out.write("<option value=\"\"></option>\n");
+        oldWriter.write("<select name=\"");
+        oldWriter.write(PageFlowUtil.filter(getColumnInfo().getPropertyName()));
+        oldWriter.write("\">\n");
+        oldWriter.write("<option value=\"\"></option>\n");
 
         for (User member : list)
         {
-            out.write("<option value=\"");
-            out.write(Integer.toString(member.getUserId()));
-            out.write("\"");
+            oldWriter.write("<option value=\"");
+            oldWriter.write(Integer.toString(member.getUserId()));
+            oldWriter.write("\"");
             if (value instanceof Integer i && i.intValue() == member.getUserId())
             {
-                out.write(" selected");
+                oldWriter.write(" selected");
             }
-            out.write(">");
-            out.write(PageFlowUtil.filter(member.getDisplayName(ctx.getViewContext().getUser())));
-            out.write("</option>\n");
+            oldWriter.write(">");
+            oldWriter.write(PageFlowUtil.filter(member.getDisplayName(ctx.getViewContext().getUser())));
+            oldWriter.write("</option>\n");
         }
 
-        out.write("</select>");
+        oldWriter.write("</select>");
     }
 }

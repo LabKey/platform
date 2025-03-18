@@ -23,6 +23,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -64,11 +65,11 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (_runId == null || _focus == null)
         {
-            out.write("(Unknown)");
+            oldWriter.write("(Unknown)");
         }
         else
         {
@@ -76,7 +77,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
             url.addParameter("rowId", Integer.toString(_runId));
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);
-            out.write("<a href=\"" + url.toString() + "\">" + _linkText + "</a>");
+            oldWriter.write("<a href=\"" + url.toString() + "\">" + _linkText + "</a>");
         }
     }
 }

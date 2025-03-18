@@ -37,7 +37,9 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
@@ -146,47 +148,39 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         var result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
-        result.setDisplayColumnFactory(new DisplayColumnFactory()
+        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
             @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            protected void renderData(Writer out, ExpData data) throws IOException
             {
-                return new ExpDataFileColumn(colInfo)
+                String val = ((String)getJsonValue(data));
+                if (val != null)
+                    out.write(val);
+            }
+
+            @Override
+            public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
+            {
+                out.write(new Input.InputBuilder<>().type("text").className("form-control").name("quf_AbsoluteFilePath").size(40));
+            }
+
+            @Override
+            protected Object getJsonValue(ExpData data)
+            {
+                String val;
+                if (data == null || data.getFile() == null || !data.getFile().exists())
+                    val = "";
+                else
                 {
-                    @Override
-                    protected void renderData(Writer out, ExpData data) throws IOException
-                    {
-                        String val = ((String)getJsonValue(data));
-                        if (val != null)
-                            out.write(val);
-                    }
+                    val = data.getFile().getAbsolutePath();
+                }
+                return val;
+            }
 
-                    @Override
-                    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
-                    {
-                        out.write("<input type=\"text\" class=\"form-control\" name=\"quf_AbsoluteFilePath\" size=\"40\">");
-                    }
-
-                    @Override
-                    protected Object getJsonValue(ExpData data)
-                    {
-                        String val;
-                        if (data == null || data.getFile() == null || !data.getFile().exists())
-                            val = "";
-                        else
-                        {
-                            val = data.getFile().getAbsolutePath();
-                        }
-                        return val;
-                    }
-
-                    @Override
-                    public boolean isEditable()
-                    {
-                        return true;
-                    }
-
-                };
+            @Override
+            public boolean isEditable()
+            {
+                return true;
             }
         });
         result.setDescription("The absolute file path of the file record.");

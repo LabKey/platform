@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -170,11 +171,11 @@ public class ProtocolManagementWebPart extends GridView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             if ((boolean)ctx.getRow().get("archived"))
             {
-                out.write("<b>&#x2714;</b>"); // html checkmark
+                oldWriter.write("<b>&#x2714;</b>"); // html checkmark
             }
         }
     }

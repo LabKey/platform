@@ -28,8 +28,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.labkey.api.util.DOM.Element.script;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -524,6 +526,14 @@ public class DOM
                 classes.add(className);
             return this;
         }
+        // Calculates the className only if test is true
+        public _Attributes cl(boolean test, Supplier<String> classNameSupplier)
+        {
+            String className;
+            if (test && null != (className = classNameSupplier.get()))
+                classes.add(className);
+            return this;
+        }
         public _Attributes cl(boolean test, String trueName, String falseName)
         {
             if (test && null != trueName)
@@ -626,8 +636,17 @@ public class DOM
 
     public static _Attributes at(Attribute firstKey, Object firstValue, Object... keyvalues)
     {
-        var ret = new _Attributes(firstKey,firstValue,keyvalues);
-        return ret;
+        return new _Attributes(firstKey,firstValue,keyvalues);
+    }
+
+    public static _Attributes at(boolean test, Attribute key, Object value)
+    {
+        return new _Attributes().at(test, key, value);
+    }
+
+    public static _Attributes at(boolean test, Attribute key, Object ifValue, Object elseValue)
+    {
+        return new _Attributes().at(test, key, ifValue, elseValue);
     }
 
     public static _Attributes cl(boolean f, String className)
@@ -750,7 +769,6 @@ public class DOM
 
         public static Renderable ERRORS(PageContext pageContext)
         {
-            int count=0;
             Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
             List<Renderable> list = new ArrayList<>();
             while (e.hasMoreElements())
@@ -777,7 +795,7 @@ public class DOM
         public static Renderable ERRORS(List<ObjectError> z)
         {
             if (null == z || z.isEmpty())
-                return HtmlString.unsafe("");
+                return HtmlString.EMPTY_STRING;
             final ViewContext context = HttpView.getRootContext();
             return DIV(cl("labkey-error"),
                 z.stream().map(error ->
@@ -799,11 +817,6 @@ public class DOM
                 })
             );
         }
-    }
-
-    @Deprecated /* use LK */
-    public static class X extends LK
-    {
     }
 
     private static Appendable appendAttribute(Appendable html, String key, Object value) throws IOException
@@ -1703,11 +1716,11 @@ public class DOM
     }
     public static Renderable SCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.script.render(html, attrs, body);
+        return (html) -> script.render(html, attrs, body);
     }
     public static Renderable SCRIPT(Object... body)
     {
-        return (html) -> Element.script.render(html, at(Attribute.type,"text/javascript", Attribute.nonce, HttpView.currentPageConfig().getScriptNonce()), body);
+        return (html) -> script.render(html, at(Attribute.type,"text/javascript", Attribute.nonce, HttpView.currentPageConfig().getScriptNonce()), body);
     }
     public static Renderable SECTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {

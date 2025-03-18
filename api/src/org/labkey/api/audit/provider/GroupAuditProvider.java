@@ -51,6 +51,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -336,7 +337,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Integer id = (Integer)getBoundColumn().getValue(ctx);
             if (id != null)
@@ -358,15 +359,15 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                             String groupName = g.isProjectGroup() && groupContainer != null ? groupContainer.getPath() + "/" + g.getName() : g.getName();
                             ActionURL url = PageFlowUtil.urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
 
-                            out.write("<a href=\"");
-                            out.write(PageFlowUtil.filter(url));
-                            out.write("\">");
-                            out.write(displayText);
-                            out.write("</a>");
+                            oldWriter.write("<a href=\"");
+                            oldWriter.write(PageFlowUtil.filter(url));
+                            oldWriter.write("\">");
+                            oldWriter.write(displayText);
+                            oldWriter.write("</a>");
                         }
                         else
                         {
-                            out.write(displayText);
+                            oldWriter.write(displayText);
                         }
                         return;
                     }
@@ -384,23 +385,23 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                             ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, id);
                             if (url != null)
                             {
-                                out.write("<a href=\"");
-                                out.write(PageFlowUtil.filter(url));
-                                out.write("\">");
-                                out.write(displayText);
-                                out.write("</a>");
+                                oldWriter.write("<a href=\"");
+                                oldWriter.write(PageFlowUtil.filter(url));
+                                oldWriter.write("\">");
+                                oldWriter.write(displayText);
+                                oldWriter.write("</a>");
                             }
                             else
-                                out.write(displayText);
+                                oldWriter.write(displayText);
                         }
                         else
                         {
-                            out.write(p.getName());
+                            oldWriter.write(p.getName());
                         }
                     }
                 }
             }
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
         }
 
         @Override

@@ -18,6 +18,7 @@ package org.labkey.pipeline.status;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class DescriptionDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Map cols = ctx.getRow();
         String description = (String) cols.get("description");
@@ -70,6 +71,6 @@ public class DescriptionDisplayColumn extends SimpleDisplayColumn
             description = filePath;
         }
 
-        out.write(PageFlowUtil.filter(description));
+        oldWriter.write(PageFlowUtil.filter(description));
     }
 }

@@ -58,6 +58,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueObject.CommentObject;
@@ -76,21 +77,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
-
-/**
- * User: Karl Lum
- * Date: Aug 31, 2006
- * Time: 1:07:36 PM
- */
 public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 {
     private final Container _c;
     private final User _user;
+    private final Map<String, Object> _renderContextDefaultValues = new CaseInsensitiveHashMap<>();
+
     private IssueObject _issue;
     private IssueObject _prevIssue;
     private Set<String> _issueIds = Collections.emptySet();
@@ -111,7 +107,6 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     private IssueListDef _issueListDef;
     private Map<String, Object> _renderContextRow;
-    private Map<String, Object> _renderContextDefaultValues = new CaseInsensitiveHashMap<>();
 
     private TableInfo _tableInfo;
     private int _mode = DataRegion.MODE_DETAILS;
@@ -358,8 +353,8 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             if (table != null)
             {
                 List<DisplayColumn> displayColumns = table.getColumns().stream()
-                        .map(ColumnInfo::getRenderer)
-                        .collect(Collectors.toUnmodifiableList());
+                    .map(ColumnInfo::getRenderer)
+                    .toList();
                 List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, table);
                 SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("IssueId"), _issue.getIssueId());
 
@@ -453,7 +448,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
                     try (Writer writer = new StringWriter())
                     {
-                        dc.renderDetailsCaptionCell(renderContext, writer, "lk-form-label");
+                        dc.renderDetailsCaptionCell(renderContext, HtmlWriter.of(writer), "lk-form-label");
                         sb.append(writer);
                     }
                     return HtmlString.unsafe(sb.toString());
@@ -530,12 +525,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return writeInput(field, value, builder->builder.tabIndex(tabIndex));
     }
 
-    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder> builderModifier)
+    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder<?>> builderModifier)
     {
         if (!isVisible(field))
             return HtmlString.unsafe(filter(value, false, true));
 
-        Input.InputBuilder builder = new Input.InputBuilder()
+        Input.InputBuilder<?> builder = new Input.InputBuilder<>()
             .name(field)
             .value(value)
             .onChange("LABKEY.setDirty(true);return true;")

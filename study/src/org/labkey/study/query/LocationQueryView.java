@@ -32,19 +32,16 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.controllers.StudyController;
 import org.springframework.validation.Errors;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
-/**
- * Created by Joe on 9/8/2014.
- */
 public class LocationQueryView extends QueryView
 {
     public LocationQueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
@@ -103,13 +100,13 @@ public class LocationQueryView extends QueryView
             {
                 var update = new UpdateColumn.Impl(urlUpdate) {
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                     {
                         Container c = ContainerManager.getForId((String)ctx.get("container"));
                         if (c.hasPermission(getUser(), AdminPermission.class))
                             super.renderGridCellContents(ctx, out);
                         else
-                            out.write("&nbsp;");
+                            out.write(HtmlString.NBSP);
                     }
                 };
                 ret.add(0, update);

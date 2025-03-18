@@ -39,6 +39,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -134,7 +135,7 @@ public class MenuViewFactory
                                     cellStrings.add(stringBuilder);
                                     StringBuilderWriter writer = new StringBuilderWriter(stringBuilder);
                                     renderContext.setRow(factory.getRowMap(rs));
-                                    dataColumn.renderGridCellContents(renderContext, writer);
+                                    dataColumn.renderGridCellContents(renderContext, HtmlWriter.of(writer));
                                     seenAtLeastOne = true;
                                 }
 

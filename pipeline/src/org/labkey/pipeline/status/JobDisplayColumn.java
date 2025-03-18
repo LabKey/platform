@@ -19,6 +19,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 
 import java.io.IOException;
@@ -60,14 +61,14 @@ public class JobDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         if (_jobStatus == null || _jobStatus.isEmpty())
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
         else
         {
             int rowIndex = 0;
-            out.write("<table class=\"labkey-data-region labkey-show-borders\">\n" +
+            oldWriter.write("<table class=\"labkey-data-region labkey-show-borders\">\n" +
                     "<colgroup><col width=\"100\"/><col width=\"400\"/></colgroup>\n" +
                     "<thead><tr>\n" +
                     "    <th class=\"labkey-col-header-filter\" align=\"left\"><div>Status</div></th>\n" +
@@ -76,21 +77,21 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             for (PipelineStatusFile sf : _jobStatus)
             {
                 if (rowIndex++ % 2 == 0)
-                    out.write("<tr class=\"labkey-alternate-row\">");
+                    oldWriter.write("<tr class=\"labkey-alternate-row\">");
                 else
-                    out.write("<tr class=\"labkey-row\">");
+                    oldWriter.write("<tr class=\"labkey-row\">");
 
-                out.write("<td nowrap><a href=\"");
-                out.write(PageFlowUtil.filter(StatusController.urlDetails(ctx.getContainer(), sf.getRowId()).getLocalURIString()));
-                out.write("\">");
-                out.write(PageFlowUtil.filter(sf.getStatus()));
-                out.write("</a></td>");
-                out.write("<td>");
-                out.write(PageFlowUtil.filter(sf.getDescription()));
-                out.write("</td>");
-                out.write("</tr>\n");
+                oldWriter.write("<td nowrap><a href=\"");
+                oldWriter.write(PageFlowUtil.filter(StatusController.urlDetails(ctx.getContainer(), sf.getRowId()).getLocalURIString()));
+                oldWriter.write("\">");
+                oldWriter.write(PageFlowUtil.filter(sf.getStatus()));
+                oldWriter.write("</a></td>");
+                oldWriter.write("<td>");
+                oldWriter.write(PageFlowUtil.filter(sf.getDescription()));
+                oldWriter.write("</td>");
+                oldWriter.write("</tr>\n");
             }
-            out.write("</table>\n");
+            oldWriter.write("</table>\n");
         }
     }
 

@@ -26,6 +26,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -154,9 +155,9 @@ public class FlagColumnRenderer extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        renderFlag(ctx, out);
+        renderFlag(ctx, oldWriter);
     }
 
     @Override

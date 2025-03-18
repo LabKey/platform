@@ -27,8 +27,9 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ReexecutableDataregion;
 import org.labkey.api.query.ReexecutableRenderContext;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -143,13 +144,13 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (null == innerDisplayColumn)
         {
             Object v = getValue(ctx);
             if (null != v)
-                out.write("&lt;" + filter(v) + "&gt;");
+                out.write(HtmlString.unsafe("&lt;" + filter(v) + "&gt;"));
             return;
         }
         updateInnerContext(ctx);
@@ -234,12 +235,12 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value)
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value)
     {
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         if (null == innerDisplayColumn)
             return String.class;
@@ -247,7 +248,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         if (null == innerDisplayColumn)
             return String.class;
