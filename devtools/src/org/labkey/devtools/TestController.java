@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
@@ -240,64 +241,43 @@ public class TestController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class CancelLongRunningAction extends FormViewAction<Object>
+    public class CancelLongRunningAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
-        {
-            return null;
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public SimpleResponse<Void> execute(Object o, BindException errors) throws Exception
         {
             if (longRunningJob !=null && !longRunningJob.isInterrupted())
             {
                 logger.info("Interrupting the long-running action");
                 longRunningJob.interrupt();
                 logger.info("Successfully interrupted the long-running action");
+
+                if (longRunningJob.isInterrupted())
+                    return new SimpleResponse<>(true);
             }
 
-            return false;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-
+            throw errors;
         }
     }
 
     @RequiresSiteAdmin
-    public class LongRunningAction extends FormViewAction<LongRunningJobForm>
+    public class LongRunningAction extends ReadOnlyApiAction<LongRunningJobForm>
     {
-
-        @Override
-        public void validateCommand(LongRunningJobForm form, Errors errors)
+        private void validateCommand(LongRunningJobForm form, Errors errors)
         {
-
+            if (form.stepTimeMS <= 0)
+                errors.rejectValue("stepTimeMS", "Step time must be greater than zero");
+            if (form.maxTimeMS <= 0)
+                errors.rejectValue("maxTimeMS", "Max time must be greater than zero");
         }
 
         @Override
-        public ModelAndView getView(LongRunningJobForm form, boolean reshow, BindException errors) throws Exception
+        public SimpleResponse<Void> execute(LongRunningJobForm form, BindException errors) throws Exception
         {
-            return null;
-        }
+            validateCommand(form, errors);
+            if (errors.hasErrors())
+                throw errors;
 
-        @Override
-        public boolean handlePost(LongRunningJobForm form, BindException errors) throws Exception
-        {
             synchronized (LongRunningAction.class)
             {
                 LongRunnable lr = new LongRunnable(logger, form.getMaxTimeMS(), form.getStepTimeMS());
@@ -312,18 +292,7 @@ public class TestController extends SpringActionController
                 longRunningJob = null;
             }
 
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(LongRunningJobForm form)
-        {
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
+            return new SimpleResponse<>(true);
         }
     }
 
