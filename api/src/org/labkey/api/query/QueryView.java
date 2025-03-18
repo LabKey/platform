@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,14 +28,44 @@ import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.AnalyticsProviderItem;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ButtonBarConfig;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.HtmlWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.PanelButton;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -75,8 +107,6 @@ import org.labkey.api.visualization.TimeChartReport;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -3126,14 +3156,36 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
+    /**
+     * The intent of this method is to ensure that the update/details URL inherit the
+     * ContainerContext from the table unless explicitly set. This is relevant because QWPs can
+     * supply custom update/detailsURLs as a string, which has no ContainerContext. Most TableInfos
+     * always set the ContainerContext on the details/update URLs to ContainerContext.FieldKeyContext,
+     * which delegates the container to row-level (usually based on a container column).
+     */
+    private void ensureUrlContainerContext(StringExpression se, TableInfo table)
+    {
+        if (se instanceof DetailsURL du)
+        {
+            if (!du.hasContainerContext())
+            {
+                du.setContainerContext(table.getContainerContext());
+            }
+        }
+    }
+
     @Nullable
     protected DisplayColumn createDetailsColumn(StringExpression urlDetails, TableInfo table)
     {
+        ensureUrlContainerContext(urlDetails, table);
+
         return new DetailsColumn(urlDetails, table);
     }
 
     protected DisplayColumn createUpdateColumn(StringExpression urlUpdate, TableInfo table)
     {
+        ensureUrlContainerContext(urlUpdate, table);
+
         return new UpdateColumn.Impl(urlUpdate);
     }
 
