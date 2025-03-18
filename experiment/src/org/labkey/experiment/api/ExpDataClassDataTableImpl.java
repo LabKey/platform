@@ -772,7 +772,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             List<Pair<String, String>> templates = new ArrayList<>();
             ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+            url.addParameter("headerType", ColumnHeaderType.ImportField.name());
             for (String excludeKey : excludeColumns)
                 url.addParameter("excludeColumn", excludeKey);
             url.addParameter("filenamePrefix", this.getName());

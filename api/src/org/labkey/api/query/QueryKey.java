@@ -311,6 +311,14 @@ import java.util.Objects;
     /**
      * Returns a string appropriate for display to the user.
      */
+    public String toImortDisplayString()
+    {
+        return StringUtils.join(getParts().iterator(), getDivider());
+    }
+
+    /**
+     * Returns a string appropriate for display to the user.
+     */
     public String toDisplayString()
     {
         return StringUtils.join(getParts().iterator(), ".");

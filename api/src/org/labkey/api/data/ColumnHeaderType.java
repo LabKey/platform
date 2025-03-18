@@ -58,6 +58,30 @@ public enum ColumnHeaderType
         }
     },
 
+    // Most useful for generating a template file to use for importing data. DisplayFieldKey also works as a way to round trip
+    // but the replacement of slashes with dots can give users pause.
+    ImportField("Import Field", "The official name of the field, without escaping or replacements") {
+        @Override
+        public String getText(DisplayColumn dc)
+        {
+            ColumnInfo columnInfo = dc.getColumnInfo();
+            String name;
+            if (columnInfo != null)
+            {
+                name = columnInfo.getName();
+                org.labkey.api.query.FieldKey fieldKey = org.labkey.api.query.FieldKey.fromString(name);
+
+                fieldKey = fixMissingValueIndicator(columnInfo, fieldKey);
+                name = fieldKey.toImortDisplayString();
+            }
+            else
+            {
+                name = dc.getName();
+            }
+            return name;
+        }
+    },
+
     // Use ColumnInfo name -- usually just the FieldKey -- and use "." for lookup separators without FieldKey escaping.
     DisplayFieldKey("Field Name", "The official name of the field, without escaping for special characters") {
         @Override
