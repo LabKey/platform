@@ -14,7 +14,7 @@ const DETAILS_SUB_INSTRUCTION = (
             <HelpLink topic="default" referrer={HELP_LINK_REFERRER.ERROR_PAGE}>
                 LabKey support documentation
             </HelpLink>{' '}
-            and previous forum questions to troubleshoot your issue.
+            to troubleshoot your issue.
         </p>
         <p className="labkey-error-details">
             If you are part of a{' '}
@@ -27,9 +27,9 @@ const DETAILS_SUB_INSTRUCTION = (
                 LabKey Server Premium Edition
             </a>{' '}
             subscription, please use your support portal or contact your account manager for assistance. If you are
-            using the free Community Edition, you may find help by posting on the{' '}
+            using the free Community Edition, you may{' '}
             <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
-                LabKey support forum.
+                request support here.
             </a>
         </p>
     </>
@@ -42,28 +42,14 @@ const NOTFOUND_HEADING = (errorMessage?: string) => (
 const NOTFOUND_SUBHEADING = (errorMessage?: string) => (
     <>{errorMessage !== undefined ? '' : 'It seems like something went wrong.'}</>
 );
-const NOTFOUND_INSTRUCTION = (errorDetails: ErrorDetails) => (
+const NOTFOUND_INSTRUCTION = () => (
     <>
         <div className="labkey-error-instruction">
-            Please contact your admin or reference the{' '}
+            Please contact your admin or{' '}
             <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
-                LabKey support forum.
+                request support here.
             </a>
         </div>
-        {errorDetails.errorCode !== undefined && errorDetails.errorCode !== null && (
-            <div className="labkey-error-instruction">
-                If you would like to file a{' '}
-                <a
-                    href="https://www.labkey.org/home/Support/project-begin.view"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    {' '}
-                    LabKey support ticket
-                </a>
-                , your unique reference code is: {errorDetails.errorCode}
-            </div>
-        )}
     </>
 );
 const NOTFOUND_DETAILS = (errorDetails: ErrorDetails) => (
@@ -240,12 +226,12 @@ const EXECUTION_SUB_HEADING = (errorMessage?: string) => (
 const EXECUTION_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-instruction">
-            Please report this bug to{' '}
+            You can{' '}
             <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
                 {' '}
-                LabKey Support{' '}
+                find help resources here{' '}
             </a>{' '}
-            by copying and pasting both your unique reference code and the full stack trace in the View Details section
+            and may find troubleshooting hints by reading the full stack trace in the View Details section
             below.
         </div>
         <div className="labkey-error-instruction">

@@ -16,6 +16,7 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.query.FieldKey;
 
 /**
  * User: kevink
@@ -42,6 +43,11 @@ public interface ExpDataClassDataTable extends ExpTable<ExpDataClassDataTable.Co
         Outputs,
         DataFileUrl,
         Properties,
-        QueryableInputs,
+        QueryableInputs;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 }

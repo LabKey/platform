@@ -268,27 +268,22 @@ LABKEY.Mothership = (function () {
         }
 
         // CONSIDER: Remove the _mothership flag and use a site-setting to suppress mothership reporting of client-side exceptions.
-        var url;
-        var o;
-        if (_mothership || (LABKEY.user && LABKEY.user.isGuest)) {
-            url = LABKEY.contextPath + '/admin/logClientException.api';
-            o = {
-                username: LABKEY.user ? LABKEY.user.email : "Unknown",
-                //site: window.location.host,
-                //version: LABKEY.versionString || "Unknown",
-                requestURL: document.URL,
-                referrerURL: document.URL,
-                exceptionMessage: msg,
-                stackTrace: stackTrace || msg,
-                file: file,
-                line: line,
-                // column: column,
-                browser: navigator && navigator.userAgent || "Unknown",
-                platform:  navigator && navigator.platform  || "Unknown"
-            };
-
+        if (_mothership) {
             try {
-                send(url, o);
+                send(LABKEY.contextPath + '/admin/logClientException.api', {
+                    username: LABKEY.user ? LABKEY.user.email : 'Unknown',
+                    //site: window.location.host,
+                    //version: LABKEY.versionString || 'Unknown',
+                    requestURL: document.URL,
+                    referrerURL: document.URL,
+                    exceptionMessage: msg,
+                    stackTrace: stackTrace || msg,
+                    file: file,
+                    line: line,
+                    // column: column,
+                    browser: navigator && navigator.userAgent || 'Unknown',
+                    platform:  navigator && navigator.platform  || 'Unknown'
+                });
                 return true;
             }
             catch (e) {
@@ -302,6 +297,11 @@ LABKEY.Mothership = (function () {
     // err is either the thrown Error object, ErrorEvent, or a string message.
     // @return {Boolean} Returns true if the error is logged to mothership, false otherwise.
     function report(err, file, line, column, errorObj) {
+        // Issue 52520: Prevent bots from submitting reports
+        if ((!LABKEY.user || LABKEY.user.isGuest)) {
+            return;
+        }
+
         //log("** report", err, errorObj);
         file = file || window.location.href;
         line = line || "None";

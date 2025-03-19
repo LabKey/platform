@@ -32,8 +32,6 @@ import java.util.function.Function;
 /**
  * Renders the contents of a database column in one of the supported {@link WikiRendererType} formats, as specified
  * by another column (referenced via the renderTypeColumnName constructor argument
- * User: markigra
- * Date: 10/25/11
  */
 public class WikiRendererDisplayColumn extends DataColumn
 {

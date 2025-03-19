@@ -3750,7 +3750,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         for (ExperimentListener listener : _listeners)
         {
-            listener.afterRunDelete(run.getProtocol(), run, user);
+            listener.afterRunDelete(protocol, run, user);
         }
     }
 
@@ -5388,7 +5388,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     documentIds.add(data.getDocumentId());
                 }
-                ss.deleteResources(documentIds);
+
+                transaction.addCommitTask(() -> ss.deleteResources(documentIds), POSTCOMMIT);
             }
 
             transaction.commit();
