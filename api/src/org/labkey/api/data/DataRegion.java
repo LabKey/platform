@@ -1765,10 +1765,10 @@ public class DataRegion extends DisplayElement
         if (name != null)
         {
             // Add attribute used by test locators
-            attributes.add(AttributeValue.of("data-region-form", name));
+            attributes.add(AttributeValue.data("region-form", name));
         }
 
-        attributes.add(AttributeValue.of("class", "form-horizontal" + (mode == MODE_DETAILS ? " form-mode-details" : "")));
+        attributes.add(AttributeValue.cl("form-horizontal" + (mode == MODE_DETAILS ? " form-mode-details" : "")));
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)

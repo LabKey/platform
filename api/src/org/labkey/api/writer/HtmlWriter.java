@@ -116,12 +116,14 @@ public class HtmlWriter implements Appendable
             return new AttributeValue(attribute.name(), value);
         }
 
-        public static AttributeValue of(String name, String value)
+        public static AttributeValue cl(String className)
         {
-            if (!name.equals("class") && !name.startsWith("data-"))
-                throw new IllegalStateException("Illegal attribute name: " + name);
+            return new AttributeValue("class", className);
+        }
 
-            return new AttributeValue(name, value);
+        public static AttributeValue data(String name, String value)
+        {
+            return new AttributeValue("data-" + name, value);
         }
 
         private String name()
