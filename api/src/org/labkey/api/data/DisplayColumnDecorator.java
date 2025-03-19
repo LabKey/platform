@@ -423,12 +423,6 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCell(RenderContext ctx, HtmlWriter out)
-    {
-        _column.renderDetailsCell(ctx, out);
-    }
-
-    @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
         return _column.getSortHandler(ctx, sort);
