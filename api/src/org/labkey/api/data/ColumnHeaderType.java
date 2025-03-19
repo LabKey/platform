@@ -72,7 +72,7 @@ public enum ColumnHeaderType
                 org.labkey.api.query.FieldKey fieldKey = org.labkey.api.query.FieldKey.fromString(name);
 
                 fieldKey = fixMissingValueIndicator(columnInfo, fieldKey);
-                name = fieldKey.toImortDisplayString();
+                name = fieldKey.toImportDisplayString();
             }
             else
             {

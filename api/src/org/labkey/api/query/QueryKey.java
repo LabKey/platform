@@ -311,7 +311,7 @@ import java.util.Objects;
     /**
      * Returns a string appropriate for display to the user.
      */
-    public String toImortDisplayString()
+    public String toImportDisplayString()
     {
         return StringUtils.join(getParts().iterator(), getDivider());
     }
