@@ -23,7 +23,6 @@ Ext4.define('LABKEY.import.OptionsPanel', {
     isFailForUndefinedVisits: false,
     showFailForUndefinedVisits: true,
     isCloudRoot: false,
-    showAdvancedImportOptions: false,
 
     initComponent: function()
     {
@@ -64,8 +63,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                 store: this.getOptionsStore(),
                 itemSelector: 'input',
                 tpl: new Ext4.XTemplate(
-                    '<tpl for=".">',
-                      '<tpl if="hidden !== true">',
+                        '<tpl for=".">',
+                        '<tpl if="hidden !== true">',
                         '<table cellpadding=0>',
                         ' <tpl if="header != null">',
                         '  <tr><td class="labkey-announcement-title" align=left><span>{header}</span></td></tr>',
@@ -79,8 +78,8 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                         '  <div id="{name}-optionsForm"></div>',
                         ' </td></tr>',
                         '</table>',
-                      '</tpl>',
-                    '</tpl>'
+                        '</tpl>',
+                        '</tpl>'
                 )
             });
 
@@ -120,7 +119,7 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                         + 'like to select a subset of those import objects, check the box below to see the full list of '
                         + 'folder archive objects to be imported.',
                 name: 'specificImportOptions',
-                initChecked: this.isSpecificImportOptions ? "checked" : "",
+                initChecked: this.isSpecificImportOptions ? "checked": "",
                 isChecked: this.isSpecificImportOptions,
                 label: 'Select specific objects to import',
                 optionsForm: this.getSpecificImportOptionsForm
@@ -130,18 +129,18 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                         + 'apply this imported archive to multiple folders, check the box below to see additional folders for this project. '
                         + 'The import archive will be applied to all selected folders.',
                 name: 'applyToMultipleFolders',
-                initChecked: this.isApplyToMultipleFolders ? "checked" : "",
+                initChecked: this.isApplyToMultipleFolders ? "checked": "",
                 isChecked: this.isApplyToMultipleFolders,
                 hidden: this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
                 label: 'Apply to multiple folders',
                 optionsForm: this.getApplyToMultipleFoldersForm
-            }]
-        }
+            }];
 
-        this.optionsStore = Ext4.create('Ext.data.Store', {
-            fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'hidden', 'optionsForm'],
-            data: data
-        });
+            this.optionsStore = Ext4.create('Ext.data.Store', {
+                fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'hidden', 'optionsForm'],
+                data: data
+            });
+        }
 
         return this.optionsStore;
     },
@@ -197,37 +196,43 @@ Ext4.define('LABKEY.import.OptionsPanel', {
 
     getSubmitButton : function()
     {
-        if (this.showAdvancedImportOptions) {
-            if (!this.submitButton) {
-                this.submitButton = Ext4.create('Ext.button.Button', {
-                    text: 'Start Import',
-                    cls: 'import-options-form-btn',
-                    scope: this,
-                    handler: function () {
-                        // call beforeSubmit for each optionsForm.
-                        // if a section wants to display a confirmation message, gather those and ask if the user wants to proceed
-                        var confirmMsgs = [];
-                        Ext4.each(this.getOptionsStore().getRange(), function (record) {
-                            var optionsForm = record.get('optionsForm') != null ? record.get('optionsForm').call(this) : null;
-                            if (optionsForm != null) {
-                                var msg = optionsForm.beforeSubmit();
-                                if (msg)
-                                    confirmMsgs.push(msg);
-                            }
-                        }, this);
-
-                        if (confirmMsgs.length > 0) {
-                            confirmMsgs.push("<br/>Would you like to proceed?");
-                            Ext4.Msg.confirm("Confirmation", confirmMsgs.join('<br/>'), function (btnId) {
-                                if (btnId == 'yes')
-                                    document.getElementById('pipelineImportForm').submit();
-                            });
-                        } else {
-                            document.getElementById('pipelineImportForm').submit();
+        if (!this.submitButton)
+        {
+            this.submitButton = Ext4.create('Ext.button.Button', {
+                text: 'Start Import',
+                cls: 'import-options-form-btn',
+                scope: this,
+                handler: function()
+                {
+                    // call beforeSubmit for each optionsForm.
+                    // if a section wants to display a confirmation message, gather those and ask if the user wants to proceed
+                    var confirmMsgs = [];
+                    Ext4.each(this.getOptionsStore().getRange(), function(record)
+                    {
+                        var optionsForm = record.get('optionsForm') != null ? record.get('optionsForm').call(this) : null;
+                        if (optionsForm != null)
+                        {
+                            var msg = optionsForm.beforeSubmit();
+                            if (msg)
+                                confirmMsgs.push(msg);
                         }
+                    }, this);
+
+                    if (confirmMsgs.length > 0)
+                    {
+                        confirmMsgs.push("<br/>Would you like to proceed?");
+                        Ext4.Msg.confirm("Confirmation", confirmMsgs.join('<br/>'), function(btnId)
+                        {
+                            if (btnId == 'yes')
+                                document.getElementById('pipelineImportForm').submit();
+                        });
                     }
-                })
-            }
+                    else
+                    {
+                        document.getElementById('pipelineImportForm').submit();
+                    }
+                }
+            })
         }
 
         return this.submitButton;
@@ -246,13 +251,13 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
     initComponent: function()
     {
         var advancedImportItems = [this.getImportOptionsHeaderConfig('Folder')],
-            additionalImportItems = [];
+                additionalImportItems = [];
 
         Ext4.each(this.importers, function(importer)
         {
             var dataType = importer['dataType'],
-                children = importer['children'],
-                showDisabled = !importer['isValidForImportArchive'];
+                    children = importer['children'],
+                    showDisabled = !importer['isValidForImportArchive'];
 
             if (!Ext4.isArray(children))
             {
@@ -293,19 +298,19 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         this.callParent();
     },
 
-    toggleState : function(checked) {
-        if (this.showAdvancedImportOptions) {
-            this.setVisible(checked);
+    toggleState : function(checked)
+    {
+        this.setVisible(checked);
 
-            // set all folder import type checkboxes to match this checked state
-            Ext4.each(this.getAllVisibleInputBoxes(), function (box) {
-                var cb = this.getInputFromBox(box);
+        // set all folder import type checkboxes to match this checked state
+        Ext4.each(this.getAllVisibleInputBoxes(), function(box)
+        {
+            var cb = this.getInputFromBox(box);
 
-                // don't update checked state of the disabled checkbox inputs
-                if (!cb.disabled)
-                    cb.checked = checked;
-            }, this);
-        }
+            // don't update checked state of the disabled checkbox inputs
+            if (!cb.disabled)
+                cb.checked = checked;
+        }, this);
     },
 
     getAllVisibleInputBoxes : function()
@@ -324,21 +329,21 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
             xtype: 'box',
             cls: 'advanced-options-header',
             html: '<div class="advanced-options-title">' + header + ' objects to import:</div>'
-                + '<div class="labkey-title-area-line"></div>'
+                    + '<div class="labkey-title-area-line"></div>'
         };
     },
 
     getImportOptionInputConfig : function(dataType, showDisabled, parent, hide)
     {
         var checked = hide || this.hidden || showDisabled ? '' : ' checked',
-            disabled = !showDisabled ? '' : ' disabled',
-            parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
+                disabled = !showDisabled ? '' : ' disabled',
+                parentAttr = parent ? 'parentDataType="' + parent + '"' : '';
 
         return {
             xtype: 'box',
             cls: hide ? 'advanced-options-hide' : 'advanced-options-input',
             html: '<label class="' + (showDisabled ? 'look-disabled' : '') + '"><input type="checkbox" name="dataTypes" '
-                + 'value="' + dataType + '" ' + parentAttr + checked + disabled + '>' + dataType + '</label>',
+                    + 'value="' + dataType + '" ' + parentAttr + checked + disabled + '>' + dataType + '</label>',
             listeners: {
                 render: function(b) {
                     if (showDisabled)
@@ -363,7 +368,7 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
             Ext4.each(this.getAllVisibleInputBoxes(), function(box)
             {
                 var visibleInput = this.getInputFromBox(box),
-                    parentDataType = visibleInput.getAttribute('parentDataType');
+                        parentDataType = visibleInput.getAttribute('parentDataType');
 
                 if (parentDataType == hiddenInput.value && visibleInput.checked)
                 {
@@ -465,7 +470,7 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
             success: function(response)
             {
                 var resp = Ext4.decode(response.responseText),
-                    projectInfo = resp.project ? resp.project : resp.current;
+                        projectInfo = resp.project ? resp.project : resp.current;
 
                 this.currentRowId = resp.current.id;
 
@@ -535,7 +540,7 @@ Ext4.define('LABKEY.import.ApplyToMultipleFolders', {
             // [disabled pending customer feedback] deselecting a child folder deselects the parent folder
             if(!checked){
                 this.clearChildRecords(record);
-             //   this.clearParentRecords(record);
+                //   this.clearParentRecords(record);
             }
             else {
                 this.selectChildRecords(record);
