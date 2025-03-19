@@ -8088,7 +8088,7 @@ public class QueryController extends SpringActionController
             if (json.has("expression"))
                 setExpression(json.getString("expression"));
             if (json.has("phiColumns"))
-                setPhiColumns(json.getJSONArray("phiColumns").toList().stream().map(s -> FieldKey.fromString(s.toString())).collect(Collectors.toList()));
+                setPhiColumns(json.getJSONArray("phiColumns").toList().stream().map(s -> FieldKey.fromParts(s.toString())).collect(Collectors.toList()));
             if (json.has("columnMap"))
             {
                 JSONObject columnMap = json.getJSONObject("columnMap");
@@ -8096,11 +8096,11 @@ public class QueryController extends SpringActionController
                 {
                     try
                     {
-                        getColumnMap().put(FieldKey.fromString(key), JdbcType.valueOf(String.valueOf(columnMap.get(key))));
+                        getColumnMap().put(FieldKey.fromParts(key), JdbcType.valueOf(String.valueOf(columnMap.get(key))));
                     }
                     catch (IllegalArgumentException iae)
                     {
-                        getColumnMap().put(FieldKey.fromString(key), JdbcType.OTHER);
+                        getColumnMap().put(FieldKey.fromParts(key), JdbcType.OTHER);
                     }
                 }
             }
