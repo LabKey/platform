@@ -59,6 +59,7 @@ public class SchemaColumnMetaData
 {
     private final SchemaTableInfo _tinfo;
     private final List<ColumnInfo> _columns = new ArrayList<>();
+    private AliasManager _aliasManager;
 
     private Map<String, ColumnInfo> _colMap = null;
     private @NotNull List<String> _pkColumnNames = new ArrayList<>();
@@ -81,7 +82,7 @@ public class SchemaColumnMetaData
     }
 
     /* This constructor is used only to create a virtual/fake SchemaTableInfo */
-    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable) throws SQLException
+    public SchemaColumnMetaData(SchemaTableInfo tinfo, List<MutableColumnInfo> cols, TableType xmlTable)
     {
         _tinfo = tinfo;
         for (var col : cols)
@@ -89,14 +90,14 @@ public class SchemaColumnMetaData
         loadColumnsFromXml(_tinfo, xmlTable);
     }
 
-    private AliasManager getAliasManager(AliasManager aliasManager)
+    private AliasManager getAliasManager()
     {
-        if (null == aliasManager)
+        if (null == _aliasManager)
         {
-            aliasManager = new AliasManager(_tinfo.getSchema());
-            aliasManager.claimAliases(_columns);
+            _aliasManager = new AliasManager(_tinfo.getSchema());
+            _aliasManager.claimAliases(_columns);
         }
-        return aliasManager;
+        return _aliasManager;
     }
 
     private void loadColumnsFromXml(SchemaTableInfo tinfo, TableType xmlTable)
@@ -117,13 +118,12 @@ public class SchemaColumnMetaData
         {
             String pkColumnName = xmlTable.getPkColumnName();
 
-            if (null != pkColumnName && pkColumnName.length() > 0)
+            if (null != pkColumnName && !pkColumnName.isEmpty())
             {
                 setPkColumnNames(Arrays.asList(pkColumnName.split(",")));
             }
         }
 
-        AliasManager aliasManager = null; // We're making an effort to be lazy about initializing.  Most SchemaTableInfo only have "real" columns.
         List<ColumnType> wrappedColumns = new ArrayList<>();
 
         for (ColumnType xmlColumn : xmlColumnArray)
@@ -153,8 +153,7 @@ public class SchemaColumnMetaData
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
-                aliasManager = getAliasManager(aliasManager);
-                aliasManager.ensureAlias(colInfo);
+                getAliasManager().ensureAlias(colInfo);
                 addColumn(colInfo);
             }
         }
@@ -198,8 +197,7 @@ public class SchemaColumnMetaData
                 exprColumn.getAlias();
                 assert exprColumn.isAliasSet();
                 // now reserve that alias
-                aliasManager = getAliasManager(aliasManager);
-                aliasManager.ensureAlias(exprColumn);
+                getAliasManager().ensureAlias(exprColumn);
                 addColumn(exprColumn);
             }
             catch (QueryParseException qpe)
@@ -418,13 +416,14 @@ public class SchemaColumnMetaData
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
-        // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
         if (!column.isAliasSet())
         {
-            if (null != column.getMetaDataName())
-                column.setAlias(column.getMetaDataName());
-            else
+            // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
+            if (AliasManager.isLegalName(column.getName(), column.getSqlDialect()))
                 column.setAlias(column.getName());
+            else if (null != column.getMetaDataName() && column.getMetaDataName().equalsIgnoreCase(column.getName()))
+                column.setAlias(column.getName());
+            getAliasManager().ensureAlias(column);  // claim alias
         }
         _colMap = null;
     }

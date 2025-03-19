@@ -142,6 +142,7 @@ import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQueryView;
+import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.query.QueryDatasetQueryChangeListener;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
@@ -744,7 +745,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             StudyManager.VisitCreationTestCase.class,
             StudyModule.TestCase.class,
             TreatmentManager.TreatmentDataTestCase.class,
-            VisitImpl.TestCase.class
+            VisitImpl.TestCase.class,
+            DatasetUpdateService.TestCase.class
         );
     }
 

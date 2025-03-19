@@ -891,7 +891,7 @@ public abstract class SqlDialect
 
     protected boolean shouldQuoteIdentifier(String id)
     {
-        return isReserved(id) || !AliasManager.isLegalName(id);
+        return isReserved(id) || !AliasManager.isLegalName(id, this);
     }
 
 
