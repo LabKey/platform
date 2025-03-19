@@ -35,6 +35,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.DefaultContainerUser;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -250,7 +251,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             String uri = (String)getBoundColumn().getValue(ctx);
             String cId = ctx.get(getContainerFieldKey(), String.class);
@@ -265,15 +266,15 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     {
                         DomainKind<?> kind = PropertyService.get().getDomainKind(domain.getTypeURI());
                         if (kind != null)
-                            out.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
+                            oldWriter.write("<a href=\"" + kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
                         else
-                            out.write(PageFlowUtil.filter(domain.getName()));
+                            oldWriter.write(PageFlowUtil.filter(domain.getName()));
                         return;
                     }
                 }
             }
 
-            out.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;"));
+            oldWriter.write(Objects.toString(PageFlowUtil.filter(ctx.get(getDefaultNameFieldKey())), "&nbsp;"));
         }
 
         @Override

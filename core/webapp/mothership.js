@@ -276,7 +276,7 @@ LABKEY.Mothership = (function () {
                 username: LABKEY.user ? LABKEY.user.email : "Unknown",
                 //site: window.location.host,
                 //version: LABKEY.versionString || "Unknown",
-                requestURL: file,
+                requestURL: document.URL,
                 referrerURL: document.URL,
                 exceptionMessage: msg,
                 stackTrace: stackTrace || msg,

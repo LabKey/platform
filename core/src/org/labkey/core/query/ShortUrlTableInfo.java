@@ -29,10 +29,9 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.core.admin.AdminController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -95,7 +94,7 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
             }
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
             {
                 String shortUrl = (String) getValue(ctx);
                 Integer rowId = ctx.get(FieldKey.fromParts(ROWID_COL), Integer.class);
@@ -103,10 +102,10 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
                 {
                     var elementId = "copyToClipboardId" + rowId;
                     PageFlowUtil.iconLink("fa fa-clipboard", "copy to clipboard")
-                            .onClick("return false;")
-                            .id(elementId)
-                            .attributes(Collections.singletonMap("data-clipboard-text", ShortURLRecord.renderShortURL(shortUrl)))
-                            .appendTo(out);
+                        .onClick("return false;")
+                        .id(elementId)
+                        .attributes(Collections.singletonMap("data-clipboard-text", ShortURLRecord.renderShortURL(shortUrl)))
+                        .appendTo(out);
                     DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#" + elementId + "');")).appendTo(out);
                 }
                 else

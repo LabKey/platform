@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
@@ -96,12 +97,12 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         settingsColumn.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo){
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
             {
                 Object value = getValue(ctx);
                 Object jsonValue = JsonUtil.DEFAULT_MAPPER.readValue(String.valueOf(value), Object.class);
 
-                out.write(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
+                oldWriter.write(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
             }
         });
 
@@ -129,9 +130,9 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 }
 
                 @Override
-                public void renderTitle(RenderContext ctx, Writer out)
+                public HtmlString getTitle(RenderContext ctx)
                 {
-                    // no title
+                    return null; // no title
                 }
 
                 @Override

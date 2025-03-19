@@ -15,68 +15,22 @@
  */
 package org.labkey.api.view;
 
-import org.labkey.api.util.DOM;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.PrintWriter;
 
 /**
  * Stacks other {@link ModelAndView} instances vertically.
  */
-public class VBox extends WebPartView<Object>
+public class VBox extends AbstractViewBox
 {
-    protected final List<ModelAndView> _views;
-
     public VBox(ModelAndView... views)
     {
-        super(FrameType.NONE);
-        _views = new ArrayList<>(Arrays.asList(views));
+        super(views);
     }
 
     @Override
-    public boolean isVisible()
-    {
-        return null != _views && !_views.isEmpty();
-    }
-
-
-    public void addView(ModelAndView v)
-    {
-        if (null == v)
-            return;
-        _views.add(v);
-    }
-
-
-    public void addView(DOM.Renderable r)
-    {
-        if (null == r)
-            return;
-        _views.add(new HtmlView(r));
-    }
-
-
-    public void addView(ModelAndView v, int index)
-    {
-        if (null == v)
-            return;
-        _views.add(index, v);
-    }
-
-    @Override
-    public List<ModelAndView> getViews()
-    {
-        ArrayList<ModelAndView> ret = new ArrayList<>(_views.size());
-        ret.addAll(_views);
-        return ret;
-    }
-
-    @Override
-    public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    protected void renderView(Object model, PrintWriter out) throws Exception
     {
         for (ModelAndView view : _views)
         {

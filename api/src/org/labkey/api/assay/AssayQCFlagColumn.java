@@ -36,6 +36,7 @@ import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -87,7 +88,7 @@ public class AssayQCFlagColumn extends ExprColumn
                     }
 
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
                     {
                         String strValue = (String)getValue(ctx);
                         if (isNotBlank(strValue))
@@ -100,11 +101,11 @@ public class AssayQCFlagColumn extends ExprColumn
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
                             Link.LinkBuilder linkBuilder = new Link.LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
                                     .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
-                            out.write(linkBuilder.toString());
+                            oldWriter.write(linkBuilder.toString());
                         }
                         else
                         {
-                            out.write("&nbsp;");
+                            oldWriter.write("&nbsp;");
                         }
                     }
 

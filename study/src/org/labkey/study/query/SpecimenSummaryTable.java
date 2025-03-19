@@ -42,6 +42,7 @@ import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -385,9 +386,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
-            out.write(getDisplayText(ctx, true));
+            oldWriter.write(getDisplayText(ctx, true));
         }
     }
 }

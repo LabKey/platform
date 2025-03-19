@@ -1075,7 +1075,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                return new InputBuilder().type("hidden").id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
+                return new InputBuilder<>().type("hidden").id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
             }
 
             return null;

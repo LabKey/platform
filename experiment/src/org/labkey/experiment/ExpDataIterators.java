@@ -33,6 +33,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVWriter;
@@ -144,6 +145,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
@@ -910,66 +912,11 @@ public class ExpDataIterators
 
     static Collection<String> getParentNames(Object parentObj, TSVWriter tsvWriter, String fieldName, @Nullable BatchValidationException errors)
     {
-        Collection<String> parentNames = null;
-        if (parentObj != null)
-        {
-            if (parentObj instanceof String)
-            {
-                if (((String) parentObj).trim().isEmpty())
-                {
-                    parentNames = Arrays.asList(((String) parentObj).trim());
-                }
-                else
-                {
-                    // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
-                    // using TabLoader instead of just splitting on the comma.
-                    String quotedStr = ((String) parentObj).contains(",") ? (String) parentObj : tsvWriter.quoteValue((String) parentObj); // if value contains comma, no need to quote again
-                    try (TabLoader tabLoader = new TabLoader(quotedStr))
-                    {
-                        tabLoader.setDelimiterCharacter(',');
-                        tabLoader.setUnescapeBackslashes(false);
-                        // Issue 50924: LKSM: Importing samples using naming expression referencing parent inputs with # result in error
-                        tabLoader.setIncludeComments(true);
-                        // Issue 51056 Samples with single double quotes in the name will not resolve if added as parent samples.
-                        tabLoader.setParseEnclosedQuotes(true);
-                        try
-                        {
-                            String[][] values = tabLoader.getFirstNLines(1);
-                            if (values.length > 0)
-                                parentNames = Arrays.asList(values[0]);
-                            else
-                                parentNames = Collections.emptyList();
-                        }
-                        catch (IOException e)
-                        {
-                            parentNames = Collections.emptyList();
-                            if (errors != null)
-                                errors.addRowError(new ValidationException("Unable to parse parent names from " + parentObj, fieldName));
-                        }
-                    }
-                }
-            }
-            else if (parentObj instanceof JSONArray ja)
-            {
-                parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
-            }
-            else if (parentObj instanceof Collection)
-            {
-                //noinspection rawtypes
-                Collection<?> c = ((Collection) parentObj);
-                parentNames = c.stream().map(String::valueOf).collect(Collectors.toSet());
-            }
-            else if (parentObj instanceof Number)
-            {
-                parentNames = Arrays.asList(parentObj.toString());
-            }
-            else
-            {
-                if (errors != null)
-                    errors.addRowError(new ValidationException("Expected comma separated list or a JSONArray of parent names: " + parentObj, fieldName));
-            }
-        }
-        return parentNames;
+        if (parentObj instanceof String parentStr && parentStr.trim().isEmpty())
+            return Arrays.asList(((String) parentObj).trim()); // This is needed to remove existing lineage
+
+        Stream<String> values = NameGenerator.parentNames(parentObj, fieldName, tsvWriter, errors);
+        return values == null ? null : values.collect(Collectors.toList());
     }
 
     static class DerivationDataIteratorBase extends WrapperDataIterator

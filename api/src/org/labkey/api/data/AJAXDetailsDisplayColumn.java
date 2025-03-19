@@ -21,27 +21,26 @@ import org.json.JSONObject;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.id;
+
 /**
  * Uses LABKEY.Ext.CalloutTip to provide additional details, summoned via AJAX
- *
- * User: jeckels
- * Date: May 14, 2012
  */
 public class AJAXDetailsDisplayColumn extends DataColumn
 {
@@ -79,7 +78,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         String evaluatedURL = null;
         if (_detailsURL != null)
@@ -106,9 +105,13 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             props.put("autoLoad", autoLoadProp);
             props.put("target", divId);
 
-            out.write("<span id=\"" + divId + "\">");
-            super.renderGridCellContents(ctx, out);
-            out.write("</span>");
+            SPAN(
+                id(divId),
+                (DOM.Renderable) ret -> {
+                    super.renderGridCellContents(ctx, out);
+                    return ret;
+                }
+            ).appendTo(out);
             HttpView.currentPageConfig().addDocumentLoadHandler(JavaScriptFragment.unsafe(
                 "    Ext.onReady(function () { \n" +
                 "    var config = " + props.toString(0) + ";\n" +

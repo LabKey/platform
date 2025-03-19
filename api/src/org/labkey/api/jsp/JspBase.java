@@ -475,7 +475,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     public InputBuilder<?> input()
     {
-        return new InputBuilder();
+        return new InputBuilder<>();
     }
 
     public HtmlString generateBackButton()

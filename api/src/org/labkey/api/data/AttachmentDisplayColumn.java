@@ -27,9 +27,6 @@ import java.io.InputStream;
 import java.util.Set;
 
 /**
- * User: adam
- * Date: Feb 12, 2008
- *
  * Renders attachment popup and download link using the underlying ColumnInfo's URL.
  */
 public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
@@ -59,7 +56,7 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         ColumnInfo displayColumn = getDisplayColumn();
         if (displayColumn.getPropertyType() != null)

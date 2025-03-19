@@ -227,12 +227,12 @@ public class ExpSchema extends AbstractExpSchema
                 return ExperimentService.get().createSampleStatusTable(expSchema, cf);
             }
         },
-        FieldNames
+        Fields
         {
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                return ExperimentService.get().createFieldNamesTable(expSchema, cf);
+                return ExperimentService.get().createFieldsTable(expSchema, cf);
             }
         },
         PhiFields

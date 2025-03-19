@@ -51,6 +51,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
@@ -1301,9 +1302,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     return new SimpleDisplayColumn()
                     {
                         @Override
-                        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
                         {
-                            out.write(PageFlowUtil.filter("Error: " + message));
+                            oldWriter.write(PageFlowUtil.filter("Error: " + message));
                         }
                     };
                 };

@@ -61,7 +61,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnUrl);
     ActionURL getMemTrackerURL();
     ActionURL getCustomizeEmailURL(Container c, Class<? extends EmailTemplate> selectedTemplate, URLHelper returnUrl);
-    ActionURL getFilesSiteSettingsURL(boolean upgrade);
+    ActionURL getFilesSiteSettingsURL();
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
     ActionURL getSystemMaintenanceURL();

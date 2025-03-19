@@ -75,7 +75,7 @@
         </tr>
         <tr>
             <td></td>
-            <td><labkey:button text="Submit" /> <labkey:button text="Cancel" href="<%= PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL(false) %>" /></td>
+            <td><labkey:button text="Submit" /> <labkey:button text="Cancel" href="<%= PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL() %>" /></td>
         </tr>
     </table>
 

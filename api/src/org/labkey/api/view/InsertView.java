@@ -24,10 +24,9 @@ import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +90,7 @@ public class InsertView extends DataView
     }
 
     @Override
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+    protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
     {
         TableInfo tableInfo = getTable();
 

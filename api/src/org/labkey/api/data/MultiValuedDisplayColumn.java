@@ -18,9 +18,8 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,9 +31,6 @@ import java.util.stream.Collectors;
 /**
  * Wraps any DisplayColumn and causes it to render each value separately. Often used in conjunction with
  * MultiValuedLookupColumn
- *
- * User: adam
- * Date: Sep 14, 2010
  */
 public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements IMultiValuedDisplayColumn
 {
@@ -125,7 +121,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         try
         {
@@ -139,7 +135,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
                 Object o = getValue(mvCtx);
                 if (o != null)
                 {
-                    out.append(sep);
+                    out.write(sep);
                     super.renderGridCellContents(mvCtx, out);
                     sep = ", ";
                 }
@@ -155,13 +151,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
-    public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
-    {
-        renderGridCellContents(ctx, out);
-    }
-
-    @Override
-    public Class getDisplayValueClass()
+    public Class<String> getDisplayValueClass()
     {
         return String.class;
     }
@@ -206,14 +196,6 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     public List<Object> getJsonValues(RenderContext ctx)
     {
         return values(ctx, _column::getJsonValue);
-    }
-
-    @Override
-    public void renderInputCell(RenderContext ctx, Writer out) throws IOException
-    {
-        renderInputWrapperBegin(out);
-        renderInputHtml(ctx, out, getInputValue(ctx));
-        renderInputWrapperEnd(out);
     }
 
     @Override

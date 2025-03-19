@@ -61,6 +61,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -141,23 +142,23 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                     cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
                     {
                         @Override
-                        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+                        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
                         {
                             boolean disabledInput = isDisabledInput();
                             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
-                            out.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
-                            out.write(" class=\"form-control\">\n");
+                            oldWriter.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
+                            oldWriter.write(" class=\"form-control\">\n");
                             if (getBoundColumn().isNullable())
-                                out.write("\t<option value=\"\">");
+                                oldWriter.write("\t<option value=\"\">");
                             for (Cohort cohort : cohorts)
                             {
-                                out.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
+                                oldWriter.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
                                         (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
-                                out.write(PageFlowUtil.filter(cohort.getLabel()));
-                                out.write("</option>\n");
+                                oldWriter.write(PageFlowUtil.filter(cohort.getLabel()));
+                                oldWriter.write("</option>\n");
                             }
-                            out.write("</select>");
+                            oldWriter.write("</select>");
                         }
                     });
                 }

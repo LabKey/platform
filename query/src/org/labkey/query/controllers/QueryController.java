@@ -3966,7 +3966,7 @@ public class QueryController extends SpringActionController
                         Aggregate.Type type = r.getAggregate().getType();
                         props.put("label", type.getFullLabel());
                         props.put("description", type.getDescription());
-                        props.put("value", r.getFormattedValue(displayColumn, getContainer()).first);
+                        props.put("value", r.getFormattedValue(displayColumn, getContainer()).value());
                         aggregateResults.put(type.getName(), props);
                     }
 

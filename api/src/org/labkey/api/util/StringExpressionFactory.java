@@ -33,6 +33,7 @@ import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
@@ -1044,10 +1045,10 @@ public class StringExpressionFactory
     {
         @NotNull private FieldKey _key;
 
-        public FieldPart(@NotNull String s, boolean urlEncodeSubstitutions)
+        public FieldPart(@NotNull String s, boolean urlEncodeSubstitutions, boolean useBackslashEscape)
         {
             super(s, urlEncodeSubstitutions);
-            _key = FieldKey.decode(_value);
+            _key = FieldKey.decode(_value, useBackslashEscape);
             if (_key == null)
             {
                 throw new IllegalArgumentException("Could not parse FieldKey from '" + s + "'");
@@ -1078,7 +1079,7 @@ public class StringExpressionFactory
                 // next, check key.toString(), which calls QueryKey.encodePart
                 if (!map.containsKey(lookupKey))
                     lookupKey = _key.toString();
-                if (!map.containsKey(lookupKey))
+                if (!map.containsKey(lookupKey)) // TODO: this might no longer be needed
                     lookupKey = PageFlowUtil.decode(_key.getParent() == null ? _key.getName() : _key.encode());
             }
 
@@ -1134,6 +1135,11 @@ public class StringExpressionFactory
             return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
         }
 
+        protected boolean isBackslashEscape()
+        {
+            return false;
+        }
+
         @Override
         protected StringPart parsePart(String expr)
         {
@@ -1142,7 +1148,7 @@ public class StringExpressionFactory
                 return new RenderContextPart(expr);
             try
             {
-                return new FieldPart(expr, _urlEncodeSubstitutions);
+                return new FieldPart(expr, _urlEncodeSubstitutions, isBackslashEscape());
             }
             catch (IllegalArgumentException x)
             {

@@ -85,6 +85,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
@@ -335,7 +336,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Object lsid = ctx.get(_sourceLsidColumn.getName());
             if (lsid != null)
@@ -344,11 +345,11 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());
-                    PageFlowUtil.link("assay").href(dataURL).appendTo(out);
+                    PageFlowUtil.link("assay").href(dataURL).appendTo(oldWriter);
                     return;
                 }
             }
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
         }
 
         @Override
@@ -728,7 +729,7 @@ public class DatasetQueryView extends StudyQueryView
         }
 
         @Override
-        protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx) throws IOException
+        protected void addHeaderMessage(StringBuilder headerMessage, RenderContext ctx)
         {
             super.addHeaderMessage(headerMessage, ctx);
 
@@ -770,7 +771,7 @@ public class DatasetQueryView extends StudyQueryView
                 ParticipantGroup sessionGroup = ParticipantGroupManager.getInstance().getSessionParticipantGroup(dqs.getContainer(), dqs.getUser(), ctx.getViewContext().getRequest());
                 if (sessionGroup != null)
                 {
-                    if (msg.length() > 0)
+                    if (!msg.isEmpty())
                         msg.append("  ");
                     msg.append("Selected " + dqs.getStudy().getSubjectNounPlural() + ": ");
                     msg.append(sessionGroup.getParticipantIds().length);

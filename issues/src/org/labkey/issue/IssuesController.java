@@ -1988,7 +1988,7 @@ public class IssuesController extends SpringActionController
             String status = ctx.getActionURL().getParameter("status");
             if (status != null)
             {
-                return new InputBuilder().type("hidden").id("search-type").name("status").value(status).getHtmlString();
+                return new InputBuilder<>().type("hidden").id("search-type").name("status").value(status).getHtmlString();
             }
 
             return null;

@@ -16,10 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -33,7 +36,6 @@ import java.util.Set;
 public class SimpleDisplayColumn extends DisplayColumn
 {
     private StringExpression _displayHTML = null;
-    private StringExpression _url = null;
 
     public SimpleDisplayColumn()
     {
@@ -96,7 +98,7 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         return String.class;
     }
@@ -108,70 +110,73 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Object value = getValue(ctx);
         if (value != null)
-            out.write(value.toString());
+            oldWriter.write(value.toString());
     }
 
     @Override
-    public void renderFilterOnClick(RenderContext ctx, Writer out)
+    public String getFilterOnClick(RenderContext ctx)
     {
         throw new UnsupportedOperationException("Non Bound columns not filterable");
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         String url = renderURL(ctx);
         if (null != url)
         {
-            out.write("<a href='");
-            out.write(PageFlowUtil.filter(url));
+            oldWriter.write("<a href='");
+            oldWriter.write(PageFlowUtil.filter(url));
 
             String linkTarget = getLinkTarget();
             if (null != linkTarget)
             {
-                out.write("' target='");
-                out.write(linkTarget);
-                out.write("' rel='noopener noreferrer'");
+                oldWriter.write("' target='");
+                oldWriter.write(linkTarget);
+                oldWriter.write("' rel='noopener noreferrer'");
             }
 
             String linkCls = getLinkCls();
             if (null != linkCls)
             {
-                out.write("' class='");
-                out.write(linkCls);
+                oldWriter.write("' class='");
+                oldWriter.write(linkCls);
             }
 
-            out.write("'>");
+            oldWriter.write("'>");
         }
         Object value = getDisplayValue(ctx);
         if (value == null)
-            out.write("");
+            oldWriter.write("");
         else if (null == _format)
-            out.write(getDisplayValue(ctx).toString());
+            oldWriter.write(getDisplayValue(ctx).toString());
         else
-            out.write(_format.format(getDisplayValue(ctx)));
+            oldWriter.write(_format.format(getDisplayValue(ctx)));
 
         if (null != url)
-            out.write("</a>");
+            oldWriter.write("</a>");
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        throw new UnsupportedOperationException("Non Bound columns not editable");
+        throw new UnsupportedOperationException("Non Bound columns not editable for " + this);
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
-        if (null != _caption)
-            _caption.render(out, ctx);
-        else
-            out.write("&nbsp;");
+        throw new UnsupportedOperationException("Non Bound columns not editable for " + this);
+    }
+
+    @Override
+    public @NotNull HtmlString getTitle(RenderContext ctx)
+    {
+        return null != _caption ? HtmlString.of(_caption) : HtmlString.NBSP;
     }
 
     @Override
@@ -181,9 +186,9 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
-        renderTitle(ctx, out);
+        out.write(getTitle(ctx));
         if (null != _caption)
             out.write(" ");
         renderDetailsCellContents(ctx, out);

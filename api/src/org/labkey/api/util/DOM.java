@@ -2,6 +2,7 @@ package org.labkey.api.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
+import jakarta.servlet.jsp.PageContext;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +18,6 @@ import org.springframework.context.NoSuchMessageException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 
-import jakarta.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,9 +28,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.labkey.api.util.DOM.Element.script;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -423,10 +424,6 @@ public class DOM
         value,
         width,
         wrap,
-
-        /* Delete once 24.3 is merged to develop (panoramapublic/ExperimentAnnotationsTableInfo.java) */
-        @Deprecated
-        onclick,
         ;
 
         Appendable render(Appendable builder, Object value) throws IOException
@@ -454,7 +451,6 @@ public class DOM
         ArrayList<Map.Entry<Attribute,Object>> attrs = new ArrayList<>();
         Set<String> classes = new TreeSet<>();
         ArrayList<Map.Entry<String,Object>> expandos = null;
-        Consumer<Appendable> callback = null;
 
         _Attributes()
         {
@@ -508,6 +504,16 @@ public class DOM
             return this;
         }
 
+        // TODO: Remove after "lk-" attributes are migrated to "data-"
+        @Deprecated
+        public _Attributes lk(String lkKey, Object value)
+        {
+            if (null == expandos)
+                expandos = new ArrayList<>();
+            expandos.add(new Pair<>("lk-" + lkKey, value));
+            return this;
+        }
+
         public _Attributes cl(String...names)
         {
             if (null != names)
@@ -520,19 +526,20 @@ public class DOM
                 classes.add(className);
             return this;
         }
+        // Calculates the className only if test is true
+        public _Attributes cl(boolean test, Supplier<String> classNameSupplier)
+        {
+            String className;
+            if (test && null != (className = classNameSupplier.get()))
+                classes.add(className);
+            return this;
+        }
         public _Attributes cl(boolean test, String trueName, String falseName)
         {
             if (test && null != trueName)
                 classes.add(trueName);
             else if (!test && null != falseName)
                 classes.add(falseName);
-            return this;
-        }
-
-        // horrible hack for temporary backward compatibility
-        public _Attributes callback(Consumer<Appendable> fn)
-        {
-            this.callback = fn;
             return this;
         }
 
@@ -594,12 +601,17 @@ public class DOM
             }
             else
             {
-                if (!(k instanceof String))
+                if (!(k instanceof String sk))
                     throw new IllegalStateException("expected Attribute or String");
-                if (((String)k).startsWith("data-"))
-                    ret.data(((String)k).substring("data-".length()), v);
+                if (sk.startsWith("data-"))
+                    ret.data(sk.substring("data-".length()), v);
+                // Temporarily allow arbitrary "lk-" attributes. TODO: Switch all to "data-", however, there are MANY
+                // tests looking for "lk-*", so the approach is for the product to add both "data-" and "lk-" to keep
+                // tests passing for now but migrate them to check "data-"
+                else if (sk.startsWith("lk-"))
+                    ret.lk(sk.substring("lk-".length()), v);
                 else
-                    ret.at(Attribute.valueOf((String)k), v);
+                    ret.at(Attribute.valueOf(sk), v);
             }
         });
         return ret;
@@ -619,14 +631,22 @@ public class DOM
             copy.expandos = new ArrayList<>();
             copy.expandos.addAll(in.expandos);
         }
-        copy.callback = in.callback;
         return copy;
     }
 
     public static _Attributes at(Attribute firstKey, Object firstValue, Object... keyvalues)
     {
-        var ret = new _Attributes(firstKey,firstValue,keyvalues);
-        return ret;
+        return new _Attributes(firstKey,firstValue,keyvalues);
+    }
+
+    public static _Attributes at(boolean test, Attribute key, Object value)
+    {
+        return new _Attributes().at(test, key, value);
+    }
+
+    public static _Attributes at(boolean test, Attribute key, Object ifValue, Object elseValue)
+    {
+        return new _Attributes().at(test, key, ifValue, elseValue);
     }
 
     public static _Attributes cl(boolean f, String className)
@@ -749,7 +769,6 @@ public class DOM
 
         public static Renderable ERRORS(PageContext pageContext)
         {
-            int count=0;
             Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
             List<Renderable> list = new ArrayList<>();
             while (e.hasMoreElements())
@@ -776,7 +795,7 @@ public class DOM
         public static Renderable ERRORS(List<ObjectError> z)
         {
             if (null == z || z.isEmpty())
-                return HtmlString.unsafe("");
+                return HtmlString.EMPTY_STRING;
             final ViewContext context = HttpView.getRootContext();
             return DIV(cl("labkey-error"),
                 z.stream().map(error ->
@@ -798,11 +817,6 @@ public class DOM
                 })
             );
         }
-    }
-
-    @Deprecated /* use LK */
-    public static class X extends LK
-    {
     }
 
     private static Appendable appendAttribute(Appendable html, String key, Object value) throws IOException
@@ -935,12 +949,6 @@ public class DOM
                         throw new IllegalArgumentException("Invalid attribute key '" + key + "' of type " + key.getClass().getName());
                     }
                 }
-                // TODO again horrible hack, make this go away
-                if (attrs instanceof _Attributes a && null != a.callback)
-                {
-                    builder.append(" ");
-                    a.callback.accept(builder);
-                }
             }
             if (selfClosing)
             {
@@ -959,8 +967,6 @@ public class DOM
         }
         return builder;
     }
-
-
 
 
     //-- generated code here --
@@ -1710,11 +1716,11 @@ public class DOM
     }
     public static Renderable SCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.script.render(html, attrs, body);
+        return (html) -> script.render(html, attrs, body);
     }
     public static Renderable SCRIPT(Object... body)
     {
-        return (html) -> Element.script.render(html, at(Attribute.type,"text/javascript", Attribute.nonce, HttpView.currentPageConfig().getScriptNonce()), body);
+        return (html) -> script.render(html, at(Attribute.type,"text/javascript", Attribute.nonce, HttpView.currentPageConfig().getScriptNonce()), body);
     }
     public static Renderable SECTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {

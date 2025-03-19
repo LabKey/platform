@@ -3,12 +3,9 @@ package org.labkey.api.studydesign.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
@@ -54,21 +51,21 @@ public abstract class StudyDesignBaseTable extends FilteredTable<StudyDesignQuer
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        checkedPermissions.add(perm);
-        // Most tables should not be editable in Dataspace
-        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+        if (perm.equals(ReadPermission.class))
+            return hasPermissionOverridable(user, perm);
+        // These are editable in Dataspace, but not in a folder within a Dataspace
+        if (null == getContainer() || null == getContainer().getProject() || (getContainer().getProject().isDataspace() && !getContainer().isDataspace()))
             return false;
         return hasPermissionOverridable(user, perm);
     }
 
     protected boolean hasPermissionOverridable(UserPrincipal user, Class<? extends Permission> perm)
     {
-        return checkHasReadPermission(user, perm);
-    }
-
-    protected boolean checkHasReadPermission(UserPrincipal user, Class<? extends Permission> perm)
-    {
-        return ReadPermission.class == perm && _userSchema.getContainer().hasPermission(user, perm, getContextualRoles());
+        // Only admins are allowed to insert into these tables at the project level
+        if (getContainer().isProject())
+            return checkReadOrIsAdminPermission(user, perm);
+        else
+            return checkContainerPermission(user, perm);
     }
 
     protected boolean checkReadOrIsAdminPermission(UserPrincipal user, Class<? extends Permission> perm)

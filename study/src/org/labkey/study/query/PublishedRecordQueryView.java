@@ -29,16 +29,16 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
+import org.labkey.api.util.SafeToRender;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * User: Karl Lum
- * Date: Oct 10, 2007
- */
 public class PublishedRecordQueryView extends DatasetQueryView
 {
     private final String _sourceLsid;
@@ -87,21 +87,17 @@ public class PublishedRecordQueryView extends DatasetQueryView
 
     private class PublishedRecordDataRegion extends DataRegion
     {
-        private static final String MISSING_ROWS_MSG = "%s rows that were previously linked in this event have been recalled (or deleted)." +
-                " The audit record(s) of the deleted rows can be found in the <a href=\"%s\">link to study history view</a>, or the" +
-                " study dataset history view.";
-
         private int _count;
 
         @Override
-        protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
+        protected int renderTableContents(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException
         {
             _count = super.renderTableContents(ctx, out, showRecordSelectors, renderers);
             return _count;
         }
 
         @Override
-        protected void renderFormEnd(RenderContext ctx, Writer out) throws IOException
+        protected void renderFormEnd(RenderContext ctx, HtmlWriter out)
         {
             super.renderFormEnd(ctx, out);
             if (_count < _recordCount)
@@ -110,12 +106,20 @@ public class PublishedRecordQueryView extends DatasetQueryView
                 if (c != null)
                 {
                     if (_count == 0)
-                        out.write(String.format(MISSING_ROWS_MSG, "All", StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
+                        out.write(getMissingRowsMessage("All", StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
                     else
-                        out.write(String.format(MISSING_ROWS_MSG, _recordCount - _count, StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
+                        out.write(getMissingRowsMessage(String.valueOf(_recordCount - _count), StudyPublishService.get().getPublishHistory(c, _publishSource, _publishSourceId)));
                 }
             }
         }
-   }
+
+        private SafeToRender getMissingRowsMessage(String count, ActionURL url)
+        {
+            return HtmlStringBuilder.of(String.format("%s rows that were previously linked in this event have been recalled (or deleted)." +
+                    " The audit record(s) of the deleted rows can be found in the ", count))
+                .append(new Link.LinkBuilder("link to study history view").href(url).clearClasses())
+                .append(", or the study dataset history view.");
+        }
+    }
 }
 

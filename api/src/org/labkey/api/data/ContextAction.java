@@ -15,18 +15,20 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.HtmlWriter;
 
 public class ContextAction
 {
-    private String iconCls;
-    private String onClick;
-    private String onClose;
-    private String text;
-    private String tooltip;
-    private boolean closable;
+    private final String iconCls;
+    private final String onClick;
+    private final String onClose;
+    private final String text;
+    private final String tooltip;
+    private final boolean closable;
 
     private ContextAction(Builder builder)
     {
@@ -67,6 +69,14 @@ public class ContextAction
     {
         return closable;
     }
+
+    public HtmlWriter render(HtmlWriter out)
+    {
+        out.write(HtmlString.unsafe(toString()));
+        return out;
+    }
+
+    // TODO: Convert to use DOM
 
     @Override
     public String toString()

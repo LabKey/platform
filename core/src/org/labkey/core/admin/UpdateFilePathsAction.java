@@ -138,13 +138,13 @@ public class UpdateFilePathsAction extends FormViewAction<UpdateFilePathsAction.
     public void addNavTrail(NavTree root)
     {
         root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-        root.addChild("Files", PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL(false));
+        root.addChild("Files", PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL());
         root.addChild("Update File Paths");
     }
 
     @Override
     public URLHelper getSuccessURL(UpdateFilePathsForm updateFilePathsForm)
     {
-        return PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL(false);
+        return PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL();
     }
 }

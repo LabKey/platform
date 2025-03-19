@@ -20,13 +20,14 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Sort;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Renders a grid (table with separate columns for each field, and rows for each separate element
+ * Renders a grid (table with separate columns for each field, and rows for each separate element)
  * Modern code should not generally create a GridView directly - it should go through a {@link org.labkey.api.query.QueryView}
  * instead, which will in turn create a GridView.
  */
@@ -59,7 +60,7 @@ public class GridView extends DataView
     }
 
     @Override
-    protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+    protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
     {
         ctx.setMode(DataRegion.MODE_GRID);
         //Force through bottleneck

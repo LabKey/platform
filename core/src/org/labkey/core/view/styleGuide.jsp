@@ -385,7 +385,7 @@
         <div class="lk-sg-guide">
             <h4>Do:</h4>
             <li>Exercise consistency in language and tone.</li>
-            <li>Offer help on how the user can solve their problem in the error message, or via microcopy when form fields don’t validate.</li>
+            <li>Offer help on how the user can solve their problem in the error message, or via microcopy when form fields don't validate.</li>
             <h4>Don't:</h4>
             <li>Blame the user.</li>
             <li>Use overly technical terms or programming errors. Messaging should be human readable, so as to help with recovery and to be informative.</li>

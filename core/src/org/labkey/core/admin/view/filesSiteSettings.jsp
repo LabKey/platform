@@ -44,24 +44,12 @@
 
 <labkey:errors/>
 <labkey:form action="<%=urlFor(FilesSiteSettingsAction.class)%>" method="post">
-    <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table class="lk-fields-table" style="width: 80%">
         <tr><td colspan="2"><h4>Site-Level File Root</h4></td></tr>
         <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
-
-        <% if (bean.isUpgrade()) { %>
-        <tr><td colspan="2">Set the site-level root for this server installation, or use the default provided. If the
-            location does not exist, LabKey Server will create it for you.<br/><br/>
-            When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
-            LabKey Server allows you to upload and process your data files, including assay and
-            study-related files. By default, LabKey Server stores your files in a standard directory structure. You can
-            override this location for each project if you wish.
-            </td></tr>
-        <% } else { %>
         <tr><td colspan="2">When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
             If the root is changed, all files will be automatically moved to the new location. If files have been moved through other means, it is also
             possible to <a href="<%= h(new ActionURL(UpdateFilePathsAction.class, getContainer())) %>">update paths stored in the database</a>.</td></tr>
-        <% } %>
         <tr><td>&nbsp;</td></tr>
 
         <%
@@ -76,14 +64,6 @@
             <td><input type="text" name="rootPath" size="64" value="<%=h(bean.getRootPath())%>"></td>
         </tr>
         <tr>
-        <%
-            if (bean.isUpgrade()) {
-        %>
-            <tr><td>&nbsp;</td></tr>
-            <td><%= button("Next").submit(true) %></td>
-        <%
-            } else {
-        %>
             <tr><td colspan="2"><h4>Alternative Webfiles Root</h4></td></tr>
             <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
             <tr><td colspan="2">Site level setting to enable/disable alternative webdav tree: _webfiles.</td></tr>
@@ -117,12 +97,7 @@
         <td><%= button("Save").submit(true) %>&nbsp;
                     <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
                 </td>
-        <%
-            }
-        %>
         </tr>
-
-
     </table>
 </labkey:form>
 
@@ -137,155 +112,152 @@
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var isUpgrade = <%=bean.isUpgrade()%>;
-
     Ext4.onReady(function(){
 
         // show the file root browser
-        if (!isUpgrade)
-        {
-            Ext4.QuickTips.init();
+        Ext4.QuickTips.init();
 
-            var store = Ext4.create('Ext.data.TreeStore', {
-                fields: ['name', 'path', 'default', 'browseURL', 'configureURL'],
-                proxy: {
-                    type: 'ajax',
-                    extraParams: {excludeNotInFolderNav: true},
-                    url: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container)
-                },
-                folderSort: true,
-                autoLoad: true
-            });
-
-            var tree = Ext4.create('Ext.tree.Panel', {
-                useArrows: true,
-                rootVisible: false,
-                store: store,
-                multiSelect: false,
-                singleExpand: false,
-
-                autoScroll:true,
-                columns:[{
-                    xtype: 'treecolumn',
-                    header:'Project',
-                    width:330,
-                    dataIndex:'name',
-                },{
-                    header:'Directory',
-                    width:420,
-                    dataIndex:'path',
-                    renderer: 'htmlEncode'
-                },{
-                    header:'Default',
-                    width:75,
-                    dataIndex:'default'
-                }],
-                tbar: [{
-                    text:'Expand All',
-                    tooltip: {text:'Expands all containers', title:'Expand All'},
-                    handler: function(button, event) {button.up('treepanel').expandAll();}
-                },{
-                    text:'Collapse All',
-                    tooltip: {text:'Collapses all containers', title:'Collapse All'},
-                    handler: function(button, event) {button.up('treepanel').collapseAll();}
-                },{
-                    text: 'Show Overridden Only',
-                    tooltip: {text: 'Will show only nodes that have custom file or pipeline roots', title: 'Show Overridden Only'},
-                    showOverridesOnly: false,
-                    handler: function(button){
-                        var tree = button.up('treepanel');
-                        var showOverridesOnly = !button.showOverridesOnly;
-
-                        if (showOverridesOnly){
-                            button.setText('Show All');
-                            button.setTooltip({
-                                text: 'Will show all containers, including those that use a default file root',
-                                title: 'Show All'
-                            });
-                        }
-                        else {
-                            button.setText('Show Overridden Only');
-                            button.setTooltip({
-                                text: 'Will show only nodes that have custom file or pipeline roots',
-                                title: 'Show Overridden Only'
-                            });
-                        }
-                        button.showOverridesOnly = showOverridesOnly;
-
-                        tree.store.proxy.extraParams.showOverridesOnly = showOverridesOnly;
-                        tree.store.load();
-                    }
-                },{
-                    text:'Configure Selected',
-                    tooltip: {text:'Configure settings for the selected root', title:'Configure Selected'},
-                    listeners:{
-                        click:function(button, event) {
-                            var selected = tree.getSelectionModel().getSelection();
-                            if (selected.length){
-                                var node = selected[0];
-                                if (node.get('configureURL')){
-                                    window.location = node.get('configureURL');
-                                }
-                            }
-                            else {
-                                Ext4.Msg.alert('Error', 'No nodes selected');
-                            }
-                        },
-                        scope:this
-                    }
-                },{
-                    text:'Browse Selected',
-                    tooltip: {text:'Browse files from the selected root', title:'Browse Selected'},
-                    listeners:{
-                        click:function(button, event) {
-                            var tree = button.up('treepanel');
-                            var selected = tree.getSelectionModel().getSelection();
-                            if (selected.length){
-                                tree.browseSelected(selected[0]);
-                            }
-                            else {
-                                Ext4.Msg.alert('Error', 'No nodes selected');
-                            }
-                        }
-                    }
-                }],
-                listeners: {
-                    itemdblclick: function(panel, node, item){
-                        this.browseSelected(node);
-                    }
-                },
-                browseSelected: function(node){
-                    if (node.get('browseURL')){
-                        window.location = node.get('browseURL');
-                    }
-                }
+        var store = Ext4.create('Ext.data.TreeStore', {
+            fields: ['name', 'path', 'default', 'browseURL', 'configureURL'],
+            proxy: {
+                type: 'ajax',
+                extraParams: { excludeNotInFolderNav: true },
+                url: LABKEY.ActionURL.buildURL("filecontent", "fileContentSummary", this.container)
+            },
+            folderSort: true,
+            autoLoad: true
         });
 
-            var panel = Ext4.create('Ext.panel.Panel', {
-                layout: 'fit',
-                renderTo: 'viewsGrid',
-                items: [tree],
-                height: 500
-            });
-        }
+        var tree = Ext4.create('Ext.tree.Panel', {
+            useArrows: true,
+            rootVisible: false,
+            store: store,
+            multiSelect: false,
+            singleExpand: false,
+
+            autoScroll: true,
+            columns: [{
+                xtype: 'treecolumn',
+                header: 'Project',
+                width: 330,
+                dataIndex: 'name',
+            }, {
+                header: 'Directory',
+                width: 420,
+                dataIndex: 'path',
+                renderer: 'htmlEncode'
+            }, {
+                header: 'Default',
+                width: 75,
+                dataIndex: 'default'
+            }],
+            tbar: [{
+                text: 'Expand All',
+                tooltip: { text: 'Expands all containers', title: 'Expand All' },
+                handler: function (button, event) {
+                    button.up('treepanel').expandAll();
+                }
+            }, {
+                text: 'Collapse All',
+                tooltip: { text: 'Collapses all containers', title: 'Collapse All' },
+                handler: function (button, event) {
+                    button.up('treepanel').collapseAll();
+                }
+            }, {
+                text: 'Show Overridden Only',
+                tooltip: {
+                    text: 'Will show only nodes that have custom file or pipeline roots',
+                    title: 'Show Overridden Only'
+                },
+                showOverridesOnly: false,
+                handler: function (button) {
+                    var tree = button.up('treepanel');
+                    var showOverridesOnly = !button.showOverridesOnly;
+
+                    if (showOverridesOnly) {
+                        button.setText('Show All');
+                        button.setTooltip({
+                            text: 'Will show all containers, including those that use a default file root',
+                            title: 'Show All'
+                        });
+                    } else {
+                        button.setText('Show Overridden Only');
+                        button.setTooltip({
+                            text: 'Will show only nodes that have custom file or pipeline roots',
+                            title: 'Show Overridden Only'
+                        });
+                    }
+                    button.showOverridesOnly = showOverridesOnly;
+
+                    tree.store.proxy.extraParams.showOverridesOnly = showOverridesOnly;
+                    tree.store.load();
+                }
+            }, {
+                text: 'Configure Selected',
+                tooltip: { text: 'Configure settings for the selected root', title: 'Configure Selected' },
+                listeners: {
+                    click: function (button, event) {
+                        var selected = tree.getSelectionModel().getSelection();
+                        if (selected.length) {
+                            var node = selected[0];
+                            if (node.get('configureURL')) {
+                                window.location = node.get('configureURL');
+                            }
+                        } else {
+                            Ext4.Msg.alert('Error', 'No nodes selected');
+                        }
+                    },
+                    scope: this
+                }
+            }, {
+                text: 'Browse Selected',
+                tooltip: { text: 'Browse files from the selected root', title: 'Browse Selected' },
+                listeners: {
+                    click: function (button, event) {
+                        var tree = button.up('treepanel');
+                        var selected = tree.getSelectionModel().getSelection();
+                        if (selected.length) {
+                            tree.browseSelected(selected[0]);
+                        } else {
+                            Ext4.Msg.alert('Error', 'No nodes selected');
+                        }
+                    }
+                }
+            }],
+            listeners: {
+                itemdblclick: function (panel, node, item) {
+                    this.browseSelected(node);
+                }
+            },
+            browseSelected: function (node) {
+                if (node.get('browseURL')) {
+                    window.location = node.get('browseURL');
+                }
+            }
+        });
+
+        Ext4.create('Ext.panel.Panel', {
+            layout: 'fit',
+            renderTo: 'viewsGrid',
+            items: [tree],
+            height: 500
+        });
     });
 </script>
 
-<% if (!bean.isUpgrade()) { %>
-    <table width="80%">
-        <tr><td colspan="2"><h4>Summary View for File Directories</h4></td></tr>
-        <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
-        <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column for @files
-            indicates whether the directory is derived from the site-level file root (set above) or has been overridden. The 'Default' column for @pipeline
-            indicates whether the directory is the same as the @files directory or has been overridden. To view or
-            manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
-            @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
-        </td></tr>
-        <tr><td>For a complete list of all file paths referenced in the LabKey database, please use the <a href="<%=h(new ActionURL(FileListAction.class, ContainerManager.getRoot()))%>">Files List</a>.
-        </td></tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr><td><div id="viewsGrid" class="extContainer"></div></td></tr>
-    </table>
-<% } %>
+<table width="80%">
+    <tr><td colspan="2"><h4>Summary View for File Directories</h4></td></tr>
+    <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
+    <tr><td>File directories, named file sets and pipeline directories can be viewed on a project/folder basis. The 'Default' column for @files
+        indicates whether the directory is derived from the site-level file root (set above) or has been overridden. The 'Default' column for @pipeline
+        indicates whether the directory is the same as the @files directory or has been overridden. To view or
+        manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
+        @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
+    </td></tr>
+    <tr><td>For a complete list of all file paths referenced in the LabKey database, please use the <a href="<%=h(new ActionURL(FileListAction.class, ContainerManager.getRoot()))%>">Files List</a>.
+    </td></tr>
+    <tr><td>&nbsp;</td></tr>
+    <tr><td><div id="viewsGrid" class="extContainer"></div></td></tr>
+</table>
 
 

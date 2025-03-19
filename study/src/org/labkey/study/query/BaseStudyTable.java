@@ -58,6 +58,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -711,11 +712,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Object value = getDisplayColumn().getValue(ctx);
             if (value instanceof String s)
-                out.write(s);
+                oldWriter.write(s);
         }
     }
 

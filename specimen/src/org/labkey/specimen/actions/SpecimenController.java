@@ -145,6 +145,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.AmbiguousLocationException;
 import org.labkey.specimen.RequestEventType;
 import org.labkey.specimen.RequestedSpecimens;
@@ -3304,7 +3305,7 @@ public class SpecimenController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Map<String, Object> cols = ctx.getRow();
             SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(cols);
@@ -3314,14 +3315,14 @@ public class SpecimenController extends SpringActionController
             {
                 for (Attachment attachment : attachments)
                 {
-                    out.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
-                    out.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
-                    out.write(PageFlowUtil.filter(attachment.getName()));
-                    out.write("</a><br>");
+                    oldWriter.write("<a href=\"" + PageFlowUtil.filter(getDownloadURL(event, attachment.getName())) + "\">");
+                    oldWriter.write("<img style=\"padding-right:4pt;\" src=\"" + _request.getContextPath() + attachment.getFileIcon() + "\">");
+                    oldWriter.write(PageFlowUtil.filter(attachment.getName()));
+                    oldWriter.write("</a><br>");
                 }
             }
             else
-                out.write("&nbsp;");
+                oldWriter.write("&nbsp;");
         }
     }
 
@@ -3331,7 +3332,7 @@ public class SpecimenController extends SpringActionController
             private int i = 0;
 
             @Override
-            protected void renderTableRow(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException, IOException
+            protected void renderTableRow(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int rowIndex) throws SQLException
             {
                 // This is so we don't show rows that have no attachments
                 SpecimenRequestEvent event = ObjectFactory.Registry.getFactory(SpecimenRequestEvent.class).fromMap(ctx.getRow());

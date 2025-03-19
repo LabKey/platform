@@ -80,6 +80,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -748,20 +749,20 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             ExpData data = getData(ctx);
             if (data != null)
             {
                 if (data.isFileOnDisk())
                 {
-                    PageFlowUtil.link("View File").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(out);
-                    out.write("<br>");
-                    PageFlowUtil.link("Download").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(out);
+                    PageFlowUtil.link("View File").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(oldWriter);
+                    oldWriter.write("<br>");
+                    PageFlowUtil.link("Download").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(oldWriter);
                 }
                 else
                 {
-                    out.write("File not available");
+                    oldWriter.write("File not available");
                 }
             }
         }

@@ -70,6 +70,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.springframework.web.multipart.MultipartFile;
@@ -700,7 +701,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         // Issue 10481: convince ExcelColumn.setSimpleType() that we are actually a string.
         @Override
-        public Class<?> getDisplayValueClass()
+        public Class<String> getDisplayValueClass()
         {
             return String.class;
         }
@@ -722,9 +723,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
-            out.write(buildString(ctx, true));
+            oldWriter.write(buildString(ctx, true));
         }
 
         @Override
@@ -760,13 +761,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             Object rowId = getColumnInfo().getValue(ctx);
             if (rowId != null)
             {
                 ActionURL graphURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(ctx.getContainer(), ((Number)rowId).intValue());
-                out.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
+                oldWriter.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
             }
         }
     }

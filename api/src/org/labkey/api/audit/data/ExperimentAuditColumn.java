@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -103,22 +104,22 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     protected abstract String extractFromKey3(RenderContext ctx);
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Pair<ObjectType, ActionURL> value = getExpValue(ctx);
         if (value != null && value.second != null)
         {
-            out.write("<a href=\"" + value.second.getLocalURIString() + "\">" + PageFlowUtil.filter(value.first.getName()) + "</a>");
+            oldWriter.write("<a href=\"" + value.second.getLocalURIString() + "\">" + PageFlowUtil.filter(value.first.getName()) + "</a>");
             return;
         }
 
         if (_defaultName != null)
         {
             String extracted = extractFromKey3(ctx);
-            out.write(extracted != null ? PageFlowUtil.filter(extracted) : "&nbsp;");
+            oldWriter.write(extracted != null ? PageFlowUtil.filter(extracted) : "&nbsp;");
         }
         else
-            out.write("&nbsp;");
+            oldWriter.write("&nbsp;");
     }
 
 }

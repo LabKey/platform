@@ -26,7 +26,6 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -36,12 +35,12 @@ import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -118,14 +117,14 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
                 DataColumn dc = new DataColumn(colInfo)
                 {
                     @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
                     {
                         Object value = getValue(ctx);
                         Modes m = Modes.fromValue((Integer)value);
                         if(null != m)
-                            out.write(m.toString());
+                            oldWriter.write(m.toString());
                         else
-                            out.write(value.toString());
+                            oldWriter.write(value.toString());
                     }
                 };
 

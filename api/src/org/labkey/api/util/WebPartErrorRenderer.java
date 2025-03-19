@@ -20,7 +20,6 @@ import java.io.PrintWriter;
 
 class WebPartErrorRenderer extends ErrorRenderer
 {
-    private String _id;
 
     WebPartErrorRenderer(int status, String errorCode, String message, Throwable x, boolean isStartupFailure)
     {
@@ -30,8 +29,8 @@ class WebPartErrorRenderer extends ErrorRenderer
     @Override
     public void renderStart(PrintWriter out)
     {
-        _id = "errorDiv" + System.identityHashCode(this);
-        out.println("<div id='" + _id + "' style=\"height:200px; overflow:scroll;\">");
+        String id = "errorDiv" + System.identityHashCode(this);
+        out.println("<div id='" + id + "' style=\"height:200px; overflow:scroll;\">");
         if (null != getHeading())
         {
             out.println("<h3 style=\"color:red;\">" + getHeading() + "</h3>");

@@ -24,17 +24,14 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Map;
 
 /**
- * User: kevink
- * Date: 7/2/15
- *
  * Renders the wiki "Path" column as a set of '/' parts with links to the wiki
  * page for each part. Since '/' is a legal character in wiki names, we split
  * the "PathParts" column value using an unlikely value delimiter and use it
@@ -108,7 +105,7 @@ public class PathDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (!_hasPathPartsDisplayCol)
         {
@@ -119,14 +116,14 @@ public class PathDisplayColumn extends DataColumn
         String[] parts = getPathParts(ctx);
         if (parts == null)
         {
-            out.write("&nbsp;");
+            out.write(HtmlString.NBSP);
             return;
         }
 
         StringExpression s = compileExpression(ctx.getViewContext());
         if (s == null)
         {
-            out.write("&nbsp;");
+            out.write(HtmlString.NBSP);
             return;
         }
 
@@ -145,15 +142,11 @@ public class PathDisplayColumn extends DataColumn
                 String url = s.eval(newRow);
                 if (url != null)
                 {
-                    out.write("<a href='");
-                    out.write(PageFlowUtil.filter(url));
-                    out.write("'>");
-                    out.write(PageFlowUtil.filter(part));
-                    out.write("</a>");
+                    out.write(new Link.LinkBuilder(part).href(url).clearClasses());
                 }
                 else
                 {
-                    out.write(PageFlowUtil.filter(part));
+                    out.write(part);
                 }
             }
         }

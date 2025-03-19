@@ -22,6 +22,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -45,7 +46,7 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         Pair<Boolean, HtmlString> matchStatus;
 
@@ -58,13 +59,13 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
         HtmlString message = matchStatus.second;
         if (match)
         {
-            out.write("<i class=\"fa fa-check\"></i>");
-            PageFlowUtil.popupHelp(message, "Match").appendTo(out);
+            oldWriter.write("<i class=\"fa fa-check\"></i>");
+            PageFlowUtil.popupHelp(message, "Match").appendTo(oldWriter);
         }
         else
         {
-            out.write("<i class=\"fa fa-times\"></i>");
-            PageFlowUtil.popupHelp(message, "No match").appendTo(out);
+            oldWriter.write("<i class=\"fa fa-times\"></i>");
+            PageFlowUtil.popupHelp(message, "No match").appendTo(oldWriter);
         }
     }
 }

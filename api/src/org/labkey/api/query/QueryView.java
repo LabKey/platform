@@ -2315,7 +2315,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         // make sure table has been instantiated
         getTable();
         List<QueryException> errors = getParseErrors();
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             renderErrors(out, "Query '" + getQueryDef().getName() + "' has errors", errors);
             return;
@@ -2948,7 +2948,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         // Set the headers to allow the client to cache, but not proxies
         ResponseHelper.setPrivate(response);
 
-        HtmlWriter writer = new HtmlWriter();
+        HtmlExportWriter writer = new HtmlExportWriter();
         writer.write(results, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());

@@ -15,14 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.writer.HtmlWriter;
+
 import java.io.IOException;
 import java.io.Writer;
 
 /**
  * Renders a bound ColumnInfo as an HTML form input in a grid view.
- *
- * User: kevink
- * Date: 10/21/12
  */
 public class InputColumn extends DataColumn
 {
@@ -32,13 +31,13 @@ public class InputColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         renderInputHtml(ctx, out, getInputValue(ctx));
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         renderInputHtml(ctx, out, getInputValue(ctx));
     }

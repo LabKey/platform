@@ -75,10 +75,12 @@ import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -92,6 +94,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.HtmlWriter;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -99,8 +102,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -115,6 +116,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.FONT;
+import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtml;
 
@@ -898,9 +900,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
         {
-            out.write("<input type=\"text\" name=\"" + _inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");
+            out.write(new Input.InputBuilder<>().type("text").name(_inputName).value(value == null ? null : value.toString()));
         }
 
         @Override
@@ -1128,31 +1130,33 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
+        protected void _renderDataRegion(RenderContext ctx, HtmlWriter out)
         {
             // may want to just put this in a js file and include it in all the wizard pages
-            out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-            out.write("""
-                        function uploadWizard_showPopup(elem, txtTitle, txtMsg)
-                          {
-                            var win = new Ext.Window({
-                               title: txtTitle,
-                               border: false,
-                               constrain: true,
-                               html: txtMsg,
-                               closeAction:'close',
-                               autoScroll: true,
-                               modal: true,
-                               buttons: [{
-                                 text: 'Close',
-                                 id: 'btn_cancel',
-                                 handler: function(){win.close();}
-                               }]
-                            });
-                            win.show(elem);
-                          }
-                    """);
-            out.write("</script>\n");
+            String script ="""
+                    function uploadWizard_showPopup(elem, txtTitle, txtMsg)
+                    {
+                        var win = new Ext.Window({
+                            title: txtTitle,
+                            border: false,
+                            constrain: true,
+                            html: txtMsg,
+                            closeAction:'close',
+                            autoScroll: true,
+                            modal: true,
+                            buttons: [{
+                                text: 'Close',
+                                id: 'btn_cancel',
+                                handler: function(){win.close();}
+                            }]
+                        });
+                        win.show(elem);
+                    }
+                """;
+
+            SCRIPT(
+                JavaScriptFragment.unsafe(script)
+            ).appendTo(out);
 
             super._renderDataRegion(ctx, out);
         }
@@ -1178,7 +1182,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     list = errors.getGlobalErrors();
                 else
                     list = errors.getFieldErrors(paramName);
-                if (list == null || list.size() == 0)
+                if (list == null || list.isEmpty())
                     return HtmlString.EMPTY_STRING;
 
                 Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
@@ -1217,12 +1221,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else if (errors != null && "main".equals(paramName) && errors.getFieldError("transform") != null)
             {
                 return createHtml(
-                        DIV(
-                            FONT(cl("labkey-error"),
-                                DIV("Transform Script Error"),
-                                BR(),
-                                DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))),
-                                BR()));
+                    DIV(
+                        FONT(
+                            cl("labkey-error"),
+                            DIV("Transform Script Error"),
+                            BR(),
+                            DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))
+                        ),
+                        BR()
+                    )
+                );
 
             }
             else

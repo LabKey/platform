@@ -23,6 +23,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -148,10 +149,6 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             {
                 throw new RuntimeSQLException(x);
             }
-            catch (IOException x)
-            {
-                throw new RuntimeException(x);
-            }
         }
     }
 
@@ -189,32 +186,32 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         updateInnerContext(ctx);
 
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            out.write("<table>");
-            out.write("<table class='table-condensed labkey-data-region table-bordered'>");
-            out.write("<thead>");
-            out.write("<tr>");
+            oldWriter.write("<table>");
+            oldWriter.write("<table class='table-condensed labkey-data-region table-bordered'>");
+            oldWriter.write("<thead>");
+            oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
                 pair.second.renderGridHeaderCell(innerCtx, out);
             }
-            out.write("</tr>");
-            out.write("</thead>");
+            oldWriter.write("</tr>");
+            oldWriter.write("</thead>");
 
-            out.write("<tbody>");
-            out.write("<tr>");
+            oldWriter.write("<tbody>");
+            oldWriter.write("<tr>");
             for (var pair : innerCtxCols)
             {
                 pair.second.renderGridDataCell(innerCtx, out);
             }
-            out.write("</tr>");
-            out.write("</tbody>");
-            out.write("</table>");
+            oldWriter.write("</tr>");
+            oldWriter.write("</tbody>");
+            oldWriter.write("</table>");
         }
     }
 
@@ -282,7 +279,7 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer out, Object value)
+    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value)
     {
         // no-op
     }

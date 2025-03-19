@@ -24,7 +24,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +34,6 @@ import java.util.Map;
 /**
  * Constructs the right context for showing a NestedQueryView, including translating sorts and filters to operate
  * on the right columns (and in the right sequence for sorts).
- *
- * User: jeckels
- * Date: Apr 11, 2007
  */
 public class NestedRenderContext extends RenderContext
 {
@@ -143,7 +139,7 @@ public class NestedRenderContext extends RenderContext
     @NotNull
     @Override
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn,
-            Map<String, Object> parameters, boolean async) throws IOException
+            Map<String, Object> parameters, boolean async)
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
@@ -217,7 +213,7 @@ public class NestedRenderContext extends RenderContext
     }
 
     @Override
-    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException
     {
         if (_nestingOption != null)
         {

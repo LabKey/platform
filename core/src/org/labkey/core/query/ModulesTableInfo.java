@@ -34,9 +34,8 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 /**
@@ -263,7 +262,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
                 }
 
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     Object o = getValue(ctx);
 

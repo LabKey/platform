@@ -16,11 +16,16 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+
+import static org.labkey.api.util.DOM.TD;
 
 public class DisplayColumnGroup
 {
@@ -50,31 +55,35 @@ public class DisplayColumnGroup
         return _copyable;
     }
 
-    public void writeSameCheckboxCell(RenderContext ctx, Writer out) throws IOException
+    public void writeSameCheckboxCell(RenderContext ctx, HtmlWriter out)
     {
-        out.write("<td>");
-        if (isCopyable())
-        {
-            String id = getGroupFormFieldName(ctx) + "CheckBox";
-            out.write("<input type=checkbox name='" + id + "' id='" + id + "' />");
-            StringBuilder onChange = new StringBuilder("b = this.checked;");
-            for (int i = 1; i < getColumns().size(); i++)
-            {
-                DisplayColumn col = getColumns().get(i);
-                ColumnInfo colInfo = col.getColumnInfo();
-                if (colInfo != null)
-                {
-                    onChange.append("document.getElementsByName('")
-                        .append(col.getFormFieldName(ctx))
-                        .append("')[0].style.display = b ? 'none' : 'block';\n");
-                }
-            }
-            onChange.append(" if (b) { ")
-                .append(getGroupFormFieldName(ctx))
-                .append("Updated(); }");
-            HttpView.currentPageConfig().addHandler(id, "change", onChange.toString());
-        }
-        out.write("</td>");
+        TD(
+            isCopyable() ? (DOM.Renderable) ret -> {
+
+                String id = getGroupFormFieldName(ctx) + "CheckBox";
+                new InputBuilder<>().type("checkbox").name(id).id(id).appendTo(out);
+                StringBuilder onChange = new StringBuilder("b = this.checked;");
+
+                getColumns().forEach(col -> {
+                    ColumnInfo colInfo = col.getColumnInfo();
+                    if (colInfo != null)
+                    {
+                        onChange.append("document.getElementsByName('")
+                            .append(col.getFormFieldName(ctx))
+                            .append("')[0].style.display = b ? 'none' : 'block';\n");
+                    }
+                });
+
+                onChange.append(" if (b) { ")
+                    .append(getGroupFormFieldName(ctx))
+                    .append("Updated(); }");
+
+                HttpView.currentPageConfig().addHandler(id, "change", onChange.toString());
+
+                return ret;
+            } :
+            null
+        ).appendTo(out);
     }
 
     private String getGroupFormFieldName(RenderContext ctx)

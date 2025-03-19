@@ -38,6 +38,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
@@ -45,15 +46,8 @@ import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
 import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Apr 20, 2007
- * Time: 2:49:42 PM
- */
 public class SpecimenRequestQueryView extends BaseSpecimenQueryView
 {
     private NavTree[] _extraLinks;
@@ -97,7 +91,7 @@ public class SpecimenRequestQueryView extends BaseSpecimenQueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             StringBuilder content = new StringBuilder();
             // Use a div to set spacing around the buttons- otherwise they overlap the edges of their data grid cells:
