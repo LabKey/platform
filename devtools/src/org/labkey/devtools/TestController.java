@@ -17,11 +17,13 @@
 package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
@@ -178,6 +180,122 @@ public class TestController extends SpringActionController
         }
     }
 
+    private static Thread longRunningJob;
+
+    static class LongRunnable implements Runnable {
+        private final Logger logger;
+        private final int maxTime;
+        private final long stepTime;
+
+        LongRunnable(Logger logger, int maxTime, int stepTime)
+        {
+            this.logger = logger;
+            this.maxTime = maxTime;
+            this.stepTime = stepTime;
+        }
+
+        @Override
+        public void run() {
+            try {
+                int loops = 0;
+                int remaining = maxTime;
+                logger.info("Long runner starting...");
+                while (!Thread.currentThread().isInterrupted() && remaining > 0) {
+                    logger.debug("Long runner working... loop [{}], remaining [{}s]", loops, remaining/1000);
+                    Thread.sleep(stepTime); // Let the thread run for a while
+                    remaining -= stepTime;
+                }
+            } catch (InterruptedException e) {
+                // Thread was interrupted during sleep
+                logger.info("Long runner interrupted.");
+            }
+            logger.info("Long runner finished.");
+        }
+    }
+
+    public static class LongRunningJobForm
+    {
+        private int maxTimeMS;
+        private int stepTimeMS;
+
+        public void setMaxTimeMS(int maxTimeMS)
+        {
+            this.maxTimeMS = maxTimeMS;
+        }
+
+        public void setStepTimeMS(int stepTimeMS)
+        {
+            this.stepTimeMS = stepTimeMS;
+        }
+
+        public int getMaxTimeMS()
+        {
+            return maxTimeMS;
+        }
+
+        public int getStepTimeMS()
+        {
+            return stepTimeMS;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class CancelLongRunningAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public SimpleResponse<Void> execute(Object o, BindException errors) throws Exception
+        {
+            if (longRunningJob !=null && !longRunningJob.isInterrupted())
+            {
+                logger.info("Interrupting the long-running action");
+                longRunningJob.interrupt();
+                logger.info("Successfully interrupted the long-running action");
+
+                if (longRunningJob.isInterrupted())
+                    return new SimpleResponse<>(true);
+            }
+
+            throw errors;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class LongRunningAction extends ReadOnlyApiAction<LongRunningJobForm>
+    {
+        private void validateCommand(LongRunningJobForm form, Errors errors)
+        {
+            if (form.stepTimeMS <= 0)
+                errors.rejectValue("stepTimeMS", "Step time must be greater than zero");
+            if (form.stepTimeMS > form.maxTimeMS)
+                errors.rejectValue("stepTimeMS", "Step time must be less than or equal to Max Time.");
+            if (form.maxTimeMS <= 0)
+                errors.rejectValue("maxTimeMS", "Max time must be greater than zero");
+        }
+
+        @Override
+        public SimpleResponse<Void> execute(LongRunningJobForm form, BindException errors) throws Exception
+        {
+            validateCommand(form, errors);
+            if (errors.hasErrors())
+                throw errors;
+
+            synchronized (LongRunningAction.class)
+            {
+                LongRunnable lr = new LongRunnable(logger, form.getMaxTimeMS(), form.getStepTimeMS());
+                longRunningJob = new Thread(lr);
+                longRunningJob.start();
+                longRunningJob.join(); // Wait for the thread to finish
+                if (longRunningJob.isInterrupted())
+                    logger.info("Long running post interrupted.");
+                else
+                    logger.info("Long running post finished.");
+
+                longRunningJob = null;
+            }
+
+            return new SimpleResponse<>(true);
+        }
+    }
 
     @RequiresPermission(ReadPermission.class)
     public class SimpleFormAction extends FormViewAction<SimpleForm>
