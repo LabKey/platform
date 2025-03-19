@@ -291,7 +291,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                 try
                 {
                     // Wait in the hopes it will terminate gracefully
-                    p.waitFor(5, TimeUnit.SECONDS);
+                    p.waitFor(15, TimeUnit.SECONDS);
 
                     // Make sure it dies
                     if (p.isAlive())
