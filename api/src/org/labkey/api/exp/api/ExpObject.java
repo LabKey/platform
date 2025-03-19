@@ -63,6 +63,12 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     String getComment();
     /** Stored in ontology manager */
     void setComment(User user, String comment) throws ValidationException;
+    /** @param index only a suggestion as not all implementations handle indexing - primarily used to suppress duplicate indexing with a false value */
+    default void setComment(User user, String comment, boolean index) throws ValidationException
+
+    {
+        setComment(user, comment);
+    }
     
     User getCreatedBy();
     Date getCreated();

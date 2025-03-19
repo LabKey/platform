@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.wiki.FormattedHtml;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 
 import java.util.Collection;
 import java.util.Map;
@@ -28,7 +29,7 @@ public class MarkdownRenderer extends HtmlRenderer
 {
     public MarkdownRenderer(String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
-        super(false, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        super(SubstitutionMode.Ignore, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 
     @Override

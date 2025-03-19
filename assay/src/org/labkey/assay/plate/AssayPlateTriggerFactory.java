@@ -100,15 +100,26 @@ public class AssayPlateTriggerFactory implements TriggerFactory
             if (_replicateLsid.isEmpty() || errors.hasErrors())
                 return;
 
+            Map<String, String> aliasMap = new HashMap<>();
+            table.getColumns().forEach(col -> {
+                // include the name if different from the alias
+                if (!col.getName().equals(col.getAlias()))
+                    aliasMap.put(col.getAlias(), col.getName());
+            });
             var filter = new SimpleFilter(FieldKey.fromParts(AssayResultDomainKind.Column.ReplicateLsid.name()), _replicateLsid.keySet(), CompareType.IN);
 
             try (TableResultSet rs = new TableSelector(table, filter, null).getResultSet())
             {
                 var replicates = new HashMap<Lsid, List<Map<String, Object>>>();
-
                 while (rs.next())
                 {
                     var lsid = rs.getString(AssayResultDomainKind.Column.ReplicateLsid.name());
+                    Map<String, Object> row = rs.getRowMap();
+                    for (Map.Entry<String, String> entry : aliasMap.entrySet())
+                    {
+                        if (row.containsKey(entry.getKey()))
+                            row.put(entry.getValue(), row.get(entry.getKey()));
+                    }
                     replicates.computeIfAbsent(Lsid.parse(String.valueOf(lsid)), m -> new ArrayList<>()).add(rs.getRowMap());
                     _replicateLsid.remove(lsid);
                 }

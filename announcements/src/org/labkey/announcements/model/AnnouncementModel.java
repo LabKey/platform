@@ -39,6 +39,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -249,7 +250,7 @@ public class AnnouncementModel extends Entity implements Serializable
         if (null == attachPrefix)
             return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription);
         else
-            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription, false, attachPrefix, getAttachments());
+            return renderingService.getFormattedHtml(_rendererType, _body, sourceDescription, SubstitutionMode.Ignore, attachPrefix, getAttachments());
     }
 
     public String getStatus()

@@ -48,6 +48,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -249,11 +250,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         return (HttpServletRequest)getFieldValue(innerRequest, "request");
     }
 
-    public Map getAttributeMap() throws NoSuchFieldException, IllegalAccessException, InvocationTargetException, NoSuchMethodException
-    {
-        return (Map)getFieldValue(getInnermostRequest(), "attributes");
-    }
-
     // Uses reflection to access public or private fields by name.
     private Object getFieldValue(Object o, String fieldName) throws NoSuchFieldException, IllegalAccessException
     {
@@ -263,7 +259,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     }
 
     // Uses reflection to invoke public or private methods by name.
-    private Object invokeMethod(Object o, Class clazz, String methodName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    private Object invokeMethod(Object o, Class<?> clazz, String methodName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         Method method = clazz.getDeclaredMethod(methodName);
         method.setAccessible(true);
@@ -274,7 +270,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
     private static class SessionWrapper implements HttpSession
     {
-        HttpSession _real = null;
+        HttpSession _real;
         final long _creationTime = HeartBeat.currentTimeMillis();
         long _accessedTime = _creationTime;
         boolean _valid = true;
@@ -337,7 +333,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         public void setAttribute(String s, Object o)
         {
             if (_log.isDebugEnabled())
-                _log.debug("Session.setAttribute(" + s + ", " + String.valueOf(o) + ")");
+                _log.debug("Session.setAttribute(" + s + ", " + o + ")");
             if (null==_real)
                 _attributes.put(s, o);
             else
@@ -398,7 +394,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
      * start expiring sessions that appear inactive.  Active sessions get handled by tomcat.
      */
     static final int NURSERY_SIZE = AppProps.getInstance().isDevMode() ? 100 : 1000;
-    static final Map<String,GuestSessionMarker> _nursery = Collections.synchronizedMap(new LinkedHashMap<String, GuestSessionMarker>(2000, 0.5f, true)
+    static final Map<String,GuestSessionMarker> _nursery = Collections.synchronizedMap(new LinkedHashMap<>(2000, 0.5f, true)
     {
         /* returning true here means this session no longer needs to be tracked in the guest nursery
          * This may be because
@@ -473,12 +469,12 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     private static void _logGuestSession(String ip, String msg)
     {
         /* try to not flood the log with repeat messages if we have a badly behaved client (e.g. not remembering JSESSIONID) */
-        ip = StringUtils.defaultString(ip,"unknown");
+        ip = Objects.toString(ip,"unknown");
         String prevMessage = logMessages.get(ip);
         if (StringUtils.equals(prevMessage, msg))
             return;
         logMessages.put(ip, msg);
-        _log.warn(msg);
+        _log.debug(msg);
     }
 
     /*
@@ -586,11 +582,11 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         @Override
         public void close()
         {
-            checkClosed();
+            ensureOpen();
             _closed = true;
         }
 
-        private boolean checkClosed()
+        private void ensureOpen()
         {
             if (_closed)
             {
@@ -599,83 +595,82 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                 else
                     throw new IllegalStateException("Request has been closed");
             }
-            return true;
         }
 
         @Override
         public void setAttribute(String name, Object o)
         {
-            checkClosed();
+            ensureOpen();
             super.setAttribute(name, o);
         }
 
         @Override
         public HttpSession getSession(boolean create)
         {
-            checkClosed();
+            ensureOpen();
             return super.getSession(create);
         }
 
         @Override
         public String getRequestURI()
         {
-            checkClosed();
+            ensureOpen();
             return super.getRequestURI();
         }
 
         @Override
         public StringBuffer getRequestURL()
         {
-            checkClosed();
+            ensureOpen();
             return super.getRequestURL();
         }
 
         @Override
         public Object getAttribute(String name)
         {
-            checkClosed();
+            ensureOpen();
             return super.getAttribute(name);
         }
 
         @Override
         public String getParameter(String name)
         {
-            checkClosed();
+            ensureOpen();
             return super.getParameter(name);
         }
 
         @Override
         public Map<String, String[]> getParameterMap()
         {
-            checkClosed();
+            ensureOpen();
             return super.getParameterMap();
         }
 
         @Override
         public Enumeration<String> getParameterNames()
         {
-            checkClosed();
+            ensureOpen();
             return super.getParameterNames();
         }
 
         @Override
         public String[] getParameterValues(String name)
         {
-            checkClosed();
+            ensureOpen();
             return super.getParameterValues(name);
         }
 
         @Override
         public void removeAttribute(String name)
         {
-            checkClosed();
+            ensureOpen();
             super.removeAttribute(name);
         }
 
         @Override
         public RequestDispatcher getRequestDispatcher(String path)
         {
-            checkClosed();
+            ensureOpen();
             return super.getRequestDispatcher(path);
         }
     }
