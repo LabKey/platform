@@ -44,7 +44,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.HtmlWriter;
+import org.labkey.api.data.HtmlExportWriter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
