@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -43,6 +44,7 @@
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
     boolean canCreateSharedDatasets = false;
+    boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
     if (!c.isProject() && null != project && project != c)
     {
@@ -212,13 +214,20 @@
             </label>
         </td>
     </tr>
+    <%
+        if (isAdvancedImportOptionEnabled)
+        {
+    %>
+        <tr>
+            <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
+                <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
+            </td>
+        </tr>
+    <%
+        }
+    %>
     <tr>
-        <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
-            <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
-        </td>
-    </tr>
-    <tr>
-        <td>
+        <td style="padding-top: 5px;">
             <%= button(action + " " + noun).submit(true) %>
         </td>
     </tr>

@@ -27,12 +27,33 @@ Ext4.define('LABKEY.import.OptionsPanel', {
 
     initComponent: function()
     {
-        this.items = [
-            this.getMainFormView(),
-            this.getSubmitButton()
-        ];
+        if (this.showAdvancedImportOptions) {
+            this.items = [
+                this.getMainFormView(),
+                this.getSubmitButton()
+            ];
+        }
+        else {
+            this.items = [
+                this.getDeprecatedMessageView()
+            ];
+        }
 
         this.callParent();
+    },
+
+    getDeprecatedMessageView: function()
+    {
+        return Ext4.create('Ext.view.View', {
+            tpl: new Ext4.XTemplate(
+                    '<div style="font-size:14px; font-weight:bold; padding-bottom:5px;padding-top: 30px;">{header}</div>',
+                    '<div style="font-size:14px; color:#555;">{description}</div>'
+            ),
+            data: {
+                header: 'Advanced Import Options',
+                description: "This feature is marked as deprecated. To restore 'Advanced Import Options' during Folder import, visit the Deprecated Features page in the Admin Console.",
+            },
+        });
     },
 
     getMainFormView : function()
@@ -94,77 +115,33 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         if (!this.optionsStore)
         {
             var data = [{
-                header: 'Validate Queries',
-                description: 'By default, queries will be validated upon import of a folder archive and any failure '
-                    + 'to validate will cause the import job to raise an error. To suppress this validation step, uncheck '
-                    + 'the box below.',
-                name: 'validateQueries',
-                initChecked: this.isValidateQueries ? "checked": "",
-                isChecked: this.isValidateQueries,
-                label: 'Validate all queries after import',
-                optionsForm: null
-            }];
-
-            if (this.showAdvancedImportOptions) {
-                data.push({
-                    header: 'Advanced Import Options',
-                    description: 'By default, all objects and settings from the import archive will be used. If you would '
-                            + 'like to select a subset of those import objects, check the box below to see the full list of '
-                            + 'folder archive objects to be imported.',
-                    name: 'specificImportOptions',
-                    initChecked: this.isSpecificImportOptions ? "checked" : "",
-                    isChecked: this.isSpecificImportOptions,
-                    label: 'Select specific objects to import',
-                    optionsForm: this.getSpecificImportOptionsForm
-                });
-                data.push({
-                    header: null,
-                    description: 'By default, the imported archive is only applied to the current folder. If you would like to '
-                            + 'apply this imported archive to multiple folders, check the box below to see additional folders for this project. '
-                            + 'The import archive will be applied to all selected folders.',
-                    name: 'applyToMultipleFolders',
-                    initChecked: this.isApplyToMultipleFolders ? "checked" : "",
-                    isChecked: this.isApplyToMultipleFolders,
-                    hidden: this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
-                    label: 'Apply to multiple folders',
-                    optionsForm: this.getApplyToMultipleFoldersForm
-                })
-            }
-
-            if (this.showFailForUndefinedVisits)
-            {
-                data.splice(1, 0, {
-                    header: 'Study Import Options',
-                    description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
-                    + 'If, instead, you would like for the import of the folder archive to fail when it encounters a visit that is not already defined in the study '
-                    + 'or as part of the incoming visit map, check the box below.',
-                    name: 'failForUndefinedVisits',
-                    initChecked: this.isFailForUndefinedVisits ? "checked": "",
-                    isChecked: this.isFailForUndefinedVisits,
-                    label: 'Fail import for undefined visits',
-                    optionsForm: null
-                });
-            }
-
-            if (this.canCreateSharedDatasets)
-            {
-                data.splice(0, 0, {
-                    header: 'Shared Datasets',
-                    description: 'By default, datasets will be created in this container. For Dataspace projects, shared datasets are '
-                        + 'created at the project level so that they can be used by each of the study folders in the project.',
-                    name: 'createSharedDatasets',
-                    initChecked: this.isCreateSharedDatasets ? "checked": "",
-                    isChecked: this.isCreateSharedDatasets,
-                    label: 'Create shared datasets',
-                    optionsForm: null
-                });
-            }
-
-            this.optionsStore = Ext4.create('Ext.data.Store', {
-                fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'hidden', 'optionsForm'],
-                data: data
-            });
+                header: 'Advanced Import Options',
+                description: 'By default, all objects and settings from the import archive will be used. If you would '
+                        + 'like to select a subset of those import objects, check the box below to see the full list of '
+                        + 'folder archive objects to be imported.',
+                name: 'specificImportOptions',
+                initChecked: this.isSpecificImportOptions ? "checked" : "",
+                isChecked: this.isSpecificImportOptions,
+                label: 'Select specific objects to import',
+                optionsForm: this.getSpecificImportOptionsForm
+            },{
+                header: null,
+                description: 'By default, the imported archive is only applied to the current folder. If you would like to '
+                        + 'apply this imported archive to multiple folders, check the box below to see additional folders for this project. '
+                        + 'The import archive will be applied to all selected folders.',
+                name: 'applyToMultipleFolders',
+                initChecked: this.isApplyToMultipleFolders ? "checked" : "",
+                isChecked: this.isApplyToMultipleFolders,
+                hidden: this.isCloudRoot, // Remove Cloud flag as part of fix Issue #43835
+                label: 'Apply to multiple folders',
+                optionsForm: this.getApplyToMultipleFoldersForm
+            }]
         }
+
+        this.optionsStore = Ext4.create('Ext.data.Store', {
+            fields: ['header', 'description', 'name', 'initChecked', 'isChecked', 'label', 'hidden', 'optionsForm'],
+            data: data
+        });
 
         return this.optionsStore;
     },
@@ -220,43 +197,37 @@ Ext4.define('LABKEY.import.OptionsPanel', {
 
     getSubmitButton : function()
     {
-        if (!this.submitButton)
-        {
-            this.submitButton = Ext4.create('Ext.button.Button', {
-                text: 'Start Import',
-                cls: 'import-options-form-btn',
-                scope: this,
-                handler: function()
-                {
-                    // call beforeSubmit for each optionsForm.
-                    // if a section wants to display a confirmation message, gather those and ask if the user wants to proceed
-                    var confirmMsgs = [];
-                    Ext4.each(this.getOptionsStore().getRange(), function(record)
-                    {
-                        var optionsForm = record.get('optionsForm') != null ? record.get('optionsForm').call(this) : null;
-                        if (optionsForm != null)
-                        {
-                            var msg = optionsForm.beforeSubmit();
-                            if (msg)
-                                confirmMsgs.push(msg);
-                        }
-                    }, this);
+        if (this.showAdvancedImportOptions) {
+            if (!this.submitButton) {
+                this.submitButton = Ext4.create('Ext.button.Button', {
+                    text: 'Start Import',
+                    cls: 'import-options-form-btn',
+                    scope: this,
+                    handler: function () {
+                        // call beforeSubmit for each optionsForm.
+                        // if a section wants to display a confirmation message, gather those and ask if the user wants to proceed
+                        var confirmMsgs = [];
+                        Ext4.each(this.getOptionsStore().getRange(), function (record) {
+                            var optionsForm = record.get('optionsForm') != null ? record.get('optionsForm').call(this) : null;
+                            if (optionsForm != null) {
+                                var msg = optionsForm.beforeSubmit();
+                                if (msg)
+                                    confirmMsgs.push(msg);
+                            }
+                        }, this);
 
-                    if (confirmMsgs.length > 0)
-                    {
-                        confirmMsgs.push("<br/>Would you like to proceed?");
-                        Ext4.Msg.confirm("Confirmation", confirmMsgs.join('<br/>'), function(btnId)
-                        {
-                            if (btnId == 'yes')
-                                document.getElementById('pipelineImportForm').submit();
-                        });
+                        if (confirmMsgs.length > 0) {
+                            confirmMsgs.push("<br/>Would you like to proceed?");
+                            Ext4.Msg.confirm("Confirmation", confirmMsgs.join('<br/>'), function (btnId) {
+                                if (btnId == 'yes')
+                                    document.getElementById('pipelineImportForm').submit();
+                            });
+                        } else {
+                            document.getElementById('pipelineImportForm').submit();
+                        }
                     }
-                    else
-                    {
-                        document.getElementById('pipelineImportForm').submit();
-                    }
-                }
-            })
+                })
+            }
         }
 
         return this.submitButton;
@@ -322,19 +293,19 @@ Ext4.define('LABKEY.import.SpecificImportOptions', {
         this.callParent();
     },
 
-    toggleState : function(checked)
-    {
-        this.setVisible(checked);
+    toggleState : function(checked) {
+        if (this.showAdvancedImportOptions) {
+            this.setVisible(checked);
 
-        // set all folder import type checkboxes to match this checked state
-        Ext4.each(this.getAllVisibleInputBoxes(), function(box)
-        {
-            var cb = this.getInputFromBox(box);
+            // set all folder import type checkboxes to match this checked state
+            Ext4.each(this.getAllVisibleInputBoxes(), function (box) {
+                var cb = this.getInputFromBox(box);
 
-            // don't update checked state of the disabled checkbox inputs
-            if (!cb.disabled)
-                cb.checked = checked;
-        }, this);
+                // don't update checked state of the disabled checkbox inputs
+                if (!cb.disabled)
+                    cb.checked = checked;
+            }, this);
+        }
     },
 
     getAllVisibleInputBoxes : function()
