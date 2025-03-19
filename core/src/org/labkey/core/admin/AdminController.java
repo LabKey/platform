@@ -10518,7 +10518,7 @@ public class AdminController extends SpringActionController
     // UNDONE: Throttle by IP to avoid DOS from buggy clients.
     @Marshal(Marshaller.Jackson)
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresNoPermission
+    @RequiresLogin // Issue 52520: Prevent bots from submitting reports
     @IgnoresForbiddenProjectCheck // Skip the "forbidden project" check since it disallows root
     public static class LogClientExceptionAction extends MutatingApiAction<ExceptionForm>
     {

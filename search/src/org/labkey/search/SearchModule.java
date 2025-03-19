@@ -69,11 +69,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class SearchModule extends DefaultModule
 {
     private static final Logger LOG = LogHelper.getLogger(SearchModule.class, "Search module startup issues");
+    public static final String NAME = "Search";
 
     @Override
     public String getName()
     {
-        return "Search";
+        return NAME;
     }
 
     @Override

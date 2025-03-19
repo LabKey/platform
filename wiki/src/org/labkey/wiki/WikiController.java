@@ -88,6 +88,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.wiki.DiffMatchPatch.Diff;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
@@ -2718,7 +2719,7 @@ public class WikiController extends SpringActionController
             for (WikiTree tree : trees)
             {
                 Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
-                FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
+                FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion(), SubstitutionMode.Substitute);
 
                 Set<String> attachmentNames = wiki.getAttachments()
                     .stream()

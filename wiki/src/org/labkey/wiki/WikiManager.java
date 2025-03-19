@@ -69,6 +69,7 @@ import org.labkey.api.wiki.WikiChangeListener;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiRenderingService.SubstitutionMode;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -94,35 +95,29 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-/**
- * User: mbellew
- * Date: Mar 10, 2005
- * Time: 1:27:36 PM
- */
 public class WikiManager implements WikiService
 {
+    public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
+
     private static final Logger LOG = LogManager.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
+    private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
 
-    public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
-
-    public static WikiManager get()
-    {
-        return _instance;
-    }
-
-    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
+    private static List<WikiPartFactory> _wikiPartFactories;
 
     /* service/schema dependencies */
     private final CommSchema comm = CommSchema.getInstance();
     private final CoreSchema core = CoreSchema.getInstance();
 
-    private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
-    private static List<WikiPartFactory> _wikiPartFactories;
-
     private WikiManager()
     {
         LOG.debug("WikiManager instantiated");
+    }
+
+    public static WikiManager get()
+    {
+        return _instance;
     }
 
     @Override
@@ -507,7 +502,7 @@ public class WikiManager implements WikiService
         WikiCache.uncache(c);
     }
 
-    public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion)
+    public FormattedHtml formatWiki(Container c, Wiki wiki, WikiVersion wikiversion, SubstitutionMode substitutionMode)
     {
         String hrefPrefix = wiki.getWikiURL(WikiController.PageAction.class, "").toString();
         String attachPrefix = null;
@@ -519,7 +514,7 @@ public class WikiManager implements WikiService
         Map<String, String> nameTitleMap = WikiSelectManager.getNameAndAliasTitleMap(c);
 
         //get formatter specified for this version
-        WikiRenderer w = wikiversion.getRenderer(hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
+        WikiRenderer w = wikiversion.getRenderer(substitutionMode, hrefPrefix, attachPrefix, nameTitleMap, wiki.getAttachments(), "Wiki '" + wiki.getName() + "' version " + wikiversion.getVersion() + " in " + wiki.getContainerPath());
 
         return w.format(wikiversion.getBody());
     }

@@ -296,7 +296,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             dps.put(dp.getPropertyURI(), dp);
         }
 
-        ValidatorContext validatorCache = new ValidatorContext(_list.getContainer(), user);
+        ValidatorContext validatorCache = new ValidatorContext(container, user);
 
         ListItm itm = new ListItm();
         itm.setEntityId((String) oldRow.get(ID));
