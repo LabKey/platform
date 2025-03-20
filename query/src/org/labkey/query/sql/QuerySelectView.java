@@ -260,11 +260,12 @@ public class QuerySelectView extends AbstractQueryRelation
         else
         {
             CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<>();
+            Set<FieldKey> fks = allColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
             ColumnInfo prev;
             for (ColumnInfo column : extraSelectDataLoggingColumns)
             {
-                assert !allColumns.contains(column);
-                allColumns.add(column);
+                if (!fks.contains(column.getFieldKey()))
+                    allColumns.add(column);
             }
             for (ColumnInfo column : allColumns)
             {
