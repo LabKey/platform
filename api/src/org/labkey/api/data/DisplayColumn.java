@@ -1219,7 +1219,7 @@ public abstract class DisplayColumn extends RenderColumn
         ).appendTo(out);
     }
 
-    public void renderDetailsCell(RenderContext ctx, HtmlWriter out)
+    public final void renderDetailsCell(RenderContext ctx, HtmlWriter out)
     {
         TD(
             getInputAttributes(),
