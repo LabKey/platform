@@ -68,6 +68,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.vfs.FileLike;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -237,7 +238,7 @@ public abstract class ScriptReport extends AbstractReport
         }
     }
 
-
+    @Deprecated
     public static File getTempRoot(ReportDescriptor descriptor)
     {
         File tempRoot;
@@ -271,12 +272,50 @@ public abstract class ScriptReport extends AbstractReport
     }
 
     @NotNull
+    @Deprecated
     public static File getDefaultTempRoot()
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         return new File(tempDir, REPORT_DIR);
     }
 
+    public static FileLike getTempRootFileLike(ReportDescriptor descriptor)
+    {
+        FileLike tempRoot;
+        boolean isPipeline = BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground));
+
+        try
+        {
+            if (isPipeline && descriptor.getContainerId() != null)
+            {
+                Container c = ContainerManager.getForId(descriptor.getContainerId());
+                PipeRoot root = PipelineService.get().findPipelineRoot(c);
+                tempRoot = root.getRootFileLike().resolveChild(REPORT_DIR);
+
+                if (!tempRoot.exists())
+                    FileUtil.mkdirs(tempRoot);
+            }
+            else
+            {
+                tempRoot = getDefaultTempRootFileLike();
+
+                if (!tempRoot.exists())
+                    FileUtil.mkdirs(tempRoot);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error setting up temp directory", e);
+        }
+
+        return tempRoot;
+    }
+
+    @NotNull
+    public static FileLike getDefaultTempRootFileLike()
+    {
+        return FileUtil.getTempDirectoryFileLike().resolveChild(REPORT_DIR);
+    }
 
     public abstract boolean supportsPipeline();
 

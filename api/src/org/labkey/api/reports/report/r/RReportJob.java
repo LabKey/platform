@@ -41,6 +41,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.Serializable;
@@ -100,8 +102,8 @@ public class RReportJob extends PipelineJob implements Serializable
         if (report != null)
         {
             _jobIdentifier.set(getJobGUID());
-            File logFile = new File(report.getReportDir(executingContainerId), LOG_FILE_NAME);
-            setLogFile(logFile);
+            FileLike logFile = report.getReportDirFileLike(executingContainerId).resolveChild(LOG_FILE_NAME);
+            setLogFile(logFile.toNioPathForWrite());
         }
     }
 
@@ -269,7 +271,8 @@ public class RReportJob extends PipelineJob implements Serializable
 
         protected File inputFile(RReport report, @NotNull ViewContext context) throws Exception
         {
-            return new File(report.getReportDir(context.getContainer().getId()), RReport.DATA_INPUT);
+            FileLike inputFile = report.getReportDirFileLike(context.getContainer().getId()).resolveChild(RReport.DATA_INPUT);
+            return FileSystemLike.toFile(inputFile);
         }
 
         protected void processOutputs(RReport report, List<ParamReplacement> outputSubst) throws Exception
@@ -277,7 +280,8 @@ public class RReportJob extends PipelineJob implements Serializable
             if (outputSubst.size() > 0)
             {
                 // write the output substitution map to disk so we can render the view later
-                File reportDir = report.getReportDir(getJob().getContainerId());
+                FileLike reportDirFileLike = report.getReportDirFileLike(getJob().getContainerId());
+                File reportDir = FileSystemLike.toFile(reportDirFileLike);
                 File substitutionMap;
 
                 if (reportDir.getName().equals(getJobIdentifier()))
