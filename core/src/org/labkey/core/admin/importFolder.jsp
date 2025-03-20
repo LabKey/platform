@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -107,44 +108,6 @@
     .lk-import-folder label {
         font-weight: normal;
     }
-    span.labkey-help-pop-up {
-      cursor: help;
-      font-weight: bold;
-      font-size: xx-small;
-      text-decoration: none;
-      position: absolute;
-      color: #116596;
-    }
-
-    .tooltip-text {
-      visibility: hidden;
-      opacity: 0;
-      width: 300px;
-      color: black;
-      background-color: #fff;
-      text-align: left;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      position: absolute;
-      bottom: 120%;
-      font-size: 12px;
-      font-family: Roboto,Arial,Helvetica,sans-serif;
-      white-space: normal;
-      word-wrap: break-word;
-      line-height: 1.4;
-      z-index: 10;
-      transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-      box-sizing: border-box;
-      display: inline-block;
-    }
-
-    /* Show tooltip when hovering over the ? */
-    .labkey-help-pop-up:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-
 </style>
 <labkey:panel title="Import Folder Archive">
 <labkey:form action="" name="import" enctype="multipart/form-data" method="post">
@@ -180,12 +143,10 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true"> Create shared datasets
-            <span class="labkey-help-pop-up">?
-                    <span class="tooltip-text">
-                        By default, datasets will be created in this container. For Dataspace projects, shared datasets are created at the project level so that they can be used by each of the study folders in the project.
-                    </span>
-                </span>
+            <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true">
+                Create shared datasets <%=helpPopup("Create Shared Datasets", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\"> By default, datasets " +
+                        "will be created in this container. For Dataspace projects, shared datasets are created at the project level so that they " +
+                        "can be used by each of the study folders in the project.</span>")) %>
             </label>
         </td>
     </tr>
@@ -194,23 +155,20 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" data-title="test" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true"> Validate all queries after <%=h(action.toLowerCase())%>
-                <span class="labkey-help-pop-up">?
-                    <span class="tooltip-text">
-                        By default, queries will be validated upon import of a folder archive and any failure to validate will cause the import job to raise an error. To suppress this validation step, uncheck this box.
-                    </span>
-                </span>
+            <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true">
+                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup("Validate all queries", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\">By default, queries will be validated upon import of a " +
+                        "folder archive and any failure to validate will cause the import job to raise an error. To suppress this validation step, " +
+                        "uncheck this box.</span>")) %>
             </label>
         </td>
     </tr>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true"> Fail import for undefined visits
-                <span class="labkey-help-pop-up">?
-                    <span class="tooltip-text">
-                        By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. If, instead, you would like for the import of the folder archive to fail when it encounters a visit that is not already defined in the study or as part of the incoming visit map, check this box.
-                    </span>
-                </span>
+            <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true">
+                Fail import for undefined visits <%= helpPopup("Fail import for undefined visits", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\">By default, new visit rows will be created " +
+                        "in the study during import for any dataset or specimen rows which have a new, undefined visit. If, instead, " +
+                        "you would like for the import of the folder archive to fail when it encounters a visit that is not already " +
+                        "defined in the study or as part of the incoming visit map, check this box.</span>")) %>
             </label>
         </td>
     </tr>
