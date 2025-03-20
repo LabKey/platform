@@ -239,7 +239,6 @@ public class QuerySelectView extends AbstractQueryRelation
                 columnMap.put(c.getFieldKey(), c);
         }
 
-        boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT ");   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
         String strComma = "\n";
@@ -262,6 +261,11 @@ public class QuerySelectView extends AbstractQueryRelation
         {
             CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<>();
             ColumnInfo prev;
+            for (ColumnInfo column : extraSelectDataLoggingColumns)
+            {
+                assert !allColumns.contains(column);
+                allColumns.add(column);
+            }
             for (ColumnInfo column : allColumns)
             {
                 if (null != (prev = aliases.put(column.getAlias(), column)))
@@ -279,9 +283,9 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
-        if (requiresExtraColumns || distinct)
+        if (distinct)
         {
-            outerSelect = distinct ?   new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
+            outerSelect = new SQLFragment("SELECT DISTINCT ");
             strComma = "";
 
             for (ColumnInfo column : selectColumns)
@@ -291,27 +295,13 @@ public class QuerySelectView extends AbstractQueryRelation
                 strComma = ", ";
             }
 
-            // NOTE: I think extraSelectDataLoggingColumns won't contain columns that were added by ensureRequiredColumns()
-            // It is safer to recheck the entire list of columns in queryLogging.getDataLoggingColumns()
-            if (distinct)
+            if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
             {
-                if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+                Set<FieldKey> select = selectColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+                for (var required : queryLogging.getDataLoggingColumns())
                 {
-                    Set<FieldKey> select = selectColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
-                    for (var required : queryLogging.getDataLoggingColumns())
-                    {
-                        if (!select.contains(required.getFieldKey()))
-                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
-                    }
-                }
-            }
-            else
-            {
-                for (ColumnInfo column : extraSelectDataLoggingColumns)
-                {
-                    outerSelect.append(strComma);
-                    outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                    strComma = ", ";
+                    if (!select.contains(required.getFieldKey()))
+                        queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
                 }
             }
         }
