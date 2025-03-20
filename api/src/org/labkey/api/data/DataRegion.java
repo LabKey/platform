@@ -1268,11 +1268,9 @@ public class DataRegion extends DisplayElement
 
     protected HtmlWriter renderCenterContent(RenderContext ctx, HtmlWriter out, boolean showRecordSelectors, List<DisplayColumn> renderers, int colCount)
     {
-        // For now, add lk-region-name AND data-region-name attributes for test locators. TODO: Migrate to "data-*" only.
         TABLE(
             cl("table-condensed labkey-data-region").cl(isShowBorders(), "table-bordered").
             data("region-name", getName()).
-            lk("region-name", getName()). // TODO: Remove this after all tests check for the "data-" attribute instead of "lk-"
             id(getDomId()),
             (Renderable) ret -> renderTableContent(ctx, out, showRecordSelectors, renderers, colCount)
         ).appendTo(out);
@@ -1766,12 +1764,11 @@ public class DataRegion extends DisplayElement
         String name = getName();
         if (name != null)
         {
-            // For now, add lk-region-form AND data-region-from attributes for test locators. TODO: Migrate to "data-*" only.
-            attributes.add(AttributeValue.of("lk-region-form", name));
-            attributes.add(AttributeValue.of("data-region-form", name));
+            // Add attribute used by test locators
+            attributes.add(AttributeValue.data("region-form", name));
         }
 
-        attributes.add(AttributeValue.of("class", "form-horizontal" + (mode == MODE_DETAILS ? " form-mode-details" : "")));
+        attributes.add(AttributeValue.cl("form-horizontal" + (mode == MODE_DETAILS ? " form-mode-details" : "")));
 
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)

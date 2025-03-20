@@ -504,16 +504,6 @@ public class DOM
             return this;
         }
 
-        // TODO: Remove after "lk-" attributes are migrated to "data-"
-        @Deprecated
-        public _Attributes lk(String lkKey, Object value)
-        {
-            if (null == expandos)
-                expandos = new ArrayList<>();
-            expandos.add(new Pair<>("lk-" + lkKey, value));
-            return this;
-        }
-
         public _Attributes cl(String...names)
         {
             if (null != names)
@@ -605,11 +595,6 @@ public class DOM
                     throw new IllegalStateException("expected Attribute or String");
                 if (sk.startsWith("data-"))
                     ret.data(sk.substring("data-".length()), v);
-                // Temporarily allow arbitrary "lk-" attributes. TODO: Switch all to "data-", however, there are MANY
-                // tests looking for "lk-*", so the approach is for the product to add both "data-" and "lk-" to keep
-                // tests passing for now but migrate them to check "data-"
-                else if (sk.startsWith("lk-"))
-                    ret.lk(sk.substring("lk-".length()), v);
                 else
                     ret.at(Attribute.valueOf(sk), v);
             }
@@ -620,9 +605,8 @@ public class DOM
     /* copy attributes, useful for extended/custom elements */
     public static _Attributes at(Attributes attrsIn)
     {
-        if (!(attrsIn instanceof _Attributes))
+        if (!(attrsIn instanceof _Attributes in))
             throw new UnsupportedOperationException();
-        _Attributes in = (_Attributes)attrsIn;
         _Attributes copy = new _Attributes();
         copy.attrs.addAll(in.attrs);
         copy.classes.addAll(in.classes);
