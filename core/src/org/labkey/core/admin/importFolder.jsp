@@ -47,6 +47,22 @@
     boolean canCreateSharedDatasets = false;
     boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
+    String sharedDatasetsHelpText = h("By default, datasets will be created in this container. For Dataspace projects, shared " +
+            "datasets are created at the project level so that they can be used by each of the study folders in the project.") + "";
+    StringBuilder sharedDatasetsTooltipStrBldr = new StringBuilder();
+    sharedDatasetsTooltipStrBldr.append("<span style=\"display: inline-block;width:300px;\">").append(sharedDatasetsHelpText).append("</span>");
+
+    String validateQueriesHelpText = h("By default, queries will be validated upon import of a folder archive and any failure to validate will " +
+            "cause the import job to raise an error. To suppress this validation step, uncheck this box") + "";
+    StringBuilder validateQueriesTooltipStrBldr = new StringBuilder();
+    validateQueriesTooltipStrBldr.append("<span style=\"display: inline-block;width:300px;\">").append(validateQueriesHelpText).append("</span>");
+
+    String failForUndefinedVisitsHelpText = h("By default, new visit rows will be created in the study during import for any dataset or specimen rows " +
+            "which have a new, undefined visit. If, instead, you would like for the import of the folder archive to fail when it encounters a visit that " +
+            "is not already defined in the study or as part of the incoming visit map, check this box.") + "";
+    StringBuilder failForUndefinedVisitsTooltipStrBldr = new StringBuilder();
+    failForUndefinedVisitsTooltipStrBldr.append("<span style=\"display: inline-block;width:300px;\">").append(failForUndefinedVisitsHelpText).append("</span>");
+
     if (!c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
@@ -144,9 +160,7 @@
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true">
-                Create shared datasets <%=helpPopup("Create Shared Datasets", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\"> By default, datasets " +
-                        "will be created in this container. For Dataspace projects, shared datasets are created at the project level so that they " +
-                        "can be used by each of the study folders in the project.</span>")) %>
+                Create shared datasets <%=helpPopup("Create Shared Datasets", HtmlString.unsafe(sharedDatasetsTooltipStrBldr.toString())) %>
             </label>
         </td>
     </tr>
@@ -156,19 +170,14 @@
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true">
-                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup("Validate all queries", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\">By default, queries will be validated upon import of a " +
-                        "folder archive and any failure to validate will cause the import job to raise an error. To suppress this validation step, " +
-                        "uncheck this box.</span>")) %>
+                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup("Validate all queries", HtmlString.unsafe(validateQueriesTooltipStrBldr.toString())) %>
             </label>
         </td>
     </tr>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true">
-                Fail import for undefined visits <%= helpPopup("Fail import for undefined visits", HtmlString.unsafe("<span style=\"display: inline-block;width:300px;\">By default, new visit rows will be created " +
-                        "in the study during import for any dataset or specimen rows which have a new, undefined visit. If, instead, " +
-                        "you would like for the import of the folder archive to fail when it encounters a visit that is not already " +
-                        "defined in the study or as part of the incoming visit map, check this box.</span>")) %>
+                Fail import for undefined visits <%= helpPopup("Fail import for undefined visits", HtmlString.unsafe(failForUndefinedVisitsTooltipStrBldr.toString())) %>
             </label>
         </td>
     </tr>
