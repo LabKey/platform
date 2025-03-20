@@ -144,7 +144,7 @@ public abstract class DisplayColumn extends RenderColumn
     /*
         Note: DataRegion plus its subclasses and the vast majority of DisplayColumn (and subclasses) have been rewritten
         to use HtmlWriter, DOM, and builders instead of String-based HTML generation. They also no longer throw
-        IOException. The three deprecated methods below that take both Writer and HtmlWriter are temporary, present only
+        IOException. The two deprecated methods below that take both Writer and HtmlWriter are temporary, present only
         until their overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to override the
         corresponding non-Writer variant. Once migrated, the deprecated methods will be removed and the non-deprecated
         variants will be made abstract.
@@ -188,24 +188,7 @@ public abstract class DisplayColumn extends RenderColumn
         throw new IllegalStateException("Must override renderDetailsCellContents()");
     }
 
-    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
-    {
-        try
-        {
-            renderInputHtml(ctx, out.unwrap(), out, value);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // No callers (other than just above)
-    @Deprecated
-    protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
-    {
-        throw new IllegalStateException("Must override renderInputHtml()");
-    }
+    public abstract void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value);
 
     public @Nullable HtmlString getTitle(RenderContext ctx)
     {

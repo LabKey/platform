@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -33,6 +34,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
@@ -64,6 +66,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.id;
 
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
@@ -313,13 +321,13 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public Class getValueClass()
+    public Class<?> getValueClass()
     {
         return _boundColumn.getJavaClass();
     }
 
     @Override
-    public Class getDisplayValueClass()
+    public Class<?> getDisplayValueClass()
     {
         return _displayColumn.getJavaClass();
     }
@@ -633,7 +641,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
             return;
@@ -647,12 +655,12 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(out, formFieldName, value);
             if (null != value)
             {
-                oldWriter.write(PageFlowUtil.filter(strVal));
+                out.write(strVal);
             }
         }
         else if (_inputType.toLowerCase().startsWith("disabled"))
         {
-            renderTextFormInput(oldWriter, formFieldName, value, strVal, true);
+            renderTextFormInput(out, formFieldName, value, strVal, true);
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
@@ -662,42 +670,43 @@ public class DataColumn extends DisplayColumn
                 displayColumn.renderInputHtml(ctx, out, value);
             }
             else
-                renderSelectFormInputFromFk(ctx, oldWriter, formFieldName, value, strVal, disabledInput);
+                renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            renderTextAreaFormInput(oldWriter, formFieldName, value, strVal, disabledInput);
+            renderTextAreaFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            renderFileFormInput(oldWriter, formFieldName, value, strVal, disabledInput);
+            renderFileFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
-            renderCheckboxFormInput(oldWriter, formFieldName, value, strVal, disabledInput);
+            renderCheckboxFormInput(out, formFieldName, value, strVal, disabledInput);
         }
         else
         {
             if (getAutoCompleteURLPrefix() != null)
             {
-                renderAutoCompleteFormInput(ctx, oldWriter, formFieldName, value, strVal, disabledInput, getAutoCompleteURLPrefix());
+                renderAutoCompleteFormInput(ctx, out, formFieldName, value, strVal, disabledInput, getAutoCompleteURLPrefix());
             }
             else
             {
                 IPropertyValidator textChoiceValidator = PropertyService.get().getValidatorForColumn(_boundColumn, PropertyValidatorType.TextChoice);
                 if (textChoiceValidator != null)
-                    renderTextChoiceFormInput(oldWriter, formFieldName, value, strVal, disabledInput, textChoiceValidator);
+                    renderTextChoiceFormInput(out, formFieldName, value, strVal, disabledInput, textChoiceValidator);
                 else
-                    renderTextFormInput(oldWriter, formFieldName, value, strVal, disabledInput);
+                    renderTextFormInput(out, formFieldName, value, strVal, disabledInput);
             }
         }
 
         HtmlString errors = getErrors(ctx);
-        if (!StringUtils.isEmpty(errors.toString()))
+        if (!errors.isEmpty())
         {
-            oldWriter.write("<span class=\"help-block form-text\">");
-            oldWriter.write(errors.toString());
-            oldWriter.write("</span>");
+            SPAN(
+                cl("help-block form-text"),
+                errors
+            ).appendTo(out);
         }
     }
 
@@ -710,10 +719,7 @@ public class DataColumn extends DisplayColumn
         return ctx.getForm() == null || col == null ? HtmlString.EMPTY_STRING : ctx.getErrors(col);
     }
 
-    private void renderSelectFormInput(
-            Writer out, String formFieldName, Object value, String strVal,
-            boolean disabledInput, NamedObjectList entryList
-    ) throws IOException
+    private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, NamedObjectList entryList)
     {
         Select.SelectBuilder select = new Select.SelectBuilder()
             .disabled(disabledInput)
@@ -738,15 +744,14 @@ public class DataColumn extends DisplayColumn
             options.add(option.build());
         }
 
-        out.write(select.addOptions(options).toString());
+        out.write(select.addOptions(options));
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(HtmlWriter.of(out), formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
-    private void renderTextChoiceFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
-            throws IOException
+    private void renderTextChoiceFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, IPropertyValidator textChoiceValidator)
     {
         NamedObjectList options = new NamedObjectList();
         List<String> choices = PropertyService.get().getTextChoiceValidatorOptions(textChoiceValidator);
@@ -764,8 +769,7 @@ public class DataColumn extends DisplayColumn
         renderSelectFormInput(out, formFieldName, value, strVal, disabledInput, options);
     }
 
-    protected void renderSelectFormInputFromFk(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
+    protected void renderSelectFormInputFromFk(RenderContext ctx, HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
         ForeignKey boundColumnFK = _boundColumn.getFk();
         NamedObjectList entryList = boundColumnFK.getSelectList(ctx);
@@ -791,8 +795,7 @@ public class DataColumn extends DisplayColumn
         }
     }
 
-    protected void renderFileFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
+    protected void renderFileFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
         var input = new Input.InputBuilder<>()
             .type("file")
@@ -800,11 +803,10 @@ public class DataColumn extends DisplayColumn
             .disabled(disabledInput)
             .needsWrapping(false);
 
-        out.write(input.build().toString());
+        out.write(input);
     }
 
-    protected void renderCheckboxFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
+    protected void renderCheckboxFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
 
@@ -816,7 +818,7 @@ public class DataColumn extends DisplayColumn
             .checked(checked)
             .needsWrapping(false);
 
-        out.write(input.build().toString());
+        out.write(input);
 
         /*
          * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
@@ -826,17 +828,17 @@ public class DataColumn extends DisplayColumn
          * To fix this, each checkbox posts a hidden field named @columnName.  Spring parameter
          * binding uses these special fields to set all unposted checkbox values to false.
          */
-        out.write("<input type=\"hidden\" name=\"");
-        out.write(SpringActionController.FIELD_MARKER);
-        out.write(PageFlowUtil.filter(formFieldName));
-        out.write("\" value=\"1\">");
+        out.write(new Input.InputBuilder<>()
+            .type("hidden")
+            .name(SpringActionController.FIELD_MARKER + formFieldName)
+            .value(1));
+
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(HtmlWriter.of(out), formFieldName, checked ? "1" : "");
+            renderHiddenFormInput(out, formFieldName, checked ? "1" : "");
     }
 
-    protected void renderTextAreaFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
+    protected void renderTextAreaFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
         TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
             .columns(_inputLength)
@@ -845,15 +847,14 @@ public class DataColumn extends DisplayColumn
             .disabled(disabledInput)
             .value(strVal);
 
-        out.write(input.build().toString());
+        out.write(input);
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(HtmlWriter.of(out), formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
-    protected void renderTextFormInput(Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
-            throws IOException
+    protected void renderTextFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
         var input = new Input.InputBuilder<>()
             .name(formFieldName)
@@ -862,18 +863,20 @@ public class DataColumn extends DisplayColumn
             .value(strVal)
             .needsWrapping(false);
 
-        out.write(input.build().toString());
+        out.write(input);
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)
-            renderHiddenFormInput(HtmlWriter.of(out), formFieldName, value);
+            renderHiddenFormInput(out, formFieldName, value);
     }
 
-    protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, @NotNull ActionURL autoCompleteURLPrefix)
-            throws IOException
+    protected void renderAutoCompleteFormInput(RenderContext ctx, HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, @NotNull ActionURL autoCompleteURLPrefix)
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
-        out.write("<div id='" + renderId + "'></div>");
+        DIV(
+            id(renderId)
+        ).appendTo(out);
+
         String initScript =
             "Ext4.onReady(function(){\n" +
             "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
@@ -941,57 +944,44 @@ public class DataColumn extends DisplayColumn
         if (null == _caption)
             return;
 
-        Writer oldWriter = out.unwrap();
-        try
-        {
-            oldWriter.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
+        TD(
+            cl(cls != null, cls, "lk-form-label"),
+            getTitle(ctx),
+            ctx.getMode() == DataRegion.MODE_DETAILS ? ":" : null,
+            (Renderable) ret -> {
 
-            HtmlString title = getTitle(ctx);
-            if (title != null)
-                oldWriter.write(title.toString());
-            if (ctx.getMode() == DataRegion.MODE_DETAILS)
-                oldWriter.write(":");
-            int mode = ctx.getMode();
-            if ((mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE) && isEditable())
-            {
-                if (_boundColumn != null)
+                int mode = ctx.getMode();
+                if ((mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE) && isEditable())
                 {
-                    List<String> helpLines = new LinkedList<>()
+                    if (_boundColumn != null)
                     {
-                        @Override
-                        public boolean add(String s)
+                        List<HtmlString> helpLines = new LinkedList<>();
+                        if (_boundColumn.getFriendlyTypeName() != null && !_inputType.toLowerCase().startsWith("select"))
                         {
-                            return super.add(PageFlowUtil.filter(s));
+                            helpLines.add(HtmlString.of("Type: " + _boundColumn.getFriendlyTypeName()));
                         }
-                    };
-                    if (_boundColumn.getFriendlyTypeName() != null && !_inputType.toLowerCase().startsWith("select"))
-                    {
-                        helpLines.add("Type: " + _boundColumn.getFriendlyTypeName());
-                    }
-                    if (_boundColumn.getDescription() != null)
-                    {
-                        helpLines.add("Description: " + _boundColumn.getDescription());
-                    }
-                    for (IPropertyValidator validator : _boundColumn.getValidators())
-                        helpLines.add("Validator: " + validator);
-                    if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
-                    {
-                        oldWriter.write(" *");
-                        helpLines.add("This field is required.");
-                    }
-                    if (!helpLines.isEmpty())
-                    {
-                        HtmlString helpHtml = HtmlString.unsafe(StringUtils.join(helpLines, "<br>"));
-                        PageFlowUtil.popupHelp(helpHtml, _boundColumn.getLabel()).appendTo(oldWriter);
+                        if (_boundColumn.getDescription() != null)
+                        {
+                            helpLines.add(HtmlString.of("Description: " + _boundColumn.getDescription()));
+                        }
+                        for (IPropertyValidator validator : _boundColumn.getValidators())
+                            helpLines.add(HtmlString.of("Validator: " + validator));
+                        if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
+                        {
+                            out.write(" *");
+                            helpLines.add(HtmlString.of("This field is required."));
+                        }
+                        if (!helpLines.isEmpty())
+                        {
+                            HtmlString helpHtml = helpLines.stream().collect(LabKeyCollectors.joining(HtmlString.BR));
+                            out.write(PageFlowUtil.popupHelp(helpHtml, _boundColumn.getLabel()));
+                        }
                     }
                 }
+
+                return ret;
             }
-            oldWriter.write("</td>\n");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        ).appendTo(out);
     }
 
     protected boolean renderRequiredIndicators()

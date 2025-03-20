@@ -168,12 +168,6 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
-    {
-        throw new UnsupportedOperationException("Non Bound columns not editable for " + this);
-    }
-
-    @Override
     public @NotNull HtmlString getTitle(RenderContext ctx)
     {
         return null != _caption ? HtmlString.of(_caption) : HtmlString.NBSP;

@@ -20,10 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
 import static org.labkey.api.util.DOM.Attribute.style;
@@ -180,57 +179,34 @@ public class MVDisplayColumn extends DataColumn
     {
         DIV(at(style,"margin-top:5px")).appendTo(out);
         super.renderInputHtml(ctx, out, value);
-        try
-        {
-            renderMVPicker(ctx, out);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        renderMVPicker(ctx, out);
     }
 
-    private void renderMVPicker(RenderContext ctx, HtmlWriter out) throws IOException
+    private void renderMVPicker(RenderContext ctx, HtmlWriter out)
     {
-        Writer oldWriter = out.unwrap();
         String formFieldName = ctx.getForm().getFormFieldName(mvIndicatorColumn);
         String selectedMvIndicator = getMvIndicator(ctx);
         Set<String> mvIndicators = MvUtil.getMvIndicators(ctx.getContainer());
-        oldWriter.write("Missing Value Indicator:&nbsp;");
-        oldWriter.write("<select style=\"margin-bottom:5px; margin-top:2px\"");
-        outputName(ctx, oldWriter, formFieldName);
-        if (isDisabledInput())
-            oldWriter.write(" DISABLED");
-        oldWriter.write(">\n");
-        oldWriter.write("<option value=\"\"></option>");
-        for (String mvIndicator : mvIndicators)
-        {
-            oldWriter.write("  <option value=\"");
-            oldWriter.write(mvIndicator);
-            oldWriter.write("\"");
-            if (null != selectedMvIndicator && mvIndicator.equals(selectedMvIndicator))
-                oldWriter.write(" selected ");
-            oldWriter.write(" >");
-            oldWriter.write(mvIndicator);
-            oldWriter.write("</option>\n");
-        }
-        oldWriter.write("</select>");
-        // disabled inputs are not posted with the form, so we output a hidden form element:
-        //if (isDisabledInput())
-        //    renderHiddenFormInput(ctx, out, formFieldName, value);
-    }
-
-    private void outputName(RenderContext ctx, Writer out, String formFieldName) throws IOException
-    {
-        out.write(" name=\"");
-        out.write(PageFlowUtil.filter(formFieldName));
-        out.write("\"");
-
         String setFocusId = (String)ctx.get("setFocusId");
         if (null != setFocusId)
         {
-            out.write(" id=\"" + PageFlowUtil.filter(setFocusId) + "\"");
             ctx.remove("setFocusId");
         }
+
+        out.write("Missing Value Indicator:");
+        out.write(HtmlString.NBSP);
+
+        new SelectBuilder()
+            .addStyle("margin-bottom:5px; margin-top:2px")
+            .name(formFieldName)
+            .id(setFocusId)
+            .disabled(isDisabledInput())
+            .addOption("")
+            .addOptions(mvIndicators)
+            .selected(selectedMvIndicator);
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        //if (isDisabledInput())
+        //    renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 }

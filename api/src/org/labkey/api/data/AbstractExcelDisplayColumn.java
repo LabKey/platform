@@ -57,12 +57,6 @@ public abstract class AbstractExcelDisplayColumn extends DisplayColumn
     }
 
     @Override
-    protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
-    {
-        throw new UnsupportedOperationException("This is for excel only.");
-    }
-
-    @Override
     public HtmlString getTitle(RenderContext ctx)
     {
         throw new UnsupportedOperationException("This is for excel only.");

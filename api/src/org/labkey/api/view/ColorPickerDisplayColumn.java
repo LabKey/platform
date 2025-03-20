@@ -18,12 +18,15 @@ package org.labkey.api.view;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.at;
 
 /**
  * {@link org.labkey.api.data.DisplayColumn} that shows an ExtJS-based color picker component for insert/update forms
@@ -37,29 +40,31 @@ public class ColorPickerDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object value = getValue(ctx);
         if (value != null)
         {
-            oldWriter.write("<div style=\"height: 20px; width: 20px; background: #" + PageFlowUtil.filter(value.toString()) + "\"></div>");
+            DIV(
+                at(style, "height: 20px; width: 20px; background: #" + value)
+            ).appendTo(out);
         }
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         String name = getFormFieldName(ctx);
         renderHiddenFormInput(out, name, value);
 
         String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
-        oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-        oldWriter.write(
+        SCRIPT(
+            JavaScriptFragment.unsafe(
                 "   LABKEY.requiresExt4Sandbox(function(){\n" +
                 "      Ext4.onReady(function(){\n" +
                 "        Ext4.create('Ext.picker.Color', {\n" +
-                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                "            renderTo     : " + PageFlowUtil.jsString(renderId) + ",\n" +
                 "            value        : " + PageFlowUtil.jsString(value == null ? null : value.toString()) + ",\n" +
                 "            listeners: { \n" +
                 "                select: function(picker, selColor) {\n" +
@@ -68,10 +73,9 @@ public class ColorPickerDisplayColumn extends DataColumn
                 "            }\n" +
                 "        });\n" +
                 "      });\n" +
-                "   });\n");
-        oldWriter.write("</script>");
-        oldWriter.write("<div id='");
-        oldWriter.write(PageFlowUtil.filter(renderId));
-        oldWriter.write("'></div>");
+                "   });\n")
+        ).appendTo(out);
+
+        DIV(renderId).appendTo(out);
     }
 }

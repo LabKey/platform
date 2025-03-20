@@ -235,7 +235,7 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value)
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
     }
 
