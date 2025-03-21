@@ -239,7 +239,6 @@ public class QuerySelectView extends AbstractQueryRelation
                 columnMap.put(c.getFieldKey(), c);
         }
 
-        SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT ");   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
         String strComma = "\n";
         String tableName = table.getName();
@@ -260,13 +259,7 @@ public class QuerySelectView extends AbstractQueryRelation
         else
         {
             CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<>();
-            Set<FieldKey> fks = allColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
             ColumnInfo prev;
-            for (ColumnInfo column : extraSelectDataLoggingColumns)
-            {
-                if (!fks.contains(column.getFieldKey()))
-                    allColumns.add(column);
-            }
             for (ColumnInfo column : allColumns)
             {
                 if (null != (prev = aliases.put(column.getAlias(), column)))
@@ -284,25 +277,51 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
-        if (distinct)
+        // NOTE: we need an outerSelect when
+        //  * distinct==true
+        //  * we want to hide columns not requested in selectColumns (see ensureRequiredColumns())
+        // however, we may need to add not requested columns for logging.
+        // It is easier and more consistent to always wrap.
+        SQLFragment outerSelect;
         {
-            outerSelect = new SQLFragment("SELECT DISTINCT ");
+            outerSelect = distinct ? new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
             strComma = "";
 
+            Set<FieldKey> selectedFieldKeys = new HashSet<>();
             for (ColumnInfo column : selectColumns)
             {
-                outerSelect.append(strComma);
-                outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                strComma = ", ";
+                if (selectedFieldKeys.add(column.getFieldKey()))
+                {
+                    outerSelect.append(strComma);
+                    outerSelect.append(dialect.makeLegalIdentifier(column.getAlias()));
+                    strComma = ", ";
+                }
             }
 
-            if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+            if (!distinct)
             {
-                Set<FieldKey> select = selectColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
-                for (var required : queryLogging.getDataLoggingColumns())
+                for (ColumnInfo column : extraSelectDataLoggingColumns)
                 {
-                    if (!select.contains(required.getFieldKey()))
-                        queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
+                    if (selectedFieldKeys.add(column.getFieldKey()))
+                    {
+                        outerSelect.append(strComma);
+                        outerSelect.append(dialect.makeLegalIdentifier(column.getAlias()));
+                        strComma = ", ";
+                    }
+                }
+            }
+
+            // NOTE: I think extraSelectDataLoggingColumns won't contain columns that were added by ensureRequiredColumns()
+            // It is safer to recheck the entire list of columns in queryLogging.getDataLoggingColumns()
+            if (distinct)
+            {
+                if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+                {
+                    for (var required : queryLogging.getDataLoggingColumns())
+                    {
+                        if (!selectedFieldKeys.contains(required.getFieldKey()))
+                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
+                    }
                 }
             }
         }
