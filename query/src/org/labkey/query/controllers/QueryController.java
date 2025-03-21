@@ -2072,7 +2072,7 @@ public class QueryController extends SpringActionController
 
         public String getFilenamePrefix()
         {
-            return filenamePrefix;
+            return filenamePrefix == null ? getQueryName() : filenamePrefix;
         }
 
         public void setFilenamePrefix(String prefix)
