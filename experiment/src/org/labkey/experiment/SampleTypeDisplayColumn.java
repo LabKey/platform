@@ -20,18 +20,11 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Oct 4, 2007
- */
 public class SampleTypeDisplayColumn extends SimpleDisplayColumn
 {
     private final ExpMaterial _material;
@@ -43,19 +36,19 @@ public class SampleTypeDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         ExpSampleType st = _material.getSampleType();
 
         if (st == null)
         {
-            oldWriter.write("Not a member of a sample type");
+            out.write("Not a member of a sample type");
         }
         else
         {
             ActionURL url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, st.getContainer());
             url.addParameter("rowId", Integer.toString(st.getRowId()));
-            oldWriter.write("<a href=\"" + url.toString() + "\">" + PageFlowUtil.filter(st.getName()) + "</a>");
+            out.write(new LinkBuilder(st.getName()).href(url).clearClasses());
         }
     }
 }

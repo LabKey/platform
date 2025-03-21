@@ -333,7 +333,7 @@ public class DataColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         // By default, use the same rendering for both the details and grid views
         renderGridCellContents(ctx, out);

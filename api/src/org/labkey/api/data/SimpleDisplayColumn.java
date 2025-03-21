@@ -110,11 +110,11 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object value = getValue(ctx);
         if (value != null)
-            oldWriter.write(value.toString());
+            out.write(value.toString());
     }
 
     @Override

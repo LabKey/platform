@@ -18,17 +18,11 @@ package org.labkey.experiment;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Oct 19, 2005
- */
 public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
 {
     private ExpRun _run;
@@ -45,16 +39,17 @@ public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (_run == null)
         {
-            oldWriter.write("(Unknown)");
+            out.write("(Unknown)");
         }
         else
         {
             ActionURL url = ExperimentController.getRunGraphURL(ctx.getContainer(), _run.getRowId());
-            oldWriter.write("<a href=\"" + url.toString() + "\">" + _run.getName() + "</a>");
+
+            out.write(new LinkBuilder(_run.getName()).href(url).clearClasses());
         }
     }
 }
