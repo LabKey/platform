@@ -5187,9 +5187,7 @@ public class AdminController extends SpringActionController
                 form.getFormat(), form.isIncludeSubfolders(), form.getExportPhiLevel(), form.isShiftDates(),
                 form.isAlternateIds(), form.isMaskClinic(), new StaticLoggerGetter(FolderWriterImpl.LOG));
 
-            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), "Folder export initiated to " + exportOption.getDescription() + " " + (form.isIncludeSubfolders() ? "including" : "excluding") + " subfolders.");
-            if (container.getProject() != null)
-                event.setProjectId(container.getProject().getId());
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container, "Folder export initiated to " + exportOption.getDescription() + " " + (form.isIncludeSubfolders() ? "including" : "excluding") + " subfolders.");
             AuditLogService.get().addEvent(getUser(), event);
 
             _successURL = exportOption.initiateExport(container, errors, writer, ctx, getViewContext().getResponse());
@@ -6409,10 +6407,7 @@ public class AdminController extends SpringActionController
                 {
                     setFormAndConfirmMessage(ctx.getContainer(), form, true, false, migrateFilesOption.name());
                     String comment = (ctx.getContainer().isProject() ? "Project " : "Folder ") + ctx.getContainer().getPath() + ": " + form.getConfirmMessage();
-                    AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, ctx.getContainer().getId(), comment);
-                    if (ctx.getContainer().getProject() != null)
-                        event.setProjectId(ctx.getContainer().getProject().getId());
-
+                    AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, ctx.getContainer(), comment);
                     AuditLogService.get().addEvent(ctx.getUser(), event);
                 }
             }
@@ -8046,7 +8041,7 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
-                    Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
+                    Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c, getUser());
 
                     //copy role assignments
                     SecurityPolicy op = SecurityPolicyManager.getPolicy(source);

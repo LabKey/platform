@@ -122,19 +122,19 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         {
             groupId = SecurityManager.getGroupId(getContainer(), groupName, location.getEntityId(), false);
             if (groupId == null && createIfMissing)
-                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE, location.getEntityId()).getUserId();
+                groupId = SecurityManager.createGroup(getContainer(), groupName, null, PrincipalType.MODULE, location.getEntityId()).getUserId();
         }
         else
         {
             groupId = SecurityManager.getGroupId(getContainer(), groupName, false);
             if (groupId == null && createIfMissing)
-                groupId = SecurityManager.createGroup(getContainer(), groupName, PrincipalType.MODULE).getUserId();
+                groupId = SecurityManager.createGroup(getContainer(), groupName, null, PrincipalType.MODULE).getUserId();
         }
         return groupId;
     }
 
     @Override
-    public void deleteAllGroups()
+    public void deleteAllGroups(User user)
     {
         List<Integer> groupsToDelete = new ArrayList<>();
         List<? extends Location> locations = LocationManager.get().getLocations(getContainer());
@@ -152,7 +152,7 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
         {
             Group group = SecurityManager.getGroup(groupId);
             if (group != null)
-                SecurityManager.deleteGroup(group);
+                SecurityManager.deleteGroup(group, user);
         }
     }
 
@@ -171,12 +171,12 @@ public abstract class DefaultActor<A extends DefaultActor<A>> implements Require
     }
 
     @Override
-    public void delete()
+    public void delete(User user)
     {
         DbScope scope = SpecimenSchema.get().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            deleteAllGroups();
+            deleteAllGroups(user);
             Table.delete(getTableInfo(), getPrimaryKey());
 
             transaction.commit();

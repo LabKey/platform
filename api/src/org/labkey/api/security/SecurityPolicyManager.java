@@ -330,7 +330,7 @@ public class SecurityPolicyManager
     {
         SecurableResource parent = resource.getParentResource();
         String parentName = parent != null ? parent.getResourceName() : "root";
-        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c,
                 "A new security policy was established for " +
                         resource.getResourceName() + ". It will no longer inherit permissions from " +
                         parentName);
@@ -353,12 +353,10 @@ public class SecurityPolicyManager
         sb.append(role.getName());
         sb.append(".");
 
-        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), sb.toString());
-        event.setProjectId(c.getProject() != null ? c.getProject().getId() : null);
-        if (principal.getPrincipalType() == PrincipalType.USER)
-            event.setUser(principal.getUserId());
-        else
-            event.setGroup(principal.getUserId());
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c,
+                sb.toString(),
+                principal instanceof Group g ? g : null,
+                principal instanceof User u ? u : null);
         event.setResourceEntityId(resource.getResourceId());
 
         AuditLogService.get().addEvent(user, event);

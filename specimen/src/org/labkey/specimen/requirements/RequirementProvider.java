@@ -44,7 +44,7 @@ public interface RequirementProvider<R extends Requirement<R>,
 
     void generateDefaultRequirements(User user, RequirementOwner owner);
 
-    void purgeContainer(Container c);
+    void purgeContainer(Container c, User user);
 
     R createDefaultRequirement(User user, R requirement, RequirementType type);
 

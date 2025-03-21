@@ -218,7 +218,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
             super();
         }
 
-        public QueryUpdateAuditEvent(String container, String comment)
+        public QueryUpdateAuditEvent(Container container, String comment)
         {
             super(QUERY_UPDATE_AUDIT_EVENT, container, comment);
         }

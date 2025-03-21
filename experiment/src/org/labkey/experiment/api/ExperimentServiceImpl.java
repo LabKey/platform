@@ -420,9 +420,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment)
     {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
-        ExperimentAuditEvent event = new ExperimentAuditEvent(c.getId(), comment);
+        ExperimentAuditEvent event = new ExperimentAuditEvent(c, comment);
         event.setUserComment(userComment);
-        event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         if (runGroup != null)
             event.setRunGroup(runGroup.getRowId());
         event.setProtocolLsid(protocol.getLSID());
@@ -8911,7 +8910,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             Set<Integer> exclusions = _getContainerDataTypeExclusions(type, containerId);
             String auditMsg = ("Data exclusion for folder " + container.getName() + " was updated.\n")
                     + getDisabledDataTypeAuditMsg(type, exclusions.stream().toList(), true);
-            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container.getId(), auditMsg);
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, container, auditMsg);
             AuditLogService.get().addEvent(user, event);
         }
     }

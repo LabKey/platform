@@ -312,30 +312,30 @@ public class ExceptionUtil
                 String message = "Exception detected";
                 if (null != errorCode)
                     message += " and logged to mothership with error code " + errorCode;
-                LOG.error(message, ex);
                 String decorations = getExtendedMessage(ex);
 
                 if (!extraInfo.isBlank() || !decorations.isBlank())
                 {
-                    String logMessage = "Additional exception info:";
+                    message += "\nAdditional exception info:";
                     if (!extraInfo.isBlank())
                     {
-                        logMessage += "\n" + extraInfo;
+                        message += "\n" + extraInfo;
                     }
                     if (!decorations.isBlank())
                     {
-                        logMessage += "\n" + decorations;
+                        message += "\n" + decorations;
                     }
                     if (HttpView.hasCurrentView())
                     {
                         ViewContext viewContext = HttpView.currentContext();
-                        logMessage += "\nCurrent URL: " + viewContext.getActionURL();
+                        message += "\nCurrent URL: " + viewContext.getActionURL();
                         if (null != viewContext.getUser())
                         {
-                            logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                            message += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
                         }
                     }
-                    LOG.error(logMessage);
+
+                    LOG.error(message, ex);
                 }
             }
         }

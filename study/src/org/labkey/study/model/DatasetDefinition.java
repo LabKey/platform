@@ -332,8 +332,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityPolicy existingPolicy = SecurityPolicyManager.getPolicy(this);
         if (!existingPolicy.getAssignments().equals(policy.getAssignments()))
         {
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(getContainer().getId(), getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription));
-            event.setDatasetId(getDatasetId());
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(getContainer(),
+                    getPolicyChangeSummary(policy, existingPolicy, baseDescription, removalDescription, additionDescription),
+                    getDatasetId());
             AuditLogService.get().addEvent(user, event);
         }
         super.savePolicy(policy, user);
@@ -1820,11 +1821,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
             }
 
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), auditComment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setDatasetId(_dataset.getDatasetId());
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, auditComment, _dataset.getDatasetId());
             event.setHasDetails(true);
 
             event.setLsid(lsid == null ? null : lsid.toString());
@@ -1847,11 +1844,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             if (table != null && table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
                 return;
 
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), comment);
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-            event.setDatasetId(_dataset.getDatasetId());
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, comment, _dataset.getDatasetId());
             if (ul != null)
             {
                 event.setLsid(ul.getFilePath());

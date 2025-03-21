@@ -628,7 +628,7 @@ public class StudyPublishManager implements StudyPublishService
                 int recordCount = rows.size();
 
                 String auditMessage = publishSource.getLinkToStudyAuditMessage(source, recordCount);
-                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, publishSource, source, sourceLsid);
+                PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer, auditMessage, publishSource, source, sourceLsid);
 
                 event.setTargetStudy(targetContainer.getId());
                 event.setDatasetId(dataset.getDatasetId());
@@ -653,7 +653,7 @@ public class StudyPublishManager implements StudyPublishService
                         String sampleName = sample.getName();
                         String sampleLsid = sample.getLSID();
 
-                        SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer.getId(), timelineEventType.getComment());
+                        SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer, timelineEventType.getComment());
                         timelineEvent.setSampleType(source.getName());
                         timelineEvent.setSampleTypeId(source.getRowId());
                         timelineEvent.setSampleId(sampleId);
@@ -1583,7 +1583,7 @@ public class StudyPublishManager implements StudyPublishService
                 sourceName = source.getName();
 
             String auditMessage = sourceType.getRecallFromStudyAuditMessage(sourceName, rowCount);
-            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer.getId(), auditMessage, sourceType, source, null);
+            PublishAuditProvider.AuditEvent event = new PublishAuditProvider.AuditEvent(sourceContainer, auditMessage, sourceType, source, null);
 
             event.setTargetStudy(def.getStudy().getContainer().getId());
             event.setDatasetId(def.getDatasetId());
@@ -1608,7 +1608,7 @@ public class StudyPublishManager implements StudyPublishService
                     String sampleName = sample.getName();
                     String sampleLsid = sample.getLSID();
 
-                    SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer.getId(), timelineEventType.getComment());
+                    SampleTimelineAuditEvent timelineEvent = new SampleTimelineAuditEvent(sourceContainer, timelineEventType.getComment());
                     timelineEvent.setSampleType(sourceName);
                     if (source != null)
                         timelineEvent.setSampleTypeId(source.getRowId());
