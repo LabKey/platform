@@ -64,7 +64,10 @@ public class DisplayColumnGroup
                 new InputBuilder<>().type("checkbox").name(id).id(id).appendTo(out);
                 StringBuilder onChange = new StringBuilder("b = this.checked;");
 
-                getColumns().forEach(col -> {
+                // Index starts at 1 -- always leave the first column visible
+                for (int i = 1; i < _columns.size(); i++)
+                {
+                    DisplayColumn col = getColumns().get(i);
                     ColumnInfo colInfo = col.getColumnInfo();
                     if (colInfo != null)
                     {
@@ -72,7 +75,7 @@ public class DisplayColumnGroup
                             .append(col.getFormFieldName(ctx))
                             .append("')[0].style.display = b ? 'none' : 'block';\n");
                     }
-                });
+                }
 
                 onChange.append(" if (b) { ")
                     .append(getGroupFormFieldName(ctx))
