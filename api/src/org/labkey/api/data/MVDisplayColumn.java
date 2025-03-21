@@ -197,13 +197,16 @@ public class MVDisplayColumn extends DataColumn
         out.write(HtmlString.NBSP);
 
         new SelectBuilder()
-            .addStyle("margin-bottom:5px; margin-top:2px")
+            .addStyle("margin-bottom:5px")
+            .addStyle("margin-top:2px")
+            .className(null)
             .name(formFieldName)
             .id(setFocusId)
             .disabled(isDisabledInput())
             .addOption("")
             .addOptions(mvIndicators)
-            .selected(selectedMvIndicator);
+            .selected(selectedMvIndicator)
+            .appendTo(out);
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         //if (isDisabledInput())
