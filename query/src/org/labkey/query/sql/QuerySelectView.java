@@ -313,15 +313,12 @@ public class QuerySelectView extends AbstractQueryRelation
 
             // NOTE: I think extraSelectDataLoggingColumns won't contain columns that were added by ensureRequiredColumns()
             // It is safer to recheck the entire list of columns in queryLogging.getDataLoggingColumns()
-            if (distinct)
+            if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
             {
-                if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+                for (var required : queryLogging.getDataLoggingColumns())
                 {
-                    for (var required : queryLogging.getDataLoggingColumns())
-                    {
-                        if (!selectedFieldKeys.contains(required.getFieldKey()))
-                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
-                    }
+                    if (!selectedFieldKeys.contains(required.getFieldKey()))
+                        queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
                 }
             }
         }
