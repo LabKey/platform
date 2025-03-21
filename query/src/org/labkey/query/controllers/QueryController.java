@@ -2070,6 +2070,7 @@ public class QueryController extends SpringActionController
             this.includeColumn = includeColumn;
         }
 
+        @NotNull
         public String getFilenamePrefix()
         {
             return filenamePrefix == null ? getQueryName() : filenamePrefix;
