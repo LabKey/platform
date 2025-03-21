@@ -2051,7 +2051,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (templates.isEmpty())
         {
             ActionURL url = Objects.requireNonNull(PageFlowUtil.urlProvider(QueryUrls.class)).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+            url.addParameter("headerType", ColumnHeaderType.ImportField.name());
             templates.add(Pair.of("Download Template", url.toString()));
         }
 
