@@ -17,7 +17,6 @@
 package org.labkey.mothership;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -54,10 +53,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 
-/**
- * User: jeckels
- * Date: Apr 20, 2006
- */
 public class MothershipManager
 {
     private static final MothershipManager INSTANCE = new MothershipManager();

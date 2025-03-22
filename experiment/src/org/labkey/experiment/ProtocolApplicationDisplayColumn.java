@@ -18,20 +18,14 @@ package org.labkey.experiment;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Oct 19, 2005
- */
 public class ProtocolApplicationDisplayColumn extends SimpleDisplayColumn
 {
-    private ExpProtocolApplication _protocolApplication;
+    private final ExpProtocolApplication _protocolApplication;
 
     public ProtocolApplicationDisplayColumn(ExpProtocolApplication protocolApplication)
     {
@@ -45,16 +39,16 @@ public class ProtocolApplicationDisplayColumn extends SimpleDisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (_protocolApplication == null)
         {
-            oldWriter.write("(Unknown)");
+            out.write("(Unknown)");
         }
         else
         {
             ActionURL url = ExperimentController.getShowApplicationURL(ctx.getContainer(), _protocolApplication.getRowId());
-            oldWriter.write("<a href=\"" + url.getEncodedLocalURIString() + "\">" + _protocolApplication.getName() + "</a>");
+            out.write(new LinkBuilder(_protocolApplication.getName()).href(url).clearClasses());
         }
     }
 }

@@ -15,19 +15,18 @@
  */
 package org.labkey.api.study.actions;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.assay.actions.BaseAssayAction;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.File;
 
 /**
  * Created by Marty on 11/16/2015.
@@ -39,14 +38,15 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
     @Override
     public ModelAndView getView(TransformResultsForm form, BindException errors) throws Exception
     {
-        File transformDir = TsvDataExchangeHandler.getWorkingDirectory(form, getUser());
+        FileLike transformDir = TsvDataExchangeHandler.getWorkingDirectory(form, getUser());
         if (null != transformDir)
         {
-            File downloadFile = new File(transformDir, form.getName());
-            if(URIUtil.isDescendant(FileUtil.resolveFile(new File(transformDir.getParent())).toURI(), FileUtil.resolveFile(downloadFile).toURI()))
+            FileLike downloadFile = transformDir.resolveChild(form.getName());
+            // isn't this always true?
+            if(URIUtil.isDescendant(transformDir.toURI(), downloadFile.toURI()))
             {
                 HttpServletResponse response = getViewContext().getResponse();
-                PageFlowUtil.streamFile(response, downloadFile, true);
+                PageFlowUtil.streamFile(response, FileSystemLike.toFile(downloadFile), true);
             }
         }
 

@@ -58,11 +58,14 @@ import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -161,7 +164,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             return engine.getFactory().getLanguageName();
         }
 
-        return "Script Engine Report";        
+        return "Script Engine Report";
         //throw new RuntimeException("No Script Engine is available for this Report");
     }
 
@@ -193,8 +196,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
     {
-        File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
-        ResultsFactory factory = ()-> {
+        FileLike resultFile = getReportDirFileLike(context.getContainer().getId()).resolveChild(DATA_INPUT);
+        ResultsFactory factory = () -> {
             try
             {
                 return generateResults(context, true);
@@ -204,24 +207,27 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 throw new RuntimeException(e);
             }
         };
-        return _createInputDataFile(context, factory, resultFile);
+        return _createInputDataFile(context, factory, FileSystemLike.toFile(resultFile));
     }
 
 
     /**
-     *
      * @param executingContainerId id of the container in which the report is running
      * @return directory, which has been created, to contain the generated report
-     *
+     * <p>
      * Note: This method used to stash results in members (_tempFolder and _tempFolderPipeline), but that no longer works
      * now that we cache reports between threads (e.g., Thread.currentThread().getId() is part of the path).
+     *
+     * Consider using the variant which returns a FileLike object
      */
+    @Deprecated
     public File getReportDir(@NotNull String executingContainerId)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
         return getReportDir(executingContainerId, isPipeline);
     }
 
+    @Deprecated
     protected File getReportDir(@NotNull String executingContainerId, boolean isPipeline)
     {
 
@@ -247,21 +253,66 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return tempFolder;
     }
 
+    /**
+     * @param executingContainerId id of the container in which the report is running
+     * @return directory, which has been created, to contain the generated report
+     * <p>
+     * Note: This method used to stash results in members (_tempFolder and _tempFolderPipeline), but that no longer works
+     * now that we cache reports between threads (e.g., Thread.currentThread().getId() is part of the path).
+     */
+    public FileLike getReportDirFileLike(@NotNull String executingContainerId)
+    {
+        boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
+        return getReportDirFileLike(executingContainerId, isPipeline);
+    }
+
+    protected FileLike getReportDirFileLike(@NotNull String executingContainerId, boolean isPipeline)
+    {
+        FileLike tempRoot = getTempRootFileLike(getDescriptor());
+        String reportId = FileUtil.makeLegalName(String.valueOf(getDescriptor().getReportId())).replaceAll(" ", "_");
+        FileLike tempFolder;
+
+        try
+        {
+            if (isPipeline)
+            {
+                String identifier = RReportJob.getJobIdentifier();
+                if (identifier != null)
+                    tempFolder = FileUtil.appendPath(tempRoot,
+                            Path.parse(executingContainerId + File.separator + "Report_" + reportId + File.separator + identifier));
+                else
+                    tempFolder = FileUtil.appendPath(tempRoot,
+                            Path.parse(executingContainerId + File.separator + "Report_" + reportId));
+            }
+            else
+                tempFolder = FileUtil.appendPath(tempRoot,
+                        Path.parse(executingContainerId + File.separator + "Report_" + reportId + File.separator + Thread.currentThread().getId()));
+
+            FileUtil.mkdirs(tempFolder);
+            return tempFolder;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to create the temporary report directory", e);
+        }
+    }
+
     public void deleteReportDir(@NotNull ContainerUser context)
     {
         boolean isPipeline = BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
 
-        File dir = getReportDir(context.getContainer().getId());
+        FileLike dir = getReportDirFileLike(context.getContainer().getId());
 
         if (!isPipeline)
-            dir = dir.getParentFile();
+            dir = dir.getParent();
 
-        FileUtil.deleteDir(dir);
+        FileUtil.deleteDir(dir.toNioPathForWrite(), null);
     }
 
     /**
      * Invoked from a maintenance task, clean up temporary report files and folders that are of a
      * certain age.
+     *
      * @param log
      */
     public static void scheduledFileCleanup(Logger log)
@@ -290,6 +341,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     /**
      * Delete any thread specific subfolders if they are older than the
      * specified cutoff, and if there are no thread subfolders, delete the parent.
+     *
      * @param dir
      * @param cutoff
      */
@@ -379,11 +431,11 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             throw UnexpectedException.wrap(sqlx);
         }
     }
-    
+
 
     private String oldLegalName(FieldKey fkey)
     {
-        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), null, false, false);
+        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(), "_"), null, false, false);
         return ColumnInfo.propNameFromName(r).toLowerCase();
     }
 
@@ -418,7 +470,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                         }
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
@@ -429,7 +481,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             public List<ScriptOutput> cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 if (report.shouldCleanup())
-                    FileUtil.deleteDir(new File(report.getReportDir(context.getContainer().getId()).getAbsolutePath()));
+                    FileUtil.deleteDir(report.getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite(), null);
 
                 return scriptOutputs;
             }
@@ -457,7 +509,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             public HttpView<?> cleanup(ScriptEngineReport report, ContainerUser context)
             {
                 if (report.shouldCleanup())
-                    view.addView(new TempFileCleanup(report.getReportDir(context.getContainer().getId()).getAbsolutePath()));
+                    view.addView(new TempFileCleanup(report.getReportDirFileLike(context.getContainer().getId())));
 
                 return view;
             }
@@ -472,7 +524,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
     {
-        return handleParameters(this, parameters, new ParameterHandler<Thumbnail>(){
+        return handleParameters(this, parameters, new ParameterHandler<Thumbnail>()
+        {
             private Thumbnail _thumbnail = null;
 
             @Override
@@ -496,7 +549,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     private static <K> K handleParameters(ScriptEngineReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
     {
-        String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
+        String sections = (String) HttpView.currentContext().get(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
 
         if (sections != null)
@@ -522,6 +575,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     private interface ParameterHandler<K>
     {
         boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException;
+
         K cleanup(ScriptEngineReport report, ContainerUser context);
     }
 
@@ -544,8 +598,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
     }
+
     /**
      * Create the script to be executed by the scripting engine
+     *
      * @param outputSubst
      * @return
      * @throws Exception
@@ -565,6 +621,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     /**
      * Takes a script source, adds a prolog, processes any input and output replacement parameters
+     *
      * @param script
      * @param inputFile
      * @param outputSubst
@@ -608,14 +665,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
-        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements, isRStudio);
+        FileLike reportDir = getReportDirFileLike(context.getContainer().getId());
+        return ParamReplacementSvc.get().processParamReplacement(script, FileSystemLike.toFile(reportDir), null, replacements, isRStudio);
     }
 
 
     @Override
     public ScriptReportDescriptor getDescriptor()
     {
-        return (ScriptReportDescriptor)super.getDescriptor();
+        return (ScriptReportDescriptor) super.getDescriptor();
     }
 
 
@@ -657,17 +715,17 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected static class TempFileCleanup extends HttpView
     {
-        private final String _path;
+        private final FileLike _dir;
 
-        public TempFileCleanup(String path)
+        public TempFileCleanup(FileLike dir)
         {
-            _path = path;
+            _dir = dir;
         }
 
         @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
-            FileUtil.deleteDir(new File(_path));
+            FileUtil.deleteDir(_dir.toNioPathForWrite(), null);
         }
     }
 }

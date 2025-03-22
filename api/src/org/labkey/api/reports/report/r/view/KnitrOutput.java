@@ -25,6 +25,8 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -105,7 +107,8 @@ public class KnitrOutput extends HtmlOutput
             if (null != htmlIn)
             {
                 // replace all ${hrefout:<filename>} with the appropriate url
-                File reportDir = _report.getReportDir(this.getViewContext().getContainer().getId());
+                FileLike reportDirFileLike = _report.getReportDirFileLike(this.getViewContext().getContainer().getId());
+                File reportDir = FileSystemLike.toFile(reportDirFileLike);
                 String htmlOut = ParamReplacementSvc.get().processHrefParamReplacement(_report, htmlIn, reportDir);
                 htmlOut = ParamReplacementSvc.get().processRelativeHrefReplacement(
                         _report,

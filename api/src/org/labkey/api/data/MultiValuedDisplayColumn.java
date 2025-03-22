@@ -151,6 +151,12 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        renderGridCellContents(ctx, out);
+    }
+
+    @Override
     public Class<String> getDisplayValueClass()
     {
         return String.class;

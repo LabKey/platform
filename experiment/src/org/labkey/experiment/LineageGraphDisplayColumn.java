@@ -22,22 +22,16 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
-
-/**
- * User: jeckels
- * Date: Oct 19, 2005
- */
 public class LineageGraphDisplayColumn extends SimpleDisplayColumn
 {
-    private Integer _runId;
-    private String _focus;
-    private String _linkText;
+    private final Integer _runId;
+    private final String _focus;
+    private final String _linkText;
 
     public LineageGraphDisplayColumn(ExpMaterial material, ExpRun run)
     {
@@ -56,20 +50,19 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
 
     private LineageGraphDisplayColumn(String typeCode, ExpObject object, ExpRun run)
     {
-        _linkText = "Lineage for ";
         _focus = typeCode + object.getRowId();
-        _linkText += object.getName();
+        _linkText = "Lineage for " + object.getName();
         _runId = run == null ? null : run.getRowId();
 
         setCaption("Lineage Graph");
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
         if (_runId == null || _focus == null)
         {
-            oldWriter.write("(Unknown)");
+            out.write("(Unknown)");
         }
         else
         {
@@ -77,7 +70,8 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
             url.addParameter("rowId", Integer.toString(_runId));
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);
-            oldWriter.write("<a href=\"" + url.toString() + "\">" + _linkText + "</a>");
+
+            out.write(new LinkBuilder(_linkText).href(url).clearClasses());
         }
     }
 }

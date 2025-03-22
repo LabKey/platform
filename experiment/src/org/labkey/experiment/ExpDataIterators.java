@@ -3039,8 +3039,11 @@ public class ExpDataIterators
                     if (typeData.dependencyIndexes.containsKey(index) && _dataIdIndex >= 0)
                     {
                         String parentTypeName = typeData.dependencyIndexes.get(index);
-                        _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                         _parentIdsPerType.computeIfAbsent(parentTypeName, k -> new HashSet<>()).add(data.toString());
+                        // Issue 52368: "Unable to determine ordering for sample type imports." error when importing to multiple sample types and including simple lineage
+                        // skip dependencies for self type
+                        if (!typeData.dataType.getName().equals(parentTypeName))
+                            _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                     }
                 }
             });

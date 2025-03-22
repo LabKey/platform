@@ -22,6 +22,8 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -48,12 +50,12 @@ public class RenderBackgroundRReportView extends HttpView
             VBox view = new VBox();
             view.addView(new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", _report));
 
-            File substitutionMap = new File(_report.getReportDir(this.getViewContext().getContainer().getId()), RReport.SUBSTITUTION_MAP);
+            FileLike substitutionMap = _report.getReportDirFileLike(this.getViewContext().getContainer().getId()).resolveChild(RReport.SUBSTITUTION_MAP);
 
             // if the job is complete, show the results of the job
             if (substitutionMap.exists())
             {
-                Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
+                Collection<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(FileSystemLike.toFile(substitutionMap));
                 VBox innerView = new VBox();
                 view.addView(innerView);
                 RReport.renderViews(_report, view, outputSubst, false);

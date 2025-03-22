@@ -160,6 +160,8 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.DataViewsWebPartFactory;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -953,8 +955,8 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
         {
             ScriptReport report = bean.getReport(getViewContext());
-            File logFile = new File(((RReport)report).getReportDir(this.getViewContext().getContainer().getId()), RReportJob.LOG_FILE_NAME);
-            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
+            FileLike logFile = ((RReport)report).getReportDirFileLike(this.getViewContext().getContainer().getId()).resolveChild(RReportJob.LOG_FILE_NAME);
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(FileSystemLike.toFile(logFile));
 
             VBox vbox = new VBox();
 

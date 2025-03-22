@@ -144,10 +144,10 @@ public abstract class DisplayColumn extends RenderColumn
     /*
         Note: DataRegion plus its subclasses and the vast majority of DisplayColumn (and subclasses) have been rewritten
         to use HtmlWriter, DOM, and builders instead of String-based HTML generation. They also no longer throw
-        IOException. The three deprecated methods below that take both Writer and HtmlWriter are temporary, present only
-        until their overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to override the
-        corresponding non-Writer variant. Once migrated, the deprecated methods will be removed and the non-deprecated
-        variants will be made abstract.
+        IOException. The deprecated renderGridCellContents() variant below that take both Writer and HtmlWriter is
+        temporary, present only until its overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to
+        override the corresponding non-Writer variant. Once migrated, the deprecated method will be removed and the
+        non-deprecated variant will be made abstract.
      */
 
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
@@ -169,43 +169,9 @@ public abstract class DisplayColumn extends RenderColumn
         throw new IllegalStateException("Must override renderGridCellContents()");
     }
 
-    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
-    {
-        try
-        {
-            renderDetailsCellContents(ctx, out.unwrap(), out);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
+    public abstract void renderDetailsCellContents(RenderContext ctx, HtmlWriter out);
 
-    // No callers (other than just above)
-    @Deprecated
-    protected void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
-    {
-        throw new IllegalStateException("Must override renderDetailsCellContents()");
-    }
-
-    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
-    {
-        try
-        {
-            renderInputHtml(ctx, out.unwrap(), out, value);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // No callers (other than just above)
-    @Deprecated
-    protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
-    {
-        throw new IllegalStateException("Must override renderInputHtml()");
-    }
+    public abstract void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value);
 
     public @Nullable HtmlString getTitle(RenderContext ctx)
     {
@@ -1219,7 +1185,7 @@ public abstract class DisplayColumn extends RenderColumn
         ).appendTo(out);
     }
 
-    public void renderDetailsCell(RenderContext ctx, HtmlWriter out)
+    public final void renderDetailsCell(RenderContext ctx, HtmlWriter out)
     {
         TD(
             getInputAttributes(),

@@ -29,6 +29,8 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -116,7 +118,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("viewContext", context);
                 bindings.put("consoleOut", consolePw);
 
-                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir(context.getContainer().getId()).getAbsolutePath());
+                bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
 
                 SimpleMetricsService.get().increment(ModuleLoader.getInstance().getModule(ApiModule.class).getName(), METRIC_FEATURE_AREA, "Internal-" + engine.getFactory().getEngineName());
 
@@ -127,9 +129,8 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 // render the output into the console
                 if (output != null || consoleString != null)
                 {
-                    File console = new File(getReportDir(context.getContainer().getId()), CONSOLE_OUTPUT);
-
-                    try (PrintWriter pw = PrintWriters.getPrintWriter(console))
+                    FileLike console = getReportDirFileLike(context.getContainer().getId()).resolveChild(CONSOLE_OUTPUT);
+                    try (PrintWriter pw = PrintWriters.getPrintWriter(console.toNioPathForRead()))
                     {
                         if (output != null)
                             pw.write(output.toString());
@@ -139,7 +140,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
                     param.setName("console");
-                    param.addFile(console);
+                    param.addFile(FileSystemLike.toFile(console));
 
                     outputSubst.add(param);
                 }
