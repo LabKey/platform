@@ -293,7 +293,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 if (selectedFieldKeys.add(column.getFieldKey()))
                 {
                     outerSelect.append(strComma);
-                    outerSelect.append(dialect.makeLegalIdentifier(column.getAlias()));
+                    outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
                     strComma = ", ";
                 }
             }
@@ -305,7 +305,7 @@ public class QuerySelectView extends AbstractQueryRelation
                     if (selectedFieldKeys.add(column.getFieldKey()))
                     {
                         outerSelect.append(strComma);
-                        outerSelect.append(dialect.makeLegalIdentifier(column.getAlias()));
+                        outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
                         strComma = ", ";
                     }
                 }
