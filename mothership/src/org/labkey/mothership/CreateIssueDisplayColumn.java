@@ -39,14 +39,14 @@ public class CreateIssueDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderDetailsCellContents(RenderContext ctx, HtmlWriter out)
     {
-        _saveButton.render(ctx, oldWriter);
-        oldWriter.write("\t");
+        _saveButton.render(ctx, out);
+        out.write("\t");
         PageFlowUtil.button("Create Issue")
             .onClick("document.forms.CreateIssue.elements['assignedTo'].value = document.forms[" +
                 PageFlowUtil.jsString(ctx.getCurrentRegion().getFormId()) +
                 "].elements['assignedTo'].value; document.forms.CreateIssue.submit();")
-            .appendTo(oldWriter);
+            .appendTo(out);
     }
 }

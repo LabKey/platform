@@ -22,14 +22,17 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
+
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.id;
 
 /**
  * {@link DisplayColumn} that use a React QuerySelect component input to allow for type-ahead search/filter
@@ -47,13 +50,13 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         ForeignKey fk = getBoundColumn().getFk();
         // currently only supported for lookup columns with a defined schema/query
         if (fk == null)
         {
-            oldWriter.write("TypeAheadSelectDisplayColumn can only be used with a lookup column.");
+            out.write("TypeAheadSelectDisplayColumn can only be used with a lookup column.");
             return;
         }
 
@@ -63,7 +66,6 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<script type=\"text/javascript\" nonce=\"").append(HttpView.currentPageConfig().getScriptNonce()).append("\">");
         //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
         sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
         sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
@@ -78,9 +80,14 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
             sb.append("     ,containerPath: ").append(PageFlowUtil.jsString(fk.getLookupContainer().getPath())).append("\n");
         sb.append(" });\n");
         sb.append("});\n");
-        sb.append("</script>\n");
-        sb.append("<div id=").append(PageFlowUtil.jsString(renderId)).append("></div>");
-        oldWriter.write(sb.toString());
+
+        SCRIPT(
+            JavaScriptFragment.unsafe(sb.toString())
+        ).appendTo(out);
+
+        DIV(
+            id(renderId)
+        ).appendTo(out);
 
         // disabled inputs are not posted with the form, so we output a hidden form element:
         if (disabledInput)

@@ -71,6 +71,8 @@ public class Select extends Input
 
         doStyles(sb);
 
+        doDataAttributes(sb);
+
         doInputEvents(id);
 
         if (isDisabled())

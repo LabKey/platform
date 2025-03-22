@@ -4,7 +4,6 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.io.Writer;
 
 public abstract class AbstractExcelDisplayColumn extends DisplayColumn
@@ -45,19 +44,7 @@ public abstract class AbstractExcelDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderDetailsCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
-    {
-        throw new UnsupportedOperationException("This is for excel only.");
-    }
-
-    @Override
     public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
-    {
-        throw new UnsupportedOperationException("This is for excel only.");
-    }
-
-    @Override
-    protected void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
     {
         throw new UnsupportedOperationException("This is for excel only.");
     }
