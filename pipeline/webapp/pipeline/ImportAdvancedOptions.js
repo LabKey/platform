@@ -34,20 +34,6 @@ Ext4.define('LABKEY.import.OptionsPanel', {
         this.callParent();
     },
 
-    getDeprecatedMessageView: function()
-    {
-        return Ext4.create('Ext.view.View', {
-            tpl: new Ext4.XTemplate(
-                    '<div style="font-size:14px; font-weight:bold; padding-bottom:5px;padding-top: 30px;">{header}</div>',
-                    '<div style="font-size:14px; color:#555;">{description}</div>'
-            ),
-            data: {
-                header: 'Advanced Import Options',
-                description: "This feature is marked as deprecated. To restore 'Advanced Import Options' during Folder import, visit the Deprecated Features page in the Admin Console.",
-            },
-        });
-    },
-
     getMainFormView : function()
     {
         if (!this.mainFormView)
@@ -118,8 +104,21 @@ Ext4.define('LABKEY.import.OptionsPanel', {
                     optionsForm: null
             }];
 
-            if (this.canCreateSharedDatasets)
-            {
+            if (this.showFailForUndefinedVisits) {
+                data.splice(1, 0, {
+                    header: 'Study Import Options',
+                    description: 'By default, new visit rows will be created in the study during import for any dataset or specimen rows which have a new, undefined visit. '
+                            + 'If, instead, you would like for the import of the folder archive to fail when it encounters a visit that is not already defined in the study '
+                            + 'or as part of the incoming visit map, check the box below.',
+                    name: 'failForUndefinedVisits',
+                    initChecked: this.isFailForUndefinedVisits ? "checked": "",
+                    isChecked: this.isFailForUndefinedVisits,
+                    label: 'Fail import for undefined visits',
+                    optionsForm: null
+                });
+            }
+
+            if (this.canCreateSharedDatasets) {
                 data.splice(0, 0, {
                     header: 'Shared Datasets',
                     description: 'By default, datasets will be created in this container. For Dataspace projects, shared datasets are '

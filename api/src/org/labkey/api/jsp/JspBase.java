@@ -518,6 +518,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
 
+    public HelpPopupBuilder helpPopup(Renderable helpText, String titleText)
+    {
+        return PageFlowUtil.popupHelp(helpText, titleText);
+    }
+
     public HelpPopupBuilder helpPopup(String helpText)
     {
         return PageFlowUtil.popupHelp(helpText);
