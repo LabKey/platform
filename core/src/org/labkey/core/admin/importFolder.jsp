@@ -51,16 +51,16 @@
 
     String sharedDatasetsHelpText = "By default, datasets will be created in this container. For Dataspace projects, shared " +
             "datasets are created at the project level so that they can be used by each of the study folders in the project.";
-    DOM.Renderable sharedDatasetsTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), sharedDatasetsHelpText));
+    DOM.Renderable sharedDatasetsTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), sharedDatasetsHelpText);
 
     String validateQueriesHelpText = "By default, queries will be validated upon import of a folder archive and any failure to validate will " +
             "cause the import job to raise an error. To suppress this validation step, uncheck this box";
-    DOM.Renderable validateQueriesTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), validateQueriesHelpText));
+    DOM.Renderable validateQueriesTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), validateQueriesHelpText);
 
     String failForUndefinedVisitsHelpText = "By default, new visit rows will be created in the study during import for any dataset or specimen rows " +
             "which have a new, undefined visit. If, instead, you would like for the import of the folder archive to fail when it encounters a visit that " +
             "is not already defined in the study or as part of the incoming visit map, check this box.";
-    DOM.Renderable failForUndefinedVisitsTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), failForUndefinedVisitsHelpText));
+    DOM.Renderable failForUndefinedVisitsTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), failForUndefinedVisitsHelpText);
 
     if (!c.isProject() && null != project && project != c)
     {
