@@ -49,17 +49,17 @@
     boolean canCreateSharedDatasets = false;
     boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
-    String sharedDatasetsHelpText = h("By default, datasets will be created in this container. For Dataspace projects, shared " +
-            "datasets are created at the project level so that they can be used by each of the study folders in the project.") + "";
+    String sharedDatasetsHelpText = "By default, datasets will be created in this container. For Dataspace projects, shared " +
+            "datasets are created at the project level so that they can be used by each of the study folders in the project.";
     DOM.Renderable sharedDatasetsTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), sharedDatasetsHelpText));
 
-    String validateQueriesHelpText = h("By default, queries will be validated upon import of a folder archive and any failure to validate will " +
-            "cause the import job to raise an error. To suppress this validation step, uncheck this box") + "";
+    String validateQueriesHelpText = "By default, queries will be validated upon import of a folder archive and any failure to validate will " +
+            "cause the import job to raise an error. To suppress this validation step, uncheck this box";
     DOM.Renderable validateQueriesTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), validateQueriesHelpText));
 
-    String failForUndefinedVisitsHelpText = h("By default, new visit rows will be created in the study during import for any dataset or specimen rows " +
+    String failForUndefinedVisitsHelpText = "By default, new visit rows will be created in the study during import for any dataset or specimen rows " +
             "which have a new, undefined visit. If, instead, you would like for the import of the folder archive to fail when it encounters a visit that " +
-            "is not already defined in the study or as part of the incoming visit map, check this box.") + "";
+            "is not already defined in the study or as part of the incoming visit map, check this box.";
     DOM.Renderable failForUndefinedVisitsTooltip = DOM.createHtml(SPAN(DOM.at(style, "display: inline-block;width:300px;"), failForUndefinedVisitsHelpText));
 
     if (!c.isProject() && null != project && project != c)
@@ -159,7 +159,7 @@
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true">
-                Create shared datasets <%=helpPopup(sharedDatasetsTooltip, "Create Shared Datasets") %>
+                Create shared datasets <%=helpPopup("Create Shared Datasets", sharedDatasetsTooltip) %>
             </label>
         </td>
     </tr>
@@ -169,14 +169,14 @@
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true">
-                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup(validateQueriesTooltip, "Validate all queries") %>
+                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup("Validate all queries", validateQueriesTooltip) %>
             </label>
         </td>
     </tr>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true">
-                Fail import for undefined visits <%= helpPopup(failForUndefinedVisitsTooltip, "Fail import for undefined visits") %>
+                Fail import for undefined visits <%= helpPopup("Fail import for undefined visits", failForUndefinedVisitsTooltip) %>
             </label>
         </td>
     </tr>
