@@ -5208,6 +5208,7 @@ public class AdminController extends SpringActionController
     {
         private boolean _createSharedDatasets;
         private boolean _validateQueries;
+        private boolean _failForUndefinedVisits;
         private boolean _advancedImportOptions;
         private String _sourceTemplateFolder;
         private String _sourceTemplateFolderId;
@@ -5226,6 +5227,16 @@ public class AdminController extends SpringActionController
         public boolean isValidateQueries()
         {
             return _validateQueries;
+        }
+
+        public boolean isFailForUndefinedVisits()
+        {
+            return _failForUndefinedVisits;
+        }
+
+        public void setFailForUndefinedVisits(boolean failForUndefinedVisits)
+        {
+            _failForUndefinedVisits = failForUndefinedVisits;
         }
 
         public void setValidateQueries(boolean validateQueries)
@@ -5379,6 +5390,7 @@ public class AdminController extends SpringActionController
             ImportOptions options = new ImportOptions(getContainer().getId(), user.getUserId());
             options.setSkipQueryValidation(!form.isValidateQueries());
             options.setCreateSharedDatasets(form.isCreateSharedDatasets());
+            options.setFailForUndefinedVisits(form.isFailForUndefinedVisits());
             options.setAdvancedImportOptions(form.isAdvancedImportOptions());
             options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
 

@@ -37,11 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Nov 1, 2005
- * Time: 5:09:48 PM
- */
 public abstract class BaseWebPartFactory implements WebPartFactory
 {
     private static final Logger LOG = LogHelper.getLogger(Portal.class, "Creates web parts based on configurations");
@@ -126,7 +121,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     @Override
     public HttpView<?> getEditView(WebPart webPart, ViewContext context)
     {
-        return null;
+        throw new IllegalStateException("Editable webparts must implement getEditView()");
     }
 
     @Override

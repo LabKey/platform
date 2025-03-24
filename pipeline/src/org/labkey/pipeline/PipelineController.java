@@ -85,6 +85,7 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -1222,14 +1223,17 @@ public class PipelineController extends SpringActionController
             {
                 _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
 
-                // Be sure that the set of folder to apply the import to match the setting to enable/disable them
-                if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().isEmpty()))
+                if (OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG))
                 {
-                    errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
-                }
-                else if (!form.isApplyToMultipleFolders() && form.getFolderRowIds() != null)
-                {
-                    errors.reject(ERROR_MSG, "Folder RowIds provided when 'apply to multiple folders' not enabled.");
+                    // Be sure that the set of folder to apply the import to match the setting to enable/disable them
+                    if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().isEmpty()))
+                    {
+                        errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
+                    }
+                    else if (!form.isApplyToMultipleFolders() && form.getFolderRowIds() != null)
+                    {
+                        errors.reject(ERROR_MSG, "Folder RowIds provided when 'apply to multiple folders' not enabled.");
+                    }
                 }
 
                 // Be sure that the user has admin permissions to all selected folders and that all selected folders exist
@@ -1262,14 +1266,17 @@ public class PipelineController extends SpringActionController
                     }
                 }
 
-                // Be sure that the provided data types to import match the setting to enable/disable them
-                if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().isEmpty()))
+                if (OptionalFeatureService.get().isFeatureEnabled(PipelineModule.ADVANCED_IMPORT_FLAG))
                 {
-                    errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
-                }
-                else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
-                {
-                    errors.reject(ERROR_MSG, "Folder data types provided when 'select specific objects to import' not enabled.");
+                    // Be sure that the provided data types to import match the setting to enable/disable them
+                    if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().isEmpty()))
+                    {
+                        errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
+                    }
+                    else if (!form.isSpecificImportOptions() && form.getDataTypes() != null)
+                    {
+                        errors.reject(ERROR_MSG, "Folder data types provided when 'select specific objects to import' not enabled.");
+                    }
                 }
             }
         }

@@ -144,7 +144,7 @@ public abstract class DisplayColumn extends RenderColumn
     /*
         Note: DataRegion plus its subclasses and the vast majority of DisplayColumn (and subclasses) have been rewritten
         to use HtmlWriter, DOM, and builders instead of String-based HTML generation. They also no longer throw
-        IOException. The deprecated renderGridCellContents() variant below that take both Writer and HtmlWriter is
+        IOException. The deprecated renderGridCellContents() variant below that takes both Writer and HtmlWriter is
         temporary, present only until its overrides are migrated to use HtmlWriter, DOM, and builders, and adjusted to
         override the corresponding non-Writer variant. Once migrated, the deprecated method will be removed and the
         non-deprecated variant will be made abstract.
