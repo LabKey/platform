@@ -19,13 +19,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.view.IssuesListView.IssuesListConfig;
 
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
+    public WebPartView<?> getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> properties = webPart.getPropertyMap();
         String issueDefName = properties.get(IssuesListView.ISSUE_LIST_DEF_NAME);
@@ -48,13 +49,23 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         if (issueDefName == null)
             issueDefName = IssueManager.getDefaultIssueListDefName(context.getContainer());
 
-        WebPartView view;
+        WebPartView<?> view;
 
         if (issueDefName != null)
+        {
             view = new IssuesListView(issueDefName);
+        }
         else
         {
-            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName));
+            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName)) {
+                @Override
+                public void setCustomize(NavTree tree)
+                {
+                    // Add "Customize" menu only if there are issue list defs in this container (consistent with getEditView() below)
+                    if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())
+                        super.setCustomize(tree);
+                }
+            };
             String title = IssueManager.getEntryTypeNames(context.getContainer(), IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName + " List";
             view.setTitle(title);
         }
@@ -77,10 +88,10 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
 
     @Override
     @Nullable
-    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+    public IssuesListConfig getEditView(Portal.WebPart webPart, ViewContext context)
     {
         if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())
-            return new IssuesListView.IssuesListConfig(webPart);
+            return new IssuesListConfig(webPart);
         else
             return null;
     }

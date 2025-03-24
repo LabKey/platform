@@ -28,6 +28,10 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController.ImportFolderForm" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
+<%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="static org.labkey.api.util.DOM.SPAN" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.style" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -42,10 +46,23 @@
     Container c = getViewContext().getContainerNoTab();
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
-    boolean isStudyRequest = requestOrigin.equals("Study") || requestOrigin.equals("Reload");
     boolean canCreateSharedDatasets = false;
+    boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
-    if (isStudyRequest && !c.isProject() && null != project && project != c)
+    String sharedDatasetsHelpText = "By default, datasets will be created in this container. For Dataspace projects, shared " +
+            "datasets are created at the project level so that they can be used by each of the study folders in the project.";
+    DOM.Renderable sharedDatasetsTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), sharedDatasetsHelpText);
+
+    String validateQueriesHelpText = "By default, queries will be validated upon import of a folder archive and any failure to validate will " +
+            "cause the import job to raise an error. To suppress this validation step, uncheck this box";
+    DOM.Renderable validateQueriesTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), validateQueriesHelpText);
+
+    String failForUndefinedVisitsHelpText = "By default, new visit rows will be created in the study during import for any dataset or specimen rows " +
+            "which have a new, undefined visit. If, instead, you would like for the import of the folder archive to fail when it encounters a visit that " +
+            "is not already defined in the study or as part of the incoming visit map, check this box.";
+    DOM.Renderable failForUndefinedVisitsTooltip = SPAN(DOM.at(style, "display: inline-block;width:300px;"), failForUndefinedVisitsHelpText);
+
+    if (!c.isProject() && null != project && project != c)
     {
         if (project.hasPermission(getViewContext().getUser(), AdminPermission.class))
         {
@@ -141,7 +158,9 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true"> Create shared datasets</label>
+            <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true">
+                Create shared datasets <%=helpPopup("Create Shared Datasets", sharedDatasetsTooltip) %>
+            </label>
         </td>
     </tr>
 <%
@@ -149,16 +168,32 @@
 %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
-            <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true"> Validate all queries after <%=h(action.toLowerCase())%></label>
+            <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true">
+                Validate all queries after <%=h(action.toLowerCase())%> <%=helpPopup("Validate all queries", validateQueriesTooltip) %>
+            </label>
         </td>
     </tr>
     <tr>
-        <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
-            <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
+        <td style="padding-left: 15px; padding-top: 5px;">
+            <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true">
+                Fail import for undefined visits <%= helpPopup("Fail import for undefined visits", failForUndefinedVisitsTooltip) %>
+            </label>
         </td>
     </tr>
+    <%
+        if (isAdvancedImportOptionEnabled)
+        {
+    %>
+        <tr>
+            <td style="padding-left: 15px; padding-top: 5px; padding-bottom: 5px;">
+                <label><input type="checkbox" name="advancedImportOptions" <%=h(form.isAdvancedImportOptions() ? "checked" : "")%> value="true"> Show advanced import options</label>
+            </td>
+        </tr>
+    <%
+        }
+    %>
     <tr>
-        <td>
+        <td style="padding-top: 5px;">
             <%= button(action + " " + noun).submit(true) %>
         </td>
     </tr>
