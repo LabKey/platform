@@ -48,6 +48,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
+<%@ page import="org.apache.commons.beanutils.ConversionException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -178,7 +179,14 @@
     } // !containers.isEmpty()
 %>
     <div><%
-        if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
+        Boolean hideCreateButton = false;
+        try
+        {
+            hideCreateButton = (Boolean) JdbcType.BOOLEAN.convert(properties.get("hideCreateButton"));
+        }
+        catch (ConversionException ignored) {}
+
+        if (Boolean.TRUE != hideCreateButton)
         {
             boolean isProject = StringUtils.equals("project",properties.get("containerTypes"));
             Container c = isProject ? ContainerManager.getRoot() : target;
