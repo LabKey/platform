@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "6.31.11-fb-alan-eg-issues.0"
+    "@labkey/components": "6.31.12-fb-alan-eg-issues.0"
   },
   "devDependencies": {
     "@labkey/build": "8.4.0",
