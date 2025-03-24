@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.security.RequiresPermission;
@@ -64,7 +63,7 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class UpdateAction extends InsertUpdateAction
+    public static class UpdateAction extends InsertUpdateAction<EditDatasetRowForm>
     {
         public UpdateAction()
         {
@@ -85,7 +84,7 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class InsertAction extends InsertUpdateAction
+    public static class InsertAction extends InsertUpdateAction<EditDatasetRowForm>
     {
         public InsertAction()
         {
@@ -115,7 +114,6 @@ public class DatasetController extends BaseStudyController
             String comment = null;
             String oldRecord = null;
             String newRecord = null;
-            int datasetId = -1;
             Container eventContainer = null;
 
             VBox view = new VBox();
@@ -126,8 +124,7 @@ public class DatasetController extends BaseStudyController
                 comment = event.getComment();
                 oldRecord = event.getOldRecordMap();
                 newRecord = event.getNewRecordMap();
-                datasetId = event.getDatasetId();
-                eventContainer = ContainerManager.getForId(event.getContainer());
+                eventContainer = event.getContainer();
             }
 
             Map<String,String> oldData = null;
@@ -167,7 +164,7 @@ public class DatasetController extends BaseStudyController
             return view;
         }
 
-        private static class NoRecordView extends HttpView
+        private static class NoRecordView extends HttpView<Object>
         {
             @Override
             protected void renderInternal(Object model, PrintWriter out)

@@ -362,9 +362,6 @@ public class GroupManager
             c = c == null ? ContainerManager.getRoot() : c;
             GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c, message, group, principal);
 
-            if (c == null)
-                event.setContainer(ContainerManager.getRoot().getId());
-
             AuditLogService.get().addEvent(user, event);
         }
 

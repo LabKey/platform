@@ -79,14 +79,14 @@ public class LogManager
     /** There are a few places that depend on the reselect behavior. e.g. to get the rowid of the event */
     public <K extends AuditTypeEvent> K insertEvent(User user, K type)
     {
-        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        Logger auditLogger = getAuditLogger(type);
         auditLogger.info(type.getAuditLogMessage());
 
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
 
         if (provider != null)
         {
-            Container c = ContainerManager.getForId(type.getContainer());
+            Container c = type.getContainer();
 
             UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
 
@@ -107,6 +107,11 @@ public class LogManager
         return null;
     }
 
+    private static <K extends AuditTypeEvent> Logger getAuditLogger(K type)
+    {
+        return org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+    }
+
     /** all events must be of same event type and container, for optimized code path */
     public <K extends AuditTypeEvent> void insertEvents(User user, List<K> events)
     {
@@ -123,7 +128,7 @@ public class LogManager
         {
             // make sure all events are the same type
             final String expectedEventType = type.getEventType();
-            final String expectedContainer = type.getContainer();
+            final Container expectedContainer = type.getContainer();
             Optional<K> problemEvent = events.stream()
                     .filter(event -> !Objects.equals(expectedEventType, event.getEventType()) || !Objects.equals(expectedContainer, event.getContainer()))
                     .findAny();
@@ -141,12 +146,12 @@ public class LogManager
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(type.getEventType());
         if (null == provider)
             return;
-        Container c = ContainerManager.getForId(type.getContainer());
+        Container c = type.getContainer();
         UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
         TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);
         TableInfo dbTable = table instanceof DefaultAuditTypeTable ? ((DefaultAuditTypeTable) table).getRealTable() : null;
 
-        Logger auditLogger = org.apache.logging.log4j.LogManager.getLogger("org.labkey.audit.event." + type.getEventType().replaceAll(" ", ""));
+        Logger auditLogger = getAuditLogger(type);
         SQLException sqlx = null;
 
         if (null != dbTable)
@@ -195,7 +200,7 @@ public class LogManager
                 TableInfo table = schema.getTable(provider.getEventName(), cf);
                 TableSelector selector = new TableSelector(table, null, null);
 
-                return (K)selector.getObject(rowId, provider.getEventClass());
+                return selector.getObject(rowId, provider.getEventClass());
             }
         }
         return null;
@@ -223,20 +228,10 @@ public class LogManager
                 TableInfo table = schema.getTable(provider.getEventName(), cf);
                 TableSelector selector = new TableSelector(table, filter, sort);
 
-                return (List<K>)selector.getArrayList(provider.getEventClass());
+                return selector.getArrayList(provider.getEventClass());
             }
         }
         return Collections.emptyList();
-    }
-
-    private String ensureMaxLength(String input, int max)
-    {
-        if (input != null && input.length() > max)
-        {
-            _log.warn("Audit field input : \n" + input + "\nexceeded the maximum length : " + max);
-            return input.substring(0, max-3) + "...";
-        }
-        return input;
     }
 
     /**
@@ -245,7 +240,7 @@ public class LogManager
      */
     private <K extends AuditTypeEvent> K validateFields(@NotNull AuditTypeProvider provider, @NotNull K type)
     {
-        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory((Class<K>)type.<K>getClass());
+        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory((Class<K>)type.getClass());
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         factory.toMap(type, values);
 
