@@ -1687,6 +1687,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
             CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<>();
+
+            if (!DatasetDomainKind.PARTICIPANTID.equalsIgnoreCase(_study.getSubjectColumnName()))
+                m.put(DatasetDomainKind.PARTICIPANTID, _study.getSubjectColumnName());
             
             // why did I add an underscore to the stored mv indicators???
             for (ColumnInfo col : getColumns())
@@ -2707,86 +2710,72 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
 
+    private static final Set<String> _alwaysIncludedColumns = CaseInsensitiveHashSet.of("created", "createdby", "lsid", "sourcelsid", "QCState");
+
     @NotNull
     @Override
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getDatasetRows(User u, Collection<String> lsids)
     {
-        // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
-        // and one to get the data.  We should eventually be able to convert to using Query completely.
         TableInfo queryTableInfo = getTableInfo(u);
 
-        DatasetSchemaTableInfo tInfo = getDatasetSchemaTableInfo(u);
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("lsid"), lsids);
 
-        Set<String> selectColumns = new TreeSet<>();
-        List<ColumnInfo> alwaysIncludedColumns = tInfo.getColumns("created", "createdby", "lsid", "sourcelsid", "QCState");
+        Set<String> selectColumnNames = new TreeSet<>();
+        List<ColumnInfo> selectColumns = new ArrayList<>();
 
-        for (ColumnInfo col : tInfo.getColumns())
+        for (ColumnInfo col : queryTableInfo.getColumns())
         {
             // special handling for lsids and keys -- they're not user-editable,
             // but we want to display them
             if (!col.isUserEditable())
             {
-                if (!(alwaysIncludedColumns.contains(col) ||
+                if (!(_alwaysIncludedColumns.contains(col.getName()) ||
                         col.isKeyField() ||
                         col.getName().equalsIgnoreCase(getKeyPropertyName())))
                 {
                     continue;
                 }
             }
-            selectColumns.add(col.getName());
+            if (selectColumnNames.add(col.getName()))
+                selectColumns.add(col);
             if (col.isMvEnabled())
             {
                 // include the indicator column for MV enabled fields
-                selectColumns.add(col.getMvColumnName().getName());
+                var mvColumn = queryTableInfo.getColumn(col.getMvColumnName().getName());
+                if (null != mvColumn && selectColumnNames.add(mvColumn.getName()))
+                    selectColumns.add(mvColumn);
             }
         }
 
-        List<Map<String, Object>> datas = new ArrayList<>(new TableSelector(tInfo, selectColumns, filter, null).getMapCollection());
+        // we don't expect selectColumns to contain RawValue for a column that supports MV
+        assert queryTableInfo.getColumns().stream().filter(ColumnInfo::isMvEnabled)
+                .noneMatch(col -> selectColumnNames.contains(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX));
+        // we do expect selectColumns to contain MVIndicator for columns that supports MV
+        assert queryTableInfo.getColumns().stream().filter(ColumnInfo::isMvEnabled)
+                .allMatch(col -> selectColumnNames.contains(col.getMvColumnName().getName()));
 
-        if (datas.isEmpty())
+        try (var rs = new TableSelector(queryTableInfo, selectColumns, filter, null).getResults(false,false))
+        {
+            // Results gives us key=ColumnInfo.getFieldKey(), but we need key=ColumnInfo.getName()
+            // there are many ways to do this (we could use ResultSet and col.getValue(rs))
+            var datas = new ArrayList<Map<String,Object>>(lsids.size());
+            var findMap = new ArrayListMap.FindMap<>(new CaseInsensitiveHashMap<>());
+            while (rs.next())
+            {
+                Map<FieldKey,Object> row = rs.getFieldKeyRowMap();
+                Map<String,Object> data = new ArrayListMap(findMap);
+                row.entrySet().stream().filter(e -> e.getKey().getParent()==null)
+                        .forEach(e -> data.put(e.getKey().getName(), e.getValue()));
+                datas.add(data);
+            }
             return datas;
-
-        if (datas.get(0) instanceof ArrayListMap)
-        {
-            ((ArrayListMap)datas.get(0)).getFindMap().remove("_key");
         }
-
-        List<Map<String, Object>> canonicalDatas = new ArrayList<>(datas.size());
-
-        for (Map<String, Object> data : datas)
+        catch (SQLException sqlx)
         {
-            canonicalDatas.add(canonicalizeDatasetRow(data, queryTableInfo.getColumns()));
+            throw new RuntimeSQLException(sqlx);
         }
-
-        return canonicalDatas;
-    }
-
-        // change a map's keys to have proper casing just like the list of columns
-    private Map<String,Object> canonicalizeDatasetRow(Map<String,Object> source, List<ColumnInfo> columns)
-    {
-        CaseInsensitiveHashMap<String> keyNames = new CaseInsensitiveHashMap<>();
-        for (ColumnInfo col : columns)
-        {
-            keyNames.put(col.getName(), col.getName());
-        }
-
-        Map<String,Object> result = new CaseInsensitiveHashMap<>();
-
-        for (Map.Entry<String,Object> entry : source.entrySet())
-        {
-            String key = entry.getKey();
-            String newKey = keyNames.get(key);
-            if (newKey != null)
-                key = newKey;
-            else if ("_row".equals(key))
-                continue;
-            result.put(key, entry.getValue());
-        }
-
-        return result;
     }
 
     private void deleteProvenance(Container c, User u, Collection<String> lsids)
