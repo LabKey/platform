@@ -47,6 +47,8 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -105,6 +107,7 @@ import java.util.Set;
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
     private static final Logger _log = LogHelper.getLogger(PipelineModule.class, "Module responsible for managing pipeline jobs and logs");
+    public static final String ADVANCED_IMPORT_FLAG = "advancedImportFlag";
 
     @Override
     public String getName()
@@ -214,6 +217,12 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         }
 
         AuditLogService.get().registerAuditType(new ProtocolManagementAuditProvider());
+
+        AdminConsole.addOptionalFeatureFlag(new AdminConsole.OptionalFeatureFlag(ADVANCED_IMPORT_FLAG,
+                "Restore 'Advanced Import Options' during Folder import",
+                "This option will be removed in LabKey Server v25.7.",
+                false, false, OptionalFeatureService.FeatureType.Deprecated
+        ));
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             DbSchema pipelineSchema =  PipelineSchema.getInstance().getSchema();

@@ -537,7 +537,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.popupHelp(HtmlString.unsafe(helpText), title);
     }
 
-    public HelpPopupBuilder helpPopup(String title, HtmlString helpHtml)
+    public HelpPopupBuilder helpPopup(String title, Renderable helpHtml)
     {
         return PageFlowUtil.popupHelp(helpHtml, title);
     }
@@ -547,7 +547,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return helpPopup(title, helpText, htmlHelpText).width(width);
     }
 
-    public HelpPopupBuilder helpPopup(String title, HtmlString helpHtml, int width)
+    public HelpPopupBuilder helpPopup(String title, Renderable helpHtml, int width)
     {
         return PageFlowUtil.popupHelp(helpHtml, title).width(width);
     }
