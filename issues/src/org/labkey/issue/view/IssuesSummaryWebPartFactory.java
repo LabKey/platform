@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -56,7 +57,15 @@ public class IssuesSummaryWebPartFactory extends BaseWebPartFactory
             view = new SummaryWebPart(issueDefName, propertyMap);
         else
         {
-            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName));
+            view = new HtmlView(IssuesController.getUndefinedIssueListMessage(context, issueDefName)) {
+                @Override
+                public void setCustomize(NavTree tree)
+                {
+                    // Add "Customize" menu only if there are issue list defs in this container (consistent with getEditView() below)
+                    if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())
+                        super.setCustomize(tree);
+                }
+            };
             view.setFrame(WebPartView.FrameType.PORTAL);
             String title = IssueManager.getEntryTypeNames(context.getContainer(), IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName + " Summary";
             view.setTitle(title);
