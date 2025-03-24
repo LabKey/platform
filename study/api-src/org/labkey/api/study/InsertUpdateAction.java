@@ -52,6 +52,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.InsertView;
@@ -66,8 +67,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -142,23 +141,22 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                     cohortCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
                     {
                         @Override
-                        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+                        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
                         {
                             boolean disabledInput = isDisabledInput();
                             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
-                            oldWriter.write("<select name=\"" + formFieldName + "\" " + (disabledInput ? "DISABLED" : ""));
-                            oldWriter.write(" class=\"form-control\">\n");
+                            SelectBuilder builder = new SelectBuilder()
+                                .name(formFieldName)
+                                .disabled(disabledInput)
+                                .className("form-control");
+
                             if (getBoundColumn().isNullable())
-                                oldWriter.write("\t<option value=\"\">");
-                            for (Cohort cohort : cohorts)
-                            {
-                                oldWriter.write("\t<option value=\"" + PageFlowUtil.filter(cohort.getLabel()) + "\" " +
-                                        (Objects.equals(value, cohort.getLabel()) ? "SELECTED" : "") + ">");
-                                oldWriter.write(PageFlowUtil.filter(cohort.getLabel()));
-                                oldWriter.write("</option>\n");
-                            }
-                            oldWriter.write("</select>");
+                                builder.addOption("");
+
+                            builder.addOptions(cohorts.stream().map(StudyEntity::getLabel))
+                                .selected(value)
+                                .appendTo(out);
                         }
                     });
                 }

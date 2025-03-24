@@ -21,11 +21,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 
 public class AssignedToDisplayColumn extends DataColumn
@@ -40,29 +39,18 @@ public class AssignedToDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object value) throws IOException
+    public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
         List<User> list = MothershipManager.get().getAssignedToList(_container);
 
-        oldWriter.write("<select name=\"");
-        oldWriter.write(PageFlowUtil.filter(getColumnInfo().getPropertyName()));
-        oldWriter.write("\">\n");
-        oldWriter.write("<option value=\"\"></option>\n");
-
-        for (User member : list)
-        {
-            oldWriter.write("<option value=\"");
-            oldWriter.write(Integer.toString(member.getUserId()));
-            oldWriter.write("\"");
-            if (value instanceof Integer i && i.intValue() == member.getUserId())
-            {
-                oldWriter.write(" selected");
-            }
-            oldWriter.write(">");
-            oldWriter.write(PageFlowUtil.filter(member.getDisplayName(ctx.getViewContext().getUser())));
-            oldWriter.write("</option>\n");
-        }
-
-        oldWriter.write("</select>");
+        new SelectBuilder()
+            .name(getColumnInfo().getPropertyName())
+            .addOption("")
+            .addOptions(
+                list.stream()
+                    .map(user -> new OptionBuilder(user.getDisplayName(ctx.getViewContext().getUser()), user.getUserId()))
+            )
+            .selected(value)
+            .appendTo(out);
     }
 }

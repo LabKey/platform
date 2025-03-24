@@ -827,13 +827,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     }
 
     @Nullable
-    public static File getWorkingDirectory(ProtocolIdForm form, User u)
+    public static FileLike getWorkingDirectory(ProtocolIdForm form, User u)
     {
         Pair<Container, File> containerFilePair = workingDirectories.get(form.getUploadAttemptID());
         if (containerFilePair != null
                 && containerFilePair.first.hasPermission("TsvDataExchangeHandler.getWorkingDirectory()", u, ReadPermission.class))
         {
-            return containerFilePair.second;
+            return new FileSystemLike.Builder(containerFilePair.second).tempDir().root();
         }
         return null;
     }

@@ -16,6 +16,7 @@
 package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HasHtmlString;
@@ -122,6 +123,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final @Nullable HtmlString _value;
     private final Integer _tabIndex;
     private final List<String> _styles;
+    private final List<InputBuilder.DataAttribute> _dataAttributes;
 
     protected Input(InputBuilder<?> builder)
     {
@@ -169,6 +171,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _needsWrapping = builder._needsWrapping == null || builder._needsWrapping;
         _tabIndex = builder._tabIndex;
         _styles = builder._styles;
+        _dataAttributes = builder._dataAttributes;
     }
 
     public String getAutoComplete()
@@ -406,6 +409,11 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         return _styles;
     }
 
+    private List<InputBuilder.DataAttribute> getDataAttributes()
+    {
+        return _dataAttributes;
+    }
+
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
@@ -566,6 +574,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
             sb.append(" tabIndex=\"").append(h(_tabIndex)).append("\"");
 
         doStyles(sb);
+        doDataAttributes(sb);
         if (!HtmlString.isBlank(getValue()))
             sb.append(" value=\"").append(h(getValue())).append("\"");
         doInputEvents(id);
@@ -608,6 +617,20 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
             getStyles().forEach(s -> {try {sb.append(h(s)).append(";");}catch(IOException io){UnexpectedException.rethrow(io);}});
             sb.append("\"");
         }
+    }
+
+    protected void doDataAttributes(Appendable sb)
+    {
+        getDataAttributes().forEach(attr -> {
+            try
+            {
+                sb.append(" data-").append(attr.name()).append("=\"").append(h(attr.value())).append("\"");
+            }
+            catch (IOException io)
+            {
+                UnexpectedException.rethrow(io);
+            }
+        });
     }
 
     protected void doInputEvents(String id)
@@ -760,6 +783,9 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private Integer _tabIndex;
 
         private final List<String> _styles = new LinkedList<>();
+        private final List<DataAttribute> _dataAttributes = new LinkedList<>();
+
+        private record DataAttribute(String name, String value) {}
 
         public InputBuilder()
         {
@@ -1058,6 +1084,13 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         public T addStyles(List<String> styles)
         {
             _styles.addAll(styles);
+            return (T)this;
+        }
+
+        // Add an arbitrary "data-" attribute. Name should not include "data-"... the builder will add prefix.
+        public T addDataAttribute(@NotNull String name, @NotNull String value)
+        {
+            _dataAttributes.add(new DataAttribute(name, value));
             return (T)this;
         }
 

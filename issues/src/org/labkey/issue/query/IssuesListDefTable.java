@@ -51,8 +51,9 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Link;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
@@ -61,13 +62,12 @@ import org.labkey.issue.actions.InsertIssueDefAction;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
@@ -338,30 +338,19 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         }
 
         @Override
-        public void renderInputHtml(RenderContext ctx, Writer oldWriter, HtmlWriter out, Object val) throws IOException
+        public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object val)
         {
             String formFieldName = ctx.getForm().getFormFieldName(getColumnInfo());
 
-            oldWriter.write("<select name='");
-            oldWriter.write(formFieldName);
-            oldWriter.write("'>\n");
-
-            if (!_values.isEmpty())
-            {
-                for (Pair<String, String> value : _values)
-                {
-                    oldWriter.write("<option value='");
-                    oldWriter.write(PageFlowUtil.filter(value.first));
-                    oldWriter.write("'>");
-                    oldWriter.write(PageFlowUtil.filter(value.second));
-                    oldWriter.write("</option>\n");
-                }
-            }
-            else
-            {
-                oldWriter.write("<option value=''/>");
-            }
-            oldWriter.write("</select>\n");
+            new SelectBuilder()
+                .name(formFieldName)
+                .addOptions(
+                    _values.isEmpty() ?
+                        Stream.of("") :
+                        _values.stream()
+                            .map(pair -> new OptionBuilder(pair.second, pair.first))
+                )
+                .appendTo(out);
         }
 
         @Override

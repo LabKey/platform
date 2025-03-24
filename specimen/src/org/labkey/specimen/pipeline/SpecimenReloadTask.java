@@ -27,6 +27,8 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
 import java.util.Collections;
@@ -56,8 +58,8 @@ public class SpecimenReloadTask extends PipelineJob.Task<SpecimenReloadTask.Fact
             PipeRoot root = PipelineService.get().findPipelineRoot(job.getContainer());
             if (root != null)
             {
-                File archive = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("specimen_reload", transform.getFileType().getDefaultSuffix()));
-
+                FileLike archiveFileLike = root.getRootFileLike().resolveChild(FileUtil.makeFileNameWithTimestamp("specimen_reload", transform.getFileType().getDefaultSuffix()));
+                File archive = FileSystemLike.toFile(archiveFileLike);
                 transform.importFromExternalSource(job, support.getExternalImportConfig(), archive);
 
                 support.setSpecimenArchive(archive);
