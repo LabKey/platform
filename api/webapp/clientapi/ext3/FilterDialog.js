@@ -513,8 +513,14 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
         // replace ; with \n on UI
         if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
-            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(';') > 0)
-                inputValue = inputValue.replaceAll(';', '\n');
+            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(';') > 0) {
+                // Issue 52068: if the filter values is an array, join them with \n but don't replace semicolons
+                var filterValues = filter.getValue();
+                if (LABKEY.Utils.isArray(filterValues))
+                    inputValue = filterValues.join('\n');
+                else
+                    inputValue = inputValue.replaceAll(';', '\n');
+            }
         }
 
         var inputs = this.getVisibleInputs();
@@ -764,6 +770,11 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
                 if (!type) {
                     alert('Filter not found for suffix: ' + c.getValue());
+                }
+
+                // Issue 52068: for multivalued filter types, split on new line to get an array of values
+                if (value && type.isMultiValued()) {
+                    value = value.split('\n');
                 }
 
                 filters.push(LABKEY.Filter.create(this.fieldKey, value, type));
