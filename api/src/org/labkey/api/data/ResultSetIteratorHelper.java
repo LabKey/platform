@@ -24,14 +24,14 @@ import java.util.Iterator;
  * Wraps a JDBC {@link ResultSet} to provide a simple {@link Iterator}-like object. Does not implement Iterator, because
  * these methods throw {@link SQLException}.
  */
-public class ResultSetIteratorHelper
+public class ResultSetIteratorHelper<RS extends ResultSet>
 {
-    private final ResultSet _rs;
+    private final RS _rs;
 
     private boolean _didNext = false;
     private boolean _hasNext = false;
 
-    public ResultSetIteratorHelper(ResultSet rs)
+    public ResultSetIteratorHelper(RS rs)
     {
         _rs = rs;
     }
@@ -48,7 +48,7 @@ public class ResultSetIteratorHelper
         return _hasNext;
     }
 
-    public ResultSet next() throws SQLException
+    public RS next() throws SQLException
     {
         if (!_didNext)
         {
