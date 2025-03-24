@@ -26,6 +26,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Input;
@@ -33,9 +34,10 @@ import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.cl;
 
 public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
 {
@@ -69,29 +71,25 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         if (null == _caption)
             return;
 
-        Writer oldWriter = out.unwrap();
-        try
-        {
-            oldWriter.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-            oldWriter.write(getTitle(ctx).toString());
-            int mode = ctx.getMode();
-            if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
-            {
-                if (_colInfo != null)
+        TD(
+            cl(cls != null ? cls : "lk-form-label"),
+            getTitle(ctx),
+            (Renderable) ret -> {
+                int mode = ctx.getMode();
+                if (mode == DataRegion.MODE_INSERT || mode == DataRegion.MODE_UPDATE)
                 {
-                    String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
-                        ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
-                    PageFlowUtil.popupHelp(HtmlString.of(helpPopupText), _colInfo.getName());
-                    if (!_colInfo.isNullable())
-                        oldWriter.write(" *");
+                    if (_colInfo != null)
+                    {
+                        String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
+                                ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
+                        out.write(PageFlowUtil.popupHelp(HtmlString.of(helpPopupText), _colInfo.getName()));
+                        if (!_colInfo.isNullable())
+                            out.write(" *");
+                    }
                 }
+                return ret;
             }
-            oldWriter.write("</td>");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        ).appendTo(out);
     }
 
     protected boolean isDisabledInput()
