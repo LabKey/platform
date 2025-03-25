@@ -24,6 +24,7 @@ import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
@@ -216,7 +217,7 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
             super();
         }
 
-        public AuditEvent(String container, String comment, Dataset.PublishSource sourceType, @Nullable ExpObject source, @Nullable String sourceLsid)
+        public AuditEvent(Container container, String comment, Dataset.PublishSource sourceType, @Nullable ExpObject source, @Nullable String sourceLsid)
         {
             super(PUBLISH_AUDIT_EVENT, container, comment);
             _sourceType = sourceType.name();

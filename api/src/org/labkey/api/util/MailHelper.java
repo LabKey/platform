@@ -255,7 +255,7 @@ public class MailHelper
 
     private static void addAuditEvent(@Nullable User user, @Nullable Container c, Message m) throws MessagingException
     {
-        MessageAuditProvider.MessageAuditEvent event = new MessageAuditProvider.MessageAuditEvent(c != null ? c.getId() : ContainerManager.getRoot().getId(),
+        MessageAuditProvider.MessageAuditEvent event = new MessageAuditProvider.MessageAuditEvent(c != null ? c : ContainerManager.getRoot(),
                 "The Email Message: (" + m.getSubject() + ") was sent");
 
         try

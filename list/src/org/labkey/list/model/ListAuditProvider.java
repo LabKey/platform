@@ -22,6 +22,7 @@ import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -157,9 +158,12 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             super();
         }
 
-        public ListAuditEvent(String container, String comment)
+        public ListAuditEvent(Container container, String comment, ListDefinitionImpl list)
         {
             super(ListManager.LIST_AUDIT_EVENT, container, comment);
+            setListDomainUri(list.getDomain().getTypeURI());
+            setListId(list.getListId());
+            setListName(list.getName());
         }
 
         public int getListId()

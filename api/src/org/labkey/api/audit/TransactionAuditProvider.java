@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
@@ -111,7 +112,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             super();
         }
 
-        public TransactionAuditEvent(String container, QueryService.AuditAction auditAction, long transactionId)
+        public TransactionAuditEvent(Container container, QueryService.AuditAction auditAction, long transactionId)
         {
             super(EVENT_TYPE, container, auditAction.getDefaultCommentSummary());
             _auditAction = auditAction;

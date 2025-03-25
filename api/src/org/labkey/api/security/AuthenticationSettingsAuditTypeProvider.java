@@ -94,7 +94,7 @@ public class AuthenticationSettingsAuditTypeProvider extends AbstractAuditTypePr
 
         public AuthSettingsAuditEvent(String comment)
         {
-            super(EVENT_TYPE, ContainerManager.getRoot().getId(), comment);
+            super(EVENT_TYPE, ContainerManager.getRoot(), comment);
         }
 
         public String getChanges()

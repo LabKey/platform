@@ -65,12 +65,15 @@ public interface AuditHandler
         for (Map.Entry<String, Object> entry : existingRow.entrySet())
         {
             String key = entry.getKey();
-            String nameFromAlias = columns
-                    .stream()
-                    .filter(column -> column.getAlias().equalsIgnoreCase(key))
-                    .map((ColumnInfo::getName))
-                    .findFirst()
-                    .orElse(key);
+            // getDatasetRows() (at least) should return key==column.getName(), expect getColumn(name) to work
+            ColumnInfo col = null==table ? null : table.getColumn(key);
+            String nameFromAlias = null != col
+                    ? col.getName()
+                    : columns.stream()
+                        .filter(column -> column.getAlias().equalsIgnoreCase(key))
+                        .map((ColumnInfo::getName))
+                        .findFirst()
+                        .orElse(key);
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false;

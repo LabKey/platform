@@ -145,7 +145,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             super();
         }
 
-        public DomainAuditEvent(String container, String comment)
+        public DomainAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
         }

@@ -136,7 +136,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasets()
     {
-        String badDataSetName = TestDataGenerator.randomInvalidDomainName(5);
+        String badDataSetName = TestDataGenerator.randomInvalidDomainName(null, 0, 5);
         createDataset(badDataSetName, "Invalid StudyDatasetVisit name '" + badDataSetName + "'. StudyDatasetVisit name must start with a letter or a number.");
 
         String datasetA = TestDataGenerator.randomDomainName();

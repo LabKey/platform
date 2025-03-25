@@ -932,11 +932,8 @@ public class DomainImpl implements Domain
     {
         if (user != null)
         {
-            DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer().getId(), comment);
+            DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), comment);
             event.setUserComment(auditUserComment);
-
-            if (_dd.getProject() != null)
-                event.setProjectId(_dd.getProject().getId());
 
             event.setDomainUri(getTypeURI());
             event.setDomainName(getName());
@@ -950,7 +947,7 @@ public class DomainImpl implements Domain
     private void addPropertyAuditEvent(@Nullable User user, DomainProperty prop, String action, Long domainEventId, String domainName, String comment)
     {
         DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
-                new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer().getId(), prop.getPropertyURI(), prop.getName(),
+                new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer(), prop.getPropertyURI(), prop.getName(),
                                                                          action, domainEventId, domainName, comment);
         AuditLogService.get().addEvent(user, event);
     }

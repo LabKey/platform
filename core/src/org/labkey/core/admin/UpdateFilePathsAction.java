@@ -120,7 +120,7 @@ public class UpdateFilePathsAction extends FormViewAction<UpdateFilePathsAction.
 
         int rows = FileContentService.get().fireFileMoveEvent(source, target, getUser(), null);
         SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(
-                ContainerManager.getRoot().getId(),
+                ContainerManager.getRoot(),
                 "Updated site-wide file paths from " + source + " to " + target);
         event.setChanges(rows + " row(s) updated in database tables");
         AuditLogService.get().addEvent(getUser(), event);

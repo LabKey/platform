@@ -40,7 +40,7 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
 
     public SelectQueryAuditEvent(Container container, String comment)
     {
-        super(SelectQueryAuditProvider.EVENT_NAME, container.getId(), comment);
+        super(SelectQueryAuditProvider.EVENT_NAME, container, comment);
     }
 
     public SelectQueryAuditEvent(QueryLogging queryLogging)

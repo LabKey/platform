@@ -1258,18 +1258,17 @@ public class DomainUtil
                     List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
                     if (domainTable.getContainerFieldKey() != null)
                         columns.add(domainTable.getColumn(domainTable.getContainerFieldKey()));
-                    List<Map<String, Object>> valueRows = new TableSelector(domainTable, columns, filter, null).getMapCollection().stream().toList();
+                    var resultsetRows = new TableSelector(domainTable, columns, filter, null).getMapCollection();
 
-                    // put the updated property value into the row map as well
-                    for (Map<String, Object> valueRow : valueRows)
+                    // generate a column name map for updateRow(), add the updated property value into the row map as well
+                    for (Map<String, Object> rsRow : resultsetRows)
                     {
+                        var valueRow = new CaseInsensitiveHashMap<>();
+                        for (ColumnInfo col : columns)
+                            valueRow.put(col.getName(), col.getValue(rsRow));
                         valueRow.put(propName, entry.getValue());
-
-                        // remove extra "_row" value (from ResultSetDataIterator) if it exists
-                        valueRow.remove("_row");
+                        rows.add(valueRow);
                     }
-
-                    rows.addAll(valueRows);
                 }
 
                 try

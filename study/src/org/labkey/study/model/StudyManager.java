@@ -2004,11 +2004,7 @@ public class StudyManager
             String auditComment = "QC state was changed for " + updateLsids.size() + " record" +
                     (updateLsids.size() == 1 ? "" : "s") + ".  User comment: " + comments;
 
-            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(container.getId(), auditComment);
-
-            if (container.getProject() != null)
-                event.setProjectId(container.getProject().getId());
-            event.setDatasetId(datasetId);
+            DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(container, auditComment, datasetId);
             event.setHasDetails(true);
             event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldQCStates));
             event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newQCStates));

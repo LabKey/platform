@@ -61,7 +61,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
 
     private AssayProvider _provider;
     private ExpProtocol _assayProtocol;
-    private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
+    private final Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
     public ExpQCFlagTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
@@ -258,7 +258,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                         DataState state = qcId != null ? DataStateManager.getInstance().getStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
-                            ExperimentAuditEvent event = new ExperimentAuditEvent(container.getId(), comment);
+                            ExperimentAuditEvent event = new ExperimentAuditEvent(container, comment);
 
                             event.setProtocolLsid(run.getProtocol().getLSID());
                             event.setRunLsid(run.getLSID());
@@ -283,7 +283,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 }
                 catch (ConversionException e)
                 {
-                    LOG.warn("Unable to log audit event for QC flag changes: " + e.getMessage());
+                    LOG.warn("Unable to log audit event for QC flag changes: {}", e.getMessage());
                 }
             }
         }

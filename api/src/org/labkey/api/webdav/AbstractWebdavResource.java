@@ -653,7 +653,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
 //        String subject = "File Management Tool notification: " + message;
 
-        FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c.getId(), message);
+        FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c, message);
 
         event.setDirectory(dir);
         event.setFile(name);

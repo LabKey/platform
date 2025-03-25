@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -357,16 +358,9 @@ public class GroupManager
                 // ignore
             }
 
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(group.getContainer(), message);
-            event.setUser(principal.getUserId());
-            event.setGroup(group.getUserId());
-
             Container c = ContainerManager.getForId(group.getContainer());
-            if (c != null && c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
-            if (c == null)
-                event.setContainer(ContainerManager.getRoot().getId());
+            c = c == null ? ContainerManager.getRoot() : c;
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c, message, group, principal);
 
             AuditLogService.get().addEvent(user, event);
         }
@@ -401,8 +395,8 @@ public class GroupManager
             _project = JunitUtil.getTestContainer().getProject();
             assertNotNull(_project);
 
-            _groupA = SecurityManager.createGroup(_project, "a");
-            _groupB = SecurityManager.createGroup(_project, "b");
+            _groupA = SecurityManager.createGroup(_project, "a", TestContext.get().getUser());
+            _groupB = SecurityManager.createGroup(_project, "b", TestContext.get().getUser());
             _devGroup = SecurityManager.getGroup(Group.groupDevelopers);
 
             TestContext context = TestContext.get();
@@ -436,7 +430,7 @@ public class GroupManager
             Integer groupId = SecurityManager.getGroupId(project, name, false);
             if (null != groupId)
             {
-                SecurityManager.deleteGroup(groupId);
+                SecurityManager.deleteGroup(groupId, TestContext.get().getUser());
                 assertNull(SecurityManager.getGroupId(project, name, false));
 
                 // Test that cache clearing after group delete is correct
@@ -582,7 +576,7 @@ public class GroupManager
 
             newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath, TestContext.get().getUser());
 
-            Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
+            Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject, TestContext.get().getUser());
             Group newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
             Assert.assertNotNull(newGroupB);
 
@@ -607,23 +601,23 @@ public class GroupManager
             assertTrue(newProject.hasPermission(newGroupB, ReadPermission.class));
 
             //cleanup
-            SecurityManager.deleteGroup(newGroupA);
-            SecurityManager.deleteGroup(newGroupB);
+            SecurityManager.deleteGroup(newGroupA, TestContext.get().getUser());
+            SecurityManager.deleteGroup(newGroupB, TestContext.get().getUser());
             assertTrue(ContainerManager.delete(newProject, getUser()));
         }
     }
 
-    public static Group copyGroupToContainer(Group g, Container c)
+    public static Group copyGroupToContainer(Group g, Container c, User user)
     {
-        return copyGroupToContainer(g, c, new HashMap<>(), 1);
+        return copyGroupToContainer(g, c, user, new HashMap<>(), 1);
     }
 
-    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap)
+    private static Group copyGroupToContainer(Group g, Container c, User user, Map<UserPrincipal, UserPrincipal> groupMap)
     {
-        return copyGroupToContainer(g, c, groupMap, 1);
+        return copyGroupToContainer(g, c, user, groupMap, 1);
     }
 
-    private static Group copyGroupToContainer(Group g, Container c, HashMap<UserPrincipal, UserPrincipal> groupMap, int suffix)
+    private static Group copyGroupToContainer(Group g, Container c, User user, Map<UserPrincipal, UserPrincipal> groupMap, int suffix)
     {
         if (!g.isProjectGroup())
         {
@@ -644,9 +638,9 @@ public class GroupManager
             {
                 translatedMembers.add(groupMap.get(m));
             }
-            else if (m instanceof Group && ((Group) m).isProjectGroup())
+            else if (m instanceof Group g2 && g.isProjectGroup())
             {
-                Group copiedGroup = GroupManager.copyGroupToContainer((Group)m, c, groupMap);
+                Group copiedGroup = GroupManager.copyGroupToContainer(g2, c, user, groupMap);
                 groupMap.put(m, copiedGroup);
                 translatedMembers.add(copiedGroup);
             }
@@ -672,13 +666,13 @@ public class GroupManager
             {
                 //a different group of the same name already exists.  modify name and try again
                 suffix++;
-                Group newGroup = GroupManager.copyGroupToContainer(g, c, groupMap, suffix);
+                Group newGroup = GroupManager.copyGroupToContainer(g, c, user, groupMap, suffix);
                 groupMap.put(g, newGroup);
                 return newGroup;
             }
         }
 
-        Group newGroup = SecurityManager.createGroup(c, newGroupName);
+        Group newGroup = SecurityManager.createGroup(c, newGroupName, user);
         groupMap.put(g, newGroup);
         List<String> errors = SecurityManager.addMembers(newGroup, translatedMembers);
 
@@ -688,14 +682,14 @@ public class GroupManager
         return newGroup;
     }
 
-    public static HashMap<UserPrincipal, UserPrincipal> copyGroupsToContainer(Container source, Container target)
+    public static HashMap<UserPrincipal, UserPrincipal> copyGroupsToContainer(Container source, Container target, User user)
     {
         //copy all project groups to new project.  returns a map between old groups and new groups
         //note: site-groups are not copied, but the map will contain them anyway
         HashMap<UserPrincipal, UserPrincipal> groupMap = new HashMap<>();
         for (Group g : SecurityManager.getGroups(source, false))
         {
-            groupMap.put(g, GroupManager.copyGroupToContainer(g, target, groupMap));
+            groupMap.put(g, GroupManager.copyGroupToContainer(g, target, user, groupMap));
         }
 
         return groupMap;
