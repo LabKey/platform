@@ -2051,37 +2051,50 @@ public class DataRegion extends DisplayElement
 
     private void renderUpdateForm(RenderContext ctx, HtmlWriter out)
     {
-        TableViewForm viewForm = ctx.getForm();
-        Map<String, Object> valueMap = ctx.getRow();
-        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        ctx.setResults(new ResultsImpl(null, selectKeyMap));
-        if (null == valueMap)
+        try
         {
-            //For updates, the valueMap is the OLD version of the data.
-            //If there is no old data, we reselect to get it
-            if (null != viewForm.getOldValues())
+            TableViewForm viewForm = ctx.getForm();
+            Map<String, Object> valueMap = ctx.getRow();
+            LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
+            if (null == valueMap)
             {
-                //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
-                Object old = viewForm.getOldValues();
-                if (old instanceof Map m)
-                    valueMap = m;
+                //For updates, the valueMap is the OLD version of the data.
+                //If there is no old data, we reselect to get it
+                if (null != viewForm.getOldValues())
+                {
+                    //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
+                    Object old = viewForm.getOldValues();
+                    if (old instanceof Map m)
+                        valueMap = m;
+                    else
+                        valueMap = new BoundMap(old);
+                }
                 else
-                    valueMap = new BoundMap(old);
-            }
-            else
-            {
-                if (!hasPermission(ctx, ReadPermission.class))
-                    throw new UnauthorizedException();
+                {
+                    if (!hasPermission(ctx, ReadPermission.class))
+                        throw new UnauthorizedException();
 
-                TableInfo tinfoMain = getTable();
-                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
-                if (!maps.isEmpty())
-                    valueMap = maps.iterator().next();
+                    TableInfo tinfoMain = getTable();
+                    var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
+                    ctx.setResults(results);
+                    if (results.next())
+                    {
+                        valueMap = results.getRowMap();
+                    }
+                }
+                ctx.setRow(valueMap);
             }
-            ctx.setRow(valueMap);
+
+            renderForm(ctx, out);
         }
-
-        renderForm(ctx, out);
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            ResultSetUtil.close(ctx.getResults());
+        }
     }
 
     /**
@@ -2102,8 +2115,6 @@ public class DataRegion extends DisplayElement
         if (!hasPermission(ctx, ReadPermission.class))
             throw new UnauthorizedException();
         TableInfo table = getTable();
-
-        ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
         String[] selectedRows = viewForm.getSelectedRows();
         if (selectedRows == null)
