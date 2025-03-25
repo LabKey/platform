@@ -79,6 +79,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
         private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
+        private int _remainingReloadCommitTasks;
 
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
@@ -86,6 +87,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         {
             super(cache, loader);
             _databaseCache = cache;
+            _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
         }
 
         @Override
@@ -95,9 +97,16 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             LOG.debug("Just loaded: " + key + " (" + getTrackingCache().getDebugName() + ")");
             TransactionImpl t = _databaseCache.getCurrentTransaction();
 
-            if (null != t)
+            // Only add post commit cache reload if there's a transaction and the post commit queue is not larger than
+            // the cache size.
+            if (null != t && _remainingReloadCommitTasks > 0)
             {
-                t.addCommitTask(new CacheReloadCommitTask<>(this, key, argument, loader), DbScope.CommitTaskOption.POSTCOMMIT);
+                CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
+                boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
+
+                // Decrement remaining commit tasks if the commit task was not previously added
+                if (!alreadyQueued)
+                    _remainingReloadCommitTasks--;
             }
 
             return value;
@@ -381,6 +390,50 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
                 // This should close the (temporary) shared cache
                 cache.close();
+            }
+        }
+
+        @Test
+        public void testDatabaseCacheTransactionLimit()
+        {
+            MyScope scope = new MyScope();
+
+            BlockingCache<String, Integer> cache = DatabaseCache.get(scope, 10, "Test Cache", new TestCacheLoader());
+
+            try (DbScope.Transaction transaction = scope.beginTransaction())
+            {
+                int taskCount = 0;
+                for (int i = 1; i <= 15; i++)
+                {
+                    cache.get("key_" + i);
+                    taskCount = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(scope.getCurrentTransactionImpl()).size();
+
+                    // Try another cache miss for this key to ensure another post commit is not added
+                    if (i == 5)
+                        cache.get("key_" + i);
+
+                    // 10 is the cache size so shouldn't be adding more post commit tasks beyond that. Less than 10 should
+                    // be adding post commit task for each miss.
+                    if (i >= 10)
+                    {
+                        assertEquals(10, taskCount);
+                    }
+                    else
+                    {
+                        assertEquals(i, taskCount);
+                    }
+                }
+                transaction.commit();
+            }
+        }
+
+        private static class TestCacheLoader implements CacheLoader<String, Integer>
+        {
+            @Override
+            public Integer load(@NotNull String test, @Nullable Object argument)
+            {
+                assertNotNull(test);
+                return 0;
             }
         }
 
