@@ -90,6 +90,18 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
         }
 
+        public void incrementRemainingReloadCommitTasks()
+        {
+            _remainingReloadCommitTasks++;
+            assert(_remainingReloadCommitTasks <= _databaseCache.getTrackingCache().getLimit());
+        }
+
+        // Primarily used for testing
+        public int getRemainingReloadCommitTasks()
+        {
+            return _remainingReloadCommitTasks;
+        }
+
         @Override
         protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
         {
@@ -274,6 +286,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         public void run()
         {
             getCache().get(_key, _arg, _loader);
+            
+            if (getCache() instanceof DatabaseCache.BlockingDatabaseCache<K,V> bdc)
+                bdc.incrementRemainingReloadCommitTasks();
         }
     }
 
@@ -396,13 +411,14 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         @Test
         public void testDatabaseCacheTransactionLimit()
         {
+            final int maxSize = 10;
             MyScope scope = new MyScope();
 
-            BlockingCache<String, Integer> cache = DatabaseCache.get(scope, 10, "Test Cache", new TestCacheLoader());
+            BlockingCache<String, Integer> cache = DatabaseCache.get(scope, maxSize, "Test Cache", new TestCacheLoader());
 
             try (DbScope.Transaction transaction = scope.beginTransaction())
             {
-                int taskCount = 0;
+                int taskCount;
                 for (int i = 1; i <= 15; i++)
                 {
                     cache.get("key_" + i);
@@ -425,6 +441,10 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 }
                 transaction.commit();
             }
+
+            // Verify remaining reload commits counts back up to cache size
+            int remainingCount = ((BlockingDatabaseCache) cache).getRemainingReloadCommitTasks();
+            assertEquals(maxSize, remainingCount);
         }
 
         private static class TestCacheLoader implements CacheLoader<String, Integer>
