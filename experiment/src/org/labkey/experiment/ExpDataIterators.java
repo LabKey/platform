@@ -2548,7 +2548,7 @@ public class ExpDataIterators
                 // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
                 configureLoader(loader, dataTable, null, true, aliasNames);
                 if (loader instanceof TabLoader tabLoader)
-                    tabLoader.setIncludeComments(true); // don't skip lines that starts with "#"
+                    tabLoader.setIncludeComments(true); // don't skip lines that starts with "#" (if the original file is Excel)
                 return updateService.loadRows(_user, dataContainer, loader, _context, null);
             }
             catch (SQLException | IOException e)
@@ -2567,17 +2567,9 @@ public class ExpDataIterators
                 return 0;
 
             int totalRowCount = 0;
-            if (_isCrossFolderUpdate && typeData.folderFiles.keySet().size() > 0)
+            if (_isCrossFolderUpdate && !typeData.folderFiles.keySet().isEmpty())
             {
-                boolean hasCrossFolderData = false;
-                for (Integer containerRowId : typeData.folderFiles.keySet())
-                {
-                    if (containerRowId != _container.getRowId())
-                    {
-                        hasCrossFolderData = true;
-                        break;
-                    }
-                }
+                boolean hasCrossFolderData = typeData.folderFiles.keySet().stream().anyMatch(id -> id != _container.getRowId());;
 
                 if (hasCrossFolderData)
                 {
@@ -2591,7 +2583,7 @@ public class ExpDataIterators
                         if (dataTable == null)
                         {
                             _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
-                            return 0;
+                            return totalRowCount;
                         }
                         totalRowCount +=_importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
                     }
@@ -3003,12 +2995,11 @@ public class ExpDataIterators
             if (typeData.dataRows.isEmpty())
                 return;
 
-            // for cross type import, write to further partitions
+            // for cross folder import, write to further partitions
             if (_isCrossFolderUpdate)
             {
                 ExpObject dataType = typeData.dataType;
 
-                // query for container
                 Map<String, List<Integer>> containerRows = new HashMap<>();
 
                 TableInfo tableInfo = null;
@@ -3032,8 +3023,8 @@ public class ExpDataIterators
                 {
                     String name = (String) row.get("name");
                     String dataContainer = (String) row.get("container");
-                    int sampleRowId = typeData.dataIds.indexOf(name);
-                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(sampleRowId);
+                    int dataRowId = typeData.dataIds.indexOf(name);
+                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(dataRowId);
                 }
 
                 for (String containerId : containerRows.keySet())
@@ -3042,7 +3033,7 @@ public class ExpDataIterators
                     if (container == null)
                     {
                         Container folder = ContainerManager.getForId(containerId);
-                        _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the container: " + (folder != null ? folder.getName() : containerId)));
+                        _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the folder: " + (folder != null ? folder.getName() : containerId)));
                         return;
                     }
 
@@ -3052,9 +3043,9 @@ public class ExpDataIterators
                     if (splitFile == null)
                     {
                         splitFile = writeSplitFile(typeData.dataType.getName(), "~containerSplit~", containerRowId + "-" + typeData.dataFile.getName(), typeData.headerRow);
-                        typeData.folderFiles.put(containerRowId, splitFile);
                         if (splitFile == null)
                             return;
+                        typeData.folderFiles.put(containerRowId, splitFile);
                     }
 
                     List<String> dataRows = new ArrayList<>();
