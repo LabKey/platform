@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="jakarta.servlet.jsp.JspWriter" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
@@ -24,11 +23,13 @@
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.settings.Theme" %>
+<%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.DateUtil.DateTimeFormat" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
@@ -42,21 +43,15 @@
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
 <%@ page import="org.labkey.core.admin.DateDisplayFormatType" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="java.lang.Enum" %>
-<%@ page import="java.lang.IllegalArgumentException" %>
-<%@ page import="java.lang.Object" %>
-<%@ page import="java.lang.String" %>
-<%@ page import="java.lang.StringBuilder" %>
 <%@ page import="java.text.SimpleDateFormat" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -72,7 +67,7 @@
         parentName = parent.isRoot() ? "the site root" : (parent.isProject() ? "project" : "folder") + " " + parent.getPath();
         String helpText = "Settings where the \"Inherited\" box is checked inherit their values from " + parentName +
                 ". Settings where \"Inherited\" is unchecked override their values in this " + (c.isProject() ? "project": "folder") + ".";
-        inheritHelp = helpPopup("Inherited", helpText, false);
+        inheritHelp = helpPopup("Inherited", helpText);
     }
     String clearMessage =
         c.isRoot() ? "all look & feel properties to their default values" : (
@@ -220,7 +215,7 @@
             "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
         inherited = isInherited(laf.isDiscussionEnabledStored());
     %>
-    <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp)%></td>
     <%=inheritCheckbox(inherited, discussionEnabled)%>
     <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDiscussionEnabled())%><%=disabled(inherited)%>></td>
 </tr>
@@ -253,7 +248,7 @@
 </tr>
 <tr>
     <td class="labkey-form-label">
-        <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+        <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.")%>
     </td>
     <% inherited = isInherited(laf.getSystemEmailAddressStored()); %>
     <%=inheritCheckbox(inherited, systemEmailAddress, hasAdminOpsPerm)%>
@@ -271,13 +266,14 @@
 <%
     }  // End of project/site only settings
 
-    String sizingPrefix = "<div style=\"width: 500px;\">";
-    String sizingSuffix = "</div>";
+    HtmlString sizingPrefix = HtmlString.unsafe("<div style=\"width: 500px;\">");
+    HtmlString sizingSuffix = HtmlString.unsafe("</div>");
 
-    String decimalFormatHelp = sizingPrefix + "The pattern string for numbers must be compatible with the format that the Java class " +
+    HtmlString decimalFormatHelp = HtmlStringBuilder.of(sizingPrefix)
+        .unsafeAppend("The pattern string for numbers must be compatible with the format that the Java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
-            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">documentation</a>. " +
+            "<a href=\"" + h(Formats.getDecimalFormatDocumentationURL()) + "\" target=\"blank\">documentation</a>. " +
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
             "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left style=\"width:200px;\">Meaning</tr>" +
@@ -286,16 +282,16 @@
             "<tr valign=top class=\"labkey-row\"><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
-            "</table>" + sizingSuffix;
+            "</table>").append(sizingSuffix).getHtmlString();
 
-    String simpleDateDocHeader = "<br><br>The pattern string must be compatible with the format that the Java class " +
+    HtmlString simpleDateDocHeader = HtmlString.unsafe("<br><br>The pattern string must be compatible with the format that the Java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
-            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">documentation</a>. " +
+            "<a href=\"" + h(DateUtil.getSimpleDateFormatDocumentationURL()) + "\" target=\"blank\">documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
-            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>";
+            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>");
 
-    String dateDocs =
+    HtmlString dateDocs = HtmlString.unsafe(
             "<tr class=\"labkey-row\"><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
@@ -304,27 +300,40 @@
             "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
             "<tr class=\"labkey-row\"><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
-            "<tr class=\"labkey-row\"><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>";
+            "<tr class=\"labkey-row\"><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>");
 
-    String timeDocs = "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+    HtmlString timeDocs = HtmlString.unsafe("<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>m</code><td>Minute in hour<td><code>30</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
-            "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>";
+            "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>");
 
-    String simpleDateFormatDocs = simpleDateDocHeader + dateDocs + "</table>";
-    String simpleDateTimeFormatDocs = simpleDateDocHeader + dateDocs + timeDocs + "</table>";
-    String simpleTimeFormatDocs = simpleDateDocHeader + timeDocs + "</table>";
-    String dateFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + sizingSuffix;
-    String dateTimeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + sizingSuffix;
-    String timeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + sizingSuffix;
+    DOM.Renderable dateFormatHelp = HtmlStringBuilder.of(sizingPrefix).append("This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below).").append(sizingSuffix);
+    DOM.Renderable dateTimeFormatHelp = HtmlStringBuilder.of(sizingPrefix).append("This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format.").append(sizingSuffix);
+    DOM.Renderable timeFormatHelp = HtmlStringBuilder.of(sizingPrefix).append("This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format.").append(sizingSuffix);
 
-    String dateParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs + sizingSuffix;
-    String dateTimeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateTimeFormatDocs + sizingSuffix;
-    String timeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs + sizingSuffix;
+    DOM.Renderable dateParsingHelp = HtmlStringBuilder.of(sizingPrefix)
+        .append("This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below).")
+        .append(simpleDateDocHeader)
+        .append(dateDocs)
+        .unsafeAppend("</table>")
+        .append(sizingSuffix);
+    DOM.Renderable dateTimeParsingHelp = HtmlStringBuilder.of(sizingPrefix)
+        .append("This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern.")
+        .append(simpleDateDocHeader)
+        .append(dateDocs)
+        .append(timeDocs)
+        .unsafeAppend("</table>")
+        .append(sizingSuffix);
+    DOM.Renderable timeParsingHelp = HtmlStringBuilder.of(sizingPrefix)
+        .append("This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern.")
+        .append(simpleDateDocHeader)
+        .append(timeDocs)
+        .unsafeAppend("</table>")
+        .append(sizingSuffix);
 %>
 <tr>
     <td<%=h(!folder ? " colspan=3" : "")%>>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
@@ -338,13 +347,13 @@
     %>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp)%></td>
     <% boolean inherited = isInherited(laf.getDefaultDateFormatStored()); %>
     <%=inheritCheckbox(inherited, defaultDateFormat)%>
     <td><% select(out, DateDisplayFormatType.Date, defaultDateFormat.name(), DateUtil.STANDARD_DATE_DISPLAY_FORMATS, laf.getDefaultDateFormat(), false, inherited); %></td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp)%></td>
     <% inherited = isInherited(laf.getDefaultDateTimeFormatStored()); %>
     <%=inheritCheckbox(inherited, defaultDateTimeFormat, true, "dateSelect", "timeSelect")%>
 <%
@@ -358,13 +367,13 @@
     </td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp)%></td>
     <% inherited = isInherited(laf.getDefaultTimeFormatStored()); %>
     <%=inheritCheckbox(inherited, defaultTimeFormat)%>
     <td><% select(out, DateDisplayFormatType.Time, defaultTimeFormat.name(), DateUtil.STANDARD_TIME_DISPLAY_FORMATS, laf.getDefaultTimeFormat(), false, inherited); %></td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp)%></td>
     <% inherited = isInherited(laf.getDefaultNumberFormatStored()); %>
     <%=inheritCheckbox(inherited, defaultNumberFormat)%>
     <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="<%=standardInputWidth%>" value="<%= h(laf.getDefaultNumberFormat()) %>"<%=disabled(inherited)%>></td>
@@ -384,13 +393,13 @@
         if (c.isRoot())
         {
             DateParsingMode mode = laf.getDateParsingMode();
-            String dateParsingModeHelp = "LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
+            DOM.Renderable dateParsingModeHelp = HtmlString.of("LabKey needs to understand how to interpret (parse) dates that users enter into input forms. " +
                 "For example, if a user enters the date \"10/4/2024\" does that person mean October 4, 2024 (typical interpretation " +
                 "in the United States) or April 10, 2024 (typical interpretation in most other countries)? Choose the " +
-                "parsing mode that matches your users' expectations.";
+                "parsing mode that matches your users' expectations.");
 %>
 <tr>
-    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp, false)%></td>
+    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing mode", dateParsingModeHelp)%></td>
     <td>
         <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.US%>"<%=checked(mode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
         <label><input type="radio" name="<%=dateParsingMode%>" value="<%=DateParsingMode.NON_US%>"<%=checked(mode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
@@ -403,19 +412,19 @@
         {
 %>
 <tr>
-    <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp)%></td>
     <% inherited = isInherited(laf.getExtraDateParsingPatternStored()); %>
     <%=inheritCheckbox(inherited, extraDateParsingPattern)%>
     <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
+    <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, 300)%></td>
     <% inherited = isInherited(laf.getExtraDateTimeParsingPatternStored()); %>
     <%=inheritCheckbox(inherited, extraDateTimeParsingPattern)%>
     <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp)%></td>
     <% inherited = isInherited(laf.getExtraTimeParsingPatternStored()); %>
     <%=inheritCheckbox(inherited, extraTimeParsingPattern)%>
     <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="<%=standardInputWidth%>" value="<%= h(laf.getExtraTimeParsingPattern()) %>"<%=disabled(inherited)%>></td>
@@ -443,16 +452,16 @@
 </tr>
 <%
     if (!folder) {
-        String customLoginHelp = "The custom login page is specified as a string composed of the module name and a page name in" +
+        HtmlString customLoginHelp = HtmlString.unsafe("The custom login page is specified as a string composed of the module name and a page name in" +
             " the format: [module]-[name]. For example the string 'myModule-customLogin' can be entered to enable a custom login provided as" +
             " an HTML page called customLogin.html located in the /resources/views directory of myModule." +
-            "<br/><br/>Requires AdminOperationsPermission to update.";
+            "<br/><br/>Requires AdminOperationsPermission to update.");
 %>
 <tr>
     <td colspan=3>Provide a custom login page (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
+    <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp)%></td>
     <% inherited = isInherited(laf.getCustomLoginStored()); %>
     <%=inheritCheckbox(inherited, customLogin, hasAdminOpsPerm)%>
     <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(inherited || !hasAdminOpsPerm)%>></td>
@@ -474,7 +483,7 @@
     <td colspan=3>Provide a custom site welcome page (<%=bean.welcomeLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=customWelcome%>">Alternative site welcome page</label><%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
+    <td class="labkey-form-label"><label for="<%=customWelcome%>">Alternative site welcome page</label><%=helpPopup("Custom Welcome Page", customWelcomeHelp)%></td>
     <td><input type="text" id="<%=customWelcome%>" name="<%=customWelcome%>" size="<%=standardInputWidth%>" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>

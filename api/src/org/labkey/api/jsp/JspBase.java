@@ -518,43 +518,29 @@ public abstract class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
 
-    public HelpPopupBuilder helpPopup(String helpText)
+    public HelpPopupBuilder helpPopup(@NotNull String helpText)
     {
         return PageFlowUtil.popupHelp(helpText);
     }
 
-    public HelpPopupBuilder helpPopup(String title, String helpText)
+    public HelpPopupBuilder helpPopup(String title, @NotNull String helpText)
     {
-        return helpPopup(title, helpText, false);
+        return PageFlowUtil.popupHelp(HtmlString.unsafe(filter(helpText,true)), title);
     }
 
-    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText)
-    {
-        if (null == title && !htmlHelpText)
-            return PageFlowUtil.popupHelp(helpText);
-        if (!htmlHelpText)
-            return PageFlowUtil.popupHelp(HtmlString.unsafe(filter(helpText,true)), title);
-        return PageFlowUtil.popupHelp(HtmlString.unsafe(helpText), title);
-    }
-
-    public HelpPopupBuilder helpPopup(String title, Renderable helpHtml)
+    public HelpPopupBuilder helpPopup(String title, @NotNull Renderable helpHtml)
     {
         return PageFlowUtil.popupHelp(helpHtml, title);
     }
 
-    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, int width)
-    {
-        return helpPopup(title, helpText, htmlHelpText).width(width);
-    }
-
-    public HelpPopupBuilder helpPopup(String title, Renderable helpHtml, int width)
+    public HelpPopupBuilder helpPopup(String title, @NotNull Renderable helpHtml, int width)
     {
         return PageFlowUtil.popupHelp(helpHtml, title).width(width);
     }
 
-    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, String linkText, int width)
+    public HelpPopupBuilder helpPopup(String title, @NotNull Renderable helpHtml, int width, String linkText)
     {
-        return helpPopup(title, helpText, htmlHelpText).link(HtmlString.of(linkText)).width(width);
+        return helpPopup(title, helpHtml, width).link(HtmlString.of(linkText));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)
