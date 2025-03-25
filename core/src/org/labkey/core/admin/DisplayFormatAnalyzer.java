@@ -5,7 +5,6 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.AdminUrls;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.PropertyManager;

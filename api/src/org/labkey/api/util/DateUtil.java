@@ -94,8 +94,14 @@ public class DateUtil
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
     private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
+    private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
+
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
-    private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
+    private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {
+        ISO_LONG_TIME_FORMAT_STRING,
+        ISO_TIME_FORMAT_STRING,
+        ISO_SHORT_TIME_FORMAT_STRING
+    };
 
     public static final Set<String> STANDARD_DATE_DISPLAY_FORMATS = PageFlowUtil.set(
             "yyyy-MM-dd",
@@ -112,9 +118,9 @@ public class DateUtil
     );
 
     public static final Set<String> STANDARD_TIME_DISPLAY_FORMATS = PageFlowUtil.set(
-        "HH:mm:ss",
-        "HH:mm",
-        "HH:mm:ss.SSS",
+        ISO_TIME_FORMAT_STRING,
+        ISO_SHORT_TIME_FORMAT_STRING,
+        ISO_LONG_TIME_FORMAT_STRING,
         "hh:mm a"
     );
 
@@ -897,9 +903,9 @@ public class DateUtil
 
         // 2. Separately, adding .SSS to the existing string (yyyy/MM/dd HH:mm:ss) worked on Chrome (and MS Edge), but not on Firefox.
         // Strangely, Firefox seem to adhere strictly to ECMA Specification of date string interchange format (i.e. date with
-        // hyphens instead of forward slashes) in this particular case with milliseconds. Hence had to modify the previous string from yyyy/MM/dd to yyyy-MM-dd.
+        // hyphens instead of forward slashes) in this particular case with milliseconds. Hence, had to modify the previous string from yyyy/MM/dd to yyyy-MM-dd.
         // Chrome seem to behave as expected with this change (and so does MS Edge, but extensive testing has not been done on this browser).
-        return "yyyy-MM-dd HH:mm:ss.SSS";
+        return ISO_DATE_TIME_FORMAT_STRING;
     }
 
     /**

@@ -28,8 +28,6 @@ import java.util.Set;
 /**
  * Factory for creating {@link WebPartView} instances. Used to assemble portal pages, where admins can add, remove,
  * and configure their desired web parts.
- * User: matthewb
- * Date: Oct 16, 2008
  */
 public interface WebPartFactory
 {

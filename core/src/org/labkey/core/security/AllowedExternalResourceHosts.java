@@ -92,7 +92,7 @@ public class AllowedExternalResourceHosts
             return;
         }
 
-        list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources(sub.directive(), sub.host()));
+        list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources(sub.directive(), "External Sources", sub.host()));
         LOG.debug("Registered [{}] as allowed external sources", list);
     }
 
