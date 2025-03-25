@@ -511,15 +511,13 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
         }
 
-        // replace ; with \n on UI
+        // replace multivalued separator (i.e. ;) with \n on UI
         if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
-            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(';') > 0) {
-                // Issue 52068: if the filter values is an array, join them with \n but don't replace semicolons
-                var filterValues = filter.getValue();
-                if (LABKEY.Utils.isArray(filterValues))
-                    inputValue = filterValues.join('\n');
-                else
-                    inputValue = inputValue.replaceAll(';', '\n');
+            var valueSeparator = filterType.getMultiValueSeparator();
+            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(valueSeparator) > 0) {
+                inputValue = filterType.parseValue(inputValue);
+                if (LABKEY.Utils.isArray(inputValue))
+                    inputValue = inputValue.join('\n');
             }
         }
 
