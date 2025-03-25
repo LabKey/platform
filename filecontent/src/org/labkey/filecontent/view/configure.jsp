@@ -30,19 +30,20 @@
 <%@ page import="java.nio.file.Files" %>
 <%@ page import="java.nio.file.Path" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<FileContentForm> me = (JspView<FileContentForm>) HttpView.currentView();
+    JspView<FileContentForm> me = HttpView.currentView();
     FileContentForm form = me.getModelBean();
     FileContentService service = FileContentService.get();
     Collection<AttachmentDirectory> attachmentDirs = service.getRegisteredDirectories(getContainer());
 
-    String fileSetHelp = "A file set enables web file sharing of data in subdirectories that do not correspond " +
+    HtmlString fileSetHelp = HtmlString.unsafe("A file set enables web file sharing of data in subdirectories that do not correspond " +
     "exactly to LabKey containers. It is important to remember that when you request a file from a file set, " +
     "you must specify the file set name in the <code>fileSet</code> parameter of the request URL.<br/><br/>" +
     "For example, if a file set was configured with a name of: <code>test</code> and a path of: <code>c:/examples</code>. " +
-    "The file: <code>c:/examples/index.htm</code> could be served with a request of: <code>.../labkey/files/home/index.htm? fileSet=test</code>";
+    "The file: <code>c:/examples/index.htm</code> could be served with a request of: <code>.../labkey/files/home/index.htm? fileSet=test</code>");
 
     %><labkey:errors/><%
     if (null != form.getMessage())
@@ -82,7 +83,7 @@
 <%  } //site administrator %>
 
 
-<b>File Sets<%=helpPopup("File Sets", fileSetHelp, true)%></b><br>
+<b>File Sets<%=helpPopup("File Sets", fileSetHelp)%></b><br>
 Each file set is an additional directory that stores files accessible to users of this folder.<br/>
 <%
     for (AttachmentDirectory attDir : attachmentDirs)

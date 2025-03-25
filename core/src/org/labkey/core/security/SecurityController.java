@@ -556,20 +556,13 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(GroupForm form, BindException errors)
         {
-            try
+            Group group = form.getGroupFor(getContainer());
+            // Issue 13837: if someone else already deleted the group, no need to throw exception
+            if (group != null)
             {
-                Group group = form.getGroupFor(getContainer());
-                ensureGroupInContainer(group,getContainer());
+                ensureGroupInContainer(group, getContainer());
                 ensureGroupUserAccess(group, getUser());
-                if (group != null)
-                {
-                    SecurityManager.deleteGroup(group);
-                    addGroupAuditEvent(getViewContext(), group, "The group: " + group.getPath() + " was deleted.");
-                }
-            }
-            catch(NotFoundException e)
-            {
-                // Issue 13837: if someone else already deleted the group, no need to throw exception
+                SecurityManager.deleteGroup(group, getUser());
             }
             return true;
         }
@@ -617,22 +610,6 @@ public class SecurityController extends SpringActionController
             _objectId = objectId;
         }
     }
-
-
-    private void addGroupAuditEvent(ContainerUser context, Group group, String message)
-    {
-        GroupAuditEvent event = new GroupAuditEvent(group.getContainer(), message);
-
-        event.setGroup(group.getUserId());
-        Container c = null==group.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(group.getContainer());
-        if (c != null && c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
-        else
-            event.setProjectId(ContainerManager.getRoot().getId());
-
-        AuditLogService.get().addEvent(context.getUser(), event);
-    }
-
 
     public static class UpdateMembersForm extends GroupForm
     {
@@ -1238,10 +1215,10 @@ public class SecurityController extends SpringActionController
         @Override
         public void validateCommand(Object target, Errors errors) {}
 
-        private void addAuditEvent(User user, String comment, int groupId)
+        private void addAuditEvent(User user, String comment, Group group)
         {
             if (user != null)
-                SecurityManager.addAuditEvent(getContainer(), user, comment, groupId);
+                SecurityManager.addAuditEvent(getContainer(), user, comment, group);
         }
 
         // UNDONE move to SecurityManager
@@ -1267,15 +1244,15 @@ public class SecurityController extends SpringActionController
             {
                 case explicit:
                     addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s",
-                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                            group.getName(), oldRole.getName(), newRole.getName()), group);
                     break;
                 case fromInherited:
                     addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s (inherited) to %s",
-                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                            group.getName(), oldRole.getName(), newRole.getName()), group);
                     break;
                 case toInherited:
                     addAuditEvent(getUser(), String.format("The permissions for group %s were changed from %s to %s (inherited)",
-                            group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
+                            group.getName(), oldRole.getName(), newRole.getName()), group);
                     break;
             }
         }
@@ -1303,7 +1280,7 @@ public class SecurityController extends SpringActionController
 
             if (inherit)
             {
-                addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), 0);
+                addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), null);
 
                 //get existing policy specifically for this container
                 SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(c, false);
@@ -1479,7 +1456,7 @@ public class SecurityController extends SpringActionController
             User userToClone = null;
 
             final String sourceUser = form.getCloneUser();
-            if (sourceUser != null && sourceUser.length() > 0)
+            if (sourceUser != null && !sourceUser.isEmpty())
             {
                 try
                 {
@@ -1503,7 +1480,7 @@ public class SecurityController extends SpringActionController
             for (String rawEmail : invalidEmails)
             {
                 // Ignore lines of all whitespace, otherwise show an error.
-                if (!"".equals(rawEmail.trim()))
+                if (!rawEmail.trim().isEmpty())
                     errors.addError(new LabKeyError("Failed to create user " + rawEmail.trim() + ": Invalid email address"));
             }
 
@@ -1567,9 +1544,7 @@ public class SecurityController extends SpringActionController
 
     private void audit(User targetUser, String message)
     {
-        GroupAuditEvent event = new GroupAuditEvent(ContainerManager.getRoot().getId(), message);
-        event.setUser(targetUser.getUserId());
-        event.setProjectId(ContainerManager.getRoot().getId());
+        GroupAuditEvent event = new GroupAuditEvent(ContainerManager.getRoot(), message, targetUser);
         AuditLogService.get().addEvent(getUser(), event);
     }
 

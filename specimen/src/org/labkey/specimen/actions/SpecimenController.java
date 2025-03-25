@@ -2880,7 +2880,7 @@ public class SpecimenController extends SpringActionController
         {
             SpecimenRequestActor actor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), form.getId());
             if (actor != null)
-                actor.delete();
+                actor.delete(getUser());
 
             return true;
         }

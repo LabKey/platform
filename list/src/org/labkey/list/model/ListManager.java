@@ -1157,16 +1157,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         if (null != user)
         {
-            ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(list.getContainer().getId(), comment);
-
-            Container c = list.getContainer();
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
-            event.setListDomainUri(list.getDomain().getTypeURI());
-            event.setListId(list.getListId());
-            event.setListName(list.getName());
-
+            ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(list.getContainer(), comment, list);
             AuditLogService.get().addEvent(user, event);
         }
     }
@@ -1176,17 +1167,9 @@ public class ListManager implements SearchService.DocumentProvider
      */
     void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
-        ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c.getId(), comment);
+        ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c, comment, list);
 
-        Container project = c.getProject();
-        if (null != project)
-            event.setProjectId(project.getId());
-
-        event.setListDomainUri(list.getDomain().getTypeURI());
-        event.setListId(list.getListId());
         event.setListItemEntityId(entityId);
-        event.setListName(list.getName());
-
         if (oldRecord != null) event.setOldRecordMap(oldRecord);
         if (newRecord != null) event.setNewRecordMap(newRecord);
 

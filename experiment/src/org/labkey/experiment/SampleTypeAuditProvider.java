@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
@@ -124,7 +125,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             super();
         }
 
-        public SampleTypeAuditEvent(String container, String comment)
+        public SampleTypeAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
         }

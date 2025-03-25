@@ -197,19 +197,19 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (parent != null)
         {
             Container c = ContainerManager.getForId(parent.getContainerId());
-            AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c != null ? c.getId() : null, comment);
+            AttachmentAuditProvider.AttachmentAuditEvent attachmentEvent = new AttachmentAuditProvider.AttachmentAuditEvent(c == null ? ContainerManager.getRoot() : c, comment);
 
             attachmentEvent.setAttachmentParentEntityId(parent.getEntityId());
             attachmentEvent.setAttachment(filename);
 
             AuditLogService.get().addEvent(user, attachmentEvent);
 
-            if (parent instanceof AttachmentDirectory)
+            if (parent instanceof AttachmentDirectory adParent)
             {
-                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c != null ? c.getId() : null, comment);
+                FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(c, comment);
                 try
                 {
-                    event.setDirectory(((AttachmentDirectory)parent).getFileSystemDirectory().getPath());
+                    event.setDirectory(adParent.getFileSystemDirectory().getPath());
                 }
                 catch (MissingRootDirectoryException ex)
                 {

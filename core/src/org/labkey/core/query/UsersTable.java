@@ -656,7 +656,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             else
                 return;
 
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(c.getId(), message, userToUpdate);
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(c, message, userToUpdate);
             AuditLogService.get().addEvent(editingUser, event);
         }
     }

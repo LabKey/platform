@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.StudyPropertiesForm" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -46,15 +47,15 @@
                     <td align="left"><input type="text" size="40" name="label" value="<%= h(form.getLabel()) %>"></td>
                 </tr>
                 <tr>
-                    <td class="lk-study-property">Subject Noun (Singular)<%=helpPopup("Subject Noun (Singular)", "The singular noun used to identify subjects.  Examples include \"Participant\", \"Mouse\", or \"Yeast\".  This value cannot be changed after study creation.", true)%></td>
+                    <td class="lk-study-property">Subject Noun (Singular)<%=helpPopup("Subject Noun (Singular)", "The singular noun used to identify subjects. Examples include \"Participant\", \"Mouse\", or \"Yeast\". This value cannot be changed after study creation.")%></td>
                     <td align="left"><input type="text" size="40" name="subjectNounSingular" value="<%= h(form.getSubjectNounSingular()) %>"></td>
                 </tr>
                 <tr>
-                    <td class="lk-study-property">Subject Noun (Plural)<%=helpPopup("Subject Noun (Plural)", "The plural noun used to identify subjects.  Examples include \"Participants\", \"Mice\", or \"Yeasts\".  This value cannot be changed after study creation.", true)%></td>
+                    <td class="lk-study-property">Subject Noun (Plural)<%=helpPopup("Subject Noun (Plural)", "The plural noun used to identify subjects. Examples include \"Participants\", \"Mice\", or \"Yeasts\". This value cannot be changed after study creation.")%></td>
                     <td align="left"><input type="text" size="40" name="subjectNounPlural" value="<%= h(form.getSubjectNounPlural()) %>"></td>
                 </tr>
                 <tr>
-                    <td class="lk-study-property">Subject Column Name<%=helpPopup("Subject Column Name", "The column header for subject IDs.  Examples include \"ParticipantId\", \"MouseId\", or \"YeastId\".  This value cannot be changed after study creation.", true)%></td>
+                    <td class="lk-study-property">Subject Column Name<%=helpPopup("Subject Column Name", "The column header for subject IDs. Examples include \"ParticipantId\", \"MouseId\", or \"YeastId\". This value cannot be changed after study creation.")%></td>
                     <td align="left"><input type="text" size="40" name="subjectColumnName" value="<%= h(form.getSubjectColumnName()) %>"></td>
                 </tr>
             </table>
@@ -68,7 +69,7 @@
             </p>
             <table class="lk-fields-table">
                 <tr>
-                    <td class="lk-study-property">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></td>
+                    <td class="lk-study-property">Timepoint Style<%=helpPopup("Timepoint Styles", HtmlString.unsafe("<p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>"))%></td>
                     <td align="left">
                         <labkey:input type="radio" name="timepointType" formGroup="false" id="dateTimepointType" value="<%=TimepointType.DATE%>" checked="<%=(form.getTimepointType() == TimepointType.DATE)%>" onChange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';" /> Dates &nbsp;&nbsp;
                         <labkey:input type="radio" name="timepointType" formGroup="false" value="<%=TimepointType.VISIT%>" checked="<%=(form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null)%>" onChange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';" /> Assigned Visits  &nbsp;&nbsp;

@@ -81,10 +81,10 @@
     public void testCoreGroups() throws Exception
     {
         // Add a user to multiple groups
-        Group g1 = SecurityManager.createGroup(c, "group1");
+        Group g1 = SecurityManager.createGroup(c, "group1", getUser());
         SecurityManager.addMember(g1, getUser());
 
-        Group g2 = SecurityManager.createGroup(c, "group2");
+        Group g2 = SecurityManager.createGroup(c, "group2", getUser());
         SecurityManager.addMember(g2, getUser());
 
         ActionURL url = new ActionURL(QueryController.SelectRowsAction.class, c);

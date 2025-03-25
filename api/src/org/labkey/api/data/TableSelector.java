@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -44,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector> implements ResultsFactory
 {
@@ -235,10 +238,22 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     @Override
-    public TableResultSet getResultSet(boolean cache, boolean scrollable)
+    public Results getResultSet(boolean cache, boolean scrollable)
     {
         ensureStableColumnOrder("getResultSet()");
-        return super.getResultSet(cache, scrollable);
+        return getResults(cache, scrollable);
+    }
+
+    @Override
+    public Results getResultSet(boolean cache)
+    {
+        return getResults(cache, false);
+    }
+
+    @Override
+    public Results getResultSet()
+    {
+        return getResults(true, false);
     }
 
     @Override
@@ -246,6 +261,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         ensureStableColumnOrder("resultSetStream()");
         return super.resultSetStream();
+    }
+
+    public Stream<Results> resultsStream(boolean cached)
+    {
+        return streamResults(SimpleResultSetIterator::new, cached);
+    }
+
+    private <T> Stream<T> streamResults(Function<Results, Iterator<T>> function, boolean cached)
+    {
+        return getStandardResultSetFactory(cached).handleResultSet((incoming, conn) -> {
+            // For convenience, we don't require closing Streams over cached result sets, so set the CachedResultSet to not validate.
+            Results rs = getResults(cached);
+            Iterable<T> iterable = () -> function.apply(rs);
+            return StreamSupport.stream(iterable.spliterator(), false)
+                    .onClose(() -> {
+                        try
+                        {
+                            rs.close();
+                        }
+                        catch (SQLException e)
+                        {
+                            throw getExceptionFramework().translate(getScope(), "Attempting to close() ResultSet and Connection", e);
+                        }
+                    });
+        });
     }
 
     /**

@@ -62,8 +62,8 @@ public class StudySecurityEscalator extends SecurityEscalator {
      * @return A blank new {@link SecurityEscalationAuditProvider.SecurityEscalationEvent}.
      */
     @Override
-    protected SecurityEscalationAuditProvider.SecurityEscalationEvent getNewSecurityEvent() {
-        return new StudySecurityEscalationAuditProvider.StudySecurityEscalationEvent();
+    protected SecurityEscalationAuditProvider.SecurityEscalationEvent getNewSecurityEvent(Container container, String comment) {
+        return new StudySecurityEscalationAuditProvider.StudySecurityEscalationEvent(container, comment);
     }
 
     /**

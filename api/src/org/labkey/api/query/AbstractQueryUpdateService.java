@@ -218,7 +218,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
         long auditId = DbSequenceManager.get(ContainerManager.getRoot(), DB_SEQUENCE_NAME).next();
-        return new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
+        return new TransactionAuditProvider.TransactionAuditEvent(container, auditAction, auditId);
     }
 
     public static void addTransactionAuditEvent(DbScope.Transaction transaction, User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
