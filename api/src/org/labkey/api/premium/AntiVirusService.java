@@ -103,7 +103,7 @@ public interface AntiVirusService
     {
         log.warn((null != info.getUser() ? info.getUser().getEmail() + " " : "") + logmessage);
         FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(
-                info.getContainer().getId(), logmessage
+                info.getContainer(), logmessage
         );
         if (null != info.getURL())
             event.setDirectory(info.getURL().getPath());

@@ -1102,17 +1102,22 @@ public class UserManager
 
         int _user;
 
+        private final Map<String, Object> _messageElements = new LinkedHashMap<>();
+
         public UserAuditEvent()
         {
             super();
         }
 
-        public UserAuditEvent(String container, String comment, User modifiedUser)
+        public UserAuditEvent(Container container, String comment, User modifiedUser)
         {
             super(UserManager.USER_AUDIT_EVENT, container, comment);
 
             if (modifiedUser != null)
+            {
                 _user = modifiedUser.getUserId();
+                _messageElements.put("user", getUserMessageElement(modifiedUser));
+            }
         }
 
         public int getUser()
@@ -1128,8 +1133,7 @@ public class UserManager
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
-            Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("user", getUserMessageElement(getUser()));
+            Map<String, Object> elements = new LinkedHashMap<>(_messageElements);
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -1141,7 +1145,7 @@ public class UserManager
      */
     public static void addAuditEvent(User user, Container c,  @Nullable User modifiedUser, String msg)
     {
-        UserAuditEvent event = new UserAuditEvent(c.getId(), msg, modifiedUser);
+        UserAuditEvent event = new UserAuditEvent(c, msg, modifiedUser);
         AuditLogService.get().addEvent(user, event);
     }
 

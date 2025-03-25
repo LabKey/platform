@@ -106,11 +106,11 @@ is uploaded along with the data. This form allows you to define a range of seque
     <tr>
         <%-- UNDONE: duplicated in editVisit.jsp --%>
         <td class="labkey-form-label">Visit Handling (advanced)<%=
-            helpPopup("Visit Handling (advanced)",
-                    "You may specify that unique sequence numbers should be based on visit date." +
-                            "<p>This is for special handling of some log/unscheduled events.</p>" +
-                            "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>",
-                    true)
+            helpPopup("Visit Handling (advanced)", HtmlString.unsafe(
+                "You may specify that unique sequence numbers should be based on visit date." +
+                "<p>This is for special handling of some log/unscheduled events.</p>" +
+                "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>"
+            ))
         %></td>
         <td>
             <select name="sequenceNumHandling">

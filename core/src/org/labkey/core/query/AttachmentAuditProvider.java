@@ -118,7 +118,7 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
             super();
         }
 
-        public AttachmentAuditEvent(String container, String comment)
+        public AttachmentAuditEvent(Container container, String comment)
         {
             super(AttachmentService.ATTACHMENT_AUDIT_EVENT, container, comment);
         }

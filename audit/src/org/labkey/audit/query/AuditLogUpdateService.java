@@ -57,7 +57,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException
     {
-        ClientApiAuditProvider.ClientApiAuditEvent event = new ClientApiAuditProvider.ClientApiAuditEvent(container.getId(), getString(row, "Comment"));
+        ClientApiAuditProvider.ClientApiAuditEvent event = new ClientApiAuditProvider.ClientApiAuditEvent(container, getString(row, "Comment"));
         if (row.get("EventType") != null)
         {
             String eventType = row.get("EventType").toString();

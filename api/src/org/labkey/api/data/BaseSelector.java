@@ -282,13 +282,13 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
      * A very simple Iterator that returns the ResultSet on each call to {@code next()}. (Compare with {@link ResultSetIterator},
      * which returns a {@code Map<String, Object>} on each call to {@code next()}).
      */
-    private class SimpleResultSetIterator implements Iterator<ResultSet>
+    class SimpleResultSetIterator<RS extends ResultSet> implements Iterator<RS>
     {
-        private final ResultSetIteratorHelper _iter;
+        private final ResultSetIteratorHelper<RS> _iter;
 
-        private SimpleResultSetIterator(ResultSet rs)
+        SimpleResultSetIterator(RS rs)
         {
-            _iter = new ResultSetIteratorHelper(rs);
+            _iter = new ResultSetIteratorHelper<>(rs);
         }
 
         @Override
@@ -305,7 +305,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         }
 
         @Override
-        public ResultSet next()
+        public RS next()
         {
             try
             {

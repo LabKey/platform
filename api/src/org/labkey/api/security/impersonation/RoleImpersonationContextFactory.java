@@ -122,12 +122,12 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         if (!_previousRoles.isEmpty())
         {
-            UserManager.UserAuditEvent stopEvent = new UserManager.UserAuditEvent(context.getContainer().getId(),
+            UserManager.UserAuditEvent stopEvent = new UserManager.UserAuditEvent(context.getContainer(),
                     adminUser.getEmail() + " stopped impersonating role" + getRolesDisplayString(_previousRoles), adminUser);
             AuditLogService.get().addEvent(adminUser, stopEvent);
         }
 
-        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer(),
                 adminUser.getEmail() + " impersonated role" + getRolesDisplayString(_roles), adminUser);
         AuditLogService.get().addEvent(adminUser, event);
     }
@@ -165,7 +165,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
         User adminUser = getAdminUser();
         Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
-        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),adminUser.getEmail()
+        UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project,adminUser.getEmail()
             + " stopped impersonating role" + getRolesDisplayString(_roles), adminUser);
         AuditLogService.get().addEvent(adminUser, event);
     }

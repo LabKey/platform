@@ -124,7 +124,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
     private void saveFileUploadDisabledSetting(FormType form, User user)
     {
-        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot().getId(), "The setting for disable file upload was changed (see details).");
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot(), "The setting for disable file upload was changed (see details).");
 
         WriteableAppProps props = AppProps.getWriteableInstance();
         boolean hasChange = false;

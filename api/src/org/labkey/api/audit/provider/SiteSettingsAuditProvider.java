@@ -21,6 +21,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.HtmlDisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
@@ -117,7 +118,7 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
             super();
         }
 
-        public SiteSettingsAuditEvent(String container, String comment)
+        public SiteSettingsAuditEvent(Container container, String comment)
         {
             super(AUDIT_EVENT_TYPE, container, comment);
         }

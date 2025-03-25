@@ -147,15 +147,15 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     @Override
     public Collection<A> getActorsInUse(Container c)
     {
-        Requirement[] requirements = getRequirements(c);
+        Requirement<?>[] requirements = getRequirements(c);
         Map<Object, A> actors = new HashMap<>();
-        for (Requirement requirement : requirements)
+        for (Requirement<?> requirement : requirements)
         {
             A actor = getActor(c, requirement.getActorPrimaryKey());
             actors.put(actor.getPrimaryKey(), actor);
         }
-        Requirement[] defaultRequirements = getDefaultRequirements(c);
-        for (Requirement requirement : defaultRequirements)
+        Requirement<?>[] defaultRequirements = getDefaultRequirements(c);
+        for (Requirement<?> requirement : defaultRequirements)
         {
             A actor = getActor(c, requirement.getActorPrimaryKey());
             actors.put(actor.getPrimaryKey(), actor);
@@ -164,7 +164,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     }
 
     @Override
-    public void purgeContainer(Container c)
+    public void purgeContainer(Container c, User user)
     {
         R[] requirements = getRequirements(c);
         for (R requirement : requirements)
@@ -172,7 +172,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
         A[] actors = getActors(c);
         for (A actor : actors)
-            actor.delete();
+            actor.delete(user);
     }
 
 

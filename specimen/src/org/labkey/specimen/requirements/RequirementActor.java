@@ -43,11 +43,11 @@ public interface RequirementActor<A extends RequirementActor>
 
     void removeMembers(Location location, User... members);
 
-    void deleteAllGroups();
+    void deleteAllGroups(User user);
 
     A create(User user);
 
     A update(User user);
 
-    void delete();
+    void delete(User user);
 }

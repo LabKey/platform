@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -221,14 +222,42 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         Integer _group;
         String _resourceEntityId;
 
+        private final Map<String, Object> _messageElements = new HashMap<>();
+
         public GroupAuditEvent()
         {
             super();
         }
 
-        public GroupAuditEvent(String container, String comment)
+        public GroupAuditEvent(Container container, String comment)
         {
             super(GroupManager.GROUP_AUDIT_EVENT, container, comment);
+        }
+        public GroupAuditEvent(Container c, String comment, Group group)
+        {
+            this(c, comment, group, null);
+        }
+        public GroupAuditEvent(Container c, String comment, Group group, UserPrincipal userOrGroup)
+        {
+            this(c, comment);
+            if (group != null)
+            {
+                _messageElements.put("group", getGroupMessageElement(group));
+                _group = group.getUserId();
+            }
+            if (userOrGroup != null)
+            {
+                if (userOrGroup instanceof User u)
+                {
+                    _messageElements.put("user", getUserMessageElement(u));
+                }
+                _user = userOrGroup.getUserId();
+            }
+        }
+
+        public GroupAuditEvent(Container c, String comment, UserPrincipal userOrGroup)
+        {
+            this(c, comment, null, userOrGroup);
         }
 
         public Integer getUser()
@@ -264,11 +293,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
-            Map<String, Object> elements = new LinkedHashMap<>();
-            if (getUser() != null)
-                elements.put("user", getUserMessageElement(getUser()));
-            if (getGroup() != null)
-                elements.put("group", getGroupMessageElement(getGroup()));
+            Map<String, Object> elements = new LinkedHashMap<>(_messageElements);
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }

@@ -396,7 +396,7 @@ public class SecurityManager
         @Override
         public void containerDeleted(Container c, User user)
         {
-            deleteGroups(c, null);
+            deleteGroups(c, null, user);
         }
     }
 
@@ -1166,12 +1166,14 @@ public class SecurityManager
         }
     }
 
-    public static Group createGroup(Container c, String name)
+    /** @param c assumed to be the root container if none is specified */
+    public static Group createGroup(@Nullable Container c, String name, @Nullable User user)
     {
-        return createGroup(c, name, PrincipalType.GROUP);
+        return createGroup(c, name, user, PrincipalType.GROUP);
     }
 
-    public static Group createGroup(Container c, String name, PrincipalType type)
+    /** @param c assumed to be the root container if none is specified */
+    public static Group createGroup(@Nullable Container c, String name, @Nullable User user, PrincipalType type)
     {
         // Consider: add validation rules to enum
         if (type != PrincipalType.GROUP && type != PrincipalType.MODULE)
@@ -1192,16 +1194,17 @@ public class SecurityManager
                 throw new IllegalStateException("Security groups can only be associated with a project or the root");
         }
 
-        return createGroup(c, name, type, ownerId);
+        return createGroup(c, name, user, type, ownerId);
     }
 
-    public static Group createGroup(Container c, String name, PrincipalType type, String ownerId)
+    /** @param c assumed to be the root container if none is specified */
+    public static Group createGroup(@Nullable Container c, String name, @Nullable User user, PrincipalType type, String ownerId)
     {
-        String containerId = (null == c || c.isRoot()) ? null : c.getId();
+        c = c == null ? ContainerManager.getRoot() : c;
         Group group = new Group(type);
         group.setName(StringUtils.trimToNull(name));
         group.setOwnerId(ownerId);
-        group.setContainer(containerId);
+        group.setContainer(c.isRoot() ? null : c.getId());
 
         if (null == group.getName())
             throw new IllegalArgumentException("Group can not have blank name");
@@ -1213,8 +1216,19 @@ public class SecurityManager
         if (groupExists(c, group.getName(), group.getOwnerId()))
             throw new IllegalArgumentException("Group '" + group.getName() + "' already exists");
 
-        Table.insert(null, core.getTableInfoPrincipals(), group);
-        ProjectAndSiteGroupsCache.uncache(c);
+        try (DbScope.Transaction t = core.getSchema().getScope().ensureTransaction())
+        {
+            group = Table.insert(null, core.getTableInfoPrincipals(), group);
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c,
+                    "A new security group named " + name + " was created.",
+                    group);
+            AuditLogService.get().addEvent(user, event);
+            t.commit();
+        }
+        finally
+        {
+            ProjectAndSiteGroupsCache.uncache(c);
+        }
 
         return group;
     }
@@ -1227,27 +1241,41 @@ public class SecurityManager
 
     public static void renameGroup(Group group, String newName, User currentUser)
     {
-        if (group.isSystemGroup())
-            throw new IllegalArgumentException("System groups may not be renamed!");
-        Container c = null == group.getContainer() ? null : ContainerManager.getForId(group.getContainer());
-        if (StringUtils.isEmpty(newName))
-            throw new IllegalArgumentException("Name is required (may not be blank)");
-        String valid = UserManager.validGroupName(newName, group.getPrincipalType());
-        if (null != valid)
-            throw new IllegalArgumentException(valid);
-        if (null != getGroupId(c, newName, false))
-            throw new IllegalArgumentException("Cannot rename group '" + group.getName() + "' to '" + newName + "' because that name is already used by another group!");
+        try (DbScope.Transaction t = core.getSchema().getScope().ensureTransaction())
+        {
+            String oldName = group.getName();
+            if (group.isSystemGroup())
+                throw new IllegalArgumentException("System groups may not be renamed!");
+            Container c = null == group.getContainer() ? null : ContainerManager.getForId(group.getContainer());
+            if (StringUtils.isEmpty(newName))
+                throw new IllegalArgumentException("Name is required (may not be blank)");
+            String valid = UserManager.validGroupName(newName, group.getPrincipalType());
+            if (null != valid)
+                throw new IllegalArgumentException(valid);
+            if (null != getGroupId(c, newName, false))
+                throw new IllegalArgumentException("Cannot rename group '" + group.getName() + "' to '" + newName + "' because that name is already used by another group!");
 
-        Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
-        GroupCache.uncache(group.getUserId());
+            Table.update(currentUser, core.getTableInfoPrincipals(), Collections.singletonMap("name", newName), group.getUserId());
+
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c == null ? ContainerManager.getRoot(): c,
+                    "The security group named '" + oldName + "' was renamed to '" + newName + "'.",
+                    group);
+            AuditLogService.get().addEvent(currentUser, event);
+
+            t.commit();
+        }
+        finally
+        {
+            GroupCache.uncache(group.getUserId());
+        }
     }
 
-    public static void deleteGroup(Group group)
+    public static void deleteGroup(@NotNull Group group, @NotNull User user)
     {
-        deleteGroup(group.getUserId());
+        deleteGroup(group.getUserId(), user);
     }
 
-    static void deleteGroup(int groupId)
+    static void deleteGroup(int groupId, User user)
     {
         Group group = getGroup(groupId);
         if (null == group)
@@ -1302,11 +1330,17 @@ public class SecurityManager
             if (!group.isProjectGroup())
                 ensureAtLeastOneRootAdminExists();
 
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(
+                    c == null ? ContainerManager.getRoot() : c,
+                    "The security group named " + group.getName() + " was deleted.",
+                    group);
+            AuditLogService.get().addEvent(user, event);
+
             transaction.commit();
         }
     }
 
-    public static void deleteGroups(Container c, @Nullable PrincipalType type)
+    public static void deleteGroups(Container c, @Nullable PrincipalType type, User user)
     {
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
             throw new IllegalArgumentException("Illegal group type: " + type);
@@ -1317,7 +1351,7 @@ public class SecurityManager
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
         new SqlSelector(core.getSchema(), "SELECT UserId FROM " + core.getTableInfoPrincipals() +
             "\tWHERE Container=? AND Type LIKE ?", c, typeString).stream(Integer.class)
-            .forEach(SecurityManager::deleteGroup);
+            .forEach((g) -> SecurityManager.deleteGroup(g, user));
     }
 
     public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
@@ -2436,7 +2470,7 @@ public class SecurityManager
 
         // Create default groups
         //Note: we are no longer creating the project-level Administrators group
-        Group userGroup = createGroup(project, "Users");
+        Group userGroup = createGroup(project, "Users", user);
 
         // Set default permissions
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
@@ -2493,18 +2527,14 @@ public class SecurityManager
         WritablePropertyMap props = PropertyManager.getWritableProperties(project, SUBFOLDERS_INHERIT_PERMISSIONS_NAME, true);
         props.put(SUBFOLDERS_INHERIT_PERMISSIONS_NAME, Boolean.toString(inherit));
         props.save();
-        addAuditEvent(project, user, String.format("Container %s was updated so that new subfolders would " + (inherit ? "" : "not ") + "inherit security permissions", project.getName()), 0);
+        addAuditEvent(project, user, String.format("Container %s was updated so that new subfolders would " + (inherit ? "" : "not ") + "inherit security permissions", project.getName()), null);
     }
 
-    public static void addAuditEvent(Container c, User user, String comment, int groupId)
+    public static void addAuditEvent(Container c, User user, String comment, Group group)
     {
         if (user != null)
         {
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(), comment);
-            event.setGroup(groupId);
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
+            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c, comment, group);
             AuditLogService.get().addEvent(user, event);
         }
     }
@@ -2520,7 +2550,7 @@ public class SecurityManager
         /* when demoting a project to a regular folder, delete the project groups */
         if (oldProject == c)
         {
-            deleteGroups(c, PrincipalType.GROUP);
+            deleteGroups(c, PrincipalType.GROUP, user);
         }
 
         /*
@@ -2788,7 +2818,7 @@ public class SecurityManager
                         {
                             try
                             {
-                                group = createGroup(rootContainer, groupName, PrincipalType.GROUP);
+                                group = createGroup(rootContainer, groupName, user, PrincipalType.GROUP);
                             }
                             catch (IllegalArgumentException e)
                             {
@@ -2856,7 +2886,7 @@ public class SecurityManager
                 {
                     try
                     {
-                        group = createGroup(rootContainer, prop.getName(), PrincipalType.GROUP);
+                        group = createGroup(rootContainer, prop.getName(), null, PrincipalType.GROUP);
                     }
                     catch (IllegalArgumentException e)
                     {
@@ -3140,15 +3170,15 @@ public class SecurityManager
         public void setUp()
         {
             project = JunitUtil.getTestContainer().getProject();
-            groupA = createGroup(project, "a");
-            groupB = createGroup(project, "b");
+            groupA = createGroup(project, "a", TestContext.get().getUser());
+            groupB = createGroup(project, "b", TestContext.get().getUser());
         }
         //            try{tearDown();} catch(Exception e){};
         @After
         public void tearDown()
         {
-            deleteGroup(groupA);
-            try{deleteGroup(groupB);}catch(Exception ignored){}
+            deleteGroup(groupA, TestContext.get().getUser());
+            try{deleteGroup(groupB, TestContext.get().getUser());}catch(Exception ignored){}
         }
 
         @Test
@@ -3219,7 +3249,7 @@ public class SecurityManager
 
                 while(count++ < maxLoop)
                 {
-                    Group newGroup = createGroup(project, "testGroup" + count);
+                    Group newGroup = createGroup(project, "testGroup" + count, TestContext.get().getUser());
                     addMember(groups.getLast(), newGroup);
                     groups.add(newGroup);
                     try
@@ -3238,7 +3268,7 @@ public class SecurityManager
                 deleteMember(groupA, groupB);
                 while(groups.size()>1)//groupB will be deleted by the tearDown
                 {
-                    deleteGroup(groups.removeLast());
+                    deleteGroup(groups.removeLast(), TestContext.get().getUser());
                 }
             }
         }
@@ -3574,7 +3604,7 @@ public class SecurityManager
             assertTrue("The group defined in the startup properties: "  + TEST_GROUP_1_NAME + " did not have the specified role: " + TEST_GROUP_1_ROLE_NAME, roles.contains(role));
 
             // delete the test group that was added
-            deleteGroup(group);
+            deleteGroup(group, TestContext.get().getUser());
         }
 
         /**
