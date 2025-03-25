@@ -239,8 +239,6 @@ public class QuerySelectView extends AbstractQueryRelation
                 columnMap.put(c.getFieldKey(), c);
         }
 
-        boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
-        SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT ");   // SAS/SHARE JDBC driver requires "SELECT " ("SELECT\n" is not allowed), #17168
         String strComma = "\n";
         String tableName = table.getName();
@@ -279,39 +277,48 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
-        if (requiresExtraColumns || distinct)
+        // NOTE: we need an outerSelect when
+        //  * distinct==true
+        //  * we want to hide columns not requested in selectColumns (see ensureRequiredColumns())
+        // however, we may need to add not requested columns for logging.
+        // It is easier and more consistent to always wrap.
+        SQLFragment outerSelect;
         {
-            outerSelect = distinct ?   new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
+            outerSelect = distinct ? new SQLFragment("SELECT DISTINCT ") : new SQLFragment("SELECT ");
             strComma = "";
 
+            Set<FieldKey> selectedFieldKeys = new HashSet<>();
             for (ColumnInfo column : selectColumns)
             {
-                outerSelect.append(strComma);
-                outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                strComma = ", ";
+                if (selectedFieldKeys.add(column.getFieldKey()))
+                {
+                    outerSelect.append(strComma);
+                    outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
+                    strComma = ", ";
+                }
+            }
+
+            if (!distinct)
+            {
+                for (ColumnInfo column : extraSelectDataLoggingColumns)
+                {
+                    if (selectedFieldKeys.add(column.getFieldKey()))
+                    {
+                        outerSelect.append(strComma);
+                        outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
+                        strComma = ", ";
+                    }
+                }
             }
 
             // NOTE: I think extraSelectDataLoggingColumns won't contain columns that were added by ensureRequiredColumns()
             // It is safer to recheck the entire list of columns in queryLogging.getDataLoggingColumns()
-            if (distinct)
+            if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
             {
-                if (null == queryLogging.getExceptionToThrowIfLoggingIsEnabled() && !queryLogging.isEmpty())
+                for (var required : queryLogging.getDataLoggingColumns())
                 {
-                    Set<FieldKey> select = selectColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
-                    for (var required : queryLogging.getDataLoggingColumns())
-                    {
-                        if (!select.contains(required.getFieldKey()))
-                            queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
-                    }
-                }
-            }
-            else
-            {
-                for (ColumnInfo column : extraSelectDataLoggingColumns)
-                {
-                    outerSelect.append(strComma);
-                    outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
-                    strComma = ", ";
+                    if (!selectedFieldKeys.contains(required.getFieldKey()))
+                        queryLogging.setExceptionToThrowIfLoggingIsEnabled(new UnauthorizedException("Unable to locate required logging column '" + required.getFieldKey().toString() + "'."));
                 }
             }
         }

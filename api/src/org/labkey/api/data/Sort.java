@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
@@ -149,7 +150,12 @@ public class Sort
         private SQLFragment toOrderByFragment(SqlDialect dialect, String alias)
         {
             SQLFragment sql = new SQLFragment();
-            sql.appendIdentifier(null != dialect ? dialect.getColumnSelectName(alias) : alias);
+            // NOTE dialect==null when this is called for display purposes (see Sort.getSortText())
+            // CONSIDER: create a separate method for that usage
+            if (null == dialect)
+                sql.appendIdentifier(LabKeySql.quoteIdentifier(alias));
+            else
+                sql.appendIdentifier(dialect.getColumnSelectName(alias));
             sql.append(" ");
             sql.append(_dir.getSqlDir());
             return sql;
