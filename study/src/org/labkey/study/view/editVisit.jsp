@@ -34,6 +34,7 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -178,11 +179,11 @@
     <tr>
         <%-- UNDONE: duplicated in createVisit.jsp --%>
         <td class="labkey-form-label">Visit Handling (advanced)<%=
-            helpPopup("Visit Handling (advanced)",
-                    "You may specify that unique sequence numbers should be based on visit date."+
-                    "<p>This is for special handling of some log/unscheduled events.</p>"+
-                    "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>",
-                    true)
+            helpPopup("Visit Handling (advanced)", HtmlString.unsafe(
+                "You may specify that unique sequence numbers should be based on visit date."+
+                "<p>This is for special handling of some log/unscheduled events.</p>"+
+                "<p>Make sure that the sequence number range is adequate (e.g #.0000-#.9999).</p>"
+            ))
         %></td>
         <td>
             <select name="sequenceNumHandling">

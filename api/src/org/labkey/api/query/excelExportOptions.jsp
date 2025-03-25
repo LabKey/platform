@@ -78,7 +78,7 @@
         </tr>
     <% } %>
     <tr>
-        <td colspan="2"><label>Column headers:<%=helpPopup("Column Header Options", sb.toString(), true)%></label>
+        <td colspan="2"><label>Column headers:<%=helpPopup("Column Header Options", HtmlString.unsafe(sb.toString()))%></label>
             <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>

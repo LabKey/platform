@@ -103,7 +103,7 @@
                                 needComma = true;
                             }
 
-                            out.print(helpPopup(indicator, label, false, indicator, 0));
+                            out.print(helpPopup(indicator, h(label), 0, indicator));
                         }
                     }
                 %>
