@@ -16,6 +16,7 @@
 
 package org.labkey.api.cache;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DatabaseCache;
@@ -132,10 +133,20 @@ public class TransactionCache<K, V> implements Cache<K, V>
     public int removeUsingFilter(Filter<K> filter)
     {
         _transaction.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
-        return (int)(
-            _privateCache.getKeys().stream().filter(filter::accept).peek(this::remove).count() +
-            _sharedCache.getKeys().stream().filter(filter::accept).peek(this::remove).count()
-        );
+        MutableInt count = new MutableInt(0);
+        _privateCache.getKeys().stream()
+            .filter(filter::accept)
+            .forEach(key -> {
+                remove(key);
+                count.increment();
+            });
+        _sharedCache.getKeys().stream()
+            .filter(filter::accept)
+            .forEach(key -> {
+                remove(key);
+                count.increment();
+            });
+        return count.intValue();
     }
 
     @Override

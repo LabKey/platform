@@ -72,9 +72,9 @@ public class IssuesListView extends VBox
     }
 
 
-    public static class IssuesListConfig extends HttpView
+    public static class IssuesListConfig extends HttpView<Object>
     {
-        private Portal.WebPart _webPart;
+        private final Portal.WebPart _webPart;
 
         public IssuesListConfig(Portal.WebPart webPart)
         {
@@ -84,7 +84,7 @@ public class IssuesListView extends VBox
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            JspView view = new JspView<>("/org/labkey/issue/view/issueListWebPartConfig.jsp", _webPart);
+            JspView<Portal.WebPart> view = new JspView<>("/org/labkey/issue/view/issueListWebPartConfig.jsp", _webPart);
             include(view);
         }
     }

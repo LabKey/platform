@@ -27,6 +27,7 @@ import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.id;
 
 /**
  * {@link org.labkey.api.data.DisplayColumn} that shows an ExtJS-based color picker component for insert/update forms
@@ -76,6 +77,6 @@ public class ColorPickerDisplayColumn extends DataColumn
                 "   });\n")
         ).appendTo(out);
 
-        DIV(renderId).appendTo(out);
+        DIV(id(renderId)).appendTo(out);
     }
 }
