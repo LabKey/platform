@@ -153,7 +153,7 @@
 %>
                         <td class="cell-display " data-index="<%=h(visit.getLabel())%>">
                             <%=h(treatment != null ? treatment.getLabel() : "")%>
-                            <%=(productHover.length() > 0 ? helpPopup("Treatment Products", productHover, true, 500) : HtmlString.EMPTY_STRING)%>
+                            <%=(!productHover.isEmpty() ? helpPopup("Treatment Products", HtmlString.unsafe(productHover), 500) : HtmlString.EMPTY_STRING)%>
                         </td>
 <%
                     }
