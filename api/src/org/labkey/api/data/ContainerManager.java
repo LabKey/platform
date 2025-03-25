@@ -2027,10 +2027,7 @@ public class ContainerManager
     {
         if (user != null)
         {
-            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c.getId(), comment);
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
-
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c, comment);
             AuditLogService.get().addEvent(user, event);
         }
     }

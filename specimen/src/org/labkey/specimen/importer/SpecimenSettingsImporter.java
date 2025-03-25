@@ -250,7 +250,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 for (SpecimenRequestActor existingActor : SpecimenRequestRequirementProvider.get().getActors(ctx.getContainer()))
                 {
                     if (!inUseActorIds.contains(existingActor.getRowId()))
-                        existingActor.delete();
+                        existingActor.delete(ctx.getUser());
                     else
                         inUseActors.put(existingActor.getLabel(), existingActor);
                 }
@@ -328,7 +328,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                 {
                     SpecimenRequestManager.get().deleteRequestRequirement(ctx.getUser(), existingReq, false);
                 }
-                catch(AttachmentService.DuplicateFilenameException e)
+                catch(AttachmentService.DuplicateFilenameException ignored)
                 {} // no op, this would only occur with deleteRequestRequirement when createEvent is true
             }
 
@@ -428,7 +428,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
                         ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
                 }
                 inputs.sort(Comparator.comparingInt(SpecimenRequestInput::getDisplayOrder));
-                SpecimenRequestManager.get().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[inputs.size()]));
+                SpecimenRequestManager.get().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenRequestInput[0]));
             }
         }
     }

@@ -154,17 +154,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         {
             assert event.getContainer() != null : "Container cannot be null";
 
-            if (event.getContainer() == null)
-            {
-                _log.warn("container was not specified for event type " + event.getEventType() + "; defaulting to root container.");
-                Container root = ContainerManager.getRoot();
-                event.setContainer(root.getId());
-            }
-
             if (user == null)
             {
                 if (HttpView.hasCurrentView() && HttpView.currentContext() != null)
-                    _log.warn("user was not specified for event type " + event.getEventType() + " in container " + ContainerManager.getForId(event.getContainer()).getPath() + "; defaulting to guest user.");
+                    _log.warn("user was not specified for event type " + event.getEventType() + " in container " + event.getContainer() + "; defaulting to guest user.");
                 user = UserManager.getGuestUser();
             }
             if (event.getTransactionId() != null && useTransactionAuditCache)
@@ -178,10 +171,6 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 event.setCreated(new Date());
             if (event.getCreatedBy() == null)
                 event.setCreatedBy(user);
-
-            Container c = ContainerManager.getForId(event.getContainer());
-            if (event.getProjectId() == null && c != null && c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
 
             if (event.getImpersonatedBy() == null && user.isImpersonated())
             {

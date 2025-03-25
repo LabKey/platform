@@ -19,6 +19,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
@@ -111,7 +112,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
             super();
         }
 
-        public FileSystemAuditEvent(String container, String comment)
+        public FileSystemAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
         }

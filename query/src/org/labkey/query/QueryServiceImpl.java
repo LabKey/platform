@@ -3130,13 +3130,11 @@ public class QueryServiceImpl implements QueryService
 
             private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
             {
-                QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
+                QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c, comment);
                 DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
                 if (tx != null)
                     event.setTransactionId(tx.getAuditId());
 
-                if (c.getProject() != null)
-                    event.setProjectId(c.getProject().getId());
                 event.setSchemaName(tinfo.getPublicSchemaName());
                 event.setQueryName(tinfo.getPublicName());
 
@@ -3177,10 +3175,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount)
     {
-        QueryExportAuditProvider.QueryExportAuditEvent event = new QueryExportAuditProvider.QueryExportAuditEvent(c.getId(), comment);
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
+        QueryExportAuditProvider.QueryExportAuditEvent event = new QueryExportAuditProvider.QueryExportAuditEvent(c, comment);
         event.setSchemaName(schemaName);
         event.setQueryName(queryName);
         if (dataRowCount != null)

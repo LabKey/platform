@@ -6,6 +6,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.PropertyStore;
@@ -129,7 +130,7 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
 
         if (auditUser != null)
         {
-            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer.getId(), getProviderLabel() + " labels have been reset to default.");
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer == null ? ContainerManager.getRoot() : labelContainer, getProviderLabel() + " labels have been reset to default.");
             AuditLogService.get().addEvent(auditUser, event);
         }
     }
@@ -167,7 +168,7 @@ public abstract class AbstractCustomLabelProvider implements CustomLabelProvider
         }
         html.append("</table>");
 
-        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer.getId(), getProviderLabel() + " labels have been updated.");
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(labelContainer, getProviderLabel() + " labels have been updated.");
         event.setChanges(html.toString());
 
         return event;

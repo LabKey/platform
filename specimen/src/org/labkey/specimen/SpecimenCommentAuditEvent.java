@@ -1,6 +1,7 @@
 package org.labkey.specimen;
 
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.data.Container;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,7 +17,7 @@ public class SpecimenCommentAuditEvent extends AuditTypeEvent
         super();
     }
 
-    public SpecimenCommentAuditEvent(String container, String comment)
+    public SpecimenCommentAuditEvent(Container container, String comment)
     {
         super(SPECIMEN_COMMENT_EVENT, container, comment);
     }

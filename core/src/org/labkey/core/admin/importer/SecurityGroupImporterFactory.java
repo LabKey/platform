@@ -75,7 +75,7 @@ public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
             {
                 Integer groupId = SecurityManager.getGroupId(ctx.getContainer(), xmlGroupType.getName(), false);
                 if (groupId == null)
-                    SecurityManager.createGroup(ctx.getContainer(), xmlGroupType.getName());
+                    SecurityManager.createGroup(ctx.getContainer(), xmlGroupType.getName(), ctx.getUser());
             }
 
             // now populate the groups with their members

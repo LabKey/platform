@@ -1396,7 +1396,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert _sampleType != null || auditAction == QueryService.AuditAction.DELETE : "SampleType required for insert/update, but not required for read/delete";
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(
-                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + (_sampleType == null ? "<Materials>" : _sampleType.getName()));
+                getContainer(), "Samples " + auditAction.getVerbPastTense() + " in: " + (_sampleType == null ? "<Materials>" : _sampleType.getName()));
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         if (tx != null)
             event.setTransactionId(tx.getAuditId());

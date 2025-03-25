@@ -340,7 +340,7 @@ public class SpecimenManager
                 message += "New value: " + newConflictState + "\n";
         }
 
-        SpecimenCommentAuditEvent event = new SpecimenCommentAuditEvent(vial.getContainer().getId(), message);
+        SpecimenCommentAuditEvent event = new SpecimenCommentAuditEvent(vial.getContainer(), message);
         event.setVialId(vial.getGlobalUniqueId());
 
         AuditLogService.get().addEvent(user, event);

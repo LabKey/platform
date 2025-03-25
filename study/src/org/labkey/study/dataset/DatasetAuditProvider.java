@@ -21,6 +21,7 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -198,9 +199,10 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             super();
         }
 
-        public DatasetAuditEvent(String container, String comment)
+        public DatasetAuditEvent(Container container, String comment, int datasetId)
         {
             super(DATASET_AUDIT_EVENT, container, comment);
+            setDatasetId(datasetId);
         }
 
         public int getDatasetId()

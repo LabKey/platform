@@ -1146,7 +1146,7 @@ public class SearchController extends SpringActionController
         if (query.length() > 200)
             query = query.substring(0, 197) + "...";
 
-        SearchAuditProvider.SearchAuditEvent event = new SearchAuditProvider.SearchAuditEvent(c.getId(), comment);
+        SearchAuditProvider.SearchAuditEvent event = new SearchAuditProvider.SearchAuditEvent(c, comment);
         event.setQuery(query);
 
         AuditLogService.get().addEvent(user, event);
