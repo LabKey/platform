@@ -762,18 +762,32 @@ public class SimpleFilter implements Filter
                 return in;
             }
 
-            Object[] convertedParams;
+            List<Object> convertedParams;
 
             if (null == colInfo || !needsTypeConversion())
             {
-                convertedParams = params;
+                convertedParams = Arrays.asList(params);
             }
             else
             {
-                convertedParams = new Object[params.length];
+                convertedParams = new ArrayList<>();
 
-                for (int i = 0; i < params.length; i++)
-                    convertedParams[i] = CompareType.convertParamValue(colInfo, params[i]);
+                for (Object param : params)
+                {
+                    try
+                    {
+                        Object convertedValue = CompareType.convertParamValue(colInfo, param);
+                        convertedParams.add(convertedValue);
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        // Ignore unparseable filter values - see Issue 52332
+                        if (!(e.getSQLException() instanceof SQLGenerationException))
+                        {
+                            throw e;
+                        }
+                    }
+                }
             }
 
             in.append("((");
@@ -784,7 +798,7 @@ public class SimpleFilter implements Filter
             in.append(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            dialect.appendInClauseSql(in, Arrays.asList(convertedParams));
+            dialect.appendInClauseSql(in, convertedParams);
 
             if (isIncludeNull())
             {
@@ -1314,7 +1328,7 @@ public class SimpleFilter implements Filter
             }
             catch (RuntimeSQLException e)
             {
-                // Deal with unparseable filter values - see issue 23321
+                // Deal with unparseable filter values - see Issue 23321
                 if (e.getSQLException() instanceof SQLGenerationException)
                 {
                     ret.append("0 = 1");
