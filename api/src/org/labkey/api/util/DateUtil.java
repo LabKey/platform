@@ -235,6 +235,69 @@ public class DateUtil
         return toISO(System.currentTimeMillis());
     }
 
+    // "HH:mm"
+    private static final FastDateFormat TIME_FORMATTER_NO_SECONDS = FastDateFormat.getInstance(ISO_SHORT_TIME_FORMAT_STRING);
+    // "HH:mm:ss
+    private static final FastDateFormat TIME_FORMATTER_NO_MILLIS = FastDateFormat.getInstance(ISO_TIME_FORMAT_STRING);
+    // "HH:mm:ss.SSS
+    private static final FastDateFormat TIME_FORMATTER_FULL = FastDateFormat.getInstance(ISO_LONG_TIME_FORMAT_STRING);
+
+    /**
+     * Formats a Time value using ISO format, potentially (fFullISO == false) using a format that suppresses unnecessary
+     * zero padding; this non-full option is appropriate for formatting values in input fields.
+     * @param t a Time object
+     * @param fFullISO if true, always uses a full ISO time format (including hours, minutes, seconds, and three-digit
+     *                 milliseconds, padding with zeroes as necessary); if false, always includes hours and minutes,
+     *                 but potentially truncates the time portion that comprises all zeros (i.e., truncate
+     *                 milliseconds if zero, truncate seconds and milliseconds if both are zero)
+     * @return a formatted time string
+     */
+    public static String toISO(Time t, boolean fFullISO)
+    {
+        final FastDateFormat formatter;
+
+        if (fFullISO)
+        {
+            formatter = TIME_FORMATTER_FULL;
+        }
+        else
+        {
+            long l = t.getTime();
+            long milliseconds = l % 1000;
+
+            if (milliseconds > 0)
+            {
+                formatter = TIME_FORMATTER_FULL;
+            }
+            else
+            {
+                long seconds = l % 60000 / 1000;
+
+                if (seconds > 0)
+                {
+                    formatter = TIME_FORMATTER_NO_MILLIS;
+                }
+                else
+                {
+                    formatter = TIME_FORMATTER_NO_SECONDS;
+                }
+            }
+        }
+
+        return formatter.format(t);
+    }
+
+    /**
+     * Formats a date value using ISO format, potentially (fFullISO == false) using a format that suppresses unnecessary
+     * zero padding; this non-full option is appropriate for formatting values in input fields.
+     * @param l milliseconds representing a date (milliseconds since 1970-01-01)
+     * @param fFullISO if true, always uses a full ISO format (including date, hours, minutes, seconds, and
+     *                 three-digit milliseconds, padding with zeroes as necessary); if false, always includes the date
+     *                 fields, but potentially truncates the time portion that comprises all zeros (i.e., truncate
+     *                 milliseconds if zero, truncate seconds and milliseconds if both are zero, truncate full time
+     *                 portion if zero)
+     * @return a formatted date string
+     */
     public static String toISO(long l, boolean fFullISO)
     {
         StringBuilder sb = new StringBuilder("1999-12-31 23:59:59.999".length());
@@ -1953,7 +2016,35 @@ Parse:
         }
 
         @Test
-        public void testFormat()
+        public void testIsoDateFormat()
+        {
+            long l = System.currentTimeMillis();
+            for (int i=0 ; i<24 ; i++)
+            {
+                String ts = new java.sql.Timestamp(l).toString();
+                String iso = toISO(l);
+                assertEquals(ts.substring(0,20),iso.substring(0,20));
+                l += 60*60*1000;
+            }
+
+            l = parseDateTime("1999-12-31 23:59:59.999");
+            assertEquals(toISO(l, false).length(), "1999-12-31 23:59:59.999".length());
+            l -= l % 1000;
+            assertEquals(toISO(l, false).length(), "1999-12-31 23:59:59".length());
+            l -= l % (60 * 1000);
+            assertEquals(toISO(l, false).length(), "1999-12-31 23:59".length());
+            l -= l % (60 * 60 * 1000);
+            assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
+            Calendar c = newCalendar(l);
+            c.clear(HOUR);
+            c.clear(AM_PM);
+            c.set(HOUR_OF_DAY,0);
+            l = c.getTimeInMillis();
+            assertEquals(toISO(l, false).length(), "1999-12-31".length());
+        }
+
+        @Test
+        public void testIsoTimeeFormat()
         {
             long l = System.currentTimeMillis();
             for (int i=0 ; i<24 ; i++)
