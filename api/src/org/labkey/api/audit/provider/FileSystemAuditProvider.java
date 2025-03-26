@@ -107,6 +107,7 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
         private String _file;           // the file name
         private String _resourcePath;   // the webdav resource path
 
+        /** Important for reflection-based instantiation */
         public FileSystemAuditEvent()
         {
             super();

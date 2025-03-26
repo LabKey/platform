@@ -40,6 +40,7 @@
                             <ref bean="tsvFileType"/>
                             <ref bean="xlsFileType"/>
                             <ref bean="txtFileType"/>
+                            <ref bean="csvFileType"/>
                         </list>
                     </property>
                     <property name="taskProgressionSpec">
@@ -97,5 +98,8 @@
     </bean>
     <bean id="txtFileType" class="org.labkey.api.util.FileType">
         <constructor-arg value=".txt"/>
+    </bean>
+    <bean id="csvFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".csv"/>
     </bean>
 </beans>
