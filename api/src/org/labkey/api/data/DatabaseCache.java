@@ -294,21 +294,28 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static class TestCase extends Assert
     {
+        public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
+        {
+            public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
+            {
+                super(scope, maxSize, debugName);
+            }
+
+            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
+            @Override
+            protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+            {
+                return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+            }
+        }
+
         @SuppressWarnings({"StringEquality"})
         @Test
         public void testDatabaseCache()
         {
             MyScope scope = new MyScope();
 
-            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
-            DatabaseCache<String, String> cache = new DatabaseCache<>(scope, 10, "Test Cache")
-            {
-                @Override
-                protected Cache<String, String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
-                {
-                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
-                }
-            };
+            DatabaseCache<String, String> cache = new TempDatabaseCache<>(scope, 10, "Test Cache");
 
             // basic cache testing
 
@@ -414,14 +421,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             final int maxSize = 10;
             MyScope scope = new MyScope();
 
-            DatabaseCache<String, Wrapper<Integer>> dbCache = new DatabaseCache<>(scope, maxSize, "Test Cache")
-            {
-                @Override
-                protected Cache<String, Wrapper<Integer>> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
-                {
-                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
-                }
-            };
+            DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, maxSize, "Test Cache");
 
             BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader());
 
