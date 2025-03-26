@@ -52,6 +52,8 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
 
     public static class StudySecurityEscalationEvent extends SecurityEscalationEvent
     {
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
         public StudySecurityEscalationEvent() {}
 
         public StudySecurityEscalationEvent(Container container, String comment)
