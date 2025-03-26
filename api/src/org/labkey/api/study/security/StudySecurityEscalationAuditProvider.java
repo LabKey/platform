@@ -52,6 +52,8 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
 
     public static class StudySecurityEscalationEvent extends SecurityEscalationEvent
     {
+        public StudySecurityEscalationEvent() {}
+
         public StudySecurityEscalationEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);

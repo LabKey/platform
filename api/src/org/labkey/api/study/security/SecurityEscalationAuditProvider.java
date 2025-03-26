@@ -213,6 +213,8 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
         private int escalatingUser;
         private int level;
 
+        public SecurityEscalationEvent() {}
+
         // It is essential that you set the container and event type, otherwise the Audit Log will fail at
         // runtime (silently in the case of the "eventType" and noisily in the case of the container).
         public SecurityEscalationEvent(String eventType, Container container, String comment) {
