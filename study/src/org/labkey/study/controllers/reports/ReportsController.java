@@ -477,7 +477,7 @@ public class ReportsController extends BaseStudyController
                 {
                     ColumnInfo colInfo = col.getColumnInfo();
                     if (colInfo != null)
-                        colMap.put(colInfo.getAlias(), colInfo);
+                        colMap.put(colInfo.getAlias().getString(), colInfo);
                 }
             }
             return colMap;

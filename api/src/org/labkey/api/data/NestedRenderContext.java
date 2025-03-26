@@ -159,7 +159,7 @@ public class NestedRenderContext extends RenderContext
         ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey(), false);
         fromSQL.insert(0, "SELECT " + groupColumn.getAlias() + " FROM (");
         fromSQL.append(") FilterOnly GROUP BY ");
-        fromSQL.append(groupColumn.getAlias());
+        fromSQL.appendIdentifier(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query
         VirtualTable<?> aggTableInfo = new VirtualTable<>(tinfo.getSchema(), "AggTable", tinfo.getUserSchema())

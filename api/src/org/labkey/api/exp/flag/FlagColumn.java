@@ -29,6 +29,6 @@ public class FlagColumn extends PropertyColumn
     {
         super(ExperimentProperty.COMMENT.getPropertyDescriptor(), parent, container, user, false);
         setFieldKey(new FieldKey(parent.getFieldKey(),name));
-        setAlias(parent.getAlias() + "$");
+        setAlias(parent.getAlias().getString() + "$");
     }
 }

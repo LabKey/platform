@@ -172,7 +172,7 @@ public class UpgradeUtils
         if (ignoreNulls)
         {
             sql.append(where);
-            sql.append(column.getSelectName());
+            sql.appendIdentifier(column.getSelectName());
             sql.append(" IS NOT NULL");
         }
 
@@ -190,7 +190,7 @@ public class UpgradeUtils
 
             if (null != additionalGroupingColumn)
             {
-                String alias = additionalGroupingColumn.getAlias();
+                String alias = additionalGroupingColumn.getAlias().getString();
                 assert map.containsKey(alias);
                 Object value = map.get(alias);
 

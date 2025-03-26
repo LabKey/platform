@@ -91,7 +91,7 @@ public class LineageClause extends CompareType.CompareClause
     public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
     {
         ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-        String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
+        var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
         ExpRunItem start = getStart();
         ExpLineageOptions options = createOptions();
@@ -102,7 +102,7 @@ public class LineageClause extends CompareType.CompareClause
             return new SQLFragment("(1 = 2)");
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(").append(alias).append(") IN (");
+        sql.append("(").appendIdentifier(alias).append(") IN (");
         sql.append("SELECT ").append(getLsidColumn()).append(" FROM (");
         sql.append(tree);
         sql.append(") AS X)");

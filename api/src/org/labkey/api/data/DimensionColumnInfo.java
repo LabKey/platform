@@ -32,7 +32,7 @@ public class DimensionColumnInfo extends BaseColumnInfo
     {
         super(dimension.getSourceColumn(), table);
         _crosstabDimension = dimension;
-        setName(_crosstabDimension.getSourceColumn().getAlias());
+        setName(_crosstabDimension.getSourceColumn().getAlias().getString());
         setLabel(_crosstabDimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
         setDimension(true);

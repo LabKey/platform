@@ -218,7 +218,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                     // don't set container on property column so that inherited domain properties work
                     var projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
-                    customProps.add(projectColumn.getAlias());
+                    customProps.add(projectColumn.getAlias().getString());
                 }
                 setDomain(domain);
             }

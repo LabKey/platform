@@ -316,7 +316,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             sql.append(sep)
                 .append(PIVOT_ALIAS + ".")
-                .append(rowDim.getSourceColumn().getAlias());
+                .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
@@ -332,7 +332,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             sql.append(sep)
                 .append(AGG_FILTERED_ALIAS + ".")
-                .append(rowDim.getSourceColumn().getAlias());
+                .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
@@ -420,7 +420,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().get(0);
 
         sql.append("(CASE WHEN ");
-        sql.append(queryAlias).append(".").append(colDimension.getSourceColumn().getAlias());
+        sql.append(queryAlias).append(".").appendIdentifier(colDimension.getSourceColumn().getAlias());
         sql.append("=");
         String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
         sql.append(value);
@@ -461,7 +461,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sql.append(sep);
             sql.append(AGG_OR_ALIAS);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = ",";
         }
 
@@ -489,11 +489,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sql.append(sep);
             sql.append(ROWMEMS_ALIAS);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sql.append("=");
             sql.append(joinAlias);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = " AND ";
         }
         

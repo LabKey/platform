@@ -273,7 +273,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
             return null;
-        String columnName = lookupTable.getPkColumns().get(0).getAlias();
+        String columnName = lookupTable.getPkColumns().get(0).getName();
         if (null == columnName)
             return null;
         return LookupForeignKey.getDetailsURL(parent, lookupTable, columnName);

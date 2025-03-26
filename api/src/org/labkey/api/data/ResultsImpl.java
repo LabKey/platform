@@ -103,7 +103,7 @@ public class ResultsImpl implements Results, DataIterator
             try
             {
                 _fieldMap.put(col.getFieldKey(), col);
-                int find = rs.findColumn(col.getAlias());
+                int find = col.findColumn(rs);
                 _fieldIndexMap.put(col.getFieldKey(), find);
                 while (_columnInfoList.size() <= find)
                     _columnInfoList.add(null);
@@ -133,7 +133,7 @@ public class ResultsImpl implements Results, DataIterator
             {
                 fk = e.getKey();
                 ColumnInfo col = e.getValue();
-                int find = rs.findColumn(col.getAlias());
+                int find = col.findColumn(rs);
                 _fieldIndexMap.put(fk, find);
                 while (_columnInfoList.size() <= find)
                     _columnInfoList.add(null);

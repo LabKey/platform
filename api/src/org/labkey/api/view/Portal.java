@@ -981,8 +981,9 @@ public class Portal implements ModuleChangeListener
 
     private static void _insertOrUpdate(TableInfo portalTable, PortalPage p, boolean update)
     {
+        var columnIndex = portalTable.getColumn("Index");
+
         int count = 0;
-        String legalIndexName = portalTable.getSqlDialect().makeLegalIdentifier("Index");
         if (!update)
         {
             // Try insert; SQL checks if pageId or index is already there and doesn't insert in those cases.
@@ -995,7 +996,7 @@ public class Portal implements ModuleChangeListener
             insertValues.add(p.getContainer());
             insertColumns.add("PageId");
             insertValues.add(p.getPageId());
-            insertColumns.add(legalIndexName);
+            insertColumns.add("Index");
             insertValues.add(p.getIndex());
             insertColumns.add("Caption");
             insertValues.add(p.getCaption());
@@ -1014,9 +1015,14 @@ public class Portal implements ModuleChangeListener
 
             SQLFragment insertSQL = new SQLFragment("INSERT INTO ")
                     .append(portalTable)
-                    .append("\n(")
-                    .append(StringUtils.join(insertColumns, ", "))
-                    .append(")\n")
+                    .append("\n(");
+            String comma = "";
+            for (String name : insertColumns)
+            {
+                insertSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectName());
+                comma = ",";
+            }
+            insertSQL.append(")\n")
                     .append(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
                     .addAll(insertValues)
                     .add(p.getPageId())
@@ -1024,7 +1030,7 @@ public class Portal implements ModuleChangeListener
                     .append(portalTable)
                     .append(" WHERE Container = ? AND PageId = ?) AND\n")
                     .add(p.getContainer()).add(p.getPageId())
-                    .append(" ? NOT IN (SELECT ").append(legalIndexName).append(" FROM ")
+                    .append(" ? NOT IN (SELECT ").appendIdentifier(columnIndex.getSelectName()).append(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
                     .append(" WHERE Container = ?)")
@@ -1041,16 +1047,16 @@ public class Portal implements ModuleChangeListener
             updateSQL.append(portalTable);
 
             SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
-            indexSQL.append(legalIndexName).append(" FROM ")
+            indexSQL.appendIdentifier(columnIndex.getSelectName()).append(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
-                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").append(legalIndexName).append(" END\n")
+                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectName()).append(" END\n")
                     .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
 
             if (portalTable.getSqlDialect().isPostgreSQL())
             {
                 List<String> updateColumns = new ArrayList<>();
-                updateColumns.add(legalIndexName);
+                updateColumns.add("Index");
                 updateColumns.add("Caption");
                 updateColumns.add("Hidden");
                 updateColumns.add("Type");
@@ -1059,19 +1065,22 @@ public class Portal implements ModuleChangeListener
                 updateColumns.add("Permanent");
                 updateColumns.add("Properties");
 
-                updateSQL.append("\nSET (")
-                        .append(StringUtils.join(updateColumns, ", "))
-                        .append(") =\n")
+                updateSQL.append("\nSET (");
+                String comma = "";
+                for (String name : updateColumns)
+                {
+                    updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectName());
+                    comma = ",";
+                }
+                updateSQL.append(") =\n")
                         .append("(")
                         .append(indexSQL)
-
                         .append(", ?, ?, ?, ?, ?, ?, ?)\n");
-
             }
             else
             {       // SQL Server
                 updateSQL.append("\nSET ")
-                        .append(legalIndexName).append(" = ").append(indexSQL).append(", ")
+                        .appendIdentifier(columnIndex.getSelectName()).append(" = ").append(indexSQL).append(", ")
                         .append("Caption").append(" = ?, ")
                         .append("Hidden").append(" = ?, ")
                         .append("Type").append(" = ?, ")

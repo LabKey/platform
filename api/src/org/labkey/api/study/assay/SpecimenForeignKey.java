@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -330,6 +331,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         return null;
     }
 
+    String getBaseAlias(String parentAlias, DatabaseIdentifier fkAlias)
+    {
+        return getBaseAlias(parentAlias, fkAlias.getString());
+    }
 
     String getBaseAlias(String parentAlias, String fkAlias)
     {
@@ -365,7 +370,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
             sql.append(targetStudySQL);
 
-            String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias());
+            String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias().getString());
             String assaySubqueryAlias = baseAlias + ASSAY_SUBQUERY_SUFFIX;
             String vialSubqueryAlias = baseAlias + VIAL_SUBQUERY_SUFFIX;
 
@@ -419,14 +424,14 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 sql.append(assaySubqueryAlias);
                 sql.append(".");
-                sql.append(_assaySpecimenIdCol.getAlias());
+                sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
             }
             else
             {
                 sql.append("CAST(");
                 sql.append(assaySubqueryAlias);
                 sql.append(".");
-                sql.append(_assaySpecimenIdCol.getAlias());
+                sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
                 sql.append(" AS ");
                 sql.append(dialect.getSqlTypeName(JdbcType.VARCHAR));
                 sql.append(")");

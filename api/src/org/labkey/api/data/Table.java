@@ -799,7 +799,7 @@ public class Table
         // _executeTriggers(table, fields);
 
         SQLFragment insertSQL = new SQLFragment();
-        StringBuilder columnSQL = new StringBuilder();
+        SQLFragment columnSQL = new SQLFragment();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
         ColumnInfo versionColumn = null;
@@ -838,7 +838,7 @@ public class Table
             }
 
             columnSQL.append(comma);
-            columnSQL.append(column.getSelectName());
+            columnSQL.appendIdentifier(column.getSelectName());
             valueSQL.append(comma);
             if (null == value || value instanceof String && 0 == ((String) value).length())
                 valueSQL.append("NULL");
@@ -1187,7 +1187,7 @@ public class Table
         {
             if (cols.containsKey(column.getFieldKey()))
                 continue;
-            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
+            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getString())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
                 cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
                 cols.put(column.getFieldKey(), column);
@@ -1565,7 +1565,7 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
+            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getString(), column)) && prev != column)
             {
                 _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;
@@ -1632,7 +1632,7 @@ public class Table
             ColumnInfo pk = columnPK.get(i);
             Parameter p = paramPK.get(i);
             sqlfWhere.append(and); and = " AND ";
-            sqlfWhere.append(pk.getSelectName()).append("=?");
+            sqlfWhere.appendIdentifier(pk.getSelectName()).append("=?");
             sqlfWhere.add(p);
         }
         if (null != table.getColumn("container"))
@@ -1668,7 +1668,7 @@ public class Table
             {
                 String keyName = StringUtils.defaultString(objectIdColumnName, objectURIColumnName);
                 ColumnInfo keyCol = table.getColumn(keyName);
-                sqlfSelectKey.append("SELECT ").append(keyCol.getSelectName());
+                sqlfSelectKey.append("SELECT ").appendIdentifier(keyCol.getSelectName());
                 sqlfSelectKey.append("FROM ").append(table.getFromSQL("X"));
                 sqlfSelectKey.append(sqlfWhere);
             }

@@ -17,6 +17,7 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.TableInfo;
@@ -75,6 +76,11 @@ public class StandardTableResolver implements TableResolver
 
     // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
     // parameter, see #43821
+    public static String escapeName(DbScope scope, @NotNull DatabaseIdentifier id)
+    {
+        return escapeName(scope, id.getString());
+    }
+
     public static String escapeName(DbScope scope, @NotNull String name)
     {
         String escape = scope.getDatabaseSearchStringEscape();

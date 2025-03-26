@@ -636,6 +636,15 @@ public class SimpleFilter implements Filter
         }
     }
 
+    public static DatabaseIdentifier getAliasForColumnFilter(SqlDialect dialect, ColumnInfo colInfo, FieldKey fieldKey)
+    {
+        DatabaseIdentifier alias;
+        if (null != colInfo)
+            return colInfo.getAlias();
+        return dialect.makeDatabaseIdentifier(fieldKey.getName());   // isn't this just a guess???
+    }
+
+
     public static class InClause extends MultiValuedFilterClause
     {
         public InClause(FieldKey fieldKey, Collection<?> params)
@@ -745,17 +754,16 @@ public class SimpleFilter implements Filter
             Object[] params = getParamVals();
 
             @Nullable ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-            String name = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
-            String alias = dialect.getColumnSelectName(name);
+            var alias = getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
             SQLFragment in = new SQLFragment();
 
             if (params.length == 0)
             {
                 if (isIncludeNull())
-                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
+                    in.appendIdentifier(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
                 else if (!isNegated())
-                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                    in.appendIdentifier(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
                 else
                     in.append("1=1");
 
@@ -781,7 +789,7 @@ public class SimpleFilter implements Filter
             if (isNegated())
                 in.append("NOT ");
 
-            in.append(alias);
+            in.appendIdentifier(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
             dialect.appendInClauseSql(in, Arrays.asList(convertedParams));
@@ -789,14 +797,14 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND ").append(alias).append(" IS NOT NULL)");
+                    in.append(") AND ").appendIdentifier(alias).append(" IS NOT NULL)");
                 else
-                    in.append(") OR ").append(alias).append(" IS NULL)");
+                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR ").append(alias).append(" IS NULL)");
+                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
                 else
                     in.append("))");
             }
@@ -874,14 +882,14 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-            String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
+            var alias = getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
             SQLFragment in = new SQLFragment();
             OperationClause oc = getContainsClause(colInfo);
             if(!oc.getClauses().isEmpty())
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.append(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return in.appendIdentifier(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)

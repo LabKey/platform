@@ -23,10 +23,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.MockSqlDialect;
+import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.util.Collection;
@@ -34,17 +38,17 @@ import java.util.Map;
 
 public class AliasManager
 {
-    SqlDialect _dialect;
-    Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
+    final @NotNull SqlDialect _dialect;
+    final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
-    public AliasManager(SqlDialect d)
+    public AliasManager(@NotNull SqlDialect d)
     {
         _dialect = d;
     }
 
-    public AliasManager(DbSchema schema)
+    public AliasManager(@NotNull DbSchema schema)
     {
-        _dialect = null==schema ? null :  schema.getSqlDialect();
+        _dialect = schema.getSqlDialect();
     }
 
     public AliasManager(@NotNull TableInfo table, @Nullable Collection<ColumnInfo> columns)
@@ -53,6 +57,11 @@ public class AliasManager
         claimAliases(table.getColumns());
         if (columns != null)
             claimAliases(columns);
+    }
+
+    public static AliasManager createLabKeyAliasManager()
+    {
+        return new AliasManager(new _LabKeyDialect());
     }
 
     /**
@@ -239,6 +248,11 @@ public class AliasManager
         return Math.min(100, max);
     }
 
+    public static String truncate(DatabaseIdentifier id, int to)
+    {
+        return truncate(id.getString(), to);
+    }
+
     public static String truncate(String str, int to)
     {
         int len = str.length();
@@ -316,7 +330,7 @@ public class AliasManager
     {
         if (column == null)
             return;
-        claimAlias(column.getAlias(), column.getName());
+        claimAlias(column.getAlias().getString(), column.getName());
     }
 
 
@@ -329,7 +343,7 @@ public class AliasManager
         {
             if (_aliases.get(column.getAlias()) != null)
                 throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
-            claimAlias(column.getAlias(), column.getName());
+            claimAlias(column.getAlias().getString(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
@@ -346,7 +360,7 @@ public class AliasManager
                     throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
             }
             else
-                claimAlias(column.getAlias(), column.getName());
+                claimAlias(column.getAlias().getString(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName()));
@@ -365,6 +379,57 @@ public class AliasManager
         _aliases.remove(column.getAlias());
     }
 
+
+    private static class _LabKeyDialect extends PostgreSql91Dialect
+    {
+        @Override
+        protected void initializeInClauseGenerator(DbScope scope)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getProductName()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getMedianFunction()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public JdbcHelper getJdbcHelper()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected boolean shouldQuoteIdentifier(String id)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isReserved(String word)
+        {
+            return super.isReserved(word);
+        }
+
+        @Override
+        public String makeLegalIdentifierName(String id)
+        {
+            return super.makeLegalIdentifierName(id);
+        }
+
+        @Override
+        public int getIdentifierMaxLength()
+        {
+            return 200;
+        }
+    }
 
 
     public static class TestCase extends Assert

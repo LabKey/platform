@@ -817,7 +817,7 @@ public class SpecimenImporter extends SpecimenTableManager
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
-        StringBuilder vialPropertiesSB = new StringBuilder("UPDATE ").append(vialTable.getSelectName())
+        SQLFragment vialPropertiesSql = new SQLFragment("UPDATE ").append(vialTable.getSelectName())
             .append(" SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), FirstProcessedByInitials = ?, AtRepository = ?, LatestComments = ?, LatestQualityComments = ? ");
 
         for (List<RollupInstance<EventVialRollup>> rollupList : getEventToVialRollups().values())
@@ -828,14 +828,12 @@ public class SpecimenImporter extends SpecimenTableManager
                 ColumnInfo column = vialTable.getColumn(colName);
                 if (null == column)
                     throw new IllegalStateException("Expected Vial table column to exist.");
-                vialPropertiesSB.append(", ").append(column.getSelectName()).append(" = ")
+                vialPropertiesSql.append(", ").appendIdentifier(column.getSelectName()).append(" = ")
                     .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().getSqlCastTypeName(column.getJdbcType()) + ")");
             }
         }
 
-        vialPropertiesSB.append(" WHERE RowId = ?");
-
-        final String vialPropertiesSql = vialPropertiesSB.toString();
+        vialPropertiesSql.append(" WHERE RowId = ?");
 
         _iTimer.setPhase(ImportPhases.HandleComments);
 
@@ -968,11 +966,11 @@ public class SpecimenImporter extends SpecimenTableManager
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
                             if (null == column)
                                 throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                            String eventColSelectName = column.getSelectName();
+                            var eventColSelectName = column.getSelectName();
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
                                 String vialColName = rollupItem.first;
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName,
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName.getString(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 if (!Objects.equals(vial.get(vialColName), rollupResult))
                                 {
@@ -1002,10 +1000,10 @@ public class SpecimenImporter extends SpecimenTableManager
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
                             if (null == column)
                                 throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                            String eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
+                            var eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias,
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias.getString(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 params.add(rollupResult);
                             }
@@ -1053,7 +1051,10 @@ public class SpecimenImporter extends SpecimenTableManager
 
                 _iTimer.setPhase(ImportPhases.UpdateVials);
                 if (!vialPropertiesParams.isEmpty())
-                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql, vialPropertiesParams);
+                {
+                    assert vialPropertiesSql.getParams().isEmpty();
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql.getRawSQL(), vialPropertiesParams);
+                }
 
                 _iTimer.setPhase(ImportPhases.UpdateComments);
                 if (!commentParams.isEmpty())

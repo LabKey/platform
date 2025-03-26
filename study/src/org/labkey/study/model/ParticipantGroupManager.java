@@ -1084,7 +1084,7 @@ public class ParticipantGroupManager
                 if (rs != null)
                 {
                     ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
-                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+                    int ptidIndex = (null != ptidColumnInfo) ? ptidColumnInfo.findColumn(rs) : 0;
 
                     while (rs.next() && ptidIndex > 0)
                     {

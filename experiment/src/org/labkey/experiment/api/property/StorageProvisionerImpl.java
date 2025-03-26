@@ -40,6 +40,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.ParameterMapStatement;
@@ -632,6 +633,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
         {
             this(schema, name, inner, map);
             _domain = domain;
+            if (StringUtils.isNotBlank(domain.getTitle()))
+                setTitle(domain.getTitle());
         }
 
         public void wrapAllColumns()
@@ -642,13 +645,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 AliasedColumn to = new AliasedColumn(this, new FieldKey(null, name), from, true)
                 {
                     @Override
-                    public String getSelectName()
+                    public DatabaseIdentifier getSelectName()
                     {
                         return _column.getSelectName();
                     }
 
                     @Override
-                    public String getAlias()
+                    public DatabaseIdentifier getAlias()
                     {
                         // it seems that alias like selectname in some places (CompareClause.toSQLFragment())
                         return _column.getAlias();
@@ -725,9 +728,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
             return _inner.getSQLName();
         }
 
-        @Nullable
         @Override
-        public String getMetaDataName()
+        public @Nullable String getMetaDataName()
         {
             return _inner.getMetaDataName();
         }

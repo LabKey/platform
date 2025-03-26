@@ -119,10 +119,10 @@ public abstract class AbstractPropertyStore implements PropertyStore
     // Delete properties associated with this store
     void deleteProperties(Container c)
     {
-        String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
-        SQLFragment deleteProps = new SQLFragment("DELETE FROM " + _prop.getTableInfoProperties().getSelectName() +
-                " WHERE " + setSelectName +  " IN " +
-                "(SELECT " + setSelectName + " FROM " + _prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId = ? AND ", c);
+        var setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+        SQLFragment deleteProps = new SQLFragment("DELETE FROM ").append(_prop.getTableInfoProperties().getSQLName())
+                .append(" WHERE ").appendIdentifier(setSelectName).append(" IN ")
+                .append("(SELECT ").appendIdentifier(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).append(" WHERE ObjectId = ? AND ").add(c);
         appendWhereFilter(deleteProps);
         deleteProps.append(")");
         new SqlExecutor(_prop.getSchema()).execute(deleteProps);
@@ -217,10 +217,10 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
     {
         ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
-        String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
+        var setSelectName = setColumn.getSelectName();   // Keyword in some dialects
 
-        SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
-                " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
+        SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(setSelectName).append(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
+                .append(" WHERE UserId = ? AND ObjectId = ? AND Category = ?").addAll(user, container, category);
 
         PropertySet propertySet = new SqlSelector(_prop.getSchema(), sql).getObject(PropertySet.class);
         if (propertySet == null)

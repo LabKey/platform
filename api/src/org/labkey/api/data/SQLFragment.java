@@ -398,6 +398,15 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    @Deprecated
+    public SQLFragment append(DatabaseIdentifier id)
+    {
+        return append(id.getSql());
+    }
+    public SQLFragment appendIdentifier(DatabaseIdentifier id)
+    {
+        return append(id.getSql());
+    }
 
     /** Functionally the same as append(CharSequence).  This method just has different asserts */
     public SQLFragment appendIdentifier(CharSequence charseq)

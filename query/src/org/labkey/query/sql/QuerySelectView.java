@@ -260,9 +260,14 @@ public class QuerySelectView extends AbstractQueryRelation
         {
             CaseInsensitiveHashMap<ColumnInfo> aliases = new CaseInsensitiveHashMap<>();
             ColumnInfo prev;
+            for (ColumnInfo column : extraSelectDataLoggingColumns)
+            {
+                assert !allColumns.contains(column);
+                allColumns.add(column);
+            }
             for (ColumnInfo column : allColumns)
             {
-                if (null != (prev = aliases.put(column.getAlias(), column)))
+                if (null != (prev = aliases.put(column.getAlias().getString(), column)))
                 {
                     if (prev != column)
                         ExceptionUtil.logExceptionToMothership(null, new Exception("Duplicate alias in column list: " + table.getSchema() + "." + table.getName() + "." + column.getFieldKey().toSQLString() + " as " + column.getAlias()));
@@ -272,7 +277,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
                 selectFrag.append(" AS ");
-                selectFrag.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
+                selectFrag.appendIdentifier(column.getAlias());
                 strComma = ",\n";
             }
         }
@@ -293,7 +298,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 if (selectedFieldKeys.add(column.getFieldKey()))
                 {
                     outerSelect.append(strComma);
-                    outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
+                    outerSelect.appendIdentifier(column.getAlias());
                     strComma = ", ";
                 }
             }
@@ -305,7 +310,7 @@ public class QuerySelectView extends AbstractQueryRelation
                     if (selectedFieldKeys.add(column.getFieldKey()))
                     {
                         outerSelect.append(strComma);
-                        outerSelect.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
+                        outerSelect.appendIdentifier(column.getAlias());
                         strComma = ", ";
                     }
                 }

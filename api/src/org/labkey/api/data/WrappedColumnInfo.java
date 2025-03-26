@@ -117,7 +117,7 @@ public class WrappedColumnInfo
             }
 
             @Override
-            public String getSelectName()
+            public DatabaseIdentifier getSelectName()
             {
                 assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
                 return sourceColumnInfo.getSelectName();
@@ -598,13 +598,28 @@ public class WrappedColumnInfo
         @Override
         public void setAlias(String alias)
         {
+            final DatabaseIdentifier id = getSqlDialect().makeDatabaseIdentifier(alias);
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
                 @Override
-                public String getAlias()
+                public DatabaseIdentifier getAlias()
                 {
-                    return alias;
+                    return id;
+                }
+            };
+        }
+
+        @Override
+        public void setAlias(DatabaseIdentifier id)
+        {
+            checkLocked();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public DatabaseIdentifier getAlias()
+                {
+                    return id;
                 }
             };
         }

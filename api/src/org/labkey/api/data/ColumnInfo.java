@@ -127,7 +127,7 @@ public interface ColumnInfo extends ColumnRenderProperties
     // use only for debugging, will change after call to getAlias()
     boolean isAliasSet();
 
-    String getAlias();
+    DatabaseIdentifier getAlias();
 
     /** If this column is represented by a column in the database, this is the name as returned by database metadata */
     String getMetaDataName();
@@ -135,11 +135,11 @@ public interface ColumnInfo extends ColumnRenderProperties
     /**
      * If this column represents a column in the database (see getMetaDataName()),
      * then this method will return the name escaped in a way that is suitable for using in SQL (e.g. quoted)
-     *
+     * <p>
      * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
      * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
      */
-    String getSelectName();
+    DatabaseIdentifier getSelectName();
 
     /**
      * Use this method to generate database SQL for selecting data from this column.
@@ -301,6 +301,8 @@ public interface ColumnInfo extends ColumnRenderProperties
         return null;
     }
 
+    int findColumn(ResultSet rs) throws SQLException;
+
     Object getValue(ResultSet rs) throws SQLException;
 
     int getIntValue(ResultSet rs) throws SQLException;
@@ -309,7 +311,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     Object getValue(RenderContext context);
 
-    Object getValue(Map<String, ?> map);
+    Object getValue(Map<?, ?> map);
 
     DefaultValueType getDefaultValueType();
 

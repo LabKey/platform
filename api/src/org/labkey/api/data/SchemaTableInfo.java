@@ -80,7 +80,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     // Table properties
     private final DbSchema _parentSchema;
     private final SQLFragment _selectName;
-    private final String _metaDataName;
+    private final DatabaseIdentifier _metaDataName;
     private final DatabaseTableType _tableType;
 
     private String _name;
@@ -121,16 +121,25 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     {
         _parentSchema = parentSchema;
         _name = tableName;
-        _metaDataName = metaDataName;
+        _metaDataName = parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(tableName);
         _selectName = selectName;
         _tableType = tableType;
         _title = title;
     }
 
+    public static SchemaTableInfo newSchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
+    {
+        var dialect = parentSchema.getSqlDialect();
+        var schemaPart = dialect.makeIdentiferFromMetaDataName(parentSchema.getName());
+        var tablePart = dialect.makeIdentiferFromMetaDataName(tableMetaDataName);
+        var full = new SQLFragment().appendIdentifier(schemaPart).append(".").appendIdentifier(tablePart);
+        return new SchemaTableInfo(parentSchema, tableType, tableMetaDataName, tableMetaDataName, full);
+    }
+
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
         this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
-                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName)));
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(tableMetaDataName)));
     }
 
     /**
@@ -212,9 +221,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public String getMetaDataName() // TODO: Mark @NotNull?
+    public @Nullable String getMetaDataName() // TODO: Mark @NotNull?
     {
-        return _metaDataName;
+        return null==_metaDataName ? null : _metaDataName.getString();
     }
 
 

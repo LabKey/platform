@@ -139,11 +139,11 @@ public class QueryNestingOption
             }
         }
 
-        NestableDataRegion dataRegion = new NestableDataRegion(allColumns, _groupIdColumn.getColumnInfo().getAlias(), _ajaxNestedGridURL);
+        NestableDataRegion dataRegion = new NestableDataRegion(allColumns, _groupIdColumn.getColumnInfo().getAlias().getString(), _ajaxNestedGridURL);
         // Set the nested button bar as not visible so that we don't render a bunch of nested <form>s which mess up IE.
         dataRegion.setButtonBar(new ButtonBar());
         dataRegion.setExpanded(expanded);
-        dataRegion.setRecordSelectorValueColumns(_groupIdColumn.getColumnInfo().getAlias());
+        dataRegion.setRecordSelectorValueColumns(_groupIdColumn.getColumnInfo().getAlias().getString());
         DataRegion nestedRgn = new DataRegion()
         {
             @Override

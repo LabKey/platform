@@ -29,6 +29,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -297,7 +298,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
-        String columnName = column.getSelectName();
+        var columnName = column.getSelectName();
         sql.append("\nRETURNING ").appendIdentifier(columnName);
         if (null != proposedVariable)
             sql.append(" INTO ").appendIdentifier(proposedVariable);
@@ -639,8 +640,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public String getCreateDatabaseSql(String dbName)
     {
         // This will handle both mixed case and special characters on PostgreSQL
-        String legal = getSelectNameFromMetaDataName(dbName);
-        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8'";
+        var legal = makeIdentiferFromMetaDataName(dbName);
+        return new SQLFragment("CREATE DATABASE ").appendIdentifier(legal).append(" WITH ENCODING 'UTF8'").getRawSQL();
     }
 
     @Override
@@ -901,15 +902,15 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
     {
         // In addition to quoting keywords and names with special characters, quote any name with an upper case
         // character. PostgreSQL normally stores column/table names in all lower case, so an upper case character
         // coming out of metadata means the name must have been quoted at creation time and needs to be quoted. #11181
         if (StringUtilsLabKey.containsUpperCase(metaDataName))
-            return quoteIdentifier(metaDataName);
+            return new _DatabaseIdentifier(metaDataName, new SQLFragment().appendIdentifier(quoteIdentifier(metaDataName)), this);
         else
-            return super.getSelectNameFromMetaDataName(metaDataName);
+            return super.makeIdentiferFromMetaDataName(metaDataName);
     }
 
     private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,?\\s*(\\w*)\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);

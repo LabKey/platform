@@ -175,6 +175,12 @@ public class DomainImpl implements Domain
     }
 
     @Override
+    public String getTitle()
+    {
+        return _dd.getTitle();
+    }
+
+    @Override
     public String getLabel()
     {
         DomainKind<?> kind = getDomainKind();
@@ -268,6 +274,12 @@ public class DomainImpl implements Domain
     public void setName(String name)
     {
         _dd = _dd.edit().setName(name).build();
+    }
+
+    @Override
+    public void setTitle(String title)
+    {
+        _dd = _dd.edit().setTitle(title).build();
     }
 
     @Override

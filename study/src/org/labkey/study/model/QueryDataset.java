@@ -68,9 +68,8 @@ public class QueryDataset extends VirtualTable<UserSchema>
         return _inner.getSQLName();
     }
 
-    @Nullable
     @Override
-    public String getMetaDataName()
+    public @Nullable String getMetaDataName()
     {
         return _inner.getMetaDataName();
     }

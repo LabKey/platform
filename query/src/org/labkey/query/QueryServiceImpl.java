@@ -371,7 +371,6 @@ public class QueryServiceImpl implements QueryService
         ColumnInfo col = columnMap.get(fieldKey);
         assert null != col;
 
-        SQLFragment colFrag = new SQLFragment(col.getAlias());
         final String sql = (String) value;
         UserSchema userSchema = col.getParentTable().getUserSchema();
 
@@ -386,7 +385,7 @@ public class QueryServiceImpl implements QueryService
         SQLFragment fromSql = t.getFromSQL("_");
 
         SQLFragment sqlFragment = new SQLFragment()
-                .append("(").append(colFrag)
+                .append("(").appendIdentifier(col.getAlias())
                 .append(")")
                 .append(negate ? " NOT" : "")
                 .append(" IN (")
@@ -681,7 +680,7 @@ public class QueryServiceImpl implements QueryService
         @Override
         public void appendSql(SqlBuilder builder, Query query)
         {
-            builder.append(_col.getAlias());
+            builder.appendIdentifier(_col.getAlias());
         }
 
         @Override
@@ -1732,7 +1731,7 @@ public class QueryServiceImpl implements QueryService
                 if (needsAlias)
                     ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
                 else
-                    ret = new QAliasedColumn(ret.getName(), ret.getAlias(), ret);
+                    ret = new QAliasedColumn(ret.getName(), ret.getAlias().getString(), ret);
                 if (null != titleURL)
                     ((QAliasedColumn) ret).setURL(titleURL);
             }
@@ -1785,7 +1784,7 @@ public class QueryServiceImpl implements QueryService
 
         // Consider that the fieldKey may have come from a URL field that is a column's alias
         Map<String, ColumnInfo> mapAlias = new HashMap<>();
-        table.getColumns().forEach(col -> mapAlias.put(col.getAlias().toLowerCase(), col));
+        table.getColumns().forEach(col -> mapAlias.put(col.getAlias().getString().toLowerCase(), col));
 
         for (FieldKey field : fields)
         {

@@ -147,23 +147,18 @@ public class Sort
             return (_dir == SortDirection.ASC ? "" : "-") + _fieldKey.toString();
         }
 
-        private SQLFragment toOrderByFragment(SqlDialect dialect, String alias)
+        private SQLFragment toOrderByFragment(SqlDialect dialect, DatabaseIdentifier alias)
         {
             SQLFragment sql = new SQLFragment();
-            // NOTE dialect==null when this is called for display purposes (see Sort.getSortText())
-            // CONSIDER: create a separate method for that usage
-            if (null == dialect)
-                sql.appendIdentifier(LabKeySql.quoteIdentifier(alias));
-            else
-                sql.appendIdentifier(dialect.getColumnSelectName(alias));
+            sql.appendIdentifier(alias);
             sql.append(" ");
             sql.append(_dir.getSqlDir());
             return sql;
         }
 
-        public String getSelectName(SqlDialect dialect)
+        public DatabaseIdentifier getSelectName(SqlDialect dialect)
         {
-            return dialect.getColumnSelectName(_fieldKey.getName());
+            return dialect.makeDatabaseIdentifier(_fieldKey.getName());
         }
 
         public FieldKey getFieldKey()
@@ -497,7 +492,8 @@ public class Sort
             ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo == null)
             {
-                appendColumnToSort(sf, dialect, fieldKey.getName(), distinctKeys, sql);
+                var id = dialect.makeDatabaseIdentifier(fieldKey.getName());
+                appendColumnToSort(sf, dialect, id, distinctKeys, sql);
             }
             else
             {
@@ -543,16 +539,16 @@ public class Sort
         return new SQLFragment();
     }
 
-    private void appendColumnToSort(SortField sf, SqlDialect dialect, String alias, Set<String> distinctKeys, SQLFragment sql)
+    private void appendColumnToSort(SortField sf, SqlDialect dialect, DatabaseIdentifier alias, Set<String> distinctKeys, SQLFragment sql)
     {
-        if (distinctKeys.contains(alias))
+        if (distinctKeys.contains(alias.getString()))
             return;
 
         if (!distinctKeys.isEmpty())
             sql.append(", ");
 
         sql.append(sf.toOrderByFragment(dialect, alias));
-        distinctKeys.add(alias);
+        distinctKeys.add(alias.getString());
     }
 
     // Return an English version of the sort

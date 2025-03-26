@@ -33,6 +33,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
@@ -832,31 +833,80 @@ public abstract class SqlDialect
         return _reservedWordSet.contains(word);
     }
 
-    // TODO: Return SQLFragment to ensure columnName gets added with appendIdentifier()
-    public String getColumnSelectName(String columnName)
+    public SQLFragment getColumnSelectName(String columnName)
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()
         if ("*".equals(columnName))
-            return columnName;
+            return new SQLFragment("*");
         else
-            return makeLegalIdentifier(columnName);
+            return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
-
-    // Translates database metadata name into a name that can be used in a select.  Most dialects simply turn them into
-    // legal identifiers (e.g., adding quotes if special symbols are present).
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    // dialect is just for debugging reference
+    protected record _DatabaseIdentifier(String string, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
     {
-        return makeLegalIdentifier(metaDataName);
+        _DatabaseIdentifier(String string, String sql, SqlDialect dialect)
+        {
+            this(string, new SQLFragment().appendIdentifier(sql), dialect);
+        }
+
+        @Override
+        public String getString()
+        {
+            return string;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            return sql;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "DatabaseIdentifier::" + string;
+        }
     }
+
+    // used when a name is provided by the database for an existng object (scheam, table, column etc)
+    // must be exactly preserved
+    public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
+    {
+        return new _DatabaseIdentifier(metaDataName, makeLegalIdentifier(metaDataName), this);
+    }
+
+    // creates an DialectIdentifier for desired alias
+    // NOTE: historically we did not quote identifiers simply because they had uppercase letters.
+    // Thus aliases tended to become defacto lowercase.  For now, we'll explicitly lower-case here.
+    // TODO : Test with alternate casing and always quoting, the get rid of the .toLowerCase()
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (getIdentifierMaxLength() < alias.length())
+            throw new UnsupportedOperationException("Name longer than " + getIdentifierMaxLength() + " characters");
+        // what we want:
+        //   SQLFragment quoted = new SQLFragment().appendIdentifier(quoteIdentifier(alias));
+        //   return new _DatabaseIdentifier(alias, quoted, this);
+        alias = alias.toLowerCase();
+        return new _DatabaseIdentifier(alias, makeLegalIdentifier(alias), this);
+    }
+
+    /* ONLY use for special cases! */
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias, SQLFragment sql)
+    {
+        return new _DatabaseIdentifier(alias, sql, null);
+    }
+
 
     // Create comma-separated list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names)
     {
         return makeLegalIdentifiers(names, ", ");
     }
 
     // Create list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names, String sep)
     {
         String s = "";
@@ -871,6 +921,7 @@ public abstract class SqlDialect
 
 
     // If necessary, quote identifier
+    @Deprecated
     public String makeLegalIdentifier(String id)
     {
         if (shouldQuoteIdentifier(id))

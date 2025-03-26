@@ -3828,7 +3828,7 @@ public class QueryController extends SpringActionController
             // I don't believe the above comment, so here's an assert
             assert(colGetAgain.getAlias().equals(col.getAlias()));
 
-            SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
             sql.append(selectSql);
             sql.append(") S ORDER BY value");
 

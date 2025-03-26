@@ -912,7 +912,7 @@ public abstract class CompareType
                     hasResult = true;
                     sql.append(sep);
                     sep = " OR ";
-                    sql.append(dialect.getColumnSelectName(column.getAlias()));
+                    sql.appendIdentifier(column.getAlias());
                     sql.append(" = ");
                     sql.appendValue(paramNum);
                     continue;
@@ -926,7 +926,7 @@ public abstract class CompareType
                 sql.append(sep);
                 sep = " OR ";
 
-                sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
+                sql.appendIdentifier(mappedColumn.getAlias());
                 sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
                 sql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
                 sql.append(LikeClause.sqlEscape());
@@ -1202,9 +1202,9 @@ public abstract class CompareType
                 _paramVals = new Object[]{value};
         }
 
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            return new SQLFragment().appendIdentifier(dialect.getColumnSelectName(alias)).append(_comparison.getSql());
+            return new SQLFragment().appendIdentifier(alias).append(_comparison.getSql());
         }
 
         protected String substituteLabKeySqlParams(String sql, Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -1295,7 +1295,7 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
-            String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
+            var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             SQLFragment fragment = toWhereClause(dialect, alias);
             if (colInfo == null || !needsTypeConversion() || getParamVals() == null)
@@ -1658,12 +1658,12 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             // See Issue 51472
             return dialect.isSqlServer() ?
                 new SQLFragment()
-                    .appendIdentifier(dialect.getColumnSelectName(alias))
+                    .appendIdentifier(alias)
                     .append(_comparison.getSql().replace("?", SS_CAST)) :
                 super.toWhereClause(dialect, alias);
         }
@@ -1699,14 +1699,13 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(selectName).append(" >= ").append(q)
+                .appendIdentifier(alias).append(" >= ").append(q)
                 .append(" AND ")
-                .appendIdentifier(selectName).append(" < ").append(q);
+                .appendIdentifier(alias).append(" < ").append(q);
         }
 
         @Override
@@ -1743,14 +1742,13 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
-            String selectName = dialect.getColumnSelectName(alias);
             String q = dialect.isSqlServer() ? SS_CAST : "?";
             return new SQLFragment()
-                .appendIdentifier(selectName).append(" < ").append(q)
+                .appendIdentifier(alias).append(" < ").append(q)
                 .append(" OR ")
-                .appendIdentifier(selectName).append(" >= ").append(q);
+                .appendIdentifier(alias).append(" >= ").append(q);
         }
 
         @Override
@@ -1973,7 +1971,7 @@ public abstract class CompareType
         }
 
         @Override
-        abstract SQLFragment toWhereClause(SqlDialect dialect, String alias);
+        abstract SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias);
     }
 
     private static class StartsWithClause extends LikeClause
@@ -1984,10 +1982,10 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment()
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" ")
+                .appendIdentifier(alias).append(" ")
                 .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
                 .append(dialect.concatenate("?", "'%'")).append(sqlEscape());
         }
@@ -2017,11 +2015,11 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment("(")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" IS NULL OR ")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
+                .appendIdentifier(alias).append(" IS NULL OR ")
+                .appendIdentifier(alias).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("?", "'%'")).append(sqlEscape())
                 .append(")");
         }
 
@@ -2099,10 +2097,10 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment()
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" ")
+                .appendIdentifier(alias).append(" ")
                 .append(dialect.getCaseInsensitiveLikeOperator()).append(" ")
                 .append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape());
         }
@@ -2132,11 +2130,11 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             return new SQLFragment("(")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" IS NULL OR ")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
+                .appendIdentifier(alias).append(" IS NULL OR ")
+                .appendIdentifier(alias).append(" NOT ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ").append(dialect.concatenate("'%'", "?", "'%'")).append(sqlEscape())
                 .append(")");
         }
 
@@ -2165,14 +2163,14 @@ public abstract class CompareType
         }
 
         @Override
-        SQLFragment toWhereClause(SqlDialect dialect, String alias)
+        SQLFragment toWhereClause(SqlDialect dialect, DatabaseIdentifier alias)
         {
             String neq = CompareType.NEQ.getSql();
             String isNull = CompareType.ISBLANK.getSql();
             return new SQLFragment("(")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(neq)
+                .appendIdentifier(alias).append(neq)
                 .append(" OR ")
-                .appendIdentifier(dialect.getColumnSelectName(alias)).append(isNull)
+                .appendIdentifier(alias).append(isNull)
                 .append(")");
         }
     }
@@ -2217,7 +2215,7 @@ public abstract class CompareType
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
-            String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
+            var alias = SimpleFilter.getAliasForColumnFilter(dialect, colInfo, _fieldKey);
 
             Object id = getId();
 
@@ -2226,7 +2224,7 @@ public abstract class CompareType
                 return new SQLFragment("(1 = 2)");
             }
 
-            return getMemberOfSQL(dialect, new SQLFragment(alias), new SQLFragment("?", convertParamValue(colInfo, id)));
+            return getMemberOfSQL(dialect, alias.getSql(), new SQLFragment("?", convertParamValue(colInfo, id)));
         }
 
         @Nullable

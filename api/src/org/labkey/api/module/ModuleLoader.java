@@ -1374,13 +1374,13 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         coreModule.initialize();
 
-        ModuleContext coreContext;
+        ModuleContext coreContext = null;
 
         // If modules table doesn't exist (bootstrap case), then new up a core context
-        if (getTableInfoModules().getTableType() == DatabaseTableType.NOT_IN_DB)
-            coreContext = new ModuleContext(coreModule);
-        else
+        if (getTableInfoModules().getTableType() != DatabaseTableType.NOT_IN_DB)
             coreContext = getModuleContextFromDatabase("Core");
+        if (null == coreContext)
+            coreContext = new ModuleContext(coreModule);
 
         // Does the core module need to be upgraded?
         if (!coreContext.needsUpgrade(coreModule.getSchemaVersion()))

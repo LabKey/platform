@@ -436,7 +436,8 @@
     <xs:complexType name="SampleSetType">
         <xs:sequence>
             <xs:element name="Name" type="string" minOccurs="1"/>
-            <xs:element name="MaterialLSIDPrefix" type="string" minOccurs="1"/>
+			<xs:element name="TableTitle" type="xs:string" minOccurs="0" />
+			<xs:element name="MaterialLSIDPrefix" type="string" minOccurs="1"/>
             <xs:element name="Description" type="string" minOccurs="0" />
 			<xs:element name="KeyField" type="string" minOccurs="0" maxOccurs="3" />
 			<xs:element name="ParentField" type="string" minOccurs="0" maxOccurs="1" />
@@ -461,6 +462,7 @@
 	<xs:complexType name="DataClassType">
 		<xs:sequence>
 			<xs:element name="Name" type="string" minOccurs="1"/>
+			<xs:element name="TableTitle" type="xs:string" minOccurs="0" />
 			<xs:element name="Description" type="string" minOccurs="0" />
 			<xs:element name="NameExpression" type="string" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="Category" type="string" minOccurs="0" />
@@ -487,7 +489,8 @@
 	<xs:complexType name="DomainDescriptorType">
         <xs:sequence>
             <xs:element name="Name" type="string" minOccurs="0"/>
-            <xs:element name="DomainURI" type="string" minOccurs="0"/>
+			<xs:element name="TableTitle" type="xs:string" minOccurs="0" />
+			<xs:element name="DomainURI" type="string" minOccurs="0"/>
             <xs:element name="Description" type="string" minOccurs="0"/>
             <xs:element name="PropertyDescriptor" type="exp:PropertyDescriptorType" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>

@@ -1054,7 +1054,7 @@ public class QueryManager
     private static Map<String, Object> getSchemaCustomViewCounts(String schema)
     {
         DbSchema dbSchema = CoreSchema.getInstance().getSchema();
-        String schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
+        var schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
         String schemaClause = schema.equalsIgnoreCase("assay") ? "C." + schemaField + " LIKE 'assay.%'" : "C." + schemaField + " = '" + schema + "'";
         return Map.of(
                 "defaultOverrides", new SqlSelector(dbSchema,

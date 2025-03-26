@@ -33,6 +33,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerSecurableResourceProvider;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -300,7 +301,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                 Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
                 ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
                 if (qcStateColumn != null)
-                    filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
+                    filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias().getSql()), null, qcStateColumn.getFieldKey()));
             }
         }
     }
@@ -957,12 +958,14 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return new SQLFragment(tableAlias + "." + getAlias());
+                return new SQLFragment().appendIdentifier(tableAlias).append(".").appendIdentifier(getAlias());
             }
         };
         unionCol.copyAttributesFrom(column);
         unionCol.setHidden(column.isHidden());
-        unionCol.setAlias(aliasManager.decideAlias(name));
+        String str = aliasManager.decideAlias(name);
+        DatabaseIdentifier alias = schema.getDbSchema().getSqlDialect().makeDatabaseIdentifier(str);
+        unionCol.setAlias(alias);
 
         unionCol.setJdbcType(JdbcType.promote(unionCol.getJdbcType(), column.getJdbcType()));
         if ("container".equalsIgnoreCase(unionCol.getName()) && unionCol.getFk() instanceof ContainerForeignKey)
@@ -1013,8 +1016,8 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                     sqlf.append(col.getValueSql(tableAlias));
                     col.declareJoins(tableAlias,joins);
                 }
-                if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias()))
-                    sqlf.append(" AS ").append(colUnion.getAlias());
+                if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias().getString()))
+                    sqlf.append(" AS ").appendIdentifier(colUnion.getAlias());
                 comma = ", ";
             }
             sqlf.append("\nFROM ");

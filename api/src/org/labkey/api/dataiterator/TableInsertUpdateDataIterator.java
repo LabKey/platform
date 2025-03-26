@@ -432,11 +432,11 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 // Update the sequence for the serial column with the max+1 and handle empty tables
                 if (autoIncCol.getSelectName() != null)
                 {
-                    String colSelectName = autoIncCol.getSelectName();
+                    var colSelectName = autoIncCol.getSelectName();
                     SQLFragment resetSeq = new SQLFragment();
                     resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName).append("),\n");
-                    resetSeq.append("  COALESCE((SELECT MAX(").append(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
+                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getString()).append("),\n");
+                    resetSeq.append("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
                     resetSeq.append("  false");
                     resetSeq.append(")");
                     new SqlExecutor(_scope, _conn).execute(resetSeq);

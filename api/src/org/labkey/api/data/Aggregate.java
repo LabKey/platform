@@ -25,13 +25,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
-import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.Format;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Configuration to track that a column should be displayed with summary information about its content, such as
@@ -40,8 +40,8 @@ import java.util.Map;
 public class Aggregate
 {
     public static String STAR = "*";
-    private static FieldKey STAR_FIELDKEY = FieldKey.fromParts(STAR);
-    private static double EPSILON = 0.00001;
+    private static final FieldKey STAR_FIELDKEY = FieldKey.fromParts(STAR);
+    private static final double EPSILON = 0.00001;
 
     public interface Type
     {
@@ -77,6 +77,20 @@ public class Aggregate
          */
         default SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, @Nullable String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
         {
+            SQLFragment c;
+            DatabaseIdentifier as = null;
+            SqlDialect d = Objects.requireNonNull(CoreSchema.getInstance().getSqlDialect());
+            if ("*".equals(columnName))
+                c =  new SQLFragment("*");
+            else
+                c = d.makeDatabaseIdentifier(columnName).getSql();
+            if (null != asName)
+                as = d.makeDatabaseIdentifier(asName);
+            return getSQLColumnFragment(dialect, c, as, jdbcType, distinct, tableInnerSql);
+        }
+
+        default SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+        {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
 
@@ -84,11 +98,11 @@ public class Aggregate
             sb.append(getSQLFunctionName(dialect)).append("(");
             if (distinct)
                 sb.append("DISTINCT ");
-            sb.append(dialect.getColumnSelectName(columnName));
+            sb.append(columnName);
             sb.append(")");
             if (asName != null)
             {
-                sb.append(" AS ").append(asName);
+                sb.append(" AS ").appendIdentifier(asName);
             }
             return sb;
         }
@@ -131,7 +145,7 @@ public class Aggregate
         SUM("Sum")
         {
             @Override
-            public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
             {
                 if (jdbcType != null && !isLegal(jdbcType))
                     return null;
@@ -144,14 +158,16 @@ public class Aggregate
                         sb.append("DISTINCT ");
                     if (dialect.isSqlServer() && castType(jdbcType) != null)
                     {
-                        sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS ")
+                        sb.append("CAST(").append(columnName).append(" AS ")
                             .append(castType(jdbcType)).append(")");
                     }
                     else
                     {
-                        sb.append(dialect.getColumnSelectName(columnName));
+                        sb.append(columnName);
                     }
-                    sb.append(") AS ").append(asName);
+                    sb.append(")");
+                    if (null != asName)
+                        sb.append(" AS ").appendIdentifier(asName);
                     return sb;
                 }
                 else
@@ -195,7 +211,7 @@ public class Aggregate
             }
 
             @Override
-            public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, @Nullable String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
             {
                 if (jdbcType != null && !isLegal(jdbcType))
                     return null;
@@ -207,12 +223,12 @@ public class Aggregate
                     sb.append(getSQLFunctionName(dialect)).append("(");
                     if (distinct)
                         sb.append("DISTINCT ");
-                    sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS FLOAT)");
+                    sb.append("CAST(").append(columnName).append(" AS FLOAT)");
                     sb.append(")");
 
                     if (asName != null)
                     {
-                        sb.append(" AS ").append(asName);
+                        sb.append(" AS ").appendIdentifier(asName);
                     }
 
                     return sb;
@@ -471,8 +487,7 @@ public class Aggregate
     {
         String alias = getColumnName();
         if (col != null)
-            alias = col.getAlias();
-
+            alias = col.getAlias().getString();
         return alias;
     }
 
@@ -606,6 +621,5 @@ public class Aggregate
             assertEquals("Expected " + type.getDisplayValue() + " to be " + (legal ? "legal" : "illegal") + " for JDBC type " + jdbcType.name(),
                     legal, type.isLegal(jdbcType));
         }
-
     }
 }

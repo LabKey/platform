@@ -41,6 +41,7 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page import="org.labkey.api.query.FilteredTable" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.data.DatabaseIdentifier" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -66,7 +67,7 @@ DbSchema getDbSchema(String columns) throws XmlException
             BaseColumnInfo c = new BaseColumnInfo(name, null, type)
             {
                 @Override
-                public String getAlias()
+                public DatabaseIdentifier getAlias()
                 {
                     return super.getAlias();
                 }
@@ -181,8 +182,8 @@ public void testBasicSchemaXML() throws Exception
 
     sql = new SQLFragment()
             .append("SELECT\n")
-            .append("  ").append(wrapped.getValueSql("t")).append(" AS ").append(wrapped.getAlias()).append(",\n")
-            .append("  ").append(calculated.getValueSql("t")).append(" AS ").append(calculated.getAlias()).append(",\n")
+            .append("  ").append(wrapped.getValueSql("t")).append(" AS ").appendIdentifier(wrapped.getAlias()).append(",\n")
+            .append("  ").append(calculated.getValueSql("t")).append(" AS ").appendIdentifier(calculated.getAlias()).append(",\n")
             .append("  ").append("*")
             .append("\nFROM ").append(t.getFromSQL("t"))
             .append("\nWHERE ").append(t.getColumn("ZED").getValueSql("t")).append(" = 0 AND ").append(t.getColumn("SIX").getValueSql("t")).append(" = 6");
@@ -462,13 +463,13 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
 
         // getFromSQL(five)
-        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
@@ -489,7 +490,7 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
@@ -512,7 +513,7 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);

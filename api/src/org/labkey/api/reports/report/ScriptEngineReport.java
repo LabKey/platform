@@ -391,7 +391,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 alias = alias + i;
             }
 
-            remap.put(col.getAlias(), alias);
+            remap.put(col.getAlias().getString(), alias);
         }
 
         try

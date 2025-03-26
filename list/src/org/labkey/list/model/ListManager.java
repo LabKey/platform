@@ -1099,7 +1099,7 @@ public class ListManager implements SearchService.DocumentProvider
             ColumnInfo keyColumn = sti.getColumn(list.getKeyName());
             if (null != keyColumn)
             {
-                String keySelectName = keyColumn.getSelectName();
+                var keySelectName = keyColumn.getSelectName();
                 new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
                         keySelectName + " = ?", new Timestamp(ms), pk);
             }

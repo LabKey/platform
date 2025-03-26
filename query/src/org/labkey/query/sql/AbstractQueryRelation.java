@@ -393,7 +393,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         @Override
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
+            return new SQLFragment().appendIdentifier(tableAlias).append(".").appendIdentifier(getAlias());
         }
 
         @Override

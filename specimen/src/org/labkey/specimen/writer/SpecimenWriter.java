@@ -131,7 +131,7 @@ public class SpecimenWriter extends AbstractSpecimenWriter
                 {
                     col = new SQLFragment("NULL");
                 }
-                col.append(" AS ").append(dc.getDisplayColumnInfo().getAlias());
+                col.append(" AS ").appendIdentifier(dc.getDisplayColumnInfo().getAlias());
             }
             else
             {
@@ -167,7 +167,7 @@ public class SpecimenWriter extends AbstractSpecimenWriter
                     sql.append(column.getJoinType()).append(" ");
                 sql.append("JOIN ").append(specimenTableManager.getTableInfoFromFkTableName(column.getFkTable())).append(" AS ").append(column.getFkTableAlias()).append(" ON ");
                 sql.append("(se.");
-                sql.append(ci.getSelectName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
+                sql.appendIdentifier(ci.getSelectName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
             }
         }
 

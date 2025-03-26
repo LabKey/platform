@@ -74,7 +74,7 @@ public class AtomicDatabaseInteger
     // Atomically sets the value to the given update value if the current value == the expected value.
     public boolean compareAndSet(int expect, int update)
     {
-        String targetColumnName = _targetColumn.getSelectName();
+        var targetColumnName = _targetColumn.getSelectName();
         // NOTE: we're not really using _ts column for optimistic concurrency, don't need to update
         SQLFragment sqlf = new SQLFragment(
                 "UPDATE " + _table.getSelectName() +
