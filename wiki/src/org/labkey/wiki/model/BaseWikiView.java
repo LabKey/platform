@@ -22,7 +22,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -35,13 +34,6 @@ import org.labkey.wiki.WikiController;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Map;
-import java.util.Set;
-
-/**
- * User: Mark Igra
- * Date: Jun 12, 2006
- * Time: 3:29:31 PM
- */
 
 public abstract class BaseWikiView extends JspView<Object>
 {
@@ -119,9 +111,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 try
                 {
                     // Issue 46346 - make a single call to get the HTML and dependency info to avoid double-rendering
-                    Pair<HtmlString, Set<ClientDependency>> rendered = wikiVersion.render(c, wiki);
-                    html = rendered.first;
-                    addClientDependencies(rendered.second);
+                    html = wikiVersion.render(this, c, wiki);
                 }
                 catch (Exception e)
                 {

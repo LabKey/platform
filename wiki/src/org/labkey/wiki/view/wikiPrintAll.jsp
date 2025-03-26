@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.wiki.WikiController" %>
+<%@ page import="org.labkey.wiki.WikiController.PrintAllBean" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
@@ -27,8 +27,8 @@
 <%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WikiController.PrintAllBean> me = (JspView<WikiController.PrintAllBean>) HttpView.currentView();
-    WikiController.PrintAllBean bean = me.getModelBean();
+    JspView<PrintAllBean> me = HttpView.currentView();
+    PrintAllBean bean = me.getModelBean();
     Container c = getContainer();
 %>
 <div style="padding:10px;">
@@ -56,7 +56,7 @@
     %>
         <hr size=1>
         <h3><a name="<%=h(wiki.getName())%>"></a><%=h(version.getTitle())%></h3><br>
-        <%=version.getHtml(c, wiki)%><br><br>
+        <%=version.render(me, c, wiki)%><br><br>
     <%}
 %>
 </div>
