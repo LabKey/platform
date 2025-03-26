@@ -87,10 +87,9 @@ public class ModulePropertiesAuditProvider extends AbstractAuditTypeProvider imp
         private Object _oldValue;
         private Object _newValue;
 
-        public ModulePropertiesAuditEvent()
-        {
-
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public ModulePropertiesAuditEvent() {}
 
         public ModulePropertiesAuditEvent(Container container, String comment)
         {

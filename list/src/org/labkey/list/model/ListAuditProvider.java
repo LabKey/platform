@@ -153,10 +153,9 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         private String _listItemEntityId;
         private String _listName;
 
-        public ListAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public ListAuditEvent() {}
 
         public ListAuditEvent(Container container, String comment, ListDefinitionImpl list)
         {

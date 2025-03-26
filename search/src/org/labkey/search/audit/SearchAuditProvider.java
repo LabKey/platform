@@ -103,10 +103,9 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
     {
         private String _query;
 
-        public SearchAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public SearchAuditEvent() {}
 
         public SearchAuditEvent(Container container, String comment)
         {

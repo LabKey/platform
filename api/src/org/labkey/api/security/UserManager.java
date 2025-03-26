@@ -1104,10 +1104,9 @@ public class UserManager
 
         private final Map<String, Object> _messageElements = new LinkedHashMap<>();
 
-        public UserAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public UserAuditEvent() {}
 
         public UserAuditEvent(Container container, String comment, User modifiedUser)
         {
