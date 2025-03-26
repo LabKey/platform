@@ -1532,6 +1532,11 @@ Parse:
             return DateUtil.parseDateTime(ContainerManager.getRoot(), s);
         }
 
+        private Time parseTime(String s)
+        {
+            return new Time(DateUtil.parseDateTimeUS(s, DateTimeOption.TimeOnly, false));
+        }
+
         void assertIllegalDate(String s)
         {
             try
@@ -1628,7 +1633,7 @@ Parse:
 
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
-// BUG?     parseDateTime() is not suppose to parse time only values
+// BUG?     parseDateTime() is not supposed to parse time-only values
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), fromTimeString("15:02:00.0000000",true).getTime());
 
@@ -2044,31 +2049,26 @@ Parse:
         }
 
         @Test
-        public void testIsoTimeeFormat()
+        public void testIsoTimeFormat()
         {
-            long l = System.currentTimeMillis();
-            for (int i=0 ; i<24 ; i++)
-            {
-                String ts = new java.sql.Timestamp(l).toString();
-                String iso = toISO(l);
-                assertEquals(ts.substring(0,20),iso.substring(0,20));
-                l += 60*60*1000;
-            }
+            validateTimeFormat("23:59:59.999", "23:59:59.999", "23:59:59.999");
+            validateTimeFormat("23:59:59.500", "23:59:59.500", "23:59:59.500");
+            validateTimeFormat("23:59:59.001", "23:59:59.001", "23:59:59.001");
 
-            l = parseDateTime("1999-12-31 23:59:59.999");
-            assertEquals(toISO(l, false).length(), "1999-12-31 23:59:59.999".length());
-            l -= l % 1000;
-            assertEquals(toISO(l, false).length(), "1999-12-31 23:59:59".length());
-            l -= l % (60 * 1000);
-            assertEquals(toISO(l, false).length(), "1999-12-31 23:59".length());
-            l -= l % (60 * 60 * 1000);
-            assertEquals(toISO(l, false).length(), "1999-12-31 23:00".length());
-            Calendar c = newCalendar(l);
-            c.clear(HOUR);
-            c.clear(AM_PM);
-            c.set(HOUR_OF_DAY,0);
-            l = c.getTimeInMillis();
-            assertEquals(toISO(l, false).length(), "1999-12-31".length());
+            validateTimeFormat("23:59:59", "23:59:59.000", "23:59:59");
+            validateTimeFormat("23:59:31", "23:59:31.000", "23:59:31");
+            validateTimeFormat("23:59:01", "23:59:01.000", "23:59:01");
+
+            validateTimeFormat("23:59", "23:59:00.000", "23:59");
+            validateTimeFormat("23:31", "23:31:00.000", "23:31");
+            validateTimeFormat("23:00:00", "23:00:00.000", "23:00");
+        }
+
+        private void validateTimeFormat(String time, String full, String notFull)
+        {
+            Time t = parseTime(time);
+            assertEquals(full, toISO(t, true));
+            assertEquals(notFull, toISO(t, false));
         }
 
         @Test
