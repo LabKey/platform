@@ -653,7 +653,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
     {
-        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), comment);
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
 
         if (txAuditId != null)
@@ -1176,14 +1176,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, String userComment, @Nullable QueryService.AuditAction action, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
     {
-        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, comment);
         event.setUserComment(userComment);
         var tx = getExpSchema().getScope().getCurrentTransaction();
         if (tx != null)
             event.setTransactionId(tx.getAuditId());
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
 
         var staticsRow = existingRow != null && !existingRow.isEmpty() ? existingRow : row;
         if (row != null)
@@ -1242,11 +1239,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
-        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container, comment);
         if (getExpSchema().getScope().getCurrentTransaction() != null)
             event.setTransactionId(getExpSchema().getScope().getCurrentTransaction().getAuditId());
-        if (container.getProject() != null)
-            event.setProjectId(container.getProject().getId());
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
         event.setSampleId(sample.getRowId());

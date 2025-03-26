@@ -15,6 +15,8 @@
  */
 package org.labkey.api.study.security;
 
+import org.labkey.api.data.Container;
+
 /**
  * @see SecurityEscalationAuditProvider
  */
@@ -50,6 +52,11 @@ public class StudySecurityEscalationAuditProvider extends SecurityEscalationAudi
 
     public static class StudySecurityEscalationEvent extends SecurityEscalationEvent
     {
+        public StudySecurityEscalationEvent(Container container, String comment)
+        {
+            super(EVENT_TYPE, container, comment);
+        }
+
         @Override
         public String getEventType() {
             return EVENT_TYPE;

@@ -75,23 +75,19 @@ public abstract class SecurityEscalator implements AutoCloseable
     /**
      * Returns a blank, new {@link SecurityEscalationAuditProvider.SecurityEscalationEvent} that will
      * be filled with data about the escalation.  You should only add values to the event that are specific
-     * to your SecurityEscalator implementation, as this class will override all of the values tracked by
+     * to your SecurityEscalator implementation, as this class will override all the values tracked by
      * the base class.
      *
      * @return A blank, new {@link SecurityEscalationAuditProvider.SecurityEscalationEvent}.
      */
-    abstract protected SecurityEscalationAuditProvider.SecurityEscalationEvent getNewSecurityEvent();
+    abstract protected SecurityEscalationAuditProvider.SecurityEscalationEvent getNewSecurityEvent(Container container, String comment);
 
-    private SecurityEscalationAuditProvider.SecurityEscalationEvent _event;
-    private User user;
+    private final SecurityEscalationAuditProvider.SecurityEscalationEvent _event;
+    private final User user;
 
     /**
      * Constructor to return a new escalator object.  This increments the escalation level, and prepares
      * an Audit Message (but doesn't add it just yet).
-     *
-     * @param user
-     * @param container
-     * @param comment
      */
     public SecurityEscalator(User user, Container container, String comment) {
         this.user = user;
@@ -130,12 +126,10 @@ public abstract class SecurityEscalator implements AutoCloseable
         String relevantStackTrace = Joiner.on("\n").join(relevantStackTraceElements);
 
         // Create an audit entry, but don't submit it yet.
-        _event = this.getNewSecurityEvent();
-        _event.setContainer(container.getId());
+        _event = this.getNewSecurityEvent(container, comment);
         _event.setStartTime(new Date());
         _event.setServiceName(serviceName);
         _event.setStackTrace(relevantStackTrace);
-        _event.setComment(comment);
         _event.setLevel(getEscalationLevel());
         _event.setEscalatingUser(user.getUserId());
 

@@ -116,12 +116,8 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
         if (null != diff)
         {
-            SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(c.getId(), "The " + getType() + " were changed (see details).");
-
-            if (c.getProject() != null)
-                event.setProjectId(c.getProject().getId());
+            SiteSettingsAuditEvent event = new SiteSettingsAuditEvent(c, "The " + getType() + " were changed (see details).");
             event.setChanges(diff);
-
             AuditLogService.get().addEvent(user, event);
         }
     }

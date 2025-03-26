@@ -95,7 +95,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         if (user != null)
         {
-            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c.getId(), comment);
+            AuditTypeEvent event = new AuditTypeEvent(ContainerAuditProvider.CONTAINER_AUDIT_EVENT, c, comment);
             AuditLogService.get().addEvent(user, event);
         }
     }

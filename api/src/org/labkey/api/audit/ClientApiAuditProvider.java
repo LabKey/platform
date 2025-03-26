@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
@@ -165,7 +166,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             super();
         }
 
-        public ClientApiAuditEvent(String container, String comment)
+        public ClientApiAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
         }

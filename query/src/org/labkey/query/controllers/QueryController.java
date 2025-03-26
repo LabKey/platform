@@ -2152,7 +2152,7 @@ public class QueryController extends SpringActionController
                     .setIncludeColumns(form.getIncludeColumns())
                     .setExcludeColumns(form.getExcludeColumns())
                     .setRenamedColumns(form.getRenameColumnMap())
-                    .setPrefix(form.getFilenamePrefix() + "_Template") // Issue 48028: Change template file names
+                    .setPrefix((StringUtils.isEmpty(form.getFilenamePrefix()) ? "Import" : form.getFilenamePrefix()) + "_Template") // Issue 48028: Change template file names
             );
         }
     }
@@ -8489,8 +8489,7 @@ public class QueryController extends SpringActionController
                     QueryManager.get().update(user, queryDef);
                 }
 
-                DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer().getId(), "Import templates updated.");
-                event.setProjectId(container.getId());
+                DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), "Import templates updated.");
                 event.setDomainUri(_domain.getTypeURI());
                 event.setDomainName(_domain.getName());
                 AuditLogService.get().addEvent(user, event);

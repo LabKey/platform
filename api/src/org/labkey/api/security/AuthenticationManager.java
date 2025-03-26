@@ -909,7 +909,7 @@ public class AuthenticationManager
         AUTH_MESSAGES.put(key, msg);
         if (user.isGuest())
         {
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(ContainerManager.getRoot().getId(), msg, user);
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(ContainerManager.getRoot(), msg, user);
             AuditLogService.get().addEvent(user, event);
         }
         else

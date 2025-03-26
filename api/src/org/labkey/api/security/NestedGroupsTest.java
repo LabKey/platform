@@ -79,7 +79,7 @@ public class NestedGroupsTest extends Assert
             Integer groupId = SecurityManager.getGroupId(project, groupName, false);
 
             if (null != groupId)
-                SecurityManager.deleteGroup(groupId);
+                SecurityManager.deleteGroup(groupId, TestContext.get().getUser());
         }
 
         for (String groupName : SITE_GROUP_NAMES)
@@ -87,7 +87,7 @@ public class NestedGroupsTest extends Assert
             Integer groupId = SecurityManager.getGroupId(ContainerManager.getRoot(), groupName, false);
 
             if (null != groupId)
-                SecurityManager.deleteGroup(groupId);
+                SecurityManager.deleteGroup(groupId, TestContext.get().getUser());
         }
 
         ValidEmail email = new ValidEmail("junit_test_user@test.com");
@@ -115,10 +115,10 @@ public class NestedGroupsTest extends Assert
         Group writers = create(WRITERS);
         Group projectX = create(PROJECT_X);
         final Group cycleTest = create(CONCURRENCY_TEST_GROUP);
-        Group siteGroup1 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_1);
-        assertTrue(!siteGroup1.isProjectGroup());
-        Group siteGroup2 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_2);
-        assertTrue(!siteGroup2.isProjectGroup());
+        Group siteGroup1 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_1, TestContext.get().getUser());
+        assertFalse(siteGroup1.isProjectGroup());
+        Group siteGroup2 = SecurityManager.createGroup(ContainerManager.getRoot(), SITE_GROUP_2, TestContext.get().getUser());
+        assertFalse(siteGroup2.isProjectGroup());
 
         addMember(projectX, user);
         addMember(projectX, _testUser);
@@ -277,7 +277,7 @@ public class NestedGroupsTest extends Assert
 
     private Group create(String name)
     {
-        Group group = SecurityManager.createGroup(_project, name);
+        Group group = SecurityManager.createGroup(_project, name, TestContext.get().getUser());
         assertTrue(group.isProjectGroup());
 
         return group;

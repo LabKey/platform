@@ -121,7 +121,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             for (String rawEmail : invalidEmails)
             {
                 // Ignore lines of all whitespace, otherwise show an error.
-                if (!"".equals(rawEmail.trim()))
+                if (!rawEmail.trim().isEmpty())
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Could not add user " + rawEmail.trim() + ": Invalid email address");
                 }
@@ -151,7 +151,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 }
             }
 
-            actor.addMembers(location, newMembers.toArray(new User[newMembers.size()]));
+            actor.addMembers(location, newMembers.toArray(new User[0]));
         }
 
         return !errors.hasErrors();

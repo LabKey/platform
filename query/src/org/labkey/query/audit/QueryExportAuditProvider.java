@@ -20,6 +20,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
@@ -159,7 +160,7 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
             super();
         }
 
-        public QueryExportAuditEvent(String container, String comment)
+        public QueryExportAuditEvent(Container container, String comment)
         {
             super(QUERY_AUDIT_EVENT, container, comment);
         }

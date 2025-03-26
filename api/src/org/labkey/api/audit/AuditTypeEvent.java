@@ -15,13 +15,17 @@
  */
 package org.labkey.api.audit;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.logging.LogHelper;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -46,8 +50,8 @@ public class AuditTypeEvent
     private long _rowId;
     private Integer _impersonatedBy;
     private String _comment;
-    private String _projectId;
-    private String _container;
+    private Container _projectId;
+    private Container _container;
     private String _eventType;
     private Date _created;
     private User _createdBy;
@@ -56,16 +60,16 @@ public class AuditTypeEvent
     private String userComment;
     private Long _transactionId;
 
-    public AuditTypeEvent(String eventType, Container container, String comment)
-    {
-        this(eventType, container.getId(), comment);
-    }
-
-    public AuditTypeEvent(String eventType, String container, String comment)
+    public AuditTypeEvent(@NotNull String eventType, @NotNull Container container, @Nullable String comment)
     {
         _eventType = eventType;
+        if (container == null)
+        {
+            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Audit event container is null"));
+        }
         _container = container;
         _comment = comment;
+        _projectId = container.getProject();
     }
 
     public AuditTypeEvent(){}
@@ -100,22 +104,22 @@ public class AuditTypeEvent
         _comment = comment;
     }
 
-    public String getProjectId()
+    public Container getProjectId()
     {
         return _projectId;
     }
 
-    public void setProjectId(String projectId)
+    public void setProjectId(Container projectId)
     {
         _projectId = projectId;
     }
 
-    public String getContainer()
+    public Container getContainer()
     {
         return _container;
     }
 
-    public void setContainer(String container)
+    public void setContainer(Container container)
     {
         _container = container;
     }
@@ -190,16 +194,19 @@ public class AuditTypeEvent
         _transactionId = transactionId;
     }
 
-    protected String getContainerMessageElement(@NotNull String containerId)
+    protected String getContainerMessageElement(@NotNull Container container)
     {
-        String value = " (" + containerId + ")";
-        Container container = ContainerManager.getForId(containerId);
-        if (container != null)
-            value = container.getPath() + value;
+        String value = " (" + container.getId() + ")";
+        value = container.getPath() + value;
         return value;
     }
 
-    protected String getUserMessageElement(@NotNull Integer userId)
+    protected String getUserMessageElement(@NotNull User user)
+    {
+        return user.getEmail() + " (" + user.getUserId() + ")";
+    }
+
+    protected String getUserMessageElement(int userId)
     {
         String value = " (" + userId + ")";
         User user = UserManager.getUser(userId);
@@ -208,13 +215,9 @@ public class AuditTypeEvent
         return value;
     }
 
-    protected String getGroupMessageElement(@NotNull Integer groupId)
+    protected String getGroupMessageElement(@NotNull Group group)
     {
-        String value = " (" + groupId + ")";
-        Group group = SecurityManager.getGroup(groupId);
-        if (group != null)
-            value = group.getName() + value;
-        return value;
+        return group.getName() + " (" + group.getUserId() + ")";
     }
 
     public Map<String, Object> getAuditLogMessageElements()
@@ -230,10 +233,9 @@ public class AuditTypeEvent
         Integer impersonatorId = getImpersonatedBy();
         if (impersonatorId != null)
             elements.put(IMPERSONATED_BY_KEY, getUserMessageElement(impersonatorId));
-        String containerId = getContainer();
-        if (containerId != null)
-            elements.put(CONTAINER_KEY, getContainerMessageElement(containerId));
-        String projectId = getProjectId();
+        Container container = getContainer();
+        elements.put(CONTAINER_KEY, getContainerMessageElement(container));
+        Container projectId = getProjectId();
         if (projectId != null)
             elements.put(PROJECT_KEY, getContainerMessageElement(projectId));
         if (getComment() != null)

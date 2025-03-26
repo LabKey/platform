@@ -19,6 +19,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MutableColumnInfo;
@@ -190,7 +191,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
             super();
         }
 
-        public DomainPropertyAuditEvent(String container, String propertyUri, String propertyName, String action,
+        public DomainPropertyAuditEvent(Container container, String propertyUri, String propertyName, String action,
                                         Long domainEventId, String domainName, String comment)
         {
             super(EVENT_NAME, container, comment);

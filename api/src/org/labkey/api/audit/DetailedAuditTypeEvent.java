@@ -13,11 +13,6 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
 
     public DetailedAuditTypeEvent(String eventType, Container container, String comment)
     {
-        super(eventType, container.getId(), comment);
-    }
-
-    public DetailedAuditTypeEvent(String eventType, String container, String comment)
-    {
         super(eventType, container, comment);
     }
 

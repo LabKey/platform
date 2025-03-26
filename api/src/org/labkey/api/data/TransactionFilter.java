@@ -104,16 +104,19 @@ public class TransactionFilter implements Filter
                             long cutoff = HeartBeat.currentTimeMillis() - timeout;
                             for (Map.Entry<Thread, RequestTracker> entry : pending.entrySet())
                             {
-                                Object readOnly = entry.getValue().request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
-                                if (Boolean.TRUE.equals(readOnly) && entry.getValue().startTime < cutoff)
+                                RequestTracker tracker = entry.getValue();
+                                Thread thread = entry.getKey();
+                                Object readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
+                                if (Boolean.TRUE.equals(readOnly) && tracker.startTime < cutoff)
                                 {
-                                    try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(entry.getKey(), Thread.currentThread()))
+                                    try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
                                     {
-                                        _log.info("Timing out request for {} on thread {}", entry.getValue(), entry.getKey());
+                                        _log.info("Timing out request for {} on thread {}", tracker, thread);
                                         DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-                                        PipelineJobService.get().killProcessesForThread(entry.getKey());
+                                        PipelineJobService.get().killProcessesForThread(thread);
                                     }
                                 }
+                                thread.interrupt();
                             }
                         }
                         try
@@ -152,7 +155,10 @@ public class TransactionFilter implements Filter
         RequestTracker previousSummary = null;
         try
         {
-            if ("GET".equalsIgnoreCase(request.getMethod()))
+            if ("GET".equalsIgnoreCase(request.getMethod()) ||
+                    "HEAD".equalsIgnoreCase(request.getMethod()) ||
+                    "OPTIONS".equalsIgnoreCase(request.getMethod()) ||
+                    "PROPFIND".equalsIgnoreCase(request.getMethod()))
             {
                 request.setAttribute(READ_ONLY_ATTRIBUTE_NAME, true);
             }

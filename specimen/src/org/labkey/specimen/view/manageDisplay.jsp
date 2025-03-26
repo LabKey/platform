@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageDisplaySettingsAction" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -50,10 +51,10 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Manual QC flagging/unflagging<%= helpPopup("Manual QC Flagging", "Vials are automatically flagged for QC " +
+            <th align="right">Manual QC flagging/unflagging<%= helpPopup("Manual QC Flagging", HtmlString.unsafe("Vials are automatically flagged for QC " +
                     "at time of import if a vial's history contains conflicting information." +
                     "<p>Manual QC flagging/unflagging allows these states to be changed without updating the underlying specimen data.  " +
-                    "<p>Once a vial's QC state is set manually, it will no longer be updated automatically during the import process.", true)%>:</th>
+                    "<p>Once a vial's QC state is set manually, it will no longer be updated automatically during the import process."))%>:</th>
             <td>
                 <select name="enableManualQCFlagging">
                     <option value="true"<%=selected(bean.isEnableManualQCFlagging())%>>Enabled</option>

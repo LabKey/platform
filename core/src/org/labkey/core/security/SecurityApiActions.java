@@ -31,6 +31,8 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.Group;
@@ -78,7 +80,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.core.security.SecurityController.UserForm;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -740,27 +741,24 @@ public class SecurityApiActions
             if (!resource.hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to delete the security policy for this resource!");
 
-            SecurityPolicyManager.deletePolicy(resource);
+            try (DbScope.Transaction t = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                SecurityPolicyManager.deletePolicy(resource);
 
-            //audit log
-            writeToAuditLog(resource);
+                String parentResource = resource.getParentResource() != null ? resource.getParentResource().getResourceName() : "root";
+                GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(resource.getResourceContainer(),
+                        "The security policy for " + resource.getResourceName()
+                                + " was deleted. It will now inherit the security policy of " +
+                                parentResource);
+                event.setResourceEntityId(resource.getResourceId());
+                AuditLogService.get().addEvent(getUser(), event);
+
+                t.commit();
+            }
+
+
 
             return new ApiSimpleResponse("success", true);
-        }
-
-        protected void writeToAuditLog(SecurableResource resource)
-        {
-            String parentResource = resource.getParentResource() != null ? resource.getParentResource().getResourceName() : "root";
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(resource.getResourceContainer().getId(),
-                    "The security policy for " + resource.getResourceName()
-                            + " was deleted. It will now inherit the security policy of " +
-                            parentResource);
-
-            event.setResourceEntityId(resource.getResourceId());
-            if (null != resource.getResourceContainer().getProject())
-                event.setProjectId(resource.getResourceContainer().getProject().getId());
-
-            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 
@@ -999,21 +997,12 @@ public class SecurityApiActions
             if (null == name)
                 throw new IllegalArgumentException("You must specify a name parameter!");
 
-            Group newGroup = SecurityManager.createGroup(getContainer().getProject(), name);
-            writeToAuditLog(newGroup);
+            Group newGroup = SecurityManager.createGroup(getContainer().getProject(), name, getUser());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("id", newGroup.getUserId());
             resp.put("name", newGroup.getName());
             return resp;
-        }
-
-        protected void writeToAuditLog(Group newGroup)
-        {
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "A new security group named " + newGroup.getName() + " was created.");
-            event.setGroup(newGroup.getUserId());
-
-            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 
@@ -1089,8 +1078,7 @@ public class SecurityApiActions
 
             if (_group == null && form.getCreateGroup())
             {
-                _group = SecurityManager.createGroup(getContainer().getProject(), form.getGroupName());
-                writeToAuditLog(_group, this.getViewContext());
+                _group = SecurityManager.createGroup(getContainer().getProject(), form.getGroupName(), getUser());
             }
 
             if (_group.getContainer() == null && !getUser().hasRootPermission(UpdateUserPermission.class))
@@ -1166,13 +1154,6 @@ public class SecurityApiActions
             return resp;
         }
 
-
-        protected void writeToAuditLog(Group newGroup, ViewContext viewContext)
-        {
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "A new security group named " + newGroup.getName() + " was created.");
-            event.setGroup(newGroup.getUserId());
-            AuditLogService.get().addEvent(viewContext.getUser(), event);
-        }
 
         private void removeMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors)
         {
@@ -1547,18 +1528,9 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within " + containerInfo);
             }
 
-            SecurityManager.deleteGroup(group);
-            writeToAuditLog(group);
+            SecurityManager.deleteGroup(group, getUser());
 
             return new ApiSimpleResponse("deleted", form.getId());
-        }
-
-        protected void writeToAuditLog(Group group)
-        {
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "The security group named " + group.getName() + " was deleted.");
-            event.setGroup(group.getUserId());
-
-            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 
@@ -1667,7 +1639,6 @@ public class SecurityApiActions
             {
                 SecurityManager.renameGroup(group, form.getNewName(), getUser());
                 group.setName(form.getNewName());
-                writeToAuditLog(group, oldName);
             }
             catch (IllegalArgumentException x)
             {
@@ -1687,14 +1658,6 @@ public class SecurityApiActions
             resp.put("oldName", oldName);
             resp.put("newName", group.getName());
             return resp;
-        }
-
-        public void writeToAuditLog(Group group, String oldName)
-        {
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(getContainer().getId(), "The security group named '" + oldName + "' was renamed to '" + group.getName() + "'.");
-            event.setGroup(group.getUserId());
-
-            AuditLogService.get().addEvent(getUser(), event);
         }
     }
 

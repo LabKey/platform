@@ -97,7 +97,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group != null)
         {
             User adminUser = getAdminUser();
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer().getId(),
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(context.getContainer(),
                     adminUser.getEmail() + " impersonated group: " + group.getName() + ".", adminUser);
             AuditLogService.get().addEvent(adminUser, event);
         }
@@ -113,7 +113,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         {
             User adminUser = getAdminUser();
             Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project.getId(),
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(project,
                     adminUser.getEmail() + " stopped impersonating group: " + group.getName() + ".", adminUser);
             AuditLogService.get().addEvent(adminUser, event);
         }

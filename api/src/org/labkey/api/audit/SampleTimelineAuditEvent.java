@@ -93,7 +93,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         super();
     }
 
-    public SampleTimelineAuditEvent(String container, String comment)
+    public SampleTimelineAuditEvent(Container container, String comment)
     {
         super(EVENT_TYPE, container, comment);
     }

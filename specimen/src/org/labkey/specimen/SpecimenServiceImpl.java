@@ -483,7 +483,7 @@ public class SpecimenServiceImpl implements SpecimenService
         Table.delete(SpecimenSchema.get().getTableInfoSampleAvailabilityRule(), containerFilter);
         assert set.add(SpecimenSchema.get().getTableInfoSampleAvailabilityRule());
 
-        SpecimenRequestRequirementProvider.get().purgeContainer(c);
+        SpecimenRequestRequirementProvider.get().purgeContainer(c, user);
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestRequirement());
         assert set.add(SpecimenSchema.get().getTableInfoSampleRequestActor());
 
