@@ -32,7 +32,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -161,10 +160,9 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         private int _int2;
         private int _int3;
 
-        public ClientApiAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public ClientApiAuditEvent() {}
 
         public ClientApiAuditEvent(Container container, String comment)
         {
