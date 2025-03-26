@@ -776,6 +776,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             url.addParameter("headerType", ColumnHeaderType.ImportField.name());
             for (String excludeKey : excludeColumns)
                 url.addParameter("excludeColumn", excludeKey);
+            url.addParameter("excludeColumn", "Flag");
             url.addParameter("filenamePrefix", this.getName());
             if (templates.get(0).first.equals(DOWNLOAD_TEMPLATE_LABEL))
                 templates.set(0, Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
