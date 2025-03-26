@@ -2029,6 +2029,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _importMsg = msg;
     }
 
+    public static final String DOWNLOAD_TEMPLATE_LABEL = "Download Template";
+
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
@@ -2052,7 +2054,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             ActionURL url = Objects.requireNonNull(PageFlowUtil.urlProvider(QueryUrls.class)).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.ImportField.name());
-            templates.add(Pair.of("Download Template", url.toString()));
+            templates.add(Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
         }
 
         return templates;

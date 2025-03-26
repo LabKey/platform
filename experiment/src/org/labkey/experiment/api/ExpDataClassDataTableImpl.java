@@ -758,6 +758,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
+        List<Pair<String, String>> templates = super.getImportTemplates(ctx);
+
         Set<String> excludeColumns = new HashSet<>();
         for (String vocabularyDomainName : getVocabularyDomainProviders().keySet())
         {
@@ -770,18 +772,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         if (!excludeColumns.isEmpty())
         {
-            List<Pair<String, String>> templates = new ArrayList<>();
             ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("headerType", ColumnHeaderType.ImportField.name());
             for (String excludeKey : excludeColumns)
                 url.addParameter("excludeColumn", excludeKey);
             url.addParameter("filenamePrefix", this.getName());
-            templates.add(Pair.of("Download Template", url.toString()));
-            return templates;
-
+            if (templates.get(0).first.equals(DOWNLOAD_TEMPLATE_LABEL))
+                templates.set(0, Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
+            else
+                templates.add(0, Pair.of(DOWNLOAD_TEMPLATE_LABEL, url.toString()));
         }
 
-        return super.getImportTemplates(ctx);
+
+        return templates;
     }
 
     @NotNull
