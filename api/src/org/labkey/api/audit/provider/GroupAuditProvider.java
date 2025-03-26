@@ -224,10 +224,9 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         private final Map<String, Object> _messageElements = new HashMap<>();
 
-        public GroupAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public GroupAuditEvent() {}
 
         public GroupAuditEvent(Container container, String comment)
         {

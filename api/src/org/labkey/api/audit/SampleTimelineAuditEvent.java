@@ -88,10 +88,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     private String _metadata;
     private String _inventoryUpdateType;
 
-    public SampleTimelineAuditEvent()
-    {
-        super();
-    }
+    /** Important for reflection-based instantiation */
+    public SampleTimelineAuditEvent() {}
 
     public SampleTimelineAuditEvent(Container container, String comment)
     {
