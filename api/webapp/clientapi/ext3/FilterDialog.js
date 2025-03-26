@@ -772,7 +772,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
                 // Issue 52068: for multivalued filter types, split on new line to get an array of values
                 if (value && type.isMultiValued()) {
-                    value = value.split('\n');
+                    value = value.indexOf('\n') > -1 ? value.split('\n') : type.parseValue(value);
                 }
 
                 filters.push(LABKEY.Filter.create(this.fieldKey, value, type));
