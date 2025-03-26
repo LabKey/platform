@@ -72,6 +72,7 @@ public class AuditTypeEvent
         _projectId = container.getProject();
     }
 
+    /** Important for reflection-based instantiation */
     public AuditTypeEvent(){}
 
     public long getRowId()
