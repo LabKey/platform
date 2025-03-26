@@ -194,10 +194,9 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         private boolean _hasDetails;
         private String _lsid;
 
-        public DatasetAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public DatasetAuditEvent() {}
 
         public DatasetAuditEvent(Container container, String comment, int datasetId)
         {

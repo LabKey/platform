@@ -84,9 +84,9 @@ public class ReportAuditProvider extends AbstractAuditTypeProvider
         private String reportKey;
         private String reportType;
 
-        public ReportAuditEvent()
-        {
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public ReportAuditEvent() {}
 
         public ReportAuditEvent(@NotNull ReportDB report, @NotNull ReportDescriptor descriptor, Container container, String comment)
         {

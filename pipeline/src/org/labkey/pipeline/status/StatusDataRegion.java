@@ -63,7 +63,7 @@ public class StatusDataRegion extends DataRegion
             cl(selected, "labkey-frame"),
             HtmlString.NBSP,
             HtmlString.NBSP,
-            new Link.LinkBuilder(text).href(url),
+            new Link.LinkBuilder(text).href(url).clearClasses(),
             HtmlString.NBSP,
             HtmlString.NBSP
         ).appendTo(out);

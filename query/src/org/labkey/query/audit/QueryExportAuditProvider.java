@@ -155,10 +155,9 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
         private String _detailsUrl;
         private int _dataRowCount;
 
-        public QueryExportAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public QueryExportAuditEvent() {}
 
         public QueryExportAuditEvent(Container container, String comment)
         {

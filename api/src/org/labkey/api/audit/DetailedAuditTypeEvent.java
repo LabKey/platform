@@ -7,9 +7,8 @@ public class DetailedAuditTypeEvent extends AuditTypeEvent
     private String _oldRecordMap;
     private String _newRecordMap;
 
-    public DetailedAuditTypeEvent()
-    {
-    }
+    /** Important for reflection-based instantiation */
+    public DetailedAuditTypeEvent() {}
 
     public DetailedAuditTypeEvent(String eventType, Container container, String comment)
     {
