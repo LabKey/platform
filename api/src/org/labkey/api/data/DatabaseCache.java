@@ -414,7 +414,16 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             final int maxSize = 10;
             MyScope scope = new MyScope();
 
-            BlockingCache<String, Integer> cache = DatabaseCache.get(scope, maxSize, "Test Cache", new TestCacheLoader());
+            DatabaseCache<String, Wrapper<Integer>> dbCache = new DatabaseCache<>(scope, maxSize, "Test Cache")
+            {
+                @Override
+                protected Cache<String, Wrapper<Integer>> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+                {
+                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+                }
+            };
+
+            BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader());
 
             try (DbScope.Transaction transaction = scope.beginTransaction())
             {
