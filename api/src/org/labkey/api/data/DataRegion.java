@@ -2292,7 +2292,7 @@ public class DataRegion extends DisplayElement
                             (Renderable) ret -> {
                                 // Note: valueMap != null, since we checked this above
 
-                                if (valueMap instanceof BoundMap)
+                                if (valueMap instanceof BoundMap || null == ctx.getFieldMap())
                                     renderOldValues(out, valueMap);
                                 else
                                     renderOldValues(out, valueMap, ctx.getFieldMap());
