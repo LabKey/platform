@@ -161,6 +161,7 @@ public class AsyncQueryRequest<T>
                     }
                     catch (InterruptedException ie)
                     {
+                        cancel();
                         throw new AbortedRequestException("Interrupted before DB query completed");
                     }
                 }
@@ -205,6 +206,17 @@ public class AsyncQueryRequest<T>
 
     synchronized public void setResult(T result)
     {
+        if (_cancelled && result instanceof AutoCloseable ac)
+        {
+            try
+            {
+                ac.close();
+            }
+            catch (Exception e)
+            {
+                _log.warn("Failed to close result after cancellation", e);
+            }
+        }
         _result = result;
         notify();
     }
