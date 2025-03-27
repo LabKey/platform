@@ -17,6 +17,7 @@ public class FieldsTable extends BaseFieldsTable
 
         addColumn("AlphaNumeric", JdbcType.BOOLEAN).setDescription("Name contains only alphabetic and numeric characters plus underscore");
         addColumn("SpecialCharacters", JdbcType.BOOLEAN).setDescription("Name contains any of these specific punctuation characters: / \"&\\$}~,.");
+        addColumn("FieldNameLength", JdbcType.INTEGER).setDescription("Number of characters in the field name");
     }
 
     @Override
@@ -25,6 +26,7 @@ public class FieldsTable extends BaseFieldsTable
         // Note that within a range expression, LIKE wildcards (such as underscore) don't need to be escaped
         addBooleanPatternColumn(sql, "pd.Name NOT", "%[^A-Za-z0-9_]%", "AlphaNumeric");
         addBooleanPatternColumn(sql, "pd.Name", "%[/ \"&\\\\$}~,.]%", "SpecialCharacters");
+        sql.append(", ").append(getSqlDialect().getVarcharLengthFunction()).append("(pd.Name) AS FieldNameLength");
     }
 
     private void addBooleanPatternColumn(SQLFragment sql, String expression, String pattern, String name)
