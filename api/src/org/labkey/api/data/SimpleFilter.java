@@ -63,6 +63,10 @@ public class SimpleFilter implements Filter
 {
     public static final String SEPARATOR_CHAR = "~";
 
+    private ArrayList<FilterClause> _clauses = new ArrayList<>();
+    private TableInfo _defaultTableInfo;
+
+
     public static SimpleFilter createContainerFilter(Container c)
     {
         return createContainerFilter(c, "Container");
@@ -638,7 +642,6 @@ public class SimpleFilter implements Filter
 
     public static DatabaseIdentifier getAliasForColumnFilter(SqlDialect dialect, ColumnInfo colInfo, FieldKey fieldKey)
     {
-        DatabaseIdentifier alias;
         if (null != colInfo)
             return colInfo.getAlias();
         return dialect.makeDatabaseIdentifier(fieldKey.getName());   // isn't this just a guess???
@@ -959,11 +962,13 @@ public class SimpleFilter implements Filter
         }
     }
 
-    private ArrayList<FilterClause> _clauses = new ArrayList<>();
-
-
     public SimpleFilter()
     {
+    }
+
+    public SimpleFilter(TableInfo t)
+    {
+        _defaultTableInfo = t;
     }
 
     public SimpleFilter(FilterClause... clauses)
@@ -1291,7 +1296,7 @@ public class SimpleFilter implements Filter
      *  SELECT ... FROM (SELECT FROM JOIN ..) x {SimpleFilter: WHERE ...}
      * Then pass in tableAlias="x", this removes some opportunities for column name ambiguity when generating the SQL clause.
      */
-    public SQLFragment getSQLFragment(TableInfo t, @Nullable String tableAlias)
+    public SQLFragment getSQLFragment(@NotNull TableInfo t, @Nullable String tableAlias)
     {
         if (null == _clauses || _clauses.isEmpty())
             return new SQLFragment();
@@ -1309,6 +1314,9 @@ public class SimpleFilter implements Filter
 
         if (null == _clauses || _clauses.isEmpty())
             return ret;
+
+        if ((null == columnMap || columnMap.isEmpty()) && null != _defaultTableInfo)
+            columnMap = _defaultTableInfo.getExtendedColumns(true);
 
         String sAND = "WHERE ";
 

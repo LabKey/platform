@@ -480,8 +480,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         checkLocked();
         assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
-        SQLFragment frag = clause.toSQLFragment(Collections.emptyMap(), _schema.getSqlDialect());
-        addCondition(frag, col.getFieldKey());
+        addCondition(new SimpleFilter().addCondition(clause));
     }
 
 
@@ -520,7 +519,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         checkReadBeforeExecute();
         SimpleFilter filter = getFilter();
-        SQLFragment where = filter.getSQLFragment(_rootTable.getSqlDialect());
+        SQLFragment where = filter.getSQLFragment(_rootTable, "x");
         if (where.isEmpty())
             return getFromTable().getFromSQL(alias);
 
@@ -529,11 +528,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         // FROM
         //   NOTE some filters depend on knowing the name of this table in the simple case, so don't alias it
-        String selectName = _rootTable.getSelectName();
-        if (null != selectName)
-            ret.append(selectName);
-        else
-            ret.append(getFromTable().getFromSQL("x"));
+        ret.append(getFromTable().getFromSQL("x"));
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());

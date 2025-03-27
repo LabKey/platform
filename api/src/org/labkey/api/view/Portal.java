@@ -174,7 +174,8 @@ public class Portal implements ModuleChangeListener
         filter.addCondition(FieldKey.fromParts("Properties"), propertiesSearchText, CompareType.CONTAINS);
 
         // Select all containers that are affected
-        SQLFragment where = filter.getSQLFragment(Portal.getSqlDialect());
+        TableInfo webparts = Portal.getTableInfoPortalWebParts();
+        SQLFragment where = filter.getSQLFragment(webparts, "WP");
         SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).append(" ").append(where);
         Collection<String> containersToClear = new SqlSelector(Portal.getSchema(), selectContainers).getCollection(String.class);
 

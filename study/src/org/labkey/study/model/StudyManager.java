@@ -4376,9 +4376,10 @@ public class StudyManager
 
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false, true).toString();
 
+        TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
         SQLFragment baseFragment = new SQLFragment();
         baseFragment.append("SELECT Container, ParticipantId FROM ");
-        baseFragment.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
+        baseFragment.append(participantTable, "p");
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
@@ -4402,7 +4403,7 @@ public class StudyManager
 
         baseFragment
             .append(" ")
-            .append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
+            .append(filter.getSQLFragment(participantTable, "p"));
 
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
         executeURL.setExtraPath(c.getId());
