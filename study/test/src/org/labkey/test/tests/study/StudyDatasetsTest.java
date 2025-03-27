@@ -142,7 +142,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         String datasetA = TestDataGenerator.randomDomainName();
         createDataset(datasetA, null);
 
-        renameDataset("Invalid StudyDatasetVisit name '" + badDataSetName + "'. StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName, "XTest", "YTest", "ZTest");
+        renameDataset("Invalid StudyDatasetVisit name '" + badDataSetName + "'. StudyDatasetVisit name must start with a letter or a number.", datasetA, badDataSetName, datasetA, badDataSetName,
+                "XTest", "YTest", "ZTest");
 
         String datasetAUpdated = TestDataGenerator.randomDomainName();
         datasetAUpdated = " " + datasetAUpdated + " "; // assure we trim leading and trailing spaces even if passed in
@@ -238,6 +239,10 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         editDatasetPage
             .setName(newName)
             .setDatasetLabel(newLabel);
+
+          editDatasetPage
+                .getFieldsPanel()
+                .expand();
 
         for (String fieldName : fieldNames)
         {
