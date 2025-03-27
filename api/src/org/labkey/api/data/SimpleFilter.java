@@ -738,6 +738,16 @@ public class SimpleFilter implements Filter
 
             return in.toString();
         }
+;
+        private void handleEmptyParams(String alias, SQLFragment in)
+        {
+            if (isIncludeNull())
+                in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
+            else if (!isNegated())
+                in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            else
+                in.append("1=1");
+        }
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -752,13 +762,7 @@ public class SimpleFilter implements Filter
 
             if (params.length == 0)
             {
-                if (isIncludeNull())
-                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
-                else if (!isNegated())
-                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
-                else
-                    in.append("1=1");
-
+                handleEmptyParams(alias, in);
                 return in;
             }
 
@@ -787,6 +791,12 @@ public class SimpleFilter implements Filter
                             throw e;
                         }
                     }
+                }
+
+                if (convertedParams.isEmpty())
+                {
+                    handleEmptyParams(alias, in);
+                    return in;
                 }
             }
 
