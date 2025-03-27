@@ -86,11 +86,9 @@ public class AuthenticationSettingsAuditTypeProvider extends AbstractAuditTypePr
     {
         private String _changes;
 
-        @SuppressWarnings("unused") // Invoked via reflection
-        public AuthSettingsAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public AuthSettingsAuditEvent() {}
 
         public AuthSettingsAuditEvent(String comment)
         {

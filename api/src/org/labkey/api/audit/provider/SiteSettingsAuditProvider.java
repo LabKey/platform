@@ -113,10 +113,9 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
     {
         private String _changes;
 
-        public SiteSettingsAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public SiteSettingsAuditEvent() {}
 
         public SiteSettingsAuditEvent(Container container, String comment)
         {

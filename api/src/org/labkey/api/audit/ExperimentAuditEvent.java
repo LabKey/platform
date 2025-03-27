@@ -16,10 +16,9 @@ public class ExperimentAuditEvent extends AuditTypeEvent
     private String _message;
     private Integer _qcState;
 
-    public ExperimentAuditEvent()
-    {
-        super();
-    }
+    /** Important for reflection-based instantiation */
+    @SuppressWarnings("unused")
+    public ExperimentAuditEvent() {}
 
     public ExperimentAuditEvent(Container container, String comment)
     {

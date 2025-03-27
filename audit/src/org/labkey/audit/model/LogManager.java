@@ -251,13 +251,13 @@ public class LogManager
         for (PropertyStorageSpec prop : domainKind.getBaseProperties(domain))
         {
             Object value = values.get(prop.getName());
-            if (prop.getJdbcType().isText() && value instanceof String)
+            if (prop.getJdbcType().isText() && value instanceof String s)
             {
                 int scale = prop.getSize();
-                if (((String)value).length() > scale)
+                if (s.length() > scale)
                 {
                     _log.warn("Audit field input : \n" + prop.getName() + "\nexceeded the maximum length : " + scale);
-                    String trimmed = ((String)value).substring(0, scale-3) + "...";
+                    String trimmed = s.substring(0, scale-3) + "...";
                     values.put(prop.getName(), trimmed);
                     changed = true;
                 }
@@ -269,17 +269,17 @@ public class LogManager
             // For now, only check for string length like we were doing for the old audit event fields
             PropertyDescriptor pd = dp.getPropertyDescriptor();
             Object value = values.get(dp.getName());
-            if (pd.isStringType() && value instanceof String)
+            if (pd.isStringType() && value instanceof String s)
             {
                 int scale = dp.getScale();
-                if (scale > 0 && ((String)value).length() > scale)
+                if (scale > 0 && s.length() > scale)
                 {
                     _log.warn("Audit field input : \n" + pd.getName() + "\nexceeded the maximum length : " + scale);
                     String trimmed;
                     if (scale > 100)
-                        trimmed = ((String)value).substring(0, scale-3) + "...";
+                        trimmed = s.substring(0, scale-3) + "...";
                     else
-                        trimmed = ((String) value).substring(0, scale);
+                        trimmed = s.substring(0, scale);
                     values.put(pd.getName(), trimmed);
                     changed = true;
                 }
