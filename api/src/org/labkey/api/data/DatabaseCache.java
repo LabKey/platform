@@ -80,6 +80,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     {
         private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
         private int _remainingReloadCommitTasks;
+        private final Object lock = new Object();
 
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
@@ -92,7 +93,11 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
         public void incrementRemainingReloadCommitTasks()
         {
-            _remainingReloadCommitTasks++;
+            synchronized (lock)
+            {
+                _remainingReloadCommitTasks++;
+            }
+
             assert(_remainingReloadCommitTasks <= _databaseCache.getTrackingCache().getLimit()) :
                     "Trying to increment remainingReloadCommitTasks beyond cache size. Size: " + _databaseCache.getTrackingCache().getLimit()
                             + ", remainingTasks: " + _remainingReloadCommitTasks + ", Cache Name: " + _databaseCache.getTrackingCache().getDebugName();
@@ -115,23 +120,15 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // the cache size.
             if (null != t && _remainingReloadCommitTasks > 0)
             {
-                CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
-                int before = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(t).size();
-                boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
-                int after = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(t).size();
+                synchronized (lock)
+                {
+                    CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
+                    boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
 
-                if ((after - before > 0) && alreadyQueued)
-                    LOG.error("Indicating already queued but was actually queued");
-
-                if ((after - before == 0) && !alreadyQueued)
-                    LOG.error("Indicating not already queued but was already queued");
-
-                // Decrement remaining commit tasks if the commit task was not previously added
-                if (!alreadyQueued)
-                    _remainingReloadCommitTasks--;
-
-                if (alreadyQueued)
-                    LOG.info("Already queued cache reload task. Cache: " + _databaseCache.getTrackingCache().getDebugName() +  ", Key: " + key);
+                    // Decrement remaining commit tasks if the commit task was not previously added
+                    if (!alreadyQueued)
+                        _remainingReloadCommitTasks--;
+                }
             }
 
             return value;
@@ -465,7 +462,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             // Verify remaining reload commits counts back up to cache size
-            int remainingCount = ((BlockingDatabaseCache) cache).getRemainingReloadCommitTasks();
+            int remainingCount = cache.getRemainingReloadCommitTasks();
             assertEquals(maxSize, remainingCount);
         }
 
