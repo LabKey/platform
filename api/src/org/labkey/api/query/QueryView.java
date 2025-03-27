@@ -2319,7 +2319,7 @@ public class QueryView extends WebPartView<Object>
                 }
                 catch (ConversionException e)
                 {
-                    _errors.reject(ERROR_MSG, "Invalid view filter: " + e.getMessage());
+                    _errors.reject(ERROR_MSG, "Invalid grid view filter: " + e.getMessage());
                 }
                 sort.addURLSort(customViewUrl, getDataRegionName());
             }
