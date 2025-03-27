@@ -3,6 +3,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -69,7 +70,7 @@ public class QueryDataset extends VirtualTable<UserSchema>
     }
 
     @Override
-    public @Nullable String getMetaDataName()
+    public @Nullable DatabaseIdentifier getMetaDataName()
     {
         return _inner.getMetaDataName();
     }
@@ -174,7 +175,8 @@ public class QueryDataset extends VirtualTable<UserSchema>
         @Override
         public @NotNull SQLFragment getFromSQL()
         {
-            SQLFragment sql = new SQLFragment("(SELECT ").append(queryAlias).append(".* FROM ").append(_sql).append(")");
+            SQLFragment sql;
+            sql = new SQLFragment("(SELECT ").append(queryAlias).append(".* FROM ").append(_sql).append(")");
             return sql;
         }
 

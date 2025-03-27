@@ -80,7 +80,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     // Table properties
     private final DbSchema _parentSchema;
     private final SQLFragment _selectName;
-    private final DatabaseIdentifier _metaDataName;
+    private final @NotNull DatabaseIdentifier _metaDataName;
     private final DatabaseTableType _tableType;
 
     private String _name;
@@ -117,11 +117,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         this(parentSchema, tableType, tableName, metaDataName, selectName, null);
     }
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName, @Nullable String title)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, @NotNull String metaDataName, SQLFragment selectName, @Nullable String title)
     {
         _parentSchema = parentSchema;
         _name = tableName;
-        _metaDataName = parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(tableName);
+        _metaDataName = parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(Objects.requireNonNull(metaDataName));
         _selectName = selectName;
         _tableType = tableType;
         _title = title;
@@ -221,9 +221,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public @Nullable String getMetaDataName() // TODO: Mark @NotNull?
+    public @NotNull DatabaseIdentifier getMetaDataName()
     {
-        return null==_metaDataName ? null : _metaDataName.getString();
+        return _metaDataName;
     }
 
 

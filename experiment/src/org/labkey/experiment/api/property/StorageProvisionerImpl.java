@@ -729,7 +729,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
 
         @Override
-        public @Nullable String getMetaDataName()
+        public @Nullable DatabaseIdentifier getMetaDataName()
         {
             return _inner.getMetaDataName();
         }

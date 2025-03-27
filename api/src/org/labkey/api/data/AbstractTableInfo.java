@@ -1742,7 +1742,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public @Nullable String getMetaDataName()
+    public @Nullable DatabaseIdentifier getMetaDataName()
     {
         return null;
     }
