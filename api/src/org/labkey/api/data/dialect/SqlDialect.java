@@ -869,17 +869,16 @@ public abstract class SqlDialect
         }
     }
 
-    // used when a name is provided by the database for an existng object (scheam, table, column etc)
-    // must be exactly preserved
+    // Use this method to wrap a name provided by the database for an existing object (schema, table, column etc).
+    // In this case the name must be preserved exactly as-is.
     public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
     {
         return new _DatabaseIdentifier(metaDataName, makeLegalIdentifier(metaDataName), this);
     }
 
-    // creates an DialectIdentifier for desired alias
+    // Create a DialectIdentifier for the desired alias
     // NOTE: historically we did not quote identifiers simply because they had uppercase letters.
     // Thus aliases tended to become defacto lowercase.  For now, we'll explicitly lower-case here.
-    // TODO : Test with alternate casing and always quoting, the get rid of the .toLowerCase()
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
         if (getIdentifierMaxLength() < alias.length())
