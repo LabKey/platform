@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -132,6 +133,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * View that generates the majority of standard data grids/tables in the LabKey Server UI.
@@ -2310,7 +2313,14 @@ public class QueryView extends WebPartView<Object>
 
             if (customViewUrl != null)
             {
-                filter.addUrlFilters(customViewUrl, getDataRegionName());
+                try
+                {
+                    filter.addUrlFilters(customViewUrl, getDataRegionName());
+                }
+                catch (ConversionException e)
+                {
+                    _errors.reject(ERROR_MSG, "Invalid view filter: " + e.getMessage());
+                }
                 sort.addURLSort(customViewUrl, getDataRegionName());
             }
 
