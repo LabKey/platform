@@ -316,7 +316,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public int getReadOnlyHttpRequestTimeout()
     {
-        return lookupIntValue(readOnlyHttpRequestTimeout, 0);
+        return lookupIntValue(readOnlyHttpRequestTimeout, 10);
     }
 
     @Override
