@@ -64,8 +64,6 @@ public class SimpleFilter implements Filter
     public static final String SEPARATOR_CHAR = "~";
 
     private ArrayList<FilterClause> _clauses = new ArrayList<>();
-    private TableInfo _defaultTableInfo;
-
 
     public static SimpleFilter createContainerFilter(Container c)
     {
@@ -751,7 +749,7 @@ public class SimpleFilter implements Filter
             return in.toString();
         }
 ;
-        private void handleEmptyParams(String alias, SQLFragment in)
+        private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
                 in.appendIdentifier(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
@@ -988,11 +986,6 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter()
     {
-    }
-
-    public SimpleFilter(TableInfo t)
-    {
-        _defaultTableInfo = t;
     }
 
     public SimpleFilter(FilterClause... clauses)
@@ -1338,9 +1331,6 @@ public class SimpleFilter implements Filter
 
         if (null == _clauses || _clauses.isEmpty())
             return ret;
-
-        if ((null == columnMap || columnMap.isEmpty()) && null != _defaultTableInfo)
-            columnMap = _defaultTableInfo.getExtendedColumns(true);
 
         String sAND = "WHERE ";
 
