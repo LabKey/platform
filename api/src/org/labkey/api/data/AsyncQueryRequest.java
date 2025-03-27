@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -160,7 +161,7 @@ public class AsyncQueryRequest<T>
                     }
                     catch (InterruptedException ie)
                     {
-                        throw UnexpectedException.wrap(ie);
+                        throw new AbortedRequestException("Interrupted before DB query completed");
                     }
                 }
 
