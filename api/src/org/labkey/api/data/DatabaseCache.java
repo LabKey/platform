@@ -93,7 +93,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         public void incrementRemainingReloadCommitTasks()
         {
             _remainingReloadCommitTasks++;
-            assert(_remainingReloadCommitTasks <= _databaseCache.getTrackingCache().getLimit());
+            assert(_remainingReloadCommitTasks > _databaseCache.getTrackingCache().getLimit()) :
+                    "Trying to increment remainingReloadCommitTasks beyond cache size. Size: " + _databaseCache.getTrackingCache().getLimit()
+                            + ", remainingTasks: " + _remainingReloadCommitTasks + ", Cache Name: " + _databaseCache.getTrackingCache().getDebugName();
         }
 
         // Primarily used for testing
