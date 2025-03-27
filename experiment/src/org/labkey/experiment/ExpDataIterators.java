@@ -874,9 +874,17 @@ public class ExpDataIterators
                 return pre;
             }
 
+            ValidationException setupError = new ValidationException();
+            DataIterator post;
             if (context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE)
-                return LoggingDataIterator.wrap(new ImportWithUpdateDerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _checkRequiredParents));
-            return LoggingDataIterator.wrap(new DerivationDataIterator(pre, context, _container, _user, _currentDataType, _isSample, _skipAliquot));
+                post = new ImportWithUpdateDerivationDataIterator(pre, context, setupError, _container, _user, _currentDataType, _isSample, _checkRequiredParents);
+            else
+                post = new DerivationDataIterator(pre, context, setupError, _container, _user, _currentDataType, _isSample, _skipAliquot);
+
+            if (setupError.hasErrors())
+                return LoggingDataIterator.wrap(ErrorIterator.wrap(post, context, false, setupError));
+
+            return LoggingDataIterator.wrap(post);
         }
     }
 
@@ -992,7 +1000,7 @@ public class ExpDataIterators
         final boolean _isSample;
         final TSVWriter _tsvWriter;
 
-        protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
+        protected DerivationDataIteratorBase(DataIterator di, DataIteratorContext context, ValidationException setupError, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
         {
             super(di);
             _context = context;
@@ -1034,6 +1042,7 @@ public class ExpDataIterators
             _container = container;
             _user = user;
 
+            Set<String> duplicateInputColumns = getDuplicateParentColumns(map.keySet());
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
@@ -1042,6 +1051,9 @@ public class ExpDataIterators
                     _parentCols.put(entry.getValue(), entry.getKey());
                     if (requiredParents.contains(name))
                         _requiredParentCols.put(entry.getValue(), entry.getKey());
+
+                    if (duplicateInputColumns.contains(entry.getKey()))
+                        setupError.addGlobalError("Two columns mapped to target column " + entry.getKey() + ". Check the column names and import aliases for your data.");
                 }
             }
 
@@ -1053,6 +1065,35 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
+        }
+
+        private @NotNull Set<String> getDuplicateParentColumns(Set<String> allColumns)
+        {
+            try
+            {
+                Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
+                if (_currentSampleType != null)
+                    parentAliasColumnMap.putAll(_currentSampleType.getImportAliases());
+                if (_currentDataClass != null)
+                    parentAliasColumnMap.putAll(_currentDataClass.getImportAliases());
+
+                Set<String> seenColumns = new CaseInsensitiveHashSet();
+                Set<String> duplicateColumns = new CaseInsensitiveHashSet();
+                for (String columnName : allColumns)
+                {
+                    if (parentAliasColumnMap.containsKey(columnName))
+                        columnName = parentAliasColumnMap.get(columnName);
+                    if (seenColumns.contains(columnName))
+                        duplicateColumns.add(columnName);
+                    seenColumns.add(columnName);
+                }
+                return duplicateColumns;
+
+            }
+            catch (IOException ignore)
+            {
+                return Collections.emptySet();
+            }
         }
 
         private BatchValidationException getErrors()
@@ -1206,9 +1247,9 @@ public class ExpDataIterators
 
         final List<String> _candidateAliquotNames; // used to check if a name is an aliquot, with absent "AliquotedFrom". used for merge only
 
-        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
+        protected DerivationDataIterator(DataIterator di, DataIteratorContext context, ValidationException setupError, Container container, User user, ExpObject currentDataType, boolean isSample, boolean skipAliquot)
         {
-            super(di, context, container, user, currentDataType, isSample, false /* for insert/merge, required parents are always checked in StandardDataIteratorBuilder */);
+            super(di, context, setupError, container, user, currentDataType, isSample, false /* for insert/merge, required parents are always checked in StandardDataIteratorBuilder */);
             _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
@@ -1395,9 +1436,9 @@ public class ExpDataIterators
 
         final boolean _useLsid;
 
-        protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
+        protected ImportWithUpdateDerivationDataIterator(DataIterator di, DataIteratorContext context, ValidationException setupError, Container container, User user, ExpObject currentDataType, boolean isSample, boolean checkRequiredParent)
         {
-            super(di, context, container, user, currentDataType, isSample, checkRequiredParent);
+            super(di, context, setupError, container, user, currentDataType, isSample, checkRequiredParent);
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _parentNames = new LinkedHashMap<>();
