@@ -120,7 +120,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
                 int after = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(t).size();
 
-                if ((after - before == 1) && alreadyQueued)
+                if ((after - before > 0) && alreadyQueued)
                     LOG.error("Indicating already queued but was actually queued");
 
                 if ((after - before == 0) && !alreadyQueued)
@@ -129,6 +129,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 // Decrement remaining commit tasks if the commit task was not previously added
                 if (!alreadyQueued)
                     _remainingReloadCommitTasks--;
+
+                if (alreadyQueued)
+                    LOG.info("Already queued cache reload task. Cache: " + _databaseCache.getTrackingCache().getDebugName() +  ", Key: " + key);
             }
 
             return value;
