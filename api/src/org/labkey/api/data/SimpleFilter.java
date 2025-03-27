@@ -25,18 +25,26 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.net.URISyntaxException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,6 +52,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1652,13 +1661,19 @@ public class SimpleFilter implements Filter
 
     public abstract static class ClauseTestCase extends Assert
     {
-        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
+        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect, Map<FieldKey, ColumnInfo> columnMap)
         {
-            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(Collections.emptyMap(), dialect).toDebugString()));
+            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(columnMap, dialect).toDebugString()));
             StringBuilder sb = new StringBuilder();
             clause.appendFilterText(sb, new ColumnNameFormatter());
             assertEquals("Description did not match", description, sb.toString());
         }
+
+        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
+        {
+            test(expectedSQL, description, clause, dialect, Collections.emptyMap());
+        }
+
     }
 
     public static class InClauseTestCase extends ClauseTestCase
@@ -1680,6 +1695,25 @@ public class SimpleFilter implements Filter
             // Include null parameter
             test("((Foo IN ('Bar', 'Blip')) OR Foo IS NULL)", "Foo IS ONE OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
             test("((NOT Foo IN ('Bar', 'Blip')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+
+            // Ignore params that cannot be parsed
+            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, new BaseColumnInfo("Foo", JdbcType.INTEGER));
+
+            InClause in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"));
+            in._needsTypeConversion = true;
+            test("((Foo IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+
+            in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"), true, true);
+            in._needsTypeConversion = true;
+            test("((NOT Foo IN (1, 2)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+
+            in =  new InClause(fieldKey, PageFlowUtil.set("S-3"));
+            in._needsTypeConversion = true;
+            test("Foo IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+
+            in = new InClause(fieldKey, PageFlowUtil.set("S-3"), true, true);
+            in._needsTypeConversion = true;
+            test("1=1", "Foo IS NOT ANY OF (S-3)", in, mockDialect, columnInfoMap);
         }
 
         @Test
