@@ -213,10 +213,9 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         private String _schemaName;
         private String _queryName;
 
-        public QueryUpdateAuditEvent()
-        {
-            super();
-        }
+        /** Important for reflection-based instantiation */
+        @SuppressWarnings("unused")
+        public QueryUpdateAuditEvent() {}
 
         public QueryUpdateAuditEvent(Container container, String comment)
         {
