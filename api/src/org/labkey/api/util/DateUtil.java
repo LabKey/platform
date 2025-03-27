@@ -235,6 +235,69 @@ public class DateUtil
         return toISO(System.currentTimeMillis());
     }
 
+    // "HH:mm"
+    private static final FastDateFormat TIME_FORMATTER_NO_SECONDS = FastDateFormat.getInstance(ISO_SHORT_TIME_FORMAT_STRING);
+    // "HH:mm:ss
+    private static final FastDateFormat TIME_FORMATTER_NO_MILLIS = FastDateFormat.getInstance(ISO_TIME_FORMAT_STRING);
+    // "HH:mm:ss.SSS
+    private static final FastDateFormat TIME_FORMATTER_FULL = FastDateFormat.getInstance(ISO_LONG_TIME_FORMAT_STRING);
+
+    /**
+     * Formats a Time value using ISO format, potentially (fFullISO == false) using a format that suppresses unnecessary
+     * zero padding; this non-full option is appropriate for formatting values in input fields.
+     * @param t a Time object
+     * @param fFullISO if true, always uses a full ISO time format (including hours, minutes, seconds, and three-digit
+     *                 milliseconds, padding with zeroes as necessary); if false, always includes hours and minutes,
+     *                 but potentially truncates the time portion that comprises all zeros (i.e., truncate
+     *                 milliseconds if zero, truncate seconds and milliseconds if both are zero)
+     * @return a formatted time string
+     */
+    public static String toISO(Time t, boolean fFullISO)
+    {
+        final FastDateFormat formatter;
+
+        if (fFullISO)
+        {
+            formatter = TIME_FORMATTER_FULL;
+        }
+        else
+        {
+            long l = t.getTime();
+            long milliseconds = l % 1000;
+
+            if (milliseconds > 0)
+            {
+                formatter = TIME_FORMATTER_FULL;
+            }
+            else
+            {
+                long seconds = l % 60000 / 1000;
+
+                if (seconds > 0)
+                {
+                    formatter = TIME_FORMATTER_NO_MILLIS;
+                }
+                else
+                {
+                    formatter = TIME_FORMATTER_NO_SECONDS;
+                }
+            }
+        }
+
+        return formatter.format(t);
+    }
+
+    /**
+     * Formats a date value using ISO format, potentially (fFullISO == false) using a format that suppresses unnecessary
+     * zero padding; this non-full option is appropriate for formatting values in input fields.
+     * @param l milliseconds representing a date (milliseconds since 1970-01-01)
+     * @param fFullISO if true, always uses a full ISO format (including date, hours, minutes, seconds, and
+     *                 three-digit milliseconds, padding with zeroes as necessary); if false, always includes the date
+     *                 fields, but potentially truncates the time portion that comprises all zeros (i.e., truncate
+     *                 milliseconds if zero, truncate seconds and milliseconds if both are zero, truncate full time
+     *                 portion if zero)
+     * @return a formatted date string
+     */
     public static String toISO(long l, boolean fFullISO)
     {
         StringBuilder sb = new StringBuilder("1999-12-31 23:59:59.999".length());
@@ -1469,6 +1532,11 @@ Parse:
             return DateUtil.parseDateTime(ContainerManager.getRoot(), s);
         }
 
+        private Time parseTime(String s)
+        {
+            return new Time(DateUtil.parseDateTimeUS(s, DateTimeOption.TimeOnly, false));
+        }
+
         void assertIllegalDate(String s)
         {
             try
@@ -1565,7 +1633,7 @@ Parse:
 
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
-// BUG?     parseDateTime() is not suppose to parse time only values
+// BUG?     parseDateTime() is not supposed to parse time-only values
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), fromTimeString("15:02:00.0000000",true).getTime());
 
@@ -1953,7 +2021,7 @@ Parse:
         }
 
         @Test
-        public void testFormat()
+        public void testIsoDateFormat()
         {
             long l = System.currentTimeMillis();
             for (int i=0 ; i<24 ; i++)
@@ -1978,6 +2046,29 @@ Parse:
             c.set(HOUR_OF_DAY,0);
             l = c.getTimeInMillis();
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
+        }
+
+        @Test
+        public void testIsoTimeFormat()
+        {
+            validateTimeFormat("23:59:59.999", "23:59:59.999", "23:59:59.999");
+            validateTimeFormat("23:59:59.500", "23:59:59.500", "23:59:59.500");
+            validateTimeFormat("23:59:59.001", "23:59:59.001", "23:59:59.001");
+
+            validateTimeFormat("23:59:59", "23:59:59.000", "23:59:59");
+            validateTimeFormat("23:59:31", "23:59:31.000", "23:59:31");
+            validateTimeFormat("23:59:01", "23:59:01.000", "23:59:01");
+
+            validateTimeFormat("23:59", "23:59:00.000", "23:59");
+            validateTimeFormat("23:31", "23:31:00.000", "23:31");
+            validateTimeFormat("23:00:00", "23:00:00.000", "23:00");
+        }
+
+        private void validateTimeFormat(String time, String full, String notFull)
+        {
+            Time t = parseTime(time);
+            assertEquals(full, toISO(t, true));
+            assertEquals(notFull, toISO(t, false));
         }
 
         @Test
