@@ -116,7 +116,6 @@ public class TransactionFilter implements Filter
                                         PipelineJobService.get().killProcessesForThread(thread);
                                     }
                                 }
-                                thread.interrupt();
                             }
                         }
                         try

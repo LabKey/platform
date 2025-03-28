@@ -44,6 +44,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -1654,8 +1655,8 @@ public class PlateController extends SpringActionController
             }
             catch (Exception e)
             {
-                if (e instanceof ValidationException ve)
-                    LOG.debug("Request failed due to a validation exception", ve);
+                if (e instanceof ValidationException || e instanceof BatchValidationException)
+                    LOG.debug("Request failed due to a validation exception", e);
                 else
                     LOG.error("Request failed due to an exception", e);
                 String message = "Failed to reformat plates.";
