@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.32.2-filterSemicolonValue52068.2",
+    "@labkey/components": "6.33.0",
     "@labkey/themes": "1.4.1"
   },
   "devDependencies": {
