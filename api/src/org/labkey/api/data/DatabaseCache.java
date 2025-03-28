@@ -79,8 +79,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
         private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
-        private final Object lock = new Object();
-
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
         public BlockingDatabaseCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
@@ -100,9 +98,11 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // larger than the cache size.
             if (null != t)
             {
+                // Create a new or get existing post commit counter task
                 CacheReloadCounterTask task = t.addCommitTask(new CacheReloadCounterTask(this) , DbScope.CommitTaskOption.POSTCOMMIT);
                 if( task.shouldAddReloadTask() )
                 {
+                    // Add reload task, if doesn't already exist, and decrement transaction reload counter
                     CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
                     boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
                     if (!alreadyQueued)
@@ -229,6 +229,8 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
     }
 
+    // This is a post commit task that counts how many cache reload post commits have been queued and is
+    // scoped to the transaction.
     public static class CacheReloadCounterTask implements Runnable
     {
         private final Cache<?, ?> _cache;
@@ -478,10 +480,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 }
                 transaction.commit();
             }
-
-            // Verify remaining reload commits counts back up to cache size
-//            int remainingCount = cache.getRemainingReloadCommitTasks();
-//            assertEquals(maxSize, remainingCount);
         }
 
         private static class TestCacheLoader implements CacheLoader<String, Integer>
