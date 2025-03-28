@@ -55,8 +55,11 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -143,6 +146,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -422,6 +426,80 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("runGroups");
             addRootNavTrail(root);
             root.addChild("Run Groups");
+        }
+    }
+
+    @RequiresPermission(SiteAdminPermission.class)
+    public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            // Find all of the fields that could have lost data due to issue 52666
+            TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.EVERYTHING);
+            Collection<Map<String, Object>> problematicFields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getMapCollection();
+
+            // Prep audit table for querying
+            UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
+            TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.EVERYTHING);
+
+            Map<Pair<ExpSampleType, String>, List<Pair<Integer, String>>> summaries = new HashMap<>();
+
+            for (Map<String, Object> problematicField : problematicFields)
+            {
+                String domainURI = (String) problematicField.get("DomainURI");
+                String name = (String) problematicField.get("Name");
+                Container container = ContainerManager.getForId((String) problematicField.get("Container"));
+                Domain domain = PropertyService.get().getDomain(container, domainURI);
+                // Drill into sample types
+                if (domain != null && domain.getDomainKind() != null && domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
+                {
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
+
+                    // Find samples that current have no value for the field with potential for data loss
+                    TableInfo sampleTable = domain.getDomainKind().getTableInfo(getUser(), container, domain, ContainerFilter.EVERYTHING);
+                    List<Integer> idsWithNulls = new TableSelector(sampleTable, Collections.singleton("RowId"), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(Integer.class);
+
+                    List<Pair<Integer, String>> fixupsNeeded = new ArrayList<>();
+
+                    // For each sample without a value today, check the audit history
+                    for (Integer id : idsWithNulls)
+                    {
+                        // Order by RowId to get them in the sequence they happened in
+                        var events = new TableSelector(sampleTimelineTable, new SimpleFilter(FieldKey.fromParts("SampleId"), id), new Sort("RowId")).getArrayList(SampleTimelineAuditEvent.class);
+                        // Remember the most recently set value
+                        String mostRecentValue = null;
+                        for (SampleTimelineAuditEvent event : events)
+                        {
+                            Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
+                            if (newValues.containsKey(name))
+                            {
+                                mostRecentValue = newValues.get(name);
+                            }
+                        }
+                        // If the value had been set before, and its most recent insert/update wasn't setting it blank,
+                        // it's most likely a lost value
+                        if (mostRecentValue != null && !mostRecentValue.isEmpty())
+                        {
+                            fixupsNeeded.add(Pair.of(id, mostRecentValue));
+                        }
+                    }
+                    if (!fixupsNeeded.isEmpty())
+                    {
+                        summaries.put(Pair.of(sampleType, name), fixupsNeeded);
+                    }
+                }
+            }
+
+            return new HtmlView("Fixups Needed", DOM.UL(summaries.entrySet().stream().map(e ->
+                    LI(e.getKey().first.getName() + ":" + e.getKey().second, DOM.UL(e.getValue().stream().map(p ->
+                            LI(ExperimentService.get().getExpMaterial(p.first).getName() + ": " + p.second)))))));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Lost to the void");
         }
     }
 
