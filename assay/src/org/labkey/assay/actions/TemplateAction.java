@@ -21,6 +21,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.BaseAssayAction;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
@@ -68,6 +69,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         ctx.setBaseFilter(filter);
 
         ExcelWriter xl = new ExcelWriter(()->dr.getResults(ctx), dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx);
+        xl.setCaptionType(ColumnHeaderType.ImportField); // Issue 52036
         xl.setFilenamePrefix(protocol.getName() + "_Template"); // Issue 48028
         xl.renderWorkbook(getViewContext().getResponse());
         return null;
