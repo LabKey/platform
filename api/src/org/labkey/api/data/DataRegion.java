@@ -69,6 +69,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -944,11 +945,18 @@ public class DataRegion extends DisplayElement
             out.write("You do not have permission to read this data");
             return;
         }
+
         Results results = null;
         try
         {
             boolean showParameterForm = false;
-            if (usesResultSet())
+            Errors errors = ctx.getErrors();
+
+            if (errors != null && errors.hasErrors())
+            {
+                errors.getAllErrors().forEach(err -> addError(err.getDefaultMessage()));
+            }
+            else if (usesResultSet())
             {
                 try
                 {
@@ -964,10 +972,7 @@ public class DataRegion extends DisplayElement
                 }
                 catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
                 {
-                    _errorCreatingResults = true;
-                    _showPagination = false;
-                    _allowHeaderLock = false;
-                    addMessage(new Message(x.getMessage(), MessageType.ERROR, MessagePart.header));
+                    addError(x.getMessage());
                 }
             }
 
@@ -984,6 +989,14 @@ public class DataRegion extends DisplayElement
         {
             ResultSetUtil.close(results);
         }
+    }
+
+    private void addError(String message)
+    {
+        _errorCreatingResults = true;
+        _showPagination = false;
+        _allowHeaderLock = false;
+        addMessage(new Message(message, MessageType.ERROR, MessagePart.header));
     }
 
     private void _renderParameterForm(RenderContext ctx, Writer out) throws IOException
