@@ -93,8 +93,8 @@ public class ContentSecurityPolicyFilter implements Filter
         // and connections.
         if (AppProps.getInstance().isDevMode())
         {
-            registerAllowedSources(Directive.Connection, "reactjs.hot.reload", "localhost:3001 ws://localhost:3001");
-            registerAllowedSources(Directive.Font, "reactjs.hot.reload", "localhost:3001");
+            registerAllowedSources("reactjs.hot.reload", Directive.Connection, "localhost:3001 ws://localhost:3001");
+            registerAllowedSources("reactjs.hot.reload", Directive.Font, "localhost:3001");
         }
     }
 
@@ -242,10 +242,18 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
+    @Deprecated // Keep around to ease the transition to the new method signature
     public static void registerAllowedSources(Directive directive, String key, String... allowedSources)
+    {
+        registerAllowedSources(key, directive, allowedSources);
+    }
+
+    public static void registerAllowedSources(String key, Directive directive, String... allowedSources)
     {
         synchronized (ALLOWED_SOURCES_LOCK)
         {
+            if (allowedSources.length == 0)
+                throw new IllegalStateException("Registering no sources is not allowed");
             LOG.debug("Registering {} for {}: {}", directive, key, Arrays.toString(allowedSources));
             SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.computeIfAbsent(directive, d -> new HashSetValuedHashMap<>());
             Arrays.stream(allowedSources).forEach(s -> multiMap.put(key, s));
@@ -400,21 +408,21 @@ public class ContentSecurityPolicyFilter implements Filter
                     unregisterAllowedSources(Directive.Connection, "foo");
                     assertTrue(ALLOWED_SOURCES.isEmpty());
                     verifySubstitutionMapSize(0);
-                    registerAllowedSources(Directive.Connection, "foo", "MySource");
+                    registerAllowedSources("foo", Directive.Connection, "MySource");
                     assertEquals(1, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(2); // Old connection substitution key should be added as well
                     verifySubstitutionInPolicyExpressions("MySource", 1);
-                    registerAllowedSources(Directive.Connection, "bar", "MySource");
+                    registerAllowedSources("bar", Directive.Connection, "MySource");
                     assertEquals(1, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 1); // Duplicate source should be filtered out
 
                     unregisterAllowedSources(Directive.Font, "font");
-                    registerAllowedSources(Directive.Font, "font", "MySource");
+                    registerAllowedSources("font", Directive.Font, "MySource");
                     assertEquals(2, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(3);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
-                    registerAllowedSources(Directive.Font, "font2", "MyFontSource");
+                    registerAllowedSources("font2", Directive.Font, "MyFontSource");
                     assertEquals(2, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(3);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
@@ -432,21 +440,21 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
 
                     unregisterAllowedSources(Directive.Frame, "frame");
-                    registerAllowedSources(Directive.Frame, "frame", "FrameSource", "FrameStore");
+                    registerAllowedSources("frame", Directive.Frame, "FrameSource", "FrameStore");
                     assertEquals(3, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(3);
                     verifySubstitutionInPolicyExpressions("FrameSource", 1);
                     verifySubstitutionInPolicyExpressions("FrameStore", 1);
 
                     unregisterAllowedSources(Directive.Style, "style");
-                    registerAllowedSources(Directive.Style, "style", "StyleSource", "MoreStylishStore");
+                    registerAllowedSources("style", Directive.Style, "StyleSource", "MoreStylishStore");
                     assertEquals(4, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(4);
                     verifySubstitutionInPolicyExpressions("StyleSource", 1);
                     verifySubstitutionInPolicyExpressions("MoreStylishStore", 1);
 
                     unregisterAllowedSources(Directive.Image, "image");
-                    registerAllowedSources(Directive.Image, "image", "ImageSource", "BetterImageStore");
+                    registerAllowedSources("image", Directive.Image, "ImageSource", "BetterImageStore");
                     assertEquals(5, ALLOWED_SOURCES.size());
                     verifySubstitutionMapSize(5);
                     verifySubstitutionInPolicyExpressions("ImageSource", 1);

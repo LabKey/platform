@@ -120,7 +120,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
+            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Connection, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
         }
     }
 

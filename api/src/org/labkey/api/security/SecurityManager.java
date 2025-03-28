@@ -242,7 +242,7 @@ public class SecurityManager
             return;
         }
 
-        ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, key, serviceURL);
+        ContentSecurityPolicyFilter.registerAllowedSources(key, Directive.Connection, serviceURL);
         LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
