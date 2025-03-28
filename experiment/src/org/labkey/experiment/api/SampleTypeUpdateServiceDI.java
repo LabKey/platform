@@ -1147,7 +1147,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
-        Map<String, Integer> nameRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {
