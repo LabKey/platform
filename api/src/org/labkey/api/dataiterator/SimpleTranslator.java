@@ -94,6 +94,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 /**
@@ -1136,7 +1137,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 if (skipOnce)
                 {
                     if (skipped.contains(name))
-                        throw new ApiUsageException("Two columns mapped to target column " + name + ". Check the column names and import aliases for your data.");
+                        throw new ApiUsageException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, name));
                     skipped.add(name);
                 }
                 continue;

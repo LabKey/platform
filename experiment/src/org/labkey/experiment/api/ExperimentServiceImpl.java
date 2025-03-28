@@ -297,6 +297,7 @@ import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_DATA;
 import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -10097,7 +10098,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (ExperimentService.isInputOutputColumn(columnName) || "parent".equalsIgnoreCase(columnName))
             {
                 if (seenColumns.contains(columnName))
-                    throw new ApiUsageException("Two columns mapped to target column " + columnName + ". Check the column names and import aliases for your data.");
+                    throw new ApiUsageException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, columnName));
                 seenColumns.add(columnName);
             }
         }
