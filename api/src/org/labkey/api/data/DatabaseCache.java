@@ -479,6 +479,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     }
                 }
                 transaction.commit();
+
+                // This should close the (temporary) shared cache
+                cache.close();
             }
         }
 
