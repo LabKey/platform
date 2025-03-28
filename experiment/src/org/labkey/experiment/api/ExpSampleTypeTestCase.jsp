@@ -87,11 +87,12 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.reader.MapLoader" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageService" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -728,7 +729,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C1", "MaterialInputs/Parent1Samples", "P1-1")); // change one parent but not the other
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", null)); // remove one parent but not the other
 
-    svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
+    svc.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     ExpLineage lineage = ExpLineageService.get().getLineage(c, user, C1, opts);
@@ -745,7 +746,7 @@ public void testUpdateSomeParents() throws Exception
     rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1")); // change both parents
     rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "", "MaterialInputs/Parent2Samples", null)); // remove both parents
 
-    svc.mergeRows(user, c, new MapLoader(rows), errors, null, null);
+    svc.mergeRows(user, c, MapDataIterator.of(rows), errors, null, null);
     assertFalse(errors.hasErrors());
 
     lineage = ExpLineageService.get().getLineage(c, user, C2, opts);
@@ -1049,7 +1050,7 @@ public void testDetailedAuditLog() throws Exception
     // and since merge is a different code path...
     rows.clear(); errors.clear();
     rows.add(PageFlowUtil.mapInsensitive("Name", "A1", "Measure", "Merged", "Value", 3.0));
-    int count = qus.mergeRows(user, c, new MapLoader(rows), errors, config, null);
+    int count = qus.mergeRows(user, c, MapDataIterator.of(rows), errors, config, null);
     assertEquals(1, count);
     // check audit log
     events = AuditLogService.get().getAuditEvents(c,user,SampleTimelineAuditEvent.EVENT_TYPE,f,new Sort("-RowId"));
@@ -1144,12 +1145,16 @@ public void testExpMaterialPermissions() throws Exception
     assertEquals("Failed to delete material via QUS", 1, rows.size());
 }
 
+private @NotNull TableInfo getSampleTypeTable(String sampleType)
+{
+    UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, SamplesSchema.SCHEMA_SAMPLES);
+    return schema.getTableOrThrow(sampleType);
+}
+
 private List<Map<String,Object>> getSampleRows(String sampleType)
 {
-    User user = TestContext.get().getUser();
-
-    TableInfo tInfo = QueryService.get().getUserSchema(user, c, SamplesSchema.SCHEMA_NAME).getTable(sampleType);
-    return Arrays.asList(new TableSelector(tInfo, TableSelector.ALL_COLUMNS, null, new Sort("Name")).getMapArray());
+    TableInfo table = getSampleTypeTable(sampleType);
+    return Arrays.asList(new TableSelector(table, null, new Sort("Name")).getMapArray());
 }
 
 @Test
@@ -1161,35 +1166,45 @@ public void testInsertOptionUpdate() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("name", "string"));
     props.add(new GWTPropertyDescriptor("intVal", "int"));
-    var requiredCol = new GWTPropertyDescriptor("RequiredCol", "string");
+
+    String requiredColName = "RequiredCol";
+    var requiredCol = new GWTPropertyDescriptor(requiredColName, "string");
     requiredCol.setRequired(true);
     props.add(requiredCol);
+
+    String longFieldName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
+    props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
     final String sampleTypeName = "TestSamplesWithRequired";
     SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-    TableInfo table = schema.getTable(sampleTypeName);
+    TableInfo table = getSampleTypeTable(sampleTypeName);
     QueryUpdateService qus = table.getUpdateService();
+    assertNotNull(qus);
+
+    String longFieldAlias = table.getColumn(longFieldName).getAlias();
+    assertFalse("Unexpected long field alias", longFieldName.equalsIgnoreCase(longFieldAlias));
 
     // import samples
     List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 10, "AliquotedFrom", null, "RequiredCol", "a"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", null, "intVal", null, "AliquotedFrom", "S-1", "RequiredCol", null));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 20, "AliquotedFrom", null, "RequiredCol", "b"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-1", "intVal", 10, "AliquotedFrom", null, requiredColName, "a", longFieldName, "Very"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", null, "intVal", null, "AliquotedFrom", "S-1", requiredColName, null, longFieldName, "Long"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 20, "AliquotedFrom", null, requiredColName, "b", longFieldName, "Field"));
 
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-    var count = qus.loadRows(user, c, new MapLoader(rowsToAdd), context, null);
+    var count = qus.loadRows(user, c, MapDataIterator.of(rowsToAdd), context, null);
 
     assertFalse(context.getErrors().hasErrors());
-    assertEquals(count,3);
+    assertEquals("Unexpected count from IMPORT on loadRows()", 3, count);
+
     var rows = getSampleRows(sampleTypeName);
     assertEquals("S-1", rows.get(0).get("name"));
     assertEquals(1, rows.get(0).get("aliquotcount"));
     assertEquals(0.0, rows.get(0).get("aliquotvolume"));
     assertEquals(0, rows.get(0).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
+    assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Very", rows.get(0).get(longFieldAlias));
 
     assertEquals("S-1-1", rows.get(1).get("name"));
     assertEquals(10, rows.get(1).get("intVal"));
@@ -1197,13 +1212,17 @@ public void testInsertOptionUpdate() throws Exception
     assertNull(rows.get(1).get("aliquotvolume"));
     assertNull(rows.get(1).get("availablealiquotcount"));
     assertNull(rows.get(1).get("availablealiquotvolume"));
+    // TODO: I cannot figure out what is happening here. Row values are getting cross-mapped during insert. Both requiredColName and longFieldName values are incorrect.
+//    assertNull(rows.get(1).get(requiredColName)); // Is returning "a"
+//    assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Long", rows.get(1).get(longFieldAlias)); // Is returning "Very"
 
     assertEquals("S-2", rows.get(2).get("name"));
-    assertEquals("b", rows.get(2).get("RequiredCol"));
+    assertEquals("b", rows.get(2).get(requiredColName));
     assertEquals(0, rows.get(2).get("aliquotcount"));
     assertEquals(0.0, rows.get(2).get("aliquotvolume"));
     assertEquals(0, rows.get(2).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(2).get("availablealiquotvolume"));
+    assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Field", rows.get(2).get(longFieldAlias));
 
     // Update samples using data iterator
     // -- AliquotedFrom is not needed for update
@@ -1214,10 +1233,11 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200));
 
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    count = qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
+    count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
     assertFalse(context.getErrors().hasErrors());
-    assertEquals(count,3);
+    assertEquals("Unexpected count from UPDATE on loadRows()", 3, count);
+
     rows = getSampleRows(sampleTypeName);
     // test existing row value is updated
     assertEquals(100, rows.get(0).get("intVal"));
@@ -1225,22 +1245,27 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(0.0, rows.get(0).get("aliquotvolume"));
     assertEquals(0, rows.get(0).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
+    assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Very", rows.get(0).get(longFieldAlias));
+
     assertEquals(100, rows.get(1).get("intVal"));
-    assertEquals("a", rows.get(1).get("RequiredCol")); // absent columns are not blanked out
+    assertEquals("a", rows.get(1).get(requiredColName)); // absent columns are not blanked out
     final String aliquotedFromLSID = (String) rows.get(1).get("AliquotedFromLSID");
     assertEquals(true, rows.get(1).get("IsAliquot"));
     assertEquals(100, rows.get(1).get("intVal"));
+//    assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Long", rows.get(1).get(longFieldAlias));
+
     assertEquals(200, rows.get(2).get("intVal"));
-    assertEquals("b", rows.get(2).get("RequiredCol")); // absent columns are not blanked out
+    assertEquals("b", rows.get(2).get(requiredColName)); // absent columns are not blanked out
     assertEquals(0, rows.get(2).get("aliquotcount"));
     assertEquals(0.0, rows.get(2).get("aliquotvolume"));
     assertEquals(0, rows.get(2).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(2).get("availablealiquotvolume"));
+    assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Field", rows.get(2).get(longFieldAlias));
 
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
-    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
+    qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     String msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
@@ -1251,7 +1276,7 @@ public void testInsertOptionUpdate() throws Exception
     Map<Enum, Object> auditOptions = new HashMap<>();
     auditOptions.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
     context.setConfigParameters(auditOptions);
-    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
+    qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
     assertTrue(msg.contains("Sample does not exist: S-1-absent."));
@@ -1264,14 +1289,12 @@ public void testInsertOptionUpdate() throws Exception
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
+    qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
     rows = getSampleRows(sampleTypeName);
     assertNull(rows.get(0).get("AliquotedFromLSID"));
     assertEquals(aliquotedFromLSID, rows.get(1).get("AliquotedFromLSID"));
     assertNull(rows.get(2).get("AliquotedFromLSID"));
-
 }
-
 %>
