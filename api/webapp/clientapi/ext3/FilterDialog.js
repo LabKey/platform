@@ -511,10 +511,14 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
         }
 
-        // replace ; with \n on UI
+        // replace multivalued separator (i.e. ;) with \n on UI
         if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
-            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(';') > 0)
-                inputValue = inputValue.replaceAll(';', '\n');
+            var valueSeparator = filterType.getMultiValueSeparator();
+            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(valueSeparator) > 0) {
+                inputValue = filterType.parseValue(inputValue);
+                if (LABKEY.Utils.isArray(inputValue))
+                    inputValue = inputValue.join('\n');
+            }
         }
 
         var inputs = this.getVisibleInputs();
@@ -764,6 +768,11 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
                 if (!type) {
                     alert('Filter not found for suffix: ' + c.getValue());
+                }
+
+                // Issue 52068: for multivalued filter types, split on new line to get an array of values
+                if (value && type.isMultiValued()) {
+                    value = value.indexOf('\n') > -1 ? value.split('\n') : type.parseValue(value);
                 }
 
                 filters.push(LABKEY.Filter.create(this.fieldKey, value, type));
