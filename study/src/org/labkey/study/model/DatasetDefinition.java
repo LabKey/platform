@@ -1634,7 +1634,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     from.append(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).append(" AS ").append(ci.getName());
                     comma = ", ";
                 }
-                from.append("\nWHERE 0=1) AS ").append(alias);
+                from.append("\nWHERE 0=1) AS ").appendIdentifier(alias);
                 from.appendComment("</DatasetDefinition>", d);
                 return from;
             }
@@ -1652,7 +1652,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 else
                     ret.appendValue(getDefinitionContainer());
                 ret.append(")");
-                ret.append(alias);
+                ret.appendIdentifier(alias);
                 ret.appendComment("</DatasetDefinition>", d);
                 return ret;
             }

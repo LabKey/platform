@@ -420,7 +420,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().get(0);
 
         sql.append("(CASE WHEN ");
-        sql.append(queryAlias).append(".").appendIdentifier(colDimension.getSourceColumn().getAlias());
+        sql.appendDottedIdentifiers(queryAlias, colDimension.getSourceColumn().getAlias());
         sql.append("=");
         String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
         sql.append(value);
@@ -429,7 +429,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.append(" ELSE ");
         sql.append(elseSql);
         sql.append(" END) AS ");
-        sql.append(alias);
+        sql.appendIdentifier(alias);
     }
 
     protected void addSourceQuery(SQLFragment sql)

@@ -1332,7 +1332,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                         markAllSelected(_query);
                         _sqlAllColumns = getSql();
                     }
-                    f.append("(").append(_sqlAllColumns).append(") ").append(alias);
+                    f.append("(").append(_sqlAllColumns).append(") ").appendIdentifier(alias);
                     return f;
                 }
             }
@@ -1367,7 +1367,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 if (!getParseErrors().isEmpty())
                     throw getParseErrors().get(0);
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(s).append(") ").append(alias);
+                f.append("(").append(s).append(") ").appendIdentifier(alias);
 
                 return f;
             }
@@ -1793,7 +1793,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         {
             // NOTE inserting the "(" earlier blows up limitRows()
             sql.insert(0,"(");
-            sql.append(") ").append(getAlias());
+            sql.append(") ").appendIdentifier(getAlias());
         }
 
         if (!AppProps.getInstance().isDevMode() || _inFromClause)

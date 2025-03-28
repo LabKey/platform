@@ -63,7 +63,7 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
                 JOIN exp.DomainDescriptor AS dd ON dd.DomainId = pdom.DomainId""");
 
         result.append(")\n")
-            .append(alias)
+            .appendIdentifier(alias)
             .appendComment("</" + _tableName + ">", getSqlDialect());
 
         return result;

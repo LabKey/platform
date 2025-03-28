@@ -79,7 +79,7 @@ public class VialTable extends BaseStudyTable
         ret.append(getColumn("Container").getValueSql("_")).append(" AS Container, *");
         ret.append(" FROM ");
         ret.append(_rootTable.getFromSQL("_"));
-        ret.append(") ").append(alias);
+        ret.append(") ").appendIdentifier(alias);
         ret.appendComment("</org.labkey.study.query.VialTable>",getSqlDialect());
         return ret;
     }

@@ -87,7 +87,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(dataset, "DataSet");
         result.append(datasetFilter);
         result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
-        result.append(alias);
+        result.appendIdentifier(alias);
         result.appendComment("</DataSetColumnsTable>", getSqlDialect());
         return result;
     }

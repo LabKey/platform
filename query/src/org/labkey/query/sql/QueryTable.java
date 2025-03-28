@@ -324,7 +324,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             ret.append("(");
         ret.append(sql);
         if (_generateSelectSQL)
-            ret.append(") ").append(getAlias());
+            ret.append(") ").appendIdentifier(getAlias());
 
         assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return ret;

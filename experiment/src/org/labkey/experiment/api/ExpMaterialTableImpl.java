@@ -1055,7 +1055,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(" WHERE ");
             sql.append("CpasType = ").appendValue(_ss.getLSID());
         }
-        sql.append(") ").append(alias);
+        sql.append(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }

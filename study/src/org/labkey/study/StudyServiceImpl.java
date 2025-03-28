@@ -958,7 +958,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return new SQLFragment().appendIdentifier(tableAlias).append(".").appendIdentifier(getAlias());
+                return new SQLFragment().appendDottedIdentifiers(tableAlias, getAlias());
             }
         };
         unionCol.copyAttributesFrom(column);

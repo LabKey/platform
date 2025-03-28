@@ -191,7 +191,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         strJoin.append("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
-        strJoin.append("\n\t) ").append(alias);
+        strJoin.append("\n\t) ").appendIdentifier(alias);
         strJoin.appendComment("</MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         return strJoin;
     }

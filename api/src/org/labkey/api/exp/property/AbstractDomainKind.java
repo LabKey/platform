@@ -208,7 +208,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             // Issue 17183 - Postgres uses lower case column names when quoting is required
             nonBlankRowsSQL.append("x.");
             // Issue 29047
-            nonBlankRowsSQL.appendIdentifier(dialect.makeLegalIdentifier(prop.getPropertyDescriptor().getStorageColumnName().toLowerCase()));
+            nonBlankRowsSQL.appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect));
             nonBlankRowsSQL.append(" IS NOT NULL");
             if (prop.isMvEnabled())
             {
@@ -296,8 +296,8 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
         SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) FROM %s.%s",
                 dialect.getVarcharLengthFunction(),
-                //Lowercase names for postgres (MSSQL is case insensitive in this case)
-                dialect.makeLegalIdentifier(prop.getName().toLowerCase()),
+                //Lowercase names for postgres (MSSQL is case-insensitive in this case)
+                prop.getPropertyDescriptor().getLegalSelectName(dialect),
                 dialect.makeLegalIdentifier(schema.toLowerCase()),
                 dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
         ));

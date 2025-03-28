@@ -26,6 +26,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
@@ -293,11 +294,7 @@ public class VisualizationSourceColumn
             for (String part : parts)
             {
                 selectName.append(sep);
-                String identifier = _schema.getDbSchema().getSqlDialect().makeLegalIdentifier(part);
-                if (identifier.charAt(0) == '"')
-                    selectName.append(identifier);
-                else
-                    selectName.append("\"").append(identifier).append("\"");
+                LabKeySql.quoteIdentifier(part);
                 sep = ".";
             }
             return selectName.toString();

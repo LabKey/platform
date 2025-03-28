@@ -233,7 +233,6 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         if (dialect.isPostgreSQL())
             legalName = dialect.makeLegalIdentifier(storageName.toLowerCase());      // Our PG code deep down makes these lowercase, so we need to, too
         return legalName;
-
     }
 
     public void setRangeURI(String dataTypeURI)

@@ -287,7 +287,7 @@ public class QValuesTable extends QTable
             ret.append("(");
             appendSql(ret);
             ret.append(") ");
-            ret.append(getAlias());
+            ret.appendIdentifier(getAlias());
             ret.append(" (");
             String comma = "";
             // generate names consistent with PostgreSQL default name for VALUES

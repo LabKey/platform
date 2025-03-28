@@ -1432,9 +1432,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
                 // Ignore the hashed columns generated for unique constraint over large text columns required for SQLServer
                 // Unfortunately, the domain doesn't record the intended unique indices, so we'll just ignore all columns that have the "_hashed_" prefix.
+                var dialect = getSqlDialect(domain);
                 if (getSqlDialect(domain).isSqlServer() && domainProp.getJdbcType().isText())
                 {
-                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + getSqlDialect(domain).makeLegalIdentifier(propDescriptor.getName());
+                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + propDescriptor.getLegalSelectName(dialect);
                     hardColumnNames.remove(hashedColumnName);
                 }
 

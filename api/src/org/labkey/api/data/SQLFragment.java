@@ -429,6 +429,23 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    // just to save some typing
+    public SQLFragment appendDottedIdentifiers(CharSequence table, DatabaseIdentifier col)
+    {
+        return appendIdentifier(table).append(".").appendIdentifier(col);
+    }
+
+    // just to save some typing
+    public SQLFragment appendDottedIdentifiers(CharSequence... ids)
+    {
+        var dot = "";
+        for (var id : ids)
+        {
+            append(dot).appendIdentifier(id);
+            dot = ".";
+        }
+        return this;
+    }
 
     /** append End Of Statement */
     public SQLFragment appendEOS()

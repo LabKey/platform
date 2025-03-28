@@ -842,12 +842,41 @@ public abstract class SqlDialect
             return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
+    private Map<String,Boolean> _validatedIds = new HashMap<>();
+
+    private boolean validateIdentifier(DatabaseIdentifier id)
+    {
+        if (LOG.isTraceEnabled())
+        {
+            final var me = this;
+            return _validatedIds.computeIfAbsent(id.getString(), key ->
+            {
+                var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
+                if (optScope.isPresent())
+                {
+                    SQLFragment sql = new SQLFragment("SELECT NULL AS ").appendIdentifier(id);
+                    try (var results = new SqlSelector(optScope.get(), sql).getResultSet(false))
+                    {
+                        assert id.getString().equals(results.getMetaData().getColumnName(1));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return true;
+            });
+        }
+        return true;
+    }
+
     // dialect is just for debugging reference
     protected record _DatabaseIdentifier(String string, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
     {
         _DatabaseIdentifier(String string, String sql, SqlDialect dialect)
         {
             this(string, new SQLFragment().appendIdentifier(sql), dialect);
+            assert null==dialect || dialect.validateIdentifier(this);
         }
 
         @Override
@@ -873,7 +902,7 @@ public abstract class SqlDialect
     // In this case the name must be preserved exactly as-is.
     public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
     {
-        return new _DatabaseIdentifier(metaDataName, makeLegalIdentifier(metaDataName), this);
+        return new _DatabaseIdentifier(metaDataName, quoteIdentifier(metaDataName), this);
     }
 
     // Create a DialectIdentifier for the desired alias
@@ -934,10 +963,10 @@ public abstract class SqlDialect
         return id;
     }
 
-    // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
+    // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
-        return "\"" + id.replaceAll("\"", "\"\"") + "\"";
+        return "\"" + StringUtils.replace(id, "\"", "\"\"") + "\"";
     }
 
 

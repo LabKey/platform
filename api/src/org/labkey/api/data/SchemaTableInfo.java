@@ -252,9 +252,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSQLName())
-            return new SQLFragment().append(getSQLName()).append(" ").append(alias);
+            return new SQLFragment().append(getSQLName()).append(" ").appendIdentifier(alias);
         else
-            return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
+            return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
     }
 
     @Override

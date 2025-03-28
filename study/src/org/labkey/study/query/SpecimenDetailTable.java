@@ -425,7 +425,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         sqlf.append("\n  JOIN ");
         sqlf.append(specimenTI.getFromSQL("specimen"));
         sqlf.append(" ON vial.specimenid = specimen.rowid) ");
-        sqlf.append(alias);
+        sqlf.appendIdentifier(alias);
         sqlf.appendComment("</getSpecimenAndVialFromSQL>", dialect);
         return sqlf;
     }

@@ -612,7 +612,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
             return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
         else
-            return new SQLFragment().appendIdentifier(tableAliasName).append(".").appendIdentifier(colIdentifier);
+            return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
     }
 
     @Override
@@ -902,7 +902,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
             TableInfo t = getParentTable();
-            return new SQLFragment("nextval('" + t.getSelectName() + "_ts')");
+            String tsName = t.getSchema().getName() + "." + _parentTable.getMetaDataName().getString() + "_ts";
+            String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
+            return new SQLFragment("nextval(" + sqlString + ")");
         }
         return null;
     }

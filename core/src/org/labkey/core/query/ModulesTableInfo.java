@@ -234,7 +234,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(getFromTable(), null);
-        ret.append("\n").append(filterFrag).append(") ").append(alias);
+        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return ret;
     }
