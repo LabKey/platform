@@ -738,6 +738,16 @@ public class SimpleFilter implements Filter
 
             return in.toString();
         }
+;
+        private void handleEmptyParams(String alias, SQLFragment in)
+        {
+            if (isIncludeNull())
+                in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
+            else if (!isNegated())
+                in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            else
+                in.append("1=1");
+        }
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -752,28 +762,42 @@ public class SimpleFilter implements Filter
 
             if (params.length == 0)
             {
-                if (isIncludeNull())
-                    in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
-                else if (!isNegated())
-                    in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
-                else
-                    in.append("1=1");
-
+                handleEmptyParams(alias, in);
                 return in;
             }
 
-            Object[] convertedParams;
+            List<Object> convertedParams;
 
             if (null == colInfo || !needsTypeConversion())
             {
-                convertedParams = params;
+                convertedParams = Arrays.asList(params);
             }
             else
             {
-                convertedParams = new Object[params.length];
+                convertedParams = new ArrayList<>();
 
-                for (int i = 0; i < params.length; i++)
-                    convertedParams[i] = CompareType.convertParamValue(colInfo, params[i]);
+                for (Object param : params)
+                {
+                    try
+                    {
+                        Object convertedValue = CompareType.convertParamValue(colInfo, param);
+                        convertedParams.add(convertedValue);
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        // Ignore unparseable filter values - see Issue 52332
+                        if (!(e.getSQLException() instanceof SQLGenerationException))
+                        {
+                            throw e;
+                        }
+                    }
+                }
+
+                if (convertedParams.isEmpty())
+                {
+                    handleEmptyParams(alias, in);
+                    return in;
+                }
             }
 
             in.append("((");
@@ -784,7 +808,7 @@ public class SimpleFilter implements Filter
             in.append(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            dialect.appendInClauseSql(in, Arrays.asList(convertedParams));
+            dialect.appendInClauseSql(in, convertedParams);
 
             if (isIncludeNull())
             {
@@ -1314,7 +1338,7 @@ public class SimpleFilter implements Filter
             }
             catch (RuntimeSQLException e)
             {
-                // Deal with unparseable filter values - see issue 23321
+                // Deal with unparseable filter values - see Issue 23321
                 if (e.getSQLException() instanceof SQLGenerationException)
                 {
                     ret.append("0 = 1");
@@ -1628,13 +1652,19 @@ public class SimpleFilter implements Filter
 
     public abstract static class ClauseTestCase extends Assert
     {
-        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
+        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect, Map<FieldKey, ColumnInfo> columnMap)
         {
-            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(Collections.emptyMap(), dialect).toDebugString()));
+            assertEquals("Generated SQL did not match", expectedSQL, SQLFragment.filterDebugString(clause.toSQLFragment(columnMap, dialect).toDebugString()));
             StringBuilder sb = new StringBuilder();
             clause.appendFilterText(sb, new ColumnNameFormatter());
             assertEquals("Description did not match", description, sb.toString());
         }
+
+        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
+        {
+            test(expectedSQL, description, clause, dialect, Collections.emptyMap());
+        }
+
     }
 
     public static class InClauseTestCase extends ClauseTestCase
@@ -1656,6 +1686,25 @@ public class SimpleFilter implements Filter
             // Include null parameter
             test("((Foo IN ('Bar', 'Blip')) OR Foo IS NULL)", "Foo IS ONE OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
             test("((NOT Foo IN ('Bar', 'Blip')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+
+            // Ignore params that cannot be parsed
+            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, new BaseColumnInfo("Foo", JdbcType.INTEGER));
+
+            InClause in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"));
+            in._needsTypeConversion = true;
+            test("((Foo IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+
+            in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"), true, true);
+            in._needsTypeConversion = true;
+            test("((NOT Foo IN (1, 2)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+
+            in =  new InClause(fieldKey, PageFlowUtil.set("S-3"));
+            in._needsTypeConversion = true;
+            test("Foo IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+
+            in = new InClause(fieldKey, PageFlowUtil.set("S-3"), true, true);
+            in._needsTypeConversion = true;
+            test("1=1", "Foo IS NOT ANY OF (S-3)", in, mockDialect, columnInfoMap);
         }
 
         @Test
