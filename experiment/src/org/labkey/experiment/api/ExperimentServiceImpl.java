@@ -201,6 +201,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -252,6 +254,7 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -10065,6 +10068,39 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
         return fileResults;
+    }
+
+    public void checkDuplicateParentColumns(@NotNull DataLoader dataLoader, @Nullable ExpObject currentDataType)
+    {
+        ColumnDescriptor[] allColumns;
+        Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
+        try
+        {
+            allColumns = dataLoader.getColumns();
+
+            if (currentDataType instanceof ExpDataClass dataClass)
+                parentAliasColumnMap.putAll(dataClass.getImportAliases());
+            else if (currentDataType instanceof ExpSampleType sampleType)
+                parentAliasColumnMap.putAll(sampleType.getImportAliases());
+        }
+        catch (IOException exception)
+        {
+            throw new UncheckedIOException(exception);
+        }
+
+        Set<String> seenColumns = new CaseInsensitiveHashSet();
+        for (ColumnDescriptor columnDescriptor : allColumns)
+        {
+            String columnName = columnDescriptor.name;
+            if (parentAliasColumnMap.containsKey(columnName))
+                columnName = parentAliasColumnMap.get(columnName);
+            if (ExperimentService.isInputOutputColumn(columnName) || "parent".equalsIgnoreCase(columnName))
+            {
+                if (seenColumns.contains(columnName))
+                    throw new ApiUsageException("Two columns mapped to target column " + columnName + ". Check the column names and import aliases for your data.");
+                seenColumns.add(columnName);
+            }
+        }
     }
 
     public static class TestCase extends Assert

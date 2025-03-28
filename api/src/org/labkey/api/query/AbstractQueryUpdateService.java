@@ -327,6 +327,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class);
     }
 
+    // override this
+    protected void preImportDIBValidation(DataIteratorBuilder in)
+    {
+    }
+
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasImportRowsPermission(user, container, context))
@@ -340,6 +345,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
+
+        preImportDIBValidation(in);
 
         boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
         boolean hasTableScript = hasTableScript(container);
