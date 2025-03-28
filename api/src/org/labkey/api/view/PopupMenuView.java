@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.writer.HtmlWriter;
@@ -92,7 +93,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         return out;
     }
 
-    public static void renderTree(NavTree tree, Writer out) throws IOException
+    public static void renderTree(NavTree tree, Writer oldWriter) throws IOException
     {
         if (tree == null)
             return;
@@ -112,7 +113,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (treeItemCls == null || !treeItemCls.equals(child.getMenuFilterItemCls()))
                 {
                     treeItemCls = child.getMenuFilterItemCls();
-                    renderMenuFilterInput(treeItemCls, out);
+                    renderMenuFilterInput(treeItemCls, oldWriter);
                 }
             }
             else
@@ -127,20 +128,20 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (lastIsSeparator)
                 {
                     lastIsSeparator = false;
-                    renderTreeDivider(out);
+                    renderTreeDivider(oldWriter);
                 }
 
                 hasNonSeparatorItem = true;
                 String text = PageFlowUtil.filter(child.getText());
 
-                out.write("<li class=\"dropdown-submenu\">");
-                out.write("<a class=\"subexpand subexpand-icon\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
-                out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
-                renderTreeDivider(out);
-                renderTree(child, out);
-                out.write("</ul>");
-                out.write("</li>");
+                oldWriter.write("<li class=\"dropdown-submenu\">");
+                oldWriter.write("<a class=\"subexpand subexpand-icon\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
+                oldWriter.write("<ul class=\"dropdown-layer-menu\">");
+                oldWriter.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
+                renderTreeDivider(oldWriter);
+                renderTree(child, oldWriter);
+                oldWriter.write("</ul>");
+                oldWriter.write("</li>");
             }
             else if ("-".equals(child.getText()))
             {
@@ -152,11 +153,11 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (lastIsSeparator)
                 {
                     lastIsSeparator = false;
-                    renderTreeDivider(out);
+                    renderTreeDivider(oldWriter);
                 }
 
                 hasNonSeparatorItem = true;
-                renderTreeItem(child, treeItemCls, out);
+                renderTreeItem(child, treeItemCls, oldWriter);
             }
         }
     }
@@ -180,10 +181,13 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
 
     // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
-    protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
+    protected static void renderLink(NavTree item, String cls, Writer oldWriter) throws IOException
     {
+        LinkBuilder builder = item.toLinkBuilder();
+//        oldWriter.write(builder.toString());
+
         var config = HttpView.currentPageConfig();
-        // if the item is "selected" and doesn't have have an image cls to use, provide our default
+        // if the item is "selected" and doesn't have an image cls to use, provide our default
         String itemImageCls = item.getImageCls();
         if (item.isSelected() && null == itemImageCls)
             itemImageCls = "fa fa-check-square-o";
@@ -237,30 +241,30 @@ public class PopupMenuView extends HttpView<PopupMenu>
         }
 
         String id = config.makeId("popupMenuView");
-        out.write("<a id='" + id + "'");
+        oldWriter.write("<a id='" + id + "'");
         if (null != cls)
-            out.write(" class=\"" + cls + "\"");
+            oldWriter.write(" class=\"" + cls + "\"");
         if (null != href && !item.isPost())
-            out.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
+            oldWriter.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
         else
-            out.write(" href=\"#\"");
+            oldWriter.write(" href=\"#\"");
         if (null != dataQuery)
-            out.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
+            oldWriter.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
         if (null != item.getTarget())
-            out.write(" target=\"" + item.getTarget() + "\"");
+            oldWriter.write(" target=\"" + item.getTarget() + "\"");
         if (null != item.getDescription())
-            out.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
+            oldWriter.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
         if (item.isDisabled())
-            out.write(" disabled");
-        out.write(" tabindex=\"0\"");
-        out.write(" style=\"" + styleStr + "\"");
+            oldWriter.write(" disabled");
+        oldWriter.write(" tabindex=\"0\"");
+        oldWriter.write(" style=\"" + styleStr + "\"");
         if (item.isNoFollow())
-            out.write(" rel=\"nofollow\"");
-        out.write(">");
+            oldWriter.write(" rel=\"noFollow\"");
+        oldWriter.write(">");
         if (null != itemImageCls)
-            out.write("<i class=\"" + itemImageCls + "\"></i>");
-        out.write(PageFlowUtil.filter(item.getText()));
-        out.write("</a>");
+            oldWriter.write("<i class=\"" + itemImageCls + "\"></i>");
+        oldWriter.write(PageFlowUtil.filter(item.getText()));
+        oldWriter.write("</a>");
         HttpView.currentPageConfig().addHandler(id, "click", item.getScript());
     }
 

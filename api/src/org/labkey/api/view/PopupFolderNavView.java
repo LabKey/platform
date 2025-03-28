@@ -40,7 +40,7 @@ public class PopupFolderNavView extends PopupMenuView
         renderFolderNavTree(ContainerManager.getProjectList(_context, true), out);
     }
 
-    private void renderFolderNavTree(NavTree tree, Writer out) throws IOException
+    private void renderFolderNavTree(NavTree tree, Writer oldWriter) throws IOException
     {
         if (tree == null)
             return;
@@ -58,19 +58,19 @@ public class PopupFolderNavView extends PopupMenuView
 
             if (child.hasChildren())
             {
-                out.write("<li class=\"dropdown-submenu " + (cls != null ? cls : "") + "\">");
-                renderLink(child, "subexpand-link " + (child.getHref() == null ? "lk-project-nav-disabled" : ""), out);
-                out.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
-                out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
-                renderTreeDivider(out);
-                renderFolderNavTree(child, out);
-                out.write("</ul>");
-                out.write("</li>");
+                oldWriter.write("<li class=\"dropdown-submenu " + (cls != null ? cls : "") + "\">");
+                renderLink(child, "subexpand-link " + (child.getHref() == null ? "lk-project-nav-disabled" : ""), oldWriter);
+                oldWriter.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
+                oldWriter.write("<ul class=\"dropdown-layer-menu\">");
+                oldWriter.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
+                renderTreeDivider(oldWriter);
+                renderFolderNavTree(child, oldWriter);
+                oldWriter.write("</ul>");
+                oldWriter.write("</li>");
             }
             else
             {
-                renderTreeItem(child, cls, out);
+                renderTreeItem(child, cls, oldWriter);
             }
         }
     }

@@ -22,15 +22,10 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
-
-import java.io.IOException;
-import java.io.Writer;
+import org.labkey.api.writer.HtmlWriter;
 
 /**
  * A button that responds to a user click by popping up a drop-down menu.
- *
- * User: jeckels
- * Date: Nov 15, 2007
  */
 public class MenuButton extends ActionButton
 {
@@ -53,7 +48,7 @@ public class MenuButton extends ActionButton
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         popupMenu.renderMenuButton(ctx, out, _requiresSelection, this);
 
