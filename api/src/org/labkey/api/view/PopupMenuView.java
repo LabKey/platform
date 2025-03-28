@@ -18,6 +18,8 @@ package org.labkey.api.view;
 
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -27,6 +29,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
+
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 
 public class PopupMenuView extends HttpView<PopupMenu>
 {
@@ -179,14 +184,55 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("<li class=\"divider\"></li>");
     }
 
-
-    // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
+    // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here.
+    // We can't call item.toLinkBuilder() because we may need to replace the HTML, and there's no setter for that.
     protected static void renderLink(NavTree item, String cls, Writer oldWriter) throws IOException
     {
-        LinkBuilder builder = item.toLinkBuilder();
-//        oldWriter.write(builder.toString());
+        {
+            // if the item is "selected" and doesn't have an image cls to use, provide our default
+            String itemImageCls = item.getImageCls();
+            if (item.isSelected() && null == itemImageCls)
+                itemImageCls = "fa fa-check-square-o";
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            if (null != itemImageCls)
+                html.append(createHtmlFragment(DOM.I(cl(itemImageCls))));
+            html.append(item.getText());
 
-        var config = HttpView.currentPageConfig();
+            var config = HttpView.currentPageConfig();
+
+            LinkBuilder builder = new LinkBuilder(html)
+                .id(config.makeId("popupMenuView"))
+                .target(item.getTarget())
+                .title(item.getDescription())
+                .tabindex(0)
+                .enabled(!item.isDisabled())
+                .clearClasses();
+
+            // data-query
+            // href stuff
+            // onclick
+
+
+            String styleStr = "";
+            if (null != itemImageCls)
+                styleStr += "padding-left: 0;";
+            if (item.isStrong())
+                styleStr += "font-weight: bold;";
+            if (item.isEmphasis())
+                styleStr += "font-style: italic;";
+
+            if (null != itemImageCls)
+                builder.style(styleStr);
+
+            if (cls != null)
+                builder.addClass(cls);
+
+            String href = item.getHref();
+            builder.href(null != href && !item.isPost() ? href : "#");
+
+//            oldWriter.write(builder.toString());
+        }
+
         // if the item is "selected" and doesn't have an image cls to use, provide our default
         String itemImageCls = item.getImageCls();
         if (item.isSelected() && null == itemImageCls)
@@ -204,6 +250,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         // instead let's use an onclick handler to "hide" the link
         String dataQuery = null;
         String href = item.getHref();
+        var config = HttpView.currentPageConfig();
         if (null != href && null == item.getScript() && !item.isPost())
         {
             try
@@ -227,7 +274,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
                         dataQuery += "#" + fragment;
 
                     href = url.getLocalURIString();
-                    HttpView.currentPageConfig().addHandlerForQuerySelector(
+                    config.addHandlerForQuerySelector(
                             "A.noFollowNavigate",
                             "click",
                             "window.location = this.href + this.dataset['query']; return false;");
@@ -265,7 +312,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
             oldWriter.write("<i class=\"" + itemImageCls + "\"></i>");
         oldWriter.write(PageFlowUtil.filter(item.getText()));
         oldWriter.write("</a>");
-        HttpView.currentPageConfig().addHandler(id, "click", item.getScript());
+        config.addHandler(id, "click", item.getScript());
     }
 
     public static String getMenuFilterItemCls(NavTree tree)

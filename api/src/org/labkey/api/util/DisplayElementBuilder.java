@@ -45,6 +45,8 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String name;
     String target;
     String title;
+    boolean enabled = true;
+    Integer tabindex = null;
 
     public DisplayElementBuilder()
     {
@@ -173,6 +175,18 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     public BUILDER style(String style)
     {
         this.style = style;
+        return getThis();
+    }
+
+    public BUILDER enabled(boolean enabled)
+    {
+        this.enabled = enabled;
+        return getThis();
+    }
+
+    public BUILDER tabindex(int tabindex)
+    {
+        this.tabindex = tabindex;
         return getThis();
     }
 
