@@ -21,6 +21,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -49,6 +50,7 @@ public class PopupFolderNavView extends PopupMenuView
         Container container = _context.getContainer();
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(container);
         String pattern = startURL.getLocalURIString();
+        HtmlWriter out = HtmlWriter.of(oldWriter);
 
         for (NavTree child : tree.getChildren())
         {
@@ -63,7 +65,7 @@ public class PopupFolderNavView extends PopupMenuView
                 oldWriter.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
                 oldWriter.write("<ul class=\"dropdown-layer-menu\">");
                 oldWriter.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
-                renderTreeDivider(oldWriter);
+                renderTreeDivider(out);
                 renderFolderNavTree(child, oldWriter);
                 oldWriter.write("</ul>");
                 oldWriter.write("</li>");

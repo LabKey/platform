@@ -23,13 +23,16 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
+import java.util.Map;
 
+import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtmlFragment;
 
@@ -94,11 +97,18 @@ public class PopupMenuView extends HttpView<PopupMenu>
     @SneakyThrows
     public static HtmlWriter renderTree(NavTree tree, HtmlWriter out)
     {
-        renderTree(tree, out.unwrap());
+        renderTree(tree, out, out.unwrap());
         return out;
     }
 
-    public static void renderTree(NavTree tree, Writer oldWriter) throws IOException
+    public static HtmlWriter renderTree(NavTree tree, Writer oldWriter) throws IOException
+    {
+        HtmlWriter out = HtmlWriter.of(oldWriter);
+        renderTree(tree, out, oldWriter);
+        return out;
+    }
+
+    private static void renderTree(NavTree tree, HtmlWriter out, Writer oldWriter) throws IOException
     {
         if (tree == null)
             return;
@@ -107,7 +117,6 @@ public class PopupMenuView extends HttpView<PopupMenu>
         // "empty" menu items between separators as well as prevent beginning or ending with a separator
         boolean hasNonSeparatorItem = false;
         boolean lastIsSeparator = false;
-
         String treeItemCls = null;
 
         for (NavTree child : tree.getChildren())
@@ -118,7 +127,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
                 if (treeItemCls == null || !treeItemCls.equals(child.getMenuFilterItemCls()))
                 {
                     treeItemCls = child.getMenuFilterItemCls();
-                    renderMenuFilterInput(treeItemCls, oldWriter);
+                    renderMenuFilterInput(treeItemCls, out);
                 }
             }
             else
@@ -179,64 +188,23 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("</li>");
     }
 
-    protected static void renderTreeDivider(Writer out) throws IOException
+    protected static void renderTreeDivider(HtmlWriter out)
     {
-        out.write("<li class=\"divider\"></li>");
+        LI(cl("divider")).appendTo(out);
     }
 
     // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here.
     // We can't call item.toLinkBuilder() because we may need to replace the HTML, and there's no setter for that.
     protected static void renderLink(NavTree item, String cls, Writer oldWriter) throws IOException
     {
-        {
-            // if the item is "selected" and doesn't have an image cls to use, provide our default
-            String itemImageCls = item.getImageCls();
-            if (item.isSelected() && null == itemImageCls)
-                itemImageCls = "fa fa-check-square-o";
-            HtmlStringBuilder html = HtmlStringBuilder.of();
-            if (null != itemImageCls)
-                html.append(createHtmlFragment(DOM.I(cl(itemImageCls))));
-            html.append(item.getText());
-
-            var config = HttpView.currentPageConfig();
-
-            LinkBuilder builder = new LinkBuilder(html)
-                .id(config.makeId("popupMenuView"))
-                .target(item.getTarget())
-                .title(item.getDescription())
-                .tabindex(0)
-                .enabled(!item.isDisabled())
-                .clearClasses();
-
-            // data-query
-            // href stuff
-            // onclick
-
-
-            String styleStr = "";
-            if (null != itemImageCls)
-                styleStr += "padding-left: 0;";
-            if (item.isStrong())
-                styleStr += "font-weight: bold;";
-            if (item.isEmphasis())
-                styleStr += "font-style: italic;";
-
-            if (null != itemImageCls)
-                builder.style(styleStr);
-
-            if (cls != null)
-                builder.addClass(cls);
-
-            String href = item.getHref();
-            builder.href(null != href && !item.isPost() ? href : "#");
-
-//            oldWriter.write(builder.toString());
-        }
-
         // if the item is "selected" and doesn't have an image cls to use, provide our default
         String itemImageCls = item.getImageCls();
         if (item.isSelected() && null == itemImageCls)
             itemImageCls = "fa fa-check-square-o";
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        if (null != itemImageCls)
+            html.append(createHtmlFragment(DOM.I(cl(itemImageCls))));
+        html.append(item.getText());
 
         String styleStr = "";
         if (null != itemImageCls)
@@ -251,6 +219,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         String dataQuery = null;
         String href = item.getHref();
         var config = HttpView.currentPageConfig();
+
         if (null != href && null == item.getScript() && !item.isPost())
         {
             try
@@ -287,32 +256,107 @@ public class PopupMenuView extends HttpView<PopupMenu>
             }
         }
 
-        String id = config.makeId("popupMenuView");
-        oldWriter.write("<a id='" + id + "'");
-        if (null != cls)
-            oldWriter.write(" class=\"" + cls + "\"");
-        if (null != href && !item.isPost())
-            oldWriter.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
-        else
-            oldWriter.write(" href=\"#\"");
-        if (null != dataQuery)
-            oldWriter.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
-        if (null != item.getTarget())
-            oldWriter.write(" target=\"" + item.getTarget() + "\"");
-        if (null != item.getDescription())
-            oldWriter.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
-        if (item.isDisabled())
-            oldWriter.write(" disabled");
-        oldWriter.write(" tabindex=\"0\"");
-        oldWriter.write(" style=\"" + styleStr + "\"");
-        if (item.isNoFollow())
-            oldWriter.write(" rel=\"noFollow\"");
-        oldWriter.write(">");
+        LinkBuilder builder = new LinkBuilder(html)
+            .id(config.makeId("popupMenuView"))
+            .target(item.getTarget())
+            .title(item.getDescription())
+            .tabindex(0)
+            .enabled(!item.isDisabled())
+            .clearClasses()
+            .href(null != href && !item.isPost() ? href : "#")
+            .onClick(item.getScript());
+
         if (null != itemImageCls)
-            oldWriter.write("<i class=\"" + itemImageCls + "\"></i>");
-        oldWriter.write(PageFlowUtil.filter(item.getText()));
-        oldWriter.write("</a>");
-        config.addHandler(id, "click", item.getScript());
+            builder.style(styleStr);
+
+        if (cls != null)
+            builder.addClass(cls);
+
+        if (null != dataQuery)
+            builder.attributes(Map.of("data-query", dataQuery));
+
+        oldWriter.write(builder.toString());
+
+//        // if the item is "selected" and doesn't have an image cls to use, provide our default
+//        String itemImageCls = item.getImageCls();
+//        if (item.isSelected() && null == itemImageCls)
+//            itemImageCls = "fa fa-check-square-o";
+//
+//        String styleStr = "";
+//        if (null != itemImageCls)
+//            styleStr += "padding-left: 0;";
+//        if (item.isStrong())
+//            styleStr += "font-weight: bold;";
+//        if (item.isEmphasis())
+//            styleStr += "font-style: italic;";
+//
+//        // NOTE: nofollow is not recommended as way to avoid crawling internal links
+//        // instead let's use an onclick handler to "hide" the link
+//        String dataQuery = null;
+//        String href = item.getHref();
+//        var config = HttpView.currentPageConfig();
+//        if (null != href && null == item.getScript() && !item.isPost())
+//        {
+//            try
+//            {
+//                URLHelper url = new URLHelper(href);
+//                boolean isLocal = null == url.getHost() && null == url.getScheme() && -1 == url.getPort();
+//                if (isLocal)
+//                {
+//                    var context = HttpView.currentContext();
+//
+//                    // separate the path (into href) and query/fragment (into dataQuery) portions of URL
+//                    var fragment = url.getFragment();
+//                    url.setFragment(null);
+//                    if (null != context && context.isRobot())
+//                        url.addParameter(ActionURL.Param._noindex.name(), "1");
+//                    dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+//                    url.deleteParameters();
+//                    if (!dataQuery.isEmpty())
+//                        dataQuery = "?" + dataQuery;
+//                    if (StringUtils.isNotEmpty(fragment))
+//                        dataQuery += "#" + fragment;
+//
+//                    href = url.getLocalURIString();
+//                    config.addHandlerForQuerySelector(
+//                            "A.noFollowNavigate",
+//                            "click",
+//                            "window.location = this.href + this.dataset['query']; return false;");
+//                    cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+//                }
+//            }
+//            catch (URISyntaxException e)
+//            {
+//                // fall through
+//            }
+//        }
+//
+//        String id = config.makeId("popupMenuView");
+//        oldWriter.write("<a id='" + id + "'");
+//        if (null != cls)
+//            oldWriter.write(" class=\"" + cls + "\"");
+//        if (null != href && !item.isPost())
+//            oldWriter.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
+//        else
+//            oldWriter.write(" href=\"#\"");
+//        if (null != dataQuery)
+//            oldWriter.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
+//        if (null != item.getTarget())
+//            oldWriter.write(" target=\"" + item.getTarget() + "\"");
+//        if (null != item.getDescription())
+//            oldWriter.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
+//        if (item.isDisabled())
+//            oldWriter.write(" disabled");
+//        oldWriter.write(" tabindex=\"0\"");
+//        oldWriter.write(" style=\"" + styleStr + "\"");
+//        if (item.isNoFollow())
+//            oldWriter.write(" rel=\"noFollow\"");
+//        oldWriter.write(">");
+//        if (null != itemImageCls)
+//            oldWriter.write("<i class=\"" + itemImageCls + "\"></i>");
+//        oldWriter.write(PageFlowUtil.filter(item.getText()));
+//        oldWriter.write("</a>");
+//        config.addHandler(id, "click", item.getScript());
     }
 
     public static String getMenuFilterItemCls(NavTree tree)
@@ -320,10 +364,15 @@ public class PopupMenuView extends HttpView<PopupMenu>
         return PageFlowUtil.filter(tree.getText()).replaceAll("\\s", "-").toLowerCase() + "-item";
     }
 
-    private static void renderMenuFilterInput(String menuFilterItemCls, Writer out) throws IOException
+    private static void renderMenuFilterInput(String menuFilterItemCls, HtmlWriter out) throws IOException
     {
-        out.write("<li class=\"menu-filter-input\">");
-        out.write("<input type=\"text\" placeholder=\"Filter\" class=\"dropdown-menu-filter\" data-filter-item=\"" + menuFilterItemCls + "\"/>");
-        out.write("</li>");
+        LI(
+            cl("menu-filter-input"),
+            new Input.InputBuilder<>()
+                .type("text")
+                .placeholder("Filter")
+                .className("dropdown-menu-filter")
+                .addDataAttribute("filter-item", menuFilterItemCls)
+        ).appendTo(out);
     }
 }
