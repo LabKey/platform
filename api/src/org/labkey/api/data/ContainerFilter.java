@@ -524,6 +524,7 @@ public abstract class ContainerFilter
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
+            Objects.requireNonNull(c);
             Objects.requireNonNull(user);
         }
 
@@ -626,7 +627,7 @@ public abstract class ContainerFilter
 
         public SimpleContainerFilterWithUser(User user, Collection<Container> containers)
         {
-            super(null, user);
+            super(ContainerManager.getRoot() /* Ignored, but we want non-null */, user);
             _ids = toIds(containers);
         }
 
@@ -642,11 +643,11 @@ public abstract class ContainerFilter
         {
             Set<GUID> result;
             result = _ids.stream()
-                    .map(ContainerManager::getForId)
-                    .filter(Objects::nonNull)
-                    .filter(c -> c.hasPermission(_user, permission, roles))
-                    .map(Container::getEntityId)
-                    .collect(Collectors.toSet());
+                .map(ContainerManager::getForId)
+                .filter(Objects::nonNull)
+                .filter(c -> c.hasPermission(_user, permission, roles))
+                .map(Container::getEntityId)
+                .collect(Collectors.toSet());
             return result;
         }
 
@@ -1187,7 +1188,7 @@ public abstract class ContainerFilter
     {
         public AllFolders(User user)
         {
-            super(null, user);
+            super(ContainerManager.getRoot(), user);
         }
 
         @Override
