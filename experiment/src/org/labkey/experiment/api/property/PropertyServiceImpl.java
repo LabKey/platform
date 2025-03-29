@@ -38,11 +38,15 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -64,21 +68,25 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorKind;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -651,6 +659,9 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
+        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.EVERYTHING);
+        long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
+
         return Map.of(
                 "propertyValidators", Map.of(
                         "byType", new SqlSelector(schema,
@@ -677,7 +688,8 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
                 ).getValueMap()),
-                        "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class)
+                        "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class),
+                "storageColumnNameMismatches", storageColumnNameMismatches
         );
     }
 
