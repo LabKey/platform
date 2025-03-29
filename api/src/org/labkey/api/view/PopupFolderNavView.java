@@ -32,7 +32,6 @@ public class PopupFolderNavView extends PopupMenuView
 
     public PopupFolderNavView(ViewContext context)
     {
-        super();
         _context = context;
     }
 
@@ -61,7 +60,7 @@ public class PopupFolderNavView extends PopupMenuView
             if (child.hasChildren())
             {
                 oldWriter.write("<li class=\"dropdown-submenu " + (cls != null ? cls : "") + "\">");
-                renderLink(child, "subexpand-link " + (child.getHref() == null ? "lk-project-nav-disabled" : ""), oldWriter);
+                renderLink(child, "subexpand-link " + (child.getHref() == null ? "lk-project-nav-disabled" : ""), out);
                 oldWriter.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
                 oldWriter.write("<ul class=\"dropdown-layer-menu\">");
                 oldWriter.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
@@ -72,7 +71,7 @@ public class PopupFolderNavView extends PopupMenuView
             }
             else
             {
-                renderTreeItem(child, cls, oldWriter);
+                renderTreeItem(child, cls, out);
             }
         }
     }

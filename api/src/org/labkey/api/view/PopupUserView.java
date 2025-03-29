@@ -16,6 +16,7 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
@@ -49,17 +50,19 @@ public class PopupUserView extends PopupMenuView
         Container c = context.getContainer();
         ActionURL currentURL = context.getActionURL();
         NavTree tree = new NavTree();
-
         tree.setId("userMenu");
 
-        NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
-        tree.addChild(account);
-
-        ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, c, currentURL);
-        if (null != externalToolsViewURL)
+        if (ModuleLoader.getInstance().isStartupComplete())
         {
-            NavTree externalToolSettings = new NavTree("External Tool Access", externalToolsViewURL);
-            tree.addChild(externalToolSettings);
+            NavTree account = new NavTree("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(c, user.getUserId(), currentURL));
+            tree.addChild(account);
+
+            ActionURL externalToolsViewURL = PageFlowUtil.urlProvider(SecurityUrls.class).getExternalToolsViewURL(user, c, currentURL);
+            if (null != externalToolsViewURL)
+            {
+                NavTree externalToolSettings = new NavTree("External Tool Access", externalToolsViewURL);
+                tree.addChild(externalToolSettings);
+            }
         }
 
         // Delegate impersonate, stop impersonating, adjust impersonation, and sign out menu items to the current ImpersonationContext
