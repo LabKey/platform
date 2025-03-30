@@ -18,25 +18,17 @@ package org.labkey.specimen.importer;
 
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
-import org.labkey.api.study.SpecimenImportStrategy;
 
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: adam
-* Date: Feb 16, 2013
-* Time: 7:35:23 AM
-*/
 public class IteratorSpecimenImportFile implements SpecimenImportFile
 {
-    private final SpecimenImportStrategy _strategy;
     private final List<Map<String, Object>> _rows;
     private final SpecimenTableType _tableType;
 
-    public IteratorSpecimenImportFile(List<Map<String, Object>> rows, SpecimenImportStrategy strategy, SpecimenTableType tableType)
+    public IteratorSpecimenImportFile(List<Map<String, Object>> rows, SpecimenTableType tableType)
     {
-        _strategy = strategy;
         _rows = rows;
         _tableType = tableType;
     }
@@ -45,12 +37,6 @@ public class IteratorSpecimenImportFile implements SpecimenImportFile
     public SpecimenTableType getTableType()
     {
         return _tableType;
-    }
-
-    @Override
-    public SpecimenImportStrategy getStrategy()
-    {
-        return _strategy;
     }
 
     @Override

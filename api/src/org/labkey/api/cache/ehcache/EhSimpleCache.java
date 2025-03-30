@@ -23,17 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
-import org.labkey.api.util.Filter;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
-/**
-* User: adam
-* Date: 12/25/11
-* Time: 8:17 PM
-*/
 class EhSimpleCache<K, V> implements SimpleCache<K, V>
 {
     private static final Logger LOG = LogManager.getLogger(EhSimpleCache.class);
@@ -74,14 +69,14 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Predicate<K> filter)
     {
         int removes = 0;
         List<K> keys = _cache.getKeys();
 
         for (K key : keys)
         {
-            if (filter.accept(key))
+            if (filter.test(key))
             {
                 remove(key);
                 removes++;

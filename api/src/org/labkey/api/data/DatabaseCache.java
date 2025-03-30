@@ -28,13 +28,13 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.DbScope.TransactionImpl;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
@@ -287,7 +287,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Predicate<K> filter)
     {
         return getCache().removeUsingFilter(filter);
     }

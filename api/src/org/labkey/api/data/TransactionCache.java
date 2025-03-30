@@ -24,10 +24,10 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.util.Filter;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * A read-through, transaction-specific cache. Reads through to the shared cache for each entry until a write operation
@@ -132,12 +132,12 @@ public class TransactionCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Predicate<K> filter)
     {
         _transaction.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
         MutableInt count = new MutableInt(0);
         getKeys().stream()
-            .filter(filter::accept)
+            .filter(filter)
             .forEach(key -> {
                 remove(key);
                 count.increment();
@@ -257,9 +257,9 @@ public class TransactionCache<K, V> implements Cache<K, V>
         }
     }
 
-    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Filter<K>>
+    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Predicate<K>>
     {
-        public CachePrefixRemovalCommitTask(Filter<K> filter)
+        public CachePrefixRemovalCommitTask(Predicate<K> filter)
         {
             super(filter);
         }
