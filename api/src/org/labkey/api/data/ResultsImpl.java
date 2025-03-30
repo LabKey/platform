@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ResultsImpl implements Results, DataIterator
 {
@@ -117,9 +118,9 @@ public class ResultsImpl implements Results, DataIterator
         }
     }
 
-    public ResultsImpl(ResultSet rs, @NotNull Map<FieldKey, ColumnInfo> fieldMap)
+    public ResultsImpl(@NotNull ResultSet rs, @NotNull Map<FieldKey, ColumnInfo> fieldMap)
     {
-        _rs = rs;
+        _rs = Objects.requireNonNull(rs);
         _fieldMap = null == fieldMap ? Collections.emptyMap() : fieldMap;
         _fieldIndexMap = new HashMap<>(_fieldMap.size() * 2);
         _columnInfoList = new ArrayList<>(fieldMap.size()+1);
@@ -128,18 +129,15 @@ public class ResultsImpl implements Results, DataIterator
         FieldKey fk = null;
         try
         {
-            if (null != rs)
+            for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
             {
-                for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
-                {
-                    fk = e.getKey();
-                    ColumnInfo col = e.getValue();
-                    int find = rs.findColumn(col.getAlias());
-                    _fieldIndexMap.put(fk, find);
-                    while (_columnInfoList.size() <= find)
-                        _columnInfoList.add(null);
-                    _columnInfoList.set(find, col);
-                }
+                fk = e.getKey();
+                ColumnInfo col = e.getValue();
+                int find = rs.findColumn(col.getAlias());
+                _fieldIndexMap.put(fk, find);
+                while (_columnInfoList.size() <= find)
+                    _columnInfoList.add(null);
+                _columnInfoList.set(find, col);
             }
         }
         catch (SQLException x)
