@@ -100,6 +100,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
     }
 
 
+    @Override
     public boolean isSealed()
     {
         return sealed;
@@ -152,7 +153,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
     {
         LevelMemberSet s = levelMap.get(l.getUniqueName());
         if (null == s)
-            return new MemberSet(l, new HashSet<Member>());
+            return new MemberSet(l, new HashSet<>());
         return new MemberSet(s);
     }
 
@@ -308,7 +309,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
     @Nullable
     Hierarchy getHierarchy()
     {
-        if (levelMap.size() == 0)
+        if (levelMap.isEmpty())
             return null;
         Hierarchy h = null;
         for (LevelMemberSet l : levelMap.values())
@@ -336,8 +337,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         }
 
         // sort levels by depth
-        List<LevelMemberSet> list = new ArrayList<>();
-        list.addAll(levelMap.values());
+        List<LevelMemberSet> list = new ArrayList<>(levelMap.values());
         list.sort((s1, s2) -> s2._level.getDepth() - s1._level.getDepth());
         List<Iterator<? extends Member>> iterators = new ArrayList<>();
         for (LevelMemberSet s : list)
@@ -371,7 +371,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
 
 
     @Override
-    public boolean addAll(Collection<? extends Member> c)
+    public boolean addAll(@NotNull Collection<? extends Member> c)
     {
         if (c instanceof MemberSet)
             return addAll((MemberSet)c);
@@ -382,7 +382,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
 
 
     @Override
-    public boolean retainAll(Collection<?> c)
+    public boolean retainAll(@NotNull Collection<?> c)
     {
         if (c instanceof MemberSet)
         {
@@ -432,9 +432,8 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
     @Override
     public boolean contains(Object o)
     {
-        if (!(o instanceof Member))
+        if (!(o instanceof Member m))
             return false;
-        Member m = (Member)o;
         LevelMemberSet s = levelMap.get(m.getLevel().getUniqueName());
         return s != null && s.contains(m);
     }
@@ -457,9 +456,8 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
     @Override
     public boolean remove(Object o)
     {
-        if (!(o instanceof Member))
+        if (!(o instanceof Member m))
             return false;
-        Member m = (Member)o;
         LevelMemberSet s = levelMap.get(m.getLevel().getUniqueName());
         return s != null && s.remove(m);
     }
@@ -491,9 +489,9 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
 
 
 
-    /** inner implmentation for a members of a single level, with natural ordering/ordinality */
+    /** inner implementation for a members of a single level, with natural ordering/ordinality */
 
-    private class LevelMemberSet implements Set<Member>
+    private static class LevelMemberSet implements Set<Member>
     {
         Level _level;
         final SparseBitSet _set;
@@ -575,9 +573,8 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         @Override
         public boolean contains(Object o)
         {
-            if (!(o instanceof Member))
+            if (!(o instanceof Member m))
                 return false;
-            Member m = (Member)o;
             if (m.getLevel() != _level)
                 return false;
             return _set.get(m.getOrdinal());
@@ -590,16 +587,14 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
             return new _Iterator();
         }
 
-        @NotNull
         @Override
-        public Object[] toArray()
+        public @NotNull Object[] toArray()
         {
             throw new UnsupportedOperationException();
         }
 
-        @NotNull
         @Override
-        public <T> T[] toArray(T[] a)
+        public <T> @NotNull T[] toArray(T @NotNull [] a)
         {
             throw new UnsupportedOperationException();
         }
@@ -621,9 +616,8 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         @Override
         public boolean remove(Object o)
         {
-            if (!(o instanceof Member))
+            if (!(o instanceof Member m))
                 return false;
-            Member m = (Member)o;
             if (m.getLevel() != _level)
                 return false;
             boolean ret = _set.get(m.getOrdinal());
@@ -632,7 +626,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         }
 
         @Override
-        public boolean containsAll(Collection<?> c)
+        public boolean containsAll(@NotNull Collection<?> c)
         {
             throw new UnsupportedOperationException();
         }
@@ -647,7 +641,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
 
 
         @Override
-        public boolean retainAll(Collection<?> c)
+        public boolean retainAll(@NotNull Collection<?> c)
         {
             if (c instanceof LevelMemberSet)
                 return retainAll((LevelMemberSet)c);
@@ -663,7 +657,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
 
 
         @Override
-        public boolean removeAll(Collection<?> c)
+        public boolean removeAll(@NotNull Collection<?> c)
         {
             throw new UnsupportedOperationException();
         }
@@ -782,15 +776,12 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
         {
-            switch (method.getName())
+            return switch (method.getName())
             {
-                case "getHierarchy":
-                    return getHierarchy();
-                case "getMembers":
-                    return getMembers(proxy);
-                default:
-                    return super.invoke(proxy, method, args);
-            }
+                case "getHierarchy" -> getHierarchy();
+                case "getMembers" -> getMembers(proxy);
+                default -> super.invoke(proxy, method, args);
+            };
         }
         Hierarchy getHierarchy()
         {
@@ -798,7 +789,7 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         }
         List<Member> getMembers(Object proxy)
         {
-            ArrayList<Member> ret = new ArrayList<Member>(memberNames.length);
+            ArrayList<Member> ret = new ArrayList<>(memberNames.length);
             for (int i=0 ; i<memberNames.length ; i++)
             {
                 String name = memberNames[i];
@@ -821,15 +812,12 @@ public class MemberSet extends AbstractSet<Member> implements CacheManager.Seala
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
         {
-            switch (method.getName())
+            return switch (method.getName())
             {
-                case "getLevel":
-                    return getLevel();
-                case "getHierarchy":
-                    return getHierarchy();
-                default:
-                    return super.invoke(proxy, method, args);
-            }
+                case "getLevel" -> getLevel();
+                case "getHierarchy" -> getHierarchy();
+                default -> super.invoke(proxy, method, args);
+            };
         }
 
         Hierarchy getHierarchy()

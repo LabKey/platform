@@ -108,7 +108,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
         // This is a post commit task that counts how many cache reload post commits have been queued and is
         // scoped to the transaction.
-        public static class CacheReloadCounterTask implements Runnable
+        private static class CacheReloadCounterTask implements Runnable
         {
             private final Cache<?, ?> _cache;
             private int _remainingReloadCommitTasks;
@@ -152,7 +152,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
         // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
         // re-played on successful commit.
-        public static class CacheReloadCommitTask<K, V> implements Runnable
+        private static class CacheReloadCommitTask<K, V> implements Runnable
         {
             private final Cache<K, V> _cache;
             private final K _key;
