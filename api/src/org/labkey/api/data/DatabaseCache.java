@@ -79,7 +79,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
         private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
-
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
         public BlockingDatabaseCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
@@ -95,9 +94,20 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             LOG.debug("Just loaded: " + key + " (" + getTrackingCache().getDebugName() + ")");
             TransactionImpl t = _databaseCache.getCurrentTransaction();
 
+            // Only add post commit cache reload if there's a transaction and the transaction post commit queue is not
+            // larger than the cache size.
             if (null != t)
             {
-                t.addCommitTask(new CacheReloadCommitTask<>(this, key, argument, loader), DbScope.CommitTaskOption.POSTCOMMIT);
+                // Create a new or get existing post commit counter task
+                CacheReloadCounterTask task = t.addCommitTask(new CacheReloadCounterTask(this) , DbScope.CommitTaskOption.POSTCOMMIT);
+                if( task.shouldAddReloadTask() )
+                {
+                    // Add reload task, if doesn't already exist, and decrement transaction reload counter
+                    CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
+                    boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
+                    if (!alreadyQueued)
+                        task.decrementReloadCount();
+                }
             }
 
             return value;
@@ -219,6 +229,50 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
     }
 
+    // This is a post commit task that counts how many cache reload post commits have been queued and is
+    // scoped to the transaction.
+    public static class CacheReloadCounterTask implements Runnable
+    {
+        private final Cache<?, ?> _cache;
+        private int _remainingReloadCommitTasks;
+
+        public CacheReloadCounterTask(Cache<?, ?> cache)
+        {
+            _cache = cache;
+            _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
+        }
+
+        @Override
+        public void run()
+        {
+            // noop
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (o == null || getClass() != o.getClass()) return false;
+            CacheReloadCounterTask that = (CacheReloadCounterTask) o;
+            return Objects.equals(_cache, that._cache);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hashCode(_cache);
+        }
+
+        public boolean shouldAddReloadTask()
+        {
+            return _remainingReloadCommitTasks > 0;
+        }
+
+        public void decrementReloadCount()
+        {
+            _remainingReloadCommitTasks--;
+        }
+    }
+
     // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
     // re-played on successful commit.
     public static class CacheReloadCommitTask<K, V> implements Runnable
@@ -270,21 +324,28 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static class TestCase extends Assert
     {
+        public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
+        {
+            public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
+            {
+                super(scope, maxSize, debugName);
+            }
+
+            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
+            @Override
+            protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+            {
+                return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+            }
+        }
+
         @SuppressWarnings({"StringEquality"})
         @Test
         public void testDatabaseCache()
         {
             MyScope scope = new MyScope();
 
-            // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
-            DatabaseCache<String, String> cache = new DatabaseCache<>(scope, 10, "Test Cache")
-            {
-                @Override
-                protected Cache<String, String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
-                {
-                    return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
-                }
-            };
+            DatabaseCache<String, String> cache = new TempDatabaseCache<>(scope, 10, "Test Cache");
 
             // basic cache testing
 
@@ -381,6 +442,56 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
                 // This should close the (temporary) shared cache
                 cache.close();
+            }
+        }
+
+        @Test
+        public void testDatabaseCacheTransactionLimit()
+        {
+            final int maxSize = 10;
+            MyScope scope = new MyScope();
+
+            DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, maxSize, "Test Cache");
+
+            BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader());
+
+            try (DbScope.Transaction transaction = scope.beginTransaction())
+            {
+                int taskCount;
+                for (int i = 1; i <= 15; i++)
+                {
+                    cache.get("key_" + i);
+                    taskCount = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(scope.getCurrentTransactionImpl()).size();
+
+                    // Try another cache miss for this key to ensure another post commit is not added
+                    if (i == 5)
+                        cache.get("key_" + i);
+
+                    // 10 is the cache size so shouldn't be adding more cache reload tasks beyond that. Less than 10 should
+                    // be adding post commit task for each miss. Plus one post commit task for the reload counter task
+                    if (i >= 10)
+                    {
+                        assertEquals(11, taskCount);
+                    }
+                    else
+                    {
+                        assertEquals(i + 1, taskCount);
+                    }
+                }
+                transaction.commit();
+
+                // This should close the (temporary) shared cache
+                cache.close();
+            }
+        }
+
+        private static class TestCacheLoader implements CacheLoader<String, Integer>
+        {
+            @Override
+            public Integer load(@NotNull String test, @Nullable Object argument)
+            {
+                assertNotNull(test);
+                return 0;
             }
         }
 
