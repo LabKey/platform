@@ -114,7 +114,7 @@ public class SamplesSchema extends AbstractExpSchema
 
         if (studyLinkedSamples)
         {
-            this.setContainerFilter(ContainerFilter.EVERYTHING_UNSAFE);
+            this.setContainerFilter(ContainerFilter.getUnsafeEverythingFilter());
             this.withLinkToStudyColumns = false;
             this.supportTableRules = false;
             this.contextualRoles = Set.of(RoleManager.getRole(ReaderRole.class));

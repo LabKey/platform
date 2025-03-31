@@ -149,7 +149,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         if (null == _assayDataTable)
         {
             AssayProtocolSchema assaySchema = _provider.createProtocolSchema(_schema.getUser(), _schema.getContainer(), _protocol, null);
-            _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING_UNSAFE);
+            _assayDataTable = assaySchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter());
         }
 
         FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();

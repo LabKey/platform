@@ -52,7 +52,7 @@ public class VialTable extends BaseStudyTable
                 TableInfo tableInfo = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
                 if (tableInfo instanceof ContainerFilterable)
                 {
-                    ((ContainerFilterable) tableInfo).setContainerFilter(ContainerFilter.EVERYTHING_UNSAFE);    // TODO: what would this do without provisioned?
+                    ((ContainerFilterable) tableInfo).setContainerFilter(ContainerFilter.getUnsafeEverythingFilter());    // TODO: what would this do without provisioned?
                 }
                 return tableInfo;
             }
