@@ -16,7 +16,7 @@
 
 package org.labkey.api.view.menu;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,11 +34,6 @@ import org.labkey.api.view.ViewContext;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: brittp
- * Date: Apr 9, 2007
- * Time: 9:51:20 AM
- */
 public class SiteAdminMenu extends NavTreeMenu
 {
     public SiteAdminMenu(ViewContext context)
@@ -57,12 +52,6 @@ public class SiteAdminMenu extends NavTreeMenu
             items.add(getAdminConsole(context));
 
         URLHelper returnUrl = context.getActionURL().getReturnUrl() == null ? context.getActionURL() : context.getActionURL().getReturnUrl();
-
-        if (user.hasSiteAdminPermission())
-        {
-            items.add(new NavTree("Site Admins", securityUrls.getManageGroupURL(root, "Administrators", returnUrl)));
-            items.add(new NavTree("Site Developers", securityUrls.getManageGroupURL(root, "Developers", returnUrl)));
-        }
 
         if (user.hasRootPermission(UserManagementPermission.class))
         {
@@ -84,8 +73,7 @@ public class SiteAdminMenu extends NavTreeMenu
         return getViewContext().getUser().hasRootPermission(TroubleshooterPermission.class);
     }
 
-    @Nullable
-    private static NavTree getAdminConsole(ViewContext context)
+    private static @NotNull NavTree getAdminConsole(ViewContext context)
     {
         AdminUrls adminUrls = PageFlowUtil.urlProvider(AdminUrls.class);
 

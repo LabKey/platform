@@ -30,10 +30,12 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.disabled;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.rel;
 import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.tabindex;
 import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.at;
@@ -93,6 +95,8 @@ public class Link extends DisplayElement implements HasHtmlString
                 .at(title, lb.title)
                 .at(style, lb.style)
                 .at(name, lb.name)
+                .at(tabindex, lb.tabindex)
+                .at(lb.enabled, disabled, true)
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),

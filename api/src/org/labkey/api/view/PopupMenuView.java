@@ -16,16 +16,22 @@
 
 package org.labkey.api.view;
 
-import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.URISyntaxException;
+
+import static org.labkey.api.util.DOM.I;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.cl;
 
 public class PopupMenuView extends HttpView<PopupMenu>
 {
@@ -85,183 +91,111 @@ public class PopupMenuView extends HttpView<PopupMenu>
         return getNavTree().hasChildren();
     }
 
-    @SneakyThrows
+    public static void renderTree(NavTree tree, Writer oldWriter) throws IOException
+    {
+        renderTree(tree, HtmlWriter.of(oldWriter));
+    }
+
     public static HtmlWriter renderTree(NavTree tree, HtmlWriter out)
     {
-        renderTree(tree, out.unwrap());
+        if (tree != null)
+        {
+            // These flags act as a trimming boundaries for menu separators. They are used to prevent
+            // "empty" menu items between separators as well as prevent beginning or ending with a separator
+            boolean hasNonSeparatorItem = false;
+            boolean lastIsSeparator = false;
+            String treeItemCls = null;
+
+            for (NavTree child : tree.getChildren())
+            {
+                // check if this is the first child with the menu filter cls, if so add the filter input item
+                if (child.getMenuFilterItemCls() != null)
+                {
+                    if (treeItemCls == null || !treeItemCls.equals(child.getMenuFilterItemCls()))
+                    {
+                        treeItemCls = child.getMenuFilterItemCls();
+                        renderMenuFilterInput(treeItemCls, out);
+                    }
+                }
+                else
+                {
+                    // clear the cls to stop the menu filter section, note that this means that menu filter items
+                    // must be consecutively placed in the menu in order to work with the filter input
+                    treeItemCls = null;
+                }
+
+                if (child.hasChildren())
+                {
+                    if (lastIsSeparator)
+                    {
+                        lastIsSeparator = false;
+                        renderTreeDivider(out);
+                    }
+
+                    hasNonSeparatorItem = true;
+
+                    LI(
+                        cl("dropdown-submenu"),
+                        new LinkBuilder(HtmlStringBuilder.of(child.getText()).append(DOM.createHtmlFragment(I(cl("fa fa-chevron-right")))))
+                            .clearClasses()
+                            .addClass("subexpand")
+                            .addClass("subexpand-icon")
+                            .tabindex(0),
+                        UL(
+                            cl("dropdown-layer-menu"),
+                            LI(
+                                new LinkBuilder(HtmlStringBuilder.of(DOM.createHtmlFragment(I(cl("fa fa-chevron-left")))).append(child.getText()))
+                                    .clearClasses()
+                                    .addClass("subcollapse")
+                                    .tabindex(0)
+                            ),
+                            (DOM.Renderable) ret -> {
+                                renderTreeDivider(out);
+                                renderTree(child, out);
+                                return ret;
+                            }
+                        )
+                    ).appendTo(out);
+                }
+                else if ("-".equals(child.getText()))
+                {
+                    if (hasNonSeparatorItem)
+                        lastIsSeparator = true;
+                }
+                else
+                {
+                    if (lastIsSeparator)
+                    {
+                        lastIsSeparator = false;
+                        renderTreeDivider(out);
+                    }
+
+                    hasNonSeparatorItem = true;
+                    renderTreeItem(child, treeItemCls, out);
+                }
+            }
+        }
+
         return out;
     }
 
-    public static void renderTree(NavTree tree, Writer out) throws IOException
+    protected static void renderTreeItem(NavTree item, @Nullable String cls, HtmlWriter out)
     {
-        if (tree == null)
-            return;
-
-        // These flags act as a trimming boundaries for menu separators. They are used to prevent
-        // "empty" menu items between separators as well as prevent beginning or ending with a separator
-        boolean hasNonSeparatorItem = false;
-        boolean lastIsSeparator = false;
-
-        String treeItemCls = null;
-
-        for (NavTree child : tree.getChildren())
-        {
-            // check if this is the first child with the menu filter cls, if so add the filter input item
-            if (child.getMenuFilterItemCls() != null)
-            {
-                if (treeItemCls == null || !treeItemCls.equals(child.getMenuFilterItemCls()))
-                {
-                    treeItemCls = child.getMenuFilterItemCls();
-                    renderMenuFilterInput(treeItemCls, out);
-                }
-            }
-            else
-            {
-                // clear the cls to stop the menu filter section, note that this means that menu filter items
-                // must be consecutively placed in the menu in order to work with the filter input
-                treeItemCls = null;
-            }
-
-            if (child.hasChildren())
-            {
-                if (lastIsSeparator)
-                {
-                    lastIsSeparator = false;
-                    renderTreeDivider(out);
-                }
-
-                hasNonSeparatorItem = true;
-                String text = PageFlowUtil.filter(child.getText());
-
-                out.write("<li class=\"dropdown-submenu\">");
-                out.write("<a class=\"subexpand subexpand-icon\" tabindex=\"0\">" + text + "<i class=\"fa fa-chevron-right\"></i></a>");
-                out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
-                renderTreeDivider(out);
-                renderTree(child, out);
-                out.write("</ul>");
-                out.write("</li>");
-            }
-            else if ("-".equals(child.getText()))
-            {
-                if (hasNonSeparatorItem)
-                    lastIsSeparator = true;
-            }
-            else
-            {
-                if (lastIsSeparator)
-                {
-                    lastIsSeparator = false;
-                    renderTreeDivider(out);
-                }
-
-                hasNonSeparatorItem = true;
-                renderTreeItem(child, treeItemCls, out);
-            }
-        }
+        LI(
+            cl(cls).cl(item.isDisabled(), "disabled"),
+            (DOM.Renderable) ret -> renderLink(item, cls, out)
+        ).appendTo(out);
     }
 
-    protected static void renderTreeItem(NavTree item, String cls, Writer out) throws IOException
+    protected static void renderTreeDivider(HtmlWriter out)
     {
-        out.write("<li");
-        if (item.isDisabled())
-            cls = cls != null ? cls + " disabled" : "disabled";
-        if (cls != null)
-            out.write(" class=\"" + cls + "\"");
-        out.write(">");
-        renderLink(item, null, out);
-        out.write("</li>");
+        LI(cl("divider")).appendTo(out);
     }
 
-    protected static void renderTreeDivider(Writer out) throws IOException
+    protected static HtmlWriter renderLink(NavTree item, String cls, HtmlWriter out)
     {
-        out.write("<li class=\"divider\"></li>");
-    }
-
-
-    // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
-    protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
-    {
-        var config = HttpView.currentPageConfig();
-        // if the item is "selected" and doesn't have have an image cls to use, provide our default
-        String itemImageCls = item.getImageCls();
-        if (item.isSelected() && null == itemImageCls)
-            itemImageCls = "fa fa-check-square-o";
-
-        String styleStr = "";
-        if (null != itemImageCls)
-            styleStr += "padding-left: 0;";
-        if (item.isStrong())
-            styleStr += "font-weight: bold;";
-        if (item.isEmphasis())
-            styleStr += "font-style: italic;";
-
-        // NOTE: nofollow is not recommended as way to avoid crawling internal links
-        // instead let's use an onclick handler to "hide" the link
-        String dataQuery = null;
-        String href = item.getHref();
-        if (null != href && null == item.getScript() && !item.isPost())
-        {
-            try
-            {
-                URLHelper url = new URLHelper(href);
-                boolean isLocal = null == url.getHost() && null == url.getScheme() && -1 == url.getPort();
-                if (isLocal)
-                {
-                    var context = HttpView.currentContext();
-
-                    // separate the path (into href) and query/fragment (into dataQuery) portions of URL
-                    var fragment = url.getFragment();
-                    url.setFragment(null);
-                    if (null != context && context.isRobot())
-                        url.addParameter(ActionURL.Param._noindex.name(), "1");
-                    dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
-                    url.deleteParameters();
-                    if (!dataQuery.isEmpty())
-                        dataQuery = "?" + dataQuery;
-                    if (StringUtils.isNotEmpty(fragment))
-                        dataQuery += "#" + fragment;
-
-                    href = url.getLocalURIString();
-                    HttpView.currentPageConfig().addHandlerForQuerySelector(
-                            "A.noFollowNavigate",
-                            "click",
-                            "window.location = this.href + this.dataset['query']; return false;");
-                    cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
-                }
-            }
-            catch (URISyntaxException e)
-            {
-                // fall through
-            }
-        }
-
-        String id = config.makeId("popupMenuView");
-        out.write("<a id='" + id + "'");
-        if (null != cls)
-            out.write(" class=\"" + cls + "\"");
-        if (null != href && !item.isPost())
-            out.write(" href=\"" + PageFlowUtil.filter(href) + "\"");
-        else
-            out.write(" href=\"#\"");
-        if (null != dataQuery)
-            out.write(" data-query=\"" + PageFlowUtil.filter(dataQuery) + "\"");
-        if (null != item.getTarget())
-            out.write(" target=\"" + item.getTarget() + "\"");
-        if (null != item.getDescription())
-            out.write(" title=\"" + PageFlowUtil.filter(item.getDescription()) + "\"");
-        if (item.isDisabled())
-            out.write(" disabled");
-        out.write(" tabindex=\"0\"");
-        out.write(" style=\"" + styleStr + "\"");
-        if (item.isNoFollow())
-            out.write(" rel=\"nofollow\"");
-        out.write(">");
-        if (null != itemImageCls)
-            out.write("<i class=\"" + itemImageCls + "\"></i>");
-        out.write(PageFlowUtil.filter(item.getText()));
-        out.write("</a>");
-        HttpView.currentPageConfig().addHandler(id, "click", item.getScript());
+        out.write(item.toLinkBuilder(cls));
+        return out;
     }
 
     public static String getMenuFilterItemCls(NavTree tree)
@@ -269,10 +203,15 @@ public class PopupMenuView extends HttpView<PopupMenu>
         return PageFlowUtil.filter(tree.getText()).replaceAll("\\s", "-").toLowerCase() + "-item";
     }
 
-    private static void renderMenuFilterInput(String menuFilterItemCls, Writer out) throws IOException
+    private static void renderMenuFilterInput(String menuFilterItemCls, HtmlWriter out)
     {
-        out.write("<li class=\"menu-filter-input\">");
-        out.write("<input type=\"text\" placeholder=\"Filter\" class=\"dropdown-menu-filter\" data-filter-item=\"" + menuFilterItemCls + "\"/>");
-        out.write("</li>");
+        LI(
+            cl("menu-filter-input"),
+            new Input.InputBuilder<>()
+                .type("text")
+                .placeholder("Filter")
+                .className("dropdown-menu-filter")
+                .addDataAttribute("filter-item", menuFilterItemCls)
+        ).appendTo(out);
     }
 }
