@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.settings.HeaderProperties" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="org.labkey.api.util.DOM.Renderable" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -39,11 +41,16 @@
 <%@ page import="org.labkey.api.view.PopupAdminView" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.PopupUserView" %>
-<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.Header" %>
+<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
+<%@ page import="static org.labkey.api.util.DOM.IMG" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.src" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.alt" %>
+<%@ page import="static org.labkey.api.util.DOM.A" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -53,60 +60,69 @@
         dependencies.add("internal/jQuery");
         dependencies.add("core/ProductNavigationHeader.js");
     }
+
+    Renderable getLogo(Container c, TemplateResourceHandler handler, String shortName, String logoHref, String className, boolean isStartupComplete)
+    {
+        Renderable logo = IMG(
+            DOM.at(src, handler.getURL(c), alt, shortName)
+        );
+
+        if (isStartupComplete)
+            logo = A(DOM.at(href, logoHref).cl(className), logo);
+
+        return logo;
+    }
 %>
 <%
-    Header me = (Header) HttpView.currentView();
+    Header me = HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
     Container c = getContainer();
     User user = getUser();
     boolean isRealUser = null != user && !user.isGuest();
     ViewContext context = getViewContext();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    boolean showSearch = hasUrlProvider(SearchUrls.class);
+    ModuleLoader moduleLoader = ModuleLoader.getInstance();
+    boolean isStartupComplete = moduleLoader.isStartupComplete();
+    boolean showSearch = isStartupComplete && hasUrlProvider(SearchUrls.class);
 
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
-    String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
+    String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
 
-    ModuleLoader moduleLoader = ModuleLoader.getInstance();
-    final NavTree optionsMenu = PopupAdminView.createNavTree(context);
+    final NavTree optionsMenu = isStartupComplete ? PopupAdminView.createNavTree(context) : null;
     boolean hasPremiumModule = moduleLoader.hasModule("Premium");
     boolean isSMHostedOnly = !hasPremiumModule && moduleLoader.hasModule("SampleManagement");
     boolean showProductMenu =
-            // don't show product menu when starting up
-            isRealUser && moduleLoader.isStartupComplete() &&
-            // .. or if user does not have read permission
-            c.hasPermission(user, ReadPermission.class)
-            // show only for premium distributions or SM distributions
-                    && (hasPremiumModule || isSMHostedOnly)
-            // show only if configured to always be shown or shown to admins and this is an admin user
-                    && (laf.getApplicationMenuDisplayMode() == FolderDisplayMode.ALWAYS || c.hasPermission(user, AdminPermission.class));
+        // don't show product menu when starting up
+        isRealUser && isStartupComplete &&
+        // .. or if user does not have read permission
+        c.hasPermission(user, ReadPermission.class)
+        // show only for premium distributions or SM distributions
+                && (hasPremiumModule || isSMHostedOnly)
+        // show only if configured to always be shown or shown to admins and this is an admin user
+                && (laf.getApplicationMenuDisplayMode() == FolderDisplayMode.ALWAYS || c.hasPermission(user, AdminPermission.class));
 %>
 <div class="labkey-page-header">
     <div class="container clearfix">
         <div class="hidden-xs navbar-header">
-            <a class="brand-logo" href="<%=h(laf.getLogoHref())%>">
-                <img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>">
-            </a>
+            <%=getLogo(c, TemplateResourceHandler.LOGO, laf.getShortName(), laf.getLogoHref(), "brand-logo", isStartupComplete)%>
             <%-- _header.html overrides the server short name--%>
 <%
     if (headerHtml == null && siteShortName != null)
     {
         String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
 %>
-            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(displayedShortName)%></a></h4>
+            <h4 class="brand-link"><%=isStartupComplete ? link(displayedShortName, laf.getLogoHref()).clearClasses() : h(displayedShortName)%></h4>
 <%
     }
 %>
         </div>
         <div class="hidden-sm hidden-md hidden-lg navbar-header">
-            <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
-                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>">
-            </a>
+            <%=getLogo(c, TemplateResourceHandler.LOGO_MOBILE, laf.getShortName(), laf.getLogoHref(), "brand-logo-mobile", isStartupComplete)%>
 <%
     if (headerHtml == null && siteShortName != null)
     {
 %>
-            <h4 class="brand-link"><a href="<%=h(laf.getLogoHref())%>"><%=h(siteShortName)%></a></h4>
+            <h4 class="brand-link"><%=isStartupComplete ? link(siteShortName, laf.getLogoHref()) : h(siteShortName)%></h4>
 <%
     }
 %>
@@ -217,7 +233,7 @@
 <%
     }
 
-    if (me.getView("notifications") != null)
+    if (isStartupComplete && me.getView("notifications") != null)
     {
         include(me.getView("notifications"), out);
     }

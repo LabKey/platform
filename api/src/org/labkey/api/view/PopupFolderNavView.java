@@ -21,6 +21,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,7 +32,6 @@ public class PopupFolderNavView extends PopupMenuView
 
     public PopupFolderNavView(ViewContext context)
     {
-        super();
         _context = context;
     }
 
@@ -40,7 +40,7 @@ public class PopupFolderNavView extends PopupMenuView
         renderFolderNavTree(ContainerManager.getProjectList(_context, true), out);
     }
 
-    private void renderFolderNavTree(NavTree tree, Writer out) throws IOException
+    private void renderFolderNavTree(NavTree tree, Writer oldWriter) throws IOException
     {
         if (tree == null)
             return;
@@ -49,6 +49,7 @@ public class PopupFolderNavView extends PopupMenuView
         Container container = _context.getContainer();
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(container);
         String pattern = startURL.getLocalURIString();
+        HtmlWriter out = HtmlWriter.of(oldWriter);
 
         for (NavTree child : tree.getChildren())
         {
@@ -58,15 +59,15 @@ public class PopupFolderNavView extends PopupMenuView
 
             if (child.hasChildren())
             {
-                out.write("<li class=\"dropdown-submenu " + (cls != null ? cls : "") + "\">");
+                oldWriter.write("<li class=\"dropdown-submenu " + (cls != null ? cls : "") + "\">");
                 renderLink(child, "subexpand-link " + (child.getHref() == null ? "lk-project-nav-disabled" : ""), out);
-                out.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
-                out.write("<ul class=\"dropdown-layer-menu\">");
-                out.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
+                oldWriter.write("<a class=\"subexpand subexpand-target\" tabindex=\"0\"><i class=\"fa fa-chevron-right\"></i></a>");
+                oldWriter.write("<ul class=\"dropdown-layer-menu\">");
+                oldWriter.write("<li><a class=\"subcollapse\" tabindex=\"0\"><i class=\"fa fa-chevron-left\"></i>" + text + "</a></li>");
                 renderTreeDivider(out);
-                renderFolderNavTree(child, out);
-                out.write("</ul>");
-                out.write("</li>");
+                renderFolderNavTree(child, oldWriter);
+                oldWriter.write("</ul>");
+                oldWriter.write("</li>");
             }
             else
             {

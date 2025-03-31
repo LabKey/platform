@@ -38,6 +38,7 @@ import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.api.util.PageFlowUtil.jsString;
@@ -116,7 +117,7 @@ public class ViewServiceImpl implements ViewService
         throw new IllegalStateException("Unknown FrameType");
     }
 
-    private abstract class AbstractFrame implements WebPartFrame
+    private abstract static class AbstractFrame implements WebPartFrame
     {
         protected final boolean _devMode = AppProps.getInstance().isDevMode();
         protected final ViewContext context;
@@ -139,7 +140,7 @@ public class ViewServiceImpl implements ViewService
         }
     }
 
-    private class FrameDiv extends AbstractFrame
+    private static class FrameDiv extends AbstractFrame
     {
         FrameDiv(ViewContext context, FrameConfig config)
         {
@@ -238,7 +239,7 @@ public class ViewServiceImpl implements ViewService
         }
     }
 
-    private class FrameNone extends AbstractFrame
+    private static class FrameNone extends AbstractFrame
     {
         FrameNone(ViewContext context, FrameConfig config)
         {
@@ -258,7 +259,7 @@ public class ViewServiceImpl implements ViewService
         }
     }
 
-    private class FrameTitle extends AbstractFrame
+    private static class FrameTitle extends AbstractFrame
     {
         FrameTitle(ViewContext context, FrameConfig config)
         {
@@ -292,7 +293,7 @@ public class ViewServiceImpl implements ViewService
         }
     }
 
-    private class FrameDialog extends AbstractFrame
+    private static class FrameDialog extends AbstractFrame
     {
         FrameDialog(ViewContext context, FrameConfig config)
         {
@@ -322,7 +323,7 @@ public class ViewServiceImpl implements ViewService
             }
 
             out.print("<div class=\"clearfix\"></div>");
-            out.print("</div><div class=\"" + StringUtils.defaultString(getConfig()._className,"") + " panel-body\">");
+            out.print("</div><div class=\"" + Objects.toString(getConfig()._className, "") + " panel-body\">");
         }
 
         @Override
@@ -426,11 +427,11 @@ public class ViewServiceImpl implements ViewService
             // Render custom buttons (e.g. wiki edit)
             if (config._floatingBtns != null)
             {
-                Iterator itr = config._floatingBtns.iterator();
+                Iterator<NavTree> itr = config._floatingBtns.iterator();
                 NavTree current;
                 while (itr.hasNext())
                 {
-                    current = (NavTree) itr.next();
+                    current = itr.next();
 
                     if (!current.hasChildren()) // floating dropdown not yet supported
                         renderCustomButton(current, out, true);
@@ -541,7 +542,7 @@ public class ViewServiceImpl implements ViewService
                         if (StringUtils.isNotEmpty(link.getHref()) || null != link.getScript())
                         {
                             // Display this NavTree as a simple link. Delegate to LinkBuilder to avoid replicating all its rendering code.
-                            final Link.LinkBuilder lb = link.toLinkBuilder();
+                            final Link.LinkBuilder lb = link.toSimpleLinkBuilder();
                             lb.clearClasses();
 
                             out.println(lb);
@@ -569,11 +570,11 @@ public class ViewServiceImpl implements ViewService
                 // Render specific parts first (e.g. wiki edit)
                 if (config._customMenus != null)
                 {
-                    Iterator itr = config._customMenus.iterator();
+                    Iterator<NavTree> itr = config._customMenus.iterator();
                     NavTree current;
                     while (itr.hasNext())
                     {
-                        current = (NavTree) itr.next();
+                        current = itr.next();
                         out.print(sep);
                         if (current.hasChildren())
                         {

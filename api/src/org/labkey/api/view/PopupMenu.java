@@ -20,13 +20,19 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.Button;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * A menu which is not fully rendered/visible at original page render time, but instead
@@ -106,15 +112,10 @@ public class PopupMenu extends DisplayElement
 
     public void render(Writer out) throws IOException
     {
-        renderMenuButton(out);
+        renderMenuButton(null, HtmlWriter.of(out), false, null);
     }
 
-    public void renderMenuButton(Writer out) throws IOException
-    {
-        renderMenuButton(null, out, false, null);
-    }
-
-    public void renderMenuButton(@Nullable RenderContext ctx, Writer out, boolean requiresSelection, @Nullable ActionButton button) throws IOException
+    public void renderMenuButton(@Nullable RenderContext ctx, HtmlWriter out, boolean requiresSelection, @Nullable ActionButton button)
     {
         if (null == _navTree.getText())
             return;
@@ -125,76 +126,79 @@ public class PopupMenu extends DisplayElement
         Map<String, String> attributes = new HashMap<>();
         String onClickScript = null;
 
-        out.append("<div class=\"lk-menu-drop dropdown\">");
         attributes.put("data-toggle", "dropdown");
 
-        String dataRegionName = null;
+        String dataRegionName;
 
         if (ctx != null && ctx.getCurrentRegion() != null)
             dataRegionName = ctx.getCurrentRegion().getName();
+        else
+            dataRegionName = null;
 
-        if (_buttonStyle == ButtonStyle.TEXTBUTTON)
-        {
-            assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.link(_navTree.getText()).onClick(onClickScript).attributes(attributes).addClass("dropdown-toggle").toString());
-        }
-        else if (_buttonStyle == ButtonStyle.MENUBUTTON)
-        {
-            if (requiresSelection)
-                attributes.put("data-labkey-requires-selection", dataRegionName);
+        DIV(
+            cl("lk-menu-drop dropdown"),
+            (DOM.Renderable) ret -> {
 
-            Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
-                    .dropdown(true)
-                    .onClick(onClickScript)
-                    .attributes(attributes);
+                if (_buttonStyle == ButtonStyle.TEXTBUTTON)
+                {
+                    assert !requiresSelection : "Only button-style popups can require selection.";
+                    out.write(PageFlowUtil.link(_navTree.getText()).onClick(onClickScript).attributes(attributes).addClass("dropdown-toggle"));
+                }
+                else if (_buttonStyle == ButtonStyle.MENUBUTTON)
+                {
+                    if (requiresSelection)
+                        attributes.put("data-labkey-requires-selection", dataRegionName);
 
-            if (button != null)
-            {
-                // set additional properties from the button
-                bldr.iconCls(button.getIconCls());
-                bldr.tooltip(button.getTooltip());
+                    Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
+                        .dropdown(true)
+                        .onClick(onClickScript)
+                        .attributes(attributes);
+
+                    if (button != null)
+                    {
+                        // set additional properties from the button
+                        bldr.iconCls(button.getIconCls());
+                        bldr.tooltip(button.getTooltip());
+                    }
+
+                    out.write(bldr);
+                }
+                else if (_buttonStyle == ButtonStyle.IMAGE || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
+                {
+                    assert !requiresSelection : "Only button-style popups can require selection.";
+                    if (_navTree.getImageCls() != null && !_navTree.getImageCls().isEmpty())
+                    {
+                        out.write(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "#",
+                            onClickScript, _navTree.getImageCls(), _imageId, attributes));
+                    }
+                    else
+                    {
+                        assert _navTree.getImageSrc() != null && !_navTree.getImageSrc().isEmpty() : "Must provide an image source or image cls for image based popups.";
+                        out.write(PageFlowUtil.generateDropDownImage(_navTree.getText(), "#",
+                            onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes));
+                    }
+
+                    if (_buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
+                    {
+                        out.write(" ");
+                    }
+                }
+
+                if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
+                {
+                    assert !requiresSelection : "Only button-style popups can require selection.";
+                    out.write(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "#",
+                        onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes));
+                }
+
+                UL(
+                    cl("dropdown-menu dropdown-menu-left"),
+                    (DOM.Renderable) ret2 -> PopupMenuView.renderTree(_navTree, out)
+                ).appendTo(out);
+
+                return ret;
             }
-
-            out.append(bldr.toString());
-        }
-        else if (_buttonStyle == ButtonStyle.IMAGE || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
-        {
-            assert !requiresSelection : "Only button-style popups can require selection.";
-            if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
-            {
-                out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "#",
-                        onClickScript, _navTree.getImageCls(), _imageId, attributes).toString());
-            }
-            else
-            {
-                assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source or image cls for image based popups.";
-                out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "#",
-                        onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes).toString());
-            }
-
-            if (_buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
-            {
-                out.append(" ");
-            }
-        }
-
-        if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
-        {
-            assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "#",
-                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes).toString());
-        }
-
-        out.append("<ul class=\"dropdown-menu dropdown-menu-left\">");
-        try
-        {
-            PopupMenuView.renderTree(_navTree, out);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        out.append("</ul></div>");
+        ).appendTo(out);
     }
 
     public Align getAlign()
