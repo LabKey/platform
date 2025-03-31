@@ -1204,6 +1204,7 @@ public void testInsertOptionUpdate() throws Exception
     assertEquals(0.0, rows.get(0).get("aliquotvolume"));
     assertEquals(0, rows.get(0).get("availablealiquotcount"));
     assertEquals(0.0, rows.get(0).get("availablealiquotvolume"));
+    assertEquals("a", rows.get(0).get(requiredColName));
     assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Very", rows.get(0).get(longFieldAlias));
 
     assertEquals("S-1-1", rows.get(1).get("name"));
@@ -1212,9 +1213,8 @@ public void testInsertOptionUpdate() throws Exception
     assertNull(rows.get(1).get("aliquotvolume"));
     assertNull(rows.get(1).get("availablealiquotcount"));
     assertNull(rows.get(1).get("availablealiquotvolume"));
-    // TODO: I cannot figure out what is happening here. Row values are getting cross-mapped during insert. Both requiredColName and longFieldName values are incorrect.
-//    assertNull(rows.get(1).get(requiredColName)); // Is returning "a"
-//    assertEquals(String.format("Failed insert for field \"%s\"", longFieldName), "Long", rows.get(1).get(longFieldAlias)); // Is returning "Very"
+    assertEquals("Expected aliquot parent values to be copied into aliquot", "a", rows.get(1).get(requiredColName));
+    assertEquals("Expected aliquot parent values to be copied into aliquot", "Very", rows.get(1).get(longFieldAlias));
 
     assertEquals("S-2", rows.get(2).get("name"));
     assertEquals("b", rows.get(2).get(requiredColName));
@@ -1252,7 +1252,7 @@ public void testInsertOptionUpdate() throws Exception
     final String aliquotedFromLSID = (String) rows.get(1).get("AliquotedFromLSID");
     assertEquals(true, rows.get(1).get("IsAliquot"));
     assertEquals(100, rows.get(1).get("intVal"));
-//    assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Long", rows.get(1).get(longFieldAlias));
+    assertEquals(String.format("Data for field \"%s\" unexpectedly changed", longFieldName), "Very", rows.get(1).get(longFieldAlias));
 
     assertEquals(200, rows.get(2).get("intVal"));
     assertEquals("b", rows.get(2).get(requiredColName)); // absent columns are not blanked out
