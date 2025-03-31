@@ -22,7 +22,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
@@ -41,6 +40,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewForm;
 import org.labkey.specimen.actions.SpecimenController.CompleteSpecimenAction;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.IOException;
 import java.io.StringWriter;

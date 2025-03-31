@@ -88,7 +88,6 @@ import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
@@ -119,6 +118,7 @@ import org.labkey.specimen.SpecimenColumns;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenTableManager;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;

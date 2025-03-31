@@ -22,8 +22,8 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.settings.SettingsManager;
 
 import static org.labkey.api.specimen.model.SpecimenTablesProvider.SPECIMENVIALCOUNT_TABLENAME;
 
@@ -58,7 +58,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
 
         addColumn(new ExprColumn(this, "TotalCount", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "VialCount"), JdbcType.INTEGER));
 
-        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
 
         addColumn(new ExprColumn(this, "LockedInRequest", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "LockedInRequestCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
         addColumn(new ExprColumn(this, "AtRepository", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AtRepositoryCount"), JdbcType.INTEGER));

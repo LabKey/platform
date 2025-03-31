@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.specimen.settings.RepositorySettings" %>
+<%@ page import="org.labkey.specimen.settings.RepositorySettings" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>

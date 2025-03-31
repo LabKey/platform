@@ -41,15 +41,13 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
+import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
@@ -80,6 +78,7 @@ import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.settings.SettingsManager;
 import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
 import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
@@ -90,7 +89,6 @@ import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -189,13 +187,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void importSpecimens(Container container, User user, List<Map<String, Object>> specimens) throws ValidationException, IOException
-            {
-                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
-                importer.process(specimens, false);
-            }
-
-            @Override
             public void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response)
             {
                 SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, timepointType, participantIdLabel);
@@ -204,18 +195,6 @@ public class SpecimenModule extends SpringModule
                 // the DisplayColumn's caption, not its own caption. That seems wrong...
                 xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
                 xlWriter.renderWorkbook(response);
-            }
-
-            @Override
-            public Map<String, String> getColumnLabelMap(Container container, User user)
-            {
-                return new SimpleSpecimenImporter(container, user).getColumnLabels();
-            }
-
-            @Override
-            public void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException
-            {
-                new SimpleSpecimenImporter(container, user).fixupSpecimenColumns(loader);
             }
 
             @Override
@@ -228,6 +207,12 @@ public class SpecimenModule extends SpringModule
             public void setDefaultRequestabilityRules(Container container, User user)
             {
                 RequestabilityManager.getInstance().setDefaultRules(container, user);
+            }
+
+            @Override
+            public boolean isEnableRequests(Container c)
+            {
+                return SettingsManager.get().getRepositorySettings(c).isEnableRequests();
             }
         });
      }
