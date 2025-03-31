@@ -367,6 +367,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    protected void preImportDIBValidation(@Nullable Collection<String> inputColumns)
+    {
+        ExperimentServiceImpl.get().checkDuplicateParentColumns(inputColumns, _sampleType);
+    }
+
+    @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";

@@ -103,6 +103,7 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -1525,6 +1526,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 if (auditType != null && auditType != AuditBehaviorType.NONE)
                     context.setSelectIds(true); // select rowId for QueryUpdateAuditEvent.rowPk
             }
+        }
+
+        @Override
+        protected void preImportDIBValidation(@Nullable Collection<String> inputColumns)
+        {
+            ExperimentServiceImpl.get().checkDuplicateParentColumns(inputColumns, _dataClass);
         }
 
         @Override

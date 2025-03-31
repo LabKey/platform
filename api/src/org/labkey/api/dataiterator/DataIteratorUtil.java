@@ -73,6 +73,7 @@ public class DataIteratorUtil
 {
     public static final String DATA_SOURCE = "dataSource";
     public static final String ETL_DATA_SOURCE = "etl";
+    public static final String DUPLICATE_COLUMN_IN_DATA_ERROR = "Two columns mapped to target column '%s'. Check the column names and import aliases for your data.";
 
     private static final Logger LOG = LogManager.getLogger(DataIteratorUtil.class);
 
@@ -297,7 +298,7 @@ public class DataIteratorUtil
                 }
                 if (count > 1)
                 {
-                    setupError.addGlobalError("Two columns mapped to target column " + e.getKey().toString() + ". Check the column names and import aliases for your data.");
+                    setupError.addGlobalError(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, e.getKey().getParent() != null ? e.getKey().toString(): e.getKey().getName()));
                     break;
                 }
             }
