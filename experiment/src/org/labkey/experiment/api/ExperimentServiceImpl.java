@@ -10071,14 +10071,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return fileResults;
     }
 
-    public void checkDuplicateParentColumns(@NotNull DataLoader dataLoader, @Nullable ExpObject currentDataType)
+    public void checkDuplicateParentColumns(@Nullable Collection<String> inputColumns, @Nullable ExpObject currentDataType)
     {
-        ColumnDescriptor[] allColumns;
+        if (inputColumns == null || currentDataType == null)
+            return;
+
         Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
         try
         {
-            allColumns = dataLoader.getColumns();
-
             if (currentDataType instanceof ExpDataClass dataClass)
                 parentAliasColumnMap.putAll(dataClass.getImportAliases());
             else if (currentDataType instanceof ExpSampleType sampleType)
@@ -10090,9 +10090,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         Set<String> seenColumns = new CaseInsensitiveHashSet();
-        for (ColumnDescriptor columnDescriptor : allColumns)
+        for (String inputColName : inputColumns)
         {
-            String columnName = columnDescriptor.name;
+            String columnName = inputColName;
             if (parentAliasColumnMap.containsKey(columnName))
                 columnName = parentAliasColumnMap.get(columnName);
             if (ExperimentService.isInputOutputColumn(columnName) || "parent".equalsIgnoreCase(columnName))
