@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.specimen.SpecimenMigrationService;
+import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.study.StudyService;
 
@@ -42,8 +43,8 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(container) +
             "/visit combination.");
 
-        Map<Integer, SpecimenMigrationService.NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
-        Map<Integer, SpecimenMigrationService.NameLabelPair> allPrimaryTypes = SpecimenMigrationService.get().getAllPrimaryTypesMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> allPrimaryTypes = SpecimenMigrationService.get().getAllPrimaryTypesMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -57,12 +58,12 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
                 if (primaryTypeMap.containsKey(primaryId))
                 {
                     wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId),
-                            new SpecimenMigrationService.NameLabelPair(parts[1], parts[1]));
+                            new NameLabelPair(parts[1], parts[1]));
                 }
                 else if (allPrimaryTypes.containsKey(primaryId))
                 {
                     var wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
-                            new SpecimenMigrationService.NameLabelPair(parts[1], parts[1]));
+                            new NameLabelPair(parts[1], parts[1]));
 
                     wrappedCol.setHidden(true);
                 }

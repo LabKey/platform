@@ -27,7 +27,6 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.specimen.model.SpecimenTypeSummaryRow;
@@ -43,6 +42,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.model.AdditiveType;
 import org.labkey.specimen.model.DerivativeType;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.specimen.model.PrimaryType;
 
 import java.util.ArrayList;
 import java.util.Calendar;

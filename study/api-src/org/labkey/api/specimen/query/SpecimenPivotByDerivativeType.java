@@ -20,6 +20,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.specimen.SpecimenMigrationService;
+import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.study.StudyService;
 
@@ -42,8 +43,8 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
             "/visit combination.");
 
         Container container = getContainer();
-        Map<Integer, SpecimenMigrationService.NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
-        Map<Integer, SpecimenMigrationService.NameLabelPair> derivativeTypeMap = SpecimenMigrationService.get().getDerivativeTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> derivativeTypeMap = SpecimenMigrationService.get().getDerivativeTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -65,7 +66,7 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
                                 COLUMN_DESCRIPTION_FORMAT,
                                 primaryTypeMap.get(primaryId),
                                 derivativeTypeMap.get(derivativeId),
-                                new SpecimenMigrationService.NameLabelPair(parts[1], parts[1]));
+                                new NameLabelPair(parts[1], parts[1]));
                     }
                 }
             }
