@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.settings.DisplaySettings"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageDisplaySettingsAction" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.specimen.settings.DisplaySettings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DisplaySettings> me = (JspView<DisplaySettings>) HttpView.currentView();
+    JspView<DisplaySettings> me = HttpView.currentView();
     DisplaySettings bean = me.getModelBean();
 %>
 

@@ -103,7 +103,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
 
             if (xmlSettings.getSettings() != null)
             {
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 // Import specimen settings from specimen_settings.xml doc
                 VirtualFile settingsDir = studyDir;

@@ -52,8 +52,6 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.specimen.settings.DisplaySettings;
-import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -67,6 +65,8 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
+import org.labkey.specimen.settings.DisplaySettings;
+import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.IOException;
