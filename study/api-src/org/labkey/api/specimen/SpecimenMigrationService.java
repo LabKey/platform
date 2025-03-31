@@ -12,6 +12,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.specimen.query.BaseSpecimenPivotTable;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
@@ -54,4 +55,35 @@ public interface SpecimenMigrationService
     void setDefaultRequestabilityRules(Container container, User user);
 
     boolean isEnableRequests(Container c);
+
+    class NameLabelPair
+    {
+        public String _name;
+        public String _label;
+
+        public NameLabelPair(String name, String label)
+        {
+            _name = name;
+            _label = label;
+        }
+    }
+
+    /**
+     * Returns a map of primary type ids to labels
+     */
+    Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container, BaseSpecimenPivotTable.LegalCaseInsensitiveMap legalMap, User user);
+    /**
+     * Returns a map of all primary types
+     */
+    Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container, BaseSpecimenPivotTable.LegalCaseInsensitiveMap legalMap, User user);
+
+    /**
+     * Returns a map of derivative type ids to labels
+     */
+    Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container, BaseSpecimenPivotTable.LegalCaseInsensitiveMap legalMap, User user);
+
+    /**
+     * Returns a map of site ids to labels
+     */
+    Map<Integer, NameLabelPair> getSiteMap(Container container, BaseSpecimenPivotTable.LegalCaseInsensitiveMap legalMap, User user);
 }

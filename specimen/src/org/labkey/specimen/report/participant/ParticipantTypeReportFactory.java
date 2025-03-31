@@ -18,7 +18,6 @@ package org.labkey.specimen.report.participant;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -128,7 +127,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenTypeSummary.TypeCount> getSelectedTypes()
     {
-        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(getContainer(), getUser());
+        SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(getContainer(), getUser());
         if (_selectedType == null || _selectedType.equals(ALL_PRIMARY_TYPES_FORM_VALUE))
             return summary.getPrimaryTypes();
         if (_selectedType.equals(ALL_DERIVATIVE_TYPES_FORM_VALUE))
@@ -173,7 +172,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected Pair<String, HtmlString> getSpecimenTypePicker()
     {
         Select.SelectBuilder select = new Select.SelectBuilder();
-        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(getContainer(), getUser());
+        SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(getContainer(), getUser());
         select.name("selectedType");
 
         select.addOption(new Option.OptionBuilder()

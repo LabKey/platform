@@ -47,7 +47,11 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.specimen.settings.RepositorySettings;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.specimen.model.PrimaryType;
+import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.query.BaseSpecimenPivotTable.LegalCaseInsensitiveMap;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.StudyInternalService;
@@ -78,6 +82,7 @@ import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.specimen.settings.SettingsManager;
 import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
@@ -91,6 +96,7 @@ import org.labkey.specimen.writer.SpecimenWriter;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -213,6 +219,90 @@ public class SpecimenModule extends SpringModule
             public boolean isEnableRequests(Container c)
             {
                 return SettingsManager.get().getRepositorySettings(c).isEnableRequests();
+            }
+
+            @Override
+            public Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
+            {
+                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+                SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, user);
+                List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
+
+                for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+                {
+                    if (type.getId() != null)
+                    {
+                        legalMap.putName(type.getLabel());
+                    }
+                }
+
+                for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+                {
+                    if (type.getId() != null)
+                        typeMap.put(type.getId(), new NameLabelPair(
+                            legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
+                }
+                return typeMap;
+            }
+
+            @Override
+            public Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
+            {
+                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+                List<PrimaryType> primaryTypes = SpecimenManager.get().getPrimaryTypes(container);
+
+                for (PrimaryType type : primaryTypes)
+                {
+                    legalMap.putName(type.getPrimaryType());
+                }
+
+                for (PrimaryType type : primaryTypes)
+                {
+                    typeMap.put((int)type.getRowId(), new NameLabelPair(
+                        legalMap.getLabel(type.getPrimaryType(), -1), type.getPrimaryType()));
+                }
+                return typeMap;
+            }
+
+            @Override
+            public Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
+            {
+                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+                SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, user);
+                List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
+
+                for (SpecimenTypeSummary.TypeCount type : types)
+                {
+                    if (type.getId() != null && type.getLabel() != null)
+                        legalMap.putName(type.getLabel());
+                }
+
+                for (SpecimenTypeSummary.TypeCount type : types)
+                {
+                    if (type.getId() != null  && type.getLabel() != null)
+                        typeMap.put(type.getId(), new NameLabelPair(
+                            legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
+                }
+                return typeMap;
+            }
+
+            @Override
+            public Map<Integer, NameLabelPair> getSiteMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
+            {
+                Map<Integer, NameLabelPair> siteMap = new HashMap<>();
+                List<LocationImpl> locations = LocationManager.get().getLocations(container);
+
+                for (LocationImpl location : locations)
+                {
+                    legalMap.putName(location.getLabel(), location.getRowId());
+                }
+
+                for (LocationImpl location : locations)
+                {
+                    siteMap.put(location.getRowId(), new NameLabelPair(
+                        legalMap.getLabel(location.getLabel(), location.getRowId()), location.getLabel()));
+                }
+                return siteMap;
             }
         });
      }

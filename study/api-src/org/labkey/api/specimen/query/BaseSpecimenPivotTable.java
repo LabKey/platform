@@ -32,16 +32,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.specimen.SpecimenManagerNew;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.PrimaryType;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
 import org.labkey.api.study.StudyService;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,7 +55,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         return name.toLowerCase();
     }
 
-    protected class LegalCaseInsensitiveMap
+    public class LegalCaseInsensitiveMap
     {
         // Map of names to normalized and legalized names
         // If normalized name is duplicated, it is added to the Duplicated set
@@ -105,17 +100,19 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
             return _normalNameDuplicated.contains(getNormalName(key));
         }
 
-    }
-
-    protected static class NameLabelPair
-    {
-        public String _name;
-        public String _label;
-
-        public NameLabelPair(String name, String label)
+        /**
+         * use the row id to uniquify the column name, else just return the name
+         */
+        public String getLabel(String label, int id)
         {
-            _name = name;
-            _label = label;
+            if (label != null && isDuplicated(label))
+            {
+                String idString = _typeNameIdMapWrapper.get(label, id);
+                int mappedId = (idString != null) ? Integer.valueOf(idString) : id;
+                return String.format("%s(%s)", getNormalName(label), mappedId);
+            }
+            else
+                return label;
         }
     }
 
@@ -191,7 +188,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
     }
 
-    protected MutableColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
+    protected MutableColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair...parts)
     {
         // The parts._name should already be "Normal Legal Name" parts
         StringBuilder name = new StringBuilder();
@@ -232,117 +229,6 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         {
             name.append("_").append(i++);
         }
-    }
-
-    /**
-     * Returns a map of primary type ids to labels
-     */
-    protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
-    {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
-        List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
-
-        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
-        {
-            if (type.getId() != null)
-            {
-                legalMap.putName(type.getLabel());
-            }
-        }
-
-        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
-        {
-            if (type.getId() != null)
-                typeMap.put(type.getId(), new NameLabelPair(
-                        getLabel(type.getLabel(), -1, legalMap), type.getLabel()));
-        }
-        return typeMap;
-    }
-
-    /**
-     * Returns a map of all primary types
-     */
-    protected Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container)
-    {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<PrimaryType> primaryTypes = SpecimenManagerNew.get().getPrimaryTypes(container);
-
-        for (PrimaryType type : primaryTypes)
-        {
-            legalMap.putName(type.getPrimaryType());
-        }
-
-        for (PrimaryType type : primaryTypes)
-        {
-            typeMap.put((int)type.getRowId(), new NameLabelPair(
-                    getLabel(type.getPrimaryType(), -1, legalMap), type.getPrimaryType()));
-        }
-        return typeMap;
-    }
-
-    /**
-     * Returns a map of derivative type ids to labels
-     */
-    protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
-    {
-        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        SpecimenTypeSummary summary = SpecimenManagerNew.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
-        List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
-
-        for (SpecimenTypeSummary.TypeCount type : types)
-        {
-            if (type.getId() != null && type.getLabel() != null)
-                legalMap.putName(type.getLabel());
-        }
-
-        for (SpecimenTypeSummary.TypeCount type : types)
-        {
-            if (type.getId() != null  && type.getLabel() != null)
-                typeMap.put(type.getId(), new NameLabelPair(
-                        getLabel(type.getLabel(), -1, legalMap), type.getLabel()));
-        }
-        return typeMap;
-    }
-
-    /**
-     * Returns a map of site id's to labels
-     */
-    protected Map<Integer, NameLabelPair> getSiteMap(Container container)
-    {
-        Map<Integer, NameLabelPair> siteMap = new HashMap<>();
-        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<LocationImpl> locations = LocationManager.get().getLocations(container);
-
-        for (LocationImpl location : locations)
-        {
-            legalMap.putName(location.getLabel(), location.getRowId());
-        }
-
-        for (LocationImpl location : locations)
-        {
-            siteMap.put(location.getRowId(), new NameLabelPair(
-                    getLabel(location.getLabel(), location.getRowId(), legalMap), location.getLabel()));
-        }
-        return siteMap;
-    }
-
-    /**
-     * use the row id to uniquify the column name, else just return the name
-     */
-    private String getLabel(String label, int id, LegalCaseInsensitiveMap legalMap)
-    {
-        if (label != null && legalMap.isDuplicated(label))
-        {
-            String idString = _typeNameIdMapWrapper.get(label, id);
-            int mappedId = (idString != null) ? Integer.valueOf(idString) : id;
-            return String.format("%s(%s)", legalMap.getNormalName(label), mappedId);
-        }
-        else
-            return label;
     }
 
     /** Note we cache these pivot tables, so we can't go calling setContainerFilter() so

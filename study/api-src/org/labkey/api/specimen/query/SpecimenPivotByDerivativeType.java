@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.study.StudyService;
 
@@ -41,8 +42,8 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
             "/visit combination.");
 
         Container container = getContainer();
-        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
-        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
+        Map<Integer, SpecimenMigrationService.NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, SpecimenMigrationService.NameLabelPair> derivativeTypeMap = SpecimenMigrationService.get().getDerivativeTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -64,7 +65,7 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
                                 COLUMN_DESCRIPTION_FORMAT,
                                 primaryTypeMap.get(primaryId),
                                 derivativeTypeMap.get(derivativeId),
-                                new NameLabelPair(parts[1], parts[1]));
+                                new SpecimenMigrationService.NameLabelPair(parts[1], parts[1]));
                     }
                 }
             }

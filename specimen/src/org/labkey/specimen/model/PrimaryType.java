@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
 import org.labkey.api.study.AbstractStudyCachable;
 
 import java.util.Map;
