@@ -10083,9 +10083,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ColumnDescriptor[] columnDescriptors;
             try
             {
-                columnDescriptors = dataLoader.getColumns();
-                for (ColumnDescriptor columnDescriptor : columnDescriptors)
-                    allColumns.add(columnDescriptor.name);
+                columnDescriptors = dataLoader.getColumns(Collections.emptyMap(), true);
+                if (columnDescriptors != null)
+                {
+                    for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                        allColumns.add(columnDescriptor.name);
+                }
             }
             catch (IOException exception)
             {
