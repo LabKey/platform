@@ -189,7 +189,7 @@ public class SearchModule extends DefaultModule
             // Report the total number of search entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
-            TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING_UNSAFE);
+            TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
 
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
