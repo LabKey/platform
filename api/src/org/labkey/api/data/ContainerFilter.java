@@ -517,7 +517,20 @@ public abstract class ContainerFilter
     }
 
     /** Use this with extreme caution - this doesn't check permissions */
+    @Deprecated(forRemoval = true) // Use getUnsafeEverythingFilter() instead TODO: Remove
     public static final ContainerFilter EVERYTHING_UNSAFE = new InternalNoContainerFilter();
+
+    private static ContainerFilter _everythingUnsafe = null;
+
+    /** Use this with extreme caution - this doesn't check permissions! */
+    public static synchronized ContainerFilter getUnsafeEverythingFilter()
+    {
+        if (_everythingUnsafe == null)
+        {
+            _everythingUnsafe = new InternalNoContainerFilter();
+        }
+        return _everythingUnsafe;
+    }
 
     public static class ContainerFilterWithPermission extends ContainerFilter
     {
@@ -1346,7 +1359,7 @@ public abstract class ContainerFilter
             assertEquals(current(home, user).getCacheKey(), current(home, user).getCacheKey());
             assertNotEquals(current(home, user).getCacheKey(), current(test, user).getCacheKey());
 
-            assertEquals(EVERYTHING_UNSAFE.getCacheKey(), new InternalNoContainerFilter().getCacheKey());
+            assertEquals(getUnsafeEverythingFilter().getCacheKey(), new InternalNoContainerFilter().getCacheKey());
 
             assertEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(home, user, shared).getCacheKey());
             assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(test, user, shared).getCacheKey());

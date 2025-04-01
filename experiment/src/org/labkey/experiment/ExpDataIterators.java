@@ -2663,7 +2663,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Invalid value provided for 'Container'."));
+                                _context.getErrors().addRowError(new ValidationException("Invalid value '" + rowFolderId +"' provided for '" + getColumnInfo(_folderColIndex).getName() + "'."));
                                 return true;
                             }
                         }

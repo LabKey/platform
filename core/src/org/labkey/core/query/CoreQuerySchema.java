@@ -315,7 +315,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo getPrincipals()
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
-        FilteredTable<CoreQuerySchema> principals = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING_UNSAFE);
+        FilteredTable<CoreQuerySchema> principals = new FilteredTable<>(principalsBase, this, ContainerFilter.getUnsafeEverythingFilter());
 
         //we expose userid, name and type via query
         var col = principals.wrapColumn(principalsBase.getColumn("UserId"));
