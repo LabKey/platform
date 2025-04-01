@@ -222,6 +222,38 @@ public interface FileSystemLike
         return p.toFile();
     }
 
+    // Converts an absolute URI to a relative one if it's within the base URI.
+    // If fileURI is outside rootURI, the result remains fileURI/unchanged.
+    // Examples:
+    // root "/a/b/c/", file "/x/y/z.txt" -> "/x/y/z.txt"
+    // root "/a/b/c/", file "/a/b/c/d.txt" -> "d.txt"
+    static URI getRelativeURI(URI rootURI, URI fileURI)
+    {
+        return rootURI.relativize(fileURI);
+    }
+
+    static FileLike resolveChildWithRelativeURI(URI rootURI, URI fileURI)
+    {
+        URI relativeURI = getRelativeURI(rootURI, fileURI);
+
+        // If the relative URI is absolute or remains unchanged, it means relativize failed and the file is outside the root directory.
+        if (relativeURI.isAbsolute() || relativeURI.equals(fileURI))
+        {
+            throw new IllegalArgumentException("File '" + fileURI.getPath() + "' is outside the root '" + rootURI.getPath() + "'");
+        }
+
+        FileLike allowedRoot = new FileSystemLike.Builder(rootURI).root();
+
+        //explicitly check whether the given file path is within the allowed root directory
+        if (allowedRoot.getFileSystem().isDescendant(allowedRoot, fileURI))
+        {
+            return allowedRoot.resolveChild(relativeURI.getPath());
+        }
+        else
+        {
+            throw new IllegalArgumentException("File '" + relativeURI.getPath() + "' is not a descendant of '" + rootURI.getPath() + "'");
+        }
+    }
 
     /* More efficient version of wrap when many files may be from the same directory */
     static List<FileLike> wrapFiles(List<File> files)
