@@ -21,7 +21,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
@@ -102,9 +102,8 @@ public class SpecimenReportQuery
 //            IN (SELECT ...)
 
 
-    public static TableInfo getPivotByPrimaryType(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByPrimaryType(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)
@@ -135,9 +134,8 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByDerivativeType(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByDerivativeType(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)
@@ -168,9 +166,8 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByRequestingLocation(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByRequestingLocation(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)

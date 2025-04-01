@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -40,6 +41,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
@@ -51,8 +53,12 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.specimen.query.BaseSpecimenPivotTable.LegalCaseInsensitiveMap;
+import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -303,6 +309,32 @@ public class SpecimenModule extends SpringModule
                         legalMap.getLabel(location.getLabel(), location.getRowId()), location.getLabel()));
                 }
                 return siteMap;
+            }
+
+            @Override
+            public void addSpecimenPivotTableNames(Set<String> names)
+            {
+                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+            }
+
+            @Override
+            public @Nullable TableInfo getSpecimenPivotTable(UserSchema schema, String name, Study study, ContainerFilter cf)
+            {
+                if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByPrimaryType(schema, study, cf);
+                }
+                if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByDerivativeType(schema, study, cf);
+                }
+                if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByRequestingLocation(schema, study, cf);
+                }
+                return null;
             }
         });
      }

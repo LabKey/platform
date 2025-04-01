@@ -19,8 +19,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
@@ -34,9 +35,9 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
     public static final String PIVOT_BY_REQUESTING_LOCATION = "Vial Counts by Requesting Location";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s requested by %s";
 
-    public SpecimenPivotByRequestingLocation(final SpecimenQuerySchema schema, ContainerFilter cf)
+    public SpecimenPivotByRequestingLocation(final UserSchema schema, Study study, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByRequestingLocation(schema, cf), schema);
+        super(SpecimenReportQuery.getPivotByRequestingLocation(schema, study, cf), schema);
         setName(PIVOT_BY_REQUESTING_LOCATION);
         setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
@@ -49,13 +50,13 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
         for (ColumnInfo col : getRealTable().getColumns())
         {
             // look for the primary/derivative pivot encoding
-            String parts[] = col.getName().split(AGGREGATE_DELIM);
+            String[] parts = col.getName().split(AGGREGATE_DELIM);
 
-            if (parts != null && parts.length == 2)
+            if (parts.length == 2)
             {
-                String types[] = parts[0].split(TYPE_DELIM);
+                String[] types = parts[0].split(TYPE_DELIM);
 
-                if (types != null && types.length == 3)
+                if (types.length == 3)
                 {
                     int primaryId = NumberUtils.toInt(types[0]);
                     int derivativeId = NumberUtils.toInt(types[1]);

@@ -19,9 +19,10 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
@@ -35,9 +36,9 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
     public static final String PIVOT_BY_PRIMARY_TYPE = "Primary Type Vial Counts";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary type %s";
 
-    public SpecimenPivotByPrimaryType(final SpecimenQuerySchema schema, ContainerFilter cf)
+    public SpecimenPivotByPrimaryType(final UserSchema schema, Study study, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByPrimaryType(schema, cf), schema);
+        super(SpecimenReportQuery.getPivotByPrimaryType(schema, study, cf), schema);
         Container container = getContainer();
         setName(PIVOT_BY_PRIMARY_TYPE);
         setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(container) +
