@@ -242,7 +242,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         settings.setSelectionKey(form.getDataRegionSelectionKey());
         if (form.getContainerFilterName() != null)
             settings.setContainerFilterName(form.getContainerFilterName());
-        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, errors,
+        PublishResultsQueryView queryView = new PublishResultsQueryView(schema, settings, null, // The JspView renders errors, so don't pass them into QueryView
                 getPublishSource(form),
                 getObjectIdFieldKey(form),
                 _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids,
