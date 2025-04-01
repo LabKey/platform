@@ -63,13 +63,13 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -85,6 +85,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
@@ -342,8 +343,6 @@ import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_
 import static org.labkey.api.query.QueryImportPipelineJob.QUERY_IMPORT_PIPELINE_PROVIDER_PARAM;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.action;
-import static org.labkey.api.util.DOM.Attribute.border;
-import static org.labkey.api.util.DOM.Attribute.cellpadding;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.method;
@@ -506,12 +505,12 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             // Find all the fields that could have lost data due to issue 52666
-            TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.EVERYTHING);
+            TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
             List<Field> problematicFields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getArrayList(Field.class);
 
             // Prep audit table for querying
             UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
-            TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.EVERYTHING);
+            TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
 
             Map<Pair<ExpSampleType, String>, List<Pair<MiniMaterial, String>>> summaries = new HashMap<>();
 
@@ -525,7 +524,7 @@ public class ExperimentController extends SpringActionController
                 Domain domain = PropertyService.get().getDomain(container, domainURI);
                 if (domain != null && domain.getDomainKind() != null)
                 {
-                    TableInfo table = domain.getDomainKind().getTableInfo(getUser(), container, domain, ContainerFilter.EVERYTHING);
+                    TableInfo table = domain.getDomainKind().getTableInfo(getUser(), container, domain, ContainerFilter.getUnsafeEverythingFilter());
 
                     // Drill into sample types
                     if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))

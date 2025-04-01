@@ -78,7 +78,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -86,7 +85,6 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.VocabularyDomainKind;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -652,7 +650,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         DbSchema schema = ExperimentService.get().getSchema();
         String lengthFn = schema.getSqlDialect().getVarcharLengthFunction();
 
-        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.EVERYTHING);
+        TableInfo t = new ExpSchema(User.getAdminServiceUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
         long storageColumnNameMismatches = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getRowCount();
 
         return Map.of(
