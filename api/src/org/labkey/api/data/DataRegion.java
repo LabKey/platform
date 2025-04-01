@@ -1027,7 +1027,7 @@ public class DataRegion extends DisplayElement
         addMessage(new Message(message, MessageType.ERROR, MessagePart.header));
     }
 
-    private void renderParameterForm(RenderContext ctx, Writer out)
+    private void renderParameterForm(RenderContext ctx, HtmlWriter out)
     {
         _allowHeaderLock = false;
 
