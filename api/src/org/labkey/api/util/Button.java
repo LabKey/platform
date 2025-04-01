@@ -267,7 +267,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         private String typeCls;
         private boolean disableOnClick;
         private boolean dropdown;
-        private boolean enabled = true;
         private boolean submit;
 
         public ButtonBuilder(@NotNull String caption)
@@ -290,12 +289,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         public ButtonBuilder disableOnClick(boolean disableOnClick)
         {
             this.disableOnClick = disableOnClick;
-            return this;
-        }
-
-        public ButtonBuilder enabled(boolean enabled)
-        {
-            this.enabled = enabled;
             return this;
         }
 

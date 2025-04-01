@@ -17,6 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PrincipalArray;
@@ -89,23 +90,26 @@ public class NotImpersonatingContext implements ImpersonationContext
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        @Nullable Container project = c.getProject();
+        if (ModuleLoader.getInstance().isStartupComplete())
+        {
+            @Nullable Container project = c.getProject();
 
-        // Must be site or project admin (folder admins can't impersonate)
-        if (user.hasRootAdminPermission() || (null != project && project.hasPermission(user, AdminPermission.class)))
-        {
-            NavTree impersonateMenu = new NavTree("Impersonate");
-            UserImpersonationContextFactory.addMenu(impersonateMenu);
-            GroupImpersonationContextFactory.addMenu(impersonateMenu);
-            RoleImpersonationContextFactory.addMenu(impersonateMenu);
-            menu.addChild(impersonateMenu);
-        }
-        // Or Impersonating Troubleshooter to impersonate site roles only
-        else if (null == project && user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-        {
-            NavTree impersonateMenu = new NavTree("Impersonate");
-            RoleImpersonationContextFactory.addMenu(impersonateMenu);
-            menu.addChild(impersonateMenu);
+            // Must be site or project admin (folder admins can't impersonate)
+            if (user.hasRootAdminPermission() || (null != project && project.hasPermission(user, AdminPermission.class)))
+            {
+                NavTree impersonateMenu = new NavTree("Impersonate");
+                UserImpersonationContextFactory.addMenu(impersonateMenu);
+                GroupImpersonationContextFactory.addMenu(impersonateMenu);
+                RoleImpersonationContextFactory.addMenu(impersonateMenu);
+                menu.addChild(impersonateMenu);
+            }
+            // Or Impersonating Troubleshooter to impersonate site roles only
+            else if (null == project && user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+            {
+                NavTree impersonateMenu = new NavTree("Impersonate");
+                RoleImpersonationContextFactory.addMenu(impersonateMenu);
+                menu.addChild(impersonateMenu);
+            }
         }
 
         NavTree signOut = new NavTree("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));

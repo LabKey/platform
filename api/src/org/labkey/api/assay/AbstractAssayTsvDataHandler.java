@@ -375,7 +375,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 domain = provider.getResultsDomain(protocol);
 
                 AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-                TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING_UNSAFE, false);
+                TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
                 if (assayDataTable != null)
                 {
                     ColumnInfo lsidCol = assayDataTable.getColumn(assayResultLsidFieldKey);

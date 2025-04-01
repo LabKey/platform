@@ -864,8 +864,14 @@ public class StatementUtils
             for (int i = 0; i < cols.size(); i++)
             {
                 FieldKey fk = cols.get(i).getFieldKey();
-                if (keys.containsKey(fk) || null != _dontUpdateColumnNames && _dontUpdateColumnNames.contains(cols.get(i).getName()))
+                if (keys.containsKey(fk))
                     continue;
+
+                // Issue 52666: Check column remapping when looking for columns to not update
+                String colName = cols.get(i).getName();
+                if (_dontUpdateColumnNames.contains(colName) || (remap.containsKey(colName) && _dontUpdateColumnNames.contains(remap.get(colName))))
+                    continue;
+
                 sqlfUpdate.append(comma);
                 comma = ", ";
                 sqlfUpdate.appendIdentifier(cols.get(i).getSelectName());

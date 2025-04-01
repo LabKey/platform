@@ -36,7 +36,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoPrincipals();
         FilteredTable<UserSchema> ret = new FilteredTable<>(tinfoUsersData, _userSchema);
-        ret.setContainerFilter(ContainerFilter.EVERYTHING_UNSAFE);
+        ret.setContainerFilter(ContainerFilter.getUnsafeEverythingFilter());
         ret.addWrapColumn(tinfoUsersData.getColumn("UserId"));
         ret.addColumn(ret.wrapColumn("Name", tinfoUsersData.getColumn("Name")));
         ret.setTitleColumn("Name");
