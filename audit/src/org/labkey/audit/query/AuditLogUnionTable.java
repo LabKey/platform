@@ -62,7 +62,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
         public AuditUnionTable(@NotNull UserSchema schema, ContainerFilter cf)
         {
-            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.EVERYTHING_UNSAFE);
+            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.getUnsafeEverythingFilter());
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());
