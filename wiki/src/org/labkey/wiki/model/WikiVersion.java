@@ -17,13 +17,13 @@
 package org.labkey.wiki.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Pair;
-import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
@@ -35,15 +35,8 @@ import org.labkey.wiki.WikiManager;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
-
-/**
- * User: Tamra Myers
- * Date: Feb 14, 2006
- * Time: 1:31:25 PM
- */
 public class WikiVersion
 {
     private int _rowId;
@@ -127,19 +120,23 @@ public class WikiVersion
     }
 
     // TODO: WikiVersion should know its wiki & container
+    // WARNING: This method drops all client dependencies declared by the wiki and embedded webparts! This HTML will
+    // likely not render correctly, so it has limited uses.
     public HtmlString getHtml(Container c, Wiki wiki)
     {
-        return render(c, wiki).first;
+        return render(null, c, wiki);
     }
 
-    public Pair<HtmlString, Set<ClientDependency>> render(Container c, Wiki wiki)
+    /** Adds all client dependencies to the view and returns the HTML to render */
+    public HtmlString render(@Nullable HttpView<?> view, Container c, Wiki wiki)
     {
         FormattedHtml rendered = WikiContentCache.getHtml(c, wiki, this, _cache);
-        return Pair.of(
-                HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX)
-                    .append(rendered.getHtml())
-                    .append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(),
-                rendered.getClientDependencies());
+        if (null != view)
+            view.addClientDependencies(rendered.getClientDependencies());
+
+        return HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX)
+            .append(rendered.getHtml())
+            .append(WikiRenderingService.WIKI_SUFFIX).getHtmlString();
     }
 
     public String getTitle()

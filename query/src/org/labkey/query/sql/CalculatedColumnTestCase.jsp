@@ -395,7 +395,7 @@ UserSchema getUserSchema(String columns) throws Exception
 TableInfo getUserTableInfo(String columns) throws Exception
 {
     UserSchema userSchema = getUserSchema(columns);
-    return userSchema.getTable("R", ContainerFilter.EVERYTHING_UNSAFE, true, false);
+    return userSchema.getTable("R", ContainerFilter.getUnsafeEverythingFilter(), true, false);
 }
 
 

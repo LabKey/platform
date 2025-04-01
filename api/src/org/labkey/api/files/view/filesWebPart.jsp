@@ -27,7 +27,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -37,7 +36,7 @@
     }
 %>
 <%
-    JspView<FilesWebPart.FilesForm> me = (JspView) HttpView.currentView();
+    JspView<FilesWebPart.FilesForm> me = HttpView.currentView();
     FilesWebPart.FilesForm bean = me.getModelBean();
     Container c = getContainer();
 

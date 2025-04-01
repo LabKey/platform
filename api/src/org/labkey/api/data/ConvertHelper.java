@@ -398,21 +398,21 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof Container)
                 return ((Container)o).getId();
 
-            if (o instanceof Time)
+            if (o instanceof Time t)
             {
-                return o.toString();
+                return DateUtil.toISO(t, false);
             }
 
-            if (o instanceof Date)
+            if (o instanceof Date d)
             {
-                return DateUtil.toISO(((Date)o).getTime(), false);
+                return DateUtil.toISO(d.getTime(), false);
             }
 
-            if (o instanceof Clob)
+            if (o instanceof Clob c)
             {
                 try
                 {
-                    return convertClobToString((Clob)o);
+                    return convertClobToString(c);
                 }
                 catch (SQLException e)
                 {
@@ -426,7 +426,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
 
     // Note: When using getObject() on a SQL column of type Text or NText, the Microsoft SQL Server jdbc driver returns
-    // a String, while the jTDS driver returns a Clob.  For consistency we map here.  Could map at lower level, but
+    // a String, while the jTDS driver returns a Clob. For consistency, we map here. Could map at lower level, but
     // don't want to preclude ever using Clob as Clob.
     public static String convertClobToString(Clob clob) throws SQLException
     {

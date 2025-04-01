@@ -30,7 +30,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    DiscussionServiceImpl.PickerView me = (DiscussionServiceImpl.PickerView) HttpView.currentView();
+    DiscussionServiceImpl.PickerView me = HttpView.currentView();
     Container c = getContainer();
     User user = getUser();
 

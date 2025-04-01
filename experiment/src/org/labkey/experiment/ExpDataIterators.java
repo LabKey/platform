@@ -2424,7 +2424,9 @@ public class ExpDataIterators
                 List<Integer> fieldIndexes,
                 Map<Integer, String> dependencyIndexes,
                 List<String> dataRows,
-                List<String> dataIds
+                List<String> dataIds,
+                String headerRow,
+                Map<Integer, File> folderFiles
         ) { }
 
         private final DataIteratorContext _context;
@@ -2439,7 +2441,6 @@ public class ExpDataIterators
         private Integer _folderColIndex = null;
         // want to process the sample types in the order given in the original file, unless we have dependencies
         private final Map<String, Map<String, TypeData>> _typeFolderDataMap = new TreeMap<>();
-        private final Map<String, TypeData> _updateOnlyFileDataMap = new LinkedHashMap<>();
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
         private final int _dataIdIndex;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
@@ -2528,149 +2529,69 @@ public class ExpDataIterators
             }
         }
 
-        private void _importPartition(TypeData typeData)
+        private int _importSplitFile(TypeData typeData, File splitFile, Container dataContainer, TableInfo dataTable)
         {
-            if (_context.getErrors().hasErrors())
-                return;
-
-            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-            var updateService = typeData.tableInfo.getUpdateService();
+            var updateService = dataTable.getUpdateService();
             if (updateService == null)
             {
-                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.dataType.getName() + "'."));
+                _context.getErrors().addRowError(new ValidationException("No update service available for type '" + typeData.dataType.getName() + "'."));
+                return 0;
             }
-            else
+
+            try (DataLoader loader = DataLoader.get().createLoader(splitFile, "text/plain", true, null, null))
             {
-                try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
-                {
-                    Set<String> aliasNames;
-                    if (_isSamples)
-                        aliasNames = new CaseInsensitiveHashSet(((ExpSampleType) typeData.dataType).getImportAliases().keySet());
-                    else
-                        aliasNames = new CaseInsensitiveHashSet(((ExpDataClass) typeData.dataType).getImportAliases().keySet());
-                    // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                    configureLoader(loader, typeData.tableInfo, null, true, aliasNames);
-                    updateService.loadRows(_user, typeData.container, loader, _context, null);
-                }
-                catch (SQLException | IOException e)
-                {
-                    String msg = "Problem importing data for type '" + typeData.dataType.getName() + "'. ";
-                    LOG.error(msg, e);
-                    _context.getErrors().addRowError(new ValidationException(msg));
-                }
+                Set<String> aliasNames;
+                if (_isSamples)
+                    aliasNames = new CaseInsensitiveHashSet(((ExpSampleType) typeData.dataType).getImportAliases().keySet());
+                else
+                    aliasNames = new CaseInsensitiveHashSet(((ExpDataClass) typeData.dataType).getImportAliases().keySet());
+                // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                configureLoader(loader, dataTable, null, true, aliasNames);
+                if (loader instanceof TabLoader tabLoader)
+                    tabLoader.setIncludeComments(true); // don't skip lines that starts with "#" (if the original file is Excel)
+                return updateService.loadRows(_user, dataContainer, loader, _context, null);
             }
+            catch (SQLException | IOException e)
+            {
+                String msg = "Problem importing data for type '" + typeData.dataType.getName() + "'. ";
+                LOG.error(msg, e);
+                _context.getErrors().addRowError(new ValidationException(msg));
+            }
+
+            return 0;
         }
 
-        /**
-         *
-         * @param typeData
-         * @return true if it has data from multiple containers, or from a container different from current container
-         */
-        private boolean handleCrossFolderUpdate(TypeData typeData)
+        private int _importPartition(TypeData typeData)
         {
-            String headerRow = typeData.dataRows.get(0);
-            String dataFileName = typeData.dataFile.getName();
+            if (_context.getErrors().hasErrors())
+                return 0;
 
-            ExpObject dataType = typeData.dataType;
-
-            Map<String, List<Integer>> containerRows = new HashMap<>();
-            boolean hasCrossFolderData = false;
-
-            TableInfo tableInfo = null;
-            SimpleFilter filter = null;
-
-            if (_isSamples)
+            int totalRowCount = 0;
+            if (_isCrossFolderUpdate && !typeData.folderFiles.keySet().isEmpty())
             {
-                filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), dataType.getRowId());
-                filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
-                tableInfo = ExperimentService.get().getTinfoMaterial();
-            }
-            else
-            {
-                filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataType.getRowId());
-                filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
-                tableInfo = ExperimentService.get().getTinfoData();
-            }
+                boolean hasCrossFolderData = typeData.folderFiles.keySet().stream().anyMatch(id -> id != _container.getRowId());;
 
-            Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
-            for (Map<String, Object> row : rows)
-            {
-                String name = (String) row.get("name");
-                String dataContainer = (String) row.get("container");
-                int sampleRowId = typeData.dataIds.indexOf(name) + 1 /* header row */;
-
-                if (!containerRows.containsKey(dataContainer))
+                if (hasCrossFolderData)
                 {
-                    containerRows.put(dataContainer, new ArrayList<>());
-                    hasCrossFolderData = hasCrossFolderData || !dataContainer.equalsIgnoreCase(_container.getId());
-                }
+                    for (Map.Entry<Integer, File> containerSplitFile : typeData.folderFiles.entrySet())
+                    {
+                        Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
+                        AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
+                        QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
+                        TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
-                containerRows.get(dataContainer).add(sampleRowId);
+                        if (dataTable == null)
+                        {
+                            _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
+                            return totalRowCount;
+                        }
+                        totalRowCount +=_importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
+                    }
+                    return totalRowCount;
+                }
             }
 
-            if (!hasCrossFolderData)
-                return false;
-
-            Map<String, TypeData> containerTypeDatas = new HashMap<>();
-            Map<String, Integer> containerIndexes = new HashMap<>();
-            for (String containerId : containerRows.keySet())
-            {
-                Container container = _containerMap.get(containerId);
-                if (container == null)
-                {
-                    Container folder = ContainerManager.getForId(containerId);
-                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the container: " + (folder != null ? folder.getName() : containerId)));
-                    return false;
-                }
-
-                AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, container) : new DataClassUserSchema(container, _user);
-                QueryDefinition qDef = schema.getQueryDefForTable(dataType.getName());
-                TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
-
-                if (dataTable == null)
-                {
-                    _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + dataType.getName() + "' not found."));
-                    return false;
-                }
-
-                List<String> dataRows = new ArrayList<>();
-                dataRows.add(headerRow);
-
-                File dataFile;
-                try
-                {
-                    dataFile = FileUtil.createTempFile("~containerSplit~", container.getRowId() + dataFileName);
-                }
-                catch (IOException e)
-                {
-                    String msg = "Problem importing data for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "'. ";
-                    LOG.error(msg, e);
-                    _context.getErrors().addRowError(new ValidationException(msg));
-                    return false;
-                }
-                List<Integer> dataRowIndexes = containerRows.get(containerId);
-                Collections.sort(dataRowIndexes);
-                containerIndexes.put(containerId, dataRowIndexes.get(0));
-                for (Integer dataRowIndex : dataRowIndexes)
-                    dataRows.add(typeData.dataRows.get(dataRowIndex));
-
-                TypeData containerTypeData = new TypeData(container, dataType, dataTable, dataFile, typeData.fieldIndexes, typeData.dependencyIndexes, dataRows, new ArrayList<>());
-                containerTypeDatas.put(containerId, containerTypeData);
-            }
-
-            List<String> orderedContainer = new ArrayList<>(containerRows.keySet());
-            orderedContainer.sort(Comparator.comparing(containerIndexes::get)); // respect original row ordering
-            for (String containerId : orderedContainer)
-            {
-                if (_context.getErrors().hasErrors())
-                    return false;
-
-                TypeData containerTypeData = containerTypeDatas.get(containerId);
-                _updateOnlyFileDataMap.put(containerId + "-" + dataType.getRowId(), containerTypeData);
-                _importPartition(containerTypeData);
-            }
-
-            return true;
+            return _importSplitFile(typeData, typeData.dataFile, typeData.container, typeData.tableInfo);
         }
 
         @Override
@@ -2698,16 +2619,10 @@ public class ExpDataIterators
                         hasCrossFolderImport = hasCrossFolderImport || typeFolderData.keySet().size() > 1;
                         for (TypeData typeData : typeFolderData.values())
                         {
+                            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+
                             if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
-                            {
-                                if (_isCrossFolderUpdate)
-                                {
-                                    if (!handleCrossFolderUpdate(typeData))
-                                        _importPartition(typeData);
-                                }
-                                else
-                                    _importPartition(typeData);
-                            }
+                                _importPartition(typeData);
                         }
                     }
 
@@ -2748,7 +2663,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Invalid value provided for 'Container'."));
+                                _context.getErrors().addRowError(new ValidationException("Invalid value '" + rowFolderId +"' provided for '" + getColumnInfo(_folderColIndex).getName() + "'."));
                                 return true;
                             }
                         }
@@ -2809,11 +2724,13 @@ public class ExpDataIterators
                 typeMap.values().forEach(typeData -> {
                     if (typeData.dataFile != null)
                         typeData.dataFile.delete();
+                    if (!typeData.folderFiles.isEmpty())
+                    {
+                        typeData.folderFiles.values().forEach(file -> {
+                            file.delete();
+                        });
+                    }
                 });
-            });
-            _updateOnlyFileDataMap.values().forEach(typeData -> {
-                if (typeData.dataFile != null)
-                    typeData.dataFile.delete();
             });
             super.close();
         }
@@ -2884,6 +2801,32 @@ public class ExpDataIterators
             return keys;
         }
 
+        private File writeSplitFile(String dataType, String prefix, String suffix, String headerRow)
+        {
+            File dataFile;
+            try
+            {
+                dataFile = FileUtil.createTempFile(prefix, suffix);
+            }
+            catch (IOException e)
+            {
+                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + dataType + "'."));
+                return null;
+            }
+
+            try (FileWriter writer = new FileWriter(dataFile, true))
+            {
+                writer.write(headerRow);
+                writer.write(System.lineSeparator());
+            }
+            catch (IOException e)
+            {
+                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + dataType + "'."));
+            }
+
+            return dataFile;
+        }
+
         private TypeData createDataClassHeaderRow(ExpDataClass dataClass, Container container) throws IOException
         {
             List<QueryException> qpe = new ArrayList<>();
@@ -2908,11 +2851,9 @@ public class ExpDataIterators
                 header.add(_tsvWriter.quoteValue(name));
             }
 
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv");
-
-            List<String> dataRows = new ArrayList<String>();
-            dataRows.add(StringUtils.join(header, "\t"));
-            return new TypeData(container, _dataType, dataTable, dataFile, fieldIndexes, Collections.emptyMap(), dataRows, new ArrayList<>());
+            String headerRow = StringUtils.join(header, "\t");
+            File dataFile = writeSplitFile(dataClass.getName(), "~importSplit-", container.getRowId() + FileUtil.makeLegalName(dataClass.getName()) + ".tsv", headerRow);
+            return new TypeData(container, _dataType, dataTable, dataFile, fieldIndexes, Collections.emptyMap(), new ArrayList<>(), new ArrayList<>(), headerRow, new LinkedHashMap<>());
         }
 
         private TypeData createSampleHeaderRow(ExpSampleTypeImpl sampleType, Container container) throws IOException
@@ -2926,7 +2867,6 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
                 return null;
             }
-            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + FileUtil.makeLegalName(sampleType.getName()) + ".tsv");
             Set<String> validFields = new CaseInsensitiveHashSet();
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
@@ -3002,9 +2942,9 @@ public class ExpDataIterators
                 return null;
             }
 
-            List<String> dataRows = new ArrayList<String>();
-            dataRows.add(StringUtils.join(header, "\t"));
-            return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows, new ArrayList<>());
+            String headerRow = StringUtils.join(header, "\t");
+            File dataFile = writeSplitFile(sampleType.getName(), "~importSplit-", container.getRowId() + FileUtil.makeLegalName(sampleType.getName()) + ".tsv", headerRow);
+            return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, new ArrayList<>(), new ArrayList<>(), headerRow, new LinkedHashMap<>());
         }
 
         private Object getSerializingObject(Object data)
@@ -3055,11 +2995,84 @@ public class ExpDataIterators
             if (typeData.dataRows.isEmpty())
                 return;
 
+            // for cross folder import, write to further partitions
+            if (_isCrossFolderUpdate)
+            {
+                ExpObject dataType = typeData.dataType;
+
+                Map<String, List<Integer>> containerRows = new HashMap<>();
+
+                TableInfo tableInfo = null;
+                SimpleFilter filter = null;
+
+                if (_isSamples)
+                {
+                    filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), dataType.getRowId());
+                    filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
+                    tableInfo = ExperimentService.get().getTinfoMaterial();
+                }
+                else
+                {
+                    filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataType.getRowId());
+                    filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
+                    tableInfo = ExperimentService.get().getTinfoData();
+                }
+
+                Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+                for (Map<String, Object> row : rows)
+                {
+                    String name = (String) row.get("name");
+                    String dataContainer = (String) row.get("container");
+                    int dataRowId = typeData.dataIds.indexOf(name);
+                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(dataRowId);
+                }
+
+                for (String containerId : containerRows.keySet())
+                {
+                    Container container = _containerMap.get(containerId);
+                    if (container == null)
+                    {
+                        Container folder = ContainerManager.getForId(containerId);
+                        _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the folder: " + (folder != null ? folder.getName() : containerId)));
+                        return;
+                    }
+
+                    int containerRowId = container.getRowId();
+                    File splitFile = typeData.folderFiles.get(containerRowId);
+
+                    if (splitFile == null)
+                    {
+                        splitFile = writeSplitFile(typeData.dataType.getName(), "~containerSplit~", containerRowId + "-" + typeData.dataFile.getName(), typeData.headerRow);
+                        if (splitFile == null)
+                            return;
+                        typeData.folderFiles.put(containerRowId, splitFile);
+                    }
+
+                    List<String> dataRows = new ArrayList<>();
+                    List<Integer> dataRowIndexes = containerRows.get(containerId);
+                    Collections.sort(dataRowIndexes);
+                    for (Integer dataRowIndex : dataRowIndexes)
+                        dataRows.add(typeData.dataRows.get(dataRowIndex));
+
+                    try (FileWriter writer = new FileWriter(splitFile, true))
+                    {
+                        writer.write(StringUtils.join(dataRows, System.lineSeparator()));
+                        writer.write(System.lineSeparator()); // Issue 48442: add a new line to the end so the next written rows start on a new line
+                    }
+                    catch (IOException e)
+                    {
+                        _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.dataType.getName() + "'."));
+                        return;
+                    }
+                }
+            }
+
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
             {
                 writer.write(StringUtils.join(typeData.dataRows, System.lineSeparator()));
                 writer.write(System.lineSeparator()); // Issue 48442: add a new line to the end so the next written rows start on a new line
                 typeData.dataRows.clear();
+                typeData.dataIds.clear();
             }
             catch (IOException e)
             {

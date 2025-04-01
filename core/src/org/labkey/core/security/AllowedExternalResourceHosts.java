@@ -66,7 +66,7 @@ public class AllowedExternalResourceHosts
                 ContentSecurityPolicyFilter.unregisterAllowedSources(dir, ALLOWED_EXTERNAL_RESOURCES);
                 List<String> list = map.get(dir);
                 if (list != null)
-                    ContentSecurityPolicyFilter.registerAllowedSources(dir, ALLOWED_EXTERNAL_RESOURCES, list.toArray(new String[0]));
+                    ContentSecurityPolicyFilter.registerAllowedSources(ALLOWED_EXTERNAL_RESOURCES, dir, list.toArray(new String[0]));
             });
         }
     }
@@ -92,7 +92,7 @@ public class AllowedExternalResourceHosts
             return;
         }
 
-        list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources(sub.directive(), "External Sources", sub.host()));
+        list.forEach(sub -> ContentSecurityPolicyFilter.registerAllowedSources("External Sources", sub.directive(), sub.host()));
         LOG.debug("Registered [{}] as allowed external sources", list);
     }
 

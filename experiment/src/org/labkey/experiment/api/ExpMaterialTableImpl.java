@@ -1656,7 +1656,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         List<Pair<String, String>> templates = new ArrayList<>();
         ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-        url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+        url.addParameter("headerType", ColumnHeaderType.ImportField.name());
         try
         {
             if (getSampleType() != null && !getSampleType().getImportAliases().isEmpty())
