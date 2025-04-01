@@ -18,16 +18,16 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="org.labkey.wiki.WikiController.WikiPrintBean" %>
 <%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
-    Wiki wiki = me.getModelBean();
+    JspView<WikiPrintBean> me = HttpView.currentView();
+    WikiPrintBean bean = me.getModelBean();
     Container c = getContainer();
 %>
 <div style="padding:10px;">
-    <%  if (null == wiki.getLatestVersion())
+    <%  if (null == bean.getVersion())
         {%>
             This page does not have any printable content. The page may have been deleted or renamed by another user.<br><br>
         <%}
@@ -35,11 +35,11 @@
         {%>
             <table width="100%">
                 <tr>
-                    <td align=left><h3 class="labkey-header-large"><%=h(wiki.getLatestVersion().getTitle())%></h3></td>
+                    <td align=left><h3 class="labkey-header-large"><%=h(bean.getVersion().getTitle())%></h3></td>
                     <td align=right><%=formatDate(new Date())%></td>
                 </tr>
             </table>
             <hr>
-            <%=wiki.getLatestVersion().getHtml(c, wiki)%>
+            <%=bean.getHtml()%>
         <%}%>
 </div>

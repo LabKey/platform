@@ -30,7 +30,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
+    JspView<VersionBean> me = HttpView.currentView();
     VersionBean bean = me.getModelBean();
     User user = getUser();
     Container c = getContainer();
@@ -54,7 +54,7 @@ if (!bean.hasReadPermission)
 <%}
 else
 {
-    HtmlString formattedHtml = (null != bean.wikiVersion ? bean.wikiVersion.getHtml(c, bean.wiki) : null);
+    HtmlString formattedHtml = bean.html;
     if (HtmlString.isBlank(formattedHtml))
     {
         %>This page has no content.<%
