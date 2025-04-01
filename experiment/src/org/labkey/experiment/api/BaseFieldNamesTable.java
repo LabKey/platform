@@ -31,6 +31,7 @@ public abstract class BaseFieldNamesTable extends FilteredTable<ExpSchema>
         addWrapColumn(_rootTable.getColumn("Label"));
         addWrapColumn(_rootTable.getColumn("Description"));
         addWrapColumn(_rootTable.getColumn("RangeURI"));
+        addWrapColumn(_rootTable.getColumn("StorageColumnName"));
     }
 
     protected MutableColumnInfo addColumn(String name, JdbcType type)
