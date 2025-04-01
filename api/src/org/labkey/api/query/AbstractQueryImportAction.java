@@ -53,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -857,6 +858,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     auditEvent.addComment(auditAction, count);
 
                 transaction.commit();
+                String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
+                metricPrefix = metricPrefix.replace("exp.", "");
+                incrementRowCountMetric(count, context.getInsertOption(), metricPrefix);
                 return count;
             }
             catch (SQLException x)
@@ -874,6 +878,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
 
         return 0;
+    }
+
+    public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String schemaName)
+    {
+        String featureArea = "file" + StringUtils.capitalize(insertOption.toString().toLowerCase()) + "Counts";
+        String prefix = schemaName.toLowerCase();
+        if (count <= 1000)
+            SimpleMetricsService.get().increment("query", featureArea, prefix + "1to1000");
+        else if (count <= 5000)
+            SimpleMetricsService.get().increment("query", featureArea, prefix + "1001to5000");
+        else if (count <= 10000)
+            SimpleMetricsService.get().increment("query", featureArea, prefix + "5001to10000");
+        else
+            SimpleMetricsService.get().increment("query", featureArea, prefix + "GT10000");
     }
 
 
