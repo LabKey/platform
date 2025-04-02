@@ -115,8 +115,8 @@ public class TransactionFilter implements Filter
                                         DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
                                         PipelineJobService.get().killProcessesForThread(thread);
                                     }
-                                    thread.interrupt();
                                 }
+                                thread.interrupt();
                             }
                         }
                         try
