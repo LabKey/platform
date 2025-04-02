@@ -77,8 +77,6 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.reader.ColumnDescriptor;
-import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -332,7 +330,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     // override this
-    protected void preImportDIBValidation(@Nullable Collection<String> inputColumns)
+    protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
     {
     }
 
@@ -350,23 +348,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
-        List<String> columns = new ArrayList<>();
-        if (in instanceof DataLoader dataLoader)
-        {
-            ColumnDescriptor[] allColumns;
-            try
-            {
-                allColumns = dataLoader.getColumns();
-                for (ColumnDescriptor columnDescriptor : allColumns)
-                    columns.add(columnDescriptor.name);
-            }
-            catch (IOException exception)
-            {
-                throw new UncheckedIOException(exception);
-            }
-        }
-
-        preImportDIBValidation(columns);
+        preImportDIBValidation(in, null);
 
         boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
         boolean hasTableScript = hasTableScript(container);
@@ -555,7 +537,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 colNames.addAll(row.keySet());
         }
 
-        preImportDIBValidation(colNames);
+        preImportDIBValidation(null, colNames);
         return MapDataIterator.of(colNames, rows, debugName);
     }
 

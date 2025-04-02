@@ -1445,7 +1445,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             skipColumns.addAll(added);
         }
 
-        t.selectAll(skipColumns);
+        t.selectAll(skipColumns, Collections.emptyMap(), false);
 
         return t;
     }

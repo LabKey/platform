@@ -1529,9 +1529,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
         @Override
-        protected void preImportDIBValidation(@Nullable Collection<String> inputColumns)
+        protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
         {
-            ExperimentServiceImpl.get().checkDuplicateParentColumns(inputColumns, _dataClass);
+            ExperimentServiceImpl.get().checkDuplicateParentColumns(in, inputColumns, _dataClass);
         }
 
         @Override
