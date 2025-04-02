@@ -17,8 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
@@ -45,11 +43,9 @@
     NavigationModel model = (NavigationModel) HttpView.currentView().getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
-    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     List<NavTree> tabs = model.getTabs();
     LinkedHashSet<Pair<String, Portal.WebPart>> menus = new LinkedHashSet<>();
     boolean isPageAdminMode = PageFlowUtil.isPageAdminMode(getViewContext()) && !c.isRoot();
-    boolean isMobile = false; // disabled mobile until experience is refined
 
     // process custom menus
     for (Portal.WebPart menu : model.getCustomMenus())
@@ -79,80 +75,29 @@
     <div class="container">
         <div id="nav_dropdowns" class="navbar-header">
             <ul class="nav">
-                <% if (isMobile) { %>
-                <li id="project-mobile" class="dropdown" style="display: none;">
-                    <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
 <%
-                    if (context.isShowFolders())
-                    {
+    if (context.isShowFolders())
+    {
 %>
-                        <i class="fa fa-folder-open"></i>&nbsp;&nbsp;<%=h(model.getProjectTitle())%>
-<%
-                    }
-                    else if (!menus.isEmpty())
-                    {
-%>
-                        <%=h(menus.iterator().next().first)%>
-<%
-                    }
-
-                    if ((context.isShowFolders() && !menus.isEmpty()) || (!context.isShowFolders() && menus.size() > 1))
-                    {
-%>
-                        &nbsp;&nbsp;<span>...</span>
-<%
-                    }
-%>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <div class="lk-header-close">
-                            <i class="fa fa-close"></i>
-                            <a class="brand-logo-mobile" href="<%=h(laf.getLogoHref())%>">
-                                <img src="<%=h(TemplateResourceHandler.LOGO_MOBILE.getURL(c))%>" alt="<%=h(laf.getShortName())%>" height="30">
-                            </a>
-                        </div>
-                        <div class="lk-horizontal-menu">
-<%
-                            if (context.isShowFolders())
-                            {
-%>
-                            <li class="mobiledrop" data-webpart="MenuProjectNav" data-name="MenuProjectNav">
-                                <a data-target="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
-                                    <i class="fa fa-folder-open"></i>
-                                    <span>Projects</span>
-                                </a>
-                            </li>
-<%
-                            }
-                            
-                            for (Pair<String, Portal.WebPart> pair : menus)
-                            {
-%>
-                            <li class="mobiledrop" data-webpart="<%=unsafe(getSafeName(pair.second))%>" data-name="<%=unsafe(pair.second.getName())%>">
-                                <a data-target="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
-                                    <span><%=h(pair.first)%></span>
-                                </a>
-                            </li>
-<%
-                            }
-%>
-                        </div>
-                        <ul class="mobiledrop-menu dropdown-menu lk-dropdown-menu-area"></ul>
-                    </ul>
-                </li>
-                <% } if (context.isShowFolders()) { %>
                 <li class="dropdown dropdown-folder-nav" data-webpart="FolderNav" data-name="FolderNav">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <%=h(model.getProjectTitle().isEmpty() ? "Site Navigation" : model.getProjectTitle())%><i style="margin-left: 5px" class="fa fa-chevron-down"></i>
                     </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
-                <% } for (Pair<String, Portal.WebPart> pair : menus) { %>
+<%
+    }
+
+    for (Pair<String, Portal.WebPart> pair : menus)
+    {
+%>
                 <li class="dropdown" data-webpart="<%=unsafe(getSafeName(pair.second))%>" data-name="<%=unsafe(pair.second.getName())%>">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%><i style="margin-left: 5px" class="fa fa-chevron-down"></i></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
-                <% } %>
+<%
+    }
+%>
             </ul>
         </div>
         <div id="nav_tabs" class="lk-nav-tabs-ct">
