@@ -880,18 +880,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return 0;
     }
 
-    public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String schemaName)
+    public static void incrementRowCountMetric(int count, QueryUpdateService.InsertOption insertOption, String prefix)
     {
         String featureArea = "file" + StringUtils.capitalize(insertOption.toString().toLowerCase()) + "Counts";
-        String prefix = schemaName.toLowerCase();
+        String lcPrefix = prefix.toLowerCase();
         if (count <= 1000)
-            SimpleMetricsService.get().increment("query", featureArea, prefix + "1to1000");
+            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1to1000");
         else if (count <= 5000)
-            SimpleMetricsService.get().increment("query", featureArea, prefix + "1001to5000");
+            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "1001to5000");
         else if (count <= 10000)
-            SimpleMetricsService.get().increment("query", featureArea, prefix + "5001to10000");
+            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "5001to10000");
         else
-            SimpleMetricsService.get().increment("query", featureArea, prefix + "GT10000");
+            SimpleMetricsService.get().increment("query", featureArea, lcPrefix + "GT10000");
     }
 
 
