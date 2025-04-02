@@ -222,27 +222,22 @@ public interface FileSystemLike
         return p.toFile();
     }
 
-    // Converts an absolute URI to a relative one if it's within the base URI.
-    // If fileURI is outside rootURI, the result remains fileURI/unchanged.
-    // Examples:
-    // root "/a/b/c/", file "/x/y/z.txt" -> "/x/y/z.txt"
-    // root "/a/b/c/", file "/a/b/c/d.txt" -> "d.txt"
-    static URI getRelativeURI(URI rootURI, URI fileURI)
+    static FileLike resolveChildWithRelativeURI(File file)
     {
-        return rootURI.relativize(fileURI);
-    }
+        URI fileURI = file.toURI();
+        FileLike allowedRoot = new FileSystemLike.Builder(fileURI).root();
 
-    static FileLike resolveChildWithRelativeURI(URI rootURI, URI fileURI)
-    {
-        URI relativeURI = getRelativeURI(rootURI, fileURI);
+        // Converts an absolute URI to a relative one if it's within the base URI.
+        // If fileURI is outside rootURI, the result remains fileURI/unchanged.
+        // Examples:
+        // root "/a/b/c/", file "/x/y/z.txt" -> "/x/y/z.txt"
+        // root "/a/b/c/", file "/a/b/c/d.txt" -> "d.txt"
+        URI relativeURI = URIUtil.relativize(allowedRoot.toURI(), fileURI);
 
-        // If the relative URI is absolute or remains unchanged, it means relativize failed and the file is outside the root directory.
-        if (relativeURI.isAbsolute() || relativeURI.equals(fileURI))
+        if (relativeURI == null)
         {
-            throw new IllegalArgumentException("File '" + fileURI.getPath() + "' is outside the root '" + rootURI.getPath() + "'");
+            throw new IllegalArgumentException("File '" + fileURI.getPath() + "' is outside the root '" + allowedRoot.toURI().getPath() + "'");
         }
-
-        FileLike allowedRoot = new FileSystemLike.Builder(rootURI).root();
 
         //explicitly check whether the given file path is within the allowed root directory
         if (allowedRoot.getFileSystem().isDescendant(allowedRoot, fileURI))
@@ -251,7 +246,7 @@ public interface FileSystemLike
         }
         else
         {
-            throw new IllegalArgumentException("File '" + relativeURI.getPath() + "' is not a descendant of '" + rootURI.getPath() + "'");
+            throw new IllegalArgumentException("File '" + relativeURI.getPath() + "' is not a descendant of '" + allowedRoot.getPath() + "'");
         }
     }
 
