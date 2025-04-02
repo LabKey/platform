@@ -85,7 +85,6 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -95,12 +94,9 @@ import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
-import org.labkey.api.specimen.settings.DisplaySettings;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.SpecimenUrls;
@@ -154,6 +150,7 @@ import org.labkey.specimen.SpecimenRequestException;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.importer.RequestabilityManager;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.specimen.model.SpecimenRequestActor;
 import org.labkey.specimen.model.SpecimenRequestEvent;
@@ -177,7 +174,11 @@ import org.labkey.specimen.security.permissions.ManageRequestStatusesPermission;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
 import org.labkey.specimen.security.permissions.ManageSpecimenActorsPermission;
 import org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission;
+import org.labkey.specimen.settings.DisplaySettings;
+import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.specimen.settings.RequestNotificationSettings;
+import org.labkey.specimen.settings.SettingsManager;
+import org.labkey.specimen.settings.StatusSettings;
 import org.labkey.specimen.view.NotificationBean;
 import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.specimen.view.SpecimenSearchWebPart;
@@ -1127,8 +1128,12 @@ public class SpecimenController extends SpringActionController
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            SpecimenMigrationService.get().exportSpecimens(getContainer(), getUser(), new ArrayList<>(),
-                getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()), response);
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(new ArrayList<>(), importer.getSimpleSpecimenColumns());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(response);
         }
     }
 

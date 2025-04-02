@@ -16,7 +16,6 @@
 
 package org.labkey.specimen;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -40,21 +40,18 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
@@ -69,16 +66,20 @@ import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.RequestabilityManager;
-import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
+import org.labkey.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
+import org.labkey.specimen.settings.RepositorySettings;
+import org.labkey.specimen.settings.SettingsManager;
 import org.labkey.specimen.view.ManageSpecimenView;
 import org.labkey.specimen.view.SpecimenReportWebPartFactory;
 import org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate;
@@ -89,7 +90,6 @@ import org.labkey.specimen.writer.SpecimenArchiveWriter;
 import org.labkey.specimen.writer.SpecimenSettingsWriter;
 import org.labkey.specimen.writer.SpecimenWriter;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -188,36 +188,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void importSpecimens(Container container, User user, List<Map<String, Object>> specimens) throws ValidationException, IOException
-            {
-                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
-                importer.process(specimens, false);
-            }
-
-            @Override
-            public void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response)
-            {
-                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, timepointType, participantIdLabel);
-                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(specimens, importer.getSimpleSpecimenColumns());
-                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
-                // the DisplayColumn's caption, not its own caption. That seems wrong...
-                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-                xlWriter.renderWorkbook(response);
-            }
-
-            @Override
-            public Map<String, String> getColumnLabelMap(Container container, User user)
-            {
-                return new SimpleSpecimenImporter(container, user).getColumnLabels();
-            }
-
-            @Override
-            public void fixupSpecimenColumns(Container container, User user, TabLoader loader) throws IOException
-            {
-                new SimpleSpecimenImporter(container, user).fixupSpecimenColumns(loader);
-            }
-
-            @Override
             public QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings)
             {
                 return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
@@ -227,6 +197,38 @@ public class SpecimenModule extends SpringModule
             public void setDefaultRequestabilityRules(Container container, User user)
             {
                 RequestabilityManager.getInstance().setDefaultRules(container, user);
+            }
+
+            @Override
+            public boolean isEnableRequests(Container c)
+            {
+                return SettingsManager.get().getRepositorySettings(c).isEnableRequests();
+            }
+
+            @Override
+            public void addSpecimenPivotTableNames(Set<String> names)
+            {
+                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+            }
+
+            @Override
+            public @Nullable TableInfo getSpecimenPivotTable(UserSchema schema, String name, Study study, ContainerFilter cf)
+            {
+                if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByPrimaryType(schema, study, cf);
+                }
+                if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByDerivativeType(schema, study, cf);
+                }
+                if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
+                {
+                    return new SpecimenPivotByRequestingLocation(schema, study, cf);
+                }
+                return null;
             }
         });
      }

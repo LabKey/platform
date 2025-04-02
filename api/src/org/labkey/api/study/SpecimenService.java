@@ -23,7 +23,6 @@ import org.labkey.api.annotations.Migrate;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -36,15 +35,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Oct 2, 2007
- * Time: 3:35:45 PM
- */
 public interface SpecimenService
 {
     String SAMPLE_TYPE_NAME = "Study Specimens";
@@ -62,10 +55,6 @@ public interface SpecimenService
     /** Does a search for matching GlobalUniqueIds  */
     ParticipantVisit getSampleInfo(Container studyContainer, User user, String globalUniqueId) throws SQLException;
 
-    Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date) throws SQLException;
-
-    Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit) throws SQLException;
-
     Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime) throws SQLException;
 
     Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user) throws SQLException;
@@ -73,8 +62,6 @@ public interface SpecimenService
     Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id);
 
     String getActiveSpecimenImporter(@NotNull Container studyContainer);
-
-    void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
 
     void registerSpecimenTransform(SpecimenTransform transform);
 
@@ -95,12 +82,6 @@ public interface SpecimenService
 
     @Nullable
     TableInfo getTableInfoSpecimenEvent(Container container);
-
-    SpecimenTablesTemplate getSpecimenTablesTemplate();
-
-    Domain getSpecimenVialDomain(Container container, User user);
-
-    Domain getSpecimenEventDomain(Container container, User user);
 
     /**
      * Returns a map of database column name -> preferred tsv column name (one per column). Does not include import aliases.
