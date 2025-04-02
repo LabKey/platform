@@ -15,20 +15,17 @@
  */
 package org.labkey.api.iterator;
 
-import org.labkey.api.util.Filter;
-
 import java.io.IOException;
+import java.util.function.Predicate;
 
 /**
  * Combination of {@link CloseableIterator} and {@link FilteredIterator}
- * User: adam
- * Date: Aug 20, 2010
  */
 public class CloseableFilteredIterator<T> extends FilteredIterator<T> implements CloseableIterator<T>
 {
     private final CloseableIterator<T> _iter;
 
-    public CloseableFilteredIterator(CloseableIterator<T> iter, Filter<T> filter)
+    public CloseableFilteredIterator(CloseableIterator<T> iter, Predicate<T> filter)
     {
         super(iter, filter);
         _iter = iter;

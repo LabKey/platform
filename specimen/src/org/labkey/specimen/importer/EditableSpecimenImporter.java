@@ -31,7 +31,6 @@ import org.labkey.api.specimen.importer.EventVialRollup;
 import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupHelper.RollupMap;
 import org.labkey.api.specimen.importer.RollupInstance;
-import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.specimen.SpecimenColumns;
 import org.labkey.specimen.SpecimenRequestManager;
 
@@ -89,9 +88,8 @@ public class EditableSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(getContainer());
         Map<SpecimenTableType, SpecimenImportFile> sifMap = new HashMap<>();
-        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows, strategy);
+        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows);
 
         try
         {
@@ -105,11 +103,10 @@ public class EditableSpecimenImporter extends SpecimenImporter
         }
     }
 
-
-    private void addSpecimenImportFile(Map<SpecimenTableType, SpecimenImportFile> fileNameMap, SpecimenTableType type, List<Map<String, Object>> specimenRows, SpecimenImportStrategy strategy)
+    private void addSpecimenImportFile(Map<SpecimenTableType, SpecimenImportFile> fileNameMap, SpecimenTableType type, List<Map<String, Object>> specimenRows)
     {
         assert null != type : "Unknown type!";
-        fileNameMap.put(type, new IteratorSpecimenImportFile(specimenRows, strategy, type));
+        fileNameMap.put(type, new IteratorSpecimenImportFile(specimenRows, type));
     }
 
     public List<Map<String, Object>> mapColumnNamesToTsvColumnNames(List<Map<String, Object>> rows)
