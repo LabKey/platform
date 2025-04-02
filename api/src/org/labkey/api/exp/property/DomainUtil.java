@@ -1240,7 +1240,7 @@ public class DomainUtil
         if (domain != null && domain.getDomainKind() != null)
         {
             // using ContainerFilter.EVERYTHING to account for /Shared domains
-            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.EVERYTHING_UNSAFE);
+            TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.getUnsafeEverythingFilter());
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
                 // we need to make all the row updates for this domain property at one time to prevent the

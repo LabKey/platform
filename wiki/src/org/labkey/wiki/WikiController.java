@@ -83,6 +83,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependencies;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
@@ -700,21 +701,56 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class PrintAllAction extends SimpleViewAction<Object>
+    public class PrintMultipleBean
+    {
+        public Set<WikiTree> wikiTrees;
+        public String displayName = getUser().getDisplayName(getUser());
+
+        private PrintMultipleBean(Set<WikiTree> wikis)
+        {
+            wikiTrees = wikis;
+        }
+    }
+
+    private abstract class PrintMultipleAction<FORM> extends SimpleViewAction<FORM>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(FORM form, BindException errors)
         {
             Container c = getContainer();
-            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c);
+            Set<WikiTree> wikiTrees = getWikiTrees(form, c);
 
-            JspView<PrintAllBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
+            JspView<PrintMultipleBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintMultipleBean(wikiTrees));
+            // Rendering everything early to collect and add the client dependencies to the view; the JSP will re-render
+            // everything, but double rendering is likely better than holding all rendered content in memory.
+            wikiTrees.forEach(tree -> {
+                Wiki wiki = WikiSelectManager.getWiki(c, tree.getName());
+                WikiVersion version = wiki.getLatestVersion();
+                if (version != null)
+                    version.render(v, c, wiki);
+            });
             v.setFrame(WebPartView.FrameType.NONE);
-
             getPageConfig().setTemplate(Template.Print);
 
             return v;
+        }
+
+        @Override
+        public String getCommandClassMethodName()
+        {
+            return "getWikiTrees";
+        }
+
+        public abstract Set<WikiTree> getWikiTrees(FORM form, Container c);
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class PrintAllAction extends PrintMultipleAction<Object>
+    {
+        @Override
+        public Set<WikiTree> getWikiTrees(Object o, Container c)
+        {
+            return WikiSelectManager.getWikiTrees(c);
         }
 
         @Override
@@ -725,15 +761,13 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PrintBranchAction extends SimpleViewAction<WikiNameForm>
+    public class PrintBranchAction extends PrintMultipleAction<WikiNameForm>
     {
         private Wiki _rootWiki;
 
         @Override
-        public ModelAndView getView(WikiNameForm form, BindException errors)
+        public Set<WikiTree> getWikiTrees(WikiNameForm form, Container c)
         {
-            Container c = getContainer();
-
             if (null == form.getName() || form.getName().trim().isEmpty())
                 throw new NotFoundException("You must supply a page name!");
 
@@ -742,30 +776,13 @@ public class WikiController extends SpringActionController
                 throw new NotFoundException("The wiki page named '" + form.getName() + "' was not found.");
 
             // build a set of all descendants of the root page
-            Set<WikiTree> wikiTrees = WikiSelectManager.getWikiTrees(c, _rootWiki);
-
-            JspView<PrintAllBean> v = new JspView<>("/org/labkey/wiki/view/wikiPrintAll.jsp", new PrintAllBean(wikiTrees));
-            v.setFrame(WebPartView.FrameType.NONE);
-            getPageConfig().setTemplate(Template.Print);
-
-            return v;
+            return WikiSelectManager.getWikiTrees(c, _rootWiki);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
-        }
-    }
-
-    public class PrintAllBean
-    {
-        public Set<WikiTree> wikiTrees;
-        public String displayName = getUser().getDisplayName(getUser());
-
-        private PrintAllBean(Set<WikiTree> wikis)
-        {
-            this.wikiTrees = wikis;
         }
     }
 
@@ -1085,6 +1102,33 @@ public class WikiController extends SpringActionController
         }
     }
 
+    public static class WikiPrintBean
+    {
+        private final WikiVersion _version;
+
+        private HtmlString _html;
+
+        private WikiPrintBean(WikiVersion version)
+        {
+            _version = version;
+        }
+
+        public WikiVersion getVersion()
+        {
+            return _version;
+        }
+
+        public HtmlString getHtml()
+        {
+            return _html;
+        }
+
+        private void setHtml(HtmlString html)
+        {
+            _html = html;
+        }
+    }
+
     @RequiresPermission(ReadPermission.class)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
@@ -1176,7 +1220,11 @@ public class WikiController extends SpringActionController
             }
             else if (isPrint())
             {
-                JspView<Wiki> view = new JspView<>("/org/labkey/wiki/view/wikiPrint.jsp", _wiki);
+                WikiVersion version = _wiki.getLatestVersion();
+                WikiPrintBean printBean = new WikiPrintBean(version);
+                JspView<WikiPrintBean> view = new JspView<>("/org/labkey/wiki/view/wikiPrint.jsp", printBean);
+                // Render content early so we can set the dependencies on the view
+                printBean.setHtml(version.render(view, _wiki.lookupContainer(), _wiki));
                 view.setFrame(WebPartView.FrameType.NONE);
                 return view;
             }
@@ -1294,7 +1342,11 @@ public class WikiController extends SpringActionController
 
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
-            return new JspView<>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
+            JspView<VersionBean> view = new JspView<>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
+            // Render the wiki content now so we can set the client dependencies on the view
+            bean.render(view);
+
+            return view;
         }
 
         @Override
@@ -1334,6 +1386,9 @@ public class WikiController extends SpringActionController
         public final String versionLink;            //base url for different versions of this page
         public final ActionURL compareLink;         //base url for comparing to another version
 
+        public HtmlString html = null;
+        public Set<ClientDependencies> dependencies = Set.of();
+
         private VersionBean(Wiki wiki, WikiVersion wikiVersion, BaseWikiPermissions perms)
         {
             this.wiki = wiki;
@@ -1351,6 +1406,14 @@ public class WikiController extends SpringActionController
             created = wikiVersion.getCreated();
             versionLink = getVersionURL(wiki.getName()).toString();
             compareLink = getCompareVersionsURL(wiki.getName());
+        }
+
+        private void render(HttpView<?> view)
+        {
+            if (wikiVersion != null)
+            {
+                html = wikiVersion.render(view, wiki.lookupContainer(), wiki);
+            }
         }
     }
 

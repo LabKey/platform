@@ -33,7 +33,6 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
@@ -226,11 +225,10 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             specimenRows.add(specimenRow);
         }
 
-        SpecimenImportStrategy strategy = new StandardSpecimenImportStrategy(container);
         Map<SpecimenTableType, SpecimenImportFile> sifMap = new HashMap<>();
-        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows, strategy);
+        addSpecimenImportFile(sifMap, _specimensTableType, specimenRows);
         for (LookupTable lookupTable : lookupTables.values())
-            addSpecimenImportFile(sifMap, lookupTable.getTableType(), lookupTable.toMaps(), strategy);
+            addSpecimenImportFile(sifMap, lookupTable.getTableType(), lookupTable.toMaps());
 
         try
         {
@@ -250,10 +248,10 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     }
 
 
-    private void addSpecimenImportFile(Map<SpecimenTableType, SpecimenImportFile> fileNameMap, SpecimenTableType type, List<Map<String, Object>> specimenRows, SpecimenImportStrategy strategy)
+    private void addSpecimenImportFile(Map<SpecimenTableType, SpecimenImportFile> fileNameMap, SpecimenTableType type, List<Map<String, Object>> specimenRows)
     {
         assert null != type : "Unknown type!";
-        fileNameMap.put(type, new IteratorSpecimenImportFile(specimenRows, strategy, type));
+        fileNameMap.put(type, new IteratorSpecimenImportFile(specimenRows, type));
     }
 
 

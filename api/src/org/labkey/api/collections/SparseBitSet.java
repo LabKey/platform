@@ -1,8 +1,8 @@
 package org.labkey.api.collections;
 
-/**
- * copied from https://github.com/brettwooldridge/SparseBitSet
- * apache license: https://github.com/brettwooldridge/SparseBitSet/blob/master/LICENSE
+/*
+  copied from https://github.com/brettwooldridge/SparseBitSet
+  apache license: https://github.com/brettwooldridge/SparseBitSet/blob/master/LICENSE
  */
 
 /*- This software is the work of Paladin Software International, Incorporated,
@@ -164,7 +164,6 @@ public class SparseBitSet implements Cloneable, Serializable
      *  4 "levels". Respectively (from the least significant end), level4, the
      *  address within word, the address within a level3 block, the address within
      *  a level2 area, and the level1 address of that area within the set.
-     *
      *  LEVEL4 is the number of bits of the level4 address (number of bits need
      *  to address the bits in a long)
      */
@@ -702,9 +701,8 @@ public class SparseBitSet implements Cloneable, Serializable
     public boolean equals(Object obj)
     {
         /*  Sanity and quick checks. */
-        if (!(obj instanceof SparseBitSet))
+        if (!(obj instanceof SparseBitSet b))
             return false;
-        final SparseBitSet b = (SparseBitSet) obj;
         if (this == b)
             return true; // Identity
 
