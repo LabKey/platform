@@ -20,18 +20,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.mbean.CacheMXBean;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.HeartBeat;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
 import java.util.Set;
-
-/**
- * User: adam
- * Date: Jul 8, 2010
- * Time: 9:47:03 AM
- */
+import java.util.function.Predicate;
 
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
@@ -150,7 +144,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
 
     @Override
-    public int removeUsingFilter(Filter<K> kFilter)
+    public int removeUsingFilter(Predicate<K> kFilter)
     {
         return trackRemoves(_cache.removeUsingFilter(kFilter));
     }

@@ -33,7 +33,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
@@ -116,14 +115,8 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             final Path path = getRootPath().append(containerPath);
             _folderCache.remove(path);
             if (recursive)
-                _folderCache.removeUsingFilter(new Filter<Path>() {
-                    @Override
-                    public boolean accept(Path test)
-                    {
-                        return test.startsWith(path);
-                    }
-                });
-            if (containerPath.size() == 0)
+                _folderCache.removeUsingFilter(test -> test.startsWith(path));
+            if (containerPath.isEmpty())
             {
                 synchronized (WebdavResolverImpl.this)
                 {

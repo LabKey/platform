@@ -26,16 +26,15 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.TrackingCache;
-import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.DbScope.TransactionImpl;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
@@ -54,13 +53,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         _scope = scope;
     }
 
-    @Deprecated // Use the factory methods that return a BlockingDatabaseCache instead
-    public DatabaseCache(DbScope scope, int maxSize, String debugName)
-    {
-        // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
-        this(scope, maxSize, CacheManager.UNLIMITED, debugName);
-    }
-
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
@@ -68,7 +60,8 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
-        return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
+        // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
+        return get(scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
     }
 
     /**
@@ -91,7 +84,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
         {
             V value = super.load(key, argument, loader);
-            LOG.debug("Just loaded: " + key + " (" + getTrackingCache().getDebugName() + ")");
+            LOG.debug("Just loaded: {} ({})", key, getTrackingCache().getDebugName());
             TransactionImpl t = _databaseCache.getCurrentTransaction();
 
             // Only add post commit cache reload if there's a transaction and the transaction post commit queue is not
@@ -99,10 +92,10 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             if (null != t)
             {
                 // Create a new or get existing post commit counter task
-                CacheReloadCounterTask task = t.addCommitTask(new CacheReloadCounterTask(this) , DbScope.CommitTaskOption.POSTCOMMIT);
-                if( task.shouldAddReloadTask() )
+                CacheReloadCounterTask task = t.addCommitTask(new CacheReloadCounterTask(this), DbScope.CommitTaskOption.POSTCOMMIT);
+                if (task.shouldAddReloadTask())
                 {
-                    // Add reload task, if doesn't already exist, and decrement transaction reload counter
+                    // Add reload task, if it doesn't already exist, and decrement transaction reload counter
                     CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
                     boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
                     if (!alreadyQueued)
@@ -111,6 +104,100 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             return value;
+        }
+
+        // This is a post commit task that counts how many cache reload post commits have been queued and is
+        // scoped to the transaction.
+        private static class CacheReloadCounterTask implements Runnable
+        {
+            private final Cache<?, ?> _cache;
+            private int _remainingReloadCommitTasks;
+
+            public CacheReloadCounterTask(Cache<?, ?> cache)
+            {
+                _cache = cache;
+                _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
+            }
+
+            @Override
+            public void run()
+            {
+                // noop
+            }
+
+            @Override
+            public boolean equals(Object o)
+            {
+                if (o == null || getClass() != o.getClass()) return false;
+                CacheReloadCounterTask that = (CacheReloadCounterTask) o;
+                return Objects.equals(_cache, that._cache);
+            }
+
+            @Override
+            public int hashCode()
+            {
+                return Objects.hashCode(_cache);
+            }
+
+            public boolean shouldAddReloadTask()
+            {
+                return _remainingReloadCommitTasks > 0;
+            }
+
+            public void decrementReloadCount()
+            {
+                _remainingReloadCommitTasks--;
+            }
+        }
+
+        // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
+        // re-played on successful commit.
+        private static class CacheReloadCommitTask<K, V> implements Runnable
+        {
+            private final Cache<K, V> _cache;
+            private final K _key;
+            private final Object _arg;
+            private final CacheLoader<K, V> _loader;
+
+            public CacheReloadCommitTask(Cache<K, V> cache, K key, Object arg, CacheLoader<K, V> loader)
+            {
+                _cache = cache;
+                _key = key;
+                _arg = arg;
+                _loader = loader;
+            }
+
+            @Override
+            public boolean equals(Object o)
+            {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                @SuppressWarnings("unchecked")
+                CacheReloadCommitTask<K, V> that = (CacheReloadCommitTask<K, V>) o;
+
+                if (!getCache().equals(that.getCache())) return false;
+                return Objects.equals(_key, that._key);
+            }
+
+            protected Cache<K, V> getCache()
+            {
+                return _cache;
+            }
+
+            @Override
+            public int hashCode()
+            {
+                int result = getCache().hashCode();
+                result = 31 * result + (_key != null ? _key.hashCode() : 0);
+                return result;
+            }
+
+            @Override
+            public void run()
+            {
+                getCache().get(_key, _arg, _loader);
+            }
         }
 
         @Override
@@ -200,7 +287,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Predicate<K> filter)
     {
         return getCache().removeUsingFilter(filter);
     }
@@ -229,106 +316,13 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
     }
 
-    // This is a post commit task that counts how many cache reload post commits have been queued and is
-    // scoped to the transaction.
-    public static class CacheReloadCounterTask implements Runnable
-    {
-        private final Cache<?, ?> _cache;
-        private int _remainingReloadCommitTasks;
-
-        public CacheReloadCounterTask(Cache<?, ?> cache)
-        {
-            _cache = cache;
-            _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
-        }
-
-        @Override
-        public void run()
-        {
-            // noop
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (o == null || getClass() != o.getClass()) return false;
-            CacheReloadCounterTask that = (CacheReloadCounterTask) o;
-            return Objects.equals(_cache, that._cache);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hashCode(_cache);
-        }
-
-        public boolean shouldAddReloadTask()
-        {
-            return _remainingReloadCommitTasks > 0;
-        }
-
-        public void decrementReloadCount()
-        {
-            _remainingReloadCommitTasks--;
-        }
-    }
-
-    // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
-    // re-played on successful commit.
-    public static class CacheReloadCommitTask<K, V> implements Runnable
-    {
-        private final Cache<K, V> _cache;
-        private final K _key;
-        private final Object _arg;
-        private final CacheLoader<K, V> _loader;
-
-        public CacheReloadCommitTask(Cache<K, V> cache, K key, Object arg, CacheLoader<K, V> loader)
-        {
-            _cache = cache;
-            _key = key;
-            _arg = arg;
-            _loader = loader;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CacheReloadCommitTask that = (CacheReloadCommitTask) o;
-
-            if (!getCache().equals(that.getCache())) return false;
-            return Objects.equals(_key, that._key);
-        }
-
-        protected Cache<K, V> getCache()
-        {
-            return _cache;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getCache().hashCode();
-            result = 31 * result + (_key != null ? _key.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().get(_key, _arg, _loader);
-        }
-    }
-
     public static class TestCase extends Assert
     {
         public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
         {
             public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
             {
-                super(scope, maxSize, debugName);
+                super(scope, maxSize, CacheManager.UNLIMITED, debugName);
             }
 
             // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
@@ -381,7 +375,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
             switch (trackingCache.getCacheType())
             {
-                case DeterministicLRU -> assertEquals("Count was " + correctCount, correctCount, 20);
+                case DeterministicLRU -> assertEquals("Count was " + correctCount, 20, correctCount);
                 case NonDeterministicLRU -> assertTrue("Count was " + correctCount, correctCount > 11);
                 default -> fail("Unknown cache type");
             }
@@ -405,7 +399,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             // As above, this test isn't very useful for a NonDeterministicLRU cache.
             switch (trackingCache.getCacheType())
             {
-                case DeterministicLRU -> assertEquals("Count was " + correctCount, correctCount, 10);
+                case DeterministicLRU -> assertEquals("Count was " + correctCount, 10, correctCount);
                 case NonDeterministicLRU -> {
                     assertTrue("Count was " + correctCount, correctCount > 4);
 
@@ -420,22 +414,62 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             try (DbScope.Transaction transaction = scope.beginTransaction())
             {
                 assertTrue(scope.isTransactionActive());
+                TransactionCache<String, String> tCache = (TransactionCache<String, String>) cache.getCache();
+                Cache<String, String> privateCache = tCache._privateCache;
+                Cache<String, String> sharedCache = tCache._sharedCache;
+                assertEquals(10, tCache.getKeys().size());
+                assertEquals(10, sharedCache.getKeys().size());
+                assertEquals(0, privateCache.getKeys().size());
 
                 // Test read-through transaction cache
                 assertSame(cache.get("key_11"), values[11]);
+                // Nothing should change after a read
+                assertEquals(10, sharedCache.getKeys().size());
+                assertEquals(10, tCache.getKeys().size());
+                assertEquals(0, privateCache.getKeys().size());
 
                 cache.remove("key_11");
                 assertNull(cache.get("key_11"));
+                assertEquals(10, sharedCache.getKeys().size());
+                assertEquals(10, tCache.getKeys().size()); // Unique keys are still 10
+                assertEquals(1, privateCache.getKeys().size()); // But private cache should now have a remove entry
+
+                for (int i = 30; i < 35; i++)
+                {
+                    cache.put("key_" + i, values[i]);
+                }
+                assertEquals(10, sharedCache.getKeys().size());
+                assertEquals(15, tCache.getKeys().size()); // 15 unique now
+                assertEquals(6, privateCache.getKeys().size());
+
+                // Remove all the even keys
+                cache.removeUsingFilter(key -> Integer.valueOf(key.substring(4)) % 2 == 0);
+                assertNull(cache.get("key_12"));
+                assertNull(cache.get("key_22"));
+                assertNull(cache.get("key_24"));
+                assertNull(cache.get("key_30"));
+                assertNotNull(privateCache.get("key_30"));
+                assertNull(cache.get("key_34"));
+                assertNotNull(privateCache.get("key_34"));
 
                 // imitate another thread: toggle transaction and test
                 scope.setOverrideTransactionActive(Boolean.FALSE);
                 assertSame(cache.get("key_11"), values[11]);
+                assertNull(cache.get("key_31"));
+                assertNull(cache.get("key_33"));
                 scope.setOverrideTransactionActive(null);
 
                 // This should close the transaction caches
                 transaction.commit();
+
                 // Test that remove got applied to shared cache
                 assertNull(cache.get("key_11"));
+                // Test that even keys got removed from the shared cache
+                cache.getKeys().stream()
+                    .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
+                    .findAny()
+                    .ifPresent(key -> fail("Found an even key: " + key));
+                // No test for puts since DatabaseCache doesn't replay them (that's solely a BlockingDatabaseCache thing)
 
                 cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));
                 assert trackingCache.size() == 0;

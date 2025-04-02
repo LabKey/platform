@@ -68,7 +68,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.specimen.actions.SpecimenApiController;
 import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
-import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.importer.SpecimenImporter;
@@ -238,7 +237,6 @@ public class SpecimenModule extends SpringModule
         ContainerManager.addContainerListener(new SpecimenRequestContainerListener());
 
         StudyService.get().registerStudyTabProvider(tabs -> tabs.add(new SpecimensPage("Specimen Data")));
-        SpecimenService.get().registerSpecimenImportStrategyFactory(new DefaultSpecimenImportStrategyFactory());
         AuditLogService.get().registerAuditType(new SpecimenCommentAuditProvider());
         PipelineService.get().registerPipelineProvider(new SpecimenPipeline(this));
         StudyInternalService.get().registerManageStudyViewFactory(ctx -> ctx.getContainer().hasActiveModuleByName("specimen") ? new ManageSpecimenView() : null);

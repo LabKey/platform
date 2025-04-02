@@ -18,32 +18,22 @@ package org.labkey.specimen.importer;
 
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.Map;
 
-/*
-* User: adam
-* Date: Feb 10, 2013
-* Time: 5:16:12 PM
-*/
 public class FileSystemSpecimenImportFile implements SpecimenImportFile
 {
     private final VirtualFile _dir;
     private final String _fileName;
-    private final SpecimenImportStrategy _strategy;
     private final SpecimenTableType _tableType;
 
-    public FileSystemSpecimenImportFile(VirtualFile dir, String fileName, SpecimenImportStrategy strategy, SpecimenTableType tableType)
+    public FileSystemSpecimenImportFile(VirtualFile dir, String fileName, SpecimenTableType tableType)
     {
         _dir = dir;
         _fileName = fileName;
-        _strategy = strategy;
         _tableType = tableType;
     }
 
@@ -54,22 +44,11 @@ public class FileSystemSpecimenImportFile implements SpecimenImportFile
     }
 
     @Override
-    public SpecimenImportStrategy getStrategy()
-    {
-        return _strategy;
-    }
-
-    @Override
     public TabLoader getDataLoader() throws IOException
     {
         Reader reader = Readers.getReader(getInputStream());
         TabLoader loader = new TabLoader(reader, true, null, true);   // Close on complete
         loader.setInferTypes(false);
-
-        Filter<Map<String, Object>> filter = getStrategy().getImportFilter();
-
-        if (null != filter)
-            loader.setMapFilter(filter);
 
         return loader;
     }

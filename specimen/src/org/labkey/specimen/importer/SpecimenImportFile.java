@@ -17,18 +17,11 @@
 package org.labkey.specimen.importer;
 
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.study.SpecimenImportStrategy;
 
 import java.io.IOException;
 
-/*
-* User: adam
-* Date: Feb 16, 2013
-* Time: 6:58:21 AM
-*/
 public interface SpecimenImportFile
 {
-    SpecimenImportStrategy getStrategy();
     SpecimenTableType getTableType();
     DataLoader getDataLoader() throws IOException;
 }
