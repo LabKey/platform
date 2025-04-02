@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -28,10 +28,6 @@ import org.labkey.api.study.StudyService;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: klum
- * Date: Feb 23, 2012
- */
 public class SpecimenReportQuery
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "SpecimenSummary_PivotByPrimaryType";

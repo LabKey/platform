@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
@@ -32,11 +32,16 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
+import org.labkey.api.specimen.location.LocationImpl;
+import org.labkey.api.specimen.location.LocationManager;
+import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
+import org.labkey.specimen.SpecimenManager;
+import org.labkey.specimen.model.PrimaryType;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -188,6 +193,18 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
     }
 
+    protected static class NameLabelPair
+    {
+        public String _name;
+        public String _label;
+
+        public NameLabelPair(String name, String label)
+        {
+            _name = name;
+            _label = label;
+        }
+    }
+
     protected MutableColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair...parts)
     {
         // The parts._name should already be "Normal Legal Name" parts
@@ -229,6 +246,90 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<UserSchema>
         {
             name.append("_").append(i++);
         }
+    }
+
+    protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
+    {
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
+        List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
+
+        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+        {
+            if (type.getId() != null)
+            {
+                legalMap.putName(type.getLabel());
+            }
+        }
+
+        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
+        {
+            if (type.getId() != null)
+                typeMap.put(type.getId(), new NameLabelPair(
+                        legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
+        }
+        return typeMap;
+    }
+
+    public Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container)
+    {
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        List<PrimaryType> primaryTypes = SpecimenManager.get().getPrimaryTypes(container);
+
+        for (PrimaryType type : primaryTypes)
+        {
+            legalMap.putName(type.getPrimaryType());
+        }
+
+        for (PrimaryType type : primaryTypes)
+        {
+            typeMap.put((int)type.getRowId(), new NameLabelPair(
+                    legalMap.getLabel(type.getPrimaryType(), -1), type.getPrimaryType()));
+        }
+        return typeMap;
+    }
+
+    protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
+    {
+        Map<Integer, NameLabelPair> typeMap = new HashMap<>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, getUserSchema().getUser());
+        List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
+
+        for (SpecimenTypeSummary.TypeCount type : types)
+        {
+            if (type.getId() != null && type.getLabel() != null)
+                legalMap.putName(type.getLabel());
+        }
+
+        for (SpecimenTypeSummary.TypeCount type : types)
+        {
+            if (type.getId() != null  && type.getLabel() != null)
+                typeMap.put(type.getId(), new NameLabelPair(
+                        legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
+        }
+        return typeMap;
+    }
+
+    protected Map<Integer, NameLabelPair> getSiteMap(Container container)
+    {
+        Map<Integer, NameLabelPair> siteMap = new HashMap<>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        List<LocationImpl> locations = LocationManager.get().getLocations(container);
+
+        for (LocationImpl location : locations)
+        {
+            legalMap.putName(location.getLabel(), location.getRowId());
+        }
+
+        for (LocationImpl location : locations)
+        {
+            siteMap.put(location.getRowId(), new NameLabelPair(
+                    legalMap.getLabel(location.getLabel(), location.getRowId()), location.getLabel()));
+        }
+        return siteMap;
     }
 
     /** Note we cache these pivot tables, so we can't go calling setContainerFilter() so

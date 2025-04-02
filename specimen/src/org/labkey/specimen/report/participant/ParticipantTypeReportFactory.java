@@ -18,7 +18,7 @@ package org.labkey.specimen.report.participant;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;

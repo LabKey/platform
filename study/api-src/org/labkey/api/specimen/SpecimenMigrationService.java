@@ -1,6 +1,5 @@
 package org.labkey.api.specimen;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -14,16 +13,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.specimen.query.BaseSpecimenPivotTable.LegalCaseInsensitiveMap;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 // Temporary service that provides entry points to ease migration of code from study module to specimen module
@@ -53,43 +48,11 @@ public interface SpecimenMigrationService
 
     @Nullable QueryUpdateService getSpecimenQueryUpdateService(Container c, TableInfo queryTable);
 
-    void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response);
     QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings);
 
     void setDefaultRequestabilityRules(Container container, User user);
 
     boolean isEnableRequests(Container c);
-
-    class NameLabelPair
-    {
-        public String _name;
-        public String _label;
-
-        public NameLabelPair(String name, String label)
-        {
-            _name = name;
-            _label = label;
-        }
-    }
-
-    /**
-     * Returns a map of primary type ids to labels
-     */
-    Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user);
-    /**
-     * Returns a map of all primary types
-     */
-    Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container, LegalCaseInsensitiveMap legalMap, User user);
-
-    /**
-     * Returns a map of derivative type ids to labels
-     */
-    Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user);
-
-    /**
-     * Returns a map of site ids to labels
-     */
-    Map<Integer, NameLabelPair> getSiteMap(Container container, LegalCaseInsensitiveMap legalMap, User user);
 
     void addSpecimenPivotTableNames(Set<String> names);
 

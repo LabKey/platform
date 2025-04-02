@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenMigrationService.NameLabelPair;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
@@ -44,8 +42,8 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
             "/visit combination.");
 
         Container container = getContainer();
-        Map<Integer, NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
-        Map<Integer, NameLabelPair> derivativeTypeMap = SpecimenMigrationService.get().getDerivativeTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -64,10 +62,11 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
                     if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId))
                     {
                         wrapPivotColumn(col,
-                                COLUMN_DESCRIPTION_FORMAT,
-                                primaryTypeMap.get(primaryId),
-                                derivativeTypeMap.get(derivativeId),
-                                new NameLabelPair(parts[1], parts[1]));
+                            COLUMN_DESCRIPTION_FORMAT,
+                            primaryTypeMap.get(primaryId),
+                            derivativeTypeMap.get(derivativeId),
+                            new NameLabelPair(parts[1], parts[1])
+                        );
                     }
                 }
             }

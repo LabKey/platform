@@ -123,7 +123,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
                         catch (NumberFormatException ignored) {}
                     }
                     moduleMetrics.put(featureArea, counts);
-                    LOG.debug("Loaded " + counts.size() + " counts for " + scoping + ": " + counts);
+                    LOG.debug("Loaded {} counts for {}: {}", counts.size(), scoping, counts);
                 }
             }
         }
@@ -174,7 +174,7 @@ public class SimpleMetricsServiceImpl implements SimpleMetricsService
         });
 
         long result = counts.computeIfAbsent(metricName, s -> new AtomicLong(0)).incrementAndGet();
-        LOG.trace("Incremented " + scoping + "." + metricName + " to " + result);
+        LOG.trace("Incremented {}.{} to {}", scoping, metricName, result);
         queueSave();
 
         return result;

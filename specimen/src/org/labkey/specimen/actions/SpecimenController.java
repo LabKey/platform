@@ -85,7 +85,6 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -97,6 +96,7 @@ import org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermiss
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.SpecimenUrls;
@@ -150,6 +150,7 @@ import org.labkey.specimen.SpecimenRequestException;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 import org.labkey.specimen.importer.RequestabilityManager;
+import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
 import org.labkey.specimen.model.SpecimenRequestActor;
 import org.labkey.specimen.model.SpecimenRequestEvent;
@@ -1127,8 +1128,12 @@ public class SpecimenController extends SpringActionController
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            SpecimenMigrationService.get().exportSpecimens(getContainer(), getUser(), new ArrayList<>(),
-                getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()), response);
+            SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getContainer(), getUser(), getStudyRedirectIfNull().getTimepointType(), StudyService.get().getSubjectNounSingular(getContainer()));
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(new ArrayList<>(), importer.getSimpleSpecimenColumns());
+            // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
+            // the DisplayColumn's caption, not its own caption. That seems wrong...
+            xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
+            xlWriter.renderWorkbook(response);
         }
     }
 

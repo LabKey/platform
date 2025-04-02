@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
@@ -43,9 +42,9 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
             "/visit combination.");
 
         Container container = getContainer();
-        Map<Integer, SpecimenMigrationService.NameLabelPair> primaryTypeMap = SpecimenMigrationService.get().getPrimaryTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
-        Map<Integer, SpecimenMigrationService.NameLabelPair> derivativeTypeMap = SpecimenMigrationService.get().getDerivativeTypeMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
-        Map<Integer, SpecimenMigrationService.NameLabelPair> locationMap = SpecimenMigrationService.get().getSiteMap(container, new LegalCaseInsensitiveMap(), getUserSchema().getUser());
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
+        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
+        Map<Integer, NameLabelPair> locationMap = getSiteMap(container);
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -65,10 +64,11 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
                     if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && locationMap.containsKey(locationId))
                     {
                         wrapPivotColumn(col,
-                                COLUMN_DESCRIPTION_FORMAT,
-                                primaryTypeMap.get(primaryId),
-                                derivativeTypeMap.get(derivativeId),
-                                locationMap.get(locationId));
+                            COLUMN_DESCRIPTION_FORMAT,
+                            primaryTypeMap.get(primaryId),
+                            derivativeTypeMap.get(derivativeId),
+                            locationMap.get(locationId)
+                        );
                     }
                 }
             }

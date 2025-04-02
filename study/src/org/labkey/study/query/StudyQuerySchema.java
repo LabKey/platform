@@ -131,19 +131,20 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
+    public static final String STUDY_DATA_TABLE_NAME = "StudyData";
+    public static final String QCSTATE_TABLE_NAME = "QCState";
+
     @Nullable // if no study defined in this container
     final StudyImpl _study;
 
     protected final Role _contextualRole;
-    private boolean _dontAliasColumns = false;
-
-    private Map<Integer, List<BigDecimal>> _datasetSequenceMap;
-    public static final String STUDY_DATA_TABLE_NAME = "StudyData";
-    public static final String QCSTATE_TABLE_NAME = "QCState";
     protected Set<String> _tableNames;
 
+    private boolean _dontAliasColumns = false;
+    private Map<Integer, List<BigDecimal>> _datasetSequenceMap;
+
     private ParticipantGroup _sessionParticipantGroup;
-    private StudyDesignQuerySchema _designQuerySchema;
+    private final StudyDesignQuerySchema _designQuerySchema;
 
     /** use StudyQuerySchema.createSchema() */
     protected StudyQuerySchema(@NotNull StudyImpl study, @NotNull User user, @Nullable Role contextualRole)

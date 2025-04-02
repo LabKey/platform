@@ -33,7 +33,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
+import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.util.PageFlowUtil;

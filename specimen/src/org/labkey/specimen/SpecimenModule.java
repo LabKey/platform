@@ -16,7 +16,6 @@
 
 package org.labkey.specimen;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
@@ -49,19 +48,10 @@ import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.SpecimensPage;
-import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.SpecimenTypeSummary;
-import org.labkey.api.specimen.query.BaseSpecimenPivotTable.LegalCaseInsensitiveMap;
-import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
-import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
-import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
-import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
@@ -77,13 +67,14 @@ import org.labkey.specimen.actions.SpecimenController;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.DefaultSpecimenImportStrategyFactory;
 import org.labkey.specimen.importer.RequestabilityManager;
-import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.importer.SpecimenImporter;
 import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
-import org.labkey.specimen.model.PrimaryType;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
+import org.labkey.specimen.query.SpecimenPivotByDerivativeType;
+import org.labkey.specimen.query.SpecimenPivotByPrimaryType;
+import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
@@ -102,7 +93,6 @@ import org.labkey.specimen.writer.SpecimenWriter;
 
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -199,17 +189,6 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public void exportSpecimens(Container container, User user, List<Map<String, Object>> specimens, TimepointType timepointType, String participantIdLabel, HttpServletResponse response)
-            {
-                SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user, timepointType, participantIdLabel);
-                MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(specimens, importer.getSimpleSpecimenColumns());
-                // Note: I don't think this is having any effect on the output because ExcelColumn.renderCaption() uses
-                // the DisplayColumn's caption, not its own caption. That seems wrong...
-                xlWriter.setColumnModifier(col -> col.setCaption(importer.label(col.getName())));
-                xlWriter.renderWorkbook(response);
-            }
-
-            @Override
             public QueryView getSpecimenQueryView(ViewContext context, QuerySettings settings)
             {
                 return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
@@ -225,90 +204,6 @@ public class SpecimenModule extends SpringModule
             public boolean isEnableRequests(Container c)
             {
                 return SettingsManager.get().getRepositorySettings(c).isEnableRequests();
-            }
-
-            @Override
-            public Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
-            {
-                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-                SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, user);
-                List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
-
-                for (SpecimenTypeSummary.TypeCount type : primaryTypes)
-                {
-                    if (type.getId() != null)
-                    {
-                        legalMap.putName(type.getLabel());
-                    }
-                }
-
-                for (SpecimenTypeSummary.TypeCount type : primaryTypes)
-                {
-                    if (type.getId() != null)
-                        typeMap.put(type.getId(), new NameLabelPair(
-                            legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
-                }
-                return typeMap;
-            }
-
-            @Override
-            public Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
-            {
-                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-                List<PrimaryType> primaryTypes = SpecimenManager.get().getPrimaryTypes(container);
-
-                for (PrimaryType type : primaryTypes)
-                {
-                    legalMap.putName(type.getPrimaryType());
-                }
-
-                for (PrimaryType type : primaryTypes)
-                {
-                    typeMap.put((int)type.getRowId(), new NameLabelPair(
-                        legalMap.getLabel(type.getPrimaryType(), -1), type.getPrimaryType()));
-                }
-                return typeMap;
-            }
-
-            @Override
-            public Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
-            {
-                Map<Integer, NameLabelPair> typeMap = new HashMap<>();
-                SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(container, user);
-                List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
-
-                for (SpecimenTypeSummary.TypeCount type : types)
-                {
-                    if (type.getId() != null && type.getLabel() != null)
-                        legalMap.putName(type.getLabel());
-                }
-
-                for (SpecimenTypeSummary.TypeCount type : types)
-                {
-                    if (type.getId() != null  && type.getLabel() != null)
-                        typeMap.put(type.getId(), new NameLabelPair(
-                            legalMap.getLabel(type.getLabel(), -1), type.getLabel()));
-                }
-                return typeMap;
-            }
-
-            @Override
-            public Map<Integer, NameLabelPair> getSiteMap(Container container, LegalCaseInsensitiveMap legalMap, User user)
-            {
-                Map<Integer, NameLabelPair> siteMap = new HashMap<>();
-                List<LocationImpl> locations = LocationManager.get().getLocations(container);
-
-                for (LocationImpl location : locations)
-                {
-                    legalMap.putName(location.getLabel(), location.getRowId());
-                }
-
-                for (LocationImpl location : locations)
-                {
-                    siteMap.put(location.getRowId(), new NameLabelPair(
-                        legalMap.getLabel(location.getLabel(), location.getRowId()), location.getLabel()));
-                }
-                return siteMap;
             }
 
             @Override
