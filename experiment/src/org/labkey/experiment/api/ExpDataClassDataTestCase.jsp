@@ -67,7 +67,6 @@
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.reader.MapLoader" %>
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.User" %>
@@ -102,6 +101,9 @@
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
+<%@ page import="org.labkey.api.exp.query.ExpSchema" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
 
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
@@ -231,6 +233,7 @@ public void testDataClass() throws Exception
 {
     final User user = TestContext.get().getUser();
     final Container sub = ContainerManager.createContainer(c, "sub", TestContext.get().getUser());
+    final String dataClassName = "testing";
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
@@ -242,16 +245,13 @@ public void testDataClass() throws Exception
     DataClassDomainKindProperties options = new DataClassDomainKindProperties();
     options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", options, props, indices, null, null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, options, props, indices, null, null);
     assertNotNull(dataClass);
 
     final Domain domain = dataClass.getDomain();
     assertNotNull(domain);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
-    TableInfo table = schema.getTable("testing");
-    assertNotNull("data class not in query schema", table);
-
+    TableInfo table = getDataClassTable(dataClassName);
     String expectedName = "JUNIT-1-20";
     testNameExpressionGeneration(dataClass, table, expectedName);
     testInsertDuplicate(dataClass, table);
@@ -373,8 +373,7 @@ private void testBulkImport(ExpDataClassImpl dataClass, TableInfo table, User us
     row.put("alias", "a,b,c");
     rows.add(row);
 
-    MapLoader mapLoader = new MapLoader(rows);
-    int count = table.getUpdateService().loadRows(user, c, mapLoader, new DataIteratorContext(), null);
+    int count = table.getUpdateService().loadRows(user, c, MapDataIterator.of(rows), new DataIteratorContext(), null);
     assertEquals(2, count);
     assertEquals(2, dataClass.getDatas().size());
 
@@ -492,16 +491,12 @@ private void verifyAliasesViaSelectRows(String schemaName, String queryName, int
 private void testEmptyInsert(ExpDataClassImpl dataClass, TableInfo table, User user) throws Exception
 {
     List<Map<String, Object>> rows = new ArrayList<>();
-    MapLoader b = new MapLoader(rows);
-
     BatchValidationException errors = new BatchValidationException();
-    int count = table.getUpdateService().importRows(user, c, b, errors, null, null);
+    int count = table.getUpdateService().importRows(user, c, MapDataIterator.of(rows), errors, null, null);
     if (errors.hasErrors())
         throw errors;
     assertEquals(0, count);
 }
-
-
 
 @Test
 public void testDataClassFromTemplate() throws Exception
@@ -553,11 +548,8 @@ public void testDataClassFromTemplate() throws Exception
     Lookup lookup = new Lookup(c, "lists", listName);
     ConceptURIProperties.setLookup(c, "http://cpas.labkey.com/Experiment#Testing", lookup);
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
-    TableInfo table = schema.getTable(domainName);
-    assertNotNull("data class not in query schema", table);
-
     // verify that the lookup from the ConceptURI mapping is applied as a FK to the column
+    TableInfo table = getDataClassTable(domainName);
     TableInfo aaLookupTable = table.getColumn("aa").getFkTableInfo();
     assertNotNull(aaLookupTable);
     assertEquals("lists", aaLookupTable.getPublicSchemaName());
@@ -701,15 +693,15 @@ public void testContainerDelete() throws Exception
 {
     final User user = TestContext.get().getUser();
     final Container sub = ContainerManager.createContainer(c, "sub", user);
+    final String dataClassName = "testing";
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, null);
+    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
     final int dataClassId = dataClass.getRowId();
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
-    TableInfo table = schema.getTable("testing");
+    TableInfo table = getDataClassTable(dataClassName);
 
     // setup: insert into junit container
     int dataRowId1;
@@ -1039,26 +1031,32 @@ public void testInsertOptionUpdate() throws Exception
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("prop", "string"));
 
-    ExpDataClass dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
-    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c"));
-    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b"));
+    String longFieldName = "Field100 ABCDEFGHIJKLMNOPQRSTUVWXYZ%()=+-[]_|*`'\":;<>?!@#^AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTTU)";
+    props.add(new GWTPropertyDescriptor(longFieldName, "string"));
 
-    UserSchema schema = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
-    TableInfo table = schema.getTable(dataClassName);
+    ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, null);
+    List<Map<String, Object>> rowsToAdd = new ArrayList<>();
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1", "prop", "a", longFieldName, "Very"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-1-d", "prop", "c", longFieldName, "Long"));
+    rowsToAdd.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b", longFieldName, "Field"));
+
+    TableInfo table = getDataClassTable(dataClassName);
     QueryUpdateService qus = table.getUpdateService();
+    assertNotNull(qus);
+
+    String longFieldAlias = table.getColumn(longFieldName).getAlias();
+    assertFalse("Unexpected long field alias", longFieldName.equalsIgnoreCase(longFieldAlias));
 
     DataIteratorContext context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
 
-    var count = qus.loadRows(user, c, new MapLoader(rowsToAdd), context, null);
+    var count = qus.loadRows(user, c, MapDataIterator.of(rowsToAdd), context, null);
     assertFalse(context.getErrors().hasErrors());
-    assertEquals(count,3);
+    assertEquals(3, count);
 
     TableInfo dataInputTInfo = ((ExperimentServiceImpl) ExperimentService.get()).getTinfoExperimentRunDataInputs();
     SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-    TableSelector ts = new TableSelector(dataInputTInfo, TableSelector.ALL_COLUMNS, filter, null);
+    TableSelector ts = new TableSelector(dataInputTInfo, filter, null);
     int inputCount =  (int) ts.getRowCount();
 
     // update regular properties as well as datainputs
@@ -1068,23 +1066,33 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "D-2", "prop", "b1", "DataInputs/DataClassWithImportOption", null));
 
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
-    count = qus.loadRows(user, c, new MapLoader(rowsToUpdate), context, null);
+    count = qus.loadRows(user, c, MapDataIterator.of(rowsToUpdate), context, null);
 
     assertFalse(context.getErrors().hasErrors());
-    assertEquals(count,3);
+    assertEquals(3, count);
 
     Set<String> columnNames = new HashSet<>();
     columnNames.add("Name");
     columnNames.add("prop");
+    columnNames.add(longFieldName);
 
     List<Map<String,Object>> rows = Arrays.asList(new TableSelector(table, columnNames, null, new Sort("Name")).getMapArray());
     assertEquals("a1", rows.get(0).get("prop"));
     assertEquals("c1", rows.get(1).get("prop"));
     assertEquals("b1", rows.get(2).get("prop"));
+    assertEquals("Very", rows.get(0).get(longFieldAlias));
+    assertEquals("Long", rows.get(1).get(longFieldAlias));
+    assertEquals("Field", rows.get(2).get(longFieldAlias));
 
-    ts = new TableSelector(dataInputTInfo, TableSelector.ALL_COLUMNS, filter, null);
+    ts = new TableSelector(dataInputTInfo, filter, null);
     int newInputCount =  (int) ts.getRowCount();
     assertEquals(inputCount + 1, newInputCount);
+}
+
+private @NotNull TableInfo getDataClassTable(String dataClassName)
+{
+    UserSchema schema = QueryService.get().getUserSchema(TestContext.get().getUser(), c, ExpSchema.SCHEMA_EXP_DATA);
+    return schema.getTableOrThrow(dataClassName);
 }
 
 %>
