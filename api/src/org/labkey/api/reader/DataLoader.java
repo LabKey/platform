@@ -48,7 +48,6 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.SimpleTime;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -65,6 +64,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -112,7 +112,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // true if the results can be scrolled by the DataIterator created in .getDataIterator()
     protected Boolean _scrollable = null;
     protected boolean _preserveEmptyString = false;
-    private Filter<Map<String, Object>> _mapFilter = null;
+    private Predicate<Map<String, Object>> _mapFilter = null;
 
     protected DataLoader()
     {
@@ -482,7 +482,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
     // This is convenient when configuring a DataLoader that is returned or passed to other code
-    public void setMapFilter(Filter<Map<String, Object>> mapFilter)
+    public void setMapFilter(Predicate<Map<String, Object>> mapFilter)
     {
         _mapFilter = mapFilter;
     }

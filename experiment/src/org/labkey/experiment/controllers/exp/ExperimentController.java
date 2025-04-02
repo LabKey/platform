@@ -59,7 +59,9 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -67,6 +69,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -82,6 +85,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
@@ -189,6 +193,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -487,6 +492,120 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("runGroups");
             addRootNavTrail(root);
             root.addChild("Run Groups");
+        }
+    }
+
+    public record Field(String domainURI, String domainName, String name, Container container) {}
+    public record MiniMaterial(int rowId, String name) {}
+
+    @RequiresPermission(SiteAdminPermission.class)
+    public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            // Find all the fields that could have lost data due to issue 52666
+            TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
+            List<Field> problematicFields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getArrayList(Field.class);
+
+            // Prep audit table for querying
+            UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
+            TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
+
+            Map<Pair<ExpSampleType, String>, List<Pair<MiniMaterial, String>>> summaries = new HashMap<>();
+
+            Map<Field, Pair<Long, Long>> otherProblematicFields = new LinkedHashMap<>();
+
+            for (Field problematicField : problematicFields)
+            {
+                String domainURI = problematicField.domainURI;
+                String name = problematicField.name;
+                Container container = problematicField.container;
+                Domain domain = PropertyService.get().getDomain(container, domainURI);
+                if (domain != null && domain.getDomainKind() != null)
+                {
+                    TableInfo table = domain.getDomainKind().getTableInfo(getUser(), container, domain, ContainerFilter.getUnsafeEverythingFilter());
+
+                    // Drill into sample types
+                    if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
+                    {
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
+
+                        // Find samples that current have no value for the field with potential for data loss
+                        List<MiniMaterial> materialsWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniMaterial.class);
+
+                        List<Pair<MiniMaterial, String>> fixupsNeeded = new ArrayList<>();
+
+                        // For each sample without a value today, check the audit history
+                        for (MiniMaterial material : materialsWithNulls)
+                        {
+                            // Order by RowId to get them in the sequence they happened in
+                            var events = new TableSelector(sampleTimelineTable, new SimpleFilter(FieldKey.fromParts("SampleId"), material.rowId), new Sort("RowId")).getArrayList(SampleTimelineAuditEvent.class);
+                            // Remember the most recently set value
+                            String mostRecentValue = null;
+                            for (SampleTimelineAuditEvent event : events)
+                            {
+                                Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
+                                if (newValues.containsKey(name))
+                                {
+                                    mostRecentValue = newValues.get(name);
+                                }
+                            }
+                            // If the value had been set before, and its most recent insert/update wasn't setting it blank,
+                            // it's most likely a lost value
+                            if (mostRecentValue != null && !mostRecentValue.isEmpty())
+                            {
+                                fixupsNeeded.add(Pair.of(material, mostRecentValue));
+                            }
+                        }
+                        if (!fixupsNeeded.isEmpty())
+                        {
+                            summaries.put(Pair.of(sampleType, name), fixupsNeeded);
+                        }
+                    }
+                    else
+                    {
+                        if (table != null)
+                        {
+                            long totalRows = new TableSelector(table).getRowCount();
+                            long emptyRows = new TableSelector(table, new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getRowCount();
+                            otherProblematicFields.put(problematicField, Pair.of(totalRows, emptyRows));
+                        }
+                        else
+                        {
+                            otherProblematicFields.put(problematicField, null);
+                        }
+                    }
+                }
+            }
+
+            return new HtmlView("Fixups Needed",
+                DOM.createHtmlFragment(
+                        DOM.H2("Sample Types"),
+                        summaries.entrySet().stream().map(e ->
+                            DOM.DIV(
+                                    DOM.H4(e.getKey().first.getName()),
+                                    DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                                            DOM.THEAD(DOM.TH("SampleID"), DOM.TH(e.getKey().second)),
+                                            e.getValue().stream().map(p ->
+                                                        DOM.TR(DOM.TD(p.first.name), DOM.TD(p.second)))
+                                    ))),
+                    DOM.H2("Other Potentially Problematic Fields"),
+                    DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                            DOM.THEAD(DOM.TH("Domain Name"), DOM.TH("Domain URI"), DOM.TH("Field Name"), DOM.TH("Container"), DOM.TH("Total Rows"), DOM.TH("Rows with Nulls")),
+                            otherProblematicFields.entrySet().stream().map(e -> {
+                                Field f = e.getKey();
+                                Pair<Long, Long> counts = e.getValue();
+                                return DOM.TR(DOM.TD(f.domainName), DOM.TD(f.domainURI), DOM.TD(f.name), DOM.TD(f.container.getPath(), DOM.TD(counts.first), DOM.TD(counts.second)));
+
+                            }
+                    ))));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Accidentally Nulled Field Report");
         }
     }
 

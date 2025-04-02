@@ -30,7 +30,6 @@ import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -526,9 +525,13 @@ public class ToolsController extends SpringActionController
 
             // As of now, Crawler.java and the study tests are the only classes that specify crawler actions
             for (String path : List.of(
-                sourcePath + "/../../../testAutomation/src/org/labkey/test/util/Crawler.java",
-                sourcePath + "/../study/test/src/org/labkey/test/tests/study")
-            )
+                sourcePath + "/../../clientModules/adjudication/test/src/org/labkey/test/tests/adjudication/AdjudicationAbstractBaseTest.java",
+                sourcePath + "/../../ehrModules/ehr/test/src/org/labkey/test/tests/ehr/ComplianceTrainingTest.java",
+                sourcePath + "/../../limsModules/biologics/test/src/org/labkey/test/tests/biologics/BiologicsReportTest.java",
+                sourcePath + "/../study/test/src/org/labkey/test/tests/study",
+                sourcePath + "/../../../testAutomation/src/org/labkey/test/stress/HarConverter.java",
+                sourcePath + "/../../../testAutomation/src/org/labkey/test/util/Crawler.java"
+            ))
             {
                 File file = new File(path);
                 if (!file.exists())
@@ -553,9 +556,7 @@ public class ToolsController extends SpringActionController
                 else
                 {
                     SpringActionController controller = (SpringActionController) module.getController(null, actionId.getController());
-                    Controller actionController = controller.resolveAction(actionId.getAction());
-
-                    if (null == actionController)
+                    if (null == controller || controller.resolveAction(actionId.getAction()) == null)
                     {
                         missingActions.add(actionId);
                     }

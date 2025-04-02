@@ -76,10 +76,6 @@ public interface SpecimenService
 
     void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws SQLException, IOException, ValidationException;
 
-    void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
-
-    Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
-
     void registerSpecimenTransform(SpecimenTransform transform);
 
     Collection<SpecimenTransform> getSpecimenTransforms(Container container);

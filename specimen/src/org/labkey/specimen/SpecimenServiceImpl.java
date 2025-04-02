@@ -46,7 +46,6 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
-import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.SpecimenTransform;
@@ -75,7 +74,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SpecimenServiceImpl implements SpecimenService
 {
-    private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
     private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();
     private final List<SpecimenChangeListener> _changeListeners = new CopyOnWriteArrayList<>();
 
@@ -328,19 +326,6 @@ public class SpecimenServiceImpl implements SpecimenService
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
         rows = importer.fixupSpecimenRows(rows);
         importer.process(rows, merge);
-    }
-
-    @Override
-    public void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory)
-    {
-        // Insert at the start (we generally want reverse dependency order)
-        _importStrategyFactories.add(0, factory);
-    }
-
-    @Override
-    public Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories()
-    {
-        return _importStrategyFactories;
     }
 
     @Override

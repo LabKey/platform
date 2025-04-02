@@ -861,6 +861,7 @@ public class WikiManager implements WikiService
     // WikiService
     //
 
+    /** Note: Does not handle the client dependencies declared by the wiki or any of its embedded webparts! */
     @Override
     public HtmlString getHtml(Container c, String name)
     {

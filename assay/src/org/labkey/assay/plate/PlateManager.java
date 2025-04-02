@@ -548,7 +548,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING_UNSAFE, false);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
             if (assayDataTable != null)
             {
                 ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
@@ -612,7 +612,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING_UNSAFE, false);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
             if (assayDataTable != null)
             {
                 ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
@@ -3192,7 +3192,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                             if (plateSet == null)
                                 throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate set for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
 
-                            PlateSetLineage lineage = getPlateSetLineage(container, user, plateSet.getRowId(), ContainerFilter.EVERYTHING_UNSAFE);
+                            PlateSetLineage lineage = getPlateSetLineage(container, user, plateSet.getRowId(), ContainerFilter.getUnsafeEverythingFilter());
                             String plateSetPath = lineage.getSeedPath();
 
                             cache.put(plateId, Pair.of(plate.getContainer().getEntityId(), plateSetPath));
@@ -3342,7 +3342,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         for (ExpProtocol protocol : protocols)
         {
             AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING_UNSAFE, false);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.getUnsafeEverythingFilter(), false);
 
             if (assayDataTable != null)
             {

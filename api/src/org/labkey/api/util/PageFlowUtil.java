@@ -802,15 +802,13 @@ public class PageFlowUtil
      */
     public static String encodePath(String path)
     {
-        String[] parts = path.split("/");
-        StringBuilder ret = new StringBuilder();
+        String[] parts = StringUtils.splitPreserveAllTokens(path, '/');
         for (int i = 0; i < parts.length; i++)
         {
-            if (i > 0)
-                ret.append("/");
-            ret.append(encodeURIComponent(parts[i]));
+            if (!parts[i].isEmpty())
+                parts[i] = encodeURIComponent(parts[i]);
         }
-        return ret.toString();
+        return StringUtils.join(parts, '/');
     }
 
 
@@ -2903,6 +2901,13 @@ public class PageFlowUtil
                 values.add(random.next(100, 'A', 'B', '\\', '|'));
             }
             assertEquals(values, splitStringToValues(joinValuesToString(values, '|'), '|', false, false, false));
+        }
+
+        @Test
+        public void encodePath()
+        {
+            assertEquals("a/b/c", PageFlowUtil.encodePath("a/b/c"));
+            assertEquals("/a/b/c/", PageFlowUtil.encodePath("/a/b/c/"));
         }
     }
 
