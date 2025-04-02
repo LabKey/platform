@@ -497,6 +497,7 @@ public class ExperimentController extends SpringActionController
 
     public record Field(String domainURI, String domainName, String name, Container container) {}
     public record MiniMaterial(int rowId, String name) {}
+    public record TimelineSummary(MiniMaterial miniMaterial, String mostRecentValue) {}
 
     @RequiresPermission(SiteAdminPermission.class)
     public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
@@ -506,21 +507,21 @@ public class ExperimentController extends SpringActionController
         {
             // Find all the fields that could have lost data due to issue 52666
             TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.getUnsafeEverythingFilter());
-            List<Field> problematicFields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getArrayList(Field.class);
+            List<Field> fields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getArrayList(Field.class);
 
             // Prep audit table for querying
             UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
             TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.getUnsafeEverythingFilter());
 
-            Map<Pair<ExpSampleType, String>, List<Pair<MiniMaterial, String>>> summaries = new HashMap<>();
+            Map<Pair<ExpSampleType, String>, List<TimelineSummary>> summaries = new HashMap<>();
 
-            Map<Field, Pair<Long, Long>> otherProblematicFields = new LinkedHashMap<>();
+            Map<Field, Pair<Long, Long>> problematicFields = new LinkedHashMap<>();
 
-            for (Field problematicField : problematicFields)
+            for (Field field : fields)
             {
-                String domainURI = problematicField.domainURI;
-                String name = problematicField.name;
-                Container container = problematicField.container;
+                String domainURI = field.domainURI;
+                String name = field.name;
+                Container container = field.container;
                 Domain domain = PropertyService.get().getDomain(container, domainURI);
                 if (domain != null && domain.getDomainKind() != null)
                 {
@@ -534,7 +535,7 @@ public class ExperimentController extends SpringActionController
                         // Find samples that current have no value for the field with potential for data loss
                         List<MiniMaterial> materialsWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniMaterial.class);
 
-                        List<Pair<MiniMaterial, String>> fixupsNeeded = new ArrayList<>();
+                        List<TimelineSummary> fixupsNeeded = new ArrayList<>();
 
                         // For each sample without a value today, check the audit history
                         for (MiniMaterial material : materialsWithNulls)
@@ -548,6 +549,7 @@ public class ExperimentController extends SpringActionController
                                 Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
                                 if (newValues.containsKey(name))
                                 {
+                                    // Will be the empty string if the value was intentionally set to blank
                                     mostRecentValue = newValues.get(name);
                                 }
                             }
@@ -555,7 +557,7 @@ public class ExperimentController extends SpringActionController
                             // it's most likely a lost value
                             if (mostRecentValue != null && !mostRecentValue.isEmpty())
                             {
-                                fixupsNeeded.add(Pair.of(material, mostRecentValue));
+                                fixupsNeeded.add(new TimelineSummary(material, mostRecentValue));
                             }
                         }
                         if (!fixupsNeeded.isEmpty())
@@ -563,43 +565,38 @@ public class ExperimentController extends SpringActionController
                             summaries.put(Pair.of(sampleType, name), fixupsNeeded);
                         }
                     }
-                    else
+
+                    Long totalRows = null;
+                    Long emptyRows = null;
+                    if (table != null)
                     {
-                        if (table != null)
-                        {
-                            long totalRows = new TableSelector(table).getRowCount();
-                            long emptyRows = new TableSelector(table, new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getRowCount();
-                            otherProblematicFields.put(problematicField, Pair.of(totalRows, emptyRows));
-                        }
-                        else
-                        {
-                            otherProblematicFields.put(problematicField, null);
-                        }
+                        totalRows = new TableSelector(table).getRowCount();
+                        emptyRows = new TableSelector(table, new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getRowCount();
                     }
+                    problematicFields.put(field, Pair.of(totalRows, emptyRows));
                 }
             }
 
             return new HtmlView("Fixups Needed",
                 DOM.createHtmlFragment(
+                        DOM.H2("Potentially Problematic Fields"),
+                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                                DOM.THEAD(DOM.TH("Domain Name"), DOM.TH("Domain URI"), DOM.TH("Field Name"), DOM.TH("Container"), DOM.TH("Total Rows"), DOM.TH("Rows with Nulls")),
+                                problematicFields.entrySet().stream().map(e -> {
+                                            Field f = e.getKey();
+                                            Pair<Long, Long> counts = e.getValue();
+                                            return DOM.TR(DOM.TD(f.domainName), DOM.TD(f.domainURI), DOM.TD(f.name), DOM.TD(f.container.getPath(), DOM.TD(counts.first), DOM.TD(counts.second)));
+                                        }
+                                )),
                         DOM.H2("Sample Types"),
                         summaries.entrySet().stream().map(e ->
                             DOM.DIV(
                                     DOM.H4(e.getKey().first.getName()),
                                     DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
                                             DOM.THEAD(DOM.TH("SampleID"), DOM.TH(e.getKey().second)),
-                                            e.getValue().stream().map(p ->
-                                                        DOM.TR(DOM.TD(p.first.name), DOM.TD(p.second)))
-                                    ))),
-                    DOM.H2("Other Potentially Problematic Fields"),
-                    DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
-                            DOM.THEAD(DOM.TH("Domain Name"), DOM.TH("Domain URI"), DOM.TH("Field Name"), DOM.TH("Container"), DOM.TH("Total Rows"), DOM.TH("Rows with Nulls")),
-                            otherProblematicFields.entrySet().stream().map(e -> {
-                                Field f = e.getKey();
-                                Pair<Long, Long> counts = e.getValue();
-                                return DOM.TR(DOM.TD(f.domainName), DOM.TD(f.domainURI), DOM.TD(f.name), DOM.TD(f.container.getPath(), DOM.TD(counts.first), DOM.TD(counts.second)));
-
-                            }
-                    ))));
+                                            e.getValue().stream().map(summary ->
+                                                        DOM.TR(DOM.TD(summary.miniMaterial.name), DOM.TD(summary.mostRecentValue)))
+                                    )))));
         }
 
         @Override

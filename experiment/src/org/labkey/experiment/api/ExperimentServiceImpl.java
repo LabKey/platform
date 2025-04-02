@@ -89,6 +89,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -10070,10 +10071,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return fileResults;
     }
 
-    public void checkDuplicateParentColumns(@Nullable Collection<String> inputColumns, @Nullable ExpObject currentDataType)
+    public void checkDuplicateParentColumns(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns, @Nullable ExpObject currentDataType)
     {
-        if (inputColumns == null || currentDataType == null)
+        if ((in == null && inputColumns == null) || currentDataType == null)
             return;
+
+        List<String> allColumns = new ArrayList<>();
+        if (in instanceof DataLoader dataLoader)
+        {
+            ColumnDescriptor[] columnDescriptors;
+            try
+            {
+                columnDescriptors = dataLoader.getColumns(Collections.emptyMap(), true);
+                if (columnDescriptors != null)
+                {
+                    for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                        allColumns.add(columnDescriptor.name);
+                }
+            }
+            catch (IOException exception)
+            {
+                throw new UncheckedIOException(exception);
+            }
+        }
+        else if (inputColumns != null)
+            allColumns.addAll(inputColumns);
 
         Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
         try
@@ -10089,7 +10111,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         Set<String> seenColumns = new CaseInsensitiveHashSet();
-        for (String inputColName : inputColumns)
+        for (String inputColName : allColumns)
         {
             String columnName = inputColName;
             if (parentAliasColumnMap.containsKey(columnName))

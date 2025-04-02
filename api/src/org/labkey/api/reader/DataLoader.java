@@ -163,7 +163,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
 
     public final ColumnDescriptor[] getColumns(@NotNull Map<String, String> renamedColumns) throws IOException
     {
-        ensureInitialized(renamedColumns);
+        return getColumns(renamedColumns, false);
+    }
+
+    public final @Nullable ColumnDescriptor[] getColumns(@NotNull Map<String, String> renamedColumns, boolean skipInit) throws IOException
+    {
+        if (!skipInit)
+            ensureInitialized(renamedColumns);
 
         return _columns;
     }
