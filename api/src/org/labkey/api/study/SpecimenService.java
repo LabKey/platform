@@ -63,10 +63,6 @@ public interface SpecimenService
 
     String getActiveSpecimenImporter(@NotNull Container studyContainer);
 
-    void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory);
-
-    Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories();
-
     void registerSpecimenTransform(SpecimenTransform transform);
 
     Collection<SpecimenTransform> getSpecimenTransforms(Container container);

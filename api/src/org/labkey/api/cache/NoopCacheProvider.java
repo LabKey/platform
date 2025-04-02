@@ -16,10 +16,10 @@
 package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.Filter;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static org.labkey.api.cache.CacheType.DeterministicLRU;
 
@@ -64,7 +64,7 @@ public class NoopCacheProvider implements CacheProvider
         }
 
         @Override
-        public int removeUsingFilter(Filter<K> filter)
+        public int removeUsingFilter(Predicate<K> filter)
         {
             return 0;
         }
