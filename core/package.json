@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/components": "6.34.1",
-    "@labkey/themes": "1.4.2-fb-dead-code.0"
+    "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
     "@labkey/build": "8.4.0",
