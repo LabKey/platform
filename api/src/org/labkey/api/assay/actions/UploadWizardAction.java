@@ -643,7 +643,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addSampleInputColumns(newRunForm, insertView);
         if (shouldShowDataCollectorUI(newRunForm))
         {
-            insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
+            insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(table, newRunForm));
         }
 
         if (warnings)
