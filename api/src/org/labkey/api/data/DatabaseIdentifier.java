@@ -23,6 +23,6 @@ package org.labkey.api.data;
  */
 public interface DatabaseIdentifier
 {
-    String getString();         // Unencoded identifier (e.g. how it is reported in schema or resultset metadata)
-    SQLFragment getSql();       // Valid SQL reference for this identifier
+    String getId();         // Unencoded identifier (e.g. how it is reported in schema or resultset metadata)
+    SQLFragment getSql();   // Valid SQL reference for this identifier
 }

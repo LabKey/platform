@@ -473,7 +473,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
                 throw new NullPointerException("col is null");
             _key = key;
             _col = col;
-            _alias = _aliasManager.decideAlias(col.getAlias().getString());
+            _alias = _aliasManager.decideAlias(col.getAlias().getId());
             _parent = parent;
 
             _query.addUniqueRelationColumn(this);

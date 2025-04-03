@@ -267,7 +267,7 @@ public class QuerySelectView extends AbstractQueryRelation
             }
             for (ColumnInfo column : allColumns)
             {
-                if (null != (prev = aliases.put(column.getAlias().getString(), column)))
+                if (null != (prev = aliases.put(column.getAlias().getId(), column)))
                 {
                     if (prev != column)
                         ExceptionUtil.logExceptionToMothership(null, new Exception("Duplicate alias in column list: " + table.getSchema() + "." + table.getName() + "." + column.getFieldKey().toSQLString() + " as " + column.getAlias()));

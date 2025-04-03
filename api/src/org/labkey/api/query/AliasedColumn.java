@@ -56,9 +56,7 @@ public class AliasedColumn extends BaseColumnInfo
             setLabel(null);
 
         _column = column;
-        _metaDataName = column.getMetaDataName();
-        if (parent instanceof SchemaTableInfo)
-            _selectName = column.getSelectName();
+        setMetaDataName(column.getMetaDataName());
     }
 
     public AliasedColumn(TableInfo parent, String name, ColumnInfo column)

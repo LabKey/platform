@@ -64,7 +64,7 @@ public class StandardTableResolver implements TableResolver
     @Override
     public JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, TableInfo tableInfo) throws SQLException
     {
-        return getSingleTableLocator(scope, schemaName, Objects.requireNonNull(tableInfo.getMetaDataName()).getString());
+        return getSingleTableLocator(scope, schemaName, Objects.requireNonNull(tableInfo.getMetaDataName()).getId());
     }
 
     private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();
@@ -79,7 +79,7 @@ public class StandardTableResolver implements TableResolver
     // parameter, see #43821
     public static String escapeName(DbScope scope, @NotNull DatabaseIdentifier id)
     {
-        return escapeName(scope, id.getString());
+        return escapeName(scope, id.getId());
     }
 
     public static String escapeName(DbScope scope, @NotNull String name)

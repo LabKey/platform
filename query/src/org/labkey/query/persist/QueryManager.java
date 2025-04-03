@@ -1053,20 +1053,25 @@ public class QueryManager
 
     private static Map<String, Object> getSchemaCustomViewCounts(String schema)
     {
-        DbSchema dbSchema = CoreSchema.getInstance().getSchema();
-        var schemaField = dbSchema.getSqlDialect().getColumnSelectName("schema");
-        String schemaClause = schema.equalsIgnoreCase("assay") ? "C." + schemaField + " LIKE 'assay.%'" : "C." + schemaField + " = '" + schema + "'";
+        DbSchema dbSchema = DbSchema.get("query");
+        TableInfo customView = dbSchema.getTable("customview");
+        var schemaField = customView.getColumn("schema").getSelectName();
+        SQLFragment schemaClause;
+        if (schema.equalsIgnoreCase("assay"))
+            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" LIKE 'assay.%'");
+        else
+            schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" = ").appendValue(schema);
         return Map.of(
                 "defaultOverrides", new SqlSelector(dbSchema,
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "inheritable", new SqlSelector(dbSchema,
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags = 1").getObject(Long.class), // inheritable, not hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags = 1")).getObject(Long.class), // inheritable, not hidden, not snapshot
                 "namedViews", new SqlSelector(dbSchema,
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.flags < 2 AND C.name IS NOT NULL").getObject(Long.class), // possibly inheritable, no hidden, not snapshot
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.flags < 2 AND C.name IS NOT NULL")).getObject(Long.class), // possibly inheritable, no hidden, not snapshot
                 "shared", new SqlSelector(dbSchema,
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.customviewowner IS NULL").getObject(Long.class),
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.customviewowner IS NULL")).getObject(Long.class),
                 "identifyingFieldsViews", new SqlSelector(dbSchema,
-                        "SELECT COUNT(*) FROM query.customview C WHERE " + schemaClause + " AND C.name = '~~identifyingfields~~'").getObject(Long.class)
+                        new SQLFragment("SELECT COUNT(*) FROM query.customview C WHERE ").append(schemaClause).append(" AND C.name = '~~identifyingfields~~'")).getObject(Long.class)
         );
     }
 

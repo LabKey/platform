@@ -1731,7 +1731,7 @@ public class QueryServiceImpl implements QueryService
                 if (needsAlias)
                     ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
                 else
-                    ret = new QAliasedColumn(ret.getName(), ret.getAlias().getString(), ret);
+                    ret = new QAliasedColumn(ret.getName(), ret.getAlias().getId(), ret);
                 if (null != titleURL)
                     ((QAliasedColumn) ret).setURL(titleURL);
             }
@@ -1784,7 +1784,7 @@ public class QueryServiceImpl implements QueryService
 
         // Consider that the fieldKey may have come from a URL field that is a column's alias
         Map<String, ColumnInfo> mapAlias = new HashMap<>();
-        table.getColumns().forEach(col -> mapAlias.put(col.getAlias().getString().toLowerCase(), col));
+        table.getColumns().forEach(col -> mapAlias.put(col.getAlias().getId().toLowerCase(), col));
 
         for (FieldKey field : fields)
         {

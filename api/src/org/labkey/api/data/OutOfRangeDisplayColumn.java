@@ -149,8 +149,8 @@ public class OutOfRangeDisplayColumn extends DataColumn
         private RenderContext renderContext(Object d, Object oor)
         {
             var ret = new RenderContext();
-            ret.put(numberColumn.getAlias().getString(), d);
-            ret.put(oorColumn.getAlias().getString(), oor);
+            ret.put(numberColumn.getAlias().getId(), d);
+            ret.put(oorColumn.getAlias().getId(), oor);
             return ret;
         }
 

@@ -531,7 +531,7 @@ public class DilutionManager
                     if (null != column)
                     {
                         if (null != column.getAlias())
-                            dataProperties.put(pd, rowMap.get(column.getAlias().getString()));
+                            dataProperties.put(pd, rowMap.get(column.getAlias().getId()));
                     }
                 }
             }

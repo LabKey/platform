@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
@@ -541,14 +540,14 @@ public class Sort
 
     private void appendColumnToSort(SortField sf, SqlDialect dialect, DatabaseIdentifier alias, Set<String> distinctKeys, SQLFragment sql)
     {
-        if (distinctKeys.contains(alias.getString()))
+        if (distinctKeys.contains(alias.getId()))
             return;
 
         if (!distinctKeys.isEmpty())
             sql.append(", ");
 
         sql.append(sf.toOrderByFragment(dialect, alias));
-        distinctKeys.add(alias.getString());
+        distinctKeys.add(alias.getId());
     }
 
     // Return an English version of the sort

@@ -1016,7 +1016,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                     sqlf.append(col.getValueSql(tableAlias));
                     col.declareJoins(tableAlias,joins);
                 }
-                if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias().getString()))
+                if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias().getId()))
                     sqlf.append(" AS ").appendIdentifier(colUnion.getAlias());
                 comma = ", ";
             }

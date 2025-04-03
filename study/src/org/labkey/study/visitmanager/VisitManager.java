@@ -614,13 +614,15 @@ public abstract class VisitManager
             TableInfo tInfo = startDateDataset.getStorageTableInfo();
             ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
             Container c = startDateDataset.getContainer();
-            String subSelect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
-                    " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
-                    " AND " + tableParticipant + ".Container = ?)");
-            String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subSelect + " WHERE (" +
-                    tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subSelect +
-                    ") AND Container = ?";
-            new SqlExecutor(schema).execute(sql, c, c, c);
+            SQLFragment expr = new SQLFragment()
+                    .append("(SELECT MIN(").appendIdentifier(col.getSelectName()).append(")")
+                    .append(" FROM ").append(tInfo)
+                    .append(" WHERE ").append(tInfo).append(".ParticipantId = ").append(tableParticipant).append(".ParticipantId").append(" AND ").append(tableParticipant).append(".Container = ").appendValue(c).append(")");
+            SQLFragment subSelect = schema.getSqlDialect().getDateTimeToDateCast(expr);
+            SQLFragment sql = new SQLFragment()
+                    .append("UPDATE ").append(tableParticipant).append(" SET StartDate = ").append(subSelect)
+                    .append(" WHERE (").append(tableParticipant).append(".StartDate IS NULL OR NOT ").append(tableParticipant).append(".StartDate = ").append(subSelect).append(") AND Container = ").appendValue(c);
+            new SqlExecutor(schema).execute(sql);
         }
 
         // For participants without a demographic StartDate, just set to study start date.

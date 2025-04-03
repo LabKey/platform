@@ -190,7 +190,7 @@ public class UpgradeUtils
 
             if (null != additionalGroupingColumn)
             {
-                String alias = additionalGroupingColumn.getAlias().getString();
+                String alias = additionalGroupingColumn.getAlias().getId();
                 assert map.containsKey(alias);
                 Object value = map.get(alias);
 

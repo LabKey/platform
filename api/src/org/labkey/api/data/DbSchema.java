@@ -732,7 +732,7 @@ public class DbSchema
                     if (pkColumns.size() == 1)
                     {
                         ColumnInfo pkColumn = pkColumns.get(0);
-                        sbSql.appendValue(pkColumn.getSelectName().getString());
+                        sbSql.appendValue(pkColumn.getSelectName().getId());
                         sbSql.append(" AS FirstPKColName, ");
                         sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumn.getSelectName() + " AS VARCHAR(100)) AS FirstPKValue, ");
                     }

@@ -419,7 +419,7 @@ public class SchemaColumnMetaData
         if (!column.isAliasSet())
         {
             if (null != column.getMetaDataName())
-                column.setAlias(column.getSqlDialect().makeIdentiferFromMetaDataName(column.getMetaDataName()));
+                column.setAlias(column.getMetaDataName());
             else
                 column.setAlias(column.getName());
             getAliasManager().ensureAlias(column);  // claim alias

@@ -1187,7 +1187,7 @@ public class Table
         {
             if (cols.containsKey(column.getFieldKey()))
                 continue;
-            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getString())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
+            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getId())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
                 cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
                 cols.put(column.getFieldKey(), column);
@@ -1565,7 +1565,7 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getString(), column)) && prev != column)
+            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
                 _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;

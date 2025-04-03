@@ -32,7 +32,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -868,9 +867,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
             assertNotNull(t);
-            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias().getString()));
-            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias().getString()));
-            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias().getString()));
+            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias().getId()));
+            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias().getId()));
+            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias().getId()));
             var up = t.getUpdateService();
             assertNotNull(up);
             var errors = new BatchValidationException();

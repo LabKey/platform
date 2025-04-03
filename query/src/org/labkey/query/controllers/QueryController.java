@@ -1604,7 +1604,7 @@ public class QueryController extends SpringActionController
                     ti = fti.getRealTable();
 
                 if (ti instanceof SchemaTableInfo)
-                    _dbTableName = ti.getMetaDataName().getString();
+                    _dbTableName = ti.getMetaDataName().getId();
                 else if (ti instanceof LinkedTableInfo)
                     _dbTableName = ti.getName();
 
@@ -1612,7 +1612,7 @@ public class QueryController extends SpringActionController
                 {
                     TableInfo tableInfo = dbSchema.getTable(ti.getName());
                     if (null != tableInfo)
-                        _dbTableName = tableInfo.getMetaDataName().getString();
+                        _dbTableName = tableInfo.getMetaDataName().getId();
                 }
             }
 

@@ -730,7 +730,7 @@ public class SpecimenRequestManager
                 var toName = column.getSelectName();
 
                 // TODO convert to SQLFragment
-                updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName.getString(), toName.getString()));
+                updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName.getId(), toName.getId()));
             }
         }
 

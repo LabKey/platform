@@ -913,6 +913,23 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             return super.makeIdentiferFromMetaDataName(metaDataName);
     }
 
+    // Create a DialectIdentifier for the desired alias
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (getIdentifierMaxLength() < alias.length())
+            throw new UnsupportedOperationException("Name longer than " + getIdentifierMaxLength() + " characters");
+        // TODO always quote, for now be as backward compatible as possible
+        SQLFragment id;
+        if (shouldQuoteIdentifier(alias))
+        {
+            return new _DatabaseIdentifier(alias, quoteIdentifier(alias), this);
+        }
+        else
+        {
+            return new _DatabaseIdentifier(alias.toLowerCase(), alias, this);
+        }
+    }
+
     private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,?\\s*(\\w*)\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override

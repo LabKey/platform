@@ -2132,7 +2132,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             _node = expr;
             _field = expr;
             _internalAliasForSqlGeneration = getSqlDialect().makeDatabaseIdentifier(_aliasManager.decideAlias(aliasPrefix));
-            _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration.getString());
+            _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration.getId());
         }
 
         public SelectColumn(QNode node)
@@ -2185,7 +2185,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (generateName)
             {
                 _internalAliasForSqlGeneration = getSqlDialect().makeDatabaseIdentifier(_aliasManager.decideAlias(field.getName()));
-                _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration.getString());
+                _sourceColumnFieldKey = new FieldKey(null, _internalAliasForSqlGeneration.getId());
             }
             else
             {
@@ -2271,7 +2271,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         @Override
         public String getAlias()
         {
-            return null==_internalAliasForSqlGeneration ? null : _internalAliasForSqlGeneration.getString();
+            return null==_internalAliasForSqlGeneration ? null : _internalAliasForSqlGeneration.getId();
         }
 
         @Override
@@ -2441,7 +2441,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             alias = StringUtils.trimToNull(alias);
             assert null != alias;
             _internalAliasForSqlGeneration = getSqlDialect().makeDatabaseIdentifier(alias);
-            _explicitAliasForColumnName = new QIdentifier(_internalAliasForSqlGeneration.getString());
+            _explicitAliasForColumnName = new QIdentifier(_internalAliasForSqlGeneration.getId());
         }
 
         public QExpr getField()

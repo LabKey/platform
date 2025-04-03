@@ -1694,19 +1694,21 @@ public class SimpleFilter implements Filter
             test("((NOT Foo IN ('Bar', 'Blip')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
 
             // Ignore params that cannot be parsed
-            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, new BaseColumnInfo("Foo", JdbcType.INTEGER));
+            BaseColumnInfo foo = new BaseColumnInfo(fieldKey, JdbcType.INTEGER);
+            foo.setAlias(SqlDialect.makeDatabaseIdentifier("Foo", new SQLFragment().appendIdentifier("\"FOO\"")));
+            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, foo);
 
             InClause in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"));
             in._needsTypeConversion = true;
-            test("((Foo IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+            test("((\"FOO\" IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
 
             in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"), true, true);
             in._needsTypeConversion = true;
-            test("((NOT Foo IN (1, 2)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+            test("((NOT \"FOO\" IN (1, 2)) OR \"FOO\" IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
 
             in =  new InClause(fieldKey, PageFlowUtil.set("S-3"));
             in._needsTypeConversion = true;
-            test("Foo IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+            test("\"FOO\" IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
 
             in = new InClause(fieldKey, PageFlowUtil.set("S-3"), true, true);
             in._needsTypeConversion = true;

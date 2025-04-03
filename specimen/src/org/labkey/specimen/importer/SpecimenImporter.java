@@ -970,7 +970,7 @@ public class SpecimenImporter extends SpecimenTableManager
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
                                 String vialColName = rollupItem.first;
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName.getString(),
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName.getId(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 if (!Objects.equals(vial.get(vialColName), rollupResult))
                                 {
@@ -1003,7 +1003,7 @@ public class SpecimenImporter extends SpecimenTableManager
                             var eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias.getString(),
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias.getId(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 params.add(rollupResult);
                             }

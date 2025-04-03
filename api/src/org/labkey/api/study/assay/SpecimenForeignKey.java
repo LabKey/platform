@@ -333,7 +333,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     String getBaseAlias(String parentAlias, DatabaseIdentifier fkAlias)
     {
-        return getBaseAlias(parentAlias, fkAlias.getString());
+        return getBaseAlias(parentAlias, fkAlias.getId());
     }
 
     String getBaseAlias(String parentAlias, String fkAlias)
@@ -370,7 +370,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
             sql.append(targetStudySQL);
 
-            String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias().getString());
+            String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias().getId());
             String assaySubqueryAlias = baseAlias + ASSAY_SUBQUERY_SUFFIX;
             String vialSubqueryAlias = baseAlias + VIAL_SUBQUERY_SUFFIX;
 

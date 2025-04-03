@@ -374,7 +374,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
             ColumnInfo mvColumn = _table.getColumn(mvFieldKey);
             if (null != mvColumn)
-                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
+                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName().getId()));
         }
         return mv;
     }
@@ -435,7 +435,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                     var colSelectName = autoIncCol.getSelectName();
                     SQLFragment resetSeq = new SQLFragment();
                     resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getString()).append("),\n");
+                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getId()).append("),\n");
                     resetSeq.append("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
                     resetSeq.append("  false");
                     resetSeq.append(")");

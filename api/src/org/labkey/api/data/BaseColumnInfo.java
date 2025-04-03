@@ -105,7 +105,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _isUserEditable = true;
     private boolean _isUnselectable = false;
     private TableInfo _parentTable = null;
-    protected String _metaDataName = null;
+    protected DatabaseIdentifier _metaDataName = null;
     protected DatabaseIdentifier _selectName = null;
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
@@ -182,7 +182,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
-        setAlias(rsmd.getColumnName(col));
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
     }
 
     public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
@@ -562,16 +562,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     @Override
     public void setMetaDataName(String metaDataName)
+    {
+        checkLocked();
+        _metaDataName = getSqlDialect().makeIdentiferFromMetaDataName(metaDataName);
+    }
+
+    public void setMetaDataName(DatabaseIdentifier metaDataName)
     {
         checkLocked();
         _metaDataName = metaDataName;
     }
 
     @Override
-    public String getMetaDataName()
+    public DatabaseIdentifier getMetaDataName()
     {
         return _metaDataName;
     }
@@ -588,18 +593,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return generateSelectName();
     }
 
+    // why is getSelectName() !== getMetaDataName()?
+    // e.g. sometimes getSelectName() != null when getMetaData() == null
+    // TODO find out and add a comment
     private DatabaseIdentifier generateSelectName()
     {
         if (null == _selectName)
         {
             if (null == getMetaDataName())
-            {
                 _selectName = getSqlDialect().makeDatabaseIdentifier(getName());
-            }
             else
-            {
-                _selectName = getSqlDialect().makeIdentiferFromMetaDataName(getMetaDataName());
-            }
+                _selectName = getMetaDataName();
         }
         return _selectName;
     }
@@ -902,7 +906,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
             TableInfo t = getParentTable();
-            String tsName = t.getSchema().getName() + "." + _parentTable.getMetaDataName().getString() + "_ts";
+            String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataName()).getId() + "_ts";
             String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
             return new SQLFragment("nextval(" + sqlString + ")");
         }
@@ -1699,8 +1703,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     String sqlTypeName = reader.getSqlTypeName();
                     var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(sqlType, sqlTypeName));
 
-                    col._metaDataName = metaDataName;
-                    col._selectName = dialect.makeIdentiferFromMetaDataName(metaDataName);
+                    col._metaDataName = dialect.makeIdentiferFromMetaDataName(metaDataName);
                     col._sqlTypeName = sqlTypeName;
                     col._isAutoIncrement = reader.isAutoIncrement();
 
@@ -1826,7 +1829,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         String colName = col.getName();
         DbSchema schema = col.getParentTable().getSchema();
 
-        if (col._metaDataName.startsWith("_"))
+        if (null != col._metaDataName && col._metaDataName.getId().startsWith("_"))
         {
             col.setHidden(true);
         }
@@ -2104,7 +2107,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public int findColumn(ResultSet rs) throws SQLException
     {
-        return rs.findColumn(getAlias().getString());
+        return rs.findColumn(getAlias().getId());
     }
 
     @Override
@@ -2113,21 +2116,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (rs == null)
             return null;
         // UNDONE
-        return rs.getObject(getAlias().getString());
+        return rs.getObject(getAlias().getId());
     }
 
     @Override
     public int getIntValue(ResultSet rs) throws SQLException
     {
         // UNDONE
-        return rs.getInt(getAlias().getString());
+        return rs.getInt(getAlias().getId());
     }
 
     @Override
     public String getStringValue(ResultSet rs) throws SQLException
     {
         // UNDONE
-        return rs.getString(getAlias().getString());
+        return rs.getString(getAlias().getId());
     }
 
     @Override
@@ -2135,7 +2138,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         if (context.containsKey(getFieldKey()))
             return context.get(getFieldKey());
-        return context.get(getAlias().getString());
+        return context.get(getAlias().getId());
     }
 
     @Override
@@ -2143,8 +2146,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         if (map == null)
             return null;
-        if (map.containsKey(getAlias().getString()))
-            return map.get(getAlias().getString());
+        if (map.containsKey(getAlias().getId()))
+            return map.get(getAlias().getId());
         return map.get(getFieldKey());
     }
 

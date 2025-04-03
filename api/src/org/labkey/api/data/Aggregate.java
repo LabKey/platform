@@ -487,7 +487,7 @@ public class Aggregate
     {
         String alias = getColumnName();
         if (col != null)
-            alias = col.getAlias().getString();
+            alias = col.getAlias().getId();
         return alias;
     }
 

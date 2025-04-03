@@ -849,7 +849,7 @@ public abstract class SqlDialect
         if (LOG.isTraceEnabled())
         {
             final var me = this;
-            return _validatedIds.computeIfAbsent(id.getString(), key ->
+            return _validatedIds.computeIfAbsent(id.getId(), key ->
             {
                 var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
                 if (optScope.isPresent())
@@ -857,7 +857,7 @@ public abstract class SqlDialect
                     SQLFragment sql = new SQLFragment("SELECT NULL AS ").appendIdentifier(id);
                     try (var results = new SqlSelector(optScope.get(), sql).getResultSet(false))
                     {
-                        assert id.getString().equals(results.getMetaData().getColumnName(1));
+                        assert id.getId().equals(results.getMetaData().getColumnName(1));
                     }
                     catch (SQLException e)
                     {
@@ -871,18 +871,18 @@ public abstract class SqlDialect
     }
 
     // dialect is just for debugging reference
-    protected record _DatabaseIdentifier(String string, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
+    protected record _DatabaseIdentifier(String id, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
     {
-        _DatabaseIdentifier(String string, String sql, SqlDialect dialect)
+        _DatabaseIdentifier(String id, String sql, SqlDialect dialect)
         {
-            this(string, new SQLFragment().appendIdentifier(sql), dialect);
+            this(id, new SQLFragment().appendIdentifier(sql), dialect);
             assert null==dialect || dialect.validateIdentifier(this);
         }
 
         @Override
-        public String getString()
+        public String getId()
         {
-            return string;
+            return id;
         }
 
         @Override
@@ -894,7 +894,7 @@ public abstract class SqlDialect
         @Override
         public String toString()
         {
-            return "DatabaseIdentifier::" + string;
+            return "[id=" + id + " sql=" + sql.getRawSQL() + "]";
         }
     }
 
@@ -906,8 +906,6 @@ public abstract class SqlDialect
     }
 
     // Create a DialectIdentifier for the desired alias
-    // NOTE: historically we did not quote identifiers simply because they had uppercase letters.
-    // Thus aliases tended to become defacto lowercase.  For now, we'll explicitly lower-case here.
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
         if (getIdentifierMaxLength() < alias.length())
@@ -915,16 +913,14 @@ public abstract class SqlDialect
         // what we want:
         //   SQLFragment quoted = new SQLFragment().appendIdentifier(quoteIdentifier(alias));
         //   return new _DatabaseIdentifier(alias, quoted, this);
-        alias = alias.toLowerCase();
         return new _DatabaseIdentifier(alias, makeLegalIdentifier(alias), this);
     }
 
     /* ONLY use for special cases! */
-    public DatabaseIdentifier makeDatabaseIdentifier(String alias, SQLFragment sql)
+    public static DatabaseIdentifier makeDatabaseIdentifier(String alias, SQLFragment sql)
     {
         return new _DatabaseIdentifier(alias, sql, null);
     }
-
 
     // Create comma-separated list of legal identifiers
     @Deprecated

@@ -250,7 +250,7 @@ public class AliasManager
 
     public static String truncate(DatabaseIdentifier id, int to)
     {
-        return truncate(id.getString(), to);
+        return truncate(id.getId(), to);
     }
 
     public static String truncate(String str, int to)
@@ -330,7 +330,7 @@ public class AliasManager
     {
         if (column == null)
             return;
-        claimAlias(column.getAlias().getString(), column.getName());
+        claimAlias(column.getAlias().getId(), column.getName());
     }
 
 
@@ -343,7 +343,7 @@ public class AliasManager
         {
             if (_aliases.get(column.getAlias()) != null)
                 throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
-            claimAlias(column.getAlias().getString(), column.getName());
+            claimAlias(column.getAlias().getId(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
@@ -360,7 +360,7 @@ public class AliasManager
                     throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
             }
             else
-                claimAlias(column.getAlias().getString(), column.getName());
+                claimAlias(column.getAlias().getId(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName()));

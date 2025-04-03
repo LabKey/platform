@@ -106,7 +106,7 @@ public class SpecimenReportManager
                 ColumnInfo col = colMap.get(typeProperty.getTypeKey());
                 builder.append(sep).append(col.getAlias());
                 sep = ", ";
-                aliasToTypeProperty.put(col.getAlias().getString(), typeProperty);
+                aliasToTypeProperty.put(col.getAlias().getId(), typeProperty);
             }
             groupingColSql = builder.toString();
         }

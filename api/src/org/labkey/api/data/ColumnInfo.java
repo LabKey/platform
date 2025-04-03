@@ -127,10 +127,22 @@ public interface ColumnInfo extends ColumnRenderProperties
     // use only for debugging, will change after call to getAlias()
     boolean isAliasSet();
 
+    /**
+     * This is the alias that will represent the column if it is selected using
+     * TableSelector or QueryService
+     * e.g. to generate a SELECT (see TableSelector) a typical usage would be
+     * new SQLFragment().append(col.getValueSql("R")).append(" AS ").appendIdentifier(col.getAlias())
+     * The returned ResultSet will contain a column names col.getAlias()
+     */
     DatabaseIdentifier getAlias();
 
-    /** If this column is represented by a column in the database, this is the name as returned by database metadata */
-    String getMetaDataName();
+    /**
+     * If this column represents a column in the database, this is the name as returned by database metadata
+     * This is the name you would find in the ResultSet using "SELECT * FROM " + ti.getSelectName()"
+     * with a SchemaTableInfo.
+     * This may a different result than what you get using TableSelector
+     */
+    DatabaseIdentifier getMetaDataName();
 
     /**
      * If this column represents a column in the database (see getMetaDataName()),
@@ -145,9 +157,9 @@ public interface ColumnInfo extends ColumnRenderProperties
      * Use this method to generate database SQL for selecting data from this column.
      *
      * <pre>
-     *     new SQLFragment(
-     *         "SELECT ").append(ti.getColumn("A").getValueSql("tablealias").append(" AS foo\n" ).append(
-     *         "FROM ").append(ti.getFromSql("tablelias"));
+     *     new SQLFragment()
+     *         .append("SELECT ").append(ti.getColumn("A").getValueSql("tablealias").append(
+     *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
      * @param tableAliasName

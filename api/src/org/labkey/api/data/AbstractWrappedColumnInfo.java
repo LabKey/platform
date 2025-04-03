@@ -74,7 +74,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getMetaDataName()
+    public DatabaseIdentifier getMetaDataName()
     {
         return delegate.getMetaDataName();
     }

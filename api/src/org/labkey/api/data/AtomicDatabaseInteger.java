@@ -76,10 +76,10 @@ public class AtomicDatabaseInteger
     {
         var targetColumnName = _targetColumn.getSelectName();
         // NOTE: we're not really using _ts column for optimistic concurrency, don't need to update
-        SQLFragment sqlf = new SQLFragment(
-                "UPDATE " + _table.getSelectName() +
-                        "    SET " + targetColumnName + "=?\n" +
-                        "    WHERE (" + targetColumnName + "=?) AND (rowid=?)", update, expect, _rowId);
+        SQLFragment sqlf = new SQLFragment()
+                .append("UPDATE ").appendIdentifier(_table.getSelectName())
+                .append("    SET ").appendIdentifier(targetColumnName).append("=?\n").add(update)
+                .append("    WHERE (").appendIdentifier(targetColumnName).append("=?) AND (rowid=?)").add(expect).add(_rowId);
         if (null != _container)
             sqlf.append(" AND (container=?)").add(_container.getEntityId());
         int rowsAffected = new SqlExecutor(_table.getSchema()).execute(sqlf);

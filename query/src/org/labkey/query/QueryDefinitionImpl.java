@@ -924,7 +924,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                         Map<String, String> params = new HashMap<>();
                         for (ColumnInfo column : pkColumns)
                         {
-                            params.put(column.getName(), column.getAlias().getString());
+                            params.put(column.getName(), column.getAlias().getId());
                         }
                         DetailsURL detailsURL = new DetailsURL(url, params);
 

@@ -2933,7 +2933,7 @@ public class StudyManager
                 if (!dataset.isDemographicData())
                 {
                     pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
-                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias().getString()));
+                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias().getId()));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
