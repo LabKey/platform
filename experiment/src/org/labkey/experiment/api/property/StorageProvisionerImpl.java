@@ -1427,7 +1427,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 var dialect = getSqlDialect(domain);
                 if (getSqlDialect(domain).isSqlServer() && domainProp.getJdbcType().isText())
                 {
-                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + propDescriptor.getLegalSelectName(dialect);
+                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + propDescriptor.getName();
                     hardColumnNames.remove(hashedColumnName);
                 }
 

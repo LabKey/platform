@@ -89,6 +89,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
@@ -889,7 +890,7 @@ public class DomainImpl implements Domain
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).append(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
         sql.append(" WHERE ");
@@ -1426,13 +1427,26 @@ public class DomainImpl implements Domain
 
         // Keep the names the same if short enough,
         // But always leave room for MV suffix in case it's changed to MV later
-        final String storage;
-        String fuzz = ""; // "".";
+        String storage;
         if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
-            storage = _aliasManager.decideAlias(fuzz + pd.getName(), fuzz + pd.getName());
+            storage = _aliasManager.decideAlias(fuzz(pd.getName()), fuzz(pd.getName()));
         else
-            storage = _aliasManager.decideAlias(fuzz + pd.getName(), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
+            storage = _aliasManager.decideAlias(fuzz(pd.getName()), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
         pd.setStorageColumnName(storage);
+    }
+
+    private static String fuzz(String s)
+    {
+        if (1==0)
+        {
+            var r = new Random();
+            if (r.nextBoolean())
+                s = s.toUpperCase();
+            else if (r.nextBoolean())
+                s = StringUtils.capitalize(s.toLowerCase());
+            s = "." + s;
+        }
+        return s;
     }
 
     @Override

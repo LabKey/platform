@@ -848,9 +848,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
-            String legalName = property.getLegalSelectName(dialect);
-            sql.append(".").append(legalName);
-            var column = new ExprColumn(this, legalName, sql, property.getJdbcType());
+            var legalName = property.getLegalSelectName(dialect);
+            sql.append(".").appendIdentifier(legalName);
+            var column = new ExprColumn(this, legalName.getId(), sql, property.getJdbcType());
             defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null, defaultsSupplier);
             if (editable)
             {

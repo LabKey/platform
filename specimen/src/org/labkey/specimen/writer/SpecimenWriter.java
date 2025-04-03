@@ -227,9 +227,9 @@ public class SpecimenWriter extends AbstractSpecimenWriter
             if (null != queryTable.getColumn(column.getDbColumnName()))
                 return queryTable.getColumn(column.getDbColumnName());
 
-            String legalName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, column.getDbColumnName());
-            if (null != queryTable.getColumn(legalName))
-                return queryTable.getColumn(legalName);
+            var legalName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, column.getDbColumnName());
+            if (null != queryTable.getColumn(legalName.getId()))
+                return queryTable.getColumn(legalName.getId());
 
             if (column.getDbColumnName().toLowerCase().endsWith("id"))
             {

@@ -133,6 +133,11 @@ public interface ColumnInfo extends ColumnRenderProperties
      * e.g. to generate a SELECT (see TableSelector) a typical usage would be
      * new SQLFragment().append(col.getValueSql("R")).append(" AS ").appendIdentifier(col.getAlias())
      * The returned ResultSet will contain a column names col.getAlias()
+     *
+     * NOTE: if you directly bind your results using BeanObjectFactory (e.g. TableSelector.getArrayList(MyClass.class))
+     * you should
+     *  a) match your column aliases to the bean properties you want to populate
+     *  b) prefer using TableSelector vs SqlSelector.  TableSelector will use ColumnInfo.getAlias().
      */
     DatabaseIdentifier getAlias();
 

@@ -407,7 +407,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
                 "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, \n");
         for (DomainProperty property : optionalVialProperties)
-            sqlf.append("    vial.").append(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
+            sqlf.append("    vial.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
 
         sqlf.append("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
                 "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
@@ -415,7 +415,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
                 "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n");
         for (DomainProperty property : optionalSpecimenProperties)
-            sqlf.append("    specimen.").append(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
+            sqlf.append("    specimen.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
 
         sqlf.append(getContainerValueSql(container,schema.getSqlDialect())).append("\n   FROM ");
         sqlf.append(vialTI.getFromSQL("vial"));
