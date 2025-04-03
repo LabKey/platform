@@ -821,23 +821,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     view.setFrame(WebPartView.FrameType.PORTAL);
                     return view;
                 }
-            },
-            new BaseWebPartFactory("MenuProjectNav")
-            {
-                @Override
-                public WebPartView<?> getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
-                {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/menuProjectNav.jsp", webPart);
-                    view.setTitle("Menu Project Navigation");
-                    view.setFrame(WebPartView.FrameType.NONE);
-                    return view;
-                }
-
-                @Override
-                public boolean isAvailable(Container c, String scope, String location)
-                {
-                    return false;
-                }
             }
         );
     }

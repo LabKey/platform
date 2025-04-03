@@ -13,58 +13,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
 
 /**
  * User: klum
- * Date: Mar 9, 2012
+ * Date: Mar 14, 2012
  */
-public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
+public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
 {
-    public static final String PIVOT_BY_DERIVATIVE_TYPE = "Primary/Derivative Type Vial Counts";
-    private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s";
+    public static final String PIVOT_BY_REQUESTING_LOCATION = "Vial Counts by Requesting Location";
+    private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s requested by %s";
 
-    public SpecimenPivotByDerivativeType(final SpecimenQuerySchema schema, ContainerFilter cf)
+    public SpecimenPivotByRequestingLocation(final UserSchema schema, Study study, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByDerivativeType(schema, cf), schema);
-        setName(PIVOT_BY_DERIVATIVE_TYPE);
-        setDescription("Contains up to one row of Specimen Primary/Derivative Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
+        super(SpecimenReportQuery.getPivotByRequestingLocation(schema, study, cf), schema);
+        setName(PIVOT_BY_REQUESTING_LOCATION);
+        setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
         Container container = getContainer();
         Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
         Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(container);
+        Map<Integer, NameLabelPair> locationMap = getSiteMap(container);
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
             // look for the primary/derivative pivot encoding
-            String parts[] = col.getName().split(AGGREGATE_DELIM);
+            String[] parts = col.getName().split(AGGREGATE_DELIM);
 
-            if (parts != null && parts.length == 2)
+            if (parts.length == 2)
             {
-                String types[] = parts[0].split(TYPE_DELIM);
+                String[] types = parts[0].split(TYPE_DELIM);
 
-                if (types != null && types.length == 2)
+                if (types.length == 3)
                 {
                     int primaryId = NumberUtils.toInt(types[0]);
                     int derivativeId = NumberUtils.toInt(types[1]);
+                    int locationId = NumberUtils.toInt(types[2]);
 
-                    if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId))
+                    if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && locationMap.containsKey(locationId))
                     {
                         wrapPivotColumn(col,
-                                COLUMN_DESCRIPTION_FORMAT,
-                                primaryTypeMap.get(primaryId),
-                                derivativeTypeMap.get(derivativeId),
-                                new NameLabelPair(parts[1], parts[1]));
+                            COLUMN_DESCRIPTION_FORMAT,
+                            primaryTypeMap.get(primaryId),
+                            derivativeTypeMap.get(derivativeId),
+                            locationMap.get(locationId)
+                        );
                     }
                 }
             }

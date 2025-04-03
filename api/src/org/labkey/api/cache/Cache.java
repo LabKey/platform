@@ -18,15 +18,9 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.Filter;
 
 import java.util.Set;
-
-/**
- * User: adam
- * Date: Jul 8, 2010
- * Time: 9:32:10 AM
- */
+import java.util.function.Predicate;
 
 public interface Cache<K, V>
 {
@@ -46,9 +40,9 @@ public interface Cache<K, V>
     /** Removes every element in the cache where filter.accept(K key) evaluates to true.
      * Returns the number of elements that were removed.
      */
-    int removeUsingFilter(Filter<K> filter);
+    int removeUsingFilter(Predicate<K> filter);
 
-    class StringPrefixFilter implements Filter<String>
+    class StringPrefixFilter implements Predicate<String>
     {
         private final String _prefix;
 
@@ -58,7 +52,7 @@ public interface Cache<K, V>
         }
 
         @Override
-        public boolean accept(String s)
+        public boolean test(String s)
         {
             return s.startsWith(_prefix);
         }

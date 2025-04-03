@@ -26,17 +26,13 @@ import org.labkey.api.view.DataView;
 
 import java.sql.ResultSet;
 
-/**
- * User: Karl Lum
- * Date: Oct 6, 2006
- */
 public class ReportQueryView extends QueryView
 {
     protected SimpleFilter _filter;
 
     public ReportQueryView(UserSchema schema, QuerySettings settings)
     {
-        super(schema, settings);
+        super(schema, settings, null);
         setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
     }
 

@@ -2,9 +2,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
-import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
-import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.StudyService;
 
 import java.util.Collections;
@@ -66,9 +64,7 @@ class SpecimenSchema extends StudyQuerySchema
 
                 // CONSIDER: show under queries instead of tables?
                 // specimen report pivots
-                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+                SpecimenMigrationService.get().addSpecimenPivotTableNames(names);
 
                 names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
             }

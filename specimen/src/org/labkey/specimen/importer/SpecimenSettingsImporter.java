@@ -22,10 +22,9 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationImpl;
-import org.labkey.api.specimen.settings.DisplaySettings;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
-import org.labkey.api.specimen.settings.StatusSettings;
+import org.labkey.specimen.settings.DisplaySettings;
+import org.labkey.specimen.settings.RepositorySettings;
+import org.labkey.specimen.settings.StatusSettings;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporter;
@@ -41,6 +40,7 @@ import org.labkey.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementType;
 import org.labkey.specimen.settings.RequestNotificationSettings;
+import org.labkey.specimen.settings.SettingsManager;
 import org.labkey.specimen.writer.SpecimenArchiveDataTypes;
 import org.labkey.study.xml.DefaultRequirementType;
 import org.labkey.study.xml.DefaultRequirementsType;
@@ -103,7 +103,7 @@ public class SpecimenSettingsImporter implements SimpleStudyImporter
 
             if (xmlSettings.getSettings() != null)
             {
-                ctx.getLogger().info("Loading " + getDescription());
+                ctx.getLogger().info("Loading {}", getDescription());
 
                 // Import specimen settings from specimen_settings.xml doc
                 VirtualFile settingsDir = studyDir;

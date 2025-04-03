@@ -367,9 +367,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    protected void preImportDIBValidation(@Nullable Collection<String> inputColumns)
+    protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
     {
-        ExperimentServiceImpl.get().checkDuplicateParentColumns(inputColumns, _sampleType);
+        ExperimentServiceImpl.get().checkDuplicateParentColumns(in, inputColumns, _sampleType);
     }
 
     @Override

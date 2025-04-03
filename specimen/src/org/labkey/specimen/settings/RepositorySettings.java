@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.settings;
+package org.labkey.specimen.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
@@ -124,7 +124,7 @@ public class RepositorySettings
 
     public void setEnableRequests(boolean enableRequests)
     {
-        assert (_simple && !enableRequests) || !_simple : "Specimen requests may only be enabled for advanced specimen repository type";
+        assert !_simple || !enableRequests : "Specimen requests may only be enabled for advanced specimen repository type";
         _enableRequests = enableRequests;
     }
 

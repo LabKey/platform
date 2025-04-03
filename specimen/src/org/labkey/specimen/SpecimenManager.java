@@ -22,14 +22,14 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenEvent;
 import org.labkey.api.specimen.SpecimenEventManager;
-import org.labkey.api.specimen.SpecimenManagerNew;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
-import org.labkey.api.specimen.model.PrimaryType;
 import org.labkey.api.specimen.model.SpecimenComment;
+import org.labkey.specimen.model.SpecimenTypeSummary;
+import org.labkey.specimen.model.SpecimenTypeSummaryRow;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -42,6 +42,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.specimen.model.AdditiveType;
 import org.labkey.specimen.model.DerivativeType;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
+import org.labkey.specimen.model.PrimaryType;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -81,7 +82,7 @@ public class SpecimenManager
         Set<FieldKey> unresolvedColumns = new HashSet<>();
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())
-            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
+            throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns);
         // generate our select SQL:
         SQLFragment specimenSql = Table.getSelectSQL(tinfo, cols, null, null);
 
@@ -187,7 +188,7 @@ public class SpecimenManager
 
     public Map<Vial, SpecimenComment> getSpecimenComments(List<Vial> vials)
     {
-        if (vials == null || vials.size() == 0)
+        if (vials == null || vials.isEmpty())
             return Collections.emptyMap();
 
         Container container = vials.get(0).getContainer();
@@ -447,7 +448,7 @@ public class SpecimenManager
     /** Looks for any specimens that have the given id as a globalUniqueId  */
     public PrimaryType getPrimaryType(Container c, int rowId)
     {
-        List<PrimaryType> primaryTypes = SpecimenManagerNew.get().getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
+        List<PrimaryType> primaryTypes = getPrimaryTypes(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId), null);
         if (!primaryTypes.isEmpty())
             return primaryTypes.get(0);
         return null;
@@ -589,5 +590,83 @@ public class SpecimenManager
         if (!includeObsolete)
             filter.addCondition(FieldKey.fromString("Obsolete"), false);
         return SpecimenEventManager.get().getSpecimenEvents(container, filter);
+    }
+
+    public List<PrimaryType> getPrimaryTypes(Container c)
+    {
+        return getPrimaryTypes(c, null, new Sort("ExternalId"));
+    }
+
+    public List<PrimaryType> getPrimaryTypes(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    {
+        final List<PrimaryType> primaryTypes = new ArrayList<>();
+        new TableSelector(SpecimenSchema.get().getTableInfoSpecimenPrimaryType(container), filter, sort).
+                forEachMap(map -> primaryTypes.add(new PrimaryType(container, map)));
+        return primaryTypes;
+    }
+
+    public SpecimenTypeSummary getSpecimenTypeSummary(Container container, @NotNull User user)
+    {
+        UserSchema querySchema = SpecimenQuerySchema.get(StudyService.get().getStudy(container), user);
+        TableInfo tableInfoSpecimenWrap = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
+        if (null == tableInfoSpecimenWrap)
+            throw new IllegalStateException("SpecimenDetail table not found.");
+
+        TableInfo additiveTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_ADDITIVE_TABLE_NAME);
+        TableInfo derivativeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_DERIVATIVE_TABLE_NAME);
+        TableInfo primaryTypeTableInfo = querySchema.getTable(SpecimenQuerySchema.SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
+        String tableInfoSelectName = "SpecimenWrap";
+
+        // TODO: consider caching
+
+        Study study = StudyService.get().getStudy(container);
+        if (study == null)
+            return null;
+
+        SQLFragment specimenTypeSummarySQL = new SQLFragment("SELECT\n" +
+                "\tPrimaryType,\n" +
+                "\tPrimaryTypeId,\n" +
+                "\tDerivative,\n" +
+                "\tDerivativeTypeId,\n" +
+                "\tAdditive,\n" +
+                "\tAdditiveTypeId,\n" +
+                "\tSUM(VialCount) AS VialCount\n" +
+                "FROM (\n" +
+                "\tSELECT\n" +
+                "\tPT.PrimaryType AS PrimaryType,\n" +
+                "\tPrimaryTypeId,\n" +
+                "\tDT.Derivative AS Derivative,\n" +
+                "\tDerivativeTypeId,\n" +
+                "\tAT.Additive AS Additive,\n" +
+                "\tAdditiveTypeId,\n" +
+                "\tSpecimens.VialCount\n" +
+                "\tFROM\n");
+
+        specimenTypeSummarySQL.append("\t\t(SELECT ")
+            .append(tableInfoSpecimenWrap.getColumn("PrimaryTypeId").getValueSql(tableInfoSelectName)).append(",")
+            .append(tableInfoSpecimenWrap.getColumn("DerivativeTypeId").getValueSql(tableInfoSelectName)).append(",")
+            .append(tableInfoSpecimenWrap.getColumn("AdditiveTypeId").getValueSql(tableInfoSelectName)).append(",")
+            .append("\n\t\t\tSUM(").append(tableInfoSpecimenWrap.getColumn("VialCount").getValueSql(tableInfoSelectName))
+            .append(") AS VialCount\n")
+            .append("\n\t\tFROM ").append(tableInfoSpecimenWrap.getFromSQL(tableInfoSelectName)).append("\n")
+            .append("\t\tGROUP BY ")
+            .append(tableInfoSpecimenWrap.getColumn("PrimaryTypeId").getValueSql(tableInfoSelectName)).append(",")
+            .append(tableInfoSpecimenWrap.getColumn("DerivativeTypeId").getValueSql(tableInfoSelectName)).append(",")
+            .append(tableInfoSpecimenWrap.getColumn("AdditiveTypeId").getValueSql(tableInfoSelectName))
+            .append("\t\t\t) Specimens\n").append(
+                "\tLEFT OUTER JOIN ").append(primaryTypeTableInfo.getFromSQL("PT")).append(  " ON\n" +
+                "\t\tPT.RowId = Specimens.PrimaryTypeId\n" +
+                "\tLEFT OUTER JOIN ").append(derivativeTableInfo.getFromSQL("DT")).append(" ON\n" +
+                "\t\tDT.RowId = Specimens.DerivativeTypeId\n" +
+                "\tLEFT OUTER JOIN ").append(additiveTableInfo.getFromSQL("AT")).append(" ON\n" +
+                "\t\tAT.RowId = Specimens.AdditiveTypeId\n" +
+                ") ContainerTotals\n" +
+                "GROUP BY PrimaryType, PrimaryTypeId, Derivative, DerivativeTypeId, Additive, AdditiveTypeId\n" +
+                "ORDER BY PrimaryType, Derivative, Additive"
+                );
+
+        SpecimenTypeSummaryRow[] rows = new SqlSelector(SpecimenSchema.get().getSchema(), specimenTypeSummarySQL).getArray(SpecimenTypeSummaryRow.class);
+
+        return new SpecimenTypeSummary(container, rows);
     }
 }

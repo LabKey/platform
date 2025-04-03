@@ -36,10 +36,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.specimen.SpecimenManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
@@ -86,7 +86,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         _participantSequenceNumColumn.setIsUnselectable(true);
         addColumn(_participantSequenceNumColumn);
 
-        boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(getContainer()).isEnableRequests();
+        boolean enableSpecimenRequest = SpecimenMigrationService.get().isEnableRequests(getContainer());
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));

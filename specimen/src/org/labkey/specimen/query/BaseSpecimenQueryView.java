@@ -40,7 +40,7 @@ public abstract class BaseSpecimenQueryView extends QueryView
 
     public BaseSpecimenQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)
     {
-        super(schema, settings);
+        super(schema, settings, null);
         _filter = filter;
         _sort = sort;
     }

@@ -15,7 +15,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.study.CohortFilter;
@@ -305,7 +304,7 @@ public class SpecimenReportManager
                 }
                 catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                 {
-                    LogManager.getLogger(SpecimenManager.class).error(e);
+                    LogManager.getLogger(SpecimenReportManager.class).error(e);
                 }
             }
             ret.add(summary);
