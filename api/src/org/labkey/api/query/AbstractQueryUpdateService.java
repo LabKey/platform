@@ -101,10 +101,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -327,6 +329,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class);
     }
 
+    // override this
+    protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
+    {
+    }
+
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasImportRowsPermission(user, container, context))
@@ -340,6 +347,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
+
+        preImportDIBValidation(in, null);
 
         boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
         boolean hasTableScript = hasTableScript(container);
@@ -528,6 +537,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 colNames.addAll(row.keySet());
         }
 
+        preImportDIBValidation(null, colNames);
         return MapDataIterator.of(colNames, rows, debugName);
     }
 

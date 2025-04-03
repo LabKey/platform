@@ -30,8 +30,6 @@ import java.util.Date;
  * Uses a specimen ID value in the assay data to resolve a specimen row in the target study and merge its
  * participant, date, and visit values with whatever might have been supplied as part of the assay data, with the assay
  * data taking precedence if both are present
- * User: jeckels
- * Date: Sep 17, 2007
  */
 public class StudyParticipantVisitResolver extends AbstractParticipantVisitResolver
 {
@@ -50,13 +48,14 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
         // that the user knows best.  This allows the user to upload assay data for a study for which all specimens have
         // not yet been loaded into the system.
         return new ParticipantVisitImpl(
-                originalInfo.getSpecimenID() == null ? studyInfo.getSpecimenID() : originalInfo.getSpecimenID(),
-                originalInfo.getParticipantID() == null ? studyInfo.getParticipantID() : originalInfo.getParticipantID(),
-                originalInfo.getVisitID() == null ? studyInfo.getVisitID() : originalInfo.getVisitID(),
-                originalInfo.getDate() == null ? studyInfo.getDate() : originalInfo.getDate(),
-                getRunContainer(),
-                // If we made it here, the originalInfo's study container should always be non-null and match the studyInfo's study container.
-                originalInfo.getStudyContainer());
+            originalInfo.getSpecimenID() == null ? studyInfo.getSpecimenID() : originalInfo.getSpecimenID(),
+            originalInfo.getParticipantID() == null ? studyInfo.getParticipantID() : originalInfo.getParticipantID(),
+            originalInfo.getVisitID() == null ? studyInfo.getVisitID() : originalInfo.getVisitID(),
+            originalInfo.getDate() == null ? studyInfo.getDate() : originalInfo.getDate(),
+            getRunContainer(),
+            // If we made it here, the originalInfo's study container should always be non-null and match the studyInfo's study container.
+            originalInfo.getStudyContainer()
+        );
     }
 
     @Override

@@ -20,25 +20,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
+import static org.labkey.api.util.DOM.I;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 
 /**
  * NavTree can be used three ways in different places in the product
- *
  * 1) as a single navigation element (no children)
  * 2) as a list of navigation elements (ignore the root node, use children as list of elements)
- * 3) as a tree, may be rendered as an tree, or menu
+ * 3) as a tree, may be rendered as a tree, or menu
  */
 
 public class NavTree implements Collapsible
@@ -146,7 +150,7 @@ public class NavTree implements Collapsible
         _imageCls = source._imageCls;
         _menuFilterItemCls = source._menuFilterItemCls;
 
-        _children.addAll(source._children.stream().map(NavTree::new).collect(Collectors.toList()));
+        _children.addAll(source._children.stream().map(NavTree::new).toList());
     }
 
 
@@ -288,7 +292,7 @@ public class NavTree implements Collapsible
     @Override
     public NavTree findSubtree(@Nullable String path)
     {
-        if (null == path || path.length() == 0 || "/".equals(path))
+        if (null == path || path.isEmpty() || "/".equals(path))
             return this;
 
         //use the escaped key for path matching, so that embedded / characters are escaped
@@ -649,24 +653,6 @@ public class NavTree implements Collapsible
         return sb;
     }
 
-    /**
-     * Generate a LinkBuilder from key properties of this NavTree.
-     * @return A LinkBuilder populated with properties from this NavTree
-     */
-    public LinkBuilder toLinkBuilder()
-    {
-        // Copy key properties. We could copy others, if needed by future code paths.
-        LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
-
-        if (_usePost)
-            lb.usePost(_confirmMessage);
-
-        if (isNoFollow())
-            lb.nofollow();
-
-        return lb;
-    }
-
     public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu, boolean withIds)
     {
         if (null == sb)
@@ -684,5 +670,110 @@ public class NavTree implements Collapsible
         }
         sb.append("]");
         return sb;
+    }
+
+    /**
+     * Generate a LinkBuilder from key properties of this NavTree.
+     * @return A LinkBuilder populated with properties from this NavTree
+     */
+    public LinkBuilder toSimpleLinkBuilder()
+    {
+        // Copy key properties. We could copy others, if needed by future code paths.
+        LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
+
+        if (_usePost)
+            lb.usePost(_confirmMessage);
+
+        if (isNoFollow())
+            lb.nofollow();
+
+        return lb;
+    }
+
+    /**
+     * Generate a LinkBuilder from all properties of this NavTree.
+     * @return A LinkBuilder populated with properties from this NavTree
+     */
+    public LinkBuilder toLinkBuilder(@Nullable String cls)
+    {
+        // if the item is "selected" and doesn't have an image cls to use, provide our default
+        String itemImageCls = getImageCls();
+        if (isSelected() && null == itemImageCls)
+            itemImageCls = "fa fa-check-square-o";
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        if (null != itemImageCls)
+            html.append(createHtmlFragment(I(cl(itemImageCls))));
+        html.append(getText());
+
+        String styleStr = "";
+        if (null != itemImageCls)
+            styleStr += "padding-left: 0;";
+        if (isStrong())
+            styleStr += "font-weight: bold;";
+        if (isEmphasis())
+            styleStr += "font-style: italic;";
+
+        // NOTE: nofollow is not recommended as way to avoid crawling internal links
+        // instead let's use an onclick handler to "hide" the link
+        String dataQuery = null;
+        String href = getHref();
+        var config = HttpView.currentPageConfig();
+
+        if (null != href && null == getScript() && !isPost())
+        {
+            try
+            {
+                URLHelper url = new URLHelper(href);
+                boolean isLocal = null == url.getHost() && null == url.getScheme() && -1 == url.getPort();
+                if (isLocal)
+                {
+                    var context = HttpView.currentContext();
+
+                    // separate the path (into href) and query/fragment (into dataQuery) portions of URL
+                    var fragment = url.getFragment();
+                    url.setFragment(null);
+                    if (null != context && context.isRobot())
+                        url.addParameter(ActionURL.Param._noindex.name(), "1");
+                    dataQuery = StringUtils.trimToEmpty(url.getRawQuery());
+                    url.deleteParameters();
+                    if (!dataQuery.isEmpty())
+                        dataQuery = "?" + dataQuery;
+                    if (StringUtils.isNotEmpty(fragment))
+                        dataQuery += "#" + fragment;
+
+                    href = url.getLocalURIString();
+                    config.addHandlerForQuerySelector(
+                            "A.noFollowNavigate",
+                            "click",
+                            "window.location = this.href + this.dataset['query']; return false;");
+                    cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
+                }
+            }
+            catch (URISyntaxException e)
+            {
+                // fall through
+            }
+        }
+
+        LinkBuilder builder = new LinkBuilder(html)
+            .id(config.makeId("popupMenuView"))
+            .target(getTarget())
+            .title(getDescription())
+            .tabindex(0)
+            .enabled(!isDisabled())
+            .clearClasses()
+            .href(null != href && !isPost() ? href : "#")
+            .onClick(getScript());
+
+        if (null != itemImageCls)
+            builder.style(styleStr);
+
+        if (cls != null)
+            builder.addClass(cls);
+
+        if (null != dataQuery)
+            builder.attributes(Map.of("data-query", dataQuery));
+
+        return builder;
     }
 }

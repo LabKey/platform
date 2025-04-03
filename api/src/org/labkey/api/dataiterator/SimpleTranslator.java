@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -93,6 +94,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 /**
@@ -1118,13 +1120,28 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public void selectAll(@NotNull Set<String> skipColumns, @NotNull Map<String, String> translations)
     {
+        selectAll(skipColumns, translations, true);
+    }
+
+    public void selectAll(@NotNull Set<String> skipColumns, @NotNull Map<String, String> translations, boolean skipOnce)
+    {
+        Set<String> skipped = new CaseInsensitiveHashSet();
         Map<String, Integer> aliasColumns = new HashMap<>();
         for (int i = 1; i <= _data.getColumnCount(); i++)
         {
             ColumnInfo c = _data.getColumnInfo(i);
             String name = c.getName();
             if (skipColumns.contains(name))
+            {
+                // if >1 columns found for the same skip column, this could be a data issue
+                if (skipOnce)
+                {
+                    if (skipped.contains(name))
+                        throw new ApiUsageException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, name));
+                    skipped.add(name);
+                }
                 continue;
+            }
 
             addColumn(c, i);
             if (translations.containsKey(name))
@@ -1428,7 +1445,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             skipColumns.addAll(added);
         }
 
-        t.selectAll(skipColumns);
+        t.selectAll(skipColumns, Collections.emptyMap(), false);
 
         return t;
     }

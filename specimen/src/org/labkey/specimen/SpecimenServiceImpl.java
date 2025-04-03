@@ -16,7 +16,6 @@
 
 package org.labkey.specimen;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +32,6 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -43,10 +41,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.DefaultSpecimenTablesTemplate;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
-import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.SpecimenChangeListener;
-import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.SpecimenTransform;
@@ -55,15 +51,12 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.importer.SpecimenColumn;
 import org.labkey.specimen.pipeline.SpecimenReloadJob;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,7 +68,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SpecimenServiceImpl implements SpecimenService
 {
-    private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
     private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();
     private final List<SpecimenChangeListener> _changeListeners = new CopyOnWriteArrayList<>();
 
@@ -219,45 +211,6 @@ public class SpecimenServiceImpl implements SpecimenService
     }
 
     @Override
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date)
-    {
-        if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
-        {
-            List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, date);
-            if (!matches.isEmpty())
-            {
-                Set<ParticipantVisit> result = new HashSet<>();
-                for (Vial match : matches)
-                {
-                    result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
-                }
-                return result;
-            }
-        }
-        
-        return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
-    }
-
-    @Override
-    public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit)
-    {
-        if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
-        {
-            List<Vial> matches = SpecimenManager.get().getVials(studyContainer, user, participantId, visit);
-            if (!matches.isEmpty())
-            {
-                Set<ParticipantVisit> result = new HashSet<>();
-                for (Vial match : matches)
-                {
-                    result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
-                }
-                return result;
-            }
-        }
-        return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
-    }
-
-    @Override
     public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime)
     {
         TableInfo tableInfoSpecimen = SpecimenSchema.get().getTableInfoSpecimen(studyContainer);
@@ -319,28 +272,6 @@ public class SpecimenServiceImpl implements SpecimenService
         if (noTransformsActive)
             return null;
         return props.get("active");
-    }
-
-    @Override
-    public void importSpecimens(User user, Container container, List<Map<String, Object>> rows, boolean merge) throws IOException, ValidationException
-    {
-        // CONSIDER: move ShowUploadSpecimensAction validation to importer.process()
-        SimpleSpecimenImporter importer = new SimpleSpecimenImporter(container, user);
-        rows = importer.fixupSpecimenRows(rows);
-        importer.process(rows, merge);
-    }
-
-    @Override
-    public void registerSpecimenImportStrategyFactory(SpecimenImportStrategyFactory factory)
-    {
-        // Insert at the start (we generally want reverse dependency order)
-        _importStrategyFactories.add(0, factory);
-    }
-
-    @Override
-    public Collection<SpecimenImportStrategyFactory> getSpecimenImportStrategyFactories()
-    {
-        return _importStrategyFactories;
     }
 
     @Override
@@ -410,26 +341,6 @@ public class SpecimenServiceImpl implements SpecimenService
     public TableInfo getTableInfoSpecimenEvent(Container container)
     {
         return SpecimenSchema.get().getTableInfoSpecimenEventIfExists(container);
-    }
-
-    @Override
-    public SpecimenTablesTemplate getSpecimenTablesTemplate()
-    {
-        return _specimenTablesTemplate;
-    }
-
-    @Override
-    public Domain getSpecimenVialDomain(Container container, User user)
-    {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-        return specimenTablesProvider.getDomain("Vial", false);
-    }
-
-    @Override
-    public Domain getSpecimenEventDomain(Container container, User user)
-    {
-        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-        return specimenTablesProvider.getDomain("SpecimenEvent", false);
     }
 
     @Override

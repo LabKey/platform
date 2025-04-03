@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.settings;
+package org.labkey.specimen.settings;
 
 import java.util.Map;
 

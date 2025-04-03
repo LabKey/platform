@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.specimen.Vial"%>
 <%@ page import="org.labkey.api.specimen.location.LocationImpl" %>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
-<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.study.Location" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.StudyUtils" %>
@@ -52,6 +51,7 @@
 <%@ page import="org.labkey.specimen.model.SpecimenRequestActor" %>
 <%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirement" %>
 <%@ page import="org.labkey.specimen.requirements.SpecimenRequestRequirementProvider" %>
+<%@ page import="org.labkey.specimen.settings.SettingsManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

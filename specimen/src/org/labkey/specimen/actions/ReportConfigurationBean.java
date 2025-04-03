@@ -7,7 +7,6 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ViewContext;
@@ -21,6 +20,7 @@ import org.labkey.specimen.report.request.RequestReportFactory;
 import org.labkey.specimen.report.specimentype.TypeCohortReportFactory;
 import org.labkey.specimen.report.specimentype.TypeParticipantReportFactory;
 import org.labkey.specimen.report.specimentype.TypeSummaryReportFactory;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

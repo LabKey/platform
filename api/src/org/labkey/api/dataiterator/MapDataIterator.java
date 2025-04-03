@@ -88,10 +88,7 @@ public interface MapDataIterator extends DataIterator
                 _findMap.put(in.getColumnInfo(i).getName(),i);
             }
             if (null != duplicates)
-            {
-                var ex = new IllegalStateException("Data has duplicate columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
-                ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), ex, true);
-            }
+                LOGGER.warn("Data has duplicate columns: '" + StringUtils.join(duplicates.toArray(), ", ") + "'");
         }
 
         @Override

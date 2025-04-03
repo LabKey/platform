@@ -18,6 +18,8 @@ package org.labkey.api.view;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 
 
@@ -70,9 +72,9 @@ public class ServletView extends HttpView
     }
 
 
-    public String toString()
+    public @NotNull String toString()
     {
-        return super.toString() + " URL=" + String.valueOf(_pathname);
+        return super.toString() + " URL=" + _pathname;
     }
 
 

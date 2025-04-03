@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -21,90 +21,87 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * User: klum
- * Date: Feb 23, 2012
- */
 public class SpecimenReportQuery
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "SpecimenSummary_PivotByPrimaryType";
     public static final String PIVOT_BY_DERIVATIVE_TYPE = "SpecimenSummary_PivotByDerivativeType";
     public static final String PIVOT_BY_REQUESTING_LOCATION = "SpecimenSummary_PivotByRequestingLocation";
 
-    private static final String sql_pivotByPrimaryType = "SELECT\n" +
-            "  Container,\n" +
-            "  %s,\n" +
-            "  Visit,\n" +
-            "  %s,\n" +
-            "  PrimaryType,\n" +
-            "  SUM(VialCount) AS VialCount,\n" +
-            "  SUM(LockedInRequestCount) AS LockedInRequestCount,\n" +
-            "  SUM(AtRepositoryCount) AS AtRepositoryCount,\n" +
-            "  SUM(AvailableCount) AS AvailableCount,\n" +
-            "  SUM(ExpectedAvailableCount) AS ExpectedAvailableCount\n" +
-            "\n" +
-            "FROM SpecimenSummary\n" +
-            "\n" +
-            "GROUP BY Container, %s, Visit, %s, PrimaryType\n" +
-            "\n" +
-            "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
-            "  BY PrimaryType\n" +
-            "  IN (SELECT RowId FROM SpecimenPrimaryType)";
+    private static final String sql_pivotByPrimaryType = """
+        SELECT
+          Container,
+          %s,
+          Visit,
+          %s,
+          PrimaryType,
+          SUM(VialCount) AS VialCount,
+          SUM(LockedInRequestCount) AS LockedInRequestCount,
+          SUM(AtRepositoryCount) AS AtRepositoryCount,
+          SUM(AvailableCount) AS AvailableCount,
+          SUM(ExpectedAvailableCount) AS ExpectedAvailableCount
+        
+        FROM SpecimenSummary
+        
+        GROUP BY Container, %s, Visit, %s, PrimaryType
+        
+        PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount
+          BY PrimaryType
+          IN (SELECT RowId FROM SpecimenPrimaryType)""";
 
-    private static final String sql_pivotByDerivativeType =
-            "SELECT\n" +
-            "  Container,\n" +
-            "  %s,\n" +
-            "  Visit,\n" +
-            "  %s,\n" +
-            "  PivotColumn,\n" +
-            "  SUM(VialCount) AS VialCount,\n" +
-            "  SUM(LockedInRequestCount) AS LockedInRequestCount,\n" +
-            "  SUM(AtRepositoryCount) AS AtRepositoryCount,\n" +
-            "  SUM(AvailableCount) AS AvailableCount,\n" +
-            "  SUM(ExpectedAvailableCount) AS ExpectedAvailableCount\n" +
-            "\n" +
-            "FROM (SELECT Container, %s, Visit, %s, ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
-            "\n" +
-            "GROUP BY Container, %s, Visit, %s, PivotColumn\n" +
-            "\n" +
-            "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
-            "  BY PivotColumn\n" +
-            "  IN (SELECT ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)";
+    private static final String sql_pivotByDerivativeType = """
+        SELECT
+          Container,
+          %s,
+          Visit,
+          %s,
+          PivotColumn,
+          SUM(VialCount) AS VialCount,
+          SUM(LockedInRequestCount) AS LockedInRequestCount,
+          SUM(AtRepositoryCount) AS AtRepositoryCount,
+          SUM(AvailableCount) AS AvailableCount,
+          SUM(ExpectedAvailableCount) AS ExpectedAvailableCount
+        
+        FROM (SELECT Container, %s, Visit, %s, ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X
+        
+        GROUP BY Container, %s, Visit, %s, PivotColumn
+        
+        PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount
+          BY PivotColumn
+          IN (SELECT ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)""";
 
 
-    private static final String sql_pivotRequestedByLocation =
-            "SELECT \n" +
-            " Container, Visit, %s, %s, PivotColumn, COUNT(*) AS RequestedVials\n" +
-            "FROM\n" +
-            "\n" +
-            "(SELECT \n" +
-            "  Vial.Container, \n" +
-            "  Vial.Visit AS Visit, \n" +
-            "  Vial.%s, \n" +
-            "  Vial.%s, \n" +
-            "  '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,\n" +
-            "  Vial.DerivativeType, \n" +
-            "  Request.Destination \n" +
-            "FROM VialRequest) X\n" +
-            "\n" +
-            "GROUP BY\n" +
-            " Container, Visit, %s, %s, PivotColumn\n" +
-            "PIVOT RequestedVials BY PivotColumn\n";
+    private static final String sql_pivotRequestedByLocation = """
+        SELECT\s
+         Container, Visit, %s, %s, PivotColumn, COUNT(*) AS RequestedVials
+        FROM
+        
+        (SELECT\s
+          Vial.Container,\s
+          Vial.Visit AS Visit,\s
+          Vial.%s,\s
+          Vial.%s,\s
+          '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,
+          Vial.DerivativeType,\s
+          Request.Destination\s
+        FROM VialRequest) X
+        
+        GROUP BY
+         Container, Visit, %s, %s, PivotColumn
+        PIVOT RequestedVials BY PivotColumn
+        """;
 //            UNDONE: do we want a custom IN query?
 //            IN (SELECT ...)
 
 
-    public static TableInfo getPivotByPrimaryType(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByPrimaryType(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)
@@ -135,9 +132,8 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByDerivativeType(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByDerivativeType(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)
@@ -168,9 +164,8 @@ public class SpecimenReportQuery
         return tinfo;
     }
 
-    public static TableInfo getPivotByRequestingLocation(SpecimenQuerySchema schema, ContainerFilter cf)
+    public static TableInfo getPivotByRequestingLocation(UserSchema schema, Study study, ContainerFilter cf)
     {
-        Study study = schema.getStudy();
         Container container = schema.getContainer();
 
         if (study == null)

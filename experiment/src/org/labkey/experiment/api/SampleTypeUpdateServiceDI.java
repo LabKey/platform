@@ -367,6 +367,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
+    protected void preImportDIBValidation(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns)
+    {
+        ExperimentServiceImpl.get().checkDuplicateParentColumns(in, inputColumns, _sampleType);
+    }
+
+    @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
@@ -1147,7 +1153,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<Integer, Integer> rowIdRowNumMap = new LinkedHashMap<>();
         Map<String, Integer> lsidRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
-        Map<String, Integer> nameRowNumMap = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
+        Map<String, Integer> nameRowNumMap = new LinkedHashMap<>();
         Integer sampleTypeId = null;
         for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
         {

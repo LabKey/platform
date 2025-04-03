@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
+
 /**
  * Helper for code that does not use QueryUpdateService
  *
@@ -223,7 +225,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
             if (null != to && _convertTypes)
             {
                 if (!unusedCols.containsKey(to.target.getFieldKey()))
-                    setupError.addGlobalError("Two columns mapped to target column " + to.target.getName() + ". Check the column names and import aliases for your data.");
+                    setupError.addGlobalError(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, to.target.getName()));
                 unusedCols.remove(to.target.getFieldKey());
                 to.indexFrom = i;
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());

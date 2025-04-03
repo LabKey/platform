@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
-import org.labkey.api.util.Filter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +30,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 /**
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
@@ -236,7 +236,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public int removeUsingFilter(Filter<K> filter)
+    public int removeUsingFilter(Predicate<K> filter)
     {
         return _cache.removeUsingFilter(filter);
     }
@@ -296,7 +296,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 }
                 @Override public Wrapper<Integer> get(@NotNull Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
                 @Override public void remove(@NotNull Integer key) { throw new UnsupportedOperationException(); }
-                @Override public int removeUsingFilter(Filter<Integer> filter) { throw new UnsupportedOperationException(); }
+                @Override public int removeUsingFilter(Predicate<Integer> filter) { throw new UnsupportedOperationException(); }
                 @Override public Set<Integer> getKeys() { throw new UnsupportedOperationException(); }
                 @Override public void clear() { throw new UnsupportedOperationException(); }
                 @Override public void close() { throw new UnsupportedOperationException(); }

@@ -88,10 +88,7 @@ import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.specimen.model.SpecimenComment;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Location;
-import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
@@ -119,6 +116,7 @@ import org.labkey.specimen.SpecimenColumns;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenTableManager;
+import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -1119,7 +1117,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 SpecimenTableType type = getForName(canonicalName);
 
                 if (null != type)
-                    fileNameMap.put(type, getSpecimenImportFile(getContainer(), dir, fileName, type));
+                    fileNameMap.put(type, getSpecimenImportFile(dir, fileName, type));
             }
         }
 
@@ -1127,20 +1125,9 @@ public class SpecimenImporter extends SpecimenTableManager
     }
 
     // TODO: Pass in merge (or import strategy)?
-    private SpecimenImportFile getSpecimenImportFile(Container c, VirtualFile dir, String fileName, SpecimenTableType type)
+    private SpecimenImportFile getSpecimenImportFile(VirtualFile dir, String fileName, SpecimenTableType type)
     {
-        DbSchema schema = SpecimenSchema.get().getSchema();
-
-        // Enumerate the import filter factories... first one to claim the file gets associated with it
-        for (SpecimenImportStrategyFactory factory : SpecimenService.get().getSpecimenImportStrategyFactories())
-        {
-            SpecimenImportStrategy strategy = factory.get(schema, c, dir, fileName);
-
-            if (null != strategy)
-                return new FileSystemSpecimenImportFile(dir, fileName, strategy, type);
-        }
-
-        throw new IllegalStateException("No SpecimenImportStrategyFactory claimed this import!");
+        return new FileSystemSpecimenImportFile(dir, fileName, type);
     }
 
     private void info(String message)
@@ -1788,10 +1775,6 @@ public class SpecimenImporter extends SpecimenTableManager
         {
             mergeTable(schema, type.getTableName(), target, type.getColumns(), loader, entityIdCol, hasContainerColumn);
         }
-        finally
-        {
-            file.getStrategy().close();
-        }
     }
 
     /**
@@ -1975,22 +1958,20 @@ public class SpecimenImporter extends SpecimenTableManager
         int rowCount;
         ColumnDescriptor[] tsvColumns;
 
-        try
+        if (null == target)
         {
-            if (null == target)
-            {
-                String dbname = tableName;
-                if (dbname.startsWith(schema.getName() + "."))
-                    dbname = dbname.substring(schema.getName().length() + 1);
-                target = schema.getTable(dbname);
-            }
-            if (null == target)
-                throw new IllegalStateException("Could not resolve table: " + tableName);
+            String dbname = tableName;
+            if (dbname.startsWith(schema.getName() + "."))
+                dbname = dbname.substring(schema.getName().length() + 1);
+            target = schema.getTable(dbname);
+        }
+        if (null == target)
+            throw new IllegalStateException("Could not resolve table: " + tableName);
 
-            DataIteratorContext dix = new DataIteratorContext();
-            dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-            DataLoader tsv = loadTsv(file);
-            tsvColumns = tsv.getColumns();
+        DataIteratorContext dix = new DataIteratorContext();
+        dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+        DataLoader tsv = loadTsv(file);
+        tsvColumns = tsv.getColumns();
 
 /*          // DEBUG: Dump data
             StringBuilder infoCol = new StringBuilder("");
@@ -2007,57 +1988,52 @@ public class SpecimenImporter extends SpecimenTableManager
             }
             info("");
 */
-            // CONSIDER turn off data conversion
-            //for (ColumnDescriptor cd : tsvColumns) cd.clazz = String.class;
-            // CONSIDER use AsyncDataIterator
-            //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
-            DataIteratorBuilder asyncIn = tsv;
-            DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(asyncIn, file.getTableType().getColumns(), computedColumns);
-            DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, getContainer(), getUser(), dix);
-            DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
-            Pump pump = new Pump(persist, dix);
-            pump.setProgress(new ListImportProgress()
-            {
-                long heartBeat = HeartBeat.currentTimeMillis();
-
-                @Override
-                public void setTotalRows(int rows)
-                {
-                }
-
-                @Override
-                public void setCurrentRow(int currentRow)
-                {
-                    if (0 == currentRow % SQL_BATCH_SIZE)
-                    {
-                        if (0 == currentRow % (SQL_BATCH_SIZE*100))
-                            info(currentRow + " rows loaded...");
-                        long hb = HeartBeat.currentTimeMillis();
-                        if (hb == heartBeat)
-                            return;
-                        ensureNotCanceled();
-                        heartBeat = hb;
-                    }
-                }
-            });
-            pump.run();
-            if (dix.getErrors().hasErrors())
-            {
-                throw new ValidationException(dix.getErrors().getLastRowError().getMessage() + " (File: " + file.getTableType().getName() + ")");
-            }
-            rowCount = pump.getRowCount();
-
-            info(tableName + ": Replaced all data with " + rowCount + " new rows.");
-        }
-        finally
+        // CONSIDER turn off data conversion
+        //for (ColumnDescriptor cd : tsvColumns) cd.clazz = String.class;
+        // CONSIDER use AsyncDataIterator
+        //DataIteratorBuilder asyncIn = new AsyncDataIterator.Builder(tsv);
+        DataIteratorBuilder asyncIn = tsv;
+        DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(asyncIn, file.getTableType().getColumns(), computedColumns);
+        DataIteratorBuilder standardEtl = StandardDataIteratorBuilder.forInsert(target, specimenWrapped, getContainer(), getUser(), dix);
+        DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
+        Pump pump = new Pump(persist, dix);
+        pump.setProgress(new ListImportProgress()
         {
-            file.getStrategy().close();
+            long heartBeat = HeartBeat.currentTimeMillis();
+
+            @Override
+            public void setTotalRows(int rows)
+            {
+            }
+
+            @Override
+            public void setCurrentRow(int currentRow)
+            {
+                if (0 == currentRow % SQL_BATCH_SIZE)
+                {
+                    if (0 == currentRow % (SQL_BATCH_SIZE*100))
+                        info(currentRow + " rows loaded...");
+                    long hb = HeartBeat.currentTimeMillis();
+                    if (hb == heartBeat)
+                        return;
+                    ensureNotCanceled();
+                    heartBeat = hb;
+                }
+            }
+        });
+        pump.run();
+        if (dix.getErrors().hasErrors())
+        {
+            throw new ValidationException(dix.getErrors().getLastRowError().getMessage() + " (File: " + file.getTableType().getName() + ")");
         }
+        rowCount = pump.getRowCount();
+
+        info(tableName + ": Replaced all data with " + rowCount + " new rows.");
 
         // Note: this duplicates the logic in SpecimenImportIterator (just below). Keep these code paths in sync.
         Map<String,T> importMap = (Map<String,T>)createImportMap(file.getTableType().getColumns());
         final var seen = new HashSet<String>();
-        List<T> availableColumns = Arrays.stream(tsvColumns).map(tsv -> importMap.get(tsv.getColumnName()))
+        List<T> availableColumns = Arrays.stream(tsvColumns).map(tsv2 -> importMap.get(tsv2.getColumnName()))
                 .filter(Objects::nonNull)
                 .filter(cd -> seen.add(cd.getPrimaryTsvColumnName()))
                 .collect(Collectors.toList());

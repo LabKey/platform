@@ -596,7 +596,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
                 {
                     var url = new URLHelper(s).setPath("");
                     if (StringUtils.isNotEmpty(url.getHost()))
-                        ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, "static.files.prefix", url.toString());
+                        ContentSecurityPolicyFilter.registerAllowedSources("static.files.prefix", Directive.Connection, url.toString());
                     prefix = s;
                 }
                 catch (URISyntaxException ignore)

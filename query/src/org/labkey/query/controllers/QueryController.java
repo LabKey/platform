@@ -2070,9 +2070,10 @@ public class QueryController extends SpringActionController
             this.includeColumn = includeColumn;
         }
 
+        @NotNull
         public String getFilenamePrefix()
         {
-            return filenamePrefix;
+            return filenamePrefix == null ? getQueryName() : filenamePrefix;
         }
 
         public void setFilenamePrefix(String prefix)
@@ -4474,6 +4475,7 @@ public class QueryController extends SpringActionController
                 }
                 if (null != jsonObj)
                 {
+                    // TODO: validate duplicate keys with different cases don't exist in data ('Name' vs 'name') (Issue 52616)
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>() : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     JsonUtil.fillMapShallow(jsonObj, rowMap);

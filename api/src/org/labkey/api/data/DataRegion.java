@@ -76,6 +76,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.HtmlWriter.AttributeValue;
+import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -972,11 +973,18 @@ public class DataRegion extends DisplayElement
             out.write("You do not have permission to read this data");
             return;
         }
+
         Results results = null;
         try
         {
             boolean showParameterForm = false;
-            if (usesResultSet())
+            Errors errors = ctx.getErrors();
+
+            if (errors != null && errors.hasErrors())
+            {
+                errors.getAllErrors().forEach(err -> addError(err.getDefaultMessage()));
+            }
+            else if (usesResultSet())
             {
                 try
                 {
@@ -992,10 +1000,7 @@ public class DataRegion extends DisplayElement
                 }
                 catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
                 {
-                    _errorCreatingResults = true;
-                    _showPagination = false;
-                    _allowHeaderLock = false;
-                    addMessage(new Message(x.getMessage(), MessageType.ERROR, MessagePart.header));
+                    addError(x.getMessage());
                 }
             }
 
@@ -1012,6 +1017,14 @@ public class DataRegion extends DisplayElement
         {
             ResultSetUtil.close(results);
         }
+    }
+
+    private void addError(String message)
+    {
+        _errorCreatingResults = true;
+        _showPagination = false;
+        _allowHeaderLock = false;
+        addMessage(new Message(message, MessageType.ERROR, MessagePart.header));
     }
 
     private void renderParameterForm(RenderContext ctx, HtmlWriter out)
@@ -2051,37 +2064,50 @@ public class DataRegion extends DisplayElement
 
     private void renderUpdateForm(RenderContext ctx, HtmlWriter out)
     {
-        TableViewForm viewForm = ctx.getForm();
-        Map<String, Object> valueMap = ctx.getRow();
-        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        ctx.setResults(new ResultsImpl(null, selectKeyMap));
-        if (null == valueMap)
+        try
         {
-            //For updates, the valueMap is the OLD version of the data.
-            //If there is no old data, we reselect to get it
-            if (null != viewForm.getOldValues())
+            TableViewForm viewForm = ctx.getForm();
+            Map<String, Object> valueMap = ctx.getRow();
+            LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
+            if (null == valueMap)
             {
-                //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
-                Object old = viewForm.getOldValues();
-                if (old instanceof Map m)
-                    valueMap = m;
+                //For updates, the valueMap is the OLD version of the data.
+                //If there is no old data, we reselect to get it
+                if (null != viewForm.getOldValues())
+                {
+                    //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
+                    Object old = viewForm.getOldValues();
+                    if (old instanceof Map m)
+                        valueMap = m;
+                    else
+                        valueMap = new BoundMap(old);
+                }
                 else
-                    valueMap = new BoundMap(old);
-            }
-            else
-            {
-                if (!hasPermission(ctx, ReadPermission.class))
-                    throw new UnauthorizedException();
+                {
+                    if (!hasPermission(ctx, ReadPermission.class))
+                        throw new UnauthorizedException();
 
-                TableInfo tinfoMain = getTable();
-                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
-                if (!maps.isEmpty())
-                    valueMap = maps.iterator().next();
+                    TableInfo tinfoMain = getTable();
+                    var results = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getResults(true);
+                    ctx.setResults(results);
+                    if (results.next())
+                    {
+                        valueMap = results.getRowMap();
+                    }
+                }
+                ctx.setRow(valueMap);
             }
-            ctx.setRow(valueMap);
+
+            renderForm(ctx, out);
         }
-
-        renderForm(ctx, out);
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            ResultSetUtil.close(ctx.getResults());
+        }
     }
 
     /**
@@ -2102,8 +2128,6 @@ public class DataRegion extends DisplayElement
         if (!hasPermission(ctx, ReadPermission.class))
             throw new UnauthorizedException();
         TableInfo table = getTable();
-
-        ctx.setResults(new ResultsImpl(null, selectKeyMap));
 
         String[] selectedRows = viewForm.getSelectedRows();
         if (selectedRows == null)
@@ -2281,7 +2305,7 @@ public class DataRegion extends DisplayElement
                             (Renderable) ret -> {
                                 // Note: valueMap != null, since we checked this above
 
-                                if (valueMap instanceof BoundMap)
+                                if (valueMap instanceof BoundMap || null == ctx.getFieldMap())
                                     renderOldValues(out, valueMap);
                                 else
                                     renderOldValues(out, valueMap, ctx.getFieldMap());

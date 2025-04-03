@@ -22,8 +22,8 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.api.specimen.settings.SettingsManager" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -34,7 +34,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudySummaryWebPartFactory.StudySummaryBean> me = (JspView<StudySummaryWebPartFactory.StudySummaryBean>) HttpView.currentView();
+    JspView<StudySummaryWebPartFactory.StudySummaryBean> me = HttpView.currentView();
     StudySummaryWebPartFactory.StudySummaryBean bean = me.getModelBean();
 
     User user = (User)request.getUserPrincipal();
@@ -155,7 +155,7 @@
                     %><p><%=link("Manage Files", pipelineUrl)%></p><%
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
-                        SettingsManager.get().getRepositorySettings(bean.getStudy().getContainer()).isEnableRequests())
+                        SpecimenMigrationService.get().isEnableRequests(getContainer()))
                 {
                     %><p><%=link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class))%></p><%
                 }

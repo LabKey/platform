@@ -743,7 +743,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             {
                 ColumnInfo col = getFieldMap().get(f);
                 if (null != col)
-                    key = getFieldMap().get(f).getAlias();
+                    key = col.getAlias();
             }
         }
 

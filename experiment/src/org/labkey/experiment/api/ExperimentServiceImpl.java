@@ -89,6 +89,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -201,6 +202,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
@@ -252,6 +255,7 @@ import org.springframework.dao.PessimisticLockingFailureException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -294,6 +298,7 @@ import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_DATA;
 import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
+import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
@@ -10064,6 +10069,60 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
         return fileResults;
+    }
+
+    public void checkDuplicateParentColumns(@Nullable DataIteratorBuilder in, @Nullable Collection<String> inputColumns, @Nullable ExpObject currentDataType)
+    {
+        if ((in == null && inputColumns == null) || currentDataType == null)
+            return;
+
+        List<String> allColumns = new ArrayList<>();
+        if (in instanceof DataLoader dataLoader)
+        {
+            ColumnDescriptor[] columnDescriptors;
+            try
+            {
+                columnDescriptors = dataLoader.getColumns(Collections.emptyMap(), true);
+                if (columnDescriptors != null)
+                {
+                    for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                        allColumns.add(columnDescriptor.name);
+                }
+            }
+            catch (IOException exception)
+            {
+                throw new UncheckedIOException(exception);
+            }
+        }
+        else if (inputColumns != null)
+            allColumns.addAll(inputColumns);
+
+        Map<String, String> parentAliasColumnMap = new CaseInsensitiveHashMap<>();
+        try
+        {
+            if (currentDataType instanceof ExpDataClass dataClass)
+                parentAliasColumnMap.putAll(dataClass.getImportAliases());
+            else if (currentDataType instanceof ExpSampleType sampleType)
+                parentAliasColumnMap.putAll(sampleType.getImportAliases());
+        }
+        catch (IOException exception)
+        {
+            throw new UncheckedIOException(exception);
+        }
+
+        Set<String> seenColumns = new CaseInsensitiveHashSet();
+        for (String inputColName : allColumns)
+        {
+            String columnName = inputColName;
+            if (parentAliasColumnMap.containsKey(columnName))
+                columnName = parentAliasColumnMap.get(columnName);
+            if (ExperimentService.isInputOutputColumn(columnName) || "parent".equalsIgnoreCase(columnName))
+            {
+                if (seenColumns.contains(columnName))
+                    throw new ApiUsageException(String.format(DUPLICATE_COLUMN_IN_DATA_ERROR, columnName));
+                seenColumns.add(columnName);
+            }
+        }
     }
 
     public static class TestCase extends Assert

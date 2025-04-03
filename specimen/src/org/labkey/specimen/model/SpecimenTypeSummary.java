@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.specimen.model;
+package org.labkey.specimen.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.SpecimenUrls;
@@ -27,11 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: brittp
- * Date: Aug 21, 2006
- * Time: 3:19:04 PM
- */
 public class SpecimenTypeSummary
 {
     public static abstract class TypeCount

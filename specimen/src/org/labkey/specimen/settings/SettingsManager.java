@@ -6,9 +6,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.specimen.settings.DisplaySettings;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.StatusSettings;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
 
@@ -87,14 +84,37 @@ public class SettingsManager
     {
         if (!checkExistingStatuses)
         {
-            return org.labkey.api.specimen.settings.SettingsManager.get().getRepositorySettings(container).isEnableRequests();
+            return SettingsManager.get().getRepositorySettings(container).isEnableRequests();
         }
         else
         {
-            if (!org.labkey.api.specimen.settings.SettingsManager.get().getRepositorySettings(container).isEnableRequests())
+            if (!SettingsManager.get().getRepositorySettings(container).isEnableRequests())
                 return false;
             Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(container, user);
             return (statuses != null && statuses.size() > 1);
         }
+    }
+
+    public DisplaySettings getDisplaySettings(Container container)
+    {
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRequestDisplay");
+        return settingsMap.isEmpty() ? DisplaySettings.getDefaultSettings() : new DisplaySettings(settingsMap);
+    }
+
+    public StatusSettings getStatusSettings(Container container)
+    {
+        Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRequestStatus");
+        return settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null ? StatusSettings.getDefaultSettings() : new StatusSettings(settingsMap);
+    }
+
+    public boolean isSpecimenShoppingCartEnabled(Container container)
+    {
+        return getStatusSettings(container).isUseShoppingCart();
+    }
+
+    public RepositorySettings getRepositorySettings(Container container)
+    {
+        Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser(), container, "SpecimenRepositorySettings");
+        return settingsMap.isEmpty() ? RepositorySettings.getDefaultSettings(container) : new RepositorySettings(container, settingsMap);
     }
 }

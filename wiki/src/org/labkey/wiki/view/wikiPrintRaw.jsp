@@ -26,7 +26,7 @@
 <%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WikiController.PrintRawBean> me = (JspView<WikiController.PrintRawBean>) HttpView.currentView();
+    JspView<WikiController.PrintRawBean> me = HttpView.currentView();
     WikiController.PrintRawBean bean = me.getModelBean();
     Container c = getContainer();
 %>

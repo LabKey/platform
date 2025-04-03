@@ -16,9 +16,9 @@
 
 package org.labkey.specimen.view;
 
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.view.JspView;
+import org.labkey.specimen.settings.SettingsManager;
 
 /**
  * User: Mark Igra

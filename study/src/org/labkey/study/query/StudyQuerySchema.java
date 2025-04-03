@@ -47,10 +47,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
-import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.query.SpecimenPivotByDerivativeType;
-import org.labkey.api.specimen.query.SpecimenPivotByPrimaryType;
-import org.labkey.api.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.SpecimenService;
@@ -135,19 +131,20 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
+    public static final String STUDY_DATA_TABLE_NAME = "StudyData";
+    public static final String QCSTATE_TABLE_NAME = "QCState";
+
     @Nullable // if no study defined in this container
     final StudyImpl _study;
 
     protected final Role _contextualRole;
-    private boolean _dontAliasColumns = false;
-
-    private Map<Integer, List<BigDecimal>> _datasetSequenceMap;
-    public static final String STUDY_DATA_TABLE_NAME = "StudyData";
-    public static final String QCSTATE_TABLE_NAME = "QCState";
     protected Set<String> _tableNames;
 
+    private boolean _dontAliasColumns = false;
+    private Map<Integer, List<BigDecimal>> _datasetSequenceMap;
+
     private ParticipantGroup _sessionParticipantGroup;
-    private StudyDesignQuerySchema _designQuerySchema;
+    private final StudyDesignQuerySchema _designQuerySchema;
 
     /** use StudyQuerySchema.createSchema() */
     protected StudyQuerySchema(@NotNull StudyImpl study, @NotNull User user, @Nullable Role contextualRole)
@@ -221,7 +218,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (!AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_STUDY_SUBSCHEMAS))
             return Set.of();
         var ret = new LinkedHashSet<>(Arrays.asList(DATASETS_SCHEMA_NAME, DESIGN_SCHEMA_NAME));
-        if (null != SpecimenService.get())
+        if (null != SpecimenService.get() && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             ret.add(SPECIMENS_SCHEMA_NAME);
         return ret;
     }
@@ -233,7 +230,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return new DatasetSchema(this);
         if (StringUtils.equalsIgnoreCase(DESIGN_SCHEMA_NAME, name))
             return new DesignSchema(this);
-        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME,name))
+        if (StringUtils.equalsIgnoreCase(SPECIMENS_SCHEMA_NAME,name) && SpecimenManager.get().isSpecimenModuleActive(getContainer()))
             return new SpecimenSchema(this);
         return super.getSchema(name);
     }
@@ -312,9 +309,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                     names.add("SpecimenComment");
 
                     // specimen report pivots
-                    names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-                    names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-                    names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+                    SpecimenMigrationService.get().addSpecimenPivotTableNames(names);
 
                     names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
                 }
@@ -700,17 +695,12 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             return new StudySnapshotTable(this, cf);
         }
-        if (SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE.equalsIgnoreCase(name))
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        if (sms != null)
         {
-            return new SpecimenPivotByPrimaryType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
-        }
-        if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
-        {
-            return new SpecimenPivotByDerivativeType(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
-        }
-        if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
-        {
-            return new SpecimenPivotByRequestingLocation(SpecimenQuerySchema.get(getStudy(), getUser()), cf);
+            TableInfo pivot = sms.getSpecimenPivotTable(this, name, _study, cf);
+            if (pivot != null)
+                return pivot;
         }
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {

@@ -517,13 +517,27 @@ public abstract class ContainerFilter
     }
 
     /** Use this with extreme caution - this doesn't check permissions */
+    @Deprecated(forRemoval = true) // Use getUnsafeEverythingFilter() instead TODO: Remove
     public static final ContainerFilter EVERYTHING_UNSAFE = new InternalNoContainerFilter();
+
+    private static ContainerFilter _everythingUnsafe = null;
+
+    /** Use this with extreme caution - this doesn't check permissions! */
+    public static synchronized ContainerFilter getUnsafeEverythingFilter()
+    {
+        if (_everythingUnsafe == null)
+        {
+            _everythingUnsafe = new InternalNoContainerFilter();
+        }
+        return _everythingUnsafe;
+    }
 
     public static class ContainerFilterWithPermission extends ContainerFilter
     {
         public ContainerFilterWithPermission(Container c, User user)
         {
             super(c, user);
+            Objects.requireNonNull(c);
             Objects.requireNonNull(user);
         }
 
@@ -626,7 +640,7 @@ public abstract class ContainerFilter
 
         public SimpleContainerFilterWithUser(User user, Collection<Container> containers)
         {
-            super(null, user);
+            super(ContainerManager.getRoot() /* Ignored, but we want non-null */, user);
             _ids = toIds(containers);
         }
 
@@ -642,11 +656,11 @@ public abstract class ContainerFilter
         {
             Set<GUID> result;
             result = _ids.stream()
-                    .map(ContainerManager::getForId)
-                    .filter(Objects::nonNull)
-                    .filter(c -> c.hasPermission(_user, permission, roles))
-                    .map(Container::getEntityId)
-                    .collect(Collectors.toSet());
+                .map(ContainerManager::getForId)
+                .filter(Objects::nonNull)
+                .filter(c -> c.hasPermission(_user, permission, roles))
+                .map(Container::getEntityId)
+                .collect(Collectors.toSet());
             return result;
         }
 
@@ -685,7 +699,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -717,7 +731,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, roles))
@@ -757,7 +771,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             List<Container> containers = new ArrayList<>(removeDuplicatedContainers(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -783,7 +797,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -813,7 +827,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             do
@@ -845,7 +859,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.protocol);
             return containers.stream()
@@ -871,7 +885,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -911,7 +925,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
 
@@ -960,7 +974,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
 
@@ -1008,7 +1022,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
             if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm, roles))
@@ -1043,7 +1057,7 @@ public abstract class ContainerFilter
     {
         public Project(Container c, User user)
         {
-            super(null==c?null:c.isRoot()?c:c.getProject(), user);
+            super(c.isRoot() ? c : c.getProject(), user);
         }
 
         @Override
@@ -1073,7 +1087,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -1136,7 +1150,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert null == _container || _container.equals(currentContainer);
+            assert _container.equals(currentContainer);
 
             Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
             if (project == null)
@@ -1187,7 +1201,7 @@ public abstract class ContainerFilter
     {
         public AllFolders(User user)
         {
-            super(null, user);
+            super(ContainerManager.getRoot(), user);
         }
 
         @Override
@@ -1326,7 +1340,7 @@ public abstract class ContainerFilter
     {
         if (!_log.isDebugEnabled())
             return;
-        _log.debug("setContainerFilter( " + StringUtils.join(parts, " ") + ", " + String.valueOf(cf) + " )");
+        _log.debug("setContainerFilter( {}, {} )", StringUtils.join(parts, " "), cf);
     }
 
 
@@ -1345,7 +1359,7 @@ public abstract class ContainerFilter
             assertEquals(current(home, user).getCacheKey(), current(home, user).getCacheKey());
             assertNotEquals(current(home, user).getCacheKey(), current(test, user).getCacheKey());
 
-            assertEquals(EVERYTHING_UNSAFE.getCacheKey(), new InternalNoContainerFilter().getCacheKey());
+            assertEquals(getUnsafeEverythingFilter().getCacheKey(), new InternalNoContainerFilter().getCacheKey());
 
             assertEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(home, user, shared).getCacheKey());
             assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(test, user, shared).getCacheKey());

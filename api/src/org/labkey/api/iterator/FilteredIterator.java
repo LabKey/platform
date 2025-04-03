@@ -15,23 +15,20 @@
  */
 package org.labkey.api.iterator;
 
-import org.labkey.api.util.Filter;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.function.Predicate;
 
 /**
  * Wrapper over some other Iterator that filters out certain objects.
- * User: adam
- * Date: Apr 10, 2009
  */
 public class FilteredIterator<T> implements Iterator<T>
 {
     private final Iterator<T> _iterator;
-    private final Filter<T> _filter;
+    private final Predicate<T> _filter;
     private T _next;
 
-    public FilteredIterator(Iterator<T> iterator, Filter<T> filter)
+    public FilteredIterator(Iterator<T> iterator, Predicate<T> filter)
     {
         _iterator = iterator;
         _filter = filter;
@@ -69,7 +66,7 @@ public class FilteredIterator<T> implements Iterator<T>
         while (_iterator.hasNext())
         {
             T item = _iterator.next();
-            if (item != null && _filter.accept(item))
+            if (item != null && _filter.test(item))
             {
                 _next = item;
                 break;

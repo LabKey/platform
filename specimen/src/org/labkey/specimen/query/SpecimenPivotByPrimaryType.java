@@ -13,36 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.query;
+package org.labkey.specimen.query;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.specimen.SpecimenQuerySchema;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
 
-/**
- * User: klum
- * Date: Mar 5, 2012
- */
 public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "Primary Type Vial Counts";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary type %s";
 
-    public SpecimenPivotByPrimaryType(final SpecimenQuerySchema schema, ContainerFilter cf)
+    public SpecimenPivotByPrimaryType(final UserSchema schema, Study study, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByPrimaryType(schema, cf), schema);
+        super(SpecimenReportQuery.getPivotByPrimaryType(schema, study, cf), schema);
+        Container container = getContainer();
         setName(PIVOT_BY_PRIMARY_TYPE);
-        setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
+        setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(container) +
             "/visit combination.");
 
-        Container container = getContainer();
         Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(container);
-        Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
+        Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(container);
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -72,33 +69,4 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 
         addWrapColumn(_rootTable.getColumn("Container"));
     }
-
-    /*
-    private List<FieldKey> getDefaultColumns(StudyQuerySchema schema)
-    {
-        List<FieldKey> defaultColumns = new ArrayList<FieldKey>();
-
-        defaultColumns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
-        defaultColumns.add(FieldKey.fromParts("Visit"));
-
-        Map<String, String> nonZeroPrimaryTypes = new HashMap<String, String>();
-
-        for (String label : getPrimaryTypeMap(getContainer()).values())
-            nonZeroPrimaryTypes.put(label, label);
-
-        for (ColumnInfo col : getColumns())
-        {
-            String[] parts = col.getName().split("::");
-
-            if (parts != null && parts.length > 1)
-            {
-                if (nonZeroPrimaryTypes.containsKey(parts[0]))
-                    defaultColumns.add(col.getFieldKey());
-                else
-                    col.setHidden(true);
-            }
-        }
-        return defaultColumns;
-    }
-    */
 }
