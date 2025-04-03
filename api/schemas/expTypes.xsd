@@ -436,7 +436,7 @@
     <xs:complexType name="SampleSetType">
         <xs:sequence>
             <xs:element name="Name" type="string" minOccurs="1"/>
-			<xs:element name="TableTitle" type="xs:string" minOccurs="0" />
+            <xs:element name="TableTitle" type="xs:string" minOccurs="0" />
 			<xs:element name="MaterialLSIDPrefix" type="string" minOccurs="1"/>
             <xs:element name="Description" type="string" minOccurs="0" />
 			<xs:element name="KeyField" type="string" minOccurs="0" maxOccurs="3" />

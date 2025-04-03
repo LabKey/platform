@@ -577,7 +577,6 @@
       </column>
       <column columnName="DomainURI"/>
       <column columnName="Name"/>
-      <column columnName="Title"/>
       <column columnName="Description"/>
       <column columnName="Container"/>
       <column columnName="Project"/>
