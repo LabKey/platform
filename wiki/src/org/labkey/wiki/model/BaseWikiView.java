@@ -95,8 +95,9 @@ public abstract class BaseWikiView extends JspView<Object>
 
             if (null == wiki)
             {
-                name = WikiSelectManager.getNameForAlias(c, name);
-                wiki = WikiSelectManager.getWiki(c, name);
+                String aliasedName = WikiSelectManager.getNameForAlias(c, name);
+                if (aliasedName != null)
+                    wiki = WikiSelectManager.getWiki(c, name);
             }
 
             //this is a non-existent wiki
