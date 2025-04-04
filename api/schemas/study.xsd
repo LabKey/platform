@@ -128,29 +128,7 @@
 									<xs:attribute name="file" type="xs:string">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                Names the file where the schema can be found. The file can follow either
-                                                the new, XML format, or the old, schema.tsv format.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:attribute>
-									<xs:attribute name="labelColumn" type="xs:string">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Names the column where labels are found.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:attribute>
-									<xs:attribute name="typeNameColumn" type="xs:string">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Names the column where type names are found.
-                                            </xs:documentation>
-                                        </xs:annotation>
-                                    </xs:attribute>
-									<xs:attribute name="typeIdColumn" type="xs:string">
-                                        <xs:annotation>
-                                            <xs:documentation>
-                                                Names the column where type IDs are found.
+                                                Names the file where the schema can be found. The file must follow the dataset_manifest XML format.
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:attribute>

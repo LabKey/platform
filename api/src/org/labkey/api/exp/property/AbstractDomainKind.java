@@ -215,7 +215,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
                 TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
                 ColumnInfo mvColumn = StorageProvisioner.get().getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
                 nonBlankRowsSQL.append(" OR x.");
-                nonBlankRowsSQL.append(mvColumn.getName().toLowerCase());
+                nonBlankRowsSQL.appendIdentifier(dialect.makeLegalIdentifier(mvColumn.getName()));
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
 

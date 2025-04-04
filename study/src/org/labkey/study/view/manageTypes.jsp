@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.audit.AuditUrls"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.exp.property.Domain"%>
 <%@ page import="org.labkey.api.reports.model.ViewCategory"%>
 <%@ page import="org.labkey.api.study.Cohort"%>
 <%@ page import="org.labkey.api.study.Dataset" %>
@@ -26,11 +25,11 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.study.controllers.DatasetController.BulkDatasetDeleteAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetDetailsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetDisplayOrderAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DatasetVisibilityAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DefineDatasetTypeAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageUndefinedTypesAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
 <%@ page import="org.labkey.study.dataset.DatasetAuditProvider" %>
@@ -46,13 +45,6 @@
     List<DatasetDefinition> shadowed = StudyManager.getInstance().getShadowedDatasets(study, null);
 
     List<? extends Dataset> datasets = study.getDatasetsByType(Dataset.TYPE_STANDARD, Dataset.TYPE_PLACEHOLDER);
-    int countUndefined = 0;
-    for (Dataset def : datasets)
-    {
-        Domain d = def.getDomain();
-        if (null == d || 0 == d.getProperties().size())
-            countUndefined++;
-    }
 %>
 <table class="lk-fields-table">
     <tr>
@@ -60,35 +52,14 @@
         <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
 <%
-
-    if (countUndefined > 0)
-    {
-        %><tr>
-            <td>A visit map can refer to datasets that do not have defined schemas.
-                <%
-                    if (countUndefined == 1)
-                    {
-                        %>One dataset in this study does not have a defined schema.<%
-                    }
-                    else if (countUndefined > 1)
-                    {
-                        %><%= countUndefined %> datasets in this study do not have defined schemas.<%
-                    }
-                    else
-                    {
-                        %>All datasets in this study have defined schemas.<%
-                    }
-                %>
-            </td>
-            <td><%= link("Define Dataset Schemas", ManageUndefinedTypesAction.class)%></td>
-        </tr><%
-    }
     if (!datasets.isEmpty())
     {
-    %><tr>
+%>
+    <tr>
         <td>Datasets can be displayed in any order.</td>
         <td><%= link("Change Display Order", DatasetDisplayOrderAction.class)%></td>
-    </tr><%
+    </tr>
+<%
     }
 
 %>
@@ -108,9 +79,13 @@
     <tr>
         <td>New datasets can be added to this study at any time.</td>
         <%
-            ActionURL createURL = new ActionURL(DefineDatasetTypeAction.class, c);
+            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
         %>
         <td><%= link("Create New Dataset", createURL)%></td>
+    </tr>
+    <tr>
+        <td>Import dataset definition XML file to quickly define datasets</td>
+        <td><%= link("Import Dataset Schema", StudyController.ImportDatasetSchemaAction.class)%></td>
     </tr>
     <tr>
         <td>Dataset audit logs can be viewed for all datasets in this folder.</td>
@@ -160,15 +135,24 @@
 %></table>
 <br>
 <%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c))%>
-<% if (!shadowed.isEmpty())
-{
-    %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%
-    for (DatasetDefinition h : shadowed)
+<%
+    if (!shadowed.isEmpty())
     {
-        %><li><%=h.getDatasetId()%>:&nbsp;<%=h(h.getName())%></li><%
+%>
+        <p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br>
+        <ul>
+<%
+        for (DatasetDefinition h : shadowed)
+        {
+%>
+            <li><%=h.getDatasetId()%>:&nbsp;<%=h(h.getName())%></li>
+<%
+        }
+%>
+        </ul>
+        </p>
+<%
     }
-    %></ul></p><%
-}
 
     FrameFactoryClassic.endTitleFrame(out);
 %>

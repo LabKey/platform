@@ -28,12 +28,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: May 26, 2009
- * Time: 10:14:08 AM
- */
-
 // This is an ugly but relatively quick way to add support for the new dataset_metadata.xml format while still
 // maintaining compatibility with schema.tsv.
 //
@@ -42,7 +36,6 @@ public interface SchemaReader
     OntologyManager.ImportPropertyDescriptorsList getImportPropertyDescriptors(DomainURIFactory factory, Collection<String> errors, Container defaultContainer);
 
     Map<Integer, DatasetImportInfo> getDatasetInfo();
-    String getTypeNameColumn();
 
     class DatasetImportInfo
     {
