@@ -19,7 +19,6 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.Study;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
@@ -33,11 +32,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * User: adam
- * Date: May 21, 2009
- * Time: 3:22:31 PM
- */
 public class DatasetCohortAssigner implements InternalStudyImporter
 {
     @Override
@@ -77,7 +71,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                 // Props will be null if a dataset is referenced in the visit map but not in the datasets_manifest
                 if (null == props)
                 {
-                    ctx.getLogger().info("INFORMATION: Dataset \"" + def.getName() + "\" found in the study that is not defined in datasets_manifest.xml");
+                    ctx.getLogger().info("INFORMATION: Dataset \"{}\" found in the study that is not defined in datasets_manifest.xml", def.getName());
                 }
                 else
                 {
@@ -94,7 +88,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                 }
             }
 
-            ctx.getLogger().info("Done importing " + getDescription());
+            ctx.getLogger().info("Done importing {}", getDescription());
         }
     }
 

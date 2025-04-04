@@ -22,11 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: May 21, 2009
- * Time: 9:14:02 AM
- */
 // Consider: generalize to StudyEntityReorderer?
 public class DatasetReorderer
 {
@@ -40,7 +35,7 @@ public class DatasetReorderer
         _user = user;
     }
 
-    // Reorder all the datasets in the study.  Datasets specified in orderedIds will appear first, in order of the
+    // Reorder all the datasets in the study. Datasets specified in orderedIds will appear first, in order of the
     // list; any unspecified datasets will appear at the end of the list, maintaining their current order.
     public void reorderDatasets(List<Integer> orderedIds)
     {

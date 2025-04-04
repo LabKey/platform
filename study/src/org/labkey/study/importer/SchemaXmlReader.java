@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -35,6 +36,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.DatasetDefinitionImporter.DatasetImportProperties;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.study.xml.DatasetsDocument.Datasets;
 
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ public class SchemaXmlReader implements SchemaReader
 
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
     private final List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
+    private final List<Integer> _orderedIds;
 
     public SchemaXmlReader(final Study study, String metadataName, TablesDocument tablesDoc, Datasets manifestDatasetsDoc) throws ImportException
     {
@@ -62,6 +65,12 @@ public class SchemaXmlReader implements SchemaReader
             // Note: different constructor than the one below
             throw new ImportException("Invalid TablesDocument ", xve);
         }
+
+        DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsDoc.getDatasets().getDatasetArray();
+        _orderedIds = new ArrayList<>(datasets.length);
+
+        for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+            _orderedIds.add(dataset.getId());
 
         Map<String, DatasetImportProperties> extraImportProps = DatasetDefinitionImporter.getDatasetImportProperties(manifestDatasetsDoc);
 
@@ -283,5 +292,11 @@ public class SchemaXmlReader implements SchemaReader
     public Map<Integer, DatasetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;
+    }
+
+    @Override
+    public @Nullable List<Integer> getDatasetOrder()
+    {
+        return _orderedIds;
     }
 }
