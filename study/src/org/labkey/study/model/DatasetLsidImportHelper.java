@@ -238,11 +238,33 @@ public class DatasetLsidImportHelper
             lsid = new DatasetLsidImportHelper(createDatasetDef(_dateStudy, false, false));
             String nonDemographics = lsid.translateLsid("222", seq.translateSequenceNum(null, parseDateTime("2025-4-15")), null, null, null);
             assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025-4-15"), null, null, null));
-            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "15 April 2025 1:00pm"), null, null, null));
-            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, parseDateTime("2025/4/15")), new Date(), null, null));
+            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, parseDateTime("15 April 2025 1:00pm")), null, null, null));
+            assertEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025/4/15"), new Date(), null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "2025-4-16"), null, null, null));
-            assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("1.0", "15 April 2024 1:00pm"), null, null, null));
+            assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum(null, "15 April 2025 1:00pm"), null, null, null));
+            assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("1.0", "15 April 2025"), null, null, null));
             assertNotEquals(nonDemographics, lsid.translateLsid("222", seq.translateSequenceNum("Enrollment", parseDateTime("2025/4/1")), new Date(), null, null));
+
+            // alternate key field
+            lsid = new DatasetLsidImportHelper(createDatasetDef(_dateStudy, false, false));
+            String additionalKey = lsid.translateLsid("333", seq.translateSequenceNum(null, parseDateTime("2025-4-15 1:00pm")), null, "abc", null);
+            assertEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "15 April 2025"), null, "abc", null));
+            assertEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "2025-4-15"), null, "abc", null));
+            assertNotEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, parseDateTime("2025-4-16")), null, "abc", null));
+            assertNotEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "2025-4-15"), null, "bca", null));
+            additionalKey = lsid.translateLsid("333", seq.translateSequenceNum(null, parseDateTime("2025-4-15 1:00pm")), null, 12.0, null);
+            assertEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "15 April 2025"), null, "12.0", null));
+            assertEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "2025-4-15"), null, 12.0000, null));
+            assertNotEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, null), null, 12.0, null));
+            assertNotEquals(additionalKey, lsid.translateLsid("333", seq.translateSequenceNum(null, "2025-4-15"), null, "12", null));
+
+            // with time portion of date field
+            lsid = new DatasetLsidImportHelper(createDatasetDef(_dateStudy, false, true));
+            additionalKey = lsid.translateLsid("444", seq.translateSequenceNum(null, "2025-1-1"), parseDateTime("2025-4-15 11:15pm"), "abc", null);
+            assertEquals(additionalKey, lsid.translateLsid("444", seq.translateSequenceNum(null, "1 Jan 2025"), new Date(DateUtil.parseDateTime("14 April 2025 11:15pm")), "abc", null));
+            assertEquals(additionalKey, lsid.translateLsid("444", seq.translateSequenceNum(null, "1 Jan 2025"), new Date(DateUtil.parseDateTime("14 April 2025 11:15pm")), null, null));
+            assertEquals(additionalKey, lsid.translateLsid("444", seq.translateSequenceNum(null, "2025-1-1"), new Date(DateUtil.parseDateTime("14 April 2025 11:15pm")), 12.00, null));
+            assertNotEquals(additionalKey, lsid.translateLsid("444", seq.translateSequenceNum(null, "2025-4-15"), new Date(), "abc", null));
         }
 
         private DatasetDefinition createDatasetDef(StudyImpl study, boolean demographics, boolean useTimeKeyField)
