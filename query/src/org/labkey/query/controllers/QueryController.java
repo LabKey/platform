@@ -2610,7 +2610,7 @@ public class QueryController extends SpringActionController
             for (int i = 0; i < jsonViews.length(); i++)
             {
                 final JSONObject jsonView = jsonViews.getJSONObject(i);
-                String viewName = jsonView.optString("name");
+                String viewName = jsonView.optString("name", null);
                 if (viewName == null)
                     throw new NotFoundException("'name' is required all views'");
 
