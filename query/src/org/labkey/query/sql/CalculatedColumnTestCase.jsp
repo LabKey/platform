@@ -42,6 +42,7 @@
 <%@ page import="org.labkey.api.query.FilteredTable" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.data.DatabaseIdentifier" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -78,8 +79,8 @@ DbSchema getDbSchema(String columns) throws XmlException
                     super.setAlias(alias);
                 }
             };
-            c.setMetaDataName(alias);
-            c.setAlias(alias);
+            c.setMetaDataName(SqlDialect.makeDatabaseIdentifier(alias, new SQLFragment().appendIdentifier(alias)));
+            c.setAlias(SqlDialect.makeDatabaseIdentifier(alias, new SQLFragment().appendIdentifier(alias)));
             return c;
         }
 
