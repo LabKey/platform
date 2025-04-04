@@ -35,7 +35,6 @@ import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -52,7 +51,6 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +77,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     boolean allowImportManagedKeys = false;
     boolean useImportAliases = false;
     Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
+    public static final DecimalFormat SEQUENCE_NUM_FORMAT = new DecimalFormat("0.0000");
 
     DataIteratorBuilder builder = null;
 
@@ -434,6 +433,38 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         return ret;
     }
 
+    public static String getOutputString(DataIterator it, Integer i)
+    {
+        if (i == null)
+            return null;
+
+        Object o = it.get(i);
+        return null == o ? "" : o.toString();
+    }
+
+    public static Double getOutputDouble(DataIterator it, Integer i)
+    {
+        if (i == null)
+            return null;
+
+        Object o = it.get(i);
+        if (null == o)
+            return null;
+        if (o instanceof Number)
+            return ((Number) o).doubleValue();
+        if (o instanceof String)
+        {
+            try
+            {
+                return Double.parseDouble((String) o);
+            }
+            catch (NumberFormatException x)
+            {
+                ;
+            }
+        }
+        return null;
+    }
 
     static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
     {
@@ -458,7 +489,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     static class DatasetColumnsIterator extends SimpleTranslator
     {
         private DatasetDefinition _datasetDefinition;
-        DecimalFormat _sequenceFormat = new DecimalFormat("0.0000");
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
@@ -543,38 +573,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return hasNext;
         }
 
-        Double getOutputDouble(int i)
-        {
-            Object o = get(i);
-            if (null == o)
-                return null;
-            if (o instanceof Number)
-                return ((Number) o).doubleValue();
-            if (o instanceof String)
-            {
-                try
-                {
-                    return Double.parseDouble((String) o);
-                }
-                catch (NumberFormatException x)
-                {
-                    ;
-                }
-            }
-            return null;
-        }
-
         Date getOutputDate(int i)
         {
             Object o = get(i);
             Date date = (Date) convertDate.convert(Date.class, o);
             return date;
-        }
-
-        String getInputString(int i)
-        {
-            Object o = getInput().get(i);
-            return null == o ? "" : o.toString();
         }
 
         String getOutputString(int i)
@@ -628,6 +631,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int addLSID()
         {
+            DatasetLsidImportHelper helper = new DatasetLsidImportHelper(_datasetDefinition);
+            Callable callable = helper.getCallable(this, indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput, indexContainerOutput);
+//            ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
+//            indexLSIDOutput = addColumn(col, callable);
+
             ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
             indexLSIDOutput = addColumn(col, new LSIDColumn());
             return indexLSIDOutput;
@@ -651,12 +659,11 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         String getFormattedSequenceNum()
         {
             assert null != indexSequenceNumOutput || hasErrors();
-            if (null == indexSequenceNumOutput)
-                return null;
-            Double d = getOutputDouble(indexSequenceNumOutput);
+            Double d = DatasetDataIteratorBuilder.getOutputDouble(this, indexSequenceNumOutput);
             if (null == d)
                 return null;
-            return _sequenceFormat.format(d);
+
+            return SEQUENCE_NUM_FORMAT.format(d);
         }
 
     //        class SequenceNumFromDateColumn implements Callable
@@ -693,7 +700,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 }
                 else
                 {
-                    entityId = getOutputString(indexContainerOutput);
+                    entityId = DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexContainerOutput);
                 }
                 String urn = map.get(entityId);
                 if (null != urn)
@@ -742,7 +749,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             public Object call()
             {
                 assert null != indexPtidOutput || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
+                String ptid = null == indexPtidOutput ? "" : DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexPtidOutput);
                 String seqnum = getFormattedSequenceNum();
                 return ptid + "|" + seqnum;
             }
@@ -754,7 +761,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             public Object call()
             {
                 assert (null != indexPtidOutput && null != indexKeyPropertyOutput) || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
+                String ptid = null == indexPtidOutput ? "" : DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexPtidOutput);
                 String seqnum = getFormattedSequenceNum();
                 Object key = null == indexKeyPropertyOutput ? "" : String.valueOf(DatasetColumnsIterator.this.get(indexKeyPropertyOutput));
                 return ptid + "|" + seqnum + "|" + key;

@@ -153,6 +153,7 @@ import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetLsidImportHelper;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.GroupSecurityType;
 import org.labkey.study.model.ImportHelperServiceImpl;
@@ -799,7 +800,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     StudyManager.VisitCreationTestCase.class,
                     StudyModule.TestCase.class,
                     VisitImpl.TestCase.class,
-                    DatasetUpdateService.TestCase.class
+                    DatasetUpdateService.TestCase.class,
+                    DatasetLsidImportHelper.TestCase.class
             );
         }
     }
