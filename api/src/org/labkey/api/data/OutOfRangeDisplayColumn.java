@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.HtmlString;
@@ -139,12 +140,25 @@ public class OutOfRangeDisplayColumn extends DataColumn
     }
 
 
-    public static final ColumnInfo numberColumn = new BaseColumnInfo("number", JdbcType.DOUBLE);
-    public static final ColumnInfo oorColumn = new BaseColumnInfo( "oor", JdbcType.VARCHAR);
-
     public static class TestCase extends Assert
     {
-        OutOfRangeDisplayColumn dc = new OutOfRangeDisplayColumn(numberColumn, oorColumn);
+        final ColumnInfo numberColumn = new BaseColumnInfo("number", JdbcType.DOUBLE)
+        {
+            @Override
+            public SqlDialect getSqlDialect()
+            {
+                return CoreSchema.getInstance().getSqlDialect();
+            }
+        };
+        final ColumnInfo oorColumn = new BaseColumnInfo( "oor", JdbcType.VARCHAR)
+        {
+            @Override
+            public SqlDialect getSqlDialect()
+            {
+                return CoreSchema.getInstance().getSqlDialect();
+            }
+        };
+        final OutOfRangeDisplayColumn dc = new OutOfRangeDisplayColumn(numberColumn, oorColumn);
 
         private RenderContext renderContext(Object d, Object oor)
         {
