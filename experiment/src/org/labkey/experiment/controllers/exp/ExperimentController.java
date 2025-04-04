@@ -57,6 +57,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.DefaultAuditSchema;
@@ -430,8 +431,8 @@ public class ExperimentController extends SpringActionController
     }
 
     public record Field(String domainURI, String domainName, String name, Container container) {}
-    public record MiniMaterial(int rowId, String name) {}
-    public record TimelineSummary(MiniMaterial miniMaterial, String mostRecentValue) {}
+    public record MiniExpObject(int rowId, String name) {}
+    public record TimelineSummary(MiniExpObject miniExpObject, String mostRecentValue) {}
 
     @RequiresPermission(SiteAdminPermission.class)
     public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
@@ -446,8 +447,10 @@ public class ExperimentController extends SpringActionController
             // Prep audit table for querying
             UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
             TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.EVERYTHING);
+            TableInfo queryUpdateTable = auditSchema.getTable("QueryUpdateAuditEvent", ContainerFilter.EVERYTHING);
 
-            Map<Pair<ExpSampleType, String>, List<TimelineSummary>> summaries = new HashMap<>();
+            Map<Pair<ExpSampleType, String>, List<TimelineSummary>> sampleTypeSummaries = new HashMap<>();
+            Map<Pair<ExpDataClass, String>, List<TimelineSummary>> dataClassSummaries = new HashMap<>();
 
             Map<Field, Pair<Long, Long>> problematicFields = new LinkedHashMap<>();
 
@@ -464,40 +467,12 @@ public class ExperimentController extends SpringActionController
                     // Drill into sample types
                     if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
                     {
-                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
-
-                        // Find samples that current have no value for the field with potential for data loss
-                        List<MiniMaterial> materialsWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniMaterial.class);
-
-                        List<TimelineSummary> fixupsNeeded = new ArrayList<>();
-
-                        // For each sample without a value today, check the audit history
-                        for (MiniMaterial material : materialsWithNulls)
-                        {
-                            // Order by RowId to get them in the sequence they happened in
-                            var events = new TableSelector(sampleTimelineTable, new SimpleFilter(FieldKey.fromParts("SampleId"), material.rowId), new Sort("RowId")).getArrayList(SampleTimelineAuditEvent.class);
-                            // Remember the most recently set value
-                            String mostRecentValue = null;
-                            for (SampleTimelineAuditEvent event : events)
-                            {
-                                Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                                if (newValues.containsKey(name))
-                                {
-                                    // Will be the empty string if the value was intentionally set to blank
-                                    mostRecentValue = newValues.get(name);
-                                }
-                            }
-                            // If the value had been set before, and its most recent insert/update wasn't setting it blank,
-                            // it's most likely a lost value
-                            if (mostRecentValue != null && !mostRecentValue.isEmpty())
-                            {
-                                fixupsNeeded.add(new TimelineSummary(material, mostRecentValue));
-                            }
-                        }
-                        if (!fixupsNeeded.isEmpty())
-                        {
-                            summaries.put(Pair.of(sampleType, name), fixupsNeeded);
-                        }
+                        checkSampleType(domainURI, table, name, sampleTimelineTable, sampleTypeSummaries);
+                    }
+                    // and data classes/sample sources
+                    if (domain.getDomainKind().getClass().equals(DataClassDomainKind.class))
+                    {
+                        checkDataClass(domainURI, table, name, queryUpdateTable, dataClassSummaries);
                     }
 
                     Long totalRows = null;
@@ -514,7 +489,8 @@ public class ExperimentController extends SpringActionController
             return new HtmlView("Fixups Needed",
                 DOM.createHtmlFragment(
                         DOM.H2("Potentially Problematic Fields"),
-                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                        problematicFields.isEmpty() ? "No problematic fields detected!" :
+                            DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
                                 DOM.THEAD(DOM.TH("Domain Name"), DOM.TH("Domain URI"), DOM.TH("Field Name"), DOM.TH("Container"), DOM.TH("Total Rows"), DOM.TH("Rows with Nulls")),
                                 problematicFields.entrySet().stream().map(e -> {
                                             Field f = e.getKey();
@@ -522,15 +498,104 @@ public class ExperimentController extends SpringActionController
                                             return DOM.TR(DOM.TD(f.domainName), DOM.TD(f.domainURI), DOM.TD(f.name), DOM.TD(f.container.getPath(), DOM.TD(counts.first), DOM.TD(counts.second)));
                                         }
                                 )),
+
                         DOM.H2("Sample Types"),
-                        summaries.entrySet().stream().map(e ->
-                            DOM.DIV(
-                                    DOM.H4(e.getKey().first.getName()),
-                                    DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
-                                            DOM.THEAD(DOM.TH("SampleID"), DOM.TH(e.getKey().second)),
-                                            e.getValue().stream().map(summary ->
-                                                        DOM.TR(DOM.TD(summary.miniMaterial.name), DOM.TD(summary.mostRecentValue)))
-                                    )))));
+                        sampleTypeSummaries.isEmpty() ? "No problems detected!" :
+                            sampleTypeSummaries.entrySet().stream().map(e ->
+                                DOM.DIV(
+                                        DOM.H4(e.getKey().first.getName()),
+                                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                                                DOM.THEAD(DOM.TH("SampleID"), DOM.TH(e.getKey().second)),
+                                                e.getValue().stream().map(summary ->
+                                                            DOM.TR(DOM.TD(summary.miniExpObject.name), DOM.TD(summary.mostRecentValue)))
+                                        ))),
+
+                        DOM.H2("Data Classes"),
+                        dataClassSummaries.isEmpty() ? "No problems detected!" :
+                                dataClassSummaries.entrySet().stream().map(e ->
+                                DOM.DIV(
+                                        DOM.H4(e.getKey().first.getName()),
+                                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                                                DOM.THEAD(DOM.TH("SourceID"), DOM.TH(e.getKey().second)),
+                                                e.getValue().stream().map(summary ->
+                                                            DOM.TR(DOM.TD(summary.miniExpObject.name), DOM.TD(summary.mostRecentValue)))
+                                        )))));
+        }
+
+        private void checkSampleType(String domainURI, TableInfo table, String name, TableInfo sampleTimelineTable, Map<Pair<ExpSampleType, String>, List<TimelineSummary>> sampleTypeSummaries)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
+
+            // Find samples that current have no value for the field with potential for data loss
+            List<MiniExpObject> materialsWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniExpObject.class);
+
+            List<TimelineSummary> fixupsNeeded = new ArrayList<>();
+
+            // For each sample without a value today, check the audit history
+            for (MiniExpObject material : materialsWithNulls)
+            {
+                // Order by RowId to get them in the sequence they happened in
+                var events = new TableSelector(sampleTimelineTable, new SimpleFilter(FieldKey.fromParts("SampleId"), material.rowId), new Sort("RowId")).getArrayList(SampleTimelineAuditEvent.class);
+                // Remember the most recently set value
+                String mostRecentValue = null;
+                for (SampleTimelineAuditEvent event : events)
+                {
+                    Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
+                    if (newValues.containsKey(name))
+                    {
+                        // Will be the empty string if the value was intentionally set to blank
+                        mostRecentValue = newValues.get(name);
+                    }
+                }
+                // If the value had been set before, and its most recent insert/update wasn't setting it blank,
+                // it's most likely a lost value
+                if (mostRecentValue != null && !mostRecentValue.isEmpty())
+                {
+                    fixupsNeeded.add(new TimelineSummary(material, mostRecentValue));
+                }
+            }
+            if (!fixupsNeeded.isEmpty())
+            {
+                sampleTypeSummaries.put(Pair.of(sampleType, name), fixupsNeeded);
+            }
+        }
+
+        private void checkDataClass(String domainURI, TableInfo table, String name, TableInfo queryUpdateTable, Map<Pair<ExpDataClass, String>, List<TimelineSummary>> summaries)
+        {
+            ExpDataClass dataClass = ExperimentService.get().getDataClass(domainURI);
+
+            // Find samples that current have no value for the field with potential for data loss
+            List<MiniExpObject> dataWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniExpObject.class);
+
+            List<TimelineSummary> fixupsNeeded = new ArrayList<>();
+
+            // For each sample without a value today, check the audit history
+            for (MiniExpObject data : dataWithNulls)
+            {
+                // Order by RowId to get them in the sequence they happened in
+                var events = new TableSelector(queryUpdateTable, new SimpleFilter(FieldKey.fromParts("RowPk"), Integer.toString(data.rowId)).addCondition(FieldKey.fromParts("SchemaName"), "exp.data").addCondition(FieldKey.fromParts("QueryName"), dataClass.getName()), new Sort("RowId")).getArrayList(DetailedAuditTypeEvent.class);
+                // Remember the most recently set value
+                String mostRecentValue = null;
+                for (DetailedAuditTypeEvent event : events)
+                {
+                    Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
+                    if (newValues.containsKey(name))
+                    {
+                        // Will be the empty string if the value was intentionally set to blank
+                        mostRecentValue = newValues.get(name);
+                    }
+                }
+                // If the value had been set before, and its most recent insert/update wasn't setting it blank,
+                // it's most likely a lost value
+                if (mostRecentValue != null && !mostRecentValue.isEmpty())
+                {
+                    fixupsNeeded.add(new TimelineSummary(data, mostRecentValue));
+                }
+            }
+            if (!fixupsNeeded.isEmpty())
+            {
+                summaries.put(Pair.of(dataClass, name), fixupsNeeded);
+            }
         }
 
         @Override
