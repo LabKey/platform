@@ -294,7 +294,7 @@ public class VisualizationSourceColumn
             for (String part : parts)
             {
                 selectName.append(sep);
-                LabKeySql.quoteIdentifier(part);
+                selectName.append(LabKeySql.quoteIdentifier(part));
                 sep = ".";
             }
             return selectName.toString();
