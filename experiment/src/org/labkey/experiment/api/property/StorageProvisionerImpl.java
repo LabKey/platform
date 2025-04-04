@@ -778,7 +778,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             for (DomainProperty dp : _domain.getProperties())
             {
                 String scn = dp.getPropertyDescriptor().getStorageColumnName();
-                if (null != scn && scn.equals(dp.getName()))
+                if (null != scn && !scn.equals(dp.getName()))
                     map.put(scn, dp.getName());
             }
             return map;
