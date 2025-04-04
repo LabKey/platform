@@ -102,6 +102,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
         RESERVED_NAMES = new CaseInsensitiveHashSet(BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet()));
         RESERVED_NAMES.addAll(Arrays.stream(ExpDataClassDataTable.Column.values()).map(ExpDataClassDataTable.Column::name).toList());
+        RESERVED_NAMES.add("Data Class");
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add("RunId"); // Issue 50461
 

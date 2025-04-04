@@ -112,6 +112,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("Created By");
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).toList());
         RESERVED_NAMES.addAll(Arrays.stream(ExpMaterialTable.Column.values()).map(ExpMaterialTable.Column::name).toList());
+        RESERVED_NAMES.add("Sample Set");
+        RESERVED_NAMES.add("Sample Type"); // Issue 52716
+        RESERVED_NAMES.add("SampleType");
         RESERVED_NAMES.add("Protocol"); // alias for "SourceProtocolApplication"
         RESERVED_NAMES.add("SampleTypeUnits"); // alias for MetricUnit
         RESERVED_NAMES.add("CpasType");
