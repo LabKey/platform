@@ -495,7 +495,14 @@ public class ExperimentController extends SpringActionController
                                 problematicFields.entrySet().stream().map(e -> {
                                             Field f = e.getKey();
                                             Pair<Long, Long> counts = e.getValue();
-                                            return DOM.TR(DOM.TD(f.domainName), DOM.TD(f.domainURI), DOM.TD(f.name), DOM.TD(f.container.getPath(), DOM.TD(counts.first), DOM.TD(counts.second)));
+                                            return DOM.TR(
+                                                DOM.TD(f.domainName),
+                                                DOM.TD(f.domainURI),
+                                                DOM.TD(f.name),
+                                                DOM.TD(f.container.getPath()),
+                                                DOM.TD(counts.first),
+                                                DOM.TD(counts.second)
+                                            );
                                         }
                                 )),
 
