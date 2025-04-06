@@ -1567,7 +1567,7 @@ public class Table
 //                bad++;
             if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
-                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
+                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias().getId() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;
             }
         }

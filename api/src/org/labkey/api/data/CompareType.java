@@ -2199,7 +2199,7 @@ public abstract class CompareType
         {
             FieldKey mvFieldKey = new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX);
             ColumnInfo mvColumn = columnMap.get(mvFieldKey);
-            SQLFragment sql = new SQLFragment(mvColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
+            SQLFragment sql = new SQLFragment().appendIdentifier(mvColumn.getAlias()).append(" IS " + (isNull ? "" : "NOT ") + "NULL");
             return sql;
         }
     }

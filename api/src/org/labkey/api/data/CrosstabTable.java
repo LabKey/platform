@@ -229,7 +229,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep);
-            sql.append(PIVOT_ALIAS + "." + rowDim.getSourceColumn().getAlias());
+            sql.appendDottedIdentifiers(PIVOT_ALIAS,rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
         sep = ",\n";

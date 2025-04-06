@@ -190,9 +190,9 @@ public class AggregateColumnInfo extends BaseColumnInfo
     public static String getColumnName(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
         if (null == member)
-            return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
+            return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias().getId();
         else
             return PIVOTED_NAME_PREFIX + member.getValueSQLAlias(measure.getSourceColumn().getSqlDialect()) + "_"
-                    + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
+                    + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias().getId();
     }
 }

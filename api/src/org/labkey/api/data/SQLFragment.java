@@ -413,6 +413,13 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
+        if (charseq instanceof SQLFragment sqlf)
+        {
+            if (0 != sqlf.getParamsArray().length)
+                throw new IllegalStateException("Unexpected SQL in appendIdentifier()");
+            charseq = sqlf.getRawSQL();
+        }
+
         String identifier = charseq.toString().strip();
 
         boolean malformed;

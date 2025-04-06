@@ -452,7 +452,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             else
             {
                 // Match based on the target study associated with the assay data
-                sql.append(" AND " + assaySubqueryAlias + "." + _assayTargetStudyCol.getAlias() + " = " + vialSubqueryAlias + ".Container");
+                sql.append(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).append(" = ").appendDottedIdentifiers(vialSubqueryAlias,".Container");
             }
 
             sql.appendComment("</" + this.getClass().getName() + ".declareJoins()" + ">", dialect);
@@ -482,9 +482,9 @@ public class SpecimenForeignKey extends LookupForeignKey
 //            assert lookupKey.getValueSql("test") != null;
             _lookupColumn = lookupColumn;
             setSqlTypeName(lookupColumn.getSqlTypeName());
-            String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
+            String alias = foreignKey.getAlias().getId() + "$" + lookupColumn.getAlias().getId();
             if (alias.length() > 60)
-                alias = AliasManager.truncate(foreignKey.getAlias(), 30) + "$" + AliasManager.truncate(lookupColumn.getAlias(),30);
+                alias = AliasManager.truncate(foreignKey.getAlias(), 30) + "$" + AliasManager.truncate(lookupColumn.getAlias().getId(),30);
             setAlias(alias);
             copyAttributesFrom(lookupColumn);
             copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
@@ -625,23 +625,28 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append("CASE WHEN (" + studyAlias + ".TimepointType IS NULL) THEN NULL ELSE (CASE WHEN (");
                 if (_assayParticipantIdCol != null)
                 {
+                    var specimenparticipantid = new SQLFragment().appendDottedIdentifiers(specimenAlias, "ParticipantId");
+                    var assayparticipantid = new SQLFragment().appendDottedIdentifiers(targetStudyAlias,_assayParticipantIdCol.getAlias());
                     // Check if the participants match, or if they're both NULL
-                    sql.append("(" + specimenAlias + ".ParticipantId = ");
-
+                    sql.append("(").append(specimenparticipantid).append(" = ");
                     // See if we need to cast - Postgres 8.3 is picky about these comparisons
                     if (_assayParticipantIdCol.getJavaClass() != String.class)
                     {
-                        sql.append("CAST(" + targetStudyAlias + "." + _assayParticipantIdCol.getAlias() + " AS VARCHAR)");
+                        sql.append("CAST(").append(assayparticipantid).append(" AS VARCHAR)");
                     }
                     else
                     {
-                        sql.append(targetStudyAlias + "." + _assayParticipantIdCol.getAlias());
+                        sql.append(assayparticipantid);
                     }
                     sql.append(" OR ");
-                    sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + _assayParticipantIdCol.getAlias() + " IS NULL))");
+                    sql.append("(").append(specimenparticipantid).append(" IS NULL AND ").append(specimenparticipantid).append(" IS NULL))");
                 }
                 if (_assayVisitIdCol != null || _assayDateCol != null)
                 {
+                    var timepointtype = new SQLFragment().appendDottedIdentifiers(studyAlias,"TimepointType");
+                    var drawtimestamp = new SQLFragment().appendDottedIdentifiers(specimenAlias, "drawtimestamp");
+                    var sequencenum = new SQLFragment().appendDottedIdentifiers(specimenAlias, "SequenceNum");
+
                     if (_assayParticipantIdCol != null)
                     {
                         sql.append(" AND ");
@@ -649,13 +654,16 @@ public class SpecimenForeignKey extends LookupForeignKey
                     sql.append("(");
                     if (_assayVisitIdCol != null)
                     {
+                        var assayvisitid = new SQLFragment().appendDottedIdentifiers(targetStudyAlias,_assayVisitIdCol.getAlias());
+                        var specimenvisit = new SQLFragment().appendDottedIdentifiers(specimenAlias,"Visit");
                         // If we're in a visit-based study, check that both the visits match or are null. Also,
                         // if the assay has a date column and it has a value, it needs to match as well.
-                        sql.append("((" + studyAlias + ".TimepointType IS NULL OR " + studyAlias + ".TimepointType = '" + TimepointType.VISIT + "')");
-                        sql.append(" AND (" + specimenAlias + ".SequenceNum = " + targetStudyAlias + "." + _assayVisitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + _assayVisitIdCol.getAlias() + " IS NULL))");
+                        sql.append("((").append(timepointtype).append(" IS NULL OR ").append(timepointtype).append(" = ").appendValue(TimepointType.VISIT).append(")");
+                        sql.append(" AND (").append(sequencenum).append(" = ").append(assayvisitid).append(" OR (").append(specimenvisit).append(" IS NULL AND ").append(assayvisitid).append(" IS NULL))");
                         if (_assayDateCol != null)
                         {
-                            sql.append(" AND (" + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL))");
+                            var assaydatecol = new SQLFragment().appendDottedIdentifiers(targetStudyAlias,_assayDateCol.getAlias());
+                            sql.append(" AND (").append(assaydatecol).append(" IS NULL OR " + dialect.getDateTimeToDateCast(drawtimestamp) + " = " + dialect.getDateTimeToDateCast(assaydatecol).append(" OR (").append(drawtimestamp).append(" IS NULL AND ").append(assaydatecol)).append(" IS NULL))");
                             sql.append(")");
                             sql.append(" OR ");
                         }
@@ -667,9 +675,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                     if (_assayDateCol != null)
                     {
                         // If we're in a relative date or continuous date study, check that the dates match or are both NULL
-                        sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.CONTINUOUS + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
-                                dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " +
-                                dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL)))");
+                        var assaydatecol = new SQLFragment().appendDottedIdentifiers(targetStudyAlias,_assayDateCol.getAlias());
+                        sql.append("((").append(timepointtype).append(" = ").appendValue(TimepointType.DATE).append(" OR ").append(timepointtype).append(" = ").appendValue(TimepointType.CONTINUOUS).append(" OR ").append(timepointtype).append(" IS NULL) AND (")
+                                .append(dialect.getDateTimeToDateCast(drawtimestamp).append(" = ")
+                                .append(dialect.getDateTimeToDateCast(assaydatecol).append(" OR (").append(drawtimestamp).append(") IS NULL AND ").append(assaydatecol).append(" IS NULL)))")));
                     }
                     sql.append(")");
                 }

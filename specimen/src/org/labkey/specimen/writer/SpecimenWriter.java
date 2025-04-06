@@ -136,12 +136,12 @@ public class SpecimenWriter extends AbstractSpecimenWriter
             else
             {
                 // DisplayColumn will use getAlias() to retrieve the value from the map
-                col = new SQLFragment(column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias());
+                col = new SQLFragment(column.getFkTableAlias() + "." + column.getFkColumn() + " AS ").appendIdentifier(dc.getDisplayColumn().getAlias());
 
                 // Don't export values for columns set at or above the PHI export level
                 if (shouldRemovePhi(ctx.getPhiLevel(), column, queryColumn))
                 {
-                    col = new SQLFragment("NULL AS " + dc.getDisplayColumn().getAlias());
+                    col = new SQLFragment("NULL AS ").appendIdentifier(dc.getDisplayColumn().getAlias());
                 }
             }
 

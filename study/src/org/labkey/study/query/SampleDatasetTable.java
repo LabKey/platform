@@ -95,7 +95,8 @@ public class SampleDatasetTable extends LinkedDatasetTable
         {
             sqlf.append(" LEFT OUTER JOIN ").append(sampleTable.getFromSQL(sampleTableAlias)).append("\n");
             sqlf.append(" ON ").appendDottedIdentifiers(sampleTableAlias, sampleTable.getPkColumns().get(0).getAlias()).append(" = ");
-            sqlf.appendDottedIdentifiers(alias, getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+            var key = getColumn(_dsd.getKeyPropertyName());
+            sqlf.appendDottedIdentifiers(alias,key.getSelectName());
         }
 
         return getTransformedFromSQL(sqlf);
