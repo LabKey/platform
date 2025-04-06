@@ -2610,7 +2610,9 @@ public class QueryController extends SpringActionController
             for (int i = 0; i < jsonViews.length(); i++)
             {
                 final JSONObject jsonView = jsonViews.getJSONObject(i);
-                String viewName = jsonView.getString("name");
+                String viewName = jsonView.optString("name", null);
+                if (viewName == null)
+                    throw new NotFoundException("'name' is required all views'");
 
                 boolean shared = jsonView.optBoolean("shared", false);
                 boolean replace = jsonView.optBoolean("replace", true); // "replace" was the default before the flag is introduced
