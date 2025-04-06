@@ -32,7 +32,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> me = (JspView<Study>) HttpView.currentView();
+    JspView<Study> me = HttpView.currentView();
     Study study = me.getModelBean();
     SpecimenRequestActor[] actors = SpecimenRequestRequirementProvider.get().getActors(getContainer());
     String showMemberSitesIdStr = request.getParameter("showMemberSites");

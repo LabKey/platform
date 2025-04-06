@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
+    JspView<RenderAssayBean> me = HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     Container c = getContainer();
     User user = getUser();

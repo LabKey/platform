@@ -30,7 +30,7 @@
     }
 %>
 <%
-    JspView<LinkReportForm> me = (JspView<LinkReportForm>) HttpView.currentView();
+    JspView<LinkReportForm> me = HttpView.currentView();
     LinkReportForm form = me.getModelBean();
     String action = (form.isUpdate() ? "update" : "create") + "linkReport";
 %>

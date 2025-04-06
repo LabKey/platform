@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.RenameFolderAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -34,7 +33,7 @@
     }
 %>
 <%
-    JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
+    JspView<ManageFoldersForm> me = HttpView.currentView();
     ManageFoldersForm form = me.getModelBean();
     Container c = getContainer();
 

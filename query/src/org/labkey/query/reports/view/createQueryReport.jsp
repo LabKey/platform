@@ -31,7 +31,7 @@
     }
 %>
 <%
-    JspView<ReportsController.QueryReportForm> me = (JspView<ReportsController.QueryReportForm>) HttpView.currentView();
+    JspView<ReportsController.QueryReportForm> me = HttpView.currentView();
 %>
 
 <table>

@@ -17,13 +17,13 @@
 %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.specimen.actions.ShowGroupMembersAction" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.specimen.actions.ShowGroupMembersAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ShowGroupMembersAction.GroupMembersBean> me = (JspView<ShowGroupMembersAction.GroupMembersBean>) HttpView.currentView();
+    JspView<ShowGroupMembersAction.GroupMembersBean> me = HttpView.currentView();
     ShowGroupMembersAction.GroupMembersBean bean = me.getModelBean();
 %>
 <labkey:errors/>

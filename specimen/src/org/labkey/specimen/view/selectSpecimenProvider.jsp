@@ -22,7 +22,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SelectSpecimenProviderBean> me = (JspView<SelectSpecimenProviderBean>) HttpView.currentView();
+    JspView<SelectSpecimenProviderBean> me = HttpView.currentView();
     SelectSpecimenProviderBean bean = me.getModelBean();
 %>
 <labkey:errors/>

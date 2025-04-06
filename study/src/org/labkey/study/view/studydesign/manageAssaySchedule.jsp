@@ -38,7 +38,7 @@
     }
 %>
 <%
-    JspView<StudyDesignController.AssayScheduleForm> me = (JspView<StudyDesignController.AssayScheduleForm>) HttpView.currentView();
+    JspView<StudyDesignController.AssayScheduleForm> me = HttpView.currentView();
     StudyDesignController.AssayScheduleForm form = me.getModelBean();
 
     Container c = getContainer();

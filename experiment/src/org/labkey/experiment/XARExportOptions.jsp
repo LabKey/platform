@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.exp.xar.LSIDRelativizer" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.xar.LSIDRelativizer" %>
 <%@ page import="org.labkey.experiment.XarExportType" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<ExperimentController.ExportBean> me = (JspView<ExperimentController.ExportBean>) HttpView.currentView();
+JspView<ExperimentController.ExportBean> me = HttpView.currentView();
 ExperimentController.ExportBean bean = me.getModelBean();
 %>
 

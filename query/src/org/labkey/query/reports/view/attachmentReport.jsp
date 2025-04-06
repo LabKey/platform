@@ -31,7 +31,7 @@
     }
 %>
 <%
-    JspView<ReportsController.AttachmentReportForm> me = (JspView<ReportsController.AttachmentReportForm>) HttpView.currentView();
+    JspView<ReportsController.AttachmentReportForm> me = HttpView.currentView();
     ReportsController.AttachmentReportForm form = me.getModelBean();
     boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
     boolean canUseDiskFile;

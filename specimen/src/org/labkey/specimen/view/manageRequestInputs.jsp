@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ManageRequestInputsBean> me = (JspView<ManageRequestInputsBean>) HttpView.currentView();
+    JspView<ManageRequestInputsBean> me = HttpView.currentView();
     ManageRequestInputsBean bean = me.getModelBean();
 
     String tdTitle = "<input type=\"text\" name=\"title\" size=\"20\">";

@@ -47,7 +47,7 @@
     }
 %>
 <%
-    JspView<NewRequestBean> me = (JspView<NewRequestBean>) HttpView.currentView();
+    JspView<NewRequestBean> me = HttpView.currentView();
     NewRequestBean bean = me.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();

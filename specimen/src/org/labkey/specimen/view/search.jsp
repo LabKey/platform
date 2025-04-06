@@ -35,7 +35,7 @@
     }
 %>
 <%
-    JspView<SpecimenSearchBean> me = (JspView) HttpView.currentView();
+    JspView<SpecimenSearchBean> me = HttpView.currentView();
     int webPartId = me.getModelBean().getWebPartId();
     String renderTarget = "labkey-specimen-search-"+ webPartId;
 %>

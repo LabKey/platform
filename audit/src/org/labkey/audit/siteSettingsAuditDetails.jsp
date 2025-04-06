@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.audit.SiteSettingsAuditDetailsModel" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SiteSettingsAuditDetailsModel> me = (JspView<SiteSettingsAuditDetailsModel>) HttpView.currentView();
+    JspView<SiteSettingsAuditDetailsModel> me = HttpView.currentView();
     SiteSettingsAuditDetailsModel model = me.getModelBean();
 %>
 

@@ -2145,12 +2145,12 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         if (_customView != null && _customView.getErrors() != null)
         {
             rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream()
-                    .map(e -> new DataRegion.Message(e, DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
-                    .collect(Collectors.toList()));
+                .map(e -> new DataRegion.Message(e, DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+                .collect(Collectors.toList()));
         }
 
         TableInfo table = getTable();
-        if (table instanceof FilteredTable && ((FilteredTable) table).hasRulesOmittedColumns())
+        if (table instanceof FilteredTable<?> ft && ft.hasRulesOmittedColumns())
         {
             rgn.addMessageSupplier(x -> List.of(new DataRegion.Message("PHI protected columns have been omitted", DataRegion.MessageType.WARNING, DataRegion.MessagePart.header)));
         }

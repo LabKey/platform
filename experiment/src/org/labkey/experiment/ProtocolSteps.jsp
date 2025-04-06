@@ -39,7 +39,7 @@
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ExpProtocolImpl> me = (JspView<ExpProtocolImpl>) HttpView.currentView();
+    JspView<ExpProtocolImpl> me = HttpView.currentView();
     final ExpProtocolImpl protocol = me.getModelBean();
     final ActionURL ppURL = urlFor(ProtocolPredecessorsAction.class);
     ppURL.addParameter("ParentLSID", protocol.getLSID());

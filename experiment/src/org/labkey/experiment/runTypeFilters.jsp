@@ -22,7 +22,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<Set<ExperimentRunType>> me = (JspView<Set<ExperimentRunType>>) HttpView.currentView();
+JspView<Set<ExperimentRunType>> me = HttpView.currentView();
 
 for (ExperimentRunType type : me.getModelBean())
 { %>

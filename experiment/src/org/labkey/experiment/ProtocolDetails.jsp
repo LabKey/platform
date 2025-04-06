@@ -21,7 +21,7 @@
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ExpProtocol> me = (JspView<ExpProtocol>) HttpView.currentView();
+    JspView<ExpProtocol> me = HttpView.currentView();
     ExpProtocol protocol = me.getModelBean();
 %>
 

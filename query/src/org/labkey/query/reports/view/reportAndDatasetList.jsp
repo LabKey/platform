@@ -15,8 +15,12 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.reports.model.NotificationInfo"%>
-<%@ page import="org.labkey.api.reports.model.ViewCategory"%>
+<%@ page import="org.labkey.api.audit.AuditUrls"%>
+<%@ page import="org.labkey.api.data.CompareType"%>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.reports.model.NotificationInfo" %>
+<%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -27,14 +31,10 @@
 <%@ page import="org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.audit.AuditUrls" %>
-<%@ page import="org.labkey.api.data.CompareType" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    JspView<ReportAndDatasetChangeDigestEmailTemplate.NotificationBean> me = (JspView<ReportAndDatasetChangeDigestEmailTemplate.NotificationBean>) HttpView.currentView();
+    JspView<ReportAndDatasetChangeDigestEmailTemplate.NotificationBean> me = HttpView.currentView();
     ViewContext context = me.getViewContext();
     ReportAndDatasetChangeDigestEmailTemplate.NotificationBean bean = me.getModelBean();
 %>

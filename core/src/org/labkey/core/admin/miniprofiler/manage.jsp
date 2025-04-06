@@ -29,7 +29,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<Settings> me = (JspView<Settings>) HttpView.currentView();
+    JspView<Settings> me = HttpView.currentView();
     Settings settings = me.getModelBean();
 
     Map<String, String> renderOptions = new LinkedHashMap<>();

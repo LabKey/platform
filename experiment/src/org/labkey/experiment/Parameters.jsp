@@ -22,7 +22,7 @@
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Map<String, ? extends AbstractParameter>> me = (JspView<Map<String, ? extends AbstractParameter>>) HttpView.currentView();
+    JspView<Map<String, ? extends AbstractParameter>> me = HttpView.currentView();
     Map<String, ? extends AbstractParameter> params = me.getModelBean();
 %>
 

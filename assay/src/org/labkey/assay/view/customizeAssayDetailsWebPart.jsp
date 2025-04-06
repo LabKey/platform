@@ -30,7 +30,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AssayBaseWebPartFactory.EditViewBean> me = (JspView<EditViewBean>) HttpView.currentView();
+    JspView<AssayBaseWebPartFactory.EditViewBean> me = HttpView.currentView();
     EditViewBean bean = me.getModelBean();
     Portal.WebPart webPart = bean.webPart;
     ViewContext ctx = getViewContext();

@@ -39,9 +39,9 @@
 <%@ page import="org.labkey.core.security.SecurityController.GroupExportAction" %>
 <%@ page import="org.labkey.core.security.SecurityController.StandardDeleteGroupAction" %>
 <%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -53,7 +53,8 @@
     }
 %>
 <%
-    GroupBean bean = ((JspView<GroupBean>)HttpView.currentView()).getModelBean();
+    JspView<GroupBean> view = HttpView.currentView();
+    GroupBean bean = view.getModelBean();
     Container c = getContainer();
 
     ActionURL completionUrl = urlFor(CompleteMemberAction.class);

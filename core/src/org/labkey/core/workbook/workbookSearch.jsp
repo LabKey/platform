@@ -30,7 +30,7 @@
     }
 %>
 <%
-    JspView<WorkbookSearchBean> me = (JspView) HttpView.currentView();
+    JspView<WorkbookSearchBean> me = HttpView.currentView();
     String searchString = StringUtils.trimToNull(me.getModelBean().getSearchString());
     int rowId = me.getModelBean().getQueryView().getWebPartRowId();
 %>

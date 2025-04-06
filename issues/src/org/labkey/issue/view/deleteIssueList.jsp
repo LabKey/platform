@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DeleteIssueListAction.DeleteIssueListForm> me = (JspView<DeleteIssueListAction.DeleteIssueListForm>)HttpView.currentView();
+    JspView<DeleteIssueListAction.DeleteIssueListForm> me = HttpView.currentView();
     DeleteIssueListAction.DeleteIssueListForm bean = me.getModelBean();
     ActionURL cancelURL = QueryService.get().urlFor(getUser(), getContainer(), QueryAction.executeQuery, "issues", IssuesQuerySchema.TableType.IssueListDef.name());
 %>

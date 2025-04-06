@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="jakarta.servlet.jsp.JspWriter"%>
 <%@ page import="org.labkey.api.attachments.Attachment"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.CustomProperties" %>
 <%@ page import="org.labkey.experiment.CustomPropertiesView" %>
 <%@ page import="java.io.IOException" %>
+<%@ page import="java.lang.RuntimeException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<CustomPropertiesView.CustomPropertiesBean> me = (JspView<CustomPropertiesView.CustomPropertiesBean>) HttpView.currentView();
+    JspView<CustomPropertiesView.CustomPropertiesBean> me = HttpView.currentView();
     CustomPropertiesView.CustomPropertiesBean form = me.getModelBean();
 %>
 <table class="lk-custom-properties">

@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.settings.StatusSettings"%>
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.study.StudyUrls"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.specimen.SpecimenRequestManager" %>
 <%@ page import="org.labkey.specimen.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.DeleteStatusAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusOrderAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ManageStatusesAction" %>
 <%@ page import="org.labkey.specimen.settings.SettingsManager" %>
+<%@ page import="org.labkey.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Study> me = (JspView<Study>) HttpView.currentView();
+    JspView<Study> me = HttpView.currentView();
     Study study = me.getModelBean();
     Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(study.getContainer(), getUser());
     Set<Integer> inUseStatuses = SpecimenRequestManager.get().getRequestStatusIdsInUse(study.getContainer());

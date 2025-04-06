@@ -53,7 +53,7 @@
     }
 %>
 <%
-    JspView<FolderNavigationForm> me = (JspView<FolderNavigationForm>) HttpView.currentView();
+    JspView<FolderNavigationForm> me = HttpView.currentView();
     FolderNavigationForm form = me.getModelBean();
     User user = getUser();
     Container c = getContainer();

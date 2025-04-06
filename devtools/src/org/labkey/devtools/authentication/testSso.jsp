@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<AuthenticationConfigurationForm> me = (JspView<AuthenticationConfigurationForm>) HttpView.currentView();
+    JspView<AuthenticationConfigurationForm> me = HttpView.currentView();
     AuthenticationConfigurationForm form = me.getModelBean();
 %>
 <labkey:form action="<%=urlFor(ValidateAction.class)%>" method="post" layout="horizontal">

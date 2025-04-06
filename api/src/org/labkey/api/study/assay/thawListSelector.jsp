@@ -20,11 +20,11 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.study.actions.ParticipantVisitResolverChooser.RenderSubSelectors" %>
 <%@ page import="org.labkey.api.study.assay.ThawListResolverType" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -36,7 +36,7 @@
     }
 %>
 <%
-    JspView<RenderContext> thisView = (JspView<RenderContext>)HttpView.currentView();
+    JspView<RenderContext> thisView = HttpView.currentView();
     RenderContext ctx = thisView.getModelBean();
     boolean renderAll = ctx.get(RenderSubSelectors.class.getSimpleName()) == null ? true : ctx.get(RenderSubSelectors.class.getSimpleName()).equals(RenderSubSelectors.ALL);
     boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));

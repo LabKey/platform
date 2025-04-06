@@ -33,7 +33,7 @@
     }
 %>
 <%
-    JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
+    JspView<Portal.WebPart> me = HttpView.currentView();
     int webPartId = me.getModelBean().getRowId();
     Map<String, String> properties = me.getModelBean().getPropertyMap();
     User u = getUser();

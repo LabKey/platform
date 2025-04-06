@@ -32,7 +32,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<QuerySnapshotForm> me = (JspView<QuerySnapshotForm>) HttpView.currentView();
+    JspView<QuerySnapshotForm> me = HttpView.currentView();
     QuerySnapshotForm bean = me.getModelBean();
     ViewContext context = getViewContext();
 

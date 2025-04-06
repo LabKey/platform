@@ -18,11 +18,11 @@
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -36,7 +36,7 @@
 <br/>
 <labkey:errors/>
 <%
-    JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
+    JspView<RenderAssayBean> me = HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
 

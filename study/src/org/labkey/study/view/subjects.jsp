@@ -58,7 +58,7 @@
     }
 %>
 <%
-    JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
+    JspView<SubjectsWebPart.SubjectsBean> me = HttpView.currentView();
     SubjectsWebPart.SubjectsBean bean = me.getModelBean();
 
     Container container  = getContainer();

@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
+    WikiController.CustomizeWikiPartView me = HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     Container currentContainer = getContainer();
 %>

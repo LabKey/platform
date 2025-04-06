@@ -45,7 +45,7 @@
     }
 %>
 <%
-    JspView<Map<Integer, DatasetVisibilityData>> me = (JspView<Map<Integer, DatasetVisibilityData>>) HttpView.currentView();
+    JspView<Map<Integer, DatasetVisibilityData>> me = HttpView.currentView();
 
     Study study = getStudy();
     Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);

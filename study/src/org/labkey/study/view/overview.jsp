@@ -69,7 +69,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<OverviewBean> me = (JspView<OverviewBean>) HttpView.currentView();
+    JspView<OverviewBean> me = HttpView.currentView();
     OverviewBean bean = me.getModelBean();
     StudyImpl study = bean.study;
     Container container = study.getContainer();
