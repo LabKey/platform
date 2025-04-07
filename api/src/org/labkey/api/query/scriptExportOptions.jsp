@@ -24,7 +24,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <% /* DO NOT ADD DEPENDENCIES HERE, WOULD END UP LOADING WITH EACH DATA REGION */ %>
 <%
-    JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
+    JspView<Map<String, ActionURL>> me = HttpView.currentView();
     Map<String, ActionURL> map = me.getModelBean();
     String radioId = makeId("radio_");
     boolean first = true;

@@ -21,11 +21,12 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController.ReorderFoldersAction" %>
+<%@ page import="java.lang.Math" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
+    JspView<ViewContext> me = HttpView.currentView();
     Container current = getContainer();
     List<Container> containers;
     boolean reorderingProjects = current.isRoot() || current.getParent().isRoot();

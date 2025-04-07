@@ -36,7 +36,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<StudyManageReportsBean> me = (JspView<StudyManageReportsBean>) HttpView.currentView();
+    JspView<StudyManageReportsBean> me = HttpView.currentView();
     StudyManageReportsBean bean = me.getModelBean();
 
     ViewContext context = getViewContext();

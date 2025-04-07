@@ -31,7 +31,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
+    JspView<ManageFoldersForm> me = HttpView.currentView();
     ManageFoldersForm form = me.getModelBean();
     List<Container> containersToDelete = form.getTargetContainers(getContainer());
     Container primaryContainer = getContainer();

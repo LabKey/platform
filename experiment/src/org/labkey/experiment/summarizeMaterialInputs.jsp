@@ -29,7 +29,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
-    JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
+    JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
     List<ExpMaterial> sameTypeInputs = new ArrayList<>();
     DerivedSamplePropertyHelper helper = bean.getPropertyHelper();

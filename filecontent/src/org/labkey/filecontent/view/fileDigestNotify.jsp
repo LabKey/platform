@@ -27,12 +27,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
+    JspView< FileDigestForm> view = HttpView.currentView();
+    FileDigestForm form = view.getModelBean();
     EmailOption pref = EmailOption.NOT_SET;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
     ActionURL emailPrefs = urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());

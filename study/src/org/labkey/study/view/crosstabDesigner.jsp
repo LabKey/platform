@@ -38,7 +38,7 @@
     }
 %>
 <%
-    JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
+    JspView<ReportsController.CrosstabDesignBean> me = HttpView.currentView();
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
 
     List<String> stats = Arrays.asList(bean.getStats());

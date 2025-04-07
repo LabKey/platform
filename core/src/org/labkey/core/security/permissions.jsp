@@ -40,7 +40,7 @@
     }
 %>
 <%
-    SecurityController.FolderPermissionsView me = (SecurityController.FolderPermissionsView)HttpView.currentView();
+    SecurityController.FolderPermissionsView me = HttpView.currentView();
     Container c = getContainer();
     ActionURL doneURL = me.doneURL;
     if (null == doneURL)

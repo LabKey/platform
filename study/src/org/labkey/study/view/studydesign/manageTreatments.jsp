@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.study.security.permissions.ManageStudyPermission" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,7 +30,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.study.security.permissions.ManageStudyPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -40,7 +40,7 @@
     }
 %>
 <%
-    JspView<StudyDesignController.ManageTreatmentsBean> me = (JspView<StudyDesignController.ManageTreatmentsBean>) HttpView.currentView();
+    JspView<StudyDesignController.ManageTreatmentsBean> me = HttpView.currentView();
     StudyDesignController.ManageTreatmentsBean bean = me.getModelBean();
 
     Container c = getContainer();

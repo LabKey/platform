@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.formSchema.FormSchema" %>
 <%@ page import="org.labkey.api.pipeline.PipelineJobService" %>
 <%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
+<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController.PipelineTriggerForm" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.formSchema.FormSchema" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,7 +40,7 @@
     }
 %>
 <%
-    HttpView<PipelineTriggerForm> me = (HttpView<PipelineTriggerForm>) HttpView.currentView();
+    HttpView<PipelineTriggerForm> me = HttpView.currentView();
     PipelineTriggerForm bean = me.getModelBean();
     String docLink = new HelpTopic("fileWatcher").getHelpTopicHref();
 

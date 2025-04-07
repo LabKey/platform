@@ -50,7 +50,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext context = getViewContext();
-    JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
+    JspView<StudyManager.ParticipantViewConfig> me = HttpView.currentView();
     StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
     StudyManager manager = StudyManager.getInstance();

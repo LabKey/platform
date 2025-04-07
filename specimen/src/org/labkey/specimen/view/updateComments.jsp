@@ -47,7 +47,7 @@
     }
 %>
 <%
-    JspView<UpdateSpecimenCommentsBean> me = (JspView<UpdateSpecimenCommentsBean>) HttpView.currentView();
+    JspView<UpdateSpecimenCommentsBean> me = HttpView.currentView();
     UpdateSpecimenCommentsBean bean = me.getModelBean();
     Container container = getContainer();
 

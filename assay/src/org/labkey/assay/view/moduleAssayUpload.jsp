@@ -55,7 +55,7 @@
     }
 %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
+    JspView<AssayRunUploadForm> me = HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
     AssayProvider provider = bean.getProvider();
     ExpProtocol protocol = bean.getProtocol();

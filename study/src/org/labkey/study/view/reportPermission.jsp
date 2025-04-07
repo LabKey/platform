@@ -44,7 +44,7 @@
     }
 %>
 <%
-    JspView<Report> me = (JspView<Report>) HttpView.currentView();
+    JspView<Report> me = HttpView.currentView();
     Report bean = me.getModelBean();
 
     /* NOTE class ReportDescriptor implements SecurableResource, but not all subclasses actually implement this interface (e.g. module defined reports) */

@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ChooseExperimentTypeBean> me = (JspView<ChooseExperimentTypeBean>) HttpView.currentView();
+    JspView<ChooseExperimentTypeBean> me = HttpView.currentView();
     ChooseExperimentTypeBean bean = me.getModelBean();
     ActionURL baseURL = bean.getUrl().clone().deleteParameters();
 %>

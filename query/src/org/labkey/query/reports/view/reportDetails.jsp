@@ -31,7 +31,7 @@
 <%@ page import="java.util.Date" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
+    JspView<ReportDesignBean> me = HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
     ViewContext context = getViewContext();
     Report report = bean.getReport(context);

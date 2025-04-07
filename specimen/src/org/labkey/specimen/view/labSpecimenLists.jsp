@@ -28,7 +28,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<LabSpecimenListsBean> me = (JspView<LabSpecimenListsBean>) HttpView.currentView();
+    JspView<LabSpecimenListsBean> me = HttpView.currentView();
     LabSpecimenListsBean bean = me.getModelBean();
     boolean originating = bean.getType() == LabSpecimenListsBean.Type.ORIGINATING;
 %>

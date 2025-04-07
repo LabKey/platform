@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
@@ -25,7 +26,6 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportAction" %>
 <%@ page import="org.labkey.pipeline.PipelineController.StartFolderImportForm" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.pipeline.PipelineModule" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -37,7 +37,7 @@
     }
 %>
 <%
-    JspView<StartFolderImportForm> me = (JspView<StartFolderImportForm>) HttpView.currentView();
+    JspView<StartFolderImportForm> me = HttpView.currentView();
     StartFolderImportForm bean = me.getModelBean();
 
     Container c = getViewContext().getContainerNoTab();

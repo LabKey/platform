@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DeactivateUsersBean> me = (JspView<DeactivateUsersBean>) HttpView.currentView();
+    JspView<DeactivateUsersBean> me = HttpView.currentView();
     DeactivateUsersBean bean = me.getModelBean();
     User currentUser = getUser();
     ActionURL urlPost = getViewContext().cloneActionURL();

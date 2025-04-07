@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.views.DataViewProvider" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport" %>
-<%@ page import="org.labkey.api.reports.report.r.RReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
+<%@ page import="org.labkey.api.reports.report.python.IpynbReport" %>
+<%@ page import="org.labkey.api.reports.report.r.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportDesignBean" %>
@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -42,13 +43,11 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.LinkedList" %>
 <%@ page import="static java.lang.Boolean.TRUE" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.reports.report.python.IpynbReport" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -60,7 +59,7 @@
     }
 %>
 <%
-    JspView<ScriptReportDesignBean> me = (JspView<ScriptReportDesignBean>)HttpView.currentView();
+    JspView<ScriptReportDesignBean> me = HttpView.currentView();
     ViewContext ctx = getViewContext();
     Container c = getContainer();
     User user = getUser();

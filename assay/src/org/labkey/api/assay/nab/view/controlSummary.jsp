@@ -24,7 +24,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
+    JspView<RenderAssayBean> me = HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
     DilutionAssayRun assay = bean.getAssay();
     Map<String, Object> virusNames = assay.getVirusNames();

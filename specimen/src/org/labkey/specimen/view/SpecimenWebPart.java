@@ -20,11 +20,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.view.JspView;
 import org.labkey.specimen.settings.SettingsManager;
 
-/**
- * User: Mark Igra
- * Date: Jul 28, 2006
- * Time: 10:50:05 AM
- */
 public class SpecimenWebPart extends JspView<SpecimenWebPart.SpecimenWebPartBean>
 {
     @SuppressWarnings("unused") // Invoked via reflection

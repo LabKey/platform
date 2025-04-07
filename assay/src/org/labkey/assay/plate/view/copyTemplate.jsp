@@ -26,7 +26,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<CopyTemplateBean> me = (JspView<CopyTemplateBean>) HttpView.currentView();
+    JspView<CopyTemplateBean> me = HttpView.currentView();
     CopyTemplateBean bean = me.getModelBean();
 %>
 <labkey:errors />

@@ -23,11 +23,13 @@
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.AssayController.UpdateQCStateForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    UpdateQCStateForm form = (UpdateQCStateForm) HttpView.currentView().getModelBean();
+    JspView<UpdateQCStateForm> view = HttpView.currentView();
+    UpdateQCStateForm form = view.getModelBean();
     String currentState = null;
     String protocolContainerPath = null;
     boolean requireComment = false;

@@ -45,7 +45,7 @@ function setElementDisplayByCheckbox(checkbox, element)
 </script>
 
 <%
-    JspView<RequestNotificationSettings> me = (JspView<RequestNotificationSettings>) HttpView.currentView();
+    JspView<RequestNotificationSettings> me = HttpView.currentView();
     RequestNotificationSettings bean = me.getModelBean();
     Container container = getContainer();
 

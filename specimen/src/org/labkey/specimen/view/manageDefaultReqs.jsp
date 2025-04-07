@@ -28,7 +28,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ManageReqsBean> me = (JspView<ManageReqsBean>) HttpView.currentView();
+    JspView<ManageReqsBean> me = HttpView.currentView();
     ManageReqsBean bean = me.getModelBean();
     SpecimenRequestRequirement[] providerRequirements = bean.getProviderRequirements();
     SpecimenRequestRequirement[] originatingRequirements = bean.getOriginatorRequirements();

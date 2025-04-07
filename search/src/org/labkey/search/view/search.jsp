@@ -216,7 +216,7 @@
     }
 %>
 <%
-    JspView<SearchForm> me = (JspView<SearchForm>) HttpView.currentView();
+    JspView<SearchForm> me = HttpView.currentView();
     SearchForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     Container c = getContainer();

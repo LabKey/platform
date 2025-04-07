@@ -19,16 +19,16 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
+<%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.announcements.model.ModeratorReview" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();
+    HttpView<CustomizeBean> me = HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 

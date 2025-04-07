@@ -32,7 +32,7 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
+    JspView<ViewContext> view = HttpView.currentView();
     ViewContext me = view.getModelBean();
     assert null != me;
     Container c = getContainer();

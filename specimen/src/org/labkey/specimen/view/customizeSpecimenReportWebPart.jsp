@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
-<%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal.WebPart" %>
+<%@ page import="org.labkey.specimen.actions.ReportConfigurationBean" %>
+<%@ page import="org.labkey.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="org.labkey.specimen.view.SpecimenReportWebPartFactory" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<WebPart> me = (JspView<WebPart>) HttpView.currentView();
+    JspView<WebPart> me = HttpView.currentView();
     WebPart webpart = me.getModelBean();
     String currentReportName = webpart.getPropertyMap().get(SpecimenReportWebPartFactory.REPORT_TYPE_PARAMETER_NAME);
 

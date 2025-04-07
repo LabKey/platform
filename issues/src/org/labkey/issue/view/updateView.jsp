@@ -93,7 +93,7 @@
     }
 %>
 <%
-    final JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
+    final JspView<IssuePage> me = HttpView.currentView();
     final IssuePage bean = me.getModelBean();
     final IssueObject issue = bean.getIssue();
     final ViewContext context = getViewContext();

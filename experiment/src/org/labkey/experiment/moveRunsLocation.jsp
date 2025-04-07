@@ -25,7 +25,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    JspView<MoveRunsBean> me = (JspView<MoveRunsBean>) HttpView.currentView();
+    JspView<MoveRunsBean> me = HttpView.currentView();
     MoveRunsBean bean = me.getModelBean();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

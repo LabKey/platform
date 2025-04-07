@@ -30,7 +30,7 @@
 <div>
 <labkey:errors/>
 <%
-    BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean> me = (BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean>)HttpView.currentView();
+    BaseStudyController.StudyJspView<StudyController.ImportStudyBatchBean> me = HttpView.currentView();
     StudyController.ImportStudyBatchBean bean = me.getModelBean();
     DatasetFileReader reader = bean.getReader();
     List<DatasetImportRunnable> runnables = reader.getRunnables();

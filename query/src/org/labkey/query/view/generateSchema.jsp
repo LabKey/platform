@@ -29,7 +29,7 @@
     }
 %>
 <%
-    JspView<QueryController.GenerateSchemaForm> me = (JspView<QueryController.GenerateSchemaForm>) HttpView.currentView();
+    JspView<QueryController.GenerateSchemaForm> me = HttpView.currentView();
     QueryController.GenerateSchemaForm bean = me.getModelBean();
 %>
 

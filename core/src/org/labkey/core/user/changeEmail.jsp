@@ -34,7 +34,7 @@
         return;
     }
 
-    JspView<UserForm> me = (JspView<UserForm>) HttpView.currentView();
+    JspView<UserForm> me = HttpView.currentView();
     UserForm form = me.getModelBean();
     ActionURL cancelURL = urlFor(DetailsAction.class).addParameter("userId", form.getUserId());
     boolean canUpdateUser = getUser().hasRootPermission(UpdateUserPermission.class);

@@ -47,7 +47,7 @@
     }
 %>
 <%
-    JspView<DeleteVisitsForm> me = (JspView<DeleteVisitsForm>)HttpView.currentView();
+    JspView<DeleteVisitsForm> me = HttpView.currentView();
     DeleteVisitsForm form = me.getModelBean();
 
     StudyManager studyManager = StudyManager.getInstance();

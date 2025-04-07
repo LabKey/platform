@@ -38,7 +38,7 @@
     }
 %>
 <%
-    JspView<ManageRequirementBean> me = (JspView<ManageRequirementBean>) HttpView.currentView();
+    JspView<ManageRequirementBean> me = HttpView.currentView();
     ManageRequirementBean bean = me.getModelBean();
     SpecimenRequestRequirement requirement = bean.getRequirement();
     Location location = requirement.getLocation();

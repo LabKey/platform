@@ -30,7 +30,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
+    JspView<SpecimenVisitReportParameters> me = HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
     Study study = StudyService.get().getStudy(getContainer());
     int tableContainerId = getRequestScopedUID();

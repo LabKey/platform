@@ -37,7 +37,7 @@
     }
 %>
 <%
-    JspView<ReturnUrlForm> me = (JspView<ReturnUrlForm>) HttpView.currentView();
+    JspView<ReturnUrlForm> me = HttpView.currentView();
     ReturnUrlForm bean = me.getModelBean();
     Container c = getContainer();
 
