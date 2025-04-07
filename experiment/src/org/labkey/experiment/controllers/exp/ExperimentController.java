@@ -484,7 +484,7 @@ public class ExperimentController extends SpringActionController
                         // Drill into sample types
                         if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
                         {
-                            // rows samples that current have no value for the field with potential for data loss
+                            // rows that currently have no value for the field with potential for data loss
                             List<MiniExpObject> rowsWithNull = new TableSelector(table,
                                     new HashSet<>(List.of("RowId", "Name")),
                                     new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(fieldName), CompareType.ISBLANK, null)),
