@@ -16,9 +16,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -66,8 +64,8 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         if (project != null && context != null)
         {
             Object o = context.getSession().getAttribute(SHARED_STUDY_CONTAINER_FILTER_KEY + project.getRowId());
-            if (o instanceof List)
-                containerIds = (List) o;
+            if (o instanceof List l)
+                containerIds = l;
         }
 
         _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
@@ -124,7 +122,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
-    public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+    public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
     {
         HashSet<GUID> allowedContainers = new HashSet<>();
         if (_containerIds != null && !_containerIds.isEmpty())
@@ -170,7 +168,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             allowedContainers.retainAll(studyContainers);
 
             if (allowedContainers.containsAll(studyContainers))
-                return null;
+                return Collections.emptySet();
         }
 
         return allowedContainers;
@@ -182,18 +180,14 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
      CONSIDER: if there were a caching version of StudyService.get().getAllStudies(project)
      we could do away with this cache
     */
-    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", new CacheLoader<String,Set<GUID>>(){
-        @Override
-        public Set<GUID> load(@NotNull String key, @Nullable Object argument)
-        {
-            Container project = ContainerManager.getForId(key);
-            if (null == project || !project.isProject())
-                return null;
-            HashSet<GUID> ret = new HashSet<>();
-            for (Study s : StudyService.get().getAllStudies(project))
-                ret.add(s.getContainer().getEntityId());
-            return Collections.unmodifiableSet(ret);
-        }
+    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", (key, argument) -> {
+        Container project = ContainerManager.getForId(key);
+        if (null == project || !project.isProject())
+            return null;
+        HashSet<GUID> ret = new HashSet<>();
+        for (Study s : StudyService.get().getAllStudies(project))
+            ret.add(s.getContainer().getEntityId());
+        return Collections.unmodifiableSet(ret);
     });
 
     static
