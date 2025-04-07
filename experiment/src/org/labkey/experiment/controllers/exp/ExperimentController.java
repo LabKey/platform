@@ -450,11 +450,15 @@ public class ExperimentController extends SpringActionController
     public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             // Find all the fields that could have lost data due to issue 52666
             TableInfo t = new ExpSchema(getUser(), ContainerManager.getRoot()).getTable(ExpSchema.TableType.Fields.name(), ContainerFilter.EVERYTHING);
-            List<Field> fields = new TableSelector(t, new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false), null).getArrayList(Field.class);
+            List<Field> fields = new TableSelector(t,
+                    new SimpleFilter(FieldKey.fromParts("StorageColumnNameMatch"), false).
+                            addCondition(FieldKey.fromParts("DomainURI"), ":AssayDomain-Data.", CompareType.DOES_NOT_CONTAIN),
+                    null).
+                    getArrayList(Field.class);
 
             // Prep audit table for querying
             UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
