@@ -115,6 +115,7 @@ public class TransactionFilter implements Filter
                                         DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
                                         PipelineJobService.get().killProcessesForThread(thread);
                                     }
+                                    thread.interrupt();
                                 }
                             }
                         }
@@ -171,6 +172,12 @@ public class TransactionFilter implements Filter
             else
                 _pendingRequests.put(t, previousSummary);
             DbScope.finishedWithThread();
+
+            // Clear the interrupted flag before we wrap up
+            if (Thread.interrupted())
+            {
+                _log.debug("HTTP request was interrupted during its execution");
+            }
         }
         FileUtil.stopRequest();
     }
