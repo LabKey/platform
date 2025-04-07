@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<IssueObject> me = (JspView<IssueObject>) HttpView.currentView();
+    JspView<IssueObject> me = HttpView.currentView();
     final IssueObject issue = me.getModelBean();
     final User user = getUser();
     final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");

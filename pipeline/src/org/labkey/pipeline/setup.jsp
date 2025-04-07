@@ -24,7 +24,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<SetupForm> thisView = (JspView<SetupForm>) HttpView.currentView();
+    JspView<SetupForm> thisView = HttpView.currentView();
     SetupForm bean = thisView.getModelBean();
     Container c = getContainer();
     FileContentService service = FileContentService.get();

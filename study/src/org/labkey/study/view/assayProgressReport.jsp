@@ -18,14 +18,13 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.JsonUtil" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -36,7 +35,7 @@
     }
 %>
 <%
-    JspView<ReportsController.ProgressReportForm> me = (JspView<ReportsController.ProgressReportForm>)HttpView.currentView();
+    JspView<ReportsController.ProgressReportForm> me = HttpView.currentView();
     ReportsController.ProgressReportForm form = me.getModelBean();
 
     String renderId = "participant-report-div-" + getRequestScopedUID();

@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StudyToolsWebPart.StudyToolsBean> me = (JspView<StudyToolsWebPart.StudyToolsBean>) HttpView.currentView();
+    JspView<StudyToolsWebPart.StudyToolsBean> me = HttpView.currentView();
     StudyToolsWebPart.StudyToolsBean bean = me.getModelBean();
 %>
 <table width="100%">

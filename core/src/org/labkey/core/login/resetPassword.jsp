@@ -18,13 +18,13 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.LoginUrls"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
 <%@ page import="org.labkey.core.login.LoginController.ResetPasswordAction" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -34,7 +34,8 @@
     }
 %>
 <%
-    LoginForm form = ((JspView<LoginForm>)HttpView.currentView()).getModelBean();
+    JspView<LoginForm> view = HttpView.currentView();
+    LoginForm form = view.getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
     HtmlString errors = formatMissedErrors("form");
 %>

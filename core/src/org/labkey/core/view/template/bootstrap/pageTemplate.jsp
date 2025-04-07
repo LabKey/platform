@@ -20,17 +20,17 @@
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="static org.labkey.core.view.template.bootstrap.PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    PageTemplate me = (PageTemplate) HttpView.currentView();
+    PageTemplate me = HttpView.currentView();
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
     ViewContext context = getViewContext();

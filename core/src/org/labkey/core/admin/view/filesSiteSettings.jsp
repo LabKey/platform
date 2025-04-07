@@ -39,7 +39,8 @@
     }
 %>
 <%
-    FileSettingsForm bean = ((JspView<FileSettingsForm>)HttpView.currentView()).getModelBean();
+    JspView<FileSettingsForm> view = HttpView.currentView();
+    FileSettingsForm bean = view.getModelBean();
 %>
 
 <labkey:errors/>

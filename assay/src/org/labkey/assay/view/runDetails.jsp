@@ -27,7 +27,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ModuleAssayProvider.RunDetailsBean> me = (JspView<ModuleAssayProvider.RunDetailsBean>) HttpView.currentView();
+    JspView<ModuleAssayProvider.RunDetailsBean> me = HttpView.currentView();
     ModuleAssayProvider.RunDetailsBean bean = me.getModelBean();
     ModuleAssayProvider provider = bean.provider;
     ExpProtocol protocol = bean.expProtocol;

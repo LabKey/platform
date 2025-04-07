@@ -36,7 +36,7 @@
     }
 %>
 <%
-    JspView<FileUploadDataCollector> me = (JspView<FileUploadDataCollector>) HttpView.currentView();
+    JspView<FileUploadDataCollector> me = HttpView.currentView();
     FileUploadDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
 %>
 

@@ -22,15 +22,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.vfs.FileLike" %>
-<%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.apache.commons.vfs2.FileObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<AssayRunUploadForm<? extends AssayProvider>> me = (JspView<AssayRunUploadForm<? extends AssayProvider>>) HttpView.currentView();
+    JspView<AssayRunUploadForm<? extends AssayProvider>> me = HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
 %>
 <table>

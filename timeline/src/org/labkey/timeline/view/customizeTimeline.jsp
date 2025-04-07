@@ -35,7 +35,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
+    HttpView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
     ViewContext ctx = getViewContext();
     TimelineSettings settings = new TimelineSettings();

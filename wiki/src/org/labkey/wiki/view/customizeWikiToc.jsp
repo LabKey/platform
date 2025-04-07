@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    JspView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     Container currentContainer = getContainer();
     String title = webPart.getPropertyMap().get("title");

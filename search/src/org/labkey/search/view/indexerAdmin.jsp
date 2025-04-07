@@ -28,12 +28,12 @@
 <%@ page import="org.labkey.search.SearchController.AdminForm" %>
 <%@ page import="org.labkey.search.model.LuceneSearchServiceImpl" %>
 <%@ page import="org.labkey.search.model.SearchPropertyManager" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.io.File" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-JspView<AdminForm> me = (JspView<AdminForm>) HttpView.currentView();
+JspView<AdminForm> me = HttpView.currentView();
 AdminForm form = me.getModelBean();
 SearchService ss = SearchService.get();
 boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);

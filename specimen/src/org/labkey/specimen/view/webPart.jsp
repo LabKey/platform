@@ -33,7 +33,8 @@
 <%@ page import="org.labkey.specimen.view.SpecimenWebPart" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
+    SpecimenWebPart webpart = HttpView.currentView();
+    SpecimenWebPart.SpecimenWebPartBean bean = webpart.getModelBean();
 
     Container c = getContainer();
     User user = getUser();

@@ -23,7 +23,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ModuleAssayProvider.AssayPageBean> me = (JspView<ModuleAssayProvider.AssayPageBean>) HttpView.currentView();
+    JspView<ModuleAssayProvider.AssayPageBean> me = HttpView.currentView();
     ModuleAssayProvider.AssayPageBean bean = me.getModelBean();
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
 %>

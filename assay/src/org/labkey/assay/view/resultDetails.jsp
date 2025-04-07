@@ -36,7 +36,7 @@
     }
 %>
 <%
-    JspView<ModuleAssayProvider.ResultDetailsBean> me = (JspView<ModuleAssayProvider.ResultDetailsBean>) HttpView.currentView();
+    JspView<ModuleAssayProvider.ResultDetailsBean> me = HttpView.currentView();
     ModuleAssayProvider.ResultDetailsBean bean = me.getModelBean();
     ModuleAssayProvider provider = bean.provider;
     ExpProtocol protocol = bean.expProtocol;

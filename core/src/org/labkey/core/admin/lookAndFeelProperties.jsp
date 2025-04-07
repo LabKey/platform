@@ -39,8 +39,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil.HelpPopupBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
+<%@ page import="org.labkey.core.admin.AdminController.LookAndFeelBean" %>
 <%@ page import="org.labkey.core.admin.DateDisplayFormatType" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.text.SimpleDateFormat" %>
@@ -55,7 +55,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    AdminController.LookAndFeelBean bean = ((JspView<AdminController.LookAndFeelBean>)HttpView.currentView()).getModelBean();
+    JspView<LookAndFeelBean> view = HttpView.currentView();
+    LookAndFeelBean bean = view.getModelBean();
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);

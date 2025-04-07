@@ -23,7 +23,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<StudyController.ImportMappingBean> me = (JspView<StudyController.ImportMappingBean>) HttpView.currentView();
+    JspView<StudyController.ImportMappingBean> me = HttpView.currentView();
     StudyController.ImportMappingBean bean = me.getModelBean();
     boolean hasCustomMapping = !bean.getCustomMapping().isEmpty();
 %>

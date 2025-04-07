@@ -23,11 +23,12 @@
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="java.lang.Boolean" %>
 <%@ page import="java.util.Arrays" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
+    HttpView<StudyImpl> me = HttpView.currentView();
     StudyImpl study = me.getModelBean();
 
     boolean isSharedStudy = study.isDataspaceStudy();

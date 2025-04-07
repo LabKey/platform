@@ -21,7 +21,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    HttpView<RegisterForm> me = (HttpView<RegisterForm>) HttpView.currentView();
+    HttpView<RegisterForm> me = HttpView.currentView();
 %>
 
 <div>

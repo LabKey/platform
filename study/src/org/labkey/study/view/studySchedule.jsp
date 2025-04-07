@@ -35,7 +35,7 @@
     }
 %>
 <%
-    JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
+    JspView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart webpart = me.getModelBean();
     Container c = getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);

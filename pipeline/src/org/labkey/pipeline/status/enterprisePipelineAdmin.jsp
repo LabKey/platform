@@ -23,7 +23,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<StatusController.EnterprisePipelineBean> view = (JspView<StatusController.EnterprisePipelineBean>) HttpView.currentView();
+    JspView<StatusController.EnterprisePipelineBean> view = HttpView.currentView();
     StatusController.EnterprisePipelineBean bean = view.getModelBean();
 %>
 

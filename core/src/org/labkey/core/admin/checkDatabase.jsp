@@ -27,7 +27,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DataCheckForm> me = (JspView<DataCheckForm>) HttpView.currentView();
+    JspView<DataCheckForm> me = HttpView.currentView();
     DataCheckForm bean = me.getModelBean();
 %>
 

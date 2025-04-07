@@ -16,6 +16,7 @@
 package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
@@ -57,7 +58,7 @@ public class MenuViewFactory
 {
     private static final int MAX_PER_COLUMN = 20;
 
-    public static WebPartView createMenuQueryView(ViewContext context, String title, final CustomizeMenuForm form)
+    public static WebPartView<?> createMenuQueryView(ViewContext context, String title, final CustomizeMenuForm form)
     {
         if (null != StringUtils.trimToNull(form.getFolderName()))
         {
@@ -167,7 +168,7 @@ public class MenuViewFactory
         }
         else
         {
-            WebPartView view = new WebPartView(title) {
+            return new WebPartView<>(title) {
                 @Override
                 protected void renderView(Object model, PrintWriter out)
                 {
@@ -176,15 +177,14 @@ public class MenuViewFactory
                     out.write("</td></tr></table>");
                 }
             };
-            return view;
         }
     }
 
-    public static WebPartView createMenuFolderView(final ViewContext context, String title, final CustomizeMenuForm form)
+    public static WebPartView<?> createMenuFolderView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
         // If rootPath is "", then use current context's container
         String rootPath = form.getRootFolder();
-        Container rootFolder = (0 == rootPath.compareTo("")) ? context.getContainer() : ContainerManager.getForPath(rootPath);
+        Container rootFolder = StringUtils.isBlank(rootPath) ? context.getContainer() : ContainerManager.getForPath(rootPath);
         final User user = context.getUser();
         List<Container> containersTemp;
         if (null != rootFolder)
@@ -221,7 +221,7 @@ public class MenuViewFactory
 
         final Collection<Container> containers = containersTemp;
 
-        WebPartView view = new WebPartView(title) {
+        WebPartView<?> view = new WebPartView<>(title) {
             @Override
             protected void renderView(Object model, PrintWriter out)
             {
@@ -246,8 +246,15 @@ public class MenuViewFactory
                         ActionURL actionURL;
                         if (null != expr)
                         {
-                            actionURL = new ActionURL(expr.getSource());
-                            actionURL.setContainer(container);
+                            try
+                            {
+                                actionURL = new ActionURL(expr.getSource());
+                                actionURL.setContainer(container);
+                            }
+                            catch (IllegalArgumentException e)
+                            {
+                                throw new ApiUsageException("Invalid source URL", e);
+                            }
                         }
                         else
                         {

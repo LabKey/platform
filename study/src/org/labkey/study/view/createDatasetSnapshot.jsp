@@ -25,14 +25,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.query.DatasetQueryView" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.study.model.QueryDataset" %>
-<%@ page import="org.labkey.study.query.DatasetQueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<StudyController.StudySnapshotForm> me = (JspView<StudyController.StudySnapshotForm>) HttpView.currentView();
+    JspView<StudyController.StudySnapshotForm> me = HttpView.currentView();
     StudyController.StudySnapshotForm bean = me.getModelBean();
 
     SimpleFilter filter = new SimpleFilter(me.getViewContext().getActionURL(), QueryView.DATAREGIONNAME_DEFAULT);

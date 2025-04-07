@@ -24,7 +24,7 @@
 
 <labkey:errors/>
 <%
-    JspView<GraphSelectedBean> me = (JspView<GraphSelectedBean>) HttpView.currentView();
+    JspView<GraphSelectedBean> me = HttpView.currentView();
     GraphSelectedBean bean = me.getModelBean();
     ActionURL chartURL = bean.getGraphRenderURL();
 

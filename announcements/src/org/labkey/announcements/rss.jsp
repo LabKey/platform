@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<RssBean> me = (HttpView<RssBean>) HttpView.currentView();
+    HttpView<RssBean> me = HttpView.currentView();
     RssBean bean = me.getModelBean();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
 %>

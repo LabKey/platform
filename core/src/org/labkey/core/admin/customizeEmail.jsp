@@ -61,7 +61,7 @@
     }
 %>
 <%
-    JspView<CustomEmailForm> me = (JspView<CustomEmailForm>) HttpView.currentView();
+    JspView<CustomEmailForm> me = HttpView.currentView();
     CustomEmailForm bean = me.getModelBean();
     Container c = getContainer();
 

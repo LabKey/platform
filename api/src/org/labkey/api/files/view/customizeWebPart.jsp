@@ -32,7 +32,7 @@
     }
 %>
 <%
-    CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
+    CustomizeFilesWebPartView me = HttpView.currentView();
     CustomizeFilesWebPartView.CustomizeWebPartForm form = me.getModelBean();
     ViewContext ctx = getViewContext();
     ActionURL postUrl = form.getWebPart().getCustomizePostURL(ctx);

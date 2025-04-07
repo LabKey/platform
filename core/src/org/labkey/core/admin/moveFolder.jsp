@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -26,7 +27,6 @@
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -36,7 +36,7 @@
     }
 %>
 <%
-    MoveFolderTreeView me = (MoveFolderTreeView) HttpView.currentView();
+    MoveFolderTreeView me = HttpView.currentView();
     ViewContext ctx = getViewContext();
     Container c = getContainer();
     Container project = c.getProject();
