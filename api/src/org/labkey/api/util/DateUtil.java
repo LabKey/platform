@@ -30,7 +30,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -701,20 +700,7 @@ public class DateUtil
         return getDateParser(pattern).parse(s);
     }
 
-    private static @NotNull Container getCurrentContainer()
-    {
-        // Yes, using ThreadLocal is unfortunate, but some code paths have no way to pass a Container through to the
-        // parsing methods (e.g., TableViewForm -> ConvertUtils and DataIterator -> JdbcType -> ConvertUtils)
-        Container c = (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
-
-        if (null == c)
-            c = ContainerManager.getRoot();
-
-        return c;
-    }
-
     // Lenient parsing using a variety of standard formats
-    @Deprecated  // Use version that takes a Container instead
     public static long parseDateTime(String s)
     {
         //Issue 30004: Remote servers cannot use the database to lookup MonthDayOption, so default to MONTH_DAY
@@ -725,16 +711,16 @@ public class DateUtil
             return parseDateTime(s, MonthDayOption.MONTH_DAY, true, null);
         }
 
-        return parseDateTime(getCurrentContainer(), s);
-    }
-
-    // Lenient parsing using a variety of standard formats
-    public static long parseDateTime(Container c, String s)
-    {
-        @Nullable String extraDateTimeParsingPattern = FolderSettingsCache.getExtraDateTimeParsingPattern(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
-        return parseDateTime(s, monthDayOption, true, extraDateTimeParsingPattern);
+        return parseDateTime(s, monthDayOption, true, null);
+    }
+
+    // TODO: Migrate callers and remove this variant
+    @Deprecated
+    public static long parseDateTime(Container c, String s)
+    {
+        return parseDate(s);
     }
 
     private static long parseDateTime(String s, MonthDayOption md)
@@ -766,19 +752,17 @@ public class DateUtil
     }
 
     // Lenient parsing using a variety of standard formats
-    @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
-        return parseDate(getCurrentContainer(), s);
-    }
-
-    // Lenient parsing using a variety of standard formats
-    public static long parseDate(Container c, String s)
-    {
-        @Nullable String extraDateParsingPattern = FolderSettingsCache.getExtraDateParsingPattern(c);
         MonthDayOption monthDayOption = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDateParsingMode().getDayMonth();
 
-        return parseDate(s, monthDayOption, extraDateParsingPattern);
+        return parseDate(s, monthDayOption, null);    }
+
+    // TODO: Migrate callers and remove this variant
+    @Deprecated
+    public static long parseDate(Container c, String s)
+    {
+        return parseDate(s);
     }
 
     private static long parseDate(String s, MonthDayOption md, @Nullable String extraParsingPattern)
@@ -860,38 +844,12 @@ public class DateUtil
     // parse time as Date on epoch 1970/1/1
     public static Time fromTimeString(@NotNull String s, boolean strict)
     {
-        return fromTimeString(s, getCurrentContainer(), strict);
+        return fromTimeString(s, strict, false);
     }
 
     // parse time as Date on epoch 1970/1/1
-    public static Time fromTimeString(@NotNull String s, boolean strict, boolean simpleParsingOnly /* for example, when infer domain field type*/)
+    public static Time fromTimeString(@NotNull String s, boolean strict, boolean simpleParsingOnly)
     {
-        return fromTimeString(s, getCurrentContainer(), strict, simpleParsingOnly);
-    }
-
-    // parse time as Date on epoch 1970/1/1
-    public static Time fromTimeString(@NotNull String s, Container container, boolean strict)
-    {
-        return fromTimeString(s, container, strict, false);
-    }
-
-    // parse time as Date on epoch 1970/1/1
-    public static Time fromTimeString(@NotNull String s, Container container, boolean strict, boolean simpleParsingOnly)
-    {
-        @Nullable String extraTimeParsingPattern = FolderSettingsCache.getExtraTimeParsingPattern(container);
-
-        // If provided, try the extra parsing pattern first
-        if (null != extraTimeParsingPattern)
-        {
-            try
-            {
-                return new Time(DateUtil.parseDateTime(s, extraTimeParsingPattern).getTime());
-            }
-            catch (ParseException ignored)
-            {
-            }
-        }
-
         try
         {
             return new Time(parseSimpleTime(s).getTime());
@@ -980,12 +938,6 @@ public class DateUtil
         return formatIsoDate(new Date());
     }
 
-    @Deprecated // Use formatIsoDate(Date);
-    public static String formatDateISO8601(@Nullable Date date)
-    {
-        return formatIsoDate(date);
-    }
-
     /**
      * Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable form,
      * for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
@@ -993,12 +945,6 @@ public class DateUtil
     public static String formatIsoDate(@Nullable Date date)
     {
         return formatDateTime(date, ISO_DATE_FORMAT_STRING);
-    }
-
-    @Deprecated // Use formatIsoDateShortTime(Date) instead
-    public static String formatDateTimeISO8601(Date date)
-    {
-        return formatIsoDateShortTime(date);
     }
 
     /**
