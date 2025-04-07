@@ -503,7 +503,7 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment appendValue(Boolean B, @NotNull SqlDialect dialect)
     {
         if (null == B)
-            return appendNull();
+            return append("CAST(NULL AS ").append(dialect.getBooleanDataType()).append(")");
         getStringBuilder().append(B ? dialect.getBooleanTRUE() : dialect.getBooleanFALSE());
         return this;
     }

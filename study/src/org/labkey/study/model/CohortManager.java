@@ -437,7 +437,7 @@ public class CohortManager
                 String participantId = rs.getString("ParticipantId");
                 Integer visitRowId = (Integer) rs.getObject("VisitRowId");
                 Integer assignedCohortId = (Integer) rs.getObject("CohortId");
-                String newCohortLabel = rs.getString(cohortLabelCol.getName());
+                String newCohortLabel = cohortLabelCol.getStringValue(rs);
                 Integer newCohortId = null;
 
                 if (newCohortLabel != null)
