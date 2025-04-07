@@ -532,7 +532,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), alias, columnMap);
+        SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "x", columnMap);
         ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
         return skipTransform ? ret : getTransformedFromSQL(ret);
     }

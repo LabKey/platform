@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -55,6 +56,7 @@ import static org.labkey.api.data.CompareType.CONTAINS_NONE_OF;
 import static org.labkey.api.data.CompareType.CONTAINS_ONE_OF;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.CompareType.NOT_IN;
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -361,9 +363,19 @@ public class SimpleFilter implements Filter
         }
 
         @Override
+        public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            var ret = new SQLFragment(_fragment);
+            ret.setSqlUnsafe(StringUtils.replace(ret.getSQL(), STR_TABLE_ALIAS, tableAlias));
+            return ret;
+        }
+
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            return _fragment;
+            var ret = new SQLFragment(_fragment);
+            ret.setSqlUnsafe(StringUtils.replace(ret.getSQL(), STR_TABLE_ALIAS + ".", ""));
+            return ret;
         }
 
         @Override
@@ -858,7 +870,6 @@ public class SimpleFilter implements Filter
                 FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
-                    var b = 1==1;
                     return !_negated;
                 }
             }
