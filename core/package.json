@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.34.3-fb-entity-creation-modal-refactor.0",
+    "@labkey/components": "6.35.0-fb-entity-creation-modal-refactor.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
