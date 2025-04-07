@@ -60,7 +60,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
-import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -268,6 +267,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -431,8 +431,20 @@ public class ExperimentController extends SpringActionController
     }
 
     public record Field(String domainURI, String domainName, String name, Container container) {}
-    public record MiniExpObject(int rowId, String name) {}
+    public record MiniExpObject(Object rowId, String name) {}
     public record TimelineSummary(MiniExpObject miniExpObject, String mostRecentValue) {}
+    public record ProblemType(String tableName, String fieldName, String pkName) {
+        public Object toHtml(List<TimelineSummary> summaries)
+        {
+            return DOM.DIV(
+                    DOM.H4(tableName),
+                    DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
+                            DOM.THEAD(DOM.TH(pkName), DOM.TH(fieldName)),
+                            summaries.stream().map(summary ->
+                                    DOM.TR(DOM.TD(summary.miniExpObject.name), DOM.TD(summary.mostRecentValue)))
+                    ));
+        }
+    }
 
     @RequiresPermission(SiteAdminPermission.class)
     public static class ReportLostFieldValuesAction extends SimpleViewAction<Object>
@@ -446,43 +458,109 @@ public class ExperimentController extends SpringActionController
 
             // Prep audit table for querying
             UserSchema auditSchema = AuditLogService.get().createSchema(getUser(), ContainerManager.getRoot());
-            TableInfo sampleTimelineTable = auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.EVERYTHING);
-            TableInfo queryUpdateTable = auditSchema.getTable("QueryUpdateAuditEvent", ContainerFilter.EVERYTHING);
 
-            Map<Pair<ExpSampleType, String>, List<TimelineSummary>> sampleTypeSummaries = new HashMap<>();
-            Map<Pair<ExpDataClass, String>, List<TimelineSummary>> dataClassSummaries = new HashMap<>();
+            Map<ProblemType, List<TimelineSummary>> sampleTypeSummaries = new HashMap<>();
+            Map<ProblemType, List<TimelineSummary>> dataClassSummaries = new HashMap<>();
+            Map<ProblemType, List<TimelineSummary>> listSummaries = new HashMap<>();
 
             Map<Field, Pair<Long, Long>> problematicFields = new LinkedHashMap<>();
 
             for (Field field : fields)
             {
                 String domainURI = field.domainURI;
-                String name = field.name;
+                String fieldName = field.name;
                 Container container = field.container;
                 Domain domain = PropertyService.get().getDomain(container, domainURI);
                 if (domain != null && domain.getDomainKind() != null)
                 {
                     TableInfo table = domain.getDomainKind().getTableInfo(getUser(), container, domain, ContainerFilter.EVERYTHING);
 
-                    // Drill into sample types
-                    if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
-                    {
-                        checkSampleType(domainURI, table, name, sampleTimelineTable, sampleTypeSummaries);
-                    }
-                    // and data classes/sample sources
-                    if (domain.getDomainKind().getClass().equals(DataClassDomainKind.class))
-                    {
-                        checkDataClass(domainURI, table, name, queryUpdateTable, dataClassSummaries);
-                    }
-
-                    Long totalRows = null;
-                    Long emptyRows = null;
                     if (table != null)
                     {
-                        totalRows = new TableSelector(table).getRowCount();
-                        emptyRows = new TableSelector(table, new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getRowCount();
+                        // Drill into sample types
+                        if (domain.getDomainKind().getClass().equals(SampleTypeDomainKind.class))
+                        {
+                            // rows samples that current have no value for the field with potential for data loss
+                            List<MiniExpObject> rowsWithNull = new TableSelector(table,
+                                    new HashSet<>(List.of("RowId", "Name")),
+                                    new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(fieldName), CompareType.ISBLANK, null)),
+                                    null).
+                                    getArrayList(MiniExpObject.class);
+
+                            List<TimelineSummary> fixupsNeeded = checkData(
+                                    rowsWithNull,
+                                    fieldName,
+                                    obj -> new SimpleFilter(FieldKey.fromParts("SampleId"), obj.rowId),
+                                    auditSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE, ContainerFilter.EVERYTHING));
+                            if (!fixupsNeeded.isEmpty())
+                            {
+                                sampleTypeSummaries.put(new ProblemType(table.getName(), fieldName, "SampleID"), fixupsNeeded);
+                            }
+                        }
+                        // and data classes/sample sources
+                        if (domain.getDomainKind().getClass().equals(DataClassDomainKind.class))
+                        {
+                            // rows samples that current have no value for the field with potential for data loss
+                            List<MiniExpObject> rowsWithNull = new TableSelector(table,
+                                    new HashSet<>(List.of("RowId", "Name")),
+                                    new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(fieldName), CompareType.ISBLANK, null)),
+                                    null).
+                                    getArrayList(MiniExpObject.class);
+
+                            List<TimelineSummary> fixupsNeeded = checkData(
+                                    rowsWithNull,
+                                    fieldName,
+                                    obj -> new SimpleFilter(FieldKey.fromParts("RowPk"), Objects.toString(obj.rowId)).
+                                            addCondition(FieldKey.fromParts("SchemaName"), "exp.data").
+                                            addCondition(FieldKey.fromParts("QueryName"), domain.getName()),
+                                    auditSchema.getTable("QueryUpdateAuditEvent", ContainerFilter.EVERYTHING));
+
+                            if (!fixupsNeeded.isEmpty())
+                            {
+                                dataClassSummaries.put(new ProblemType(table.getName(), fieldName, "SourceID"), fixupsNeeded);
+                            }
+                        }
+                        // and lists
+                        if ("lists".equals(table.getUserSchema().getName()))
+                        {
+                            // rows samples that current have no value for the field with potential for data loss
+                            List<MiniExpObject> rowsWithNull = new ArrayList<>();
+
+                            ColumnInfo entityIdCol = table.getColumn("EntityId");
+                            ColumnInfo pkCol = table.getPkColumns().get(0);
+
+                            new TableSelector(table,
+                                    List.of(entityIdCol, pkCol),
+                                    new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(fieldName), CompareType.ISBLANK, null)),
+                                    null).
+                                    forEachResults(r ->
+                                    {
+                                        Object entityId = entityIdCol.getValue(r);
+                                        Object pk = pkCol.getValue(r);
+                                        rowsWithNull.add(new MiniExpObject(entityId, pk.toString()));
+                                    });
+
+
+                            List<TimelineSummary> fixupsNeeded = checkData(
+                                    rowsWithNull,
+                                    fieldName,
+                                    obj -> new SimpleFilter(FieldKey.fromParts("ListItemEntityId"), obj.rowId),
+                                    auditSchema.getTable("ListAuditEvent", ContainerFilter.EVERYTHING));
+
+                            if (!fixupsNeeded.isEmpty())
+                            {
+                                listSummaries.put(new ProblemType(table.getName(), fieldName, table.getPkColumnNames().get(0)), fixupsNeeded);
+                            }
+                        }
+
+                        long totalRows = new TableSelector(table).getRowCount();
+                        long emptyRows = new TableSelector(table, new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(fieldName), CompareType.ISBLANK, null)), null).getRowCount();
+                        problematicFields.put(field, Pair.of(totalRows, emptyRows));
                     }
-                    problematicFields.put(field, Pair.of(totalRows, emptyRows));
+                    else
+                    {
+                        problematicFields.put(field, Pair.of(null, null));
+                    }
                 }
             }
 
@@ -508,101 +586,50 @@ public class ExperimentController extends SpringActionController
 
                         DOM.H2("Sample Types"),
                         sampleTypeSummaries.isEmpty() ? "No problems detected!" :
-                            sampleTypeSummaries.entrySet().stream().map(e ->
-                                DOM.DIV(
-                                        DOM.H4(e.getKey().first.getName()),
-                                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
-                                                DOM.THEAD(DOM.TH("SampleID"), DOM.TH(e.getKey().second)),
-                                                e.getValue().stream().map(summary ->
-                                                            DOM.TR(DOM.TD(summary.miniExpObject.name), DOM.TD(summary.mostRecentValue)))
-                                        ))),
+                                sampleTypeSummaries.entrySet().stream().map(e ->
+                                    e.getKey().toHtml(e.getValue())),
 
                         DOM.H2("Data Classes"),
                         dataClassSummaries.isEmpty() ? "No problems detected!" :
                                 dataClassSummaries.entrySet().stream().map(e ->
-                                DOM.DIV(
-                                        DOM.H4(e.getKey().first.getName()),
-                                        DOM.TABLE(at(cl("table-condensed", "labkey-data-region", "table-bordered")),
-                                                DOM.THEAD(DOM.TH("SourceID"), DOM.TH(e.getKey().second)),
-                                                e.getValue().stream().map(summary ->
-                                                            DOM.TR(DOM.TD(summary.miniExpObject.name), DOM.TD(summary.mostRecentValue)))
-                                        )))));
+                                        e.getKey().toHtml(e.getValue())),
+
+                        DOM.H2("Lists"),
+                        listSummaries.isEmpty() ? "No problems detected!" :
+                                listSummaries.entrySet().stream().map(e ->
+                                        e.getKey().toHtml(e.getValue()))
+                ));
         }
 
-        private void checkSampleType(String domainURI, TableInfo table, String name, TableInfo sampleTimelineTable, Map<Pair<ExpSampleType, String>, List<TimelineSummary>> sampleTypeSummaries)
+        @NotNull
+        private List<TimelineSummary> checkData(List<MiniExpObject> rowsWithNull, String fieldName, Function<MiniExpObject, SimpleFilter> filterGenerator, TableInfo auditTable)
         {
-            ExpSampleType sampleType = SampleTypeService.get().getSampleType(domainURI);
-
-            // Find samples that current have no value for the field with potential for data loss
-            List<MiniExpObject> materialsWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniExpObject.class);
-
             List<TimelineSummary> fixupsNeeded = new ArrayList<>();
 
             // For each sample without a value today, check the audit history
-            for (MiniExpObject material : materialsWithNulls)
+            for (MiniExpObject row : rowsWithNull)
             {
                 // Order by RowId to get them in the sequence they happened in
-                var events = new TableSelector(sampleTimelineTable, new SimpleFilter(FieldKey.fromParts("SampleId"), material.rowId), new Sort("RowId")).getArrayList(SampleTimelineAuditEvent.class);
-                // Remember the most recently set value
-                String mostRecentValue = null;
-                for (SampleTimelineAuditEvent event : events)
-                {
-                    Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                    if (newValues.containsKey(name))
-                    {
-                        // Will be the empty string if the value was intentionally set to blank
-                        mostRecentValue = newValues.get(name);
-                    }
-                }
-                // If the value had been set before, and its most recent insert/update wasn't setting it blank,
-                // it's most likely a lost value
-                if (mostRecentValue != null && !mostRecentValue.isEmpty())
-                {
-                    fixupsNeeded.add(new TimelineSummary(material, mostRecentValue));
-                }
-            }
-            if (!fixupsNeeded.isEmpty())
-            {
-                sampleTypeSummaries.put(Pair.of(sampleType, name), fixupsNeeded);
-            }
-        }
-
-        private void checkDataClass(String domainURI, TableInfo table, String name, TableInfo queryUpdateTable, Map<Pair<ExpDataClass, String>, List<TimelineSummary>> summaries)
-        {
-            ExpDataClass dataClass = ExperimentService.get().getDataClass(domainURI);
-
-            // Find samples that current have no value for the field with potential for data loss
-            List<MiniExpObject> dataWithNulls = new TableSelector(table, new HashSet<>(List.of("RowId", "Name")), new SimpleFilter(new CompareType.CompareClause(FieldKey.fromParts(name), CompareType.ISBLANK, null)), null).getArrayList(MiniExpObject.class);
-
-            List<TimelineSummary> fixupsNeeded = new ArrayList<>();
-
-            // For each sample without a value today, check the audit history
-            for (MiniExpObject data : dataWithNulls)
-            {
-                // Order by RowId to get them in the sequence they happened in
-                var events = new TableSelector(queryUpdateTable, new SimpleFilter(FieldKey.fromParts("RowPk"), Integer.toString(data.rowId)).addCondition(FieldKey.fromParts("SchemaName"), "exp.data").addCondition(FieldKey.fromParts("QueryName"), dataClass.getName()), new Sort("RowId")).getArrayList(DetailedAuditTypeEvent.class);
+                var events = new TableSelector(auditTable, filterGenerator.apply(row), new Sort("RowId")).getArrayList(DetailedAuditTypeEvent.class);
                 // Remember the most recently set value
                 String mostRecentValue = null;
                 for (DetailedAuditTypeEvent event : events)
                 {
                     Map<String, String> newValues = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                    if (newValues.containsKey(name))
+                    if (newValues.containsKey(fieldName))
                     {
                         // Will be the empty string if the value was intentionally set to blank
-                        mostRecentValue = newValues.get(name);
+                        mostRecentValue = newValues.get(fieldName);
                     }
                 }
                 // If the value had been set before, and its most recent insert/update wasn't setting it blank,
                 // it's most likely a lost value
                 if (mostRecentValue != null && !mostRecentValue.isEmpty())
                 {
-                    fixupsNeeded.add(new TimelineSummary(data, mostRecentValue));
+                    fixupsNeeded.add(new TimelineSummary(row, mostRecentValue));
                 }
             }
-            if (!fixupsNeeded.isEmpty())
-            {
-                summaries.put(Pair.of(dataClass, name), fixupsNeeded);
-            }
+            return fixupsNeeded;
         }
 
         @Override
