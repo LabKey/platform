@@ -2429,6 +2429,7 @@ public class NameGenerator
         return expression.replaceAll("%", "%25").replaceAll("[+]", "%2B");
     }
 
+    // Issue 52774: Naming Expression with default value that contains special characters aren't generated as expected
     public static String decodeNamingPart(@Nullable String expression)
     {
         if (expression == null)
