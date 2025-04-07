@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 /**
  * Holds both the SQL text and JDBC parameter values to use during invocation.
  * User: Matthew
@@ -421,6 +423,12 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         String identifier = charseq.toString().strip();
+
+        if (STR_TABLE_ALIAS.equals(identifier))
+        {
+            getStringBuilder().append(identifier);
+            return this;
+        }
 
         boolean malformed;
         if (identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\""))
