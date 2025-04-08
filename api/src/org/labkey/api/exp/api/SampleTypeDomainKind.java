@@ -123,6 +123,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("CpasType");
         RESERVED_NAMES.add("Cpas Type");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
+        RESERVED_NAMES.add("Aliquoted From");
         RESERVED_NAMES.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
         RESERVED_NAMES.add("AliquotTotalVolume"); // Issue 52158: Sample Manager: data type reserved field name and label inconsistencies
         RESERVED_NAMES.add("Aliquot Total Volume"); // Issue 52158: Sample Manager: data type reserved field name and label inconsistencies
