@@ -22,7 +22,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -42,7 +41,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Pair;
@@ -55,7 +53,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -632,19 +629,19 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         int addLSID()
         {
             DatasetLsidImportHelper helper = new DatasetLsidImportHelper(_datasetDefinition);
-            Callable callable = helper.getCallable(this, indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput, indexContainerOutput);
-//            ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
-//            indexLSIDOutput = addColumn(col, callable);
-
+            Callable<Object> callable = helper.getCallable(this, indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput, indexContainerOutput);
             ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
-            indexLSIDOutput = addColumn(col, new LSIDColumn());
+            indexLSIDOutput = addColumn(col, callable);
+
             return indexLSIDOutput;
         }
 
         int addParticipantSequenceNum()
         {
+            Callable<Object> callable = ParticipantSeqNumImportHelper.getCallable(this, indexPtidOutput, indexSequenceNumOutput);
+
             var col = new BaseColumnInfo("participantsequencenum", JdbcType.VARCHAR);
-            return addColumn(col, new ParticipantSequenceNumColumn());
+            return addColumn(col, callable);
         }
 
         int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
@@ -678,82 +675,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     //                    return VisitImpl.DEMOGRAPHICS_VISIT;
     //            }
     //        }
-
-        // MUST match what is produced by DatasetDefinition.generateLSIDSQL
-        class LSIDColumn implements Callable
-        {
-            Map<String, String> map = new HashMap<>();
-
-            String getURNPrefix()
-            {
-                Container c = null;
-                String entityId = null;
-                if (_datasetDefinition.isShared() && _datasetDefinition.getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
-                {
-                    c = _datasetDefinition.getDefinitionContainer();
-                    entityId = c.getId();
-                }
-                else if (null == indexContainerOutput)
-                {
-                    c = _datasetDefinition.getContainer();
-                    entityId = c.getId();
-                }
-                else
-                {
-                    entityId = DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexContainerOutput);
-                }
-                String urn = map.get(entityId);
-                if (null != urn)
-                    return urn;
-                if (null == c)
-                    c = ContainerManager.getForId(entityId);
-                String id = null == c ? entityId : String.valueOf(c.getRowId());
-                urn = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + id + ":" + _datasetDefinition.getDatasetId() + ".";
-                map.put(entityId, urn);
-                return urn;
-            }
-
-            @Override
-            public Object call()
-            {
-                StringBuilder sb = new StringBuilder(getURNPrefix());
-                assert null != indexPtidOutput || hasErrors();
-
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
-                sb.append(ptid.trim());
-
-                if (!_datasetDefinition.isDemographicData())
-                {
-                    String seqnum = getFormattedSequenceNum();
-                    sb.append(".").append(seqnum);
-
-                    if (!_datasetDefinition.getStudy().getTimepointType().isVisitBased() && _datasetDefinition.getUseTimeKeyField())
-                    {
-                        Date date = getOutputDate(indexVisitDateOutput);
-                        sb.append(".").append(String.format("%tH%tM%tS", date, date, date));
-                    }
-                    else if (null != indexKeyPropertyOutput)
-                    {
-                        Object key = DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
-                        if (null != key)
-                            sb.append(".").append(key);
-                    }
-                }
-                return sb.toString();
-            }
-        }
-
-        class ParticipantSequenceNumColumn implements Callable
-        {
-            @Override
-            public Object call()
-            {
-                assert null != indexPtidOutput || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexPtidOutput);
-                String seqnum = getFormattedSequenceNum();
-                return ptid + "|" + seqnum;
-            }
-        }
 
         class ParticipantSequenceNumKeyColumn implements Callable
         {

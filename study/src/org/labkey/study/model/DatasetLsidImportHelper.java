@@ -99,6 +99,7 @@ public class DatasetLsidImportHelper
         return urn;
     }
 
+    // MUST match what is produced by DatasetDefinition.generateLSIDSQL
     public String translateLsid(
             String participantId,
             Double sequenceNum,

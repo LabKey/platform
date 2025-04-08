@@ -10,6 +10,8 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.params.FieldDefinition;
@@ -19,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -54,7 +57,7 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
 
         _containerHelper.createSubfolder(getProjectName(), DATE_STUDY, "Study");
         _studyHelper.startCreateStudy()
-                .setTimepointType(StudyHelper.TimepointType.CONTINUOUS)
+                .setTimepointType(StudyHelper.TimepointType.DATE)
                 .createStudy();
     }
 
@@ -169,6 +172,9 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
                 ));
         expectSuccess(conn, ADDITIONAL_KEY_FIELD, containerPath,
                 List.of(Map.of("Ptid", "222", "Visit", 1)));
+
+        log("Validate participant/visit generation");
+        validateParticipantVisits(conn, containerPath, 9);
     }
 
     @Test
@@ -288,6 +294,9 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
                 ));
         expectFail(conn, TIME_PORTION_OF_DATE, containerPath,
                 List.of(Map.of("Ptid", "111", "Date", "2025-05-01 1:15pm")));
+
+        log("Validate participant/visit generation");
+        validateParticipantVisits(conn, containerPath, 10);
     }
 
     // Create datasets via the java api
@@ -329,5 +338,12 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
         }
 
         assertFalse("Expected the insert to fail.", fail);
+    }
+
+    private void validateParticipantVisits(Connection conn, String containerPath, int expectedCount) throws Exception
+    {
+        SelectRowsCommand cmd = new SelectRowsCommand("Study", "ParticipantVisit");
+        SelectRowsResponse resp = cmd.execute(conn, containerPath);
+        assertEquals(String.format("Expecting exactly %d distinct participant visits", expectedCount), expectedCount, resp.getRowCount().intValue());
     }
 }
