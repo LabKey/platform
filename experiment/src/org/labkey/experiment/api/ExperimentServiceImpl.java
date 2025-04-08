@@ -6885,17 +6885,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 Table.update(user, getTinfoData(), ((ExpDataImpl)outputData).getDataObject(), outputData.getRowId());
             }
 
-            boolean hasMissingRequiredParent = false;
-            for (String required : requiredDataTypes)
+            // Issue 52561: LKSM: Moving aliquots into a subfolder with required MaterialInputs errors
+            if (!isSampleAliquot(run.getProtocol()))
             {
-                if (!inputDataTypes.contains(required))
+                boolean hasMissingRequiredParent = false;
+                for (String required : requiredDataTypes)
                 {
-                    hasMissingRequiredParent = true;
-                    break;
+                    if (!inputDataTypes.contains(required))
+                    {
+                        hasMissingRequiredParent = true;
+                        break;
+                    }
                 }
+                if (hasMissingRequiredParent)
+                    throw new ExperimentException("Inputs are required: " + String.join(",", requiredDataTypes));
             }
-            if (hasMissingRequiredParent)
-                throw new ExperimentException("Inputs are required: " + String.join(",", requiredDataTypes));
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
