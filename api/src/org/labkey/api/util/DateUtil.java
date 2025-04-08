@@ -720,7 +720,7 @@ public class DateUtil
     @Deprecated
     public static long parseDateTime(Container c, String s)
     {
-        return parseDate(s);
+        return parseDateTime(s);
     }
 
     private static long parseDateTime(String s, MonthDayOption md)
