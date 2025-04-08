@@ -946,22 +946,24 @@ public class SpecimenRequestManager
                     TableInfo tableInfo = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
                     Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
 
-                    SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
+                    SQLFragment inner = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
 
                     // Insert COUNT
                     String sampleCountName = tableInfo.getSqlDialect().makeLegalIdentifier("SampleCount");
-                    String countStr = " COUNT(*) As " + sampleCountName + ",\n";
-                    int insertIndex = sql.indexOf("SELECT");
-                    sql.insert(insertIndex + 6, countStr);
+                    SQLFragment sql = new SQLFragment("SELECT COUNT(*) As " + sampleCountName);
+                    for (var col : columnMap.values())
+                        sql.append(",").appendIdentifier(col.getAlias());
 
-                    sql.append("GROUP BY ");
+                    sql.append("\nFROM (").append(inner).append(") AS details");
+
+                    sql.append("\nGROUP BY ");
                     boolean firstGroupBy = true;
                     for (ColumnInfo columnInfo : columnMap.values())
                     {
                         if (!firstGroupBy)
                             sql.append(", ");
                         firstGroupBy = false;
-                        sql.append(columnInfo.getValueSql(tableInfo.getTitle()));
+                        sql.appendIdentifier(columnInfo.getAlias());
                     }
 
                     sql.append("\nORDER BY ");
@@ -971,7 +973,7 @@ public class SpecimenRequestManager
                         if (!firstOrderBy)
                             sql.append(", ");
                         firstOrderBy = false;
-                        sql.append(columnInfo.getValueSql(tableInfo.getTitle()));
+                        sql.appendIdentifier(columnInfo.getAlias());
                     }
 
                     SqlSelector selector = new SqlSelector(tableInfo.getSchema(), sql);
@@ -1003,7 +1005,7 @@ public class SpecimenRequestManager
 
                                     GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(s);
                                     ColumnInfo columnInfo = columnMap.get(columnHelper.getFieldKey());
-                                    Object value = rowMap.get(columnInfo.getAlias());
+                                    Object value = columnInfo.getValue(rowMap);
                                     String labelValue = (null != value) ? value.toString() : null;
                                     GroupedResults groupedResults = currentGroupedResultsMap.get(labelValue);
                                     if (null == groupedResults)

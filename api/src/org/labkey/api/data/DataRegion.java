@@ -1639,9 +1639,7 @@ public class DataRegion extends DisplayElement
 
                 if (col != null)
                 {
-                    result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
-                    if (result == null)
-                        aggregateResults.get(renderer.getColumnInfo().getAlias());
+                    result = (List<Aggregate.Result>)renderer.getColumnInfo().getValue(aggregateResults);
                 }
                 else
                 {

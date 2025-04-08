@@ -51,7 +51,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
     {
         if (_requiredColumn == null)
             return null;
-        return ctx.getRow().get(_requiredColumn.getAlias());
+        return _requiredColumn.getValue(ctx);
     }
     
     @Override

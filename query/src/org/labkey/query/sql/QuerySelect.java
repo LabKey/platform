@@ -1690,7 +1690,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 String sqlAlias = aliasMap.get(selectColumn.getAlias());
                 if (null != sqlAlias)
                 {
-                    boolean isMedian = getMedianColumns().contains(selectColumn);
+                    boolean isMedian = getMedianColumns().contains(selectColumn);B
                     wrapSelect.append(sep)
                             .append(isMedian ? "MAX(" : "")
                             .append(wrapAlias).append(".").append(sqlAlias)
