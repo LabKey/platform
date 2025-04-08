@@ -262,8 +262,8 @@ public class QuerySelectView extends AbstractQueryRelation
             ColumnInfo prev;
             for (ColumnInfo column : extraSelectDataLoggingColumns)
             {
-                assert !allColumns.contains(column);
-                allColumns.add(column);
+                if (!allColumns.contains(column))
+                    allColumns.add(column);
             }
             for (ColumnInfo column : allColumns)
             {
