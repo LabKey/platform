@@ -30,7 +30,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    JspView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     ViewContext context = getViewContext();
     Map<String, String> pm = webPart.getPropertyMap();

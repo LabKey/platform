@@ -39,7 +39,7 @@
     }
 %>
 <%
-    JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
+    JspView<ReportsController.CreateQueryReportBean> me = HttpView.currentView();
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
     Container container = getContainer();
 

@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>
 <%@ page import="org.labkey.assay.plate.PlateManager" %>
+<%@ page import="java.lang.Integer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
@@ -39,7 +40,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
+    JspView<PlateController.PlateTemplateListBean> me = HttpView.currentView();
     Container c = getContainer();
     List<? extends Plate> plates = me.getModelBean().getTemplates();
     Map<Plate, Integer> plateRunCount = new HashMap<>();

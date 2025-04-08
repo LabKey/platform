@@ -93,7 +93,9 @@ public class CustomViewSetKey implements Serializable
         {
             return Collections.emptyMap();
         }
-        return Collections.unmodifiableMap(map);
+
+        // Copy to avoid ConcurrentModificationExceptions
+        return Collections.unmodifiableMap(new HashMap<>(map));
     }
 
     static public void deleteCustomViewFromSession(HttpServletRequest request, QueryDefinition queryDef, String name)

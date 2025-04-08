@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<ListBean> me = (HttpView<ListBean>) HttpView.currentView();
+    HttpView<ListBean> me = HttpView.currentView();
     ListBean bean = me.getModelBean();
 %>
 <!--ANNOUNCEMENTS-->

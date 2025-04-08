@@ -31,7 +31,7 @@
     }
 %>
 <%
-    JspView<QueryController.ExportTablesForm> me = (JspView<QueryController.ExportTablesForm>) HttpView.currentView();
+    JspView<QueryController.ExportTablesForm> me = HttpView.currentView();
     Errors errors = me.getErrors();
 
     if(errors.hasErrors())

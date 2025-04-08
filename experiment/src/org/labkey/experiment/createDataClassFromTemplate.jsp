@@ -24,7 +24,7 @@
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ExperimentController.CreateDataClassFromTemplateForm> me = (JspView<ExperimentController.CreateDataClassFromTemplateForm>) HttpView.currentView();
+    JspView<ExperimentController.CreateDataClassFromTemplateForm> me = HttpView.currentView();
     ExperimentController.CreateDataClassFromTemplateForm bean = me.getModelBean();
     String returnUrl = bean.getReturnUrl();
 

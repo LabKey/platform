@@ -16,17 +16,17 @@
  */
 %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeleteUsersBean" %>
 <%@ page import="org.labkey.core.user.UserController.DeactivateUsersAction" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DeleteUsersBean> me = (JspView<DeleteUsersBean>) HttpView.currentView();
+    JspView<DeleteUsersBean> me = HttpView.currentView();
     DeleteUsersBean bean = me.getModelBean();
     User currentUser = getUser();
     ActionURL urlPost = getViewContext().cloneActionURL();

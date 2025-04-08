@@ -38,7 +38,7 @@
     }
 %>
 <%
-    JspView<SpecimenHeaderBean> me = (JspView<SpecimenHeaderBean>) HttpView.currentView();
+    JspView<SpecimenHeaderBean> me = HttpView.currentView();
     SpecimenHeaderBean bean = me.getModelBean();
     ActionURL createRequestURL = new ActionURL(ShowSearchAction.class, getContainer());
     createRequestURL.addParameter("fromGroupedView", !bean.isShowingVials());

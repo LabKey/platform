@@ -22,16 +22,10 @@ import org.labkey.api.view.NotFoundException;
 
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Aug 11, 2007
- * Time: 3:30:55 PM
- */
 public class WikiWebPart extends BaseWikiView
 {
     public WikiWebPart(int webPartId, Map<String, String> props)
     {
-        super();
         _webPartId = webPartId;
 
         // webPartContainer and name will be null in the new webpart case

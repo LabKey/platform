@@ -18,10 +18,12 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="java.lang.Boolean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Boolean includeButtons = ((JspView<Boolean>)HttpView.currentView()).getModelBean();
+    JspView<Boolean> view = HttpView.currentView();
+    Boolean includeButtons = view.getModelBean();
 %>
 <labkey:errors/><%
     if (includeButtons)

@@ -23,11 +23,12 @@
 <%@ page import="org.labkey.api.assay.plate.WellData" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="java.lang.Math" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<RenderAssayBean> me = (JspView<RenderAssayBean>) HttpView.currentView();
+    JspView<RenderAssayBean> me = HttpView.currentView();
     RenderAssayBean bean = me.getModelBean();
 %>
 <style type="text/css">

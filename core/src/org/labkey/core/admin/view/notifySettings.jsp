@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
+<%@ page import="org.labkey.api.message.settings.MessageConfigService.EmailConfigForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -32,7 +32,8 @@
     final String ID_PREFIX = "labkey_";
     String panelDiv = ID_PREFIX + getRequestScopedUID();
 
-    MessageConfigService.EmailConfigForm bean = ((JspView <MessageConfigService.EmailConfigForm>)HttpView.currentView()).getModelBean();
+    JspView <EmailConfigForm> view = HttpView.currentView();
+    EmailConfigForm bean = view.getModelBean();
 %>
 <div id="<%=h(panelDiv)%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

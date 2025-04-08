@@ -42,7 +42,7 @@
 
 <div width="240px" id="pipelineFilesPermissions">
 <%
-    PermissionView me = (PermissionView)HttpView.currentView();
+    PermissionView me = HttpView.currentView();
     PipeRoot pipeRoot = me.getModelBean();
     SecurityPolicy policy = SecurityPolicyManager.getPolicy(pipeRoot);
     Container c = getContainer();

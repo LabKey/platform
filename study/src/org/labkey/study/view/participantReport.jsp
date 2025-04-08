@@ -33,7 +33,7 @@
     }
 %>
 <%
-    JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<ParticipantReportForm>) HttpView.currentView();
+    JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = HttpView.currentView();
     ParticipantReportForm bean = me.getModelBean();
     String reportId = null;
 

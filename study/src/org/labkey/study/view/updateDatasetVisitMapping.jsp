@@ -37,7 +37,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>)HttpView.currentView();
+    JspView<DatasetDefinition> me = HttpView.currentView();
     DatasetDefinition dataset = me.getModelBean();
 
     Container container = getContainer();

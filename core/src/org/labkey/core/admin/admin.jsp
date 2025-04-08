@@ -32,8 +32,6 @@
 <%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.lang.Math" %>
-<%@ page import="java.lang.String" %>
 <%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.time.Duration" %>
 <%@ page import="java.time.LocalDateTime" %>

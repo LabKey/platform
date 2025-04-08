@@ -22,7 +22,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    JspView<TestNetworkDriveBean> me = (JspView<TestNetworkDriveBean>) HttpView.currentView();
+    JspView<TestNetworkDriveBean> me = HttpView.currentView();
     TestNetworkDriveBean bean = me.getModelBean();
 %>
 <labkey:errors />

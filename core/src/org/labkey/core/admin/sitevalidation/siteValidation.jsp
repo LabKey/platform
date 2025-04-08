@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidationService" %>
 <%@ page import="org.labkey.api.admin.sitevalidation.SiteValidatorDescriptor" %>
 <%@ page import="org.labkey.core.admin.AdminController.SiteValidationForm" %>
-<%@ page import="java.lang.String" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

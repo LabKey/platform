@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper"%>
+<%@ page import="org.labkey.api.util.JavaScriptFragment"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,8 +24,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.JsonUtil" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -37,7 +35,7 @@
 %>
 
 <%
-    JspView<AssayProgressReport.AssayReportBean> me = (JspView<AssayProgressReport.AssayReportBean>)HttpView.currentView();
+    JspView<AssayProgressReport.AssayReportBean> me = HttpView.currentView();
     AssayProgressReport.AssayReportBean form = me.getModelBean();
     List<Map<String, String>> legend = AssayProgressReport.SpecimenStatus.serialize();
     String renderId = "participant-report-div-" + getRequestScopedUID();

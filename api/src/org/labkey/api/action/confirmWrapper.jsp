@@ -27,8 +27,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ConfirmAction> me = (JspView<ConfirmAction>) HttpView.currentView();
-    ConfirmAction confirmAction = me.getModelBean();
+    JspView<ConfirmAction<?>> me = HttpView.currentView();
+    ConfirmAction<?> confirmAction = me.getModelBean();
     PropertyValues propertyValues = confirmAction.getPropertyValues();
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>

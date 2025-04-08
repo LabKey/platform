@@ -59,7 +59,7 @@
     }
 %>
 <%
-    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
+    JspView<DatasetDefinition> me = HttpView.currentView();
     DatasetDefinition dataset = me.getModelBean();
 
     Container c = getContainer();

@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<RemoveUserBean> me = (HttpView<RemoveUserBean>) HttpView.currentView();
+    HttpView<RemoveUserBean> me = HttpView.currentView();
     RemoveUserBean bean = me.getModelBean();
 %>
 Are you sure you want to remove yourself (<%=h(bean.email)%>) from the member list of this <%=h(bean.conversationName)%>?

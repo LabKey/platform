@@ -32,7 +32,7 @@
     }
 %>
 <%
-    JspView<AssayHeaderView> me = (JspView<AssayHeaderView>) HttpView.currentView();
+    JspView<AssayHeaderView> me = HttpView.currentView();
     AssayHeaderView bean = me.getModelBean();
     if (bean.isIncludeDescription() && bean.getProtocol().getProtocolDescription() != null && !"".equals(bean.getProtocol().getProtocolDescription().trim())) { %>
         <p><%= h(bean.getProtocol().getProtocolDescription()) %></p>
