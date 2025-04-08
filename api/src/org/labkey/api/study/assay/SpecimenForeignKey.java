@@ -452,7 +452,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             else
             {
                 // Match based on the target study associated with the assay data
-                sql.append(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).append(" = ").appendDottedIdentifiers(vialSubqueryAlias,".Container");
+                sql.append(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).append(" = ").appendDottedIdentifiers(vialSubqueryAlias,"Container");
             }
 
             sql.appendComment("</" + this.getClass().getName() + ".declareJoins()" + ">", dialect);

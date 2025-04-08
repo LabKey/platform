@@ -2461,13 +2461,13 @@ public class SpecimenImporter extends SpecimenTableManager
             info("Checking for conflicting specimens before merging...");
 
             // Columns used in the specimen hash
-            StringBuilder hashCols = new StringBuilder();
+            SQLFragment hashCols = new SQLFragment();
             for (SpecimenColumn col : loadedColumns)
             {
                 if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
                 {
                     hashCols.append(",\n\t");
-                    hashCols.append(col.getLegalDbColumnName(getSqlDialect()));
+                    hashCols.appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
                 }
             }
             hashCols.append("\n");
