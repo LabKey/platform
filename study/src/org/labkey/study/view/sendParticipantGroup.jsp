@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SendParticipantGroupForm> me = (JspView<SendParticipantGroupForm>) HttpView.currentView();
+    JspView<SendParticipantGroupForm> me = HttpView.currentView();
     SendParticipantGroupForm bean = me.getModelBean();
 
     Container container = getContainer();

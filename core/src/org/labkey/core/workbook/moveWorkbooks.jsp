@@ -24,7 +24,7 @@
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView me = (JspView) HttpView.currentView();
+    JspView me = HttpView.currentView();
     MoveWorkbooksBean bean = (MoveWorkbooksBean)me.getModelBean();
     List<Container> workbooks = bean.getWorkbooks();
 

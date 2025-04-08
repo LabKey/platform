@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.reports.LabKeyScriptEngineManager" %>
 <%@ page import="org.labkey.api.reports.report.r.RemoteRNotEnabledException" %>
-<%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -39,7 +38,7 @@
     }
 %>
 <%
-    JspView<AdminController.RConfigForm> me = (JspView<AdminController.RConfigForm>) HttpView.currentView();
+    JspView<AdminController.RConfigForm> me = HttpView.currentView();
     AdminController.RConfigForm form = me.getModelBean();
     Container container = getContainer();
     LabKeyScriptEngineManager mgr = LabKeyScriptEngineManager.get();

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="jakarta.servlet.http.HttpServletResponse" %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
@@ -29,7 +30,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
-    BaseWikiView view = (BaseWikiView)HttpView.currentView();
+    BaseWikiView view = HttpView.currentView();
     ViewContext context = getViewContext();
     User user = getUser();
     Wiki wiki = view.wiki;

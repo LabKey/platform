@@ -34,10 +34,10 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
-<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="org.labkey.issue.view.RelatedIssuesView" %>
@@ -58,7 +58,7 @@
     }
 %>
 <%
-    JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
+    JspView<IssuePage> me = HttpView.currentView();
     IssuePage bean = me.getModelBean();
     final IssueObject issue = bean.getIssue();
     ViewContext context = getViewContext();

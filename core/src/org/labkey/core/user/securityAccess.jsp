@@ -54,7 +54,7 @@
 
     User currentUser = getUser();
     Container c = getContainer();
-    JspView<AccessDetail> me = (JspView<AccessDetail>) HttpView.currentView();
+    JspView<AccessDetail> me = HttpView.currentView();
     AccessDetail bean = me.getModelBean();
     List<AccessDetailRow> rows = bean.getRows();
 

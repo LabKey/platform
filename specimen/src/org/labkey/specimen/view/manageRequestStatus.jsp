@@ -28,7 +28,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ManageRequestBean> me = (JspView<ManageRequestBean>) HttpView.currentView();
+    JspView<ManageRequestBean> me = HttpView.currentView();
     ManageRequestBean bean = me.getModelBean();
     Collection<SpecimenRequestStatus> statuses = SpecimenRequestManager.get().getRequestStatuses(getContainer(), getUser());
 %>

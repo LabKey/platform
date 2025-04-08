@@ -41,7 +41,8 @@
     }
 %>
 <%
-    SetPasswordBean bean = ((JspView<SetPasswordBean>)HttpView.currentView()).getModelBean();
+    JspView<SetPasswordBean> view = HttpView.currentView();
+    SetPasswordBean bean = view.getModelBean();
     HtmlString errors = formatMissedErrors("form");
     int gaugeWidth = 350;
     int gaugeHeight = 30;

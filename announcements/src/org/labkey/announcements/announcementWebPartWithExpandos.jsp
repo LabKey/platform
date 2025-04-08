@@ -23,10 +23,10 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -36,7 +36,7 @@
     }
 %>
 <%
-    AnnouncementWebPart me = (AnnouncementWebPart) HttpView.currentView();
+    AnnouncementWebPart me = HttpView.currentView();
     MessagesBean bean = me.getModelBean();
     Container c = getContainer();
     User user = getUser();

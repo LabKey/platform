@@ -26,7 +26,7 @@
 <%@ page import="org.labkey.assay.actions.TemplateAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
+    JspView<AssayRunUploadForm> me = HttpView.currentView();
     AssayRunUploadForm<AssayProvider> bean = me.getModelBean();
 %>
 <div id="showExpectedDataFieldsDiv"><%= link("Show Expected Data Fields").onClick("document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;").id("showExpectedDataFieldsLink") %></div>

@@ -23,7 +23,8 @@
 <%@ page import="org.labkey.core.admin.AdminController.MaintenanceBean" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    MaintenanceBean bean = ((JspView<MaintenanceBean>)HttpView.currentView()).getModelBean();
+    JspView<MaintenanceBean> view = HttpView.currentView();
+    MaintenanceBean bean = view.getModelBean();
 %>
 <labkey:errors/>
 <p><%=bean.content%></p>

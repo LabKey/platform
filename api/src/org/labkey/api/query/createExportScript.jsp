@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %><%@ page import="org.labkey.api.query.ExportScriptModel, org.labkey.api.view.HttpView, org.labkey.api.view.JspView" %><%@ page extends="org.labkey.api.jsp.JspBase" %><%
-    JspView<ExportScriptModel> me = (JspView<ExportScriptModel>) HttpView.currentView();
+    JspView<ExportScriptModel> me = HttpView.currentView();
     ExportScriptModel model = me.getModelBean();
     getViewContext().getResponse().setContentType("text/plain");
 %><%=unsafe(model.getExportText())%>

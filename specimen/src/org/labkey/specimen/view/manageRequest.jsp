@@ -65,7 +65,7 @@
     }
 %>
 <%
-    JspView<ManageRequestBean> me = (JspView<ManageRequestBean>) HttpView.currentView();
+    JspView<ManageRequestBean> me = HttpView.currentView();
     Container c = getContainer();
     User user = getUser();
     ManageRequestBean bean = me.getModelBean();

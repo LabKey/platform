@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
@@ -52,7 +53,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.Errors;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -415,7 +415,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     {
         Container container;
 
-        if (containerName == null || "".equals(containerName))
+        if (containerName == null || containerName.isEmpty())
         {
             container = c;
         }

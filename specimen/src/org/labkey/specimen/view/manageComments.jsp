@@ -33,7 +33,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ManageCommentsForm> me = (JspView<ManageCommentsForm>) HttpView.currentView();
+    JspView<ManageCommentsForm> me = HttpView.currentView();
     ManageCommentsForm bean = me.getModelBean();
 
     Study study = StudyService.get().getStudy(getContainer());

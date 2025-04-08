@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
@@ -23,10 +22,12 @@
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -36,14 +37,13 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.JsonUtil" %>
-<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
+    JspView<MasterPatientIndexService> view = HttpView.currentView();
+    MasterPatientIndexService service = view.getModelBean();
     Collection<MasterPatientIndexService> services = MasterPatientIndexService.getProviders();
-    MasterPatientIndexService service = (MasterPatientIndexService) HttpView.currentView().getModelBean();
     MasterPatientIndexService.FolderSettings settings = service != null ? service.getFolderSettings(getContainer()) : new MasterPatientIndexService.FolderSettings();
     String docLink = new HelpTopic("empi").getHelpTopicHref();
 

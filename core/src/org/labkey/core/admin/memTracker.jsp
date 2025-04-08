@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil"%>
+<%@ page import="org.labkey.api.data.ContainerManager"%>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.MemTracker" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.Tuple3" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.MemBean" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.Tuple3" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
+    JspView<MemBean> me = HttpView.currentView();
     MemBean bean = me.getModelBean();
     boolean hasAdminPerm = getUser().hasRootAdminPermission();
 

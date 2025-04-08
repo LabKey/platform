@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
@@ -40,7 +41,8 @@
     }
 %>
 <%
-    NavigationModel model = (NavigationModel) HttpView.currentView().getModelBean();
+    JspView<NavigationModel> me = HttpView.currentView();
+    NavigationModel model = me.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
     List<NavTree> tabs = model.getTabs();

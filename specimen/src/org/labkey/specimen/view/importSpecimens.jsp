@@ -25,7 +25,7 @@
 <%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ImportSpecimensBean> me = (JspView<ImportSpecimensBean>) HttpView.currentView();
+    JspView<ImportSpecimensBean> me = HttpView.currentView();
     ImportSpecimensBean bean = me.getModelBean();
     boolean hasError = !bean.getErrors().isEmpty();
     int archiveCount = bean.getArchives().size();

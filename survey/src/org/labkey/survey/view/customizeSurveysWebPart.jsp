@@ -30,7 +30,7 @@
     }
 %>
 <%
-    HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
+    HttpView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
     ViewContext ctx = getViewContext();
     Map<String, String> props = part.getPropertyMap();
