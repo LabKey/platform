@@ -362,20 +362,22 @@ public class SimpleFilter implements Filter
             _fieldKeys = Arrays.asList(fieldKeys);
         }
 
+        /* NOTE: FilterClause allows you to override toSQLFragment(Map,SqlDialect) w/o toSQLFragment(String,Map,SqlDialect).
+         * Preserve that behavior by having this method call toSQLFragment(Map,SqlDialect).
+         */
         @Override
         public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            var ret = new SQLFragment(_fragment);
-            ret.setSqlUnsafe(StringUtils.replace(ret.getSQL(), STR_TABLE_ALIAS, tableAlias));
+            var ret = toSQLFragment(columnMap, dialect);
+            tableAlias = StringUtils.trimToEmpty(tableAlias);
+            ret.setSqlUnsafe(StringUtils.replace(ret.getRawSQL(), STR_TABLE_ALIAS+".", tableAlias+"."));
             return ret;
         }
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            var ret = new SQLFragment(_fragment);
-            ret.setSqlUnsafe(StringUtils.replace(ret.getSQL(), STR_TABLE_ALIAS + ".", ""));
-            return ret;
+            return _fragment;
         }
 
         @Override
