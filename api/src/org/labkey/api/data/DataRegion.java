@@ -1634,12 +1634,15 @@ public class DataRegion extends DisplayElement
                     continue;
 
                 ColumnInfo col = renderer.getColumnInfo();
-
                 final List<Aggregate.Result> result;
 
                 if (col != null)
                 {
-                    result = (List<Aggregate.Result>)renderer.getColumnInfo().getValue(aggregateResults);
+                    // Why is aggregateResults a map of FieldKey.toString()??
+                    var r = aggregateResults.get(col.getFieldKey().toString());
+                    if (r == null)
+                        r = aggregateResults.get(col.getAlias().getId());
+                    result = r;
                 }
                 else
                 {
