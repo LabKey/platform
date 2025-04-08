@@ -990,7 +990,7 @@ public class Table
 
         if (null != filter)
         {
-            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
+            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
             whereSQL.append(fragment);
             whereAND = " AND ";
         }
@@ -1143,7 +1143,7 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
-        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
+        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
 
         SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
 
@@ -1541,6 +1541,22 @@ public class Table
                     ret.put(column.getFieldKey(), column);
                 }
             }
+        }
+        return ret;
+    }
+
+    /**
+     *  Create a map that can be passed into Filter.getSQLFragment() that create a SQL fragment using getMetaDataName() instead of
+     * getAlias().
+     */
+    static private Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
+    {
+        Map<FieldKey, ColumnInfo> ret = new HashMap<>();
+        for (var column : table.getColumns())
+        {
+            var wrapped = WrappedColumnInfo.wrap(column);
+            wrapped.setAlias(column.getMetaDataName());
+            ret.put(column.getFieldKey(), wrapped);
         }
         return ret;
     }
