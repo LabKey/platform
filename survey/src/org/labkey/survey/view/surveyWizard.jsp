@@ -34,7 +34,7 @@
     }
 %>
 <%
-    JspView<SurveyForm> me = (JspView<SurveyForm>) HttpView.currentView();
+    JspView<SurveyForm> me = HttpView.currentView();
     SurveyForm bean = me.getModelBean();
 
     Integer rowId = 0;

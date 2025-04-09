@@ -36,7 +36,7 @@
     }
 %>
 <%
-    JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
+    JspView<AdminController.ManageFoldersForm> me = HttpView.currentView();
     AdminController.ManageFoldersForm form = me.getModelBean();
     boolean userHasEnableRestrictedModulesPermission = getContainer().hasEnableRestrictedModules(getUser());
     boolean isContainerRoot = getContainer().isRoot();

@@ -31,9 +31,9 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="org.labkey.issue.view.RelatedIssuesView" %>
@@ -46,7 +46,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
+    JspView<IssuePage> me = HttpView.currentView();
     ViewContext context = getViewContext();
     IssuePage bean = me.getModelBean();
 

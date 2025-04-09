@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
+    JspView<AssayRunUploadForm> me = HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
 %>
 <labkey:form layout="horizontal">

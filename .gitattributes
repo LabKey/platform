@@ -345,7 +345,6 @@ api/src/org/labkey/api/cache/Stats.java -text
 api/src/org/labkey/api/cache/Throttle.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
 api/src/org/labkey/api/cache/TrackingCache.java -text
-api/src/org/labkey/api/cache/TransactionCache.java -text
 api/src/org/labkey/api/cache/Wrapper.java -text
 api/src/org/labkey/api/cloud/CloudComputeService.java -text
 api/src/org/labkey/api/cloud/CloudUrls.java -text
@@ -1313,8 +1312,6 @@ api/src/org/labkey/api/study/reports/CrosstabReport.java -text
 api/src/org/labkey/api/study/reports/CrosstabReportDescriptor.java -text
 api/src/org/labkey/api/study/reports/CrosstabView.java -text
 api/src/org/labkey/api/study/SpecimenChangeListener.java -text
-api/src/org/labkey/api/study/SpecimenImportStrategy.java -text
-api/src/org/labkey/api/study/SpecimenImportStrategyFactory.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
 api/src/org/labkey/api/study/SpecimenTransform.java -text
 api/src/org/labkey/api/study/Study.java -text
@@ -1369,7 +1366,6 @@ api/src/org/labkey/api/util/ExpectedException.java -text
 api/src/org/labkey/api/util/FileNameUniquifier.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text
-api/src/org/labkey/api/util/Filter.java -text
 api/src/org/labkey/api/util/FolderDisplayMode.java -text
 api/src/org/labkey/api/util/Formats.java -text
 api/src/org/labkey/api/util/GUID.java -text
@@ -1453,7 +1449,6 @@ api/src/org/labkey/api/view/NavTrailConfig.java -text
 api/src/org/labkey/api/view/NavTreeManager.java -text
 api/src/org/labkey/api/view/Overview.java -text
 api/src/org/labkey/api/view/PopupAdminView.java -text
-api/src/org/labkey/api/view/PopupFolderNavView.java -text
 api/src/org/labkey/api/view/PopupHelpView.java -text
 api/src/org/labkey/api/view/PopupMenu.java -text
 api/src/org/labkey/api/view/PopupMenuView.java -text
@@ -1880,7 +1875,6 @@ core/src/org/labkey/core/notification/userNotifications.jsp -text
 core/src/org/labkey/core/portal/PortalJUnitTest.java -text
 core/src/org/labkey/core/project/folderNav.jsp -text
 core/src/org/labkey/core/project/FolderNavigationForm.java -text
-core/src/org/labkey/core/project/menuProjectNav.jsp -text
 core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
 core/src/org/labkey/core/query/ApiKeysTableInfo.java -text
@@ -2675,7 +2669,6 @@ study/src/org/labkey/study/importer/ParticipantGroupImporter.java -text
 study/src/org/labkey/study/importer/PipeDelimParser.java -text
 study/src/org/labkey/study/importer/ProtocolDocumentImporter.java -text
 study/src/org/labkey/study/importer/SchemaReader.java -text
-study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SpecimenRefreshPipelineJob.java -text
 study/src/org/labkey/study/importer/StudyImportContext.java -text
@@ -2819,7 +2812,6 @@ study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyUnionTableInfo.java -text
 study/src/org/labkey/study/view/assayProgressReport.jsp -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
-study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/bulkVisitDelete.jsp -text
 study/src/org/labkey/study/view/confirmDeleteLocation.jsp -text
 study/src/org/labkey/study/view/confirmDeleteVisit.jsp -text
@@ -2853,7 +2845,6 @@ study/src/org/labkey/study/view/manageStudy.jsp -text
 study/src/org/labkey/study/view/manageStudyPropertiesExt.jsp -text
 study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
-study/src/org/labkey/study/view/manageUndefinedTypes.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
 study/src/org/labkey/study/view/masterPatientProvider.jsp -text
 study/src/org/labkey/study/view/mergeParticipants.jsp -text

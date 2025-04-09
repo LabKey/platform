@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
+    JspView<RReport> me = HttpView.currentView();
     RReport bean = me.getModelBean();
     ViewContext context = getViewContext();
 

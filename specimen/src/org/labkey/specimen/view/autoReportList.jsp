@@ -41,7 +41,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ReportConfigurationBean> me = (JspView<ReportConfigurationBean>) HttpView.currentView();
+    JspView<ReportConfigurationBean> me = HttpView.currentView();
     ReportConfigurationBean bean = me.getModelBean();
     Container container = getContainer();
     User user = getUser();

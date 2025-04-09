@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -109,29 +110,37 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
-        RESERVED_NAMES.add("Created By");
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).toList());
+        RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(col -> ColumnInfo.labelFromName(col.name())).toList());
         RESERVED_NAMES.addAll(Arrays.stream(ExpMaterialTable.Column.values()).map(ExpMaterialTable.Column::name).toList());
+        RESERVED_NAMES.addAll(Arrays.stream(ExpMaterialTable.Column.values()).map(col -> ColumnInfo.labelFromName(col.name())).toList());
+        RESERVED_NAMES.add("Sample Type"); // Issue 52716
+        RESERVED_NAMES.add("SampleType"); // Issue 52716
         RESERVED_NAMES.add("Protocol"); // alias for "SourceProtocolApplication"
         RESERVED_NAMES.add("SampleTypeUnits"); // alias for MetricUnit
+        RESERVED_NAMES.add("Sample Type Units");
         RESERVED_NAMES.add("CpasType");
-        RESERVED_NAMES.add("Is Aliquot");
+        RESERVED_NAMES.add("Cpas Type");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
+        RESERVED_NAMES.add("Aliquoted From");
         RESERVED_NAMES.addAll(ALIQUOT_ROLLUP_FIELD_LABELS);
         RESERVED_NAMES.add("AliquotTotalVolume"); // Issue 52158: Sample Manager: data type reserved field name and label inconsistencies
+        RESERVED_NAMES.add("Aliquot Total Volume"); // Issue 52158: Sample Manager: data type reserved field name and label inconsistencies
         RESERVED_NAMES.add("Aliquoted From Parent");
         RESERVED_NAMES.add("Root Material");
         RESERVED_NAMES.add("RecomputeRollup");
+        RESERVED_NAMES.add("Recompute Rollup");
         RESERVED_NAMES.add("Aliquot Unit");
-        RESERVED_NAMES.add("ExpirationDate");
+        RESERVED_NAMES.add("ExpirationDate"); // alias for MaterialExpDate
         RESERVED_NAMES.add("Expiration Date");
         RESERVED_NAMES.add("Ancestors");
         RESERVED_NAMES.add("Container");
-        RESERVED_NAMES.add("SampleID");
+        RESERVED_NAMES.add("SampleID"); // alias for Name
         RESERVED_NAMES.add("Sample ID");
         RESERVED_NAMES.add("Status");
-        RESERVED_NAMES.add("Amount");
+        RESERVED_NAMES.add("Amount"); // alias for storedAmount
         RESERVED_NAMES.add("RunId"); // Issue 50461
+        RESERVED_NAMES.add("Run Id");
         RESERVED_NAMES.addAll(InventoryService.InventoryStatusColumn.namesAndLabels());
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(

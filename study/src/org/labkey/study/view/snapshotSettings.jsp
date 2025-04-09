@@ -25,7 +25,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<StudySnapshot> me = (JspView<StudySnapshot>) HttpView.currentView();
+    JspView<StudySnapshot> me = HttpView.currentView();
     StudySnapshot snapshot = me.getModelBean();
     Study study = StudyManager.getInstance().getStudy(getContainer());
     assert null != study;

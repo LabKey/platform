@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.specimen.SpecimenManager" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
+<%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -31,7 +31,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
-    BaseStudyController.StudyJspView<VisitImpl> me = (BaseStudyController.StudyJspView<VisitImpl>) HttpView.currentView();
+    StudyJspView<VisitImpl> me = HttpView.currentView();
     VisitImpl visit = me.getModelBean();
     StudyImpl study = getStudy();
 

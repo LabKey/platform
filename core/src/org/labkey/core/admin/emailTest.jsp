@@ -18,16 +18,14 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.core.admin.AdminController.EmailTestForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.EmailTestAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.EmailTestForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<EmailTestForm> me = (JspView<EmailTestForm>) HttpView.currentView();
+    JspView<EmailTestForm> me = HttpView.currentView();
     EmailTestForm form = me.getModelBean();
 %>
 

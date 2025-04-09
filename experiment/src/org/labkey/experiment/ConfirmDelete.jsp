@@ -32,7 +32,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ConfirmDeleteView.ConfirmDeleteBean> me = (JspView<ConfirmDeleteView.ConfirmDeleteBean>) HttpView.currentView();
+    JspView<ConfirmDeleteView.ConfirmDeleteBean> me = HttpView.currentView();
     ConfirmDeleteView.ConfirmDeleteBean bean = me.getModelBean();
     Container currentContainer = getContainer();
 

@@ -31,7 +31,7 @@
     }
 %>
 <%
-    JspView<SurveyController.SurveyDesignForm> me = (JspView<SurveyController.SurveyDesignForm>) HttpView.currentView();
+    JspView<SurveyController.SurveyDesignForm> me = HttpView.currentView();
     SurveyController.SurveyDesignForm form = me.getModelBean();
 
     String allSchemas = getActionURL().getParameter("allSchemas");

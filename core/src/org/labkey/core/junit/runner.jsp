@@ -31,7 +31,7 @@
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<JUnitViewBean> me = (JspView<JUnitViewBean>) HttpView.currentView();
+    JspView<JUnitViewBean> me = HttpView.currentView();
     JUnitViewBean bean = me.getModelBean();
     var testCases = bean.testCases;
     var showRunButtons = bean.showRunButtons;

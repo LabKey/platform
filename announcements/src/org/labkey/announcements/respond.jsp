@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -38,7 +37,7 @@
     }
 %>
 <%
-    HttpView<BaseInsertView.InsertBean> me = (HttpView<BaseInsertView.InsertBean>) HttpView.currentView();
+    HttpView<BaseInsertView.InsertBean> me = HttpView.currentView();
     BaseInsertView.InsertBean bean = me.getModelBean();
 
     DiscussionService.Settings settings = bean.settings;

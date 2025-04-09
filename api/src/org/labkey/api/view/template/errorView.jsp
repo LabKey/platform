@@ -1,9 +1,9 @@
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.ErrorView" %>
 <%@ page import="org.labkey.api.util.ErrorRenderer" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.util.ErrorView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -16,7 +16,7 @@
     }
 %>
 <%
-    ErrorView me = (ErrorView) HttpView.currentView();
+    ErrorView me = HttpView.currentView();
     ErrorRenderer model = me.getModelBean();
 
     String appId = "error-handler-app-" + UniqueID.getServerSessionScopedUID();

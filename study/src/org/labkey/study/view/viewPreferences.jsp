@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
-    JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
+    JspView<StudyController.ViewPrefsBean> me = HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
 
     ViewContext context = getViewContext();

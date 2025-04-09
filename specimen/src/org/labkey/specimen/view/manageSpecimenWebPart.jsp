@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.specimen.actions.SpecimenController.SpecimenWebPartForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.SpecimenWebPartForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -28,7 +28,7 @@
     }
 %>
 <%
-    JspView<SpecimenWebPartForm> me = (JspView<SpecimenWebPartForm>) HttpView.currentView();
+    JspView<SpecimenWebPartForm> me = HttpView.currentView();
     SpecimenWebPartForm bean = me.getModelBean();
     String[] grouping1 = bean.getGrouping1();
     String[] grouping2 = bean.getGrouping2();

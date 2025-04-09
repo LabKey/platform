@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,7 +38,7 @@
     }
 %>
 <%
-    HttpView<InsertBean> me = (HttpView<InsertBean>) HttpView.currentView();
+    HttpView<InsertBean> me = HttpView.currentView();
     InsertBean bean = me.getModelBean();
 
     Container c = getContainer();

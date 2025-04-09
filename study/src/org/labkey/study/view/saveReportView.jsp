@@ -25,12 +25,13 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="java.lang.Boolean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 
 <%
-    JspView<ReportsController.SaveReportViewForm> me = (JspView<ReportsController.SaveReportViewForm>) HttpView.currentView();
+    JspView<ReportsController.SaveReportViewForm> me = HttpView.currentView();
     ReportsController.SaveReportViewForm bean = me.getModelBean();
     ViewContext context = getViewContext();
 

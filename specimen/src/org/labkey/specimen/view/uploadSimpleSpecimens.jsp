@@ -26,7 +26,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = (JspView<ShowUploadSpecimensAction.UploadSpecimensForm>) HttpView.currentView();
+    JspView<ShowUploadSpecimensAction.UploadSpecimensForm> me = HttpView.currentView();
     ShowUploadSpecimensAction.UploadSpecimensForm bean = me.getModelBean();
     Container c = getContainer();
     Study study = StudyService.get().getStudy(c);

@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
-    JspView<IssuesController.RssBean> me = (JspView<IssuesController.RssBean>) HttpView.currentView();
+    JspView<IssuesController.RssBean> me = HttpView.currentView();
     IssuesController.RssBean bean = me.getModelBean();
     Container c = getContainer();
     User user = getUser();

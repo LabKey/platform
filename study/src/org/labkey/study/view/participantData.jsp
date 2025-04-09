@@ -37,7 +37,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     final ViewContext context = getViewContext();
-    JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
+    JspView<StudyManager.ParticipantViewConfig> me = HttpView.currentView();
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
 
     QueryForm form = new QueryForm();

@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
+    JspView<ExpRun> me = HttpView.currentView();
     ExpRun replacedRun = me.getModelBean();
     ExpRun replacedByRun = replacedRun.getReplacedByRun();
     ExpProtocol protocol = replacedRun.getProtocol();

@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
+    JspView<PageConfig> me = HttpView.currentView();
     PageConfig pageConfig = me.getModelBean();
 %>
 <div class="container">
