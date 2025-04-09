@@ -949,10 +949,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
         final boolean _includeTitleColumn;
+        final DataIteratorContext.LookupResolutionType _lookupResolutionType;
 
         final private RemapPostConvert _remapper;
 
-        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn)
+        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull DataIteratorContext.LookupResolutionType lookupResolutionType)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
             _convertCol = convertCol;
@@ -960,32 +961,64 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
             _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true);
+            _lookupResolutionType = lookupResolutionType;
         }
 
-        @Override
-        protected Object convert(Object o)
+        protected Object convertWithPrimaryColumn(Object o, int orderNum)
         {
-            try
+            if (_lookupResolutionType.getPrimaryResolutionOrder() >= orderNum)
             {
-                Object value =  _convertCol.convert(o);
-                ForeignKey fk = _toCol.getFk();
-                // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
+                try
                 {
-                    if (_remapper.getPkColumn().getJdbcType().isText())
+                    // _convertCol here will be the column for the primary key type (unless type inference has gone wrong?)
+                    Object value =  _convertCol.convert(o);
+                    ForeignKey fk = _toCol.getFk();
+                    // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
+                    if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
                     {
-                        Object remappedValue = _remapper.mappedValue(o);
-                        value = remappedValue != null ? remappedValue : value;
+                        if (_remapper.getPkColumn().getJdbcType().isText())
+                        {
+                            Object remappedValue = _remapper.mappedValue(o);
+                            value = remappedValue != null ? remappedValue : value;
+                        }
                     }
+                    return value;
                 }
-                return value;
+                catch (ConversionException ex)
+                {
+                    return null;
+                }
             }
-            catch (ConversionException ex)
+            return null;
+        }
+
+        protected Object convertWithRemapper(Object o, int orderNum)
+        {
+            if (_lookupResolutionType.getAlternateResolutionOrder() >= orderNum)
             {
                 // don't want to attempt to resolve by target table PK because we already know there is a type mismatch
                 _remapper.setIncludePkLookup(false);
                 return _remapper.mappedValue(o);
             }
+            return null;
+        }
+
+        @Override
+        protected Object convert(Object o)
+        {
+            if (o == null)
+                return null;
+
+            int convertNum = 1;
+            Object value = convertWithPrimaryColumn(o, convertNum);
+            if (value != null)
+                return value;
+            convertNum++;
+            value = convertWithRemapper(o, convertNum);
+            if (value != null)
+                return value;
+            convertNum++;
+            return convertWithPrimaryColumn(o, convertNum);
         }
     }
 
@@ -1334,7 +1367,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type);
 
         ForeignKey fk = col.getFk();
-        if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
+        DataIteratorContext.LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
+        if (fk != null && lookupResolutionType.usesAlternateKey() && fk.allowImportByAlternateKey())
         {
             // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
             boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
@@ -1342,7 +1376,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
                 missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
+            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
         boolean multiValue = fk instanceof MultiValuedForeignKey;
@@ -2204,7 +2238,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setAllowImportLookupByAlternateKey(true);
+                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue);

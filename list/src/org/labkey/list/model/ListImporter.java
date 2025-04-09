@@ -258,7 +258,7 @@ public class ListImporter
                             }
                         }
 
-                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, false, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
+                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, null, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
                     }
 
                     for (ValidationException v : batchErrors.getRowErrors())

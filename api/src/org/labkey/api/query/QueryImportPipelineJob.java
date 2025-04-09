@@ -60,6 +60,7 @@ public class QueryImportPipelineJob extends PipelineJob
         String _auditUserComment = null;
         boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
+        DataIteratorContext.LookupResolutionType _lookupResolutionType = null;
 
         String _jobDescription;
 
@@ -208,6 +209,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public DataIteratorContext.LookupResolutionType getLookupResolutionType()
+        {
+            return _lookupResolutionType;
+        }
+
+        public QueryImportAsyncContextBuilder setLookupResolutionType(DataIteratorContext.LookupResolutionType lookupResolutionType)
+        {
+            _lookupResolutionType = lookupResolutionType;
+            return this;
+        }
+
         public QueryImportAsyncContextBuilder setAllowLineageColumns(boolean allowLineageColumns)
         {
             _allowLineageColumns = allowLineageColumns;
@@ -345,7 +357,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private DataIteratorContext createDataIteratorContext(BatchValidationException errors, Container container)
     {
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container, this);
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getLookupResolutionType(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container, this);
     }
 
     @Override

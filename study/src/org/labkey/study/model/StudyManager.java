@@ -3443,14 +3443,14 @@ public class StudyManager
                                           @Nullable DataState defaultQCState,
                                           QueryUpdateService.InsertOption insertOption,
                                           Logger logger,
-                                          boolean importLookupByAlternateKey,
+                                          DataIteratorContext.LookupResolutionType lookupResolutionType,
                                           @Nullable AuditBehaviorType auditBehaviorType)
             throws IOException
     {
         DataIteratorContext context = new DataIteratorContext(errors);
 
         context.setInsertOption(insertOption);
-        context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        context.setLookupResolutionType(lookupResolutionType);
 
         Map<Enum, Object> options = new HashMap<>();
         options.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);

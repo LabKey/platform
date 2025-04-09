@@ -205,7 +205,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importLookupsByAlternateKey, InsertOption insertOption)
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, DataIteratorContext.LookupResolutionType lookupResolutionType)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -215,7 +215,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         context.setFailFast(false);
         context.setInsertOption(insertOption);    // this method is used by ListImporter and BackgroundListImporter
         context.setSupportAutoIncrementKey(supportAutoIncrementKey);
-        context.setAllowImportLookupByAlternateKey(importLookupsByAlternateKey);
+        context.setLookupResolutionType(lookupResolutionType);
         setAttachmentDirectory(attachmentDir);
         TableInfo ti = _list.getTable(updatedUser);
 

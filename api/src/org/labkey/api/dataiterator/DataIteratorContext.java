@@ -37,6 +37,39 @@ import static org.labkey.api.query.QueryUpdateService.InsertOption.INSERT;
  */
 public class DataIteratorContext
 {
+    public enum LookupResolutionType
+    {
+        primaryKey(1, -1), // known that the use will always supply the pk value
+        alternateKey(-1, 1), // known that the use will never supply the pk value
+        alternateThenPrimaryKey(2, 1), // If there is a situation where it's sometimes a primary and sometimes an alternate key, check for the alternate key first
+        // TODO do we need to support this? If not, we can change the properties here to just have a "supportsAlternateKey" since alternate will always be checked first.
+        primaryThenAlternateKey(1, 2); // this most closely matches previous behavior when allowImportLookupByAlternateKey was true (added for compatibility; prefer the other options)
+
+        final int _primaryResolutionOrder;
+        final int _alternateResolutionOrder;
+
+        LookupResolutionType(int primaryResolutionOrder, int alternateResolutionOrder)
+        {
+            _primaryResolutionOrder = primaryResolutionOrder;
+            _alternateResolutionOrder = alternateResolutionOrder;
+        }
+
+        public int getPrimaryResolutionOrder()
+        {
+            return _primaryResolutionOrder;
+        }
+
+        public int getAlternateResolutionOrder()
+        {
+            return _alternateResolutionOrder;
+        }
+
+        public boolean usesAlternateKey()
+        {
+            return _alternateResolutionOrder != -1;
+        }
+    }
+
     /*
       NOTE: DIC is not really meant to be a set up parameter block
       targetOption and selectIds should probably be moved out in a future
@@ -50,7 +83,7 @@ public class DataIteratorContext
     boolean _failFast = true;
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
-    boolean _allowImportLookupByAlternateKey = false;
+    LookupResolutionType _lookupResolutionType = LookupResolutionType.primaryKey;
     QueryImportPipelineJob _backgroundJob = null;
     boolean _crossTypeImport = false;
     boolean _crossFolderImport = false;
@@ -162,15 +195,26 @@ public class DataIteratorContext
         _supportAutoIncrementKey = supportAutoIncrementKey;
     }
 
+    @NotNull
+    public LookupResolutionType getLookupResolutionType()
+    {
+        return _lookupResolutionType == null ? LookupResolutionType.primaryKey : _lookupResolutionType;
+    }
+
+    public void setLookupResolutionType(LookupResolutionType lookupResolutionType)
+    {
+        _lookupResolutionType = lookupResolutionType;
+    }
+
     public boolean isAllowImportLookupByAlternateKey()
     {
-        return _allowImportLookupByAlternateKey;
+        return getLookupResolutionType() == LookupResolutionType.alternateThenPrimaryKey;
     }
 
     /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */
     public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
     {
-        _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
+        _lookupResolutionType = allowImportLookupByAlternateKey ? LookupResolutionType.alternateThenPrimaryKey : LookupResolutionType.primaryKey;
     }
 
     public boolean isCrossTypeImport()
