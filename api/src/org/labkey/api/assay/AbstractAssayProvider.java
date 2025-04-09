@@ -2146,9 +2146,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
 
+                    var realTable = assayResultTable.getRealTable();
+                    var realFileColumn = realTable.getColumn(fileField);
                     updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
                             .append(" SET ")
-                            .appendIdentifier(fileColumn.getSelectName())
+                            .appendIdentifier(realFileColumn.getSelectName())
                             .append(" = ").appendValue(updatedFile.getAbsolutePath())
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);

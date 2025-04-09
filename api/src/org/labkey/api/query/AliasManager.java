@@ -112,7 +112,6 @@ public class AliasManager
     }
 
     public static String legalNameFromName(String str, @Nullable SqlDialect dialect)
-
     {
         int i;
         char ch=0;
