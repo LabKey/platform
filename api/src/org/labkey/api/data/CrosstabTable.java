@@ -405,13 +405,13 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected String getMemberInstanceCountAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
+        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_INSTANCE_COUNT;
     }
 
     protected String getMemberSortPatternAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
+        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_SORT_PATTERN;
     }
 
