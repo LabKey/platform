@@ -476,6 +476,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         rows.add(CaseInsensitiveHashMap.of("SampleId", "sally"));
 
         DataIteratorContext context = new DataIteratorContext();
+        context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
         context.setAllowImportLookupByAlternateKey(true);
 
         errors = new BatchValidationException();
