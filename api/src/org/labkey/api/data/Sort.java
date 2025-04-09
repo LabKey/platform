@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
@@ -491,7 +492,12 @@ public class Sort
             ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo == null)
             {
-                var id = dialect.makeDatabaseIdentifier(fieldKey.getName());
+                // NOTE Sort.getSortText() passes in dialect==null
+                DatabaseIdentifier id;
+                if (null != dialect)
+                    id = dialect.makeDatabaseIdentifier(fieldKey.getName());
+                else
+                    id = SqlDialect.makeDatabaseIdentifier(fieldKey.getName(), new SQLFragment(LabKeySql.quoteIdentifier(fieldKey.getName())));
                 appendColumnToSort(sf, dialect, id, distinctKeys, sql);
             }
             else
