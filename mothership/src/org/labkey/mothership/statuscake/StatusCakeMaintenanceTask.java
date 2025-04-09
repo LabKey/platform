@@ -43,7 +43,6 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.api.query.QueryUpdateService.ConfigParameters.BulkLoad;
