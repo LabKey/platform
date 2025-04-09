@@ -242,7 +242,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (selectedVisits != null)
                     studyExportContext.setVisitIds(selectedVisits);
 
-                // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
                 if (!participantGroups.isEmpty())
                 {
                     studyExportContext.setParticipants(getGroupParticipants(_form, participantGroups, studyExportContext));
@@ -518,7 +517,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             List<Integer> participantGroupIds = new ArrayList<>();
             if (!participantGroups.isEmpty())
             {
-                // get the participant categories that were copied to the ancillary study
+                // get the participant categories that were copied to the published study
                 for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getDstContainer(), user))
                 {
                     for (ParticipantGroup group : category.getGroups())

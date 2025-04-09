@@ -7541,7 +7541,7 @@ public class StudyController extends BaseStudyController
 
             if (null == snapshot)
             {
-                errors.reject(null, "This is not a published or ancillary study");
+                errors.reject(null, "This is not a published study");
                 return new SimpleErrorView(errors);
             }
             else

@@ -4558,14 +4558,8 @@ public class StudyManager
         }
     }
 
-
     public List<StudyImpl> getPublishedStudies(Container sourceStudyContainer)
     {
-        // in the upgrade case there may not be any ancillary studies
-        TableInfo t = StudySchema.getInstance().getTableInfoStudy();
-        ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
-        if (null == ssci || ssci.isUnselectable())
-            return Collections.emptyList();
         return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
                 new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArrayList(StudyImpl.class));
     }
