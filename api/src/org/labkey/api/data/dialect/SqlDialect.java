@@ -894,6 +894,7 @@ public abstract class SqlDialect
         @Override
         public String toString()
         {
+            assert false : "[id=" + id + " sql=" + sql.getRawSQL() + "]";
             return "[id=" + id + " sql=" + sql.getRawSQL() + "]";
         }
     }

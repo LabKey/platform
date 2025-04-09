@@ -90,7 +90,7 @@ public class TempTableWriter
         //
         // create table
         //
-        StringBuilder sql = new StringBuilder();
+        SQLFragment sql = new SQLFragment();
         sql.append("CREATE TABLE ").append(tempTableName).append(" (");
         String comma = "";
 
@@ -115,11 +115,11 @@ public class TempTableWriter
                 if (length == -1)
                     length = 100;
 
-                sql.append(col.getSelectName()).append(" ").append(col.getSqlTypeName()).append("(").append(length).append(")");
+                sql.appendIdentifier(col.getSelectName()).append(" ").append(col.getSqlTypeName()).append("(").appendValue(length).append(")");
             }
             else
             {
-                sql.append(col.getSelectName()).append(" ").append(col.getSqlTypeName());
+                sql.appendIdentifier(col.getSelectName()).append(" ").append(col.getSqlTypeName());
             }
         }
 
@@ -135,15 +135,15 @@ public class TempTableWriter
         //
         // Populate
         //
-        StringBuilder sqlInsert = new StringBuilder();
-        StringBuilder sqlValues = new StringBuilder();
+        SQLFragment sqlInsert = new SQLFragment();
+        SQLFragment sqlValues = new SQLFragment();
         sqlInsert.append("INSERT INTO ").append(tempTableName).append(" (");
         sqlValues.append(" VALUES (");
         comma = "";
 
         for (ColumnInfo col : activeColumns)
         {
-            sqlInsert.append(comma).append(col.getSelectName());
+            sqlInsert.append(comma).appendIdentifier(col.getSelectName());
             sqlValues.append(comma).append("?");
             comma = ",";
         }
@@ -157,7 +157,8 @@ public class TempTableWriter
         for (Map<String, Object> m : maps)
             paramList.add(m.values());
 
-        Table.batchExecute(schema, sqlInsert.toString(), paramList);
+        assert sqlInsert.getParams().isEmpty();
+        Table.batchExecute(schema, sqlInsert.getSQL(), paramList);
 
         // Update statistics on the new table -- without this, query planner might pick a terrible plan
         schema.getSqlDialect().updateStatistics(tinfoTempTable);

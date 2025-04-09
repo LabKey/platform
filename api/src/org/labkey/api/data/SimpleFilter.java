@@ -345,6 +345,7 @@ public class SimpleFilter implements Filter
         private final SQLFragment _fragment;
         private final List<FieldKey> _fieldKeys;
 
+        @Deprecated //use SQLClause(SQLFragment)
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _needsTypeConversion = false;
@@ -1229,6 +1230,7 @@ public class SimpleFilter implements Filter
         return this;
     }
 
+    @Deprecated  //use addWhereClause(SQLFragment)
     public SimpleFilter addWhereClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
     {
         _clauses.add(new SQLClause(fragment, paramVals, fieldKeys));
