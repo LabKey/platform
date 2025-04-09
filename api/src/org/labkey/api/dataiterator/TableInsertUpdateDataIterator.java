@@ -374,7 +374,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
             ColumnInfo mvColumn = _table.getColumn(mvFieldKey);
             if (null != mvColumn)
-                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName().getId()));
+                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataIdentifier().getId()));
         }
         return mv;
     }
@@ -430,9 +430,9 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
             {
                 // Update the sequence for the serial column with the max+1 and handle empty tables
-                if (autoIncCol.getSelectName() != null)
+                if (autoIncCol.getSelectIdentifier() != null)
                 {
-                    var colSelectName = autoIncCol.getSelectName();
+                    var colSelectName = autoIncCol.getSelectIdentifier();
                     SQLFragment resetSeq = new SQLFragment();
                     resetSeq.append("SELECT setval(\n");
                     resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getId()).append("),\n");

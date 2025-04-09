@@ -634,9 +634,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 AliasedColumn to = new AliasedColumn(this, new FieldKey(null, name), from, true)
                 {
                     @Override
-                    public DatabaseIdentifier getSelectName()
+                    public DatabaseIdentifier getSelectIdentifier()
                     {
-                        return _column.getSelectName();
+                        return _column.getSelectIdentifier();
                     }
 
                     @Override
@@ -714,9 +714,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
 
         @Override
-        public @Nullable DatabaseIdentifier getMetaDataName()
+        public @Nullable DatabaseIdentifier getMetaDataIdentifier()
         {
-            return _inner.getMetaDataName();
+            return _inner.getMetaDataIdentifier();
         }
 
         @NotNull

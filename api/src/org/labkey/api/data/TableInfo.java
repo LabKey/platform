@@ -108,7 +108,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     }
 
     @Nullable
-    DatabaseIdentifier getMetaDataName();
+    DatabaseIdentifier getMetaDataIdentifier();
 
     /**
      * SQL representing this table, e.g.

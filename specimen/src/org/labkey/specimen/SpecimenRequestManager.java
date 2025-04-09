@@ -703,7 +703,7 @@ public class SpecimenRequestManager
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
                 if (null == column)
                     throw new IllegalStateException("Expected Specimen table column to exist.");
-                var colSelectName = column.getSelectName();
+                var colSelectName = column.getSelectIdentifier();
                 updateSql.append(",\n    ").appendIdentifier(colSelectName).append(" = VialCounts.").appendIdentifier(colSelectName);
             }
 
@@ -720,14 +720,14 @@ public class SpecimenRequestManager
             ColumnInfo vialColumn = tableInfoVial.getColumn(entry.getKey());
             if (null == vialColumn)
                 throw new IllegalStateException("Expected Vial table column to exist.");
-            var fromName = vialColumn.getSelectName();
+            var fromName = vialColumn.getSelectIdentifier();
             for (RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
                 VialSpecimenRollup rollup = rollupItem.second;
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
                 if (null == column)
                     throw new IllegalStateException("Expected Specimen table column to exist.");
-                var toName = column.getSelectName();
+                var toName = column.getSelectIdentifier();
 
                 // TODO convert to SQLFragment
                 updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName.getId(), toName.getId()));

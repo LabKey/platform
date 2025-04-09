@@ -115,11 +115,11 @@ public class TempTableWriter
                 if (length == -1)
                     length = 100;
 
-                sql.appendIdentifier(col.getSelectName()).append(" ").append(col.getSqlTypeName()).append("(").appendValue(length).append(")");
+                sql.appendIdentifier(col.getSelectIdentifier()).append(" ").append(col.getSqlTypeName()).append("(").appendValue(length).append(")");
             }
             else
             {
-                sql.appendIdentifier(col.getSelectName()).append(" ").append(col.getSqlTypeName());
+                sql.appendIdentifier(col.getSelectIdentifier()).append(" ").append(col.getSqlTypeName());
             }
         }
 
@@ -143,7 +143,7 @@ public class TempTableWriter
 
         for (ColumnInfo col : activeColumns)
         {
-            sqlInsert.append(comma).appendIdentifier(col.getSelectName());
+            sqlInsert.append(comma).appendIdentifier(col.getSelectIdentifier());
             sqlValues.append(comma).append("?");
             comma = ",";
         }

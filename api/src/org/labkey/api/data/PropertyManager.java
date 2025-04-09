@@ -597,7 +597,7 @@ public class PropertyManager
      */
     public static void deleteSetDirectly(User user, String objectId, String category, AbstractPropertyStore store)
     {
-        var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+        var setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
 
         SQLFragment deleteProps = new SQLFragment();
         deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());

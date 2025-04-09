@@ -1020,7 +1020,7 @@ public class Portal implements ModuleChangeListener
             String comma = "";
             for (String name : insertColumns)
             {
-                insertSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectName());
+                insertSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
                 comma = ",";
             }
             insertSQL.append(")\n")
@@ -1031,7 +1031,7 @@ public class Portal implements ModuleChangeListener
                     .append(portalTable)
                     .append(" WHERE Container = ? AND PageId = ?) AND\n")
                     .add(p.getContainer()).add(p.getPageId())
-                    .append(" ? NOT IN (SELECT ").appendIdentifier(columnIndex.getSelectName()).append(" FROM ")
+                    .append(" ? NOT IN (SELECT ").appendIdentifier(columnIndex.getSelectIdentifier()).append(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
                     .append(" WHERE Container = ?)")
@@ -1048,10 +1048,10 @@ public class Portal implements ModuleChangeListener
             updateSQL.append(portalTable);
 
             SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
-            indexSQL.appendIdentifier(columnIndex.getSelectName()).append(" FROM ")
+            indexSQL.appendIdentifier(columnIndex.getSelectIdentifier()).append(" FROM ")
                     .add(p.getIndex())
                     .append(portalTable)
-                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectName()).append(" END\n")
+                    .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectIdentifier()).append(" END\n")
                     .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
 
             if (portalTable.getSqlDialect().isPostgreSQL())
@@ -1070,7 +1070,7 @@ public class Portal implements ModuleChangeListener
                 String comma = "";
                 for (String name : updateColumns)
                 {
-                    updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectName());
+                    updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
                     comma = ",";
                 }
                 updateSQL.append(") =\n")
@@ -1081,7 +1081,7 @@ public class Portal implements ModuleChangeListener
             else
             {       // SQL Server
                 updateSQL.append("\nSET ")
-                        .appendIdentifier(columnIndex.getSelectName()).append(" = ").append(indexSQL).append(", ")
+                        .appendIdentifier(columnIndex.getSelectIdentifier()).append(" = ").append(indexSQL).append(", ")
                         .append("Caption").append(" = ?, ")
                         .append("Hidden").append(" = ?, ")
                         .append("Type").append(" = ?, ")

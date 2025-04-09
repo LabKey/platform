@@ -576,13 +576,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
-    public DatabaseIdentifier getMetaDataName()
+    public DatabaseIdentifier getMetaDataIdentifier()
     {
         return _metaDataName;
     }
 
     @Override
-    public DatabaseIdentifier getSelectName()
+    public DatabaseIdentifier getSelectIdentifier()
     {
         assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
         if (null == _selectName)
@@ -600,10 +600,10 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         if (null == _selectName)
         {
-            if (null == getMetaDataName())
+            if (null == getMetaDataIdentifier())
                 _selectName = getSqlDialect().makeDatabaseIdentifier(getName());
             else
-                _selectName = getMetaDataName();
+                _selectName = getMetaDataIdentifier();
         }
         return _selectName;
     }
@@ -906,7 +906,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
             TableInfo t = getParentTable();
-            String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataName()).getId() + "_ts";
+            String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataIdentifier()).getId() + "_ts";
             String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
             return new SQLFragment("nextval(" + sqlString + ")");
         }

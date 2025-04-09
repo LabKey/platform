@@ -298,7 +298,7 @@ public class LocationManager
             updateSQL
                 .append(locationTableInfo)
                 .append(" SET ")
-                .appendIdentifier(inUseColumn.getSelectName())
+                .appendIdentifier(inUseColumn.getSelectIdentifier())
                 .append(" = ")
                 .append(schema.getSqlDialect().wrapBooleanExpression(existsSQL));
 

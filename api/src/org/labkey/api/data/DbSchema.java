@@ -732,9 +732,9 @@ public class DbSchema
                     if (pkColumns.size() == 1)
                     {
                         ColumnInfo pkColumn = pkColumns.get(0);
-                        sbSql.appendValue(pkColumn.getSelectName().getId());
+                        sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
                         sbSql.append(" AS FirstPKColName, ");
-                        sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectName()).append(" AS VARCHAR(100)) AS FirstPKValue, ");
+                        sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).append(" AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -747,7 +747,7 @@ public class DbSchema
                         sbSql.append(" NULL AS FirstPKValue, ");
                     }
                     sbSql.appendValue(moduleName).append(" AS ModuleName, ");
-                    sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectName()).append(" AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).append(" AS VARCHAR(100)) AS OrphanedContainer ");
                     sbSql.append(" FROM ").appendIdentifier(t.getSelectName());
                     sbSql.append( " LEFT OUTER JOIN  core.Containers C ");
                     sbSql.append(" ON (").appendIdentifier(t.getSelectName()).append(".").append("Container = C.EntityId ) ");

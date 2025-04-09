@@ -418,8 +418,8 @@ public class SchemaColumnMetaData
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         if (!column.isAliasSet())
         {
-            if (null != column.getMetaDataName())
-                column.setAlias(column.getMetaDataName());
+            if (null != column.getMetaDataIdentifier())
+                column.setAlias(column.getMetaDataIdentifier());
             else
                 column.setAlias(column.getName());
             getAliasManager().ensureAlias(column);  // claim alias

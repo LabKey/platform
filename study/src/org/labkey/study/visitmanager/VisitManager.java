@@ -615,7 +615,7 @@ public abstract class VisitManager
             ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
             Container c = startDateDataset.getContainer();
             SQLFragment expr = new SQLFragment()
-                    .append("(SELECT MIN(").appendIdentifier(col.getSelectName()).append(")")
+                    .append("(SELECT MIN(").appendIdentifier(col.getSelectIdentifier()).append(")")
                     .append(" FROM ").append(tInfo)
                     .append(" WHERE ").append(tInfo).append(".ParticipantId = ").append(tableParticipant).append(".ParticipantId").append(" AND ").append(tableParticipant).append(".Container = ").appendValue(c).append(")");
             SQLFragment subSelect = schema.getSqlDialect().getDateTimeToDateCast(expr);

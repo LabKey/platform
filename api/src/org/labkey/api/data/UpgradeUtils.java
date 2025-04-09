@@ -144,14 +144,14 @@ public class UpgradeUtils
         String groupBy;
 
         if (caseSensitive)
-            groupBy = "t." + column.getSelectName();
+            groupBy = "t." + column.getSelectIdentifier();
         else
-            groupBy = "LOWER(t." + column.getSelectName() + ")";
+            groupBy = "LOWER(t." + column.getSelectIdentifier() + ")";
 
         if (null != additionalGroupingColumn)
         {
-            selectColumns = selectColumns + ", " + additionalGroupingColumn.getSelectName();
-            groupBy = groupBy + ", " + additionalGroupingColumn.getSelectName();
+            selectColumns = selectColumns + ", " + additionalGroupingColumn.getSelectIdentifier();
+            groupBy = groupBy + ", " + additionalGroupingColumn.getSelectIdentifier();
         }
 
         SQLFragment sql = new SQLFragment();
@@ -172,7 +172,7 @@ public class UpgradeUtils
         if (ignoreNulls)
         {
             sql.append(where);
-            sql.appendIdentifier(column.getSelectName());
+            sql.appendIdentifier(column.getSelectIdentifier());
             sql.append(" IS NOT NULL");
         }
 

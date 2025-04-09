@@ -127,13 +127,13 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             if (columnMap.containsKey("EnrollmentSiteId"))
             {
                 executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=" + site.getSelectName() + ".RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".EnrollmentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectName() + "\n" +
+                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".EnrollmentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
             if (columnMap.containsKey("CurrentSiteId"))
             {
                 executor.execute("UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=" + site.getSelectName() + ".RowId\n" +
-                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".CurrentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectName() + "\n" +
+                        "FROM " + tinfoTemp + " JOIN " + site.getSelectName() + " ON " + tinfoTemp.toString() + ".CurrentSiteId=" + site.getSelectName() + "." + siteLookup.getSelectIdentifier() + "\n" +
                         "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
             }
 

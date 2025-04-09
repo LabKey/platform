@@ -70,9 +70,9 @@ public class QueryDataset extends VirtualTable<UserSchema>
     }
 
     @Override
-    public @Nullable DatabaseIdentifier getMetaDataName()
+    public @Nullable DatabaseIdentifier getMetaDataIdentifier()
     {
-        return _inner.getMetaDataName();
+        return _inner.getMetaDataIdentifier();
     }
 
     @NotNull

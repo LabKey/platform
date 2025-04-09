@@ -11878,7 +11878,7 @@ public class AdminController extends SpringActionController
                     if (sql.isEmpty())
                         sql.append("UPDATE ").append(tInfo, "").append(" SET ");
                     sql.append(comma)
-                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
+                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectIdentifier(), delta, col.getSelectIdentifier()));
                     comma = ", ";
                 }
             }

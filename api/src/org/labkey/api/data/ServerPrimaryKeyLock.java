@@ -53,7 +53,7 @@ public class ServerPrimaryKeyLock implements DbScope.ServerLock
         for (ColumnInfo pkColumn : pkColumns)
         {
             forUpdate.append(and);
-            forUpdate.appendIdentifier(pkColumn.getSelectName()).append("=?").add(pkValues[forUpdate.getParamsArray().length]);
+            forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).append("=?").add(pkValues[forUpdate.getParamsArray().length]);
         }
         if (scope.getSqlDialect().isPostgreSQL())
             forUpdate.append("\nFOR UPDATE");

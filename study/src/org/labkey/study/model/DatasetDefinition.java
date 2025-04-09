@@ -1863,7 +1863,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             result.setPropertyURI(propertyURI);
         // Hidden doesn't get copied with the default set of properties
         result.setHidden(from.isHidden());
-        result.setMetaDataName(from.getMetaDataName());
+        result.setMetaDataName(from.getMetaDataIdentifier());
         return result;
     }
 

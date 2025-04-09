@@ -119,7 +119,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     // Delete properties associated with this store
     void deleteProperties(Container c)
     {
-        var setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+        var setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
         SQLFragment deleteProps = new SQLFragment("DELETE FROM ").append(_prop.getTableInfoProperties().getSQLName())
                 .append(" WHERE ").appendIdentifier(setSelectName).append(" IN ")
                 .append("(SELECT ").appendIdentifier(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).append(" WHERE ObjectId = ? AND ").add(c);
@@ -217,7 +217,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
     {
         ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
-        var setSelectName = setColumn.getSelectName();   // Keyword in some dialects
+        var setSelectName = setColumn.getSelectIdentifier();   // Keyword in some dialects
 
         SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(setSelectName).append(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
                 .append(" WHERE UserId = ? AND ObjectId = ? AND Category = ?").addAll(user, container, category);

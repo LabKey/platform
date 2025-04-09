@@ -146,8 +146,10 @@ public interface ColumnInfo extends ColumnRenderProperties
      * This is the name you would find in the ResultSet using "SELECT * FROM " + ti.getSelectName()"
      * with a SchemaTableInfo.
      * This may a different result than what you get using TableSelector
+     *
+     * TODO I'm pretty sure we can make do with only getMetaDataIdentifer() OR getSelectIdentifier()
      */
-    DatabaseIdentifier getMetaDataName();
+    DatabaseIdentifier getMetaDataIdentifier();
 
     /**
      * If this column represents a column in the database (see getMetaDataName()),
@@ -155,8 +157,10 @@ public interface ColumnInfo extends ColumnRenderProperties
      * <p>
      * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
      * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
+     *
+     * TODO I'm pretty sure we can make do with only getMetaDataIdentifer() OR getSelectIdentifier()
      */
-    DatabaseIdentifier getSelectName();
+    DatabaseIdentifier getSelectIdentifier();
 
     /**
      * Use this method to generate database SQL for selecting data from this column.

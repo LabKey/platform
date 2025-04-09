@@ -74,15 +74,15 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public DatabaseIdentifier getMetaDataName()
+    public DatabaseIdentifier getMetaDataIdentifier()
     {
-        return delegate.getMetaDataName();
+        return delegate.getMetaDataIdentifier();
     }
 
     @Override
-    public DatabaseIdentifier getSelectName()
+    public DatabaseIdentifier getSelectIdentifier()
     {
-        return delegate.getSelectName();
+        return delegate.getSelectIdentifier();
     }
 
     @Override

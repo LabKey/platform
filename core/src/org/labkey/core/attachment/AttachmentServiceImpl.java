@@ -894,11 +894,11 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (StringUtils.containsIgnoreCase(column.getName(), "EntityId"))
         {
             // TODO convert all this to use SQLFragment
-            expression = column.getSelectName().getSql().getRawSQL();
+            expression = column.getSelectIdentifier().getSql().getRawSQL();
         }
         else if (StringUtils.endsWithIgnoreCase(column.getName(), "LSID"))
         {
-            Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectName().getSql().getRawSQL(), column.getSqlDialect());
+            Pair<String, String> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql().getRawSQL(), column.getSqlDialect());
             expression = pair.first;
             where = pair.second;
         }

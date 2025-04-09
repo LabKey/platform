@@ -221,7 +221,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public @NotNull DatabaseIdentifier getMetaDataName()
+    public @NotNull DatabaseIdentifier getMetaDataIdentifier()
     {
         return _metaDataName;
     }

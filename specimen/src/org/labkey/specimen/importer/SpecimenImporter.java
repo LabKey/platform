@@ -827,7 +827,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 ColumnInfo column = vialTable.getColumn(colName);
                 if (null == column)
                     throw new IllegalStateException("Expected Vial table column to exist.");
-                vialPropertiesSql.append(", ").appendIdentifier(column.getSelectName()).append(" = ")
+                vialPropertiesSql.append(", ").appendIdentifier(column.getSelectIdentifier()).append(" = ")
                     .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().getSqlCastTypeName(column.getJdbcType()) + ")");
             }
         }
@@ -965,7 +965,7 @@ public class SpecimenImporter extends SpecimenTableManager
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
                             if (null == column)
                                 throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                            var eventColSelectName = column.getSelectName();
+                            var eventColSelectName = column.getSelectIdentifier();
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
                                 String vialColName = rollupItem.first;

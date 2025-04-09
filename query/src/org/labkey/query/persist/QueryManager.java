@@ -1055,7 +1055,7 @@ public class QueryManager
     {
         DbSchema dbSchema = DbSchema.get("query");
         TableInfo customView = dbSchema.getTable("customview");
-        var schemaField = customView.getColumn("schema").getSelectName();
+        var schemaField = customView.getColumn("schema").getSelectIdentifier();
         SQLFragment schemaClause;
         if (schema.equalsIgnoreCase("assay"))
             schemaClause = new SQLFragment("C.").appendIdentifier(schemaField).append(" LIKE 'assay.%'");

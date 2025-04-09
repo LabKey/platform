@@ -31,7 +31,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
@@ -233,7 +232,7 @@ public class TableUpdaterFileListener implements FileListener
             sharedSQL.append("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
-        sharedSQL.appendIdentifier(_pathColumn.getSelectName());
+        sharedSQL.appendIdentifier(_pathColumn.getSelectIdentifier());
         sharedSQL.append(" = ");
 
         String srcPath = getSourcePath(src, container);
@@ -251,14 +250,14 @@ public class TableUpdaterFileListener implements FileListener
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
         singleEntrySQL.append("? WHERE (");
-        singleEntrySQL.appendIdentifier(_pathColumn.getSelectName());
+        singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
         singleEntrySQL.append(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
         if (null != srcPathWithout)
         {
             singleEntrySQL.append(" OR ");
-            singleEntrySQL.append(_pathColumn.getSelectName());
+            singleEntrySQL.append(_pathColumn.getSelectIdentifier());
             singleEntrySQL.append(" = ?");
             singleEntrySQL.add(srcPathWithout);
         }
@@ -289,11 +288,11 @@ public class TableUpdaterFileListener implements FileListener
                 srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
             SQLFragment whereClause = new SQLFragment(" WHERE ");
-            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectName().getSql())).append(" = 1");
+            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).append(" = 1");
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectName().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
@@ -386,10 +385,10 @@ public class TableUpdaterFileListener implements FileListener
                 selectFrag.append("  NULL AS ModifiedBy,\n");
         }
 
-        selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectName()).append(" AS FilePath,\n");
+        selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" AS FilePath,\n");
 
         if (_keyColumn != null)
-            selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectName()).append(" AS SourceKey,\n");
+            selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).append(" AS SourceKey,\n");
         else
             selectFrag.append("  NULL AS SourceKey,\n");
 
@@ -397,7 +396,7 @@ public class TableUpdaterFileListener implements FileListener
         selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
-        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectName()).append(" IS NOT NULL\n");
+        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" IS NOT NULL\n");
 
         return selectFrag;
     }
