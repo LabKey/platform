@@ -21,13 +21,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.study.StudySchema;
 
-/**
- * User: brittp
- * Date: Jan 26, 2007
- * Time: 9:49:46 AM
- */
 public class SpecimenEventTable extends BaseStudyTable
 {
     public SpecimenEventTable(StudyQuerySchema schema, ContainerFilter cf)
@@ -92,11 +86,4 @@ public class SpecimenEventTable extends BaseStudyTable
 
         addOptionalColumns(specimenEventDomain.getNonBaseProperties(), false, null);
     }
-
-    @Override
-    protected String getParticipantColumnName()
-    {
-        return "PTID";
-    }
-
 }

@@ -31,8 +31,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -1030,19 +1028,6 @@ public abstract class ContainerFilter
                 result.add(currentContainer.getEntityId());
             }
 
-            Study study = null;
-            StudyService svc = StudyService.get();
-            if (svc != null)
-                study = svc.getStudy(currentContainer);
-
-            if (study != null && study.isAncillaryStudy())
-            {
-                Study sourceStudy = study.getSourceStudy();
-                if (sourceStudy != null && (_skipPermissionChecks || sourceStudy.getContainer().hasPermission(_user, perm, roles)))
-                {
-                    result.add(sourceStudy.getContainer().getEntityId());
-                }
-            }
             return result;
         }
 

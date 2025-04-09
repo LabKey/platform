@@ -34,10 +34,10 @@
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.study.StudyUtils" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -67,8 +67,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.StudyUtils" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -129,8 +127,7 @@
 
     if (study.hasSourceStudy() || study.isSnapshotStudy())
     {
-        String snapshotTitle = study.getStudySnapshotType().getTitle().toLowerCase();
-        snapshotTitle = ("ancillary".equals(snapshotTitle) ? "an " : "a ") + snapshotTitle;
+        String snapshotTitle = "a " + study.getStudySnapshotType().getTitle().toLowerCase();
 %>
         <p>This is <%=h(snapshotTitle)%> study.</p>
 <%
@@ -344,7 +341,6 @@
     if (study.allowExport(getUser()))
     {
 %>
-        <%= OptionalFeatureService.get().isFeatureEnabled(StudyManager.ENABLE_ANCILLARY_STUDIES) ? button("Create Ancillary Study").onClick("showCreateStudyWizard('ancillary'); return false;") : HtmlString.EMPTY_STRING%>
         <%= button("Publish Study").onClick("showCreateStudyWizard('publish'); return false;") %>
 <%
     }
