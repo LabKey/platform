@@ -202,8 +202,6 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     String getPropertyName();
 
-    String getJdbcRsName();
-
     /**
      * Version column can be used for optimistic concurrency.
      * for now we assume that this column is never updated

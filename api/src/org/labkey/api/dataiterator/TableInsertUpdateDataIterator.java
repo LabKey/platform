@@ -374,7 +374,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             // Iterator makes SQL stmt from table, but munges names (see Parameter), so we need to match that to find them.
             ColumnInfo mvColumn = _table.getColumn(mvFieldKey);
             if (null != mvColumn)
-                mv = stmt.getParameter(BaseColumnInfo.jdbcRsNameFromName(mvColumn.getMetaDataName()));
+                mv = stmt.getParameter(mvColumn.getMetaDataName());
         }
         return mv;
     }

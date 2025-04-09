@@ -226,12 +226,6 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getJdbcRsName()
-    {
-        return delegate.getJdbcRsName();
-    }
-
-    @Override
     public boolean isVersionColumn()
     {
         return delegate.isVersionColumn();

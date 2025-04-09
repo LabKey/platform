@@ -854,12 +854,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _propertyName;
     }
 
-    /**
-     * See {@link #jdbcRsNameFromName(String) }
-     *
-     */
-    @Override
-    public String getJdbcRsName() { return jdbcRsNameFromName(getName()); }
 
     /**
      * Version column can be used for optimistic concurrency.
@@ -1393,6 +1387,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return buf.toString();
     }
 
+
     public static String propNameFromName(String name)
     {
         if (name == null)
@@ -1404,23 +1399,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return Introspector.decapitalize(legalNameFromName(name));
     }
 
-    /**
-     *  The jdbc resultset metadata replaces special characters in source column names.
-     *  This is a problem when matching source and target columns, as we have the jdbc name for the source.
-     *  I haven't found an exhaustive list of the characters and their replacements, but spaces, hyphens, parens,
-     *  and forward slashes have been seen in a client db schema and have an issue.
-     */
-    public static String jdbcRsNameFromName(String name)
-    {
-        if (StringUtils.isBlank(name))
-            return null;
-
-        return name.replaceAll("\\s", "_")
-                .replace("-", "_minus_")
-                .replace("/", "_fs_")
-                .replace("(", "_lp_")
-                .replace(")", "_rp_");
-    }
 
     // TODO why is there here? and not something like RequestHelper or PageFlowUtil
     public static boolean booleanFromString(String str)
