@@ -22,9 +22,6 @@ import org.labkey.api.util.DateUtil;
 
 import java.util.Map;
 
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraTimeParsingPattern;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 
 /**
@@ -181,66 +178,6 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     public String getDefaultNumberFormatStored()
     {
         return getStoredValue(_c, defaultNumberFormatString);
-    }
-
-    // Returns inherited value from the cache
-    public String getExtraDateParsingPattern()
-    {
-        return FolderSettingsCache.getExtraDateParsingPattern(_c);
-    }
-
-    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateParsingPattern() instead.
-    public String calculateExtraDateParsingPattern()
-    {
-        // Look up this value starting from the current container
-        return lookupStringValue(_c, extraDateParsingPattern, null);
-    }
-
-    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
-    // This is useful for export and showing inheritance status in the UI.
-    public String getExtraDateParsingPatternStored()
-    {
-        return getStoredValue(_c, extraDateParsingPattern);
-    }
-
-    // Returns inherited value from the cache
-    public String getExtraDateTimeParsingPattern()
-    {
-        return FolderSettingsCache.getExtraDateTimeParsingPattern(_c);
-    }
-
-    // Note: Should be called only by FolderSettingsCache; other callers use getExtraDateTimeParsingPattern() instead.
-    public String calculateExtraDateTimeParsingPattern()
-    {
-        // Look up this value starting from the current container
-        return lookupStringValue(_c, extraDateTimeParsingPattern, null);
-    }
-
-    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
-    // This is useful for export and showing inheritance status in the UI.
-    public String getExtraDateTimeParsingPatternStored()
-    {
-        return getStoredValue(_c, extraDateTimeParsingPattern);
-    }
-
-    // Returns inherited value from the cache
-    public String getExtraTimeParsingPattern()
-    {
-        return FolderSettingsCache.getExtraTimeParsingPattern(_c);
-    }
-
-    // Note: Should be called only by FolderSettingsCache; other callers use getExtraTimeParsingPattern() instead.
-    public String calculateExtraTimeParsingPattern()
-    {
-        // Look up this value starting from the current container
-        return lookupStringValue(_c, extraTimeParsingPattern, null);
-    }
-
-    // Get the value that's actually stored in this container or null if inherited; don't look up the hierarchy.
-    // This is useful for export and showing inheritance status in the UI.
-    public String getExtraTimeParsingPatternStored()
-    {
-        return getStoredValue(_c, extraTimeParsingPattern);
     }
 
     // Returns inherited value from the cache

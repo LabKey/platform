@@ -131,18 +131,6 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (null != defaultNumberFormat)
             folderXml.setDefaultNumberFormat(defaultNumberFormat);
 
-        String extraDateParsingPattern = props.getExtraDateParsingPatternStored();
-        if (null != extraDateParsingPattern)
-            folderXml.setExtraDateParsingPattern(extraDateParsingPattern);
-
-        String extraDateTimeParsingPattern = props.getExtraDateTimeParsingPatternStored();
-        if (null != extraDateTimeParsingPattern)
-            folderXml.setExtraDateTimeParsingPattern(extraDateTimeParsingPattern);
-
-        String extraTimeParsingPattern = props.getExtraTimeParsingPatternStored();
-        if (null != extraTimeParsingPattern)
-            folderXml.setExtraTimeParsingPattern(extraTimeParsingPattern);
-
         Boolean areRestricted = props.areRestrictedColumnsEnabledStored();
         if (null != areRestricted)
             folderXml.setRestrictedColumnsEnabled(areRestricted);
