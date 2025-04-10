@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.util.element.TextArea.TextAreaBuilder"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
+<%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ImportDatasetSchemaAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ImportDatasetSchemaForm" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
@@ -36,23 +37,33 @@ For more information about the schema definition format, see <%=helpLink("Datase
 </p>
 <table>
     <tr>
-        <th align="left" colspan="3"><span class="labkey-error">*Required</span></th>
+        <th align="left" colspan="3"><span class="labkey-error">* Both fields are required</span></th>
     </tr>
 </table>
 
 <labkey:form action="<%=urlFor(ImportDatasetSchemaAction.class)%>" method="POST" enctype="multipart/form-data">
     <table>
         <tr>
-            <td class=labkey-form-label>Dataset manifest XML<span class="labkey-error">*</span></td>
+            <td>
+                <%=new TextAreaBuilder().name("manifest").label("Dataset manifest XML *")
+                    .required(true)
+                    .formGroup(true)
+                    .value(bean.getManifest())
+                    .columns(160)
+                    .rows(20)
+                %>
+            </td>
         </tr>
         <tr>
-            <td><textarea name="manifest" rows=20 cols=160><%=h(bean.getManifest())%></textarea></td>
-        </tr>
-        <tr>
-            <td class=labkey-form-label>Dataset metadata XML<span class="labkey-error">*</span></td>
-        </tr>
-        <tr>
-            <td><textarea name="metadata" rows=20 cols=160><%=h(bean.getMetadata())%></textarea></td>
+            <td>
+                <%=new TextAreaBuilder().name("metadata").label("Dataset metadata XML *")
+                    .required(true)
+                    .formGroup(true)
+                    .value(bean.getMetadata())
+                    .columns(160)
+                    .rows(20)
+                %>
+            </td>
         </tr>
         <tr>
             <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ManageTypesAction.class, getContainer()) %></td>
