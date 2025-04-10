@@ -139,11 +139,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
@@ -861,31 +859,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void bootstrap()
     {
         // Create the initial groups
-        GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
-        Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
-        Role adminRole = RoleManager.getRole(SiteAdminRole.class);
 
-        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole, adminRole);
+        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole);
         Container rootContainer = ContainerManager.getRoot();
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
 
         // Users & guests can read from /home
-        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole);
         home.setFolderType(collaborationType, null);
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null, null).setFolderType(collaborationType, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null).setFolderType(collaborationType, null);
 
         try
         {

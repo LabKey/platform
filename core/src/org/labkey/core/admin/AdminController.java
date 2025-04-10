@@ -6653,9 +6653,6 @@ public class AdminController extends SpringActionController
                     SecurityPolicy policy = getContainer().getPolicy();
                     Set<String> assignmentSet = new HashSet<>();
 
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());
-
                     for (RoleAssignment assignment : policy.getAssignments())
                     {
                         Group g = SecurityManager.getGroup(assignment.getUserId());

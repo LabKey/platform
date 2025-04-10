@@ -188,13 +188,13 @@ public class IssueListDef extends Entity
                     }
                     catch (BatchValidationException | ExperimentException e)
                     {
-                        throw new UnexpectedException(e);
+                        throw UnexpectedException.wrap(e);
                     }
                 }
                 Container container = ContainerManager.getForId(def.getContainerId());
 
-                // issue 29493 : set the default assigned-to group to site administrators
-                IssueManager.saveAssignedToGroup(container, def.getName(), SecurityManager.getGroup(Group.groupAdministrators));
+                // Issue 29493: set the default assigned-to group to site users
+                IssueManager.saveAssignedToGroup(container, def.getName(), SecurityManager.getGroup(Group.groupUsers));
 
                 IssueListDefCache.uncache(container);
                 transaction.commit();

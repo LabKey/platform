@@ -64,10 +64,10 @@ import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.EntropyPasswordValidator;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.RequiresNoPermission;
@@ -75,6 +75,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
@@ -84,6 +85,7 @@ import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -1873,7 +1875,9 @@ public class LoginController extends SpringActionController
                     // If successful, add audit event, make site admin, set some properties based on email domain, and commit
                     if (success)
                     {
-                        SecurityManager.addMember(SecurityManager.getGroup(Group.groupAdministrators), newUserBean.getUser());
+                        MutableSecurityPolicy policy = new MutableSecurityPolicy(ContainerManager.getRoot());
+                        policy.addRoleAssignment(_user, SiteAdminRole.class);
+                        SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
 
                         if (!LookAndFeelProperties.getInstance(ContainerManager.getRoot()).hasSystemEmailAddress())
                         {
@@ -1899,13 +1903,17 @@ public class LoginController extends SpringActionController
                     }
                 }
             }
+            catch (InvalidEmailException e)
+            {
+                errors.rejectValue("email", ERROR_MSG, "'" + StringUtils.trimToEmpty(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
+            }
             catch (UserManagementException e)
             {
                 errors.reject(ERROR_MSG, "Unable to create user '" + e.getEmail() + "': " + e.getMessage());
             }
-            catch (InvalidEmailException e)
+            catch (Exception e)
             {
-                errors.rejectValue("email", ERROR_MSG, "'" + StringUtils.trimToEmpty(form.getEmail()) + "' is not a valid email address. Please enter an email address in this form: user@domain.tld");
+                errors.reject(ERROR_MSG, "Unable to create user: " + e.getMessage());
             }
 
             return success;

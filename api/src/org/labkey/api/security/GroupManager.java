@@ -397,7 +397,6 @@ public class GroupManager
 
             _groupA = SecurityManager.createGroup(_project, "a", TestContext.get().getUser());
             _groupB = SecurityManager.createGroup(_project, "b", TestContext.get().getUser());
-            _devGroup = SecurityManager.getGroup(Group.groupDevelopers);
 
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();

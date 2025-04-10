@@ -692,12 +692,6 @@ public class SecurityController extends SpringActionController
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
 
-        // Warn if Site Admin group isn't assigned SiteAdminRole or Developer group isn't assigned PlatformDeveloperRole
-        if (group.isAdministrators())
-            verifySystemGroupIsAssignedRole(group, RoleManager.getRole(SiteAdminRole.class), errors);
-        else if (group.isDevelopers())
-            verifySystemGroupIsAssignedRole(group, RoleManager.getRole(PlatformDeveloperRole.class), errors);
-
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
