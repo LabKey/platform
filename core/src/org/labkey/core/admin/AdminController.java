@@ -10466,7 +10466,11 @@ public class AdminController extends SpringActionController
                 form.getUsername()
             );
 
-            return success(Map.of("errorCode", errorCode, "loggedToMothership", errorCode != null));
+            Map<String, Object> results = new HashMap<>();
+            results.put("errorCode", errorCode);
+            results.put("loggedToMothership", errorCode != null);
+
+            return success(results);
         }
     }
 
