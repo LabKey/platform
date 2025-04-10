@@ -28,7 +28,7 @@
     }
 %>
 <%
-    JspView<TimelineSettings> me = (JspView<TimelineSettings>) HttpView.currentView();
+    JspView<TimelineSettings> me = HttpView.currentView();
     TimelineSettings bean = me.getModelBean();
 %>
 <div class="ms-form" style="border:1px solid black;width:100%;height:<%=bean.getPixelHeight()%>px" id="<%=h(bean.getDivId())%>"></div>

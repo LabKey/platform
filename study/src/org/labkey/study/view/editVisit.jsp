@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.study.Params"%>
 <%@ page import="org.labkey.api.study.TimepointType"%>
 <%@ page import="org.labkey.api.study.Visit"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ConfirmDeleteVisitAction" %>
@@ -34,11 +35,10 @@
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<VisitSummaryBean> me = (JspView<VisitSummaryBean>) HttpView.currentView();
+    JspView<VisitSummaryBean> me = HttpView.currentView();
     VisitSummaryBean visitBean = me.getModelBean();
     VisitImpl visit = visitBean.getVisit();
 

@@ -92,7 +92,7 @@
     ViewContext context = getViewContext();
     StudyQuerySchema querySchema = (StudyQuerySchema) QueryService.get().getUserSchema(getUser(), getContainer(), "study");
     DbSchema dbSchema = querySchema.getDbSchema();
-    JspView<StudyManager.ParticipantViewConfig> me = (JspView<StudyManager.ParticipantViewConfig>) HttpView.currentView();
+    JspView<StudyManager.ParticipantViewConfig> me = HttpView.currentView();
     final StudyManager.ParticipantViewConfig bean = me.getModelBean();
     Map<String, String> aliasMap = bean.getAliases();
 

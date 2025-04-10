@@ -28,7 +28,7 @@
     }
 %>
 <%
-    JspView<ManageLocationTypesForm> me = (JspView<ManageLocationTypesForm>) HttpView.currentView();
+    JspView<ManageLocationTypesForm> me = HttpView.currentView();
     ManageLocationTypesForm bean = me.getModelBean();
 %>
 <div style="max-width: 1000px">

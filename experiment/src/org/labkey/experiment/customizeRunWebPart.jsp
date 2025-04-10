@@ -23,7 +23,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ExperimentRunWebPartFactory.Bean> me = (JspView<ExperimentRunWebPartFactory.Bean>) HttpView.currentView();
+    JspView<ExperimentRunWebPartFactory.Bean> me = HttpView.currentView();
     ExperimentRunWebPartFactory.Bean bean = me.getModelBean();
 %>
 <labkey:form method="POST">

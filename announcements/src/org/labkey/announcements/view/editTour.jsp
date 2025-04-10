@@ -33,7 +33,7 @@
     }
 %>
 <%
-    JspView<TourModel> me = (JspView<TourModel>) HttpView.currentView();
+    JspView<TourModel> me = HttpView.currentView();
     TourModel model = me.getModelBean();
 %>
 

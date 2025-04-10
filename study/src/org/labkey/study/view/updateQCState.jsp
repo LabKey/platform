@@ -19,13 +19,10 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.qc.DataState" %>
 <%@ page import="org.labkey.api.qc.QCStateManager" %>
-<%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
-<%@ page import="org.labkey.study.controllers.StudyController.DatasetAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateQCStateAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.UpdateQCStateForm" %>
 <%@ page import="java.util.List" %>
@@ -40,7 +37,7 @@
     }
 %>
 <%
-    JspView<UpdateQCStateForm> me = (JspView<UpdateQCStateForm>) HttpView.currentView();
+    JspView<UpdateQCStateForm> me = HttpView.currentView();
     UpdateQCStateForm bean = me.getModelBean();
     Container container = getContainer();
     List<DataState> states = QCStateManager.getInstance().getStates(container);

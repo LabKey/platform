@@ -22,7 +22,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<CopyBean> me = (JspView<CopyBean>) HttpView.currentView();
+    JspView<CopyBean> me = HttpView.currentView();
     CopyBean bean = me.getModelBean();
 %>
 <labkey:form name="copy" action="<%=urlFor(CopyWikiAction.class)%>" method="POST">

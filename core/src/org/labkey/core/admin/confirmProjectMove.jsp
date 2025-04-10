@@ -25,7 +25,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
+    JspView<ManageFoldersForm> view = HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
     Container c = getContainer();
     ActionURL cancelURL = urlProvider(AdminUrls.class).getManageFoldersURL(c);

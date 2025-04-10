@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.FileManagementForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.FileRootProp" %>
 <%@ page import="org.labkey.core.admin.AdminController.MigrateFilesOption" %>
 <%@ page import="java.util.Collections" %>
@@ -39,7 +40,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
-    AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
+    JspView<FileManagementForm> view = HttpView.currentView();
+    FileManagementForm bean = view.getModelBean();
     Container c = getContainer();
 
     // Issue 38439: get a copy of the original form bean in the error reshow case to use for toggling the migrateFilesRow message and select input

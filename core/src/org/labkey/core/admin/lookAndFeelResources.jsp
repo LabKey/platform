@@ -27,7 +27,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    LookAndFeelBean bean = ((JspView<LookAndFeelBean>)HttpView.currentView()).getModelBean();
+    JspView<LookAndFeelBean> view = HttpView.currentView();
+    LookAndFeelBean bean = view.getModelBean();
     Container c = getContainer();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     HtmlString rowSpan = HtmlString.of(!canUpdate ? "1" : "2");

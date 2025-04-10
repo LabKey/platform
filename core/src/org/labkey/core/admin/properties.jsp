@@ -22,7 +22,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Map<String, String>> me = (JspView<Map<String, String>>) HttpView.currentView();
+    JspView<Map<String, String>> me = HttpView.currentView();
     Map<String, String> properties = me.getModelBean();
     Map<String, String> sortedProperties = new CaseInsensitiveTreeMap<>(properties);
 %>

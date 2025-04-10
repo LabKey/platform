@@ -35,7 +35,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
+    HttpView<ManageBean> view = HttpView.currentView();
+    ManageBean bean = view.getModelBean();
     ViewContext context = getViewContext();
     Container c = getContainer();
     Errors errors = getErrors("form");

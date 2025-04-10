@@ -23,7 +23,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<Set<Role>> me = (JspView<Set<Role>>) HttpView.currentView();
+    JspView<Set<Role>> me = HttpView.currentView();
     Set<Role> roles = me.getModelBean();
 %>
 

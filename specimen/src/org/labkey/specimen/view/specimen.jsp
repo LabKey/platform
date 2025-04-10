@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.specimen.security.permissions.SetSpecimenCommentsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<SpecimenEventBean> me = (JspView<SpecimenEventBean>) HttpView.currentView();
+    JspView<SpecimenEventBean> me = HttpView.currentView();
     SpecimenEventBean bean = me.getModelBean();
     Vial vial = bean.getVial();
     Location originatingLocation = LocationManager.get().getOriginatingLocation(vial);

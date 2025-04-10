@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.beanutils.ConversionException" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
@@ -46,9 +47,8 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
-<%@ page import="org.apache.commons.beanutils.ConversionException" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -63,7 +63,7 @@
     }
 %>
 <%
-    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    JspView<Portal.WebPart> me = HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     int webPartId = webPart.getRowId();
     boolean hasPermission;

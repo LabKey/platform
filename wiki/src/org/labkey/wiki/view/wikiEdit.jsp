@@ -41,7 +41,7 @@
     }
 %>
 <%
-    JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
+    JspView<WikiEditModel> me = HttpView.currentView();
     WikiEditModel model = me.getModelBean();
     final boolean existingWiki = null != model.getEntityId();
     final String ID_PREFIX = "wiki-input-";

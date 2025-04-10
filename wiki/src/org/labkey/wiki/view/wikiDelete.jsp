@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Wiki> me = (JspView<Wiki>) HttpView.currentView();
+    JspView<Wiki> me = HttpView.currentView();
     Wiki wiki = me.getModelBean();
 %>
 

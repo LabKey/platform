@@ -24,7 +24,7 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<ButtonForm> me = (JspView<ButtonForm>) HttpView.currentView();
+    JspView<ButtonForm> me = HttpView.currentView();
     ButtonForm form = me.getModelBean();
     ActionURL formURL = urlFor(ButtonAction.class);
 %>
