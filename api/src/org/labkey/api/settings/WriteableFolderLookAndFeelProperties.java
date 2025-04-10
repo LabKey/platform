@@ -25,9 +25,6 @@ import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateTim
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultNumberFormatString;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultTimeFormatString;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateParsingPattern;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraDateTimeParsingPattern;
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.extraTimeParsingPattern;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.restrictedColumnsEnabled;
 
 // Handles only the properties that can be set at the folder level
@@ -147,75 +144,6 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
         props.setDefaultNumberFormat(defaultNumberFormat);
-        props.save();
-    }
-
-    // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateParsingPattern(String pattern) throws IllegalArgumentException
-    {
-        // Check for legal format
-        if (null != pattern)
-            FastDateFormat.getInstance(pattern);
-        storeStringValue(extraDateParsingPattern, pattern);
-    }
-
-    // Validate inside the set method, since this is called from multiple places
-    public void setExtraDateTimeParsingPattern(String pattern) throws IllegalArgumentException
-    {
-        // Check for legal format
-        if (null != pattern)
-            FastDateFormat.getInstance(pattern);
-        storeStringValue(extraDateTimeParsingPattern, pattern);
-    }
-
-    // Validate inside the set method, since this is called from multiple places
-    public void setExtraTimeParsingPattern(String pattern) throws IllegalArgumentException
-    {
-        // Check for legal format
-        if (null != pattern)
-            FastDateFormat.getInstance(pattern);
-        storeStringValue(extraTimeParsingPattern, pattern);
-    }
-
-    // Allows clearing the property to allow inheriting of this property alone
-    public void clearExtraDateParsingPattern()
-    {
-        remove(extraDateParsingPattern);
-    }
-
-    // Allows clearing the property to allow inheriting of this property alone
-    public void clearExtraDateTimeParsingPattern()
-    {
-        remove(extraDateTimeParsingPattern);
-    }
-
-    // Allows clearing the property to allow inheriting of this property alone
-    public void clearExtraTimeParsingPattern()
-    {
-        remove(extraTimeParsingPattern);
-    }
-
-    // Convenience method to support import: validate and save just this property
-    public static void saveExtraDateParsingPattern(Container c, String extraDateParsingPattern) throws IllegalArgumentException
-    {
-        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setExtraDateParsingPattern(extraDateParsingPattern);
-        props.save();
-    }
-
-    // Convenience method to support import: validate and save just this property
-    public static void saveExtraDateTimeParsingPattern(Container c, String extraDateTimeParsingPattern) throws IllegalArgumentException
-    {
-        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setExtraDateTimeParsingPattern(extraDateTimeParsingPattern);
-        props.save();
-    }
-
-    // Convenience method to support import: validate and save just this property
-    public static void saveExtraTimeParsingPattern(Container c, String extraTimeParsingPattern) throws IllegalArgumentException
-    {
-        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setExtraTimeParsingPattern(extraTimeParsingPattern);
         props.save();
     }
 
