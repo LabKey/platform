@@ -1282,7 +1282,6 @@ public class AdminController extends SpringActionController
         {
             return _returnUrl;
         }
-
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -5563,12 +5562,6 @@ public class AdminController extends SpringActionController
         private boolean _defaultTimeFormatInherited;
         private String _defaultNumberFormat;
         private boolean _defaultNumberFormatInherited;
-        private String _extraDateParsingPattern;
-        private boolean _extraDateParsingPatternInherited;
-        private String _extraDateTimeParsingPattern;
-        private boolean _extraDateTimeParsingPatternInherited;
-        private String _extraTimeParsingPattern;
-        private boolean _extraTimeParsingPatternInherited;
         private boolean _restrictedColumnsEnabled;
         private boolean _restrictedColumnsEnabledInherited;
 
@@ -5660,72 +5653,6 @@ public class AdminController extends SpringActionController
             _defaultNumberFormatInherited = defaultNumberFormatInherited;
         }
 
-        public String getExtraDateParsingPattern()
-        {
-            return _extraDateParsingPattern;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateParsingPattern(String extraDateParsingPattern)
-        {
-            _extraDateParsingPattern = extraDateParsingPattern;
-        }
-
-        public boolean isExtraDateParsingPatternInherited()
-        {
-            return _extraDateParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateParsingPatternInherited(boolean extraDateParsingPatternInherited)
-        {
-            _extraDateParsingPatternInherited = extraDateParsingPatternInherited;
-        }
-
-        public String getExtraDateTimeParsingPattern()
-        {
-            return _extraDateTimeParsingPattern;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
-        {
-            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
-        }
-
-        public boolean isExtraDateTimeParsingPatternInherited()
-        {
-            return _extraDateTimeParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateTimeParsingPatternInherited(boolean extraDateTimeParsingPatternInherited)
-        {
-            _extraDateTimeParsingPatternInherited = extraDateTimeParsingPatternInherited;
-        }
-
-        public String getExtraTimeParsingPattern()
-        {
-            return _extraTimeParsingPattern;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
-        {
-            _extraTimeParsingPattern = extraTimeParsingPattern;
-        }
-
-        public boolean isExtraTimeParsingPatternInherited()
-        {
-            return _extraTimeParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraTimeParsingPatternInherited(boolean extraTimeParsingPatternInherited)
-        {
-            _extraTimeParsingPatternInherited = extraTimeParsingPatternInherited;
-        }
-
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
@@ -5777,9 +5704,6 @@ public class AdminController extends SpringActionController
         validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time display format");
         validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time display format");
         validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number display format");
-        validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date parsing pattern");
-        validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time parsing pattern");
-        validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time parsing pattern");
 
         setProperty(form.isRestrictedColumnsEnabledInherited(), props::clearRestrictedColumnsEnabled, () -> props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled()));
 
@@ -10542,7 +10466,11 @@ public class AdminController extends SpringActionController
                 form.getUsername()
             );
 
-            return success(Map.of("errorCode", errorCode, "loggedToMothership", errorCode != null));
+            Map<String, Object> results = new HashMap<>();
+            results.put("errorCode", errorCode);
+            results.put("loggedToMothership", errorCode != null);
+
+            return success(results);
         }
     }
 
