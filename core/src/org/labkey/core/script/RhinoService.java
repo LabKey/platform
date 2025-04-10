@@ -294,7 +294,7 @@ class ScriptReferenceImpl implements ScriptReference
             }
             catch (Throwable t)
             {
-                LOG.error("Failed to compile script '" + r.toString() + "': " + t.getMessage());
+                LOG.error("Failed to compile script '" + r + "': " + t.getMessage());
                 return null;
             }
             finally
