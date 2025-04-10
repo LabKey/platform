@@ -43,7 +43,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.Pair;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
@@ -570,19 +569,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return hasNext;
         }
 
-        Date getOutputDate(int i)
-        {
-            Object o = get(i);
-            Date date = (Date) convertDate.convert(Date.class, o);
-            return date;
-        }
-
-        String getOutputString(int i)
-        {
-            Object o = this.get(i);
-            return null == o ? "" : o.toString();
-        }
-
         int addQCStateColumn(int index, String uri, DataState defaultQCState)
         {
             var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
@@ -596,19 +582,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
             return addColumn(col, new FileColumn(user, _datasetDefinition.getContainer(), name, index, "datasetdata", fileRootPath));
         }
-
-    //        int addSequenceNumFromDateColumn()
-    //        {
-    //            return addColumn(new BaseColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
-    //        }
-    //
-    //        int translateColumn(final int index, Map<?, ?> map, boolean strict)
-    //        {
-    //            ColumnInfo existing = getColumnInfo(index);
-    //            Callable origCallable = _outputColumns.get(index).getValue();
-    //            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
-    //            return replaceOrAddColumn(index, existing, remapColumn);
-    //        }
 
         int translateSequenceNum(Integer indexSequenceNumInput, Integer indexVisitDateInput)
         {
@@ -642,51 +615,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
             var col = new BaseColumnInfo("participantsequencenum", JdbcType.VARCHAR);
             return addColumn(col, callable);
-        }
-
-        int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
-        {
-            if (null == index || index <= 0)
-                return addColumn(col, call);
-            Pair p = new Pair(col, call);
-            _outputColumns.set(index, p);
-            return index;
-        }
-
-        String getFormattedSequenceNum()
-        {
-            assert null != indexSequenceNumOutput || hasErrors();
-            Double d = DatasetDataIteratorBuilder.getOutputDouble(this, indexSequenceNumOutput);
-            if (null == d)
-                return null;
-
-            return SEQUENCE_NUM_FORMAT.format(d);
-        }
-
-    //        class SequenceNumFromDateColumn implements Callable
-    //        {
-    //            @Override
-    //            public Object call() throws Exception
-    //            {
-    //                Date date = getOutputDate(indexVisitDateOutput);
-    //                if (null != date)
-    //                    return StudyManager.sequenceNumFromDate(date);
-    //                else
-    //                    return VisitImpl.DEMOGRAPHICS_VISIT;
-    //            }
-    //        }
-
-        class ParticipantSequenceNumKeyColumn implements Callable
-        {
-            @Override
-            public Object call()
-            {
-                assert (null != indexPtidOutput && null != indexKeyPropertyOutput) || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : DatasetDataIteratorBuilder.getOutputString(DatasetColumnsIterator.this, indexPtidOutput);
-                String seqnum = getFormattedSequenceNum();
-                Object key = null == indexKeyPropertyOutput ? "" : String.valueOf(DatasetColumnsIterator.this.get(indexKeyPropertyOutput));
-                return ptid + "|" + seqnum + "|" + key;
-            }
         }
 
         class QCStateColumn implements Callable
