@@ -35,38 +35,27 @@ dataset_metadata.xml files. These files are included in folder archives exported
 <p>
 For more information about the schema definition format, see <%=helpLink("DatasetBulkDefinition", "the dataset schema definition documentation page")%>
 </p>
-<table>
-    <tr>
-        <th align="left" colspan="3"><span class="labkey-error">* Both fields are required</span></th>
-    </tr>
-</table>
+
+<span class="labkey-error">Note: Both fields are required *</span><br/><br/>
 
 <labkey:form action="<%=urlFor(ImportDatasetSchemaAction.class)%>" method="POST" enctype="multipart/form-data">
-    <table>
-        <tr>
-            <td>
-                <%=new TextAreaBuilder().name("manifest").label("Dataset manifest XML *")
-                    .required(true)
-                    .formGroup(true)
-                    .value(bean.getManifest())
-                    .columns(160)
-                    .rows(20)
-                %>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <%=new TextAreaBuilder().name("metadata").label("Dataset metadata XML *")
-                    .required(true)
-                    .formGroup(true)
-                    .value(bean.getMetadata())
-                    .columns(160)
-                    .rows(20)
-                %>
-            </td>
-        </tr>
-        <tr>
-            <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ManageTypesAction.class, getContainer()) %></td>
-        </tr>
-    </table>
+
+    <%=new TextAreaBuilder().name("manifest").label("Dataset manifest XML *")
+        .required(true)
+        .formGroup(true)
+        .value(bean.getManifest())
+        .columns(160)
+        .rows(20)
+    %>
+
+    <%=new TextAreaBuilder().name("metadata").label("Dataset metadata XML *")
+        .required(true)
+        .formGroup(true)
+        .value(bean.getMetadata())
+        .columns(160)
+        .rows(20)
+    %>
+
+    <%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ManageTypesAction.class, getContainer()) %>
+
 </labkey:form>
