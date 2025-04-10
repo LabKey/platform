@@ -36,10 +36,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * User: cnathe
- * Date: Apr 10, 2012
- */
 public class FolderTypeImporterFactory extends AbstractFolderImportFactory
 {
     @Override
@@ -67,18 +63,18 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
         {
             Container c = ctx.getContainer();
             Folder folderXml = ctx.getXml();
-            ctx.getLogger().debug("[" + c.getPath() + "] Importing folder properties from: " + root.getLocation());
+            ctx.getLogger().debug("[{}] Importing folder properties from: {}", c.getPath(), root.getLocation());
 
             if (folderXml.isSetDefaultDateFormat())
             {
                 try
                 {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Default date format: " + folderXml.getDefaultDateFormat());
+                    ctx.getLogger().debug("[{}] Default date format: {}", c.getPath(), folderXml.getDefaultDateFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultDateFormat(c, folderXml.getDefaultDateFormat());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
+                    ctx.getLogger().warn("Illegal default date format specified: {}", e.getMessage());
                 }
             }
 
@@ -86,12 +82,12 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 try
                 {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Default date-time format: " + folderXml.getDefaultDateTimeFormat());
+                    ctx.getLogger().debug("[{}] Default date-time format: {}", c.getPath(), folderXml.getDefaultDateTimeFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultDateTimeFormat(c, folderXml.getDefaultDateTimeFormat());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    ctx.getLogger().warn("Illegal default date-time format specified: " + e.getMessage());
+                    ctx.getLogger().warn("Illegal default date-time format specified: {}", e.getMessage());
                 }
             }
 
@@ -99,18 +95,18 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 try
                 {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Default time format: " + folderXml.getDefaultTimeFormat());
+                    ctx.getLogger().debug("[{}] Default time format: {}", c.getPath(), folderXml.getDefaultTimeFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultTimeFormat(c, folderXml.getDefaultTimeFormat());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    ctx.getLogger().warn("Illegal default time format specified: " + e.getMessage());
+                    ctx.getLogger().warn("Illegal default time format specified: {}", e.getMessage());
                 }
             }
 
             if (folderXml.isSetRestrictedColumnsEnabled())
             {
-                ctx.getLogger().debug("[" + c.getPath() + "] Restricted columns enabled: " + folderXml.getRestrictedColumnsEnabled());
+                ctx.getLogger().debug("[{}] Restricted columns enabled: {}", c.getPath(), folderXml.getRestrictedColumnsEnabled());
                 WriteableFolderLookAndFeelProperties.saveRestrictedColumnsEnabled(c, folderXml.getRestrictedColumnsEnabled());
             }
 
@@ -118,52 +114,30 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
             {
                 try
                 {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Default number format: " + folderXml.getDefaultNumberFormat());
+                    ctx.getLogger().debug("[{}] Default number format: {}", c.getPath(), folderXml.getDefaultNumberFormat());
                     WriteableFolderLookAndFeelProperties.saveDefaultNumberFormat(c, folderXml.getDefaultNumberFormat());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    ctx.getLogger().warn("Illegal default number format specified: " + e.getMessage());
+                    ctx.getLogger().warn("Illegal default number format specified: {}", e.getMessage());
                 }
             }
 
+            // For now, fail with a clear error if extra date/time parsing formats are specified.
+            // TODO: Remove these from the XSD.
             if (folderXml.isSetExtraDateParsingPattern())
             {
-                try
-                {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Extra date parsing format: " + folderXml.getExtraDateParsingPattern());
-                    WriteableFolderLookAndFeelProperties.saveExtraDateParsingPattern(c, folderXml.getExtraDateParsingPattern());
-                }
-                catch (IllegalArgumentException e)
-                {
-                    ctx.getLogger().warn("Illegal default date format specified: " + e.getMessage());
-                }
+                ctx.getLogger().error("[{}] Extra date parsing format is not longer supported", c.getPath());
             }
 
             if (folderXml.isSetExtraDateTimeParsingPattern())
             {
-                try
-                {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Extra date-time parsing format: " + folderXml.getExtraDateTimeParsingPattern());
-                    WriteableFolderLookAndFeelProperties.saveExtraDateTimeParsingPattern(c, folderXml.getExtraDateTimeParsingPattern());
-                }
-                catch (IllegalArgumentException e)
-                {
-                    ctx.getLogger().warn("Illegal default date-time format specified: " + e.getMessage());
-                }
+                ctx.getLogger().error("[{}] Extra date-time parsing format is not longer supported", c.getPath());
             }
 
             if (folderXml.isSetExtraTimeParsingPattern())
             {
-                try
-                {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Extra time parsing format: " + folderXml.getExtraTimeParsingPattern());
-                    WriteableFolderLookAndFeelProperties.saveExtraTimeParsingPattern(c, folderXml.getExtraTimeParsingPattern());
-                }
-                catch (IllegalArgumentException e)
-                {
-                    ctx.getLogger().warn("Illegal extra time parsing format specified: " + e.getMessage());
-                }
+                ctx.getLogger().error("[{}] Extra time parsing format is not longer supported", c.getPath());
             }
 
             if (folderXml.isSetFolderType())
@@ -186,8 +160,8 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
 
                 if (null != folderType)
                 {
-                    ctx.getLogger().debug("[" + c.getPath() + "] Folder type: " + folderType.getName());
-                    ctx.getLogger().debug("[" + c.getPath() + "] Active modules: " + activeModules.stream().map(Module::getName).collect(Collectors.joining(", ")));
+                    ctx.getLogger().debug("[{}] Folder type: {}", c.getPath(), folderType.getName());
+                    ctx.getLogger().debug("[{}] Active modules: {}", c.getPath(), activeModules.stream().map(Module::getName).collect(Collectors.joining(", ")));
                     // It's sorta BrandNew, but not really; say it's not and SubImporter will handle container tabs correctly
                     BindException errors = new BindException(new Object(), "dummy");
                     c.setFolderType(folderType, ctx.getUser(), errors, activeModules);
@@ -198,7 +172,7 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
                 else
                 {
-                    ctx.getLogger().warn("Unknown folder type: '" + folderTypeXml.getName() + "'. Folder type and active modules not set.");
+                    ctx.getLogger().warn("Unknown folder type: '{}'. Folder type and active modules not set.", folderTypeXml.getName());
                 }
 
                 Module defaultModule = ModuleLoader.getInstance().getModule(folderTypeXml.getDefaultModule());
@@ -206,8 +180,8 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 {
                     c.setDefaultModule(defaultModule);
                 }
-                
-                ctx.getLogger().info("Done importing " + getDescription());
+
+                ctx.getLogger().info("Done importing {}", getDescription());
             }
         }
 

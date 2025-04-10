@@ -108,9 +108,6 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         },
 
         dateParsingMode("Date parsing mode. Valid values: " + Arrays.toString(DateParsingMode.values())),
-        extraDateParsingPattern("Additional parsing pattern for dates"),
-        extraDateTimeParsingPattern("Additional parsing pattern for date-times"),
-        extraTimeParsingPattern("Additional parsing pattern for times"),
 
         restrictedColumnsEnabled("Restrict charting columns by measure and dimension flags"),
 

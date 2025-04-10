@@ -810,6 +810,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             try
             {
+                QueryService.get().setEnvironment(QueryService.Environment.USER, _def.getModifiedBy());
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, _def.getContainer());
+
                 _def.setNextUpdate(null);
                 _def.save(_def.getModifiedBy());
 
@@ -838,6 +841,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             catch(Exception e)
             {
                 ExceptionUtil.logExceptionToMothership(null, e);
+            }
+            finally
+            {
+                QueryService.get().clearEnvironment();
             }
         }
     }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 
 import java.sql.SQLException;
@@ -25,13 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
-* User: kevink
-* Date: 3/5/14
-*/
 class FieldKeyRowMap implements Map<FieldKey, Object>
 {
-    private Results _results;
+    private final Results _results;
 
     public FieldKeyRowMap(Results results)
     {
@@ -67,7 +64,7 @@ class FieldKeyRowMap implements Map<FieldKey, Object>
     {
         try
         {
-            return _results.getObject((FieldKey) key);
+            return key instanceof FieldKey fk ? _results.getObject(fk) : null;
         }
         catch (SQLException e)
         {
@@ -88,7 +85,7 @@ class FieldKeyRowMap implements Map<FieldKey, Object>
     }
 
     @Override
-    public void putAll(Map<? extends FieldKey, ? extends Object> m)
+    public void putAll(@NotNull Map<? extends FieldKey, ?> m)
     {
         throw new UnsupportedOperationException();
     }
@@ -100,13 +97,13 @@ class FieldKeyRowMap implements Map<FieldKey, Object>
     }
 
     @Override
-    public Set<FieldKey> keySet()
+    public @NotNull Set<FieldKey> keySet()
     {
         return _results.getFieldIndexMap().keySet();
     }
 
     @Override
-    public Collection<Object> values()
+    public @NotNull Collection<Object> values()
     {
         List<Object> list = new LinkedList<>();
 
@@ -117,7 +114,7 @@ class FieldKeyRowMap implements Map<FieldKey, Object>
     }
 
     @Override
-    public Set<Map.Entry<FieldKey, Object>> entrySet()
+    public @NotNull Set<Map.Entry<FieldKey, Object>> entrySet()
     {
         HashSet<Map.Entry<FieldKey, Object>> map = new HashSet<>(_results.getFieldIndexMap().size());
 

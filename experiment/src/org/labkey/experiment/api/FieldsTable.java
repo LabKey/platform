@@ -5,7 +5,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.ExprColumn;
 
 public class FieldsTable extends BaseFieldsTable
 {
@@ -30,8 +32,17 @@ public class FieldsTable extends BaseFieldsTable
         sql.append(", ").
                 append(getSqlDialect().getVarcharLengthFunction()).
                 append("(pd.Name) AS FieldNameLength\n");
+
+        // Identify fields at risk for issue 52666 as ones that would use a provisioned table name that doesn't match their
+        // user-facing name, and that are attached to a domain that has a provisioned table
+        SQLFragment mismatchSql = new SQLFragment("(pd.StorageColumnName IS NULL OR pd.Name = pd.StorageColumnName) OR NOT EXISTS (SELECT dd.DomainId FROM ");
+        mismatchSql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
+        mismatchSql.append(" INNER JOIN ");
+        mismatchSql.append(OntologyManager.getTinfoPropertyDomain(), "propDomain");
+        mismatchSql.append(" ON dd.DomainId = propDomain.DomainId AND propDomain.PropertyId = pd.PropertyId AND dd.StorageTableName IS NOT NULL)");
+
         sql.append(", ").
-                append(getSqlDialect().wrapBooleanExpression(new SQLFragment("pd.StorageColumnName IS NULL OR pd.Name = pd.StorageColumnName"))).
+                append(getSqlDialect().wrapBooleanExpression(mismatchSql)).
                 append(" AS StorageColumnNameMatch\n");
     }
 
