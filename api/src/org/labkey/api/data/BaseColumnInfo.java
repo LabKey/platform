@@ -270,6 +270,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return null != _alias;
     }
 
+    private static final SQLFragment NOT_IN_DATABASE = new SQLFragment("/* NOT_IN_DATABASE */ . . . ");
 
     @Override
     public DatabaseIdentifier getAlias()
@@ -278,6 +279,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (_alias == null)
         {
             var legal = AliasManager.makeLegalName(getFieldKey(), getSqlDialect(), false);
+            // there are BaseColumnInfo instances that are not part of a database table (e.g. for a DataLoader)
+            // these don't really need an alias, but we need something here
+            SqlDialect dialect = getSqlDialect();
+            if (null == dialect)
+                return SqlDialect.makeDatabaseIdentifier(legal, NOT_IN_DATABASE);
             _alias = getSqlDialect().makeDatabaseIdentifier(legal);
         }
         return _alias;
