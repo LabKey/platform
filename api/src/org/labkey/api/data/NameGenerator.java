@@ -2442,7 +2442,7 @@ public class NameGenerator
     {
         public NameExpressionPart(@NotNull String s, boolean urlEncodeSubstitutions)
         {
-            super(s, urlEncodeSubstitutions, true);
+            super(s, urlEncodeSubstitutions, true /*support escaping using backslash*/);
         }
 
         @Override
