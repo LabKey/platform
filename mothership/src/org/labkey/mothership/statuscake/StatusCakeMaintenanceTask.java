@@ -1,5 +1,6 @@
 package org.labkey.mothership.statuscake;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpRequest;
@@ -9,6 +10,7 @@ import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.labkey.api.data.Container;
@@ -20,6 +22,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.mothership.MothershipManager;
@@ -40,7 +43,6 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.api.query.QueryUpdateService.ConfigParameters.BulkLoad;
@@ -296,6 +298,11 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
         {
             super(message);
         }
+
+        public FailedRequestException(String message, Exception cause)
+        {
+            super(message, cause);
+        }
     }
 
     private void requestUptime(Server server, CloseableHttpClient client, ClassicHttpRequest httpGet, List<History> result) throws IOException
@@ -307,9 +314,12 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
                 throw new FailedRequestException("Bad response " + response.getCode() + " for " + httpGet.getPath());
             }
 
-            try (Reader reader = new InputStreamReader(entity1.getContent(), StandardCharsets.UTF_8))
+            // Responses are small so they fit comfortably in memory. Capture as a string so that we can report on
+            // JSON parsing problems which happen intermittently
+            String jsonString = PageFlowUtil.getStreamContentsAsString(entity1.getContent());
+            try
             {
-                JSONObject o = new JSONObject(new JSONTokener(reader));
+                JSONObject o = new JSONObject(new JSONTokener(jsonString));
                 JSONArray data = o.getJSONArray("data");
                 for (int i = 0; i < data.length(); i++)
                 {
@@ -324,6 +334,10 @@ public class StatusCakeMaintenanceTask implements SystemMaintenance.MaintenanceT
                         result.add(history);
                     }
                 }
+            }
+            catch (JSONException e)
+            {
+                throw new FailedRequestException("Bad JSON for " + httpGet.getPath() + ", truncated content: " + StringUtils.truncate(jsonString, 500), e);
             }
             return null;
         });
