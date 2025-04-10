@@ -1911,10 +1911,6 @@ public class LoginController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Unable to create user '" + e.getEmail() + "': " + e.getMessage());
             }
-            catch (Exception e)
-            {
-                errors.reject(ERROR_MSG, "Unable to create user: " + e.getMessage());
-            }
 
             return success;
         }
