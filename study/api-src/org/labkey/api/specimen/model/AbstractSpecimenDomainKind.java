@@ -15,7 +15,9 @@
  */
 package org.labkey.api.specimen.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -27,10 +29,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
@@ -44,6 +48,7 @@ import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.TableType;
@@ -71,6 +76,40 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
+    }
+
+
+    @Override
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        ValidationException validation = checkFieldNameLength(domain);
+        if (validation != null)
+        {
+            throw UnexpectedException.wrap(validation);
+        }
+
+        return super.createDomain(domain, arguments, container, user, templateInfo);
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+    {
+        ValidationException validation = checkFieldNameLength(update);
+        if (validation != null) return validation;
+        return super.updateDomain(original, update, options, container, user, includeWarnings);
+    }
+
+    // Issue 52666: Don't allow property names that might cause problems due to a storage vs user-facing name
+    private static @Nullable ValidationException checkFieldNameLength(GWTDomain<? extends GWTPropertyDescriptor> update)
+    {
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
+            if (prop.getName().length() > 48)
+            {
+                return new ValidationException(prop.getName() + " is longer than the maximum length of 48 characters");
+            }
+        }
+        return null;
     }
 
     @Override
