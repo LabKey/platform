@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.jsp.taglib.ErrorsTag;
-import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.NoSuchMessageException;

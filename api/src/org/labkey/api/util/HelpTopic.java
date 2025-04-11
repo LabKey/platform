@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.view.NavTree;
 
 import java.util.Formatter;

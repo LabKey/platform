@@ -240,7 +240,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
@@ -255,7 +255,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTracker.HeldReference;
@@ -4230,7 +4230,7 @@ public class AdminController extends SpringActionController
                                     DOM.TR(DOM.TD("Delay between iterations (ms)"), DOM.TD(DOM.INPUT(at(name, "delay", value, memoryStressForm._delay)))),
                                     DOM.TR(DOM.TD("Percent churn per iteration (0.0 - 1.0)"), DOM.TD(DOM.INPUT(at(name, "percentChurn", value, memoryStressForm._percentChurn))))
                             ),
-                            new Button.ButtonBuilder("Perform stress test").submit(true).build())
+                            new ButtonBuilder("Perform stress test").submit(true).build())
             );
         }
 

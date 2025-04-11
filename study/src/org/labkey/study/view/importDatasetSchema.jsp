@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.element.TextArea.TextAreaBuilder"%>
+<%@ page import="org.labkey.api.util.TextAreaBuilder"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ImportDatasetSchemaAction" %>

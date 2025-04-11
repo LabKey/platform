@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.writer.HtmlWriter;
@@ -134,7 +134,7 @@ public class CrosstabDataRegion extends DataRegion
     {
         if (url != null)
         {
-            return new Link.LinkBuilder(caption).href(url);
+            return new LinkBuilder(caption).href(url);
         }
 
         return HtmlString.of(caption);

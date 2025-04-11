@@ -26,9 +26,9 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Input;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.actions.SpecimenReportActions;
 import org.labkey.specimen.report.SpecimenVisitReport;
@@ -65,17 +65,16 @@ public class TypeCohortReportFactory extends TypeReportFactory
         if (study.isAdvancedCohorts())
         {
             CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-            Input.InputBuilder<?> input = new Input.InputBuilder<>()
-                .type("hidden")
+            InputBuilder<?> input = InputBuilder.hidden()
                 .value("0")
                 .name(Params.cohortId.name());
 
-            Select.SelectBuilder select = new Select.SelectBuilder()
+            SelectBuilder select = new SelectBuilder()
                 .name(Params.cohortFilterType.name());
 
             for (CohortFilter.Type type : CohortFilter.Type.values())
             {
-                select.addOption(new Option.OptionBuilder()
+                select.addOption(new OptionBuilder()
                     .value(type.name())
                     .label(type.getTitle())
                     .selected(type == currentType)

@@ -50,10 +50,10 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.issue.IssuesController;
@@ -191,7 +191,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                         {
                             if (c.hasPermission(getUserSchema().getUser(), ReadPermission.class))
                             {
-                                out.write(new Link.LinkBuilder(c.getName()).href(c.getStartURL(getUserSchema().getUser())).clearClasses());
+                                out.write(LinkBuilder.simpleLink(c.getName(), c.getStartURL(getUserSchema().getUser())));
                             }
                             else
                             {

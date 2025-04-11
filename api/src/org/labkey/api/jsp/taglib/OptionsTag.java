@@ -16,7 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.OptionBuilder;
 
 import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;

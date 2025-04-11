@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.query.QueryParam"%>
 <%@ page import="org.labkey.api.query.QueryUrls"%>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>

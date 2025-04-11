@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.specimen.location.LocationImpl"%>
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder"%>
+<%@ page import="org.labkey.api.util.OptionBuilder"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>

@@ -30,7 +30,7 @@ public class ActionListView extends HttpView
 
         _controller.getActionResolver().getActionDescriptors().stream()
             .filter(ad->!(FormHandlerAction.class.isAssignableFrom(ad.getActionClass())))
-            .filter(_filter::test)
+            .filter(_filter)
             .sorted(Comparator.comparing(ActionDescriptor::getPrimaryName))
             .forEach(ad->{
                 out.println(PageFlowUtil.link(ad.getPrimaryName()).href(new ActionURL(ad.getActionClass(), c)).clearClasses());

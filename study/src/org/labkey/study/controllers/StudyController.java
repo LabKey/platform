@@ -204,7 +204,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;

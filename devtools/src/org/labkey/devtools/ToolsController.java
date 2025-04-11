@@ -14,7 +14,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -135,7 +135,7 @@ public class ToolsController extends SpringActionController
                         {
                             out.println();
                             out.println(
-                                new Button.ButtonBuilder("Delete All " + missing.size() + " File Paths from .gitattributes")
+                                new ButtonBuilder("Delete All " + missing.size() + " File Paths from .gitattributes")
                                     .href(new ActionURL(DeleteMissingFilesAction.class, getContainer()).addParameter("module", _moduleName))
                                     .usePost()
                             );

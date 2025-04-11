@@ -38,18 +38,17 @@ import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.element.Input;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select;
-import org.labkey.api.util.element.TextArea;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
+import org.labkey.api.util.TextAreaBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TypeAheadSelectDisplayColumn;
@@ -393,7 +392,7 @@ public class DataColumn extends DisplayColumn
 
             if (StringUtils.isNotBlank(url))
             {
-                Link.LinkBuilder link = new Link.LinkBuilder(formattedValue).href(url).clearClasses();
+                LinkBuilder link = new LinkBuilder(formattedValue).href(url).clearClasses();
 
                 String linkTitle = renderURLTitle(ctx);
                 if (null != linkTitle)
@@ -721,12 +720,12 @@ public class DataColumn extends DisplayColumn
 
     private void renderSelectFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput, NamedObjectList entryList)
     {
-        Select.SelectBuilder select = new Select.SelectBuilder()
+        SelectBuilder select = new SelectBuilder()
             .disabled(disabledInput)
             .multiple("select.multiple".equalsIgnoreCase(_inputType))
             .name(formFieldName);
 
-        List<Option> options = new ArrayList<>();
+        List<OptionBuilder.Option> options = new ArrayList<>();
 
         // add empty option
         options.add(new OptionBuilder().build());
@@ -797,8 +796,7 @@ public class DataColumn extends DisplayColumn
 
     protected void renderFileFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
-        var input = new Input.InputBuilder<>()
-            .type("file")
+        var input = InputBuilder.file()
             .name(formFieldName)
             .disabled(disabledInput)
             .needsWrapping(false);
@@ -810,8 +808,7 @@ public class DataColumn extends DisplayColumn
     {
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
 
-        var input = new Input.InputBuilder<>()
-            .type("checkbox")
+        var input = InputBuilder.checkbox()
             .name(formFieldName)
             .disabled(disabledInput)
             .value("1")
@@ -828,8 +825,7 @@ public class DataColumn extends DisplayColumn
          * To fix this, each checkbox posts a hidden field named @columnName.  Spring parameter
          * binding uses these special fields to set all unposted checkbox values to false.
          */
-        out.write(new Input.InputBuilder<>()
-            .type("hidden")
+        out.write(InputBuilder.hidden()
             .name(SpringActionController.FIELD_MARKER + formFieldName)
             .value(1));
 
@@ -840,7 +836,7 @@ public class DataColumn extends DisplayColumn
 
     protected void renderTextAreaFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
-        TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
+        TextAreaBuilder input = new TextAreaBuilder()
             .columns(_inputLength)
             .rows(_inputRows)
             .name(formFieldName)
@@ -856,7 +852,7 @@ public class DataColumn extends DisplayColumn
 
     protected void renderTextFormInput(HtmlWriter out, String formFieldName, Object value, String strVal, boolean disabledInput)
     {
-        var input = new Input.InputBuilder<>()
+        var input = InputBuilder.text()
             .name(formFieldName)
             .disabled(disabledInput)
             .size(_inputLength)

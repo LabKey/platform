@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;

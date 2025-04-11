@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.query.FieldKey"%>
 <%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.util.HtmlString"%>
-<%@ page import="org.labkey.api.util.element.Option"%>
-<%@ page import="org.labkey.api.util.element.Select.SelectBuilder"%>
+<%@ page import="org.labkey.api.util.OptionBuilder"%>
+<%@ page import="org.labkey.api.util.SelectBuilder"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -110,7 +110,7 @@
         if (allowBlank)
             builder.addOption("", "");
         if (cols.containsKey("SequenceNum"))
-            builder.addOption(new Option.OptionBuilder("Visit Id", "SequenceNum")
+            builder.addOption(new OptionBuilder("Visit Id", "SequenceNum")
                     .selected("SequenceNum".equalsIgnoreCase(selected)));
 
         String subjectNoun = StudyService.get().getSubjectColumnName(getContainer());

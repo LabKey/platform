@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.DetailsURL;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -377,7 +377,7 @@ public class ActionButton extends DisplayElement implements Cloneable
 
         lock();
 
-        Button.ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
+        ButtonBuilder button = PageFlowUtil.button(getCaption(ctx))
             .disableOnClick(_disableOnClick)
             .iconCls(getIconCls())
             .tooltip(getTooltip())

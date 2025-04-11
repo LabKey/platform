@@ -25,7 +25,7 @@ import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -142,7 +142,7 @@ public class PathDisplayColumn extends DataColumn
                 String url = s.eval(newRow);
                 if (url != null)
                 {
-                    out.write(new Link.LinkBuilder(part).href(url).clearClasses());
+                    out.write(new LinkBuilder(part).href(url).clearClasses());
                 }
                 else
                 {

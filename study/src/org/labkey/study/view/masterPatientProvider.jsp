@@ -19,9 +19,9 @@
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Option" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
@@ -40,14 +40,14 @@
     }
 
     Collection<MasterPatientIndexService> services = MasterPatientIndexService.getProviders();
-    Select.SelectBuilder options = new Select.SelectBuilder().name("type").label("Type")
+    SelectBuilder options = new SelectBuilder().name("type").label("Type")
             .layout(Input.Layout.HORIZONTAL)
             .formGroup(true)
-            .addOption(new Option.OptionBuilder().build());
+            .addOption(new OptionBuilder().build());
 
     for (MasterPatientIndexService svc : services)
     {
-        options.addOption(new Option.OptionBuilder().value(svc.getName())
+        options.addOption(new OptionBuilder().value(svc.getName())
                 .label(svc.getName())
                 .selected(svc.getName().equals(type))
                 .build());

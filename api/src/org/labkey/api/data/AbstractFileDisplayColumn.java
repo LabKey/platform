@@ -23,7 +23,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -273,11 +273,10 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             String filename = getFileName(ctx, value);
             String formFieldName = ctx.getForm().getFormFieldName(getBoundColumn());
 
-            InputBuilder<?> input = new InputBuilder<>()
-                    .type("file")
-                    .name(formFieldName)
-                    .disabled(isDisabledInput(ctx))
-                    .needsWrapping(false);
+            InputBuilder<?> input = InputBuilder.file()
+                .name(formFieldName)
+                .disabled(isDisabledInput(ctx))
+                .needsWrapping(false);
 
             if (null != filename)
             {

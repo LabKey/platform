@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
