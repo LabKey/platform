@@ -26,12 +26,11 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
 
 public abstract class StudyManualTest extends StudyTest
 {
-    private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/schema.tsv");
+    private final File DATASETS_MANIFEST = TestFileUtils.getSampleData("study/datasets_manifest.xml");
+    private final File DATASETS_METADATA = TestFileUtils.getSampleData("study/datasets_metadata.xml");
     protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
@@ -84,12 +83,9 @@ public abstract class StudyManualTest extends StudyTest
         // define forms
         clickTab("Manage");
         clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Define Dataset Schemas"));
-        clickAndWait(Locator.linkWithText("Bulk Import Schemas"));
-        setFormElement(Locator.name("typeNameColumn"), "platename");
-        setFormElement(Locator.name("labelColumn"), "platelabel");
-        setFormElement(Locator.name("typeIdColumn"), "plateno");
-        setFormElement(Locator.name("tsv"), TestFileUtils.getFileContents(CRF_SCHEMAS));
+        clickAndWait(Locator.linkWithText("Import Dataset Schema"));
+        setFormElement(Locator.name("manifest"), TestFileUtils.getFileContents(DATASETS_MANIFEST));
+        setFormElement(Locator.name("metadata"), TestFileUtils.getFileContents(DATASETS_METADATA));
         clickButton("Submit", 180000);
 
         // setup cohorts:

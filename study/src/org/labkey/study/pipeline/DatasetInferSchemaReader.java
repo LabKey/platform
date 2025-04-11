@@ -15,6 +15,7 @@
  */
 package org.labkey.study.pipeline;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.ImportTypesHelper;
@@ -169,12 +170,6 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
     }
 
     @Override
-    public String getTypeNameColumn()
-    {
-        return "PlateName";
-    }
-
-    @Override
     protected String getKeyFromDatasetName(String name)
     {
         // if there is an explicit input data map as is the case for file analysis jobs, use this
@@ -215,5 +210,11 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
             return _inputDataMap.keySet().stream().map(File::getName).collect(Collectors.toList());
         else
             return super.getDatasetFileNames();
+    }
+
+    @Override
+    public @Nullable List<Integer> getDatasetOrder()
+    {
+        return null;
     }
 }

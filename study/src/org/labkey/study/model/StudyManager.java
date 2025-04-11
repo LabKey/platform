@@ -3663,6 +3663,14 @@ public class StudyManager
 
             addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
+
+        List<Integer> orderedIds = reader.getDatasetOrder();
+        if (null != orderedIds)
+        {
+            DatasetReorderer reorderer = new DatasetReorderer(study, user);
+            reorderer.reorderDatasets(orderedIds);
+        }
+
         return true;
     }
 

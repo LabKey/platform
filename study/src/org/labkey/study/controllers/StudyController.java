@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -54,6 +55,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.assay.AssayUrls;
@@ -201,6 +203,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -222,6 +225,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
@@ -238,7 +242,7 @@ import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
-import org.labkey.study.importer.SchemaTsvReader;
+import org.labkey.study.importer.SchemaXmlReader;
 import org.labkey.study.importer.VisitMapImporter;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
@@ -278,6 +282,7 @@ import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
+import org.labkey.study.xml.DatasetsDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -2705,9 +2710,7 @@ public class StudyController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(ImportDatasetForm form)
         {
-            ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
-                    addParameter(Dataset.DATASET_KEY, form.getDatasetId());
-            return url;
+            return new ActionURL(DatasetAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, form.getDatasetId());
         }
 
         @Override
@@ -2721,47 +2724,64 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
     @RequiresPermission(AdminPermission.class)
-    public class BulkImportDataTypesAction extends FormViewAction<BulkImportTypesForm>
+    public class ImportDatasetSchemaAction extends FormViewAction<ImportDatasetSchemaForm>
     {
         @Override
-        public void validateCommand(BulkImportTypesForm target, Errors errors)
+        public void validateCommand(ImportDatasetSchemaForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(BulkImportTypesForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(ImportDatasetSchemaForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkImportDataTypes.jsp", form, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/importDatasetSchema.jsp", form, errors);
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public boolean handlePost(BulkImportTypesForm form, BindException errors)
+        public boolean handlePost(ImportDatasetSchemaForm form, BindException errors) throws ImportException
         {
-            if (form.getLabelColumn() == null)
-                errors.reject(null, "Column containing dataset Label must be identified.");
-            if (form.getTypeNameColumn() == null)
-                errors.reject(null, "Column containing dataset Name must be identified.");
-            if (form.getTypeIdColumn() == null)
-                errors.reject(null, "Column containing dataset ID must be identified.");
-            if (form.getTsv() == null)
-                errors.reject(null, "Type definition is required.");
+            if (form.getManifest() == null)
+                errors.reject(null, "Manifest is required.");
+
+            if (form.getMetadata() == null)
+                errors.reject(null, "Metadata is required.");
 
             if (errors.hasErrors())
                 return false;
 
-            _log.warn("DataFax schema definition format is deprecated and scheduled for removal. Contact LabKey immediately if your organization requires this support.");
-            SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
+            DatasetsDocument.Datasets manifestDatasetsDoc;
+
+            try
+            {
+                manifestDatasetsDoc = DatasetsDocument.Factory.parse(form.getManifest(), XmlBeansUtil.getDefaultParseOptions()).getDatasets();
+            }
+            catch (XmlException e)
+            {
+                errors.reject(null, "Invalid manifest XML: " + e.getMessage());
+                return false;
+            }
+
+            TablesDocument tablesDoc;
+
+            try
+            {
+                tablesDoc = TablesDocument.Factory.parse(form.getMetadata(), XmlBeansUtil.getDefaultParseOptions());
+            }
+            catch (XmlException e)
+            {
+                errors.reject(null, "Invalid metadata XML: " + e.getMessage());
+                return false;
+            }
+
+            SchemaReader reader = new SchemaXmlReader(getStudyThrowIfNull(), "metadata XML", tablesDoc, manifestDatasetsDoc);
 
             ComplianceService complianceService = ComplianceService.get();
-            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false, true,
-                                                                   null != complianceService ? complianceService.getCurrentActivity(getViewContext()) : null);
+            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false, true, complianceService.getCurrentActivity(getViewContext()));
         }
 
         @Override
-        public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)
+        public ActionURL getSuccessURL(ImportDatasetSchemaForm bulkImportTypesForm)
         {
             return new ActionURL(ManageTypesAction.class, getContainer());
         }
@@ -2771,55 +2791,35 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("DatasetBulkDefinition");
             _addNavTrailDatasetAdmin(root);
-            root.addChild("Bulk Import");
+            root.addChild("Import Dataset Schema");
         }
     }
 
-    public static class BulkImportTypesForm
+    public static class ImportDatasetSchemaForm
     {
-        private String typeNameColumn;
-        private String labelColumn;
-        private String typeIdColumn;
-        private String tsv;
+        private String _metadata;
+        private String _manifest;
 
-        public String getTsv()
+        public String getMetadata()
         {
-            return tsv;
+            return _metadata;
         }
 
-        public void setTsv(String tsv)
+        @SuppressWarnings("unused")
+        public void setMetadata(String metadata)
         {
-            this.tsv = tsv;
+            _metadata = metadata;
         }
 
-        public String getTypeIdColumn()
+        public String getManifest()
         {
-            return typeIdColumn;
+            return _manifest;
         }
 
-        public void setTypeIdColumn(String typeIdColumn)
+        @SuppressWarnings("unused")
+        public void setManifest(String manifest)
         {
-            this.typeIdColumn = typeIdColumn;
-        }
-
-        public String getTypeNameColumn()
-        {
-            return typeNameColumn;
-        }
-
-        public void setTypeNameColumn(String typeNameColumn)
-        {
-            this.typeNameColumn = typeNameColumn;
-        }
-
-        public String getLabelColumn()
-        {
-            return labelColumn;
-        }
-
-        public void setLabelColumn(String labelColumn)
-        {
-            this.labelColumn = labelColumn;
+            _manifest = manifest;
         }
     }
 
@@ -4006,25 +4006,6 @@ public class StudyController extends BaseStudyController
             {
                 throw new NotFoundException("No such dataset with ID: " + unparsedDatasetId);
             }
-        }
-    }
-
-
-
-    @RequiresPermission(AdminPermission.class)
-    public class ManageUndefinedTypesAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/manageUndefinedTypes.jsp", o, errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            _addNavTrailDatasetAdmin(root);
-            root.addChild("Define Dataset Schemas");
         }
     }
 

@@ -16,23 +16,21 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
 <%@ page import="org.labkey.api.exp.OntologyManager"%>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor"%>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.study.StudyService"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.StudyController.BulkImportDataTypesAction" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.collections.CaseInsensitiveHashSet" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<DatasetDefinition> me = (JspView<DatasetDefinition>) HttpView.currentView();
+    JspView<DatasetDefinition> me = HttpView.currentView();
     DatasetDefinition dataset = me.getModelBean();
     Study study = dataset.getStudy();
 
@@ -130,12 +128,3 @@
     }
 %>
 </table>
-<%
-    if (getViewContext().hasPermission(AdminPermission.class))
-    {
-        if (dataset.getTypeURI() == null)
-        {
-            %><br/><%=link("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
-        }
-    }
-%>
