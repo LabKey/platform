@@ -39,7 +39,7 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 
-// Allows some sharing of code between snapshot/ancillary study publication and specimen refresh
+// Allows some sharing of code between study publication and specimen refresh
 public abstract class AbstractStudyPipelineJob extends PipelineJob
 {
     protected transient Container _dstContainer;

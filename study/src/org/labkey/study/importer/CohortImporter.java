@@ -113,7 +113,7 @@ public class CohortImporter implements InternalStudyImporter
     }
 
     // Return the cohort dataset ID iff the <cohorts> element includes it and the corresponding dataset exists.
-    // LabKey export, publish, and ancillary study creation always include the cohort dataset, but a manually
+    // LabKey export and publish study creation always include the cohort dataset, but a manually
     // created archive might not. See #19944 and #20397.
     private @Nullable Integer getValidCohortDatasetId(StudyDocument.Study.Cohorts cohortsXml, Study study)
     {

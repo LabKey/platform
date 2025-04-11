@@ -39,12 +39,6 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         addContainerColumn(isProvisioned);
     }
 
-    @Override
-    protected String getParticipantColumnName()
-    {
-        return "PTID";
-    }
-
     protected void addSpecimenTypeColumns()
     {
         addWrapColumn(_rootTable.getColumn("VolumeUnits"));
