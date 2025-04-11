@@ -103,7 +103,7 @@ These groups can read ALL datasets.
 <%
     boolean guestsCanRead = false;
     boolean usersCanRead = false;
-    if (readGroups.size() == 0)
+    if (readGroups.isEmpty())
     {
         %><li><i>none</i></li><%
     }
@@ -132,7 +132,7 @@ else
     These groups do not have read permissions. (Note: a user may belong to more than one group, see documentation.)
     <ul class="minus">
     <%
-        if (noReadGroups.size() == 0)
+        if (noReadGroups.isEmpty())
         {
     %>
         <li><i>none</i></li>

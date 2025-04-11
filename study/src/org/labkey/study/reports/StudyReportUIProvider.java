@@ -25,7 +25,6 @@ import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -41,8 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.study.StudyModule.ASSAY_PROGRESS_REPORT_FLAG;
-
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
     private static final Map<String, String> _typeToIconMap = new HashMap<>();
@@ -55,7 +52,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
-        _typeToIconMap.put(AssayProgressReport.TYPE, "/reports/grid.png");
 
         // font icons - some report image icons dont have corresponding font icon replacements yet
 //      _typeToIconClsMap.put(StudyRReport.TYPE, "/reports/r_logo.svg");
@@ -63,7 +59,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconClsMap.put(ParticipantReport.TYPE, "fa fa-clipboard");
 //      _typeToIconClsMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
 //      _typeToIconClsMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
-        _typeToIconClsMap.put(AssayProgressReport.TYPE, "fa fa-calendar");
     }
 
     private static final ReportService.ItemFilter _filter = (type, label) -> {
@@ -108,15 +103,6 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                         _getIconPath(ParticipantReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
-
-                if (OptionalFeatureService.get().isFeatureEnabled(ASSAY_PROGRESS_REPORT_FLAG))
-                {
-                    DesignerInfoImpl progressReportInfo = new DesignerInfoImpl(AssayProgressReport.TYPE, AssayProgressReport.REPORT_LABEL, null,
-                            new ActionURL(ReportsController.AssayProgressReportAction.class, context.getContainer()),
-                            _getIconPath(AssayProgressReport.TYPE), ReportService.DesignerType.DEFAULT, _getIconCls(AssayProgressReport.TYPE));
-                    prInfo.setId("create_assayProgressReport");
-                    designers.add(progressReportInfo);
-                }
             }
             catch (Exception e)
             {
