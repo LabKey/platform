@@ -685,9 +685,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (annotation != null && annotation.trim().toLowerCase().startsWith(prefix))
             {
                 String[] parts = annotation.split(":");
-                if (parts.length == 2)
+                if (parts.length > 1)
                 {
-                    return parts[1].trim();
+                    // Issue 52782: measure name may contain a colon, so we need to join the rest of the parts
+                    return StringUtils.join(parts, ":", 1, parts.length).trim();
                 }
             }
             return null;
