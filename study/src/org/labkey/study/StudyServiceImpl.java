@@ -1122,12 +1122,6 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     }
 
     @Override
-    public Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer)
-    {
-        return StudyManager.getInstance().getAncillaryStudies(sourceStudyContainer);
-    }
-
-    @Override
     public Study getStudyForVisits(@NotNull Study study)
     {
         return StudyManager.getInstance().getStudyForVisits(study);

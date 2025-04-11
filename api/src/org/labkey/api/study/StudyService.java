@@ -212,8 +212,6 @@ public interface StudyService
 
     void registerStudyTabProvider(StudyTabProvider provider);
 
-    Collection<? extends Study> getAncillaryStudies(Container sourceStudyContainer);
-
     Study getStudyForVisits(@NotNull Study study);
 
     boolean showCohorts(Container container, @Nullable User user);

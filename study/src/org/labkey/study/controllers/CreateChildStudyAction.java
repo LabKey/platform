@@ -50,13 +50,7 @@ import org.springframework.validation.ObjectError;
 
 import java.util.List;
 
-/**
- * User: klum
- * Date: Sep 1, 2011
- * Time: 9:39:49 AM
- */
-
-// Used to create ancillary studies, study snapshots, and specimen-based studies
+// Used to create published studies
 @RequiresPermission(AdminPermission.class)
 public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefinition>
 {
@@ -170,7 +164,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         study.setSubjectNounPlural(_sourceStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_sourceStudy.getSubjectColumnName());
 
-        // This setting is specific to ancillary / publish study
+        // This setting is specific to publish study
         if (form.isUpdate())
         {
             study.setSourceStudyContainerId(_sourceStudy.getContainer().getId());

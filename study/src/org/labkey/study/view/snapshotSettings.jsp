@@ -31,7 +31,7 @@
     assert null != study;
 %>
 <labkey:form action="" method="post">
-    <p>This page displays some of the settings associated with <%=unsafe(study.isAncillaryStudy() ? "this ancillary" : "the publication of this")%> study.</p>
+    <p>This page displays some of the settings associated with the publication of this study.</p>
 <%
     if (snapshot.isRefresh())
     {
@@ -57,25 +57,8 @@
             <td class="labkey-form-label">Modified:</td>
             <td><%=formatDate(snapshot.getModified())%></td>
         </tr>
-    <%
-        if (!study.isAncillaryStudy())
-        {
-    %>
-        <tr>
-            <td class="labkey-form-label" valign="top">Refresh Specimens:</td>
-            <td>
-                <input type="checkbox" id="refresh" name="refresh"<%=checked(snapshot.isRefresh())%>>
-                <p>
-                    Note that the "Modified By" user's permissions apply to the nightly specimen refresh. A successful specimen refresh requires this user to
-                    have administrator permissions in this folder. Clicking the Update button changes the "Modified By" user to the current user.
-                </p>
-            </td>
-        </tr>
-    <%
-        }
-    %>
     </table>
     <br/>
-    <% if (!study.isAncillaryStudy()) { %><%= button("Update").submit(true) %>&nbsp; <% } %>
+    <%= button("Update").submit(true) %>&nbsp; <% %>
     <%= button("Done").href(ManageStudyAction.class, getContainer()) %>
 </labkey:form>

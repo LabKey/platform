@@ -159,13 +159,6 @@ public class SpecimenSummaryTable extends BaseStudyTable
     }
 
     @Override
-    protected String getParticipantColumnName()
-    {
-        return "PTID";
-    }
-
-
-    @Override
     protected ColumnInfo resolveColumn(String name)
     {
         name = name.toLowerCase();
@@ -191,7 +184,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
     public static class CommentDisplayColumn extends DataColumn
     {
-        private TableInfo _summaryTable;
+        private final TableInfo _summaryTable;
         private ColumnInfo _specimenHashColumn;
 
         public CommentDisplayColumn(ColumnInfo commentColumn, TableInfo summaryTable)

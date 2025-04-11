@@ -106,7 +106,7 @@
    else
    {
 %>
-<p>Specimen repository and request settings are not available for ancillary or published studies.</p>
+<p>Specimen repository and request settings are not available for published studies.</p>
 <%= button("Back").href(urlFor(ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
 <%
    }

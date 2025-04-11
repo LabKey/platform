@@ -648,17 +648,7 @@ public abstract class VisitManager
 
     protected static TableInfo getSpecimenTable(StudyImpl study, User user)
     {
-        // If this is an ancillary study, the specimen table may be subject to special filtering, so we need to use
-        // the query table, rather than the underlying database table.  We don't do this in all cases for performance
-        // reasons.
-        if (study.isAncillaryStudy() && null != user)
-        {
-            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user);
-            studyQuerySchema.setDontAliasColumns(true);
-            return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-        }
-        else
-            return SpecimenSchema.get().getTableInfoSpecimen(study.getContainer());
+        return SpecimenSchema.get().getTableInfoSpecimen(study.getContainer());
     }
 
 
