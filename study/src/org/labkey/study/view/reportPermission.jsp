@@ -149,15 +149,8 @@
         </tr><%
         for (Group g : globalGroups)
         {
-            if (g.isAdministrators())
-            {
-            %>
-                <tr style="display: none;"><td><input type="hidden" name="group" value="<%=g.getUserId()%>"></td></tr>
-            <%
-            }
-            //if (g.isAdministrators()) continue;
-            boolean checked = bean.getDescriptor().hasPermission(g, ReadPermission.class) || g.isAdministrators();
-            boolean disabled = !c.hasPermission(g, ReadPermission.class) || g.isAdministrators();
+            boolean checked = bean.getDescriptor().hasPermission(g, ReadPermission.class);
+            boolean disabled = !c.hasPermission(g, ReadPermission.class);
             %><tr class="labkey-row">
                 <td><font color=<%=unsafe(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td>
                 <td height="22" width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>

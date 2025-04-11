@@ -1558,9 +1558,6 @@ public class SecurityManager
         if (group.equals(newMember))
             return ADD_GROUP_TO_ITSELF_ERROR_MESSAGE;
 
-        if (group.isSystemGroup())
-            return ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE;
-
         if (newMember.isSystemGroup())
             return ADD_SYSTEM_GROUP_ERROR_MESSAGE;
 
@@ -2689,14 +2686,7 @@ public class SecurityManager
      */
     public static String getDisambiguatedGroupName(Group group)
     {
-        int id = group.getUserId();
-
-        return switch (id)
-        {
-            case Group.groupAdministrators -> "Site Administrators";
-            case Group.groupUsers -> "All Site Users";
-            default -> group.getName();
-        };
+        return group.getUserId() == Group.groupUsers ? "All Site Users" : group.getName();
     }
 
     public static boolean canSeeUserDetails(Container c, User user)

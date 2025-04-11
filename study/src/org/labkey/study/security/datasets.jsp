@@ -88,8 +88,6 @@
     ArrayList<Group> noReadGroups = new ArrayList<>();
     for (Group g : groups)
     {
-        if (g.getUserId() == Group.groupAdministrators)
-            continue;
         if (studyPolicy.hasNonInheritedPermission(g, ReadPermission.class))
             readGroups.add(g);
         else if (studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))

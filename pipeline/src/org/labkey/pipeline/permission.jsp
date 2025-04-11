@@ -78,9 +78,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         List<Role> assignedRoles = policy.getAssignedRoles(g);
         Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : null;
         final HtmlString name;
-        if (g.isAdministrators())
-            name = HtmlString.unsafe("Site&nbsp;Administrators");
-        else if (g.isUsers())
+        if (g.isUsers())
             name = HtmlString.of("All Users");
         else
             name = h(g.getName());

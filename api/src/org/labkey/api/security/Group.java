@@ -27,10 +27,8 @@ import java.util.stream.Stream;
  */
 public class Group extends UserPrincipal
 {
-    public static final int groupAdministrators = -1;
     public static final int groupUsers = -2;
     public static final int groupGuests = -3;
-    public static final int groupDevelopers = -4;
 
     private String _ownerId;
     private String _container;
@@ -55,11 +53,6 @@ public class Group extends UserPrincipal
         _ownerId = ownerId;
     }
 
-    public boolean isAdministrators()
-    {
-        return getUserId() == groupAdministrators;
-    }
-
     public boolean isGuests()
     {
         return getUserId() == groupGuests;
@@ -70,11 +63,6 @@ public class Group extends UserPrincipal
         return getUserId() == groupUsers;
     }
 
-    public boolean isDevelopers()
-    {
-        return getUserId() == groupDevelopers;
-    }
-
     public boolean isProjectGroup()
     {
         return getContainer() != null;
@@ -83,7 +71,7 @@ public class Group extends UserPrincipal
     public boolean isSystemGroup()
     {
         int id = getUserId();
-        return (id == groupAdministrators || id == groupGuests || id == groupUsers || id == groupDevelopers);
+        return (id == groupGuests || id == groupUsers);
     }
 
     public String getContainer()
@@ -96,22 +84,15 @@ public class Group extends UserPrincipal
         _container = containerId;
     }
 
-
-    private volatile String _path = null;
-    
     // @deprecated
     public String getPath()
     {
-        if (null == _path)
-        {
-            if (null == _container)
-                return "/" + getName();
-            Container c = ContainerManager.getForId(_container);
-            if (c == null)
-                return "/" + _container + "/" + getName();
-            return "/" + c.getName() + "/" + getName();
-        }
-        return _path;
+        if (null == _container)
+            return "/" + getName();
+        Container c = ContainerManager.getForId(_container);
+        if (c == null)
+            return "/" + _container + "/" + getName();
+        return "/" + c.getName() + "/" + getName();
     }
 
     @Override

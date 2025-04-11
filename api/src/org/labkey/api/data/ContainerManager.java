@@ -2585,8 +2585,8 @@ public class ContainerManager
         // Users can read/write, Guests can read.
         return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
                 RoleManager.getRole(AuthorRole.class),
-                RoleManager.getRole(ReaderRole.class),
-                null, null);
+                RoleManager.getRole(ReaderRole.class)
+        );
     }
 
     public static void removeDefaultSupportContainer(User user)
@@ -2750,7 +2750,7 @@ public class ContainerManager
      * permissions if all users are dropped. Implicitly done as an admin-level service user.
      */
     @NotNull
-    public static Container bootstrapContainer(String path, @NotNull Role userRole, @Nullable Role guestRole, @Nullable Role devRole, @Nullable Role adminRole)
+    public static Container bootstrapContainer(String path, @NotNull Role userRole, @Nullable Role guestRole)
     {
         Container c = null;
         User user = User.getAdminServiceUser();
@@ -2789,10 +2789,6 @@ public class ContainerManager
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
             if (guestRole != null)
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
-            if (devRole != null)
-                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
-            if (adminRole != null)
-                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
             SecurityPolicyManager.savePolicy(policy, user);
         }
 
