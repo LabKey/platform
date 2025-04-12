@@ -16,10 +16,8 @@ Ext4.define('Security.util.SecurityCache', {
     },
 
     statics : {
-        groupAdministrators : -1,
         groupUsers : -2,
         groupGuests : -3,
-        groupDevelopers : -4,
 
         global : null,
         getGlobalCache : function() {
@@ -575,9 +573,6 @@ Ext4.define('Security.util.SecurityCache', {
 
     Principals_onReady : function()
     {
-        var admin = this.principalsStore.getById(Security.util.SecurityCache.groupAdministrators);
-        if (admin)
-            admin.data.Name = 'Site Administrators';
         var users = this.principalsStore.getById(Security.util.SecurityCache.groupUsers);
         if (users)
             users.data.Name = 'All Site Users';
@@ -596,7 +591,7 @@ Ext4.define('Security.util.SecurityCache', {
     _applyPrincipalsSortOrder : function(item)
     {
         var data = item.data;
-        var major = data.Type == 'u' ? '4' : data.Container ? '3' : data.UserId > 0 ? '2' : '1'; // Put system groups at the top
+        var major = data.Type === 'u' ? '4' : data.Container ? '3' : data.UserId > 0 ? '2' : '1'; // Put system groups at the top
         var minor = (data.Name||'').toLowerCase();
         data.sortOrder = major + "." + minor;
     },

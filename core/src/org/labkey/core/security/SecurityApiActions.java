@@ -970,14 +970,14 @@ public class SecurityApiActions
 
     public static class IdForm
     {
-        private int _id = -1;
+        private Integer _id = null;
 
-        public int getId()
+        public Integer getId()
         {
             return _id;
         }
 
-        public void setId(int id)
+        public void setId(Integer id)
         {
             _id = id;
         }
@@ -1515,8 +1515,12 @@ public class SecurityApiActions
         @Override
         public ApiResponse execute(IdForm form, BindException errors)
         {
-            if (form.getId() < 0)
+            if (form.getId() == null)
                 throw new IllegalArgumentException("You must specify an id parameter!");
+
+            // Allow deleting of legacy Site Administrators (-1) and Developers (-4) groups, if they exist
+            if (form.getId() < 0 && form.getId() != -1 && form.getId() != -4)
+                throw new IllegalArgumentException("You must specify a valid id parameter!");
 
             Group group = SecurityManager.getGroup(form.getId());
             Container c = getContainer();
@@ -1540,8 +1544,11 @@ public class SecurityApiActions
         @Override
         public ApiResponse execute(IdForm form, BindException errors) throws Exception
         {
-            if (form.getId() < 0)
+            if (form.getId() == null)
                 throw new IllegalArgumentException("You must specify an id parameter!");
+
+            if (form.getId() < 0)
+                throw new IllegalArgumentException("You must specify a valid id parameter!");
 
             User user = UserManager.getUser(form.getId());
             if (null == user)
