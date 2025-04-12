@@ -141,7 +141,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                     }
 
                                     ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
-                                    oldWriter.write(new LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
+                                    oldWriter.write(LinkBuilder.simpleLink(globalUniqueId, url).toString());
                                 }
                             };
                         }

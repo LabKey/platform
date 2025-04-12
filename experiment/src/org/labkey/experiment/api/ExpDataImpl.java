@@ -1070,7 +1070,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 if (addParam)
                     url = url.clone().addParameter(PROPERTY, dataclass);
 
-                sb.append(new LinkBuilder(label).href(url).clearClasses());
+                sb.append(LinkBuilder.simpleLink(label, url));
             }
             else
             {

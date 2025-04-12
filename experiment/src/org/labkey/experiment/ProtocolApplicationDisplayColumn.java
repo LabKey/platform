@@ -48,7 +48,7 @@ public class ProtocolApplicationDisplayColumn extends SimpleDisplayColumn
         else
         {
             ActionURL url = ExperimentController.getShowApplicationURL(ctx.getContainer(), _protocolApplication.getRowId());
-            out.write(new LinkBuilder(_protocolApplication.getName()).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_protocolApplication.getName(), url));
         }
     }
 }

@@ -30,14 +30,6 @@ public class LinkBuilder extends DisplayElementBuilder<LinkBuilder.Link, LinkBui
         return new LinkBuilder(text).href(url);
     }
 
-    //TODO: Temporary!!
-
-    @Override
-    public LinkBuilder clearClasses()
-    {
-        return super.clearClasses();
-    }
-
     public LinkBuilder()
     {
         cssClass = "labkey-text-link";

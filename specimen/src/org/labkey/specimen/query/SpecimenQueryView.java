@@ -59,6 +59,7 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -188,7 +189,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 HtmlStringBuilder builder = HtmlStringBuilder.of(reason instanceof String r ? r : "Specimen Unavailable.")
                     .append(HtmlString.BR).append(HtmlString.BR)
                     .append("Click ")
-                    .append(PageFlowUtil.link("[history]", getHistoryLink(ctx)).clearClasses())
+                    .append(LinkBuilder.simpleLink("[history]", getHistoryLink(ctx)))
                     .append(" for more information.");
 
                 out.write(PageFlowUtil.popupHelp(builder.getHtmlString(), "Specimen Unavailable"));

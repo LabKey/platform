@@ -2365,13 +2365,13 @@ public class SecurityManager
             // Email failure message already includes link to the contents
             if (!emailFailure)
             {
-                LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
+                LinkBuilder link = LinkBuilder.simpleLink("here", messageContentsURL).target("_blank");
                 message.append(" Click ").append(link).append(" to see the email.");
             }
 
             if (!context.getContainer().isRoot())
             {
-                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                LinkBuilder projectGroupLink = LinkBuilder.simpleLink("here", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer()));
                 message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".").append(HtmlString.BR).append(HtmlString.BR);
             }
         }
@@ -2446,7 +2446,7 @@ public class SecurityManager
         if (messageContentsURL != null)
         {
             builder.append(" Alternatively, you can copy the ")
-                .append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses())
+                .append(LinkBuilder.simpleLink("contents of the message", messageContentsURL).target("_blank"))
                 .append(" into an email client and send it to the user manually.");
         }
 

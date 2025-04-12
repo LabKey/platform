@@ -71,7 +71,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);
 
-            out.write(new LinkBuilder(_linkText).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_linkText, url));
         }
     }
 }

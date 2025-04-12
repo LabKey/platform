@@ -159,7 +159,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
             StringBuilder sb = new StringBuilder();
             for (Attachment att : attachments)
             {
-                sb.append(new LinkBuilder(att.getName()).href(SpecimenController.getDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
+                sb.append(LinkBuilder.simpleLink(att.getName(), SpecimenController.getDownloadURL(_notification.getEvent(), att.getName())));
                 sb.append("<br>");
             }
             return sb.toString();

@@ -116,7 +116,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
         {
             return HtmlStringBuilder.of(String.format("%s rows that were previously linked in this event have been recalled (or deleted)." +
                     " The audit record(s) of the deleted rows can be found in the ", count))
-                .append(new LinkBuilder("link to study history view").href(url).clearClasses())
+                .append(LinkBuilder.simpleLink("link to study history view", url))
                 .append(", or the study dataset history view.");
         }
     }

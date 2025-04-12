@@ -1402,9 +1402,7 @@ public class ExperimentController extends SpringActionController
             if (!inDefinitionContainer)
             {
                 ActionURL definitionURL = urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId());
-                LinkBuilder link = PageFlowUtil.link(_dataClass.getContainer().getPath())
-                        .href(definitionURL)
-                        .clearClasses();
+                LinkBuilder link = LinkBuilder.simpleLink(_dataClass.getContainer().getPath(), definitionURL);
                 SimpleDisplayColumn definedInCol = new SimpleDisplayColumn(link.toString());
                 definedInCol.setCaption("Defined In");
                 detailsView.getDataRegion().addDisplayColumn(definedInCol);

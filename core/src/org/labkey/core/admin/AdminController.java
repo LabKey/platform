@@ -4582,7 +4582,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "container");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 
@@ -4597,7 +4597,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "descriptor");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 

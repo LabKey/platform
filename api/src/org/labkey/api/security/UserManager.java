@@ -1221,7 +1221,7 @@ public class UserManager
         // currentUser has permissions to see user details of the displayed user
         if (url != null)
         {
-            return new LinkBuilder(displayName).href(url).clearClasses().getHtmlString();
+            return LinkBuilder.simpleLink(displayName, url).getHtmlString();
         }
 
         return HtmlString.of(displayName);

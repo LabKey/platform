@@ -49,7 +49,7 @@ public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
         {
             ActionURL url = ExperimentController.getRunGraphURL(ctx.getContainer(), _run.getRowId());
 
-            out.write(new LinkBuilder(_run.getName()).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_run.getName(), url));
         }
     }
 }
