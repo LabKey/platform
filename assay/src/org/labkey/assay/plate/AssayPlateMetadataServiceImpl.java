@@ -1469,11 +1469,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             @Override
             public String format(FieldKey fieldKey)
             {
-                var formatted = super.format(fieldKey);
-                var dotIndex = formatted.lastIndexOf('.');
-                if (dotIndex >= 0)
-                    formatted = formatted.substring(dotIndex + 1);
-                return formatted;
+                // Display the fieldKey label (as opposed to the toDisplayString()) for these criteria
+                return fieldKey.getLabel();
             }
         };
 
