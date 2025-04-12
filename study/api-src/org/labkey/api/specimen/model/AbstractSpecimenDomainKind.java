@@ -100,6 +100,8 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     }
 
     // Issue 52666: Don't allow property names that might cause problems due to a storage vs user-facing name
+    // Specimens don't handle this mismatch. Ideally we'd get smarter about realizing when there could be a mismatch
+    // once Issue 52714 is addressed, as it's not as simple as just the character count.
     private static @Nullable ValidationException checkFieldNameLength(GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         for (GWTPropertyDescriptor prop : update.getFields())
