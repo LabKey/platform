@@ -214,7 +214,7 @@ public abstract class ContainerFilter
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, Set<String> includedTypes)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, @Nullable Collection<GUID> ids, boolean allowNulls, Set<String> includedTypes)
     {
         SQLFragment f = _getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includedTypes);
         if (_log.isTraceEnabled())
@@ -226,7 +226,7 @@ public abstract class ContainerFilter
         return f;
     }
 
-    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, @NotNull Set<String> includedChildTypes)
+    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, @Nullable Collection<GUID> ids, boolean allowNulls, @NotNull Set<String> includedChildTypes)
     {
         if (ids == null)
         {
@@ -1137,7 +1137,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             assert _container.equals(currentContainer);
 

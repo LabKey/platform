@@ -16,6 +16,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -122,7 +123,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
-    public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+    public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
     {
         HashSet<GUID> allowedContainers = new HashSet<>();
         if (_containerIds != null && !_containerIds.isEmpty())
@@ -168,7 +169,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             allowedContainers.retainAll(studyContainers);
 
             if (allowedContainers.containsAll(studyContainers))
-                return Collections.emptySet();
+                return null;
         }
 
         return allowedContainers;
