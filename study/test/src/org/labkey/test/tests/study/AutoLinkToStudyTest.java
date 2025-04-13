@@ -308,10 +308,10 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         actionClear(newCategoryField);
         newCategoryField.sendKeys(name);
         newCategoryField.sendKeys(Keys.ENTER);
+        sleep(1000);
         if(!newCategoryField.getText().equals(name))
         {
             //retry again after wait.
-            sleep(1000);
             newCategoryField.sendKeys(name);
             newCategoryField.sendKeys(Keys.ENTER);
         }
