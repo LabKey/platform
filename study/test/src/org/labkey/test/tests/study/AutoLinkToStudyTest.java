@@ -306,15 +306,10 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         categoryWindow.clickButton("New Category", 0);
         WebElement newCategoryField = Locator.input("label").withAttributeContaining("id", "textfield").notHidden().waitForElement(getDriver(), WAIT_FOR_JAVASCRIPT);
         actionClear(newCategoryField);
+        sleep(500);
         newCategoryField.sendKeys(name);
         newCategoryField.sendKeys(Keys.ENTER);
-        sleep(1000);
-        if(!newCategoryField.getText().equals(name))
-        {
-            //retry again after wait.
-            newCategoryField.sendKeys(name);
-            newCategoryField.sendKeys(Keys.ENTER);
-        }
+        sleep(500);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
         _extHelper.waitForExtDialogToDisappear("Manage Categories");
