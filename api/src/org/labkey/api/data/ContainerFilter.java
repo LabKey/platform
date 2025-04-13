@@ -212,7 +212,7 @@ public abstract class ContainerFilter
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, Set<String> includedTypes)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, @Nullable Collection<GUID> ids, boolean allowNulls, Set<String> includedTypes)
     {
         SQLFragment f = _getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, includedTypes);
         if (_log.isTraceEnabled())
@@ -224,7 +224,7 @@ public abstract class ContainerFilter
         return f;
     }
 
-    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean allowNulls, @NotNull Set<String> includedChildTypes)
+    protected SQLFragment _getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, @Nullable Collection<GUID> ids, boolean allowNulls, @NotNull Set<String> includedChildTypes)
     {
         if (ids == null)
         {
@@ -514,10 +514,6 @@ public abstract class ContainerFilter
         return Type.Current.create(cu);
     }
 
-    /** Use this with extreme caution - this doesn't check permissions */
-    @Deprecated(forRemoval = true) // Use getUnsafeEverythingFilter() instead TODO: Remove
-    public static final ContainerFilter EVERYTHING_UNSAFE = new InternalNoContainerFilter();
-
     private static ContainerFilter _everythingUnsafe = null;
 
     /** Use this with extreme caution - this doesn't check permissions! */
@@ -581,13 +577,9 @@ public abstract class ContainerFilter
         @Override
         public final Collection<GUID> getIds()
         {
-            if (null != _container)
-            {
-                if (null == _cached)
-                    _cached = generateIds(_container, ReadPermission.class, null);
-                return _cached;
-            }
-            return generateIds(_container, ReadPermission.class, null);
+            if (null == _cached)
+                _cached = generateIds(_container, ReadPermission.class, null);
+            return _cached;
         }
 
         @Override
@@ -767,7 +759,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             assert _container.equals(currentContainer);
 
@@ -795,6 +787,12 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            Set<Container> containers = getContainers(currentContainer, perm, roles);
+            return toIds(containers);
+        }
+
+        private @NotNull Set<Container> getContainers(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
@@ -805,7 +803,7 @@ public abstract class ContainerFilter
             {
                 containers.add(project);
             }
-            return toIds(containers);
+            return containers;
         }
 
         @Override
@@ -1072,16 +1070,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            assert _container.equals(currentContainer);
-
-            Set<Container> containers = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
-                containers.add(currentContainer);
-            Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, perm, roles))
-            {
-                containers.add(project);
-            }
+            Set<Container> containers = new CurrentPlusProject(_container, _user).getContainers(currentContainer, perm, roles);
             Container shared = ContainerManager.getSharedContainer();
             if (shared.hasPermission(_user, perm, roles))
             {
@@ -1106,7 +1095,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             var containers = super.generateIds(currentContainer, perm, roles);
             var shared = ContainerManager.getSharedContainer();
@@ -1133,7 +1122,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             assert _container.equals(currentContainer);
 
@@ -1164,7 +1153,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Collection<GUID> containers = super.generateIds(currentContainer, perm, roles);
             var shared = ContainerManager.getSharedContainer();
@@ -1262,7 +1251,7 @@ public abstract class ContainerFilter
     }
 
 
-    public static Set<GUID> toIds(Collection<Container> containers)
+    public static @NotNull Set<GUID> toIds(Collection<Container> containers)
     {
         Set<GUID> ids = new HashSet<>();
         for (Container container : containers)
