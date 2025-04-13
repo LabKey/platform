@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
-<%@ page import="org.labkey.api.util.Button" %>
+<%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -32,7 +32,7 @@
         dependencies.add("codemirror");
     }
 
-    private Button.ButtonBuilder makeButton(AnalysisController.ProtocolTask action, ActionURL urlBase)
+    private ButtonBuilder makeButton(AnalysisController.ProtocolTask action, ActionURL urlBase)
     {
         String actionStr = action.toString();
         String confirmMsg = "Are you sure you want to " + actionStr + " this protocol?";
@@ -43,7 +43,7 @@
 <%
     AnalysisController.ProtocolDetailsForm form = ((HttpView<AnalysisController.ProtocolDetailsForm>) HttpView.currentView()).getModelBean();
     ActionURL returnUrl = form.getReturnActionURL(urlProvider(ProjectUrls.class).getBeginURL(getContainer()));
-    Button.ButtonBuilder cancelButton = button("Cancel").href(returnUrl);
+    ButtonBuilder cancelButton = button("Cancel").href(returnUrl);
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">

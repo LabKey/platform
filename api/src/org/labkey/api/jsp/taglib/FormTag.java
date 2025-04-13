@@ -21,7 +21,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -198,8 +198,8 @@ public class FormTag extends BodyTagSupport
         var form =
                 DOM.LK.FORM(formAttributes
                     .cl(isNotBlank(_class), _class)
-                    .cl(Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()), "form-horizontal")
-                    .cl(Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()), "form-inline"),
+                    .cl(InputBuilder.Input.Layout.HORIZONTAL.toString().equalsIgnoreCase(getLayout()), "form-horizontal")
+                    .cl(InputBuilder.Input.Layout.INLINE.toString().equalsIgnoreCase(getLayout()), "form-inline"),
                     DOM.BODY_PLACE_HOLDER);
         endTag = DOM.renderTemplate(form, pageContext.getOut());
 

@@ -61,13 +61,13 @@ public class DomTestCase extends Assert
         assertTrue(h.toString().endsWith("<option selected>A&amp;W</option></select>"));
 
         h = createHtml(
-                DIV(new Button.ButtonBuilder("button").build())
+                DIV(new ButtonBuilder("button").build())
         );
         assertTrue(h.toString().contains("labkey-button"));
 
 
         h = createHtml(
-                LK.FORM(at(method,"POST"), new Button.ButtonBuilder("button").build())
+                LK.FORM(at(method,"POST"), new ButtonBuilder("button").build())
         );
         assertTrue(h.toString().contains("labkey-button"));
         assertTrue(h.toString().contains("POST"));

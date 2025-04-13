@@ -38,7 +38,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -47,16 +47,11 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.list.controllers.ListController;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Created by joec on 8/18/2014.
- */
 public class ListManagerSchema extends UserSchema
 {
     private static final Set<String> TABLE_NAMES;
@@ -153,11 +148,11 @@ public class ListManagerSchema extends UserSchema
                     return btnCreate;
                 }
 
-                private Button createImportListArchiveButton()
+                private ButtonBuilder.Button createImportListArchiveButton()
                 {
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
                     urlImport.addReturnUrl(getReturnUrl());
-                    Button btnImport = new Button.ButtonBuilder("Import List Archive")
+                    ButtonBuilder.Button btnImport = new ButtonBuilder("Import List Archive")
                             .href(urlImport)
                             .build();
                     btnImport.setDisplayPermission(DesignListPermission.class);

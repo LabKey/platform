@@ -1,0 +1,143 @@
+package org.labkey.api.util;
+
+import jakarta.validation.constraints.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public class OptionBuilder implements HasHtmlString, SafeToRender
+{
+    private @NotNull HtmlString _label;
+    private @NotNull String _value;
+    private boolean _disabled;
+    private boolean _selected;
+
+    public OptionBuilder()
+    {
+        _label = HtmlString.EMPTY_STRING;
+    }
+
+    public OptionBuilder(String label, @Nullable Object value)
+    {
+        label(label);
+        value(value);
+    }
+
+    public OptionBuilder disabled(boolean disabled)
+    {
+        _disabled = disabled;
+        return this;
+    }
+
+    public OptionBuilder label(String label)
+    {
+        _label = HtmlString.of(label);
+        return this;
+    }
+
+    public OptionBuilder label(@NotNull HtmlString label)
+    {
+        assert null != label;
+        _label = label;
+        return this;
+    }
+
+    public OptionBuilder selected(boolean selected)
+    {
+        _selected = selected;
+        return this;
+    }
+
+    public OptionBuilder value(@Nullable Object value)
+    {
+        _value = null == value ? "" : value.toString();
+        return this;
+    }
+
+    public Option build()
+    {
+        return new Option(this);
+    }
+
+    @Override
+    public String toString()
+    {
+        return getHtmlString().toString();
+    }
+
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return build().getHtmlString();
+    }
+
+    public static class Option implements HasHtmlString, SafeToRender
+    {
+        private final @NotNull HtmlString _label;
+        private final @NotNull String _value;
+        private final boolean _disabled;
+        private final boolean _selected;
+
+        private Option(OptionBuilder builder)
+        {
+            _label = builder._label;
+            _value = builder._value;
+            _disabled = builder._disabled;
+            _selected = builder._selected;
+        }
+
+        public boolean isDisabled()
+        {
+            return _disabled;
+        }
+
+        public HtmlString getLabel()
+        {
+            return _label;
+        }
+
+        public boolean isSelected()
+        {
+            return _selected;
+        }
+
+        public @NotNull String getValue()
+        {
+            return _value;
+        }
+
+        public HtmlString render(boolean forceSelected)
+        {
+            // TODO: This method should do the rendering via DOM or HtmlStringBuilder
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("<option")
+                .append(" value=\"").append(PageFlowUtil.filter(getValue())).append("\"");
+
+            if (isDisabled())
+                sb.append(" disabled");
+
+            if (forceSelected || isSelected())
+                sb.append(" selected");
+
+            sb.append(">");
+
+            if (!HtmlString.EMPTY_STRING.equals(getLabel()))
+                sb.append(getLabel());
+
+            sb.append("</option>");
+
+            return HtmlString.unsafe(sb.toString());
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            return render(false);
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
+        }
+    }
+}

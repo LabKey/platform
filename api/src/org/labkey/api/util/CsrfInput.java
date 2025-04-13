@@ -1,11 +1,6 @@
-package org.labkey.api.util.element;
+package org.labkey.api.util;
 
 import jakarta.servlet.jsp.JspContext;
-import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.HasHtmlString;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.SafeToRender;
-import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ViewContext;
 
 public class CsrfInput implements HasHtmlString, SafeToRender
@@ -25,7 +20,7 @@ public class CsrfInput implements HasHtmlString, SafeToRender
     @Override
     public HtmlString getHtmlString()
     {
-        return new InputBuilder<>().type("hidden").name(CSRFUtil.csrfName).value(_expectedToken).getHtmlString();
+        return InputBuilder.hidden().name(CSRFUtil.csrfName).value(_expectedToken).getHtmlString();
     }
 
     @Override

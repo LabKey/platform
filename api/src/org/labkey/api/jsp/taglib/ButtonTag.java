@@ -16,7 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
@@ -35,7 +35,7 @@ public class ButtonTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        Button.ButtonBuilder button = PageFlowUtil.button(_text).id(_id);
+        ButtonBuilder button = PageFlowUtil.button(_text).id(_id);
 
         // TODO: This shouldn't have inconsistent logic from Button.java, should just be a pass through
         if (_href != null)

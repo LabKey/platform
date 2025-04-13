@@ -23,8 +23,8 @@ import org.labkey.api.study.Location;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.actions.SpecimenReportActions;
 import org.labkey.specimen.report.SpecimenVisitReport;
@@ -120,17 +120,17 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml(User user)
     {
 
-        Select.SelectBuilder builder = new Select.SelectBuilder();
+        SelectBuilder builder = new SelectBuilder();
 
         builder.name("locationId")
-            .addOption(new Option.OptionBuilder()
+            .addOption(new OptionBuilder()
             .value("")
             .label("All Requesting Locations")
             .build());
 
         for (LocationImpl location : SpecimenManager.get().getSitesWithRequests(getContainer()))
         {
-            builder.addOption(new Option.OptionBuilder()
+            builder.addOption(new OptionBuilder()
                 .value(Integer.toString(location.getRowId()))
                 .label(location.getLabel())
                 .selected(_locationId != null && location.getRowId() == _locationId)

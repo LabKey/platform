@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.Button" %>
+<%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -72,7 +72,7 @@
     <%= button("Generate Button").submit(true) %>
 </labkey:form>
 <%
-    Button.ButtonBuilder button = form.getBuiltButton();
+    ButtonBuilder button = form.getBuiltButton();
     if (button != null)
     {
 %>

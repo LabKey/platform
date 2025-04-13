@@ -19,8 +19,8 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
-<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.wiki.WikiController.DeleteAction" %>

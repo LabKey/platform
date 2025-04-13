@@ -35,7 +35,7 @@
 <table>
     <% for (Domain type : bean.locals.values()) { %>
 <tr>
-    <td><%=link(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getTypeURI())).clearClasses()%></td>
+    <td><%=simpleLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, getContainer()).addParameter("type", type.getTypeURI()))%></td>
     <%
         DomainKind kind = type.getDomainKind();
         if (kind != null)
@@ -57,7 +57,7 @@
 <table>
     <% for (Domain type : bean.project.values()) { %>
     <tr>
-        <td><%=link(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI())).clearClasses()%></td>
+        <td><%=simpleLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI()))%></td>
         <%
             DomainKind kind = type.getDomainKind();
             if (kind != null)
@@ -79,7 +79,7 @@
 <table>
     <% for (Domain type : bean.globals.values()) { %>
     <tr>
-        <td><%=link(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI())).clearClasses()%></td>
+        <td><%=simpleLink(type.getName(), new ActionURL(TypesController.TypeDetailsAction.class, type.getContainer()).addParameter("type", type.getTypeURI()))%></td>
         <%
             DomainKind kind = type.getDomainKind();
             if (kind != null)

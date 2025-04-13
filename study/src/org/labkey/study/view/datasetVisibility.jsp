@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.JavaScriptFragment" %>
-<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -89,7 +89,7 @@
 <labkey:errors/>
 
 <%
-    if (bean.entrySet().size() == 0)
+    if (bean.entrySet().isEmpty())
     {
         ActionURL createURL = urlFor(DefineDatasetTypeAction.class);
 %>
@@ -136,7 +136,7 @@
             </td>
             <td>
                 <%
-                    if (cohorts == null || cohorts.size() == 0)
+                    if (cohorts == null || cohorts.isEmpty())
                     {
                 %>
                     <em>No cohorts defined</em>

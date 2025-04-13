@@ -65,14 +65,14 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -1346,7 +1346,7 @@ public class Portal implements ModuleChangeListener
                                         ),
                                         SPAN(
                                                 cl("input-group-button"),
-                                                new Button.ButtonBuilder("Add").submit(true).build()
+                                                new ButtonBuilder("Add").submit(true).build()
                                         )
                                 )
                         )

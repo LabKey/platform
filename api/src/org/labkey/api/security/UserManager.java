@@ -64,7 +64,7 @@ import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1221,7 +1221,7 @@ public class UserManager
         // currentUser has permissions to see user details of the displayed user
         if (url != null)
         {
-            return new Link.LinkBuilder(displayName).href(url).clearClasses().getHtmlString();
+            return LinkBuilder.simpleLink(displayName, url).getHtmlString();
         }
 
         return HtmlString.of(displayName);

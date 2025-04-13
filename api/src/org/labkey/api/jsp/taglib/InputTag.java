@@ -18,9 +18,9 @@ package org.labkey.api.jsp.taglib;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.element.DisplayField;
-import org.labkey.api.util.element.Input;
-import org.labkey.api.util.element.TextArea;
+import org.labkey.api.util.DisplayFieldBuilder;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.TextAreaBuilder;
 
 import java.io.IOException;
 
@@ -279,14 +279,14 @@ public class InputTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
-        Input.InputBuilder input;
+        InputBuilder<?> input;
 
         if ("textarea".equalsIgnoreCase(type))
-            input = new TextArea.TextAreaBuilder();
+            input = new TextAreaBuilder();
         else if ("displayfield".equalsIgnoreCase(type))
-            input = new DisplayField.DisplayFieldBuilder();
+            input = new DisplayFieldBuilder();
         else
-            input = new Input.InputBuilder<>().type(type);
+            input = new InputBuilder<>().type(type);
 
         if (null == forceSmallContext)
             forceSmallContext = false;
@@ -331,7 +331,7 @@ public class InputTag extends SimpleTagBase
             .checked(checked)
             .size(size)
             .maxLength(maxLength)
-            .state(Input.State.get(state))
+            .state(InputBuilder.Input.State.get(state))
             .autoComplete(autoComplete)
             .dirName(dirName)
             .form(form)
@@ -360,7 +360,7 @@ public class InputTag extends SimpleTagBase
             if (formGroup == null)
                 input.formGroup(true);
 
-            input.layout(Input.Layout.get(form.getLayout()));
+            input.layout(InputBuilder.Input.Layout.get(form.getLayout()));
         }
 
         getOut().print(input);

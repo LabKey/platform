@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.security.SecurityUrls"%>
 <%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder"%>
+<%@ page import="org.labkey.api.util.OptionBuilder"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.StudySecurityAction" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>

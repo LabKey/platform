@@ -7,7 +7,7 @@ import org.labkey.api.specimen.Vial;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.study.Location;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.ViewContext;
@@ -83,7 +83,7 @@ public class ManageRequestBean extends SpecimensViewBean
 
                 ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, _container);
                 importActionURL.addParameter("id", specimenRequest.getRowId());
-                Button importButton = new Button.ButtonBuilder("Upload Specimen Ids")
+                ButtonBuilder.Button importButton = new ButtonBuilder("Upload Specimen Ids")
                         .href(importActionURL)
                         .submit(false)
                         .build();

@@ -117,14 +117,14 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.stats.BaseAggregatesAnalyticsProvider;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
@@ -714,16 +714,15 @@ public class QueryController extends SpringActionController
                 TD(TABLE(
                     TR(TD(
                         at(DOM.Attribute.colspan, 3),
-                        hasRead ? new LinkBuilder(path).href(urls.urlExternalSchemaAdmin(c)).clearClasses() : path
+                        hasRead ? LinkBuilder.simpleLink(path, urls.urlExternalSchemaAdmin(c)) : path
                     )),
                     TR(TD(TABLE(
                         defs.stream()
                             .map(def -> TR(TD(
                                 at(DOM.Attribute.style, "padding-left:20px"),
-                                hasRead ? new LinkBuilder(def.getUserSchemaName() +
-                                    (!StringUtils.equals(def.getSourceSchemaName(), def.getUserSchemaName()) ? " (" + def.getSourceSchemaName() + ")" : ""))
-                                    .href(urls.urlUpdateExternalSchema(c, def))
-                                    .clearClasses() : def.getUserSchemaName()
+                                hasRead ? LinkBuilder.simpleLink(def.getUserSchemaName() +
+                                    (!StringUtils.equals(def.getSourceSchemaName(), def.getUserSchemaName()) ? " (" + def.getSourceSchemaName() + ")" : ""), urls.urlUpdateExternalSchema(c, def))
+                                    : def.getUserSchemaName()
                             )))
                     )))
                 ));

@@ -26,11 +26,11 @@
 <%@ page import="org.labkey.api.study.publish.StudyPublishService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Option" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -60,7 +60,7 @@
     List<Pair<String, String>> parameters = postURL.getParameters();
     postURL.deleteParameters();
 
-    Select.SelectBuilder options = new Select.SelectBuilder().name("targetStudy").label("Choose target study")
+    SelectBuilder options = new SelectBuilder().name("targetStudy").label("Choose target study")
             .id("targetStudy")
             .layout(Input.Layout.HORIZONTAL)
             .formGroup(true);
@@ -68,7 +68,7 @@
     for (Study study : StudyPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
     {
         String path = study.getContainer().getPath();
-        options.addOption(new Option.OptionBuilder()
+        options.addOption(new OptionBuilder()
                 .value(study.getContainer().getId())
                 .label(path + " (" + study.getLabel() + ")")
                 .selected(firstStudyContainer != null && firstStudyContainer.getPath().equals(path))
