@@ -338,9 +338,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getOptionParamsMap().getOrDefault(p, false);
     }
 
+    @NotNull
     protected DataIteratorContext.LookupResolutionType getLookupResolutionType()
     {
-        return DataIteratorContext.LookupResolutionType.valueOf(getParam(Params.lookupResolutionType));
+        String paramValue = getParam(Params.lookupResolutionType);
+        if (paramValue == null)
+            return DataIteratorContext.LookupResolutionType.primaryKey;
+        return DataIteratorContext.LookupResolutionType.valueOf(paramValue);
     }
 
     protected boolean skipInsertOptionValidation()
