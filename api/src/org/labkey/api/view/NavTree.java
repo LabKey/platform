@@ -679,7 +679,7 @@ public class NavTree implements Collapsible
     public LinkBuilder toSimpleLinkBuilder()
     {
         // Copy key properties. We could copy others, if needed by future code paths.
-        LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
+        LinkBuilder lb = LinkBuilder.simpleLink(_text, _href).onClick(_script);
 
         if (_usePost)
             lb.usePost(_confirmMessage);
@@ -755,13 +755,12 @@ public class NavTree implements Collapsible
             }
         }
 
-        LinkBuilder builder = new LinkBuilder(html)
+        LinkBuilder builder = LinkBuilder.simpleLink(html)
             .id(config.makeId("popupMenuView"))
             .target(getTarget())
             .title(getDescription())
             .tabindex(0)
             .enabled(!isDisabled())
-            .clearClasses()
             .href(null != href && !isPost() ? href : "#")
             .onClick(getScript());
 

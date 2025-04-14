@@ -199,6 +199,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -2840,7 +2841,7 @@ public class StudyController extends BaseStudyController
                 public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    PageFlowUtil.link("Download Data File").href(url).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("Download Data File", url).appendTo(oldWriter);
                 }
             };
             dr.addDisplayColumn(dc);
@@ -3825,7 +3826,7 @@ public class StudyController extends BaseStudyController
             if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
-                return HtmlView.unsafe("No data rows selected. " + PageFlowUtil.link("back").onClick("back()"));
+                return HtmlView.unsafe("No data rows selected. " + LinkBuilder.labkeyLink("back").onClick("back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -5955,13 +5956,13 @@ public class StudyController extends BaseStudyController
             out.print("<table><tr><td align=\"left\">");
             if (_prevURL != null)
             {
-                PageFlowUtil.link("Previous " + subjectNoun).href(_prevURL).appendTo(out);
+                LinkBuilder.labkeyLink("Previous " + subjectNoun, _prevURL).appendTo(out);
                 out.print("&nbsp;");
             }
 
             if (_nextURL != null)
             {
-                PageFlowUtil.link("Next " + subjectNoun).href(_nextURL).appendTo(out);
+                LinkBuilder.labkeyLink("Next " + subjectNoun, _nextURL).appendTo(out);
                 out.print("&nbsp;");
             }
 
@@ -5970,7 +5971,7 @@ public class StudyController extends BaseStudyController
             if (null != _currentParticipantId && null != ss)
             {
                 ActionURL search = urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
-                PageFlowUtil.link("Search for '" + id(_currentParticipantId, c, user) + "'").href(search).appendTo(out);
+                LinkBuilder.labkeyLink("Search for '" + id(_currentParticipantId, c, user) + "'", search).appendTo(out);
                 out.print("&nbsp;");
             }
 
@@ -5984,7 +5985,7 @@ public class StudyController extends BaseStudyController
                 customizeURL.addReturnUrl(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 out.print("</td><td>");
-                PageFlowUtil.link("Customize View").href(customizeURL).appendTo(out);
+                LinkBuilder.labkeyLink("Customize View", customizeURL).appendTo(out);
             }
 
             if (_display != null)

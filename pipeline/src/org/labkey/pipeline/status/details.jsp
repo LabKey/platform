@@ -232,7 +232,7 @@
             if (url != null)
             {
         %>
-            <%=link("Show raw log file").id("show-raw-log").attributes(Map.of("data-details", "false")).href(url).target("_blank")%>
+            <%=link("Show raw log file", url).id("show-raw-log").attributes(Map.of("data-details", "false")).target("_blank")%>
         <%
             }
         %>

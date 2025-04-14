@@ -21,6 +21,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -99,6 +100,6 @@ public class ListsWebPart extends WebPartView<ViewContext>
         }
         out.write("</table>");
         if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            out.write(PageFlowUtil.link("manage lists").href(PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
+            out.write(LinkBuilder.labkeyLink("manage lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(model.getContainer())).toString());
     }
 }

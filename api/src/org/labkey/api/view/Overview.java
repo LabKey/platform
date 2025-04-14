@@ -23,6 +23,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -293,7 +294,7 @@ public class Overview implements HasHtmlString
             ret.unsafeAppend("<span class=\"action-label\">");
             if (_url != null)
             {
-                ret.append(PageFlowUtil.link(_label).href(_url));
+                ret.append(LinkBuilder.labkeyLink(_label, _url));
             }
             else
             {

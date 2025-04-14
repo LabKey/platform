@@ -60,7 +60,7 @@
     <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=h(type)%></td></tr> <% } %>
     <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=h(description)%></td></tr> <% } %>
     <tr><td colspan=2>
-        <%=link("view report").href(url).target(report.getRunReportTarget())%>
+        <%=link("view report", url).target(report.getRunReportTarget())%>
     </td></tr>
 </table>
 <div style='clear: both;'></div>

@@ -1237,7 +1237,7 @@ public class ExperimentController extends SpringActionController
                     // container context on the generated expr.
                     ((DetailsURL) expr).setContainerContext(st.getContainer());
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
-                    updateLinks.append(PageFlowUtil.link("edit").href(url)).append(" ");
+                    updateLinks.append(LinkBuilder.labkeyLink("edit", url)).append(" ");
                 }
             }
 
@@ -1248,7 +1248,7 @@ public class ExperimentController extends SpringActionController
                 if (st != null)
                     deriveURL.addParameter("targetSampleTypeId", st.getRowId());
 
-                updateLinks.append(PageFlowUtil.link("derive samples from this sample").href(deriveURL)).append(" ");
+                updateLinks.append(LinkBuilder.labkeyLink("derive samples from this sample", deriveURL)).append(" ");
             }
 
             vbox.addView(new HtmlView(updateLinks));
@@ -1928,8 +1928,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (editor.isProtocolEditor(form.lookupRun().getProtocol()))
                 {
-                    updateLinks.append(PageFlowUtil.link("edit " + editor.getDisplayName() + " run")
-                            .href(editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
+                    updateLinks.append(LinkBuilder.labkeyLink("edit " + editor.getDisplayName() + " run", editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
                 }
             }
 

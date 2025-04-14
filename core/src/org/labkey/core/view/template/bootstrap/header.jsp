@@ -111,7 +111,7 @@
     {
         String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
 %>
-            <h4 class="brand-link"><%=isStartupComplete ? link(displayedShortName, laf.getLogoHref()).clearClasses() : h(displayedShortName)%></h4>
+            <h4 class="brand-link"><%=isStartupComplete ? simpleLink(displayedShortName, laf.getLogoHref()) : h(displayedShortName)%></h4>
 <%
     }
 %>

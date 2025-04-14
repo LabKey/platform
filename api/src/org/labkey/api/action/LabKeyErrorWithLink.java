@@ -28,7 +28,7 @@ public class LabKeyErrorWithLink extends LabKeyError
         if (adviceHref != null)
         {
             builder.append(" ");
-            builder.append(new LinkBuilder(getAdviceText()).href(getAdviceHref()).clearClasses());
+            builder.append(LinkBuilder.simpleLink(getAdviceText(), getAdviceHref()));
         }
 
         return builder.getHtmlString();

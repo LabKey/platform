@@ -22,6 +22,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
@@ -67,7 +68,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                 case Assay -> {
                     ActionURL runURL = new ActionURL(AssayDetailRedirectAction.class, ctx.getContainer());
                     runURL.addParameter("runId", sourceId);
-                    out.write(PageFlowUtil.link("View Run").href(runURL));
+                    out.write(LinkBuilder.labkeyLink("View Run", runURL));
                 }
                 case SampleType -> {
                     ExpObject expObject = _publishSource.resolvePublishSource(sourceId);
@@ -77,7 +78,7 @@ public class SourceDataLinkDisplayColumn extends DataInputColumn
                         // by default the container is where the sample definition lives, use the current container instead so
                         // the user is returned to the original folder that the link was attempted from.
                         url.setContainer(ctx.getContainer());
-                        out.write(PageFlowUtil.link("View Sample Type").href(url));
+                        out.write(LinkBuilder.labkeyLink("View Sample Type", url));
                     }
                 }
             }

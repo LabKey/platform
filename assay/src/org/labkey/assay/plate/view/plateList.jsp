@@ -154,12 +154,12 @@
     {
         Integer runCount = plateRunCount.get(plate);
 
-        LinkBuilder editLink = new LinkBuilder("edit");
+        LinkBuilder editLink = LinkBuilder.labkeyLink("edit");
         if (runCount > 0)
         {
             editLink.tooltip("Plate template is used by " + runCount + " runs and can't be edited")
-                    .clearClasses()
-                    .addClass("labkey-disabled-text-link");
+                .clearClasses()
+                .addClass("labkey-disabled-text-link");
         }
         else
         {
@@ -198,12 +198,12 @@
             {
                 if (plates.size() > 1)
                 {
-                    LinkBuilder deleteLink = new LinkBuilder("delete");
+                    LinkBuilder deleteLink = LinkBuilder.labkeyLink("delete");
                     if (runCount > 0)
                     {
                         deleteLink.tooltip("Plate template is used by " + runCount + " runs and can't be deleted")
-                                .clearClasses()
-                                .addClass("labkey-disabled-text-link");
+                            .clearClasses()
+                            .addClass("labkey-disabled-text-link");
                     }
                     else
                     {

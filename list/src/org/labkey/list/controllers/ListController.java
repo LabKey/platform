@@ -94,6 +94,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -596,7 +597,7 @@ public class ListController extends SpringActionController
 
             if (form.isShowHistory())
             {
-                WebPartView<?> linkView = new HtmlView(PageFlowUtil.link("hide item history").href(getViewContext().cloneActionURL().deleteParameter("showHistory")).build());
+                WebPartView<?> linkView = new HtmlView(LinkBuilder.labkeyLink("hide item history", getViewContext().cloneActionURL().deleteParameter("showHistory")).build());
                 linkView.setFrame(WebPartView.FrameType.NONE);
                 view.addView(linkView);
 
@@ -619,7 +620,7 @@ public class ListController extends SpringActionController
             }
             else
             {
-                view.addView(new HtmlView(PageFlowUtil.link("show item history").href(getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
+                view.addView(new HtmlView(LinkBuilder.labkeyLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1")).build()));
             }
 
             if (

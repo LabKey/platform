@@ -392,7 +392,7 @@ public class DataColumn extends DisplayColumn
 
             if (StringUtils.isNotBlank(url))
             {
-                LinkBuilder link = new LinkBuilder(formattedValue).href(url).clearClasses();
+                LinkBuilder link = LinkBuilder.simpleLink(formattedValue).href(url);
 
                 String linkTitle = renderURLTitle(ctx);
                 if (null != linkTitle)

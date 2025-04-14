@@ -21,4 +21,4 @@
 <p>
     The connection using the supplied credentials was <a style="color: green; font-size: 200%">successful</a>.
 </p>
-<%=link("manage remote connections").href(QueryController.RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer()))%>
+<%=link("manage remote connections", QueryController.RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer()))%>

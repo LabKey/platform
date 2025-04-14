@@ -34,6 +34,7 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
@@ -257,7 +258,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                     if (user.hasSiteAdminPermission() || user.isPlatformDeveloper())
                     {
                         out.write("&nbsp;");
-                        out.write(PageFlowUtil.link(Objects.toString(resolveText, "resolve")).href(resolveURL).toString());
+                        out.write(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL).toString());
                     }
                 }
                 out.write("<br>");

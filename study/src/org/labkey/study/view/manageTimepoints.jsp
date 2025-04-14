@@ -54,7 +54,7 @@
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
-        <td><%=link("Recompute Timepoints").href(urlFor(UpdateParticipantVisitsAction.class)).usePost()%></td>
+        <td><%=link("Recompute Timepoints", urlFor(UpdateParticipantVisitsAction.class)).usePost()%></td>
     </tr>
 <% if (timepoints.size() > 0) { %>
     <tr>

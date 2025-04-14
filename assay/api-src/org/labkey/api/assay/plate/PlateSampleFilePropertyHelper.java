@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.HttpView;
@@ -357,7 +358,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
 
                     out.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
-                    out.write(PageFlowUtil.link("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
+                    out.write(LinkBuilder.labkeyLink("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
                     out.write(HtmlString.BR);
 
                     if (reshowFile != null)

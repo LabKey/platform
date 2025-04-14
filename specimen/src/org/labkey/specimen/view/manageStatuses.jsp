@@ -102,7 +102,7 @@ function showSystemRows(value)
                         else
                         {
                     %>
-                            <td><%=link("delete").href(urlFor(DeleteStatusAction.class).addParameter("id", status.getRowId())).usePost()%></td>
+                            <td><%=link("delete", urlFor(DeleteStatusAction.class).addParameter("id", status.getRowId())).usePost()%></td>
                     <%
                         }
                     %>

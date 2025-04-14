@@ -1636,7 +1636,7 @@ public class AuthenticationManager
         {
             HtmlString img = getImg(prefix);
 
-            return null != img ? new LinkBuilder(img).href(getURL(returnUrl, false)).clearClasses().getHtmlString() : null;
+            return null != img ? LinkBuilder.simpleLink(img, getURL(returnUrl, false)).getHtmlString() : null;
         }
 
         @SuppressWarnings("ConstantConditions")
