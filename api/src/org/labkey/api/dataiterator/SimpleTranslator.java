@@ -2255,11 +2255,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 public StringExpression getURL(ColumnInfo parent) { return null; }
             };
 
-            // with remap with allowImportLookupByAlternateKey
+            // with remap with primary then alternate key
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
+                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.primaryThenAlternateKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue);
@@ -2285,7 +2285,79 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // fourth row
                 assertTrue(t.next());
                 assertEquals(4, t.get(0));
-                assertNull(t.get(1)); // empty string converts to null
+                assertEquals("", t.get(1)); // since remapping to the original, returns the empty string
+
+                // no more rows
+                assertFalse(t.next());
+            }
+
+            // with remap with primary then alternate key, missing behavior is null
+            // don't throw error if remap can't be resolved
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.primaryThenAlternateKey);
+                simpleData.beforeFirst();
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
+
+                // first row
+                assertTrue(t.next());
+                assertEquals(1, t.get(0));
+                assertEquals(0, t.get(1)); // convert string "0" -> rowId ordinal 0
+
+                // second row
+                assertTrue(t.next());
+                assertEquals(2, t.get(0));
+                assertEquals(1, t.get(1)); // convert string "Two" -> rowId ordinal 1
+
+                // third row -- original value passed through
+                assertTrue(t.next());
+                assertEquals(3, t.get(0));
+                assertNull(t.get(1)); // fails to convert
+
+                // fourth row
+                assertTrue(t.next());
+                assertEquals(4, t.get(0));
+                assertNull(t.get(1)); // missing returns null
+
+                // no more rows
+                assertFalse(t.next());
+            }
+
+            // with remap with alternate then primary key, missing behavior is null
+            // don't throw error if remap can't be resolved
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
+                simpleData.beforeFirst();
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
+
+                // first row
+                assertTrue(t.next());
+                assertEquals(1, t.get(0));
+                assertEquals(0, t.get(1)); // convert string "0" -> rowId ordinal 0
+
+                // second row
+                assertTrue(t.next());
+                assertEquals(2, t.get(0));
+                assertEquals(1, t.get(1)); // convert string "Two" -> rowId ordinal 1
+
+                // third row -- original value passed through
+                assertTrue(t.next());
+                assertEquals(3, t.get(0));
+                assertNull(t.get(1)); // fails to convert
+
+                // fourth row
+                assertTrue(t.next());
+                assertEquals(4, t.get(0));
+                assertNull(t.get(1)); // missing returns null
 
                 // no more rows
                 assertFalse(t.next());
