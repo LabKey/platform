@@ -333,7 +333,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             final ColumnInfo pkCol = triple.getLeft();
             final ColumnInfo altKeyCol = triple.getMiddle();
             final MultiValuedMap map = triple.getRight();
-            boolean typeMismatch = false;
 
             // check if we've already fetched the key
             Collection<Object> vs;
@@ -363,7 +362,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     }
                     else
                     {
-                        typeMismatch = true;
                         vs = Collections.emptyList();
                     }
 
