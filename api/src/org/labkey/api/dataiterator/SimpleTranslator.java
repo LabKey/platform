@@ -221,8 +221,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void setIncludePkLookup(boolean includePkLookup)
         {
             _includePkLookup = includePkLookup;
-            if (includePkLookup)
-                _maps = null;
+            _maps = null;
         }
 
         public ColumnInfo getPkColumn()
