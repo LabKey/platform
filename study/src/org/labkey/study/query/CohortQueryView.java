@@ -137,7 +137,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
                         ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
                         actionURL.addParameter("rowId", rowId.toString());
 
-                        oldWriter.write(new LinkBuilder("delete").href(actionURL).usePost().toString());
+                        oldWriter.write(LinkBuilder.labkeyLink("delete", actionURL).usePost().toString());
                     }
                     else
                     {

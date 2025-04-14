@@ -134,7 +134,7 @@ public class CrosstabDataRegion extends DataRegion
     {
         if (url != null)
         {
-            return new LinkBuilder(caption).href(url);
+            return LinkBuilder.simpleLink(caption, url);
         }
 
         return HtmlString.of(caption);

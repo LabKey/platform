@@ -19,15 +19,51 @@ import static org.labkey.api.util.DOM.at;
 public class LinkBuilder extends DisplayElementBuilder<LinkBuilder.Link, LinkBuilder>
 {
     // Simple unstyled link -- replacement for hand-coded <a> tags
-    public static LinkBuilder simpleLink(String text, @NotNull URLHelper url)
+    public static LinkBuilder simpleLink(@NotNull String text)
     {
-        return new LinkBuilder(text).href(url).clearClasses();
+        return new LinkBuilder(text).clearClasses();
+    }
+
+    // Simple unstyled link -- replacement for hand-coded <a> tags
+    public static LinkBuilder simpleLink(@NotNull String text, @NotNull URLHelper url)
+    {
+        return simpleLink(text).href(url);
+    }
+
+    // Simple unstyled link -- replacement for hand-coded <a> tags
+    public static LinkBuilder simpleLink(@NotNull String text, @NotNull String url)
+    {
+        return simpleLink(text).href(url);
+    }
+
+    // Simple unstyled link -- replacement for hand-coded <a> tags
+    public static LinkBuilder simpleLink(@NotNull DOM.Renderable html)
+    {
+        return new LinkBuilder(html).clearClasses();
+    }
+
+    // Simple unstyled link -- replacement for hand-coded <a> tags
+    public static LinkBuilder simpleLink(@NotNull DOM.Renderable html, @NotNull URLHelper url)
+    {
+        return simpleLink(html).href(url);
     }
 
     // Standard LabKey-styled text link
-    public static LinkBuilder labkeyLink(String text, @NotNull URLHelper url)
+    public static LinkBuilder labkeyLink(@NotNull String text)
     {
-        return new LinkBuilder(text).href(url);
+        return new LinkBuilder(text);
+    }
+
+    // Standard LabKey-styled text link
+    public static LinkBuilder labkeyLink(@NotNull String text, @NotNull URLHelper url)
+    {
+        return labkeyLink(text).href(url);
+    }
+
+    // Standard LabKey-styled text link
+    public static LinkBuilder labkeyLink(@NotNull String text, @NotNull String url)
+    {
+        return labkeyLink(text).href(url);
     }
 
     public LinkBuilder()
@@ -35,6 +71,7 @@ public class LinkBuilder extends DisplayElementBuilder<LinkBuilder.Link, LinkBui
         cssClass = "labkey-text-link";
     }
 
+    // Use factory methods above TODO: Make private
     public LinkBuilder(@NotNull String text)
     {
         this(HtmlString.of(text));

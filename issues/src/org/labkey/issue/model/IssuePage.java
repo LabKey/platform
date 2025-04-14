@@ -659,7 +659,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     .unsafeAppend("\">&nbsp;")
                     .append(a.getName());
 
-                builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank").clearClasses());
+                builder.append(LinkBuilder.simpleLink(icon.getHtmlString(), download).target("_blank"));
                 builder.endTag("td").endTag("tr");
             }
             builder.endTag("table");

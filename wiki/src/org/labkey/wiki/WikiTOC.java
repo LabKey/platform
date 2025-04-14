@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -275,19 +276,19 @@ public class WikiTOC extends NavTreeMenu
 
             if (prevURL != null)
             {
-                PageFlowUtil.link("previous").href(prevURL).appendTo(out);
+                LinkBuilder.labkeyLink("previous", prevURL).appendTo(out);
             }
 
             if (nextURL != null)
             {
-                PageFlowUtil.link("next").href(nextURL).appendTo(out);
+                LinkBuilder.labkeyLink("next", nextURL).appendTo(out);
             }
 
             if (showExpandOption)
             {
                 out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                PageFlowUtil.link("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)").appendTo(out);
-                PageFlowUtil.link("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)").appendTo(out);
+                LinkBuilder.labkeyLink("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)").appendTo(out);
+                LinkBuilder.labkeyLink("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)").appendTo(out);
             }
 
             out.println("</td>\n</tr>\n</table>");

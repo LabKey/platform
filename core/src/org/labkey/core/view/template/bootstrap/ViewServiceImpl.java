@@ -543,7 +543,6 @@ public class ViewServiceImpl implements ViewService
                         {
                             // Display this NavTree as a simple link. Delegate to LinkBuilder to avoid replicating all its rendering code.
                             final LinkBuilder lb = link.toSimpleLinkBuilder();
-                            lb.clearClasses();
 
                             out.println(lb);
                         }

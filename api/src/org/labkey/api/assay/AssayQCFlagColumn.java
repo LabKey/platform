@@ -19,9 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
@@ -48,16 +46,12 @@ import java.util.Set;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
-/**
- * User: jeckels
- * Date: Dec 12, 2011
- */
 public class AssayQCFlagColumn extends ExprColumn
 {
     public static final String NAME = "QCFlags";
 
-    private String _schemaName;
-    private boolean _editable;
+    private final String _schemaName;
+    private final boolean _editable;
 
     public AssayQCFlagColumn(ExpRunTable parent, String schemaName, boolean editable)
     {
@@ -70,62 +64,55 @@ public class AssayQCFlagColumn extends ExprColumn
     @Override
     public DisplayColumnFactory getDisplayColumnFactory()
     {
-        return new DisplayColumnFactory()
+        return colInfo -> new DataColumn(colInfo)
         {
+            @NotNull
             @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            public Set<ClientDependency> getClientDependencies()
             {
-                return new DataColumn(colInfo)
+                return new LinkedHashSet<>(Arrays.asList(
+                    ClientDependency.fromPath("clientapi/ext3"),
+                    ClientDependency.fromPath("experiment/QCFlagToggleWindow.js")
+                ));
+            }
+
+            @Override
+            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+            {
+                String strValue = (String)getValue(ctx);
+                if (isNotBlank(strValue))
                 {
-                    @NotNull
-                    @Override
-                    public Set<ClientDependency> getClientDependencies()
-                    {
-                        return new LinkedHashSet<>(Arrays.asList(
-                            ClientDependency.fromPath("clientapi/ext3"),
-                            ClientDependency.fromPath("experiment/QCFlagToggleWindow.js")
-                        ));
-                    }
+                    String[] values = strValue.split(",");
+                    Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
+                    Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
 
-                    @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
-                    {
-                        String strValue = (String)getValue(ctx);
-                        if (isNotBlank(strValue))
-                        {
-                            String[] values = strValue.split(",");
-                            Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
-                            Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
+                    // add onclick handler to call the QCFlag toggle window creation function
+                    // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
+                    LinkBuilder linkBuilder = new LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
+                            .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
+                    oldWriter.write(linkBuilder.toString());
+                }
+                else
+                {
+                    oldWriter.write("&nbsp;");
+                }
+            }
 
-                            // add onclick handler to call the QCFlag toggle window creation function
-                            // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                            LinkBuilder linkBuilder = new LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
-                                    .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
-                            oldWriter.write(linkBuilder.toString());
-                        }
-                        else
-                        {
-                            oldWriter.write("&nbsp;");
-                        }
-                    }
+            @Override
+            public void addQueryFieldKeys(Set<FieldKey> keys)
+            {
+                keys.add(getEnabledFieldKey());
+                keys.add(getRunRowIdFieldKey());
+            }
 
-                    @Override
-                    public void addQueryFieldKeys(Set<FieldKey> keys)
-                    {
-                        keys.add(getEnabledFieldKey());
-                        keys.add(getRunRowIdFieldKey());
-                    }
+            private FieldKey getEnabledFieldKey()
+            {
+                return new FieldKey(getBoundColumn().getFieldKey().getParent(), "QCFlagsEnabled");
+            }
 
-                    private FieldKey getEnabledFieldKey()
-                    {
-                        return new FieldKey(getBoundColumn().getFieldKey().getParent(), "QCFlagsEnabled");
-                    }
-
-                    private FieldKey getRunRowIdFieldKey()
-                    {
-                        return new FieldKey(getBoundColumn().getFieldKey().getParent(), "RowId");
-                    }
-                };
+            private FieldKey getRunRowIdFieldKey()
+            {
+                return new FieldKey(getBoundColumn().getFieldKey().getParent(), "RowId");
             }
         };
     }

@@ -84,6 +84,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
@@ -393,7 +394,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
-                        out.print(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL));
+                        out.print(LinkBuilder.labkeyLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
                     }
                 }
                 out.write("<br>");

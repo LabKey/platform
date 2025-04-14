@@ -136,16 +136,14 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
                     LI(
                         cl("dropdown-submenu"),
-                        new LinkBuilder(HtmlStringBuilder.of(child.getText()).append(DOM.createHtmlFragment(I(cl("fa fa-chevron-right")))))
-                            .clearClasses()
+                        LinkBuilder.simpleLink(HtmlStringBuilder.of(child.getText()).append(DOM.createHtmlFragment(I(cl("fa fa-chevron-right")))))
                             .addClass("subexpand")
                             .addClass("subexpand-icon")
                             .tabindex(0),
                         UL(
                             cl("dropdown-layer-menu"),
                             LI(
-                                new LinkBuilder(HtmlStringBuilder.of(DOM.createHtmlFragment(I(cl("fa fa-chevron-left")))).append(child.getText()))
-                                    .clearClasses()
+                                LinkBuilder.simpleLink(HtmlStringBuilder.of(DOM.createHtmlFragment(I(cl("fa fa-chevron-left")))).append(child.getText()))
                                     .addClass("subcollapse")
                                     .tabindex(0)
                             ),

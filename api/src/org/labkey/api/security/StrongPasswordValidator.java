@@ -55,11 +55,10 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
         if (tips) tips.style.display = (tips.style.display === 'none' ? 'block' : 'none');
         this.text = (this.text.includes('show') ?
         """ + PageFlowUtil.jsString(_tipsLinkText.replace("show", "hide")) + " : " + PageFlowUtil.jsString(_tipsLinkText) + ");";
-    private final LinkBuilder _tipsLink = new LinkBuilder(_tipsLinkText)
+    private final LinkBuilder _tipsLink = LinkBuilder.simpleLink(_tipsLinkText)
         .id("tipsLink")
         .attributes(Map.of(DOM.Attribute.tabindex.name(), "5"))
-        .onClick(_tipsLinkOnClick)
-        .clearClasses();
+        .onClick(_tipsLinkOnClick);
 
     private final HtmlString _tips = DOM.createHtml(
         DIV(id("passwordTips").at(DOM.Attribute.style, "display:none;"),
