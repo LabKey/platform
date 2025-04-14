@@ -32,6 +32,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ImportTypesHelper;
@@ -258,7 +259,7 @@ public class ListImporter
                             }
                         }
 
-                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, null, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
+                        def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, DataIteratorContext.LookupResolutionType.primaryKey, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
                     }
 
                     for (ValidationException v : batchErrors.getRowErrors())
