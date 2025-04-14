@@ -32,12 +32,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
@@ -79,9 +79,14 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.study.model.DatasetDataIteratorBuilder;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
+import org.labkey.study.model.DatasetLsidImportHelper;
+import org.labkey.study.model.ParticipantIdImportHelper;
+import org.labkey.study.model.ParticipantSeqNumImportHelper;
 import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.PurgeParticipantsJob.ParticipantPurger;
@@ -181,7 +186,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         //      Container, Dataset, DatasetId, Datasets, Folder, Modified, ModifiedBy, MouseVisit, ParticipantSequenceNum, VisitDay, VisitRowId
         // Mostly this is harmless, but there is some noise.
         HashSet<String> nameset = new HashSet<>(getQueryTable().getColumnNameSet());
-        List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
+//        List.of("Container","Datasets","DatasetId","Dataset","Folder","ParticipantSequenceNum").forEach(nameset::remove);
+        List.of("Container","Datasets","DatasetId","Dataset","Folder").forEach(nameset::remove);
         List<ColumnInfo> columns = new ArrayList<>(getQueryTable().getColumns(nameset.toArray(new String[0])));
 
         // filter out calculated columns which can be expensive to reselect
@@ -579,6 +585,115 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException
+    {
+        // Make sure we've found the original participant before doing the update
+        String oldParticipant = getParticipant(oldRow, user, container);
+        String newLsid;
+
+        try (DbScope.Transaction transaction = StudyService.get().getDatasetSchema().getScope().ensureTransaction())
+        {
+            String lsid = keyFromMap(oldRow);
+            Long rowId = (Long)oldRow.get(DatasetDomainKind.DSROWID);
+            Map<String, Object> oldData = _dataset.getDatasetRow(user, lsid);
+
+            if (oldData == null)
+            {
+                // No old record found, so we can't update
+                ValidationException error = new ValidationException();
+                error.addError(new SimpleValidationError("Record not found with lsid: " + lsid));
+                throw error;
+            }
+
+            // values that are always recalculated
+            getComputedValues(user, row, oldRow);
+
+            newLsid = (String)row.get(DatasetDomainKind.LSID);
+            Table.update(user, _dataset.getStorageTableInfo(), row, rowId);
+
+            DatasetTableImpl target = (DatasetTableImpl)_dataset.getTableInfo(user);
+            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, target, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+                    List.of(row), List.of(oldData));
+
+            // Successfully updated
+            transaction.commit();
+        }
+
+        // return updated row
+        var returnRow = getRow(user, container, Map.of(DatasetDomainKind.LSID, newLsid));
+
+        String newParticipant = getParticipant(returnRow, user, container);
+        if (!oldParticipant.equals(newParticipant))
+        {
+            // Participant has changed - might be a reference to a new participant, or removal of the last reference to
+            // the old participant
+            _potentiallyNewParticipants.add(newParticipant);
+            _potentiallyDeletedParticipants.add(oldParticipant);
+
+            // Need to resync the ParticipantVisit table too
+            _participantVisitResyncRequired = true;
+        }
+        // Check if the timepoint may have changed, but only if we don't already know we need to resync
+        else if (!_participantVisitResyncRequired)
+        {
+            String columnName = StudyManager.getInstance().getStudy(container).getTimepointType().isVisitBased() ?
+                    "SequenceNum" : "Date";
+            Object oldTimepoint = oldRow.get(columnName);
+            Object newTimepoint = returnRow.get(columnName);
+            if (!Objects.equals(oldTimepoint, newTimepoint))
+            {
+                _participantVisitResyncRequired = true;
+            }
+        }
+
+        return returnRow;
+    }
+
+    private void getComputedValues(User user, Map<String, Object> row, Map<String, Object> oldRow) throws ValidationException
+    {
+        String subjectColumnName = _dataset.getStudy().getSubjectColumnName();
+        TableInfo table = _dataset.getTableInfo(user);
+        ColumnInfo subjectColumn = table.getColumn(subjectColumnName);
+        ColumnInfo sequenceNumColumn = table.getColumn(DatasetDomainKind.SEQUENCENUM);
+        ColumnInfo dateColumn = table.getColumn(DatasetDomainKind.DATE);
+        String managedKey = null;
+//        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && _dataset.getKeyManagementType() == Dataset.KeyManagementType.None)
+        if (_dataset.getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER)
+            managedKey = _dataset.getKeyPropertyName();
+        ColumnInfo managedKeyColumn = managedKey != null ? table.getColumn(managedKey) : null;
+
+        Object inputSubjectId = DatasetDataIteratorBuilder.findColumnInMap(row, subjectColumn);
+        if (inputSubjectId == null)
+            inputSubjectId = DatasetDataIteratorBuilder.findColumnInMap(oldRow, subjectColumn);
+        Object inputSeqNum = DatasetDataIteratorBuilder.findColumnInMap(row, sequenceNumColumn);
+        if (inputSeqNum == null)
+            inputSeqNum = DatasetDataIteratorBuilder.findColumnInMap(oldRow, sequenceNumColumn);
+        Date inputDate = (Date)DatasetDataIteratorBuilder.findColumnInMap(row, dateColumn);
+        if (inputDate == null)
+            inputDate = (Date)DatasetDataIteratorBuilder.findColumnInMap(oldRow, dateColumn);
+        Object inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(row, managedKeyColumn);
+        if (inputManagedKey == null)
+            inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(oldRow, managedKeyColumn);
+
+        SequenceNumImportHelper snih = new SequenceNumImportHelper(_dataset.getStudy(), _dataset);
+        Double sequenceNum = snih.translateSequenceNum(inputSeqNum, inputDate);
+
+        ParticipantIdImportHelper helper = new ParticipantIdImportHelper(_dataset.getStudy(), user, _dataset);
+        String subjectId = helper.translateParticipantId(inputSubjectId);
+
+        // generate participant sequence number
+        String participantSeqNum = ParticipantSeqNumImportHelper.translateParticipantSeqNum(subjectId, sequenceNum);
+
+        // re-generate a new lsid
+        DatasetLsidImportHelper dlih = new DatasetLsidImportHelper(_dataset);
+        String lsid = dlih.translateLsid(subjectId, sequenceNum, inputDate, inputManagedKey, null);
+
+        row.put(DatasetDomainKind.LSID, lsid);
+        row.put(DatasetDomainKind.PARTICIPANTSEQUENCENUM, participantSeqNum);
+        row.put(subjectColumnName, subjectId);
+    }
+
+    protected Map<String, Object> prevUpdateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException
     {
         // Update will delete old and insert, so covering aliases, like insert, is needed

@@ -462,7 +462,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         return null;
     }
 
-    static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
+    public static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
     {
         if (null == c)
             return null;
