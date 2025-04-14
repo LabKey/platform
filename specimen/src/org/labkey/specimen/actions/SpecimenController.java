@@ -4099,8 +4099,8 @@ public class SpecimenController extends SpringActionController
                         errors.reject(ERROR_MSG, e.getMessage());
                     }
                 }
-                if (selectedVials == null || selectedVials.size() == 0)
-                    return HtmlView.unsafe("No vials selected. " + PageFlowUtil.link("back").onClick("back()"));
+                if (selectedVials == null || selectedVials.isEmpty())
+                    return HtmlView.unsafe("No vials selected. " + LinkBuilder.labkeyLink("back").onClick("back()"));
             }
 
             return new JspView<>("/org/labkey/specimen/view/updateComments.jsp",
@@ -4387,7 +4387,7 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(new LinkBuilder("View Request").href(SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
+            HtmlView header = new HtmlView(LinkBuilder.labkeyLink("View Request", SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);

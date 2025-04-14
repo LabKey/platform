@@ -61,7 +61,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public LinkBuilder getViewLink(Container c)
             {
-                return PageFlowUtil.link("view logo").href(TemplateResourceHandler.LOGO.getURL(c));
+                return LinkBuilder.labkeyLink("view logo", TemplateResourceHandler.LOGO.getURL(c));
             }
 
             @Override
@@ -124,7 +124,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public LinkBuilder getViewLink(Container c)
             {
-                return PageFlowUtil.link("view logo").href(TemplateResourceHandler.LOGO_MOBILE.getURL(c));
+                return LinkBuilder.labkeyLink("view logo", TemplateResourceHandler.LOGO_MOBILE.getURL(c));
             }
 
             @Override
@@ -187,7 +187,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public LinkBuilder getViewLink(Container c)
             {
-                return PageFlowUtil.link("view icon").href(TemplateResourceHandler.FAVICON.getURL(c));
+                return LinkBuilder.labkeyLink("view icon", TemplateResourceHandler.FAVICON.getURL(c));
             }
 
             @Override
@@ -248,7 +248,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public LinkBuilder getViewLink(Container c)
             {
-                return PageFlowUtil.link("view CSS").href(PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(c));
+                return LinkBuilder.labkeyLink("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(c));
             }
 
             @Override

@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
@@ -77,11 +78,11 @@ public class FileDisplayColumn extends SimpleDisplayColumn
 
                 if (Files.isReadable(file))
                 {
-                    out.write(PageFlowUtil.link(fileName).href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)));
+                    out.write(LinkBuilder.labkeyLink(fileName, StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)));
                     out.write(HtmlString.NBSP);
                     out.write(HtmlString.NBSP);
-                    out.write(PageFlowUtil.link("view").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)));
-                    out.write(PageFlowUtil.link("download").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)));
+                    out.write(LinkBuilder.labkeyLink("view", StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)));
+                    out.write(LinkBuilder.labkeyLink("download", StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)));
                 }
                 else
                 {

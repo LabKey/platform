@@ -239,7 +239,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 oldWriter.write(separator);
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
-                oldWriter.write(new LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
+                oldWriter.write(LinkBuilder.labkeyLink(thread.getName(), url).target("_blank").renderToString());
                 separator = "\n<br/>";
 
                 // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them

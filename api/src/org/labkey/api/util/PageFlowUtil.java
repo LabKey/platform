@@ -1343,14 +1343,16 @@ public class PageFlowUtil
         return new ButtonBuilder(text);
     }
 
+    @Deprecated(forRemoval = true) // Use LinkBuilder.simpleLink() or LinkBuilder.labkeyLink() instead
     public static LinkBuilder link(String text)
     {
-        return new LinkBuilder(text);
+        return LinkBuilder.labkeyLink(text);
     }
 
+    @Deprecated(forRemoval = true) // Use LinkBuilder.simpleLink() or LinkBuilder.labkeyLink() instead
     public static LinkBuilder link(String text, URLHelper url)
     {
-        return new LinkBuilder(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)

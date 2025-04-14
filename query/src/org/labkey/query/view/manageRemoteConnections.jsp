@@ -46,9 +46,9 @@
     {
         for (String field : connectionMap.keySet())
         {
-            %><%=link("edit").href(RemoteQueryConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field)))%><%
-            %><%=link("delete").href(RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field)))%><%
-            %><%=link("test").href(RemoteQueryConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=link("edit", RemoteQueryConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=link("delete", RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field)))%><%
+            %><%=link("test", RemoteQueryConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field)))%><%
             %><%=h(connectionMap.get(field))%>
             <br/><%
         }
@@ -56,7 +56,7 @@
 <%
         if (hasAdminOpsPerm)
         {
-            %><%=link("create new connection").href(RemoteQueryConnectionUrls.urlCreateRemoteConnection(c))%><%
+            %><%=link("create new connection", RemoteQueryConnectionUrls.urlCreateRemoteConnection(c))%><%
         }
     }
 %>

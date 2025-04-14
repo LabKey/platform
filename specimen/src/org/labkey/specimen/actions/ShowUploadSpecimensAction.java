@@ -31,6 +31,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.settings.RepositorySettings;
 import org.labkey.api.study.Study;
@@ -314,9 +315,9 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             return new HtmlView(
                 HtmlStringBuilder.of("Specimens uploaded successfully.")
                     .append(HtmlString.BR).append(HtmlString.BR)
-                    .append(PageFlowUtil.link("study home", homeLink))
+                    .append(LinkBuilder.labkeyLink("study home", homeLink))
                     .append(" ")
-                    .append(PageFlowUtil.link("specimens", samplesLink)
+                    .append(LinkBuilder.labkeyLink("specimens", samplesLink)
                 )
             );
         }

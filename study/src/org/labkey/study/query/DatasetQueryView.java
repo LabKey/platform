@@ -78,6 +78,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -345,7 +346,7 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());
-                    PageFlowUtil.link("assay").href(dataURL).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("assay", dataURL).appendTo(oldWriter);
                     return;
                 }
             }

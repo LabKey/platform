@@ -928,12 +928,10 @@ class PullRequestsDisplayColumn extends DataColumn
                         }
                     }
 
-                    LinkBuilder link = new LinkBuilder(linkText)
-                            .href(url)
-                            .title(title)
-                            .clearClasses()
-                            .target("_blank")
-                            .rel("noopener noreferrer");
+                    LinkBuilder link = LinkBuilder.simpleLink(linkText, url)
+                        .title(title)
+                        .target("_blank")
+                        .rel("noopener noreferrer");
                     link.build().appendTo(oldWriter);
                 }
                 else
