@@ -221,6 +221,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void setIncludePkLookup(boolean includePkLookup)
         {
             _includePkLookup = includePkLookup;
+            if (includePkLookup)
+                _maps = null;
         }
 
         public ColumnInfo getPkColumn()
@@ -331,6 +333,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             final ColumnInfo pkCol = triple.getLeft();
             final ColumnInfo altKeyCol = triple.getMiddle();
             final MultiValuedMap map = triple.getRight();
+            boolean typeMismatch = false;
 
             // check if we've already fetched the key
             Collection<Object> vs;
@@ -350,11 +353,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
 
                 // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
-                if (bulkLoaded == null || bulkLoaded.isEmpty())
+                if (bulkLoaded == null || bulkLoaded.isEmpty() )
                 {
-                    TableSelector ts = createSelector(pkCol, altKeyCol, k);
-                    ts.fillMultiValuedMap(map);
-                    vs = map.get(k);
+                    if (altKeyCol.getJdbcType().getJavaClass().isAssignableFrom(k.getClass()))
+                    {
+                        TableSelector ts = createSelector(pkCol, altKeyCol, k);
+                        ts.fillMultiValuedMap(map);
+                        vs = map.get(k);
+                    }
+                    else
+                    {
+                        typeMismatch = true;
+                        vs = Collections.emptyList();
+                    }
+
                 }
                 else
                 {
@@ -964,9 +976,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _lookupResolutionType = lookupResolutionType;
         }
 
-        protected Object convertWithPrimaryColumn(Object o, int orderNum)
+        protected Object convertWithPrimaryColumn(Object o, boolean primaryTried)
         {
-            if (_lookupResolutionType.getPrimaryResolutionOrder() >= orderNum)
+            if (_lookupResolutionType.usePrimaryKey() && _lookupResolutionType.usePrimaryFirst() != primaryTried)
             {
                 try
                 {
@@ -978,6 +990,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     {
                         if (_remapper.getPkColumn().getJdbcType().isText())
                         {
+                            _remapper.setIncludePkLookup(true);
                             Object remappedValue = _remapper.mappedValue(o);
                             value = remappedValue != null ? remappedValue : value;
                         }
@@ -992,13 +1005,19 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return null;
         }
 
-        protected Object convertWithRemapper(Object o, int orderNum)
+        protected Object convertWithRemapper(Object o)
         {
-            if (_lookupResolutionType.getAlternateResolutionOrder() >= orderNum)
+            if (_lookupResolutionType.useAlternateKey())
             {
-                // don't want to attempt to resolve by target table PK because we already know there is a type mismatch
-                _remapper.setIncludePkLookup(false);
-                return _remapper.mappedValue(o);
+                try
+                {
+                    _remapper.setIncludePkLookup(false);
+                    return _remapper.mappedValue(o);
+                }
+                catch (ConversionException ex)
+                {
+                    return null;
+                }
             }
             return null;
         }
@@ -1009,16 +1028,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (o == null)
                 return null;
 
-            int convertNum = 1;
-            Object value = convertWithPrimaryColumn(o, convertNum);
+            boolean triedPrimary = false;
+            Object value = o;
+            value = convertWithPrimaryColumn(o, triedPrimary);
+            triedPrimary = true;
             if (value != null)
                 return value;
-            convertNum++;
-            value = convertWithRemapper(o, convertNum);
+            value = convertWithRemapper(o);
             if (value != null)
                 return value;
-            convertNum++;
-            return convertWithPrimaryColumn(o, convertNum);
+            value = convertWithPrimaryColumn(o, triedPrimary);
+            return value;
         }
     }
 
@@ -1368,14 +1388,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         ForeignKey fk = col.getFk();
         DataIteratorContext.LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
-        if (fk != null && lookupResolutionType.usesAlternateKey() && fk.allowImportByAlternateKey())
+        if (fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
             // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
             boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
 
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+                missing = col.isRequired() || hasValidator || !lookupResolutionType.usePrimaryKey() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+            // For enum tables, we should not be using number names for the values, so we will look up by primary key first (resolving rowIds) then alternate.
+            // This assures the type is an Integer when a rowId is given (e.g., from a row read from the database), not a string.
+            if (fk.getLookupTableInfo() instanceof EnumTableInfo)
+                lookupResolutionType = DataIteratorContext.LookupResolutionType.primaryThenAlternateKey;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
