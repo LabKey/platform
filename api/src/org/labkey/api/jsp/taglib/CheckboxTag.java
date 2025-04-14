@@ -17,7 +17,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 
 import java.io.IOException;
 
@@ -35,8 +35,7 @@ public class CheckboxTag extends SimpleTagBase
     public void doTag() throws IOException
     {
         // TODO: We need a CheckBoxBuilder
-        InputBuilder<?> checkbox = new InputBuilder<>()
-            .type("checkbox")
+        InputBuilder<?> checkbox = InputBuilder.checkbox()
             .id(_id)
             .name(_name)
             .value(_value);
@@ -52,8 +51,7 @@ public class CheckboxTag extends SimpleTagBase
 
         getOut().print(checkbox);
 
-        InputBuilder<?> springMarker = new InputBuilder<>()
-            .type("hidden")
+        InputBuilder<?> springMarker = InputBuilder.hidden()
             .name(SpringActionController.FIELD_MARKER + _name);
 
         getOut().print(springMarker);

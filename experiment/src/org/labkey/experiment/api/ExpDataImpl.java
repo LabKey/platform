@@ -71,13 +71,13 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -1070,7 +1070,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 if (addParam)
                     url = url.clone().addParameter(PROPERTY, dataclass);
 
-                sb.append(new LinkBuilder(label).href(url).clearClasses());
+                sb.append(LinkBuilder.simpleLink(label, url));
             }
             else
             {
@@ -1086,7 +1086,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                return new InputBuilder<>().type("hidden").id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
+                return InputBuilder.hidden().id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
             }
 
             return null;

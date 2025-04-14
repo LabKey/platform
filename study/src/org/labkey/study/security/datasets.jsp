@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
@@ -88,8 +88,6 @@
     ArrayList<Group> noReadGroups = new ArrayList<>();
     for (Group g : groups)
     {
-        if (g.getUserId() == Group.groupAdministrators)
-            continue;
         if (studyPolicy.hasNonInheritedPermission(g, ReadPermission.class))
             readGroups.add(g);
         else if (studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))

@@ -19,9 +19,9 @@
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.qc.DataState" %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
-<%@ page import="org.labkey.api.util.element.TextArea" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
+<%@ page import="org.labkey.api.util.TextAreaBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.AssayController.UpdateQCStateForm" %>
@@ -145,7 +145,7 @@
         }
     %>
 
-    <%= new Select.SelectBuilder().name("state").id("stateInput").label("New State *")
+    <%= new SelectBuilder().name("state").id("stateInput").label("New State *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
             .contextContent("The QC State to assign to the selected run(s)")
@@ -157,7 +157,7 @@
         String commentLabel = requireComment ? "Comment *" : "Comment";
         String commentHelpTip = requireComment ? "A comment is required when changing a QC State for the selected run(s)." : null;
     %>
-    <%= new TextArea.TextAreaBuilder().name("comment").id("commentInput").label(commentLabel)
+    <%= new TextAreaBuilder().name("comment").id("commentInput").label(commentLabel)
             .layout(Input.Layout.HORIZONTAL)
             .value(form.getComment())
             .required(requireComment)

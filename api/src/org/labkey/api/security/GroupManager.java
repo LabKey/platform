@@ -380,7 +380,6 @@ public class GroupManager
         private Container _project;
         private Group _groupA;
         private Group _groupB;
-        private Group _devGroup;
 
         private User getUser()
         {
@@ -397,7 +396,6 @@ public class GroupManager
 
             _groupA = SecurityManager.createGroup(_project, "a", TestContext.get().getUser());
             _groupB = SecurityManager.createGroup(_project, "b", TestContext.get().getUser());
-            _devGroup = SecurityManager.getGroup(Group.groupDevelopers);
 
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();
@@ -512,14 +510,24 @@ public class GroupManager
             assertTrue(policy.hasPermission(user, AnalystPermission.class));
             policy.clearAssignedRoles(user);
 
-            SecurityManager.addMember(_devGroup, user);
-            user = _testUser.cloneUser();
-            policy.addRoleAssignment(_devGroup, PlatformDeveloperRole.class);
-            assertTrue(policy.hasPermission(user, PlatformDeveloperPermission.class));
-            assertTrue(policy.hasPermission(user, TrustedPermission.class));
-            assertTrue(policy.hasPermission(user, AnalystPermission.class));
-            policy.clearAssignedRoles(_devGroup);
-            SecurityManager.deleteMember(_devGroup, user);
+            // We no longer create the site "Developers" group automatically, but let's test that admins can set this up themselves
+            Group devGroup = SecurityManager.createGroup(_root, "TheDevelopers", _user);
+            MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(_root));
+            rootPolicy.addRoleAssignment(devGroup, PlatformDeveloperRole.class);
+            SecurityPolicyManager.savePolicy(rootPolicy, _user);
+
+            assertFalse(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(_root.hasPermission(user, TrustedPermission.class));
+            assertFalse(_root.hasPermission(user, AnalystPermission.class));
+            SecurityManager.addMember(devGroup, user);
+            assertTrue(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertTrue(_root.hasPermission(user, TrustedPermission.class));
+            assertTrue(_root.hasPermission(user, AnalystPermission.class));
+            SecurityManager.deleteMember(devGroup, user);
+            assertFalse(_root.hasPermission(user, PlatformDeveloperPermission.class));
+            assertFalse(_root.hasPermission(user, TrustedPermission.class));
+            assertFalse(_root.hasPermission(user, AnalystPermission.class));
+            SecurityManager.deleteGroup(devGroup, _user);
         }
 
         @Test

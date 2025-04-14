@@ -57,11 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jul 27, 2007
- * Time: 11:02:04 AM
- */
 @RequiresPermission(InsertPermission.class)
 public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmForm> extends FormViewAction<FORM>
 {
@@ -77,7 +72,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
     public static class PublishConfirmBean
     {
-        private TimepointType _timepointType;
+        private final TimepointType _timepointType;
         private final boolean _mismatched;
 
         public PublishConfirmBean(TimepointType timepointType, boolean mismatched)
@@ -340,7 +335,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             boolean selected = selectedObjects.contains(objectId);
 
             String participantId = participantIds != null && participantIds.length > index ? participantIds[index] : null;
-            if (participantId == null || participantId.trim().length() == 0)
+            if (participantId == null || participantId.trim().isEmpty())
             {
                 if (selected)
                 {
@@ -383,7 +378,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 {
                     String visitIdStr = visitIds != null && visitIds.length > index ? visitIds[index] : null;
                     Float visitId = null;
-                    if (visitIdStr == null || visitIdStr.trim().length() == 0)
+                    if (visitIdStr == null || visitIdStr.trim().isEmpty())
                     {
                         if (selected)
                             missingVisitId = true;
@@ -410,7 +405,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
                 {
                     String dateStr = dates != null && dates.length > index ? dates[index] : null;
                     Date date = null;
-                    if (dateStr == null || dateStr.trim().length() == 0)
+                    if (dateStr == null || dateStr.trim().isEmpty())
                     {
                         if (selected)
                             missingDate = true;

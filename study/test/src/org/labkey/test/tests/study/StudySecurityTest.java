@@ -62,7 +62,6 @@ public class StudySecurityTest extends BaseWebDriverTest
     private static final String GROUP_NONE = "No Access";
 
     // General system groups.
-    private static final String GROUP_DEVELOPER = "Developers";
     private static final String GROUP_GUESTS = "Guests";
     private static final String GROUP_ALL_USERS = "All site users";
     private static final String GROUP_USERS = "Users";
@@ -696,7 +695,6 @@ public class StudySecurityTest extends BaseWebDriverTest
                 GROUP_AUTHORS, GroupSecuritySetting.PER_DATASET,
                 GROUP_LIMITED, GroupSecuritySetting.PER_DATASET,
                 GROUP_NONE, GroupSecuritySetting.NONE,
-                GROUP_DEVELOPER, GroupSecuritySetting.NONE,
                 GROUP_GUESTS, GroupSecuritySetting.NONE,
                 GROUP_ALL_USERS, GroupSecuritySetting.NONE,
                 GROUP_USERS, GroupSecuritySetting.NONE);

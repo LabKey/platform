@@ -24,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
@@ -465,17 +464,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                // TODO ContainerFilter
-                return studyService.getSpecimenTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
-            }
             return new SimpleSpecimenTable(this, cf);
         }
 
@@ -490,16 +479,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             if (getContainer().isRoot())
                 return null;
-            if (null != _study && _study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                return studyService.getTypeTableUnion(LocationTable.class, this, containers, _dontAliasColumns);
-            }
             return new LocationTable(this, cf);
         }
 
@@ -545,51 +525,21 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return studyService.getSpecimenSummaryTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
-            }
             return new SpecimenSummaryTable(this, cf);
         }
         if (SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return studyService.getSpecimenDetailTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
-            }
             return new SpecimenDetailTable(this, cf);
         }
         if (SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                Map<Container, SQLFragment> filterFragments = getAncillaryStudyFilterFragments(sourceStudyContainer);
-                return studyService.getSpecimenWrapTableUnion(this, containers, filterFragments, _dontAliasColumns, false);
-            }
             return new SpecimenWrapTable(this, cf);
         }
         if (SPECIMENVIALCOUNT_TABLENAME.equalsIgnoreCase(name))
@@ -639,48 +589,21 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                return studyService.getTypeTableUnion(AdditiveTypeTable.class, this, containers, _dontAliasColumns);
-            }
             return new AdditiveTypeTable(this, cf);
         }
         if (SPECIMEN_DERIVATIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                return studyService.getTypeTableUnion(DerivativeTypeTable.class, this, containers, _dontAliasColumns);
-            }
             return new DerivativeTypeTable(this, cf);
         }
         if (SPECIMEN_PRIMARY_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             if (getContainer().isRoot())
                 return null;
-            if (_study.isAncillaryStudy() && null != _study.getSourceStudy())
-            {
-                Set<Container> containers = new HashSet<>();
-                containers.add(_study.getContainer());
-                Container sourceStudyContainer = _study.getSourceStudy().getContainer();
-                containers.add(sourceStudyContainer);
 
-                // TODO ContainerFilter
-                return studyService.getTypeTableUnion(PrimaryTypeTable.class, this, containers, _dontAliasColumns);
-            }
             return new PrimaryTypeTable(this, cf);
         }
         if ("SpecimenComment".equalsIgnoreCase(name))
@@ -817,21 +740,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
             return null;
 
         return StudyManager.getInstance().getDatasetDefinitionByQueryName(_study, queryName);
-    }
-
-    private Map<Container, SQLFragment> getAncillaryStudyFilterFragments(Container sourceStudyContainer)
-    {
-        assert _study != null && _study.isAncillaryStudy();       // Don't call if it's not
-        Map<Container, SQLFragment> filterFragments = new HashMap<>();
-        List<String> ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
-        if (!ptids.isEmpty())
-        {
-            SQLFragment condition = new SQLFragment("(PTID ");
-            getDbSchema().getSqlDialect().appendInClauseSql(condition, ptids);
-            condition.append(") ");
-            filterFragments.put(sourceStudyContainer, condition);
-        }
-        return filterFragments;
     }
 
     // Null if there's no alias dataset configured, otherwise a "skinny" table with just Participant, Source, Alias, and Modified

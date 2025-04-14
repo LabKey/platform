@@ -57,9 +57,6 @@ Ext4.define('Security.window.UserInfoPopup', {
             if (this.user.UserId === Security.util.SecurityCache.groupUsers || this.user.UserId === Security.util.SecurityCache.groupGuests)
                 this.canEdit = false;
 
-            if (!LABKEY.user.isSystemAdmin && this.user.UserId === Security.util.SecurityCache.groupAdministrators)
-                this.canEdit = false;
-
             if (this.canEdit)
             {
                 const userContainer = this.user.Container === this.cache.projectId ? container : this.user.Container;
@@ -169,10 +166,11 @@ Ext4.define('Security.window.UserInfoPopup', {
             {
                 toAdd.push({html: '<p>Site Users represents all signed-in users.</p>', border: false, frame: false});
             }
-            else {
+            else
+            {
                 toAdd.push({html: '<p class="userinfoHdr">Members</p>', border: false, frame: false});
                 if (this.canEdit) {
-                    if (users.length == 0 && this.userId > 0) {
+                    if (users.length === 0 && this.userId !== Security.util.SecurityCache.groupGuests) {
                         toAdd.push(Ext4.create('Ext.Button', {
                             text: "Delete Empty Group",
                             handler: Ext4.bind(this.DeleteGroup_onClick, this)
@@ -181,7 +179,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                 }
 
                 let items = [];
-                const canRemove = this.canEdit && (this.userId !== Security.util.SecurityCache.groupAdministrators || users.length > 1);
+                const canRemove = this.canEdit && users.length > 1;
                 for (i = 0; i < users.length; i++) {
                     user = users[i];
 

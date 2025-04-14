@@ -2418,6 +2418,39 @@ public class NameGenerator
         }
     }
 
+    // Issue 51109: Name Pattern using lineage doesn't like sample type names that contain a '+'
+    // parsePart assumes encoded expression
+    // QueryKey.decode calls PageFlowUtil.decode, which can't handle '%' and '+'
+    public static String encodeNamingPart(@Nullable String expression)
+    {
+        if (expression == null)
+            return null;
+
+        return expression.replaceAll("%", "%25").replaceAll("[+]", "%2B");
+    }
+
+    // Issue 52774: Naming Expression with default value that contains special characters aren't generated as expected
+    public static String decodeNamingPart(@Nullable String expression)
+    {
+        if (expression == null)
+            return null;
+
+        return expression.replaceAll("%2B", "+").replaceAll("%25", "%");
+    }
+
+    public static class NameExpressionPart extends StringExpressionFactory.FieldPart
+    {
+        public NameExpressionPart(@NotNull String s, boolean urlEncodeSubstitutions)
+        {
+            super(s, urlEncodeSubstitutions, true /*support escaping using backslash*/);
+        }
+
+        @Override
+        public String getExpressionParam(String param)
+        {
+            return decodeNamingPart(param);
+        }
+    }
     /**
      *  Same as FieldKeyExpression, but supports :withCounter syntax
      */
@@ -2457,12 +2490,6 @@ public class NameGenerator
         public static NameGenerationExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior, boolean allowSideEffects, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax)
         {
             return new NameGenerationExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax);
-        }
-
-        @Override
-        protected boolean isBackslashEscape()
-        {
-            return true;
         }
 
         public List<String> getSyntaxErrors()
@@ -2508,10 +2535,19 @@ public class NameGenerator
                 expression = expression.replaceAll(ANCESTOR_INPUT_PREFIX_DATA.replace("[", "\\["), ANCESTOR_INPUT_PREFIX_DATA_NOSLASH);
             }
 
-            expression = expression.replaceAll("%", "%25");
-            expression = expression.replaceAll("[+]", "%2B");
+            expression = encodeNamingPart(expression);
 
-            return super.parsePart(expression);
+            // override FieldKeyStringExpression.parsePart to use NameExpressionPart instead of FieldPart
+            if (StringExpressionFactory.RenderContextPart.SUPPORTED_SUBSTITUTIONS.contains(expression))
+                return new StringExpressionFactory.RenderContextPart(expression);
+            try
+            {
+                return new NameExpressionPart(expression, isUrlEncodeSubstitutions());
+            }
+            catch (IllegalArgumentException x)
+            {
+                return new StringExpressionFactory.ConstantPart("${" + expression + "}");
+            }
         }
 
         public static int findFirstOpenOrCloseTag(String str, String target, int startIndex)

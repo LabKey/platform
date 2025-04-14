@@ -31,7 +31,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.specimen.actions.SpecimenController;
@@ -141,7 +141,7 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
                                     }
 
                                     ActionURL url = SpecimenController.getCommentURL(container, globalUniqueId);
-                                    oldWriter.write(new Link.LinkBuilder(globalUniqueId).href(url).clearClasses().toString());
+                                    oldWriter.write(LinkBuilder.simpleLink(globalUniqueId, url).toString());
                                 }
                             };
                         }

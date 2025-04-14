@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.Button" %>
+<%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -100,7 +100,7 @@ if (!shadowed.isEmpty())
     %><%=unsafe(sb.toString())%><br><%
 }
 
-List<Button.ButtonBuilder> buttons = new ArrayList<>();
+List<ButtonBuilder> buttons = new ArrayList<>();
 if (permissions.contains(AdminPermission.class))
 {
     if (dataset.getType().equals(Dataset.TYPE_STANDARD))
@@ -153,7 +153,7 @@ if (permissions.contains(AdminPermission.class) && !isDatasetInherited)
 }
 %><br/>
 <labkey:form method="POST" action=""><%
-for (Button.ButtonBuilder bb : buttons)
+for (ButtonBuilder bb : buttons)
 {
     %><%= bb %> <%
 }

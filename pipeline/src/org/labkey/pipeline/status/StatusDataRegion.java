@@ -26,7 +26,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
@@ -63,7 +63,7 @@ public class StatusDataRegion extends DataRegion
             cl(selected, "labkey-frame"),
             HtmlString.NBSP,
             HtmlString.NBSP,
-            new Link.LinkBuilder(text).href(url).clearClasses(),
+            LinkBuilder.simpleLink(text, url),
             HtmlString.NBSP,
             HtmlString.NBSP
         ).appendTo(out);

@@ -26,11 +26,9 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertySchema;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -55,7 +53,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -106,11 +103,8 @@ import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
 import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JspTestCase;
-import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
@@ -124,9 +118,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.WarningProvider;
-import org.labkey.api.view.template.WarningService;
-import org.labkey.api.view.template.Warnings;
 import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.ExperimentListenerImpl;
@@ -207,7 +198,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
@@ -239,7 +229,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 25.001;
+        return 25.002;
     }
 
     @Override
@@ -439,12 +429,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyManager.ENABLE_ANCILLARY_STUDIES,
-            "Restore ability to create ancillary studies",
-            "This option and all support for creating ancillary studies will be removed in LabKey Server v25.4.",
-            false, false, FeatureType.Deprecated
-        ));
-
         AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
                 "Study Protocol Design Tools",
                 "This option adds support for the study protocol and vaccine design tools.",
@@ -478,7 +462,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 // Note: study.StudySnapshot maintains a rows for deleted child studies (allowing re-creation of those child studies).
                 // In that case, Destination is set to null. COUNT(DISTINCT) skips these null values, so this returns the count of existing child studies.
                 metric.put("publishStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'publish'").getObject(Long.class));
-                metric.put("ancillaryStudyCount", new SqlSelector(PropertySchema.getInstance().getSchema(), "SELECT COUNT(DISTINCT destination) FROM study.StudySnapshot WHERE Type = 'ancillary'").getObject(Long.class));
 
                 SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
                 metric.put("demographicsDatasetCount", new SqlSelector(StudySchema.getInstance().getSchema(), "SELECT COUNT(*) FROM study.Dataset WHERE DemographicData = " + dialect.getBooleanTRUE()).getObject(Long.class));
@@ -555,40 +538,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
-
-        WarningService.get().register(new WarningProvider()
-        {
-            @Override
-            public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
-            {
-                MutableInt count = new MutableInt(0);
-                HtmlString links = getAncillaryStudies(count);
-                if (showAllWarnings || !links.isEmpty())
-                {
-                    HtmlStringBuilder builder = HtmlStringBuilder.of(
-                        "Support for ancillary studies will be removed in the next release of LabKey Server. This " +
-                        "server has " + StringUtilsLabKey.pluralize(count.getValue(), "ancillary study",
-                        "ancillary studies") + ": [")
-                        .append(links)
-                        .append("]. Contact your LabKey Account Manager if you have any concerns about this change.");
-                    warnings.add(builder);
-                }
-            }
-
-            private HtmlString getAncillaryStudies(MutableInt count)
-            {
-                StudyUrls urls = PageFlowUtil.urlProvider(StudyUrls.class);
-                TableInfo studySnapshot = StudySchema.getInstance().getTableInfoStudySnapshot();
-                FieldKey type = studySnapshot.getColumn("Type").getFieldKey();
-                return new TableSelector(studySnapshot, Collections.singleton("Destination"), new SimpleFilter(type, "ancillary"), null).stream(String.class)
-                    .filter(Objects::nonNull)
-                    .map(ContainerManager::getForId)
-                    .filter(Objects::nonNull)
-                    .map(c -> new Link.LinkBuilder(c.getPath()).href(urls.getBeginURL(c)).clearClasses().build().getHtmlString())
-                    .peek(h -> count.increment())
-                    .collect(LabKeyCollectors.joining(HtmlString.of(", ")));
-            }
-        });
     }
 
     @Override

@@ -15,8 +15,8 @@
  */
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -27,7 +27,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.IndexType;
 import org.labkey.data.xml.IndicesType;
@@ -37,8 +36,9 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.DatasetDefinitionImporter.DatasetImportProperties;
 import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.xml.DatasetsDocument;
+import org.labkey.study.xml.DatasetsDocument.Datasets;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,38 +46,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: May 26, 2009
- * Time: 10:31:36 AM
- */
 public class SchemaXmlReader implements SchemaReader
 {
     private static final String NAME_KEY = "PlateName";
 
     private final Map<Integer, DatasetImportInfo> _datasetInfoMap;
-    List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
+    private final List<ImportTypesHelper.Builder> _builders = new ArrayList<>();
+    private final List<Integer> _orderedIds;
 
-    public SchemaXmlReader(final Study study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, ImportException
+    public SchemaXmlReader(final Study study, String metadataName, TablesDocument tablesDoc, Datasets manifestDatasetsDoc) throws ImportException
     {
-        TablesDocument tablesDoc;
-
         try
         {
-            XmlObject doc = root.getXmlBean(metaDataFile);
-            if (doc instanceof TablesDocument)
-            {
-                XmlBeansUtil.validateXmlDocument(doc, metaDataFile);
-                tablesDoc =  (TablesDocument)doc;
-            }
-            else
-                throw new IllegalArgumentException("Could not get an instance of: " + metaDataFile);
+            XmlBeansUtil.validateXmlDocument(tablesDoc, metadataName);
         }
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
             throw new ImportException("Invalid TablesDocument ", xve);
         }
+
+        DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsDoc.getDatasets().getDatasetArray();
+        _orderedIds = new ArrayList<>(datasets.length);
+
+        for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
+            _orderedIds.add(dataset.getId());
+
+        Map<String, DatasetImportProperties> extraImportProps = DatasetDefinitionImporter.getDatasetImportProperties(manifestDatasetsDoc);
 
         TablesType tablesXml = tablesDoc.getTables();
 
@@ -91,7 +86,7 @@ public class SchemaXmlReader implements SchemaReader
             DatasetImportProperties tableProps = extraImportProps.get(datasetName);
 
             if (null == tableProps)
-                throw new ImportException("Dataset \"" + datasetName + "\" was specified in " + metaDataFile + " but not in the dataset manifest file.");
+                throw new ImportException("Dataset \"" + datasetName + "\" was specified in " + metadataName + " but not in the dataset manifest file.");
 
             info.category = tableProps.getCategory();
             info.name = datasetName;
@@ -169,8 +164,9 @@ public class SchemaXmlReader implements SchemaReader
     {
         IndicesType tableXmlIndices = tableXml.getIndices();
         List<List<String>> indicesColumns = new ArrayList<>();
-        if(tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
+        if (tableXmlIndices != null)
         {
+            tableXmlIndices.getIndexArray();
             for (IndexType indexType : tableXmlIndices.getIndexArray())
             {
                 List<String> columns = Arrays.asList(indexType.getColumnArray());
@@ -223,8 +219,9 @@ public class SchemaXmlReader implements SchemaReader
         for (SharedConfigType sharedConfigType : sharedConfigArray)
         {
             IndicesType tableXmlIndices = sharedConfigType.getIndices();
-            if (tableXmlIndices != null && tableXmlIndices.getIndexArray().length > 0)
+            if (tableXmlIndices != null)
             {
+                tableXmlIndices.getIndexArray();
                 for (IndexType indexType : tableXmlIndices.getIndexArray())
                 {
                     PropertyStorageSpec.Index index = getIndexFromIndexType(indexType);
@@ -280,7 +277,7 @@ public class SchemaXmlReader implements SchemaReader
             }
             if (columnTypeArrayList != null)
             {
-                tableXml.getColumns().setColumnArray(columnTypeArrayList.toArray(new ColumnType[columnTypeArrayList.size()]));
+                tableXml.getColumns().setColumnArray(columnTypeArrayList.toArray(new ColumnType[0]));
             }
         }
     }
@@ -298,8 +295,8 @@ public class SchemaXmlReader implements SchemaReader
     }
 
     @Override
-    public String getTypeNameColumn()
+    public @Nullable List<Integer> getDatasetOrder()
     {
-        return NAME_KEY;
+        return _orderedIds;
     }
 }

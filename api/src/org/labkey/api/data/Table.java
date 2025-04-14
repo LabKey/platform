@@ -799,7 +799,7 @@ public class Table
         // _executeTriggers(table, fields);
 
         SQLFragment insertSQL = new SQLFragment();
-        StringBuilder columnSQL = new StringBuilder();
+        SQLFragment columnSQL = new SQLFragment();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
         ColumnInfo versionColumn = null;
@@ -838,7 +838,7 @@ public class Table
             }
 
             columnSQL.append(comma);
-            columnSQL.append(column.getSelectName());
+            columnSQL.appendIdentifier(column.getSelectName());
             valueSQL.append(comma);
             if (null == value || value instanceof String && 0 == ((String) value).length())
                 valueSQL.append("NULL");

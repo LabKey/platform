@@ -32,7 +32,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
@@ -99,7 +99,7 @@ public class AssayQCFlagColumn extends ExprColumn
 
                             // add onclick handler to call the QCFlag toggle window creation function
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                            Link.LinkBuilder linkBuilder = new Link.LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
+                            LinkBuilder linkBuilder = new LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
                                     .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
                             oldWriter.write(linkBuilder.toString());
                         }

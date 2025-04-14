@@ -29,9 +29,9 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.element.Input;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Set;
@@ -127,7 +127,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         out.write(select);
 
         if (disabled)
-            out.write(new Input.InputBuilder<>().type("hidden").name(_inputName).value(HtmlString.of(value)));
+            out.write(InputBuilder.hidden().name(_inputName).value(HtmlString.of(value)));
     }
 
     @Override

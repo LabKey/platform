@@ -22,9 +22,9 @@
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
 <%@ page import="org.labkey.api.util.JavaScriptFragment" %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -172,7 +172,7 @@ else
 {
 %>
 <labkey:form method="POST" layout="horizontal" onsubmit="LABKEY.setSubmit(true);">
-    <%= new Select.SelectBuilder().name("schema").id("schemaNameInput").label("Schema *")
+    <%= new SelectBuilder().name("schema").id("schemaNameInput").label("Schema *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
             .contextContent("The schema name of the query used to provide patient data to the Master Patient Index Provider")
@@ -180,7 +180,7 @@ else
             .formGroup(true)
             .disabled(true)
     %>
-    <%= new Select.SelectBuilder().name("query").id("queryNameInput").label("Query *")
+    <%= new SelectBuilder().name("query").id("queryNameInput").label("Query *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
             .contextContent("The query used to provide patient data to the Master Patient Index Provider")
@@ -198,14 +198,14 @@ else
     <%
         } else {
     %>
-    <%= new Select.SelectBuilder().name("dataset").id("datasetInput").label("UID Dataset *")
+    <%= new SelectBuilder().name("dataset").id("datasetInput").label("UID Dataset *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
             .contextContent("The dataset to store the universal ID returned from the Master Patient Index")
             .forceSmallContext(true)
             .formGroup(true)
     %>
-    <%= new Select.SelectBuilder().name("fieldName").id("fieldInput").label("UID Field *")
+    <%= new SelectBuilder().name("fieldName").id("fieldInput").label("UID Field *")
             .layout(Input.Layout.HORIZONTAL)
             .required(true)
             .contextContent("The field in the dataset to store the universal ID")

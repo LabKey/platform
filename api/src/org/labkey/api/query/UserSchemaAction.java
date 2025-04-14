@@ -31,7 +31,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -115,7 +115,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
         return bb.add(
             btnSubmit,
-            new Button.ButtonBuilder("Cancel").href(getCancelURL(form)).build()
+            new ButtonBuilder("Cancel").href(getCancelURL(form)).build()
         );
     }
 

@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.specimen.actions.SpecimenController;
@@ -159,7 +159,7 @@ public class SpecimenRequestNotificationEmailTemplate extends EmailTemplate
             StringBuilder sb = new StringBuilder();
             for (Attachment att : attachments)
             {
-                sb.append(new LinkBuilder(att.getName()).href(SpecimenController.getDownloadURL(_notification.getEvent(), att.getName())).clearClasses());
+                sb.append(LinkBuilder.simpleLink(att.getName(), SpecimenController.getDownloadURL(_notification.getEvent(), att.getName())));
                 sb.append("<br>");
             }
             return sb.toString();

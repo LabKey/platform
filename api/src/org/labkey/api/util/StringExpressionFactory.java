@@ -33,7 +33,6 @@ import org.labkey.api.data.StopIteratingException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
@@ -369,7 +368,7 @@ public class StringExpressionFactory
                 if (rest.startsWith("defaultValue('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
-                    format = new SubstitutionFormat.DefaultSubstitutionFormat(param);
+                    format = new SubstitutionFormat.DefaultSubstitutionFormat(getExpressionParam(param));
                 }
                 else if ((rest.startsWith("minValue('") && rest.endsWith("')")
                     || (rest.startsWith("minValue(") && rest.endsWith(")"))))
@@ -379,34 +378,34 @@ public class StringExpressionFactory
                         param = rest.substring("minValue('".length(), rest.length() - "')".length());
                     else if (rest.startsWith("minValue(") && rest.endsWith(")"))
                         param = rest.substring("minValue(".length(), rest.length() - ")".length());
-                    format = new SubstitutionFormat.MinValueSubstitutionFormat(param);
+                    format = new SubstitutionFormat.MinValueSubstitutionFormat(getExpressionParam(param));
                 }
                 else if (rest.startsWith("number('") && rest.endsWith("')"))
                 {
                     // TODO: Without a format string parameter, use container default number format
                     String param = rest.substring("number('".length(), rest.length() - "')".length());
-                    format = new SubstitutionFormat.NumberSubstitutionFormat(param);
+                    format = new SubstitutionFormat.NumberSubstitutionFormat(getExpressionParam(param));
                 }
                 else if (rest.startsWith("date('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("date('".length(), rest.length() - "')".length());
-                    format = createDateSubstitutionFormat(param);
+                    format = createDateSubstitutionFormat(getExpressionParam(param));
                 }
                 else if (rest.startsWith("prefix('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("prefix('".length(), rest.length() - "')".length());
-                    format = new SubstitutionFormat.JoinSubstitutionFormat("", param, "");
+                    format = new SubstitutionFormat.JoinSubstitutionFormat("", getExpressionParam(param), "");
                 }
                 else if (rest.startsWith("suffix('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("suffix('".length(), rest.length() - "')".length());
-                    format = new SubstitutionFormat.JoinSubstitutionFormat("", "", param);
+                    format = new SubstitutionFormat.JoinSubstitutionFormat("", "", getExpressionParam(param));
                 }
                 else if (rest.startsWith("join('") && rest.endsWith("')"))
                 {
                     // TODO: Support three parameter variation
                     String param = rest.substring("join('".length(), rest.length() - "')".length());
-                    format = new SubstitutionFormat.JoinSubstitutionFormat(param, "", "");
+                    format = new SubstitutionFormat.JoinSubstitutionFormat(getExpressionParam(param), "", "");
                 }
                 else
                 {
@@ -428,6 +427,11 @@ public class StringExpressionFactory
                 _formats = Collections.singleton(urlEncodeSubstitutions ? SubstitutionFormat.urlEncode : SubstitutionFormat.passThrough);
             else
                 _formats = Collections.unmodifiableList(formats);
+        }
+
+        protected String getExpressionParam(String param)
+        {
+            return param;
         }
 
         public SubstitutePart(String value, SubstitutionFormat sf)
@@ -532,7 +536,7 @@ public class StringExpressionFactory
         };
     }
 
-    private static class RenderContextPart extends SubstitutePart
+    public static class RenderContextPart extends SubstitutePart
     {
         public enum Substitution
         {
@@ -1135,9 +1139,9 @@ public class StringExpressionFactory
             return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior, allowSideEffects);
         }
 
-        protected boolean isBackslashEscape()
+        public boolean isUrlEncodeSubstitutions()
         {
-            return false;
+            return _urlEncodeSubstitutions;
         }
 
         @Override
@@ -1148,7 +1152,7 @@ public class StringExpressionFactory
                 return new RenderContextPart(expr);
             try
             {
-                return new FieldPart(expr, _urlEncodeSubstitutions, isBackslashEscape());
+                return new FieldPart(expr, _urlEncodeSubstitutions, false);
             }
             catch (IllegalArgumentException x)
             {

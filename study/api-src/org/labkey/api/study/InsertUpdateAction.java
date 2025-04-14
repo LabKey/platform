@@ -52,7 +52,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.InsertView;

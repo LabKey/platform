@@ -67,7 +67,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
@@ -928,7 +928,7 @@ class PullRequestsDisplayColumn extends DataColumn
                         }
                     }
 
-                    Link.LinkBuilder link = new Link.LinkBuilder(linkText)
+                    LinkBuilder link = new LinkBuilder(linkText)
                             .href(url)
                             .title(title)
                             .clearClasses()

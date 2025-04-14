@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Option" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.DOM" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.DOM" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -255,13 +255,13 @@
                 <labkey:input name="required" label="Required" isRequired="true" id="required1" placeholder="I need a value"/>
                 <labkey:input name="readOnly" label="Read Only" isReadOnly="true" id="readOnly1" value="You can only read me"/>
                 <% /* This is an example of a select builder -- hopefully can be replaced soon with a <labkey:select> */ %>
-                <%= new Select.SelectBuilder().name("selectfield").label("Nominal select")
+                <%= new SelectBuilder().name("selectfield").label("Nominal select")
                         .layout(Input.Layout.HORIZONTAL)
                         .formGroup(true)
-                        .addOption(new Option.OptionBuilder().build())
-                        .addOption(new Option.OptionBuilder().value("BMW").label("Beemer").build())
-                        .addOption(new Option.OptionBuilder().value("VW").label("Volkswagen").build())
-                        .addOption(new Option.OptionBuilder().value("GM").label("General Motors").build())
+                        .addOption(new OptionBuilder().build())
+                        .addOption(new OptionBuilder().value("BMW").label("Beemer").build())
+                        .addOption(new OptionBuilder().value("VW").label("Volkswagen").build())
+                        .addOption(new OptionBuilder().value("GM").label("General Motors").build())
                 %>
                 <labkey:input name="test" label="HTML5 attributes" autoComplete="on" isAutoFocused="true" isMultiple="true" pattern="[A-Za-z]{3}" placeholder="3 letter country code"/>
                 <button type="submit" class="btn btn-default">Invite</button>
@@ -316,19 +316,19 @@
         <br>
         <h2>Schema/Query Select Inputs</h2>
         <labkey:form>
-            <%= new Select.SelectBuilder().id("schemaNameInput").label("Schema")
+            <%= new SelectBuilder().id("schemaNameInput").label("Schema")
                     .layout(Input.Layout.HORIZONTAL)
                     .formGroup(true)
                     .disabled(true)
             %>
 
-            <%= new Select.SelectBuilder().id("queryNameInput").label("Query")
+            <%= new SelectBuilder().id("queryNameInput").label("Query")
                     .layout(Input.Layout.HORIZONTAL)
                     .formGroup(true)
                     .disabled(true)
             %>
 
-            <%= new Select.SelectBuilder().id("columnInput").label("Column")
+            <%= new SelectBuilder().id("columnInput").label("Column")
                     .layout(Input.Layout.HORIZONTAL)
                     .formGroup(true)
                     .disabled(true)

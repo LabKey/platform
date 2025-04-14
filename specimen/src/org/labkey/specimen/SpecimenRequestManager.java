@@ -770,8 +770,6 @@ public class SpecimenRequestManager
         _requestEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
-        for (Study study : StudyService.get().getAncillaryStudies(c))
-            clearCaches(study.getContainer());
 
         clearGroupedValuesForColumn(c);
     }

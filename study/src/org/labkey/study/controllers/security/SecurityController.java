@@ -139,12 +139,6 @@ public class SecurityController extends SpringActionController
                 set.add(g.getUserId());
 
             MutableSecurityPolicy policy = policyFromPost(request, set, study);
-
-            // Explicitly give site admins read permission, so they can never be locked out
-            Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
-            policy.clearAssignedRoles(siteAdminGroup);
-            policy.addRoleAssignment(siteAdminGroup, ReaderRole.class);
-
             study.savePolicy(policy, getUser());
             return true;
         }
