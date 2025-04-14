@@ -39,34 +39,36 @@ public class DataIteratorContext
 {
     public enum LookupResolutionType
     {
-        primaryKey(1, -1), // known that the use will always supply the pk value
-        alternateKey(-1, 1), // known that the use will never supply the pk value
-        alternateThenPrimaryKey(2, 1), // If there is a situation where it's sometimes a primary and sometimes an alternate key, check for the alternate key first
+        primaryKey(true, false, true), // known that the use will always supply the pk value
+        alternateKey(false, true, false), // known that the use will never supply the pk value
+        alternateThenPrimaryKey(true, true, false), // If there is a situation where it's sometimes a primary and sometimes an alternate key, check for the alternate key first
         // TODO do we need to support this? If not, we can change the properties here to just have a "supportsAlternateKey" since alternate will always be checked first.
-        primaryThenAlternateKey(1, 2); // this most closely matches previous behavior when allowImportLookupByAlternateKey was true (added for compatibility; prefer the other options)
+        primaryThenAlternateKey(true, true, true); // this most closely matches previous behavior when allowImportLookupByAlternateKey was true (added for compatibility; prefer the other options)
 
-        final int _primaryResolutionOrder;
-        final int _alternateResolutionOrder;
+        final boolean _useAlternateKey;
+        final boolean _usePrimaryKey;
+        final boolean _usePrimaryFirst;
 
-        LookupResolutionType(int primaryResolutionOrder, int alternateResolutionOrder)
+        LookupResolutionType(boolean usePrimaryKey, boolean useAlternateKey, boolean usePrimaryFirst)
         {
-            _primaryResolutionOrder = primaryResolutionOrder;
-            _alternateResolutionOrder = alternateResolutionOrder;
+            _usePrimaryKey = usePrimaryKey;
+            _useAlternateKey = useAlternateKey;
+            _usePrimaryFirst = usePrimaryFirst;
         }
 
-        public int getPrimaryResolutionOrder()
+        public boolean useAlternateKey()
         {
-            return _primaryResolutionOrder;
+            return _useAlternateKey;
         }
 
-        public int getAlternateResolutionOrder()
+        public boolean usePrimaryKey()
         {
-            return _alternateResolutionOrder;
+            return _usePrimaryKey;
         }
 
-        public boolean usesAlternateKey()
+        public boolean usePrimaryFirst()
         {
-            return _alternateResolutionOrder != -1;
+            return _usePrimaryFirst;
         }
     }
 
