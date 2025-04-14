@@ -208,11 +208,6 @@ public class DataIteratorContext
         _lookupResolutionType = lookupResolutionType;
     }
 
-    public boolean isAllowImportLookupByAlternateKey()
-    {
-        return getLookupResolutionType() == LookupResolutionType.alternateThenPrimaryKey;
-    }
-
     /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */
     public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
     {
