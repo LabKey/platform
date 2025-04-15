@@ -308,6 +308,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         insertOption,
         crossTypeImport,
         allowCreateStorage,
+        importLookupByAlternateKey, // deprecated. Prefer lookupResolutionType
         crossFolderImport,
         useTransactionAuditCache,
         lookupResolutionType,
@@ -343,7 +344,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         String paramValue = getParam(Params.lookupResolutionType);
         if (paramValue == null)
-            return DataIteratorContext.LookupResolutionType.primaryKey;
+        {
+            paramValue = getParam(Params.importLookupByAlternateKey);
+            if (paramValue == null)
+                return DataIteratorContext.LookupResolutionType.primaryKey;
+            else
+            {
+                if (Boolean.valueOf(paramValue))
+                    return DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey;
+                else
+                    return DataIteratorContext.LookupResolutionType.primaryThenAlternateKey;
+            }
+        }
         return DataIteratorContext.LookupResolutionType.valueOf(paramValue);
     }
 
