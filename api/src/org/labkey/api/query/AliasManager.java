@@ -56,37 +56,6 @@ public class AliasManager
             claimAliases(columns);
     }
 
-    /**
-     *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
-     *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
-     */
-    public static boolean isLegalNameChar(char ch, boolean first, @NotNull SqlDialect dialect)
-    {
-        // quick check
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
-            return true;
-        if (!first && ch >= '0' && ch <= '9')
-            return true;
-
-        // oracle doesn't allow leading underscore
-        if (dialect.isOracle())
-            return !first && ch == '_';
-
-        // TODO be more lenient here (allow more unicode characters as "legal")
-        return ch == '_';
-    }
-
-    public static boolean isLegalName(String str, @NotNull SqlDialect dialect)
-    {
-        int length = str.length();
-        for (int i = 0; i < length; i ++)
-        {
-            if (!isLegalNameChar(str.charAt(i), i == 0, dialect))
-                return false;
-        }
-        return true;
-    }
-
     public static String legalNameFromName(String str, @NotNull SqlDialect dialect)
     {
         int i;
@@ -96,7 +65,7 @@ public class AliasManager
         for (i = 0; i < length; i ++)
         {
             ch = str.charAt(i);
-            if (!isLegalNameChar(ch, i==0, dialect))
+            if (!dialect.isLegalNameChar(ch, i==0))
                 break;
         }
         if (i==length)
@@ -106,7 +75,7 @@ public class AliasManager
         if (i==0)
         {
             sb.append("X_");
-            if (isLegalNameChar(ch, false, dialect))
+            if (dialect.isLegalNameChar(ch, false))
             {
                 sb.append(ch);
                 i++;
@@ -120,7 +89,7 @@ public class AliasManager
         for ( ; i < length ; i ++)
         {
             ch = str.charAt(i);
-            boolean isLegal = isLegalNameChar(ch, false, dialect);
+            boolean isLegal = dialect.isLegalNameChar(ch, false);
             if (isLegal)
             {
                 sb.append(ch);
@@ -143,7 +112,7 @@ public class AliasManager
             }
         }
         var ret = sb.toString();
-        assert isLegalName(ret, dialect);
+        assert dialect.isLegalName(ret);
         return ret;
     }
 
@@ -182,7 +151,7 @@ public class AliasManager
         if (maxLength < 5)
             throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
         ret = (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
-        assert isLegalName(ret, dialect);
+        assert dialect.isLegalName(ret);
         return ret;
     }
 
@@ -200,7 +169,7 @@ public class AliasManager
             connector = "_";
         }
         var ret = truncate(sb.toString(), getMaxLength(dialect));
-        assert isLegalName(ret, dialect);
+        assert dialect.isLegalName(ret);
         return ret;
     }
 
@@ -221,7 +190,6 @@ public class AliasManager
         String n = String.valueOf((str.hashCode()&0x7fffffff));
         return str.charAt(0) + n + str.substring(len-(to-n.length()-1));
     }
-
 
     public String decideAlias(String name)
     {
@@ -322,8 +290,6 @@ public class AliasManager
     {
         _aliases.remove(column.getAlias());
     }
-
-
 
     public static class TestCase extends Assert
     {

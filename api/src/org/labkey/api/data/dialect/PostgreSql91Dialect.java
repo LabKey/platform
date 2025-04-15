@@ -652,7 +652,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName, this) || isReserved(schemaName))
+        if (!isLegalName(schemaName) || isReserved(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
 
         //Quoted schema names are bad news
@@ -1448,7 +1448,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String makeTableIdentifier(TableChange change)
     {
-        assert AliasManager.isLegalName(change.getTableName(), this);
+        assert isLegalName(change.getTableName());
         return change.getSchemaName() + "." + change.getTableName();
     }
 

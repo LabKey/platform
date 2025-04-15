@@ -20,7 +20,11 @@ import org.junit.Test;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,7 +85,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getQueryDefinition().getSchema().getDbSchema().getSqlDialect()));
+            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getSchema().getDbSchema().getSqlDialect()));
         }
 
         if (_pivotBuilder != null)
@@ -157,10 +161,12 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
 
     public static class TestCase extends Assert
     {
+        private final UserSchema _schema = DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer()).getUserSchema("core");
+
         @Test
         public void testPassthrough()
         {
-            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(_schema),
                     new SimpleFilter(), Collections.emptyList(), Collections.emptyList(), null);
 
             assertEqualsIgnoreWhitespace("SELECT A.* FROM ( mySchema.myTable ) A", transform.getLabKeySQL());
@@ -172,7 +178,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
             PivotBuilder pivotBuilder = new PivotBuilder();
             pivotBuilder.setColumns(Arrays.asList(FieldKey.fromParts("Pivot1"), FieldKey.fromParts("Pivot2")));
             pivotBuilder.setBy(FieldKey.fromParts("Pivot3"));
-            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(_schema),
                     new SimpleFilter(), Collections.emptyList(), Collections.emptyList(),
                     pivotBuilder);
 
@@ -182,7 +188,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         @Test
         public void testAggregatesWithNoGroupBy()
         {
-            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(_schema),
                     new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX)), Collections.emptyList(),
                     null);
 
@@ -192,13 +198,13 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         @Test
         public void testGroupBy()
         {
-            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+            AggregateQueryDataTransform transform = new AggregateQueryDataTransform(new DummyQueryDataSource(_schema),
                     new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX)), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
                     null);
 
             assertEqualsIgnoreWhitespace("SELECT A.\"Group1\".\"Child1\", A.\"Group2\", MAX(\"Agg1\") AS MAXAgg1 FROM ( mySchema.myTable ) A GROUP BY A.\"Group1\".\"Child1\", A.\"Group2\"", transform.getLabKeySQL());
 
-            transform = new AggregateQueryDataTransform(new DummyQueryDataSource(),
+            transform = new AggregateQueryDataTransform(new DummyQueryDataSource(_schema),
                     new SimpleFilter(), Collections.singletonList(new Aggregate(FieldKey.fromParts("Agg1"), Aggregate.BaseType.MAX, "MyAggLabel")), Arrays.asList(FieldKey.fromParts("Group1", "Child1"), FieldKey.fromParts("Group2")),
                     null);
 

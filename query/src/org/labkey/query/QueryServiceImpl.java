@@ -1726,7 +1726,7 @@ public class QueryServiceImpl implements QueryService
             if (ret == null)
                 return null;
 
-            boolean needsAlias = !AliasManager.isLegalName(ret.getName(), table.getSqlDialect()) && !ret.isAliasSet();
+            boolean needsAlias = !table.getSqlDialect().isLegalName(ret.getName()) && !ret.isAliasSet();
             if (null != titleURL || needsAlias)
             {
                 if (needsAlias)

@@ -893,9 +893,35 @@ public abstract class SqlDialect
 
     protected boolean shouldQuoteIdentifier(String id)
     {
-        return isReserved(id) || !AliasManager.isLegalName(id, this);
+        return isReserved(id) || !isLegalName(id);
     }
 
+    public boolean isLegalName(String str)
+    {
+        int length = str.length();
+        for (int i = 0; i < length; i ++)
+        {
+            if (!isLegalNameChar(str.charAt(i), i == 0))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
+     *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
+     */
+    public boolean isLegalNameChar(char ch, boolean first)
+    {
+        // quick check
+        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
+            return true;
+        if (!first && ch >= '0' && ch <= '9')
+            return true;
+
+        // TODO be more lenient here (allow more unicode characters as "legal")
+        return ch == '_';
+    }
 
     public void testDialectKeywords(SqlExecutor executor)
     {

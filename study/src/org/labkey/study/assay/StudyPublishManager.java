@@ -1640,7 +1640,7 @@ public class StudyPublishManager implements StudyPublishService
         for (int i = 0; i < originalName.length(); i++)
         {
             char c = originalName.charAt(i);
-            if (AliasManager.isLegalNameChar(c, first, dialect))
+            if (dialect.isLegalNameChar(c, first))
             {
                 sb.append(c);
                 first = false;
