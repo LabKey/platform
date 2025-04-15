@@ -950,7 +950,6 @@ public abstract class SqlDialect
         }
     }
 
-
     public void testKeywordCandidates(SqlExecutor executor) throws IOException, SQLException
     {
         Set<String> jdbcKeywords = getJdbcKeywords(executor);
@@ -963,12 +962,32 @@ public abstract class SqlDialect
     }
 
     /**
-     * @return The absolute maximum length for this database. Callers are responsible for truncating generated names,
-     * handing suffixes, etc.
+     * @return The absolute maximum identifier character length for this database. Callers are responsible for
+     * truncating generated names, handing suffixes, etc.
      */
-    public int getIdentifierMaxLength()
+    @Deprecated // Make protected - callers shouldn't concern themselves with this
+    public int getIdentifierMaxCharLength()
     {
         return 63;
+    }
+
+    /**
+     * Truncates a candidate identifier based on this database's rules. If non-zero, the truncation leaves room for
+     * one or more ASCII characters (e.g., to allow callers to add an ASCII suffix of that length). Note that the
+     * lengths and rules differ by database; for example, most databases limit identifiers based on character length,
+     * but PostgreSQL limits based on byte length.
+     * @param identifier The candidate identifier name
+     * @param extraAsciiCharsToReserveIfTruncating Number of ASCII characters to reserve (e.g., for a suffix)
+     * @return The truncated identifier
+     */
+    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserveIfTruncating)
+    {
+        return identifier.substring(0, getIdentifierMaxCharLength() - extraAsciiCharsToReserveIfTruncating);
+    }
+
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.length() > getIdentifierMaxCharLength();
     }
 
     protected SQLFragment getIdentifierTestSql(String candidate)
@@ -980,7 +999,6 @@ public abstract class SqlDialect
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
                "DROP TABLE " + name + ";");
     }
-
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
     {

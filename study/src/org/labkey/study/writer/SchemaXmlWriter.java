@@ -147,7 +147,7 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, StudyExp
 
         private void writeTableIndices(TableType tableXml)
         {
-            if(_indices.size() > 0)
+            if(!_indices.isEmpty())
             {
                 IndicesType indicesXml = tableXml.addNewIndices();
                 for (IndexInfo indexInfo : _indices)

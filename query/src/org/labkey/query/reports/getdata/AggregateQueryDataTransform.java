@@ -81,7 +81,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL())));
+            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getQueryDefinition().getSchema().getDbSchema().getSqlDialect()));
         }
 
         if (_pivotBuilder != null)
@@ -96,7 +96,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         sb.append("\n) ");
         sb.append(SUBQUERY_ALIAS);
         String where = _filters.toLabKeySQL(getSource().getColumnMap(getRequiredInputs()));
-        if (where.length() > 0)
+        if (!where.isEmpty())
         {
             sb.append("\nWHERE ");
             sb.append(where);
@@ -141,8 +141,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
     @Override
     public Collection<FieldKey> getRequiredInputs()
     {
-        Set<FieldKey> result = new HashSet<>();
-        result.addAll(_filters.getAllFieldKeys());
+        Set<FieldKey> result = new HashSet<>(_filters.getAllFieldKeys());
         for (Aggregate aggregate : _aggregates)
         {
             result.add(aggregate.getFieldKey());

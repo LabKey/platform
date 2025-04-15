@@ -493,7 +493,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            boolean assertEnabled = false; // needed to generate SQL for logging/debugging
+            boolean assertEnabled = false; // needed to generate SQL for logging/debnugging
             assert assertEnabled = true;
 
             String baseAlias = getBaseAlias(parentAlias, _foreignKey.getAlias());

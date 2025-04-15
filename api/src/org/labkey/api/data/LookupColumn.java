@@ -131,7 +131,7 @@ public class LookupColumn extends BaseColumnInfo
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxLength() - 3; // Leave room for "$" and possible suffixes
+        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxCharLength() - 3; // Leave room for "$" and possible suffixes
         if (alias.length() > maxLength)
             alias = AliasManager.truncate(foreignKey.getAlias(),maxLength/2) + "$" + AliasManager.truncate(lookupColumn.getAlias(),maxLength/2);
         setAlias(alias);
@@ -280,7 +280,7 @@ public class LookupColumn extends BaseColumnInfo
     {
         String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
 
-        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
+        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxCharLength() - 3 /* leave room for possible suffixes */);
         return alias;
     }
 

@@ -274,7 +274,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public String getAlias()
     {
         if (_alias == null)
-            _alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect(), false);
+            _alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
         return _alias;
     }
 

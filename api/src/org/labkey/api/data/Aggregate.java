@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -438,10 +439,10 @@ public class Aggregate
         return _distinct;
     }
 
-    public SQLFragment toLabKeySQL(SQLFragment tableInnerSql)
+    public SQLFragment toLabKeySQL(SQLFragment tableInnerSql, @NotNull SqlDialect dialect)
     {
-        String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
-        alias = AliasManager.makeLegalName(alias, null);
+        String alias = _label == null ? getAggregateName(getFieldKey().toString(), dialect) : _label;
+        alias = AliasManager.makeLegalName(alias, dialect);
 
         // special case for those aggregate (i.e. summary stat) types that don't have a LabKey SQL function
         if (_type.getSQLFunctionName(null) == null)
@@ -461,7 +462,7 @@ public class Aggregate
     {
         ColumnInfo col = columns.get(getFieldKey());
         String alias = getAliasName(col);
-        String aggColName = getAggregateName(alias);
+        String aggColName = getAggregateName(alias, dialect);
         JdbcType jdbcType = col == null ? null : col.getJdbcType();
 
         return _type.getSQLColumnFragment(dialect, alias, aggColName, jdbcType, _distinct, tableInnerSql);
@@ -476,7 +477,7 @@ public class Aggregate
         return alias;
     }
 
-    private String getAggregateName(String alias)
+    private String getAggregateName(String alias, @NotNull SqlDialect dialect)
     {
         if (isCountStar())
         {
@@ -486,7 +487,7 @@ public class Aggregate
         {
             // Issue 45977: aggregate alias too long after adding the aggregate name prefix (i.e. "COUNT_DISTINCT")
             String alias_ = _type.getAliasName() + (_distinct ? "Distinct" : "") + alias;
-            return AliasManager.makeLegalName(alias_, null);
+            return AliasManager.makeLegalName(alias_, dialect);
         }
     }
 
@@ -534,13 +535,13 @@ public class Aggregate
     }
 
     // CONSIDER: Use Results instead of ResultSet -- it includes the selected column map
-    public Result getResult(ResultSet rs, Map<FieldKey, ? extends ColumnInfo> columns) throws SQLException
+    public Result getResult(ResultSet rs, Map<FieldKey, ? extends ColumnInfo> columns, SqlDialect dialect) throws SQLException
     {
         ColumnInfo col = columns.get(getFieldKey());
         if (col != null && !_type.isLegal(col.getJdbcType()))
             return new Result(this, null);
 
-        String aggColName = getAggregateName(getAliasName(col));
+        String aggColName = getAggregateName(getAliasName(col), dialect);
 
         Object o;
         JdbcType returnType = col == null ? null : _type.returnType(col.getJdbcType());

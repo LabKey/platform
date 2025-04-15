@@ -86,7 +86,6 @@ public class AliasManager
     }
 
     public static boolean isLegalName(String str, @Nullable SqlDialect dialect)
-
     {
         int length = str.length();
         for (int i = 0; i < length; i ++)
@@ -163,7 +162,6 @@ public class AliasManager
         return ret;
     }
 
-
     private String makeLegalName(String str)
     {
         return makeLegalName(str, _dialect);
@@ -171,37 +169,29 @@ public class AliasManager
 
     private String makeLegalName(String str, int reserveCount)
     {
-        return makeLegalName(str, _dialect, true, false, reserveCount);
+        return makeLegalName(str, _dialect, true, reserveCount);
     }
 
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect)
     {
-        return makeLegalName(str, dialect, true, useLegacyMaxLength);
+        return makeLegalName(str, dialect, true);
     }
 
-
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate)
     {
-        return makeLegalName(str, dialect, true, false);
+        return makeLegalName(str, dialect, truncate, 0);
     }
 
-
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength)
-    {
-        return makeLegalName(str, dialect, truncate, useLegacyMaxLength, 0);
-    }
-
-    private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength, int reserveCount)
+    private static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate, int reserveCount)
     {
         String ret = legalNameFromName(str, dialect);
-        if (null != dialect && dialect.isReserved(ret))
+        if (dialect.isReserved(ret))
             ret = ret + "_";
         int length = ret.length();
         if (0 == length)
             ret = "X_";
-        if (dialect != null)
-            ret = dialect.makeLegalIdentifierName(ret);
-        int maxLength = getMaxLength(dialect, useLegacyMaxLength);
+        ret = dialect.makeLegalIdentifierName(ret);
+        int maxLength = getMaxLength(dialect);
         if (reserveCount > 0)
             maxLength -= reserveCount;
         if (maxLength < 5)
@@ -212,7 +202,7 @@ public class AliasManager
     }
 
 
-    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
+    public static String makeLegalName(FieldKey key, @NotNull SqlDialect dialect)
     {
         if (key.getParent() == null)
             return makeLegalName(key.getName(), dialect);
@@ -224,17 +214,16 @@ public class AliasManager
             sb.append(legalNameFromName(part, dialect));
             connector = "_";
         }
-        var ret = truncate(sb.toString(), getMaxLength(dialect, useLegacyMaxLength));
+        var ret = truncate(sb.toString(), getMaxLength(dialect));
         assert isLegalName(ret, dialect);
         return ret;
     }
 
-    private static int getMaxLength(@Nullable SqlDialect dialect, boolean useLegacyMaxLength)
+    // TODO: Replace this and truncate() with calls to the dialect.truncateIdentifier()
+    private static int getMaxLength(@NotNull SqlDialect dialect)
     {
-        // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
+        int max = dialect.getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
 
-        // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
-        int max = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
         // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
         return Math.min(100, max);
     }
@@ -405,7 +394,7 @@ public class AliasManager
 
             assertEquals("select_", m.decideAlias("select"));
 
-            assertEquals(m._dialect.getIdentifierMaxLength() - 3, m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
+            assertEquals(m._dialect.getIdentifierMaxCharLength() - 3, m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
         }
     }
 }

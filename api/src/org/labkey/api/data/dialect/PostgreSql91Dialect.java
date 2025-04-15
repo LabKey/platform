@@ -61,6 +61,7 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -113,6 +114,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
+
+    // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
+    // the future, servers can be compiled with a different limit, and Redshift purports to having a 127-byte limit, so
+    // we query this setting on first connection to each database.
+    private int _maxIdentifierByteLength = 63;
 
     public boolean getStandardConformingStrings()
     {
@@ -866,6 +872,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
             _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
+
+            String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
+            try
+            {
+                _maxIdentifierByteLength = Integer.valueOf(value);
+            }
+            catch (NumberFormatException e)
+            {
+                LOG.error("Couldn't parse max_identifier_length; continuing with default value of {}", _maxIdentifierByteLength, e);
+            }
         }
     }
 
@@ -926,6 +942,27 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     protected Pattern getSQLScriptProcPattern()
     {
         return PROC_PATTERN;
+    }
+
+    @Override
+    public int getIdentifierMaxCharLength()
+    {
+        return 63; // TODO: Set to some invalid value, like -1
+    }
+
+    /**
+     * Note: PostgreSQL truncates based on number of bytes NOT number of characters. Therefore, UTF-8 truncating.
+     */
+    @Override
+    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserveIfTruncating)
+    {
+        return StringUtilsLabKey.truncateToUtf8ByteLimit(identifier, _maxIdentifierByteLength - extraAsciiCharsToReserveIfTruncating);
+    }
+
+    @Override
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.getBytes(StandardCharsets.UTF_8).length > _maxIdentifierByteLength;
     }
 
     @Override
