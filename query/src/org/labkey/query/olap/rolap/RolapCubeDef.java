@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -78,11 +79,9 @@ public class RolapCubeDef
     // however, depending on NULL semantics we may sometimes want JOIN semantics (see memberFilterUsersJoinKey)
     boolean useOuterJoin = true;
 
-
     // filter on PK IS NOT NULL if there is a member filter
     // if this is TRUE, then we'll eliminate values that are null only because the JOIN failed
     final boolean memberFilterUsesJoinKey = true;
-
 
     protected String name;
     protected String olapSchemaName;
@@ -92,8 +91,9 @@ public class RolapCubeDef
     protected final Map<String,String> annotations = new TreeMap<>();
     protected final Map<String,Object> uniqueNameMap = new TreeMap<>();
 
-    // TODO: Don't pass null!!
-    private final AliasManager columnAliases = new AliasManager((SqlDialect) null);
+    // Use the labkey scope's dialect for the purpose of creating column aliases used in getAllColumnsSQL(). This seems
+    // like a safe assumption.
+    private final AliasManager columnAliases = new AliasManager(DbScope.getLabKeyScope().getSqlDialect());
 
 
     public RolapCubeDef(String schema, String cubeName)
