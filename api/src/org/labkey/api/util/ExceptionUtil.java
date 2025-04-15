@@ -1065,7 +1065,7 @@ public class ExceptionUtil
                 pageConfig.setFrameOption(originalConfig.getFrameOption());
             }
 
-            HttpView<?> errorView;
+            HttpView<?> errorView = null;
             try
             {
                 renderer.setErrorType(errorType);
@@ -1083,7 +1083,8 @@ public class ExceptionUtil
                     {
                         errorView = pageConfig.getTemplate().getTemplate(context, new ErrorView(renderer), pageConfig);
                     }
-                    else
+
+                    if (errorView == null)
                     {
                         // context can be null for configuration exceptions depending on how far server got through initialization
                         errorView = PageConfig.Template.Body.getTemplate(new ViewContext(request, response, new ActionURL(ActionURL.getBaseServerURL())), new ErrorView(renderer), pageConfig);
