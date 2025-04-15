@@ -30,6 +30,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
+<%@ page import="org.labkey.api.data.LookupResolutionType" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final static String tableName = "testGetSelectSqlSort";
@@ -44,7 +45,7 @@
         ListDefinition list = s.getList(c, tableName);
 
         var data = new ReaderInputStream(new StringReader("A,B,C\n6,4,3\n1,8,6\n7,1,9\n2,5,1\n8,9,4\n3,2,7\n9,6,10\n4,10,2\n10,3,5\n5,7,8\n"));
-        list.insertListItems(user, c, new TabLoader.CsvFactory().createLoader(data,true), new BatchValidationException(), null, null, false, DataIteratorContext.LookupResolutionType.primaryKey);
+        list.insertListItems(user, c, new TabLoader.CsvFactory().createLoader(data,true), new BatchValidationException(), null, null, false, LookupResolutionType.primaryKey);
 
         // wrap this list so we can mangle the sort properties
         UserSchema schema = (UserSchema)DefaultSchema.get(user,c,"lists");

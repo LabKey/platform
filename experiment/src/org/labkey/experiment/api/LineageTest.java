@@ -13,6 +13,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -476,7 +477,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         rows.add(CaseInsensitiveHashMap.of("SampleId", "sally"));
 
         DataIteratorContext context = new DataIteratorContext();
-        context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
+        context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
         context.setAllowImportLookupByAlternateKey(true);
 
         errors = new BatchValidationException();

@@ -44,6 +44,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.SimpleFilter;
@@ -958,11 +959,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
         final boolean _includeTitleColumn;
-        final DataIteratorContext.LookupResolutionType _lookupResolutionType;
+        final LookupResolutionType _lookupResolutionType;
 
         final private RemapPostConvert _remapper;
 
-        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull DataIteratorContext.LookupResolutionType lookupResolutionType)
+        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull LookupResolutionType lookupResolutionType)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
             _convertCol = convertCol;
@@ -1384,7 +1385,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type);
 
         ForeignKey fk = col.getFk();
-        DataIteratorContext.LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
+        LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
         if (fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
             // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
@@ -1396,7 +1397,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // For enum tables, we should not be using number names for the values, so we will look up by primary key first (resolving rowIds) then alternate.
             // This assures the type is an Integer when a rowId is given (e.g., from a row read from the database), not a string.
             if (fk.getLookupTableInfo() instanceof EnumTableInfo)
-                lookupResolutionType = DataIteratorContext.LookupResolutionType.primaryThenAlternateKey;
+                lookupResolutionType = LookupResolutionType.primaryThenAlternateKey;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
@@ -2259,7 +2260,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.primaryThenAlternateKey);
+                context.setLookupResolutionType(LookupResolutionType.primaryThenAlternateKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue);
@@ -2295,7 +2296,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.primaryThenAlternateKey);
+                context.setLookupResolutionType(LookupResolutionType.primaryThenAlternateKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null);
@@ -2331,7 +2332,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(DataIteratorContext.LookupResolutionType.alternateThenPrimaryKey);
+                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null);

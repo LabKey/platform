@@ -58,6 +58,7 @@ import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -3443,7 +3444,7 @@ public class StudyManager
                                           @Nullable DataState defaultQCState,
                                           QueryUpdateService.InsertOption insertOption,
                                           Logger logger,
-                                          DataIteratorContext.LookupResolutionType lookupResolutionType,
+                                          LookupResolutionType lookupResolutionType,
                                           @Nullable AuditBehaviorType auditBehaviorType)
             throws IOException
     {

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -60,7 +61,7 @@ public class QueryImportPipelineJob extends PipelineJob
         String _auditUserComment = null;
         boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
-        DataIteratorContext.LookupResolutionType _lookupResolutionType = null;
+        LookupResolutionType _lookupResolutionType = null;
 
         String _jobDescription;
 
@@ -209,12 +210,12 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
-        public DataIteratorContext.LookupResolutionType getLookupResolutionType()
+        public LookupResolutionType getLookupResolutionType()
         {
             return _lookupResolutionType;
         }
 
-        public QueryImportAsyncContextBuilder setLookupResolutionType(DataIteratorContext.LookupResolutionType lookupResolutionType)
+        public QueryImportAsyncContextBuilder setLookupResolutionType(LookupResolutionType lookupResolutionType)
         {
             _lookupResolutionType = lookupResolutionType;
             return this;

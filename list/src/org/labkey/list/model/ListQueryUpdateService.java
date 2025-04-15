@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -205,7 +206,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     public int insertUsingDataIterator(DataLoader loader, User user, Container container, BatchValidationException errors, @Nullable VirtualFile attachmentDir,
-                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, DataIteratorContext.LookupResolutionType lookupResolutionType)
+                                       @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, InsertOption insertOption, LookupResolutionType lookupResolutionType)
     {
         if (!_list.isVisible(user))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
