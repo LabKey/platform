@@ -1213,7 +1213,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 {
                     sb.append("<br>");
                     String script = "uploadWizard_showPopup('extraErrors', 'All Errors', " + PageFlowUtil.jsString(msgBox.toString()) + "); return false;";
-                    sb.append(new LinkBuilder("Too many errors to display (click to show all).").id("extraErrors").onClick(script).getHtmlString());
+                    sb.append(LinkBuilder.labkeyLink("Too many errors to display (click to show all).").id("extraErrors").onClick(script).getHtmlString());
                     sb.append("<br>");
                 }
                 return sb.getHtmlString();

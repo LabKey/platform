@@ -72,10 +72,10 @@
         <td>
             <table>
                 <tr>
-                    <td><%=link("Export to Excel").href(downloadURL.replaceParameter("export", "xls"))%></td>
+                    <td><%=link("Export to Excel", downloadURL.replaceParameter("export", "xls"))%></td>
                 </tr>
                 <tr>
-                    <td><%=link("Export to text file").href(downloadURL.replaceParameter("export", "tsv")) %></td>
+                    <td><%=link("Export to text file", downloadURL.replaceParameter("export", "tsv")) %></td>
                 </tr>
             </table>
             <br>

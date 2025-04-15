@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -195,7 +196,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("Design").href(designUrl));
+                                out.write(LinkBuilder.labkeyLink("Design", designUrl));
                             }
                         });
                     }
@@ -210,7 +211,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
                                 historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("View History").href(historyUrl));
+                                out.write(LinkBuilder.labkeyLink("View History", historyUrl));
                             }
                         });
                     }

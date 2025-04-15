@@ -142,7 +142,7 @@ public class PathDisplayColumn extends DataColumn
                 String url = s.eval(newRow);
                 if (url != null)
                 {
-                    out.write(new LinkBuilder(part).href(url).clearClasses());
+                    out.write(LinkBuilder.simpleLink(part, url));
                 }
                 else
                 {

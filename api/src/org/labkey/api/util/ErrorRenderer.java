@@ -141,7 +141,7 @@ public class ErrorRenderer
 
             if (!showDetails)
             {
-                out.println("<p><div id='togglePanel' style='cursor:pointer' >" + PageFlowUtil.link("Show more details").href("#details") + "</div>\n" +
+                out.println("<p><div id='togglePanel' style='cursor:pointer' >" + LinkBuilder.labkeyLink("Show more details", "#details") + "</div>\n" +
                         "<div id=\"contentPanel\" style=\"display:none;\">");
                 HttpView.currentPageConfig().addHandler("togglePanel", "click", "document.getElementById('contentPanel').style.display='block'; document.getElementById('togglePanel').style.display='none';");
             }

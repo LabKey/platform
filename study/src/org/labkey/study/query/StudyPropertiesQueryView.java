@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.security.User;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -83,7 +84,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
         {
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);
-            PageFlowUtil.link("edit").href(actionURL).appendTo(oldWriter);
+            LinkBuilder.labkeyLink("edit", actionURL).appendTo(oldWriter);
         }
     }
 }

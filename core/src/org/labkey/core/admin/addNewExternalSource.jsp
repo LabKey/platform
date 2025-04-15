@@ -85,7 +85,7 @@
     </p>
     <p>
         For more information on the security concern, refer to the
-        <%=link("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").target("_owasp").clearClasses()%>.
+        <%=simpleLink("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").target("_owasp")%>.
     </p>
 </div>
 <%

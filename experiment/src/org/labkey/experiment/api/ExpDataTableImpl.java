@@ -77,6 +77,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -756,9 +757,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 if (data.isFileOnDisk())
                 {
-                    PageFlowUtil.link("View File").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(oldWriter);
                     oldWriter.write("<br>");
-                    PageFlowUtil.link("Download").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(oldWriter);
                 }
                 else
                 {

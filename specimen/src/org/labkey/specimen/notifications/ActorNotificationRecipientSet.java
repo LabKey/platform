@@ -22,6 +22,7 @@ import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.specimen.location.LocationManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
@@ -109,7 +110,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
             getLocation() != null ? getLocation().getRowId() : null,
             currentUrl
         );
-        return PageFlowUtil.link("Configure Addresses").href(url).getHtmlString();
+        return LinkBuilder.labkeyLink("Configure Addresses", url).getHtmlString();
     }
 
     public SafeToRender getHtmlDescriptionAndLink(boolean hasEmailAddresses, ActionURL currentUrl)

@@ -57,6 +57,7 @@ import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -226,18 +227,18 @@ public class SqlScriptController extends SpringActionController
             if (AppProps.getInstance().isDevMode())
             {
                 if (form.isManagedOnly())
-                    html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
+                    html.append(LinkBuilder.labkeyLink("show all modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
-                    html.append(PageFlowUtil.link("show only managed modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
+                    html.append(LinkBuilder.labkeyLink("show only managed modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
 
-                html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
+                html.append(LinkBuilder.labkeyLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
+                html.append(LinkBuilder.labkeyLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
+                html.append(LinkBuilder.labkeyLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
             }
 
             // Make this link available on production deployments
-            html.append(PageFlowUtil.link("upgrade code").href(new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
+            html.append(LinkBuilder.labkeyLink("upgrade code", new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
             html.unsafeAppend("</td></tr>");
             html.unsafeAppend("<tr><td>&nbsp;</td></tr>");
 

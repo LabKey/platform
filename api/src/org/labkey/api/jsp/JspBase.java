@@ -443,7 +443,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     public LinkBuilder link(String text)
     {
-        return new LinkBuilder(text);
+        return LinkBuilder.labkeyLink(text);
     }
 
     public LinkBuilder link(Renderable html)
@@ -460,12 +460,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
     // Link to a URLHelper
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
-        return link(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public LinkBuilder link(String text, @NotNull String url)
     {
-        return link(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public LinkBuilder link(Renderable html, @NotNull URLHelper url)
@@ -474,9 +474,33 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     // Simple, unstyled link
+    public LinkBuilder simpleLink(String text)
+    {
+        return LinkBuilder.simpleLink(text);
+    }
+
+    // Simple, unstyled link
     public LinkBuilder simpleLink(String text, @NotNull URLHelper url)
     {
         return LinkBuilder.simpleLink(text, url);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(String text, @NotNull String url)
+    {
+        return LinkBuilder.simpleLink(text, url);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(Renderable html)
+    {
+        return LinkBuilder.simpleLink(html);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(Renderable html, @NotNull URLHelper url)
+    {
+        return LinkBuilder.simpleLink(html, url);
     }
 
     public InputBuilder<?> input()

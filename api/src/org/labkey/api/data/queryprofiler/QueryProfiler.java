@@ -410,10 +410,10 @@ public class QueryProfiler
                 Arrays.stream(ExecutionPlanType.values()).
                     filter(tracker::canShowExecutionPlan).
                     map(type -> DOM.DIV(
-                        new LinkBuilder("Show " + type.getDescription()).
-                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
-                        ExecutionPlanType.Actual == type ? DOM.DIV(new LinkBuilder("Log " + type.getDescription() + " to primary site log").
-                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
+                        LinkBuilder.labkeyLink("Show " + type.getDescription(),
+                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
+                        ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
+                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
                     )),
                 DOM.BR(),
                 tracker.renderStackTraces()
@@ -425,7 +425,7 @@ public class QueryProfiler
 
     private LinkBuilder.Link copyToClipboardLink(String linkId, String targetId)
     {
-        return new LinkBuilder("copy to clipboard").
+        return LinkBuilder.labkeyLink("copy to clipboard").
             onClick("return false;").
             id(linkId).
             attributes(Collections.singletonMap("data-clipboard-target", "#" + targetId)).
