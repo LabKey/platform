@@ -2655,6 +2655,7 @@ public class ExpDataIterators
                     _context.getErrors().addRowError(new ValidationException("No value provided for '" + _typeColName + "'."));
                 else
                 {
+                    // Issue 52626 and Issue 52609 - don't check folders during update
                     if (_isCrossFolder && _folderColIndex != null && !_context.getInsertOption().updateOnly)
                     {
                         String rowFolderId = StringUtils.trim((String) get(_folderColIndex));
