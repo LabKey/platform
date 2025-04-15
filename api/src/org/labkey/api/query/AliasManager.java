@@ -219,7 +219,7 @@ public class AliasManager
         return ret;
     }
 
-    // TODO: Replace this and truncate() with calls to the dialect.truncateIdentifier()
+    // TODO: Replace this and truncate() with calls to dialect.truncateIdentifier()
     private static int getMaxLength(@NotNull SqlDialect dialect)
     {
         int max = dialect.getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
@@ -306,22 +306,6 @@ public class AliasManager
         if (column == null)
             return;
         claimAlias(column.getAlias(), column.getName());
-    }
-
-
-    /* assumes won't be called on same columninfo twice
-     * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
-     */
-    public void ensureAlias(MutableColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
-    {
-        if (column.isAliasSet())
-        {
-            if (_aliases.get(column.getAlias()) != null)
-                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
-            claimAlias(column.getAlias(), column.getName());
-        }
-        else
-            column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
     }
 
     public void ensureAlias(MutableColumnInfo column)

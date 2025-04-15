@@ -654,7 +654,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (null != result)
             {
                 ((BaseColumnInfo) result).setFieldKey(new FieldKey(null, name));
-                ((BaseColumnInfo) result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true));
+                ((BaseColumnInfo) result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect()));
             }
         }
         return result;
