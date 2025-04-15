@@ -58,6 +58,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -1633,12 +1634,13 @@ public class StudyPublishManager implements StudyPublishService
      */
     private String sanitizeName(String originalName)
     {
+        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
         StringBuilder sb = new StringBuilder();
         boolean first = true; // first character is special
         for (int i = 0; i < originalName.length(); i++)
         {
             char c = originalName.charAt(i);
-            if (AliasManager.isLegalNameChar(c, first))
+            if (AliasManager.isLegalNameChar(c, first, dialect))
             {
                 sb.append(c);
                 first = false;

@@ -819,7 +819,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
     String makeRelationName(String name)
     {
-        if (!AliasManager.isLegalName(name) || name.length() > 40)
+        if (!AliasManager.isLegalName(name, getSqlDialect()) || name.length() > 40)
             return AliasManager.makeLegalName(name, getSqlDialect()) + "_" + _query.incrementAliasCounter();
         else
             return name + "_" + _query.incrementAliasCounter();

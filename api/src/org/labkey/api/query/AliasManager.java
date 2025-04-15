@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
@@ -42,9 +43,9 @@ public class AliasManager
         _dialect = d;
     }
 
-    public AliasManager(DbSchema schema)
+    public AliasManager(@NotNull DbSchema schema)
     {
-        _dialect = null==schema ? null :  schema.getSqlDialect();
+        _dialect = schema.getSqlDialect();
     }
 
     public AliasManager(@NotNull TableInfo table, @Nullable Collection<ColumnInfo> columns)
@@ -59,12 +60,7 @@ public class AliasManager
      *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
      *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
      */
-    public static boolean isLegalNameChar(char ch, boolean first)
-    {
-        return isLegalNameChar(ch, first, null);
-    }
-
-    public static boolean isLegalNameChar(char ch, boolean first, @Nullable SqlDialect dialect)
+    public static boolean isLegalNameChar(char ch, boolean first, @NotNull SqlDialect dialect)
     {
         // quick check
         if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
@@ -73,19 +69,14 @@ public class AliasManager
             return true;
 
         // oracle doesn't allow leading underscore
-        if (null == dialect || dialect.isOracle())
+        if (dialect.isOracle())
             return !first && ch == '_';
 
         // TODO be more lenient here (allow more unicode characters as "legal")
         return ch == '_';
     }
 
-    public static boolean isLegalName(String str)
-    {
-        return isLegalName(str, null);
-    }
-
-    public static boolean isLegalName(String str, @Nullable SqlDialect dialect)
+    public static boolean isLegalName(String str, @NotNull SqlDialect dialect)
     {
         int length = str.length();
         for (int i = 0; i < length; i ++)
@@ -96,13 +87,7 @@ public class AliasManager
         return true;
     }
 
-    public static String legalNameFromName(String str)
-    {
-        return legalNameFromName(str, null);
-    }
-
-    public static String legalNameFromName(String str, @Nullable SqlDialect dialect)
-
+    public static String legalNameFromName(String str, @NotNull SqlDialect dialect)
     {
         int i;
         char ch=0;
@@ -121,7 +106,7 @@ public class AliasManager
         if (i==0)
         {
             sb.append("X_");
-            if (isLegalNameChar(ch, false))
+            if (isLegalNameChar(ch, false, dialect))
             {
                 sb.append(ch);
                 i++;
@@ -135,7 +120,7 @@ public class AliasManager
         for ( ; i < length ; i ++)
         {
             ch = str.charAt(i);
-            boolean isLegal = isLegalNameChar(ch, false);
+            boolean isLegal = isLegalNameChar(ch, false, dialect);
             if (isLegal)
             {
                 sb.append(ch);
@@ -345,15 +330,16 @@ public class AliasManager
         @Test
         public void test_legalNameFromName()
         {
-            assertEquals("bob", legalNameFromName("bob"));
-            assertEquals("bob1", legalNameFromName("bob1"));
-            assertEquals("X_1", legalNameFromName("1"));
-            assertEquals("X_1bob", legalNameFromName("1bob"));
-            assertEquals("X__bob", legalNameFromName("_bob"));
-            assertEquals("X__bob", legalNameFromName("?bob"));
-            assertEquals("bob_", legalNameFromName("bob?"));
-            assertEquals("bob_by", legalNameFromName("bob?by"));
-            assertFalse(legalNameFromName("bob+").equals(legalNameFromName("bob-")));
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            assertEquals("bob", legalNameFromName("bob", dialect));
+            assertEquals("bob1", legalNameFromName("bob1", dialect));
+            assertEquals("X_1", legalNameFromName("1", dialect));
+            assertEquals("X_1bob", legalNameFromName("1bob", dialect));
+            assertEquals("X__bob", legalNameFromName("_bob", dialect));
+            assertEquals("X__bob", legalNameFromName("?bob", dialect));
+            assertEquals("bob_", legalNameFromName("bob?", dialect));
+            assertEquals("bob_by", legalNameFromName("bob?by", dialect));
+            assertNotEquals(legalNameFromName("bob+", dialect), legalNameFromName("bob-", dialect));
         }
 
         @Test

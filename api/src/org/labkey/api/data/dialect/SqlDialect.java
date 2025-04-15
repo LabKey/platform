@@ -977,12 +977,12 @@ public abstract class SqlDialect
      * lengths and rules differ by database; for example, most databases limit identifiers based on character length,
      * but PostgreSQL limits based on byte length.
      * @param identifier The candidate identifier name
-     * @param extraAsciiCharsToReserveIfTruncating Number of ASCII characters to reserve (e.g., for a suffix)
+     * @param extraAsciiCharsToReserve Number of ASCII characters to reserve (e.g., for a suffix)
      * @return The truncated identifier
      */
-    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserveIfTruncating)
+    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserve)
     {
-        return identifier.substring(0, getIdentifierMaxCharLength() - extraAsciiCharsToReserveIfTruncating);
+        return identifier.substring(0, getIdentifierMaxCharLength() - extraAsciiCharsToReserve);
     }
 
     public boolean isIdentifierTooLong(String identifier)

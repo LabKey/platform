@@ -652,7 +652,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
+        if (!AliasManager.isLegalName(schemaName, this) || isReserved(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
 
         //Quoted schema names are bad news
@@ -954,9 +954,9 @@ public abstract class PostgreSql91Dialect extends SqlDialect
      * Note: PostgreSQL truncates based on number of bytes NOT number of characters. Therefore, UTF-8 truncating.
      */
     @Override
-    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserveIfTruncating)
+    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserve)
     {
-        return StringUtilsLabKey.truncateToUtf8ByteLimit(identifier, _maxIdentifierByteLength - extraAsciiCharsToReserveIfTruncating);
+        return StringUtilsLabKey.truncateToUtf8ByteLimit(identifier, _maxIdentifierByteLength - extraAsciiCharsToReserve);
     }
 
     @Override
@@ -1448,7 +1448,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String makeTableIdentifier(TableChange change)
     {
-        assert AliasManager.isLegalName(change.getTableName());
+        assert AliasManager.isLegalName(change.getTableName(), this);
         return change.getSchemaName() + "." + change.getTableName();
     }
 

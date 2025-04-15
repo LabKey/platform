@@ -60,9 +60,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: jeckels
- * Date: May 7, 2009
- *
  * If you touch this file, run AssayTest, FlowSpecimenTest, ElispotAssay, and TargetStudyTest
  */
 public class SpecimenForeignKey extends LookupForeignKey
