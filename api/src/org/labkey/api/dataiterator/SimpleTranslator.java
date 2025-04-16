@@ -195,7 +195,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
-        private final RemapMissingBehavior _missing;
         private boolean _includePkLookup;               // if true, will perform an initial PK lookup before attempting the AK lookup
 
         private final boolean _allowBulkLoads;
@@ -205,16 +204,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
         private Pair<ColumnInfo, Map<?, ?>> _pkColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads)
-        {
-            this(targetTable, includeTitleColumn, missing, allowBulkLoads, false);
-        }
-
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup)
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
-            _missing = missing;
             _allowBulkLoads = allowBulkLoads;
             _includePkLookup = includePkLookup;
         }
@@ -309,18 +302,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             if (_titleColumnLookupMap != null)
             {
-                Object v = fetch(_titleColumnLookupMap, String.valueOf(k));
-                if (v != null)
-                    return v;
+                return fetch(_titleColumnLookupMap, String.valueOf(k));
             }
 
-            switch (_missing)
-            {
-                case Null:          return null;
-                case OriginalValue: return k;
-                case Error:
-                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
-            }
+            return null;
         }
 
         private final Object MISS = new Object();
@@ -970,17 +955,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true);
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, false, true);
             _lookupResolutionType = lookupResolutionType;
         }
 
-        protected Object convertWithPrimaryColumn(Object o, boolean primaryTried)
+        private Object convertWithPrimaryColumn(Object o, boolean primaryTried)
         {
             if (_lookupResolutionType.usePrimaryKey() && _lookupResolutionType.usePrimaryFirst() != primaryTried)
             {
                 try
                 {
-                    // _convertCol here will be the column for the primary key type (unless type inference has gone wrong?)
+                    // _convertCol here will be the column for the primary key type
                     Object value =  _convertCol.convert(o);
                     ForeignKey fk = _toCol.getFk();
                     // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
@@ -1003,7 +988,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return null;
         }
 
-        protected Object convertWithRemapper(Object o)
+        private Object convertWithRemapper(Object o)
         {
             if (_lookupResolutionType.useAlternateKey())
             {
@@ -1026,16 +1011,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (o == null)
                 return null;
 
-            boolean triedPrimary = false;
-            Object value = convertWithPrimaryColumn(o, triedPrimary);
-
+            Object value = convertWithPrimaryColumn(o, false);
             if (value != null)
                 return value;
-            triedPrimary = true;
+
             value = convertWithRemapper(o);
             if (value != null)
                 return value;
-            value = convertWithPrimaryColumn(o, triedPrimary);
+
+            value = convertWithPrimaryColumn(o, true);
             if (value == null)
             {
                 return switch (_missing)
@@ -1049,46 +1033,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return value;
         }
     }
-
-    protected class RemapColumn implements Supplier
-    {
-        final Supplier _inputColumn;
-        final Map<?, ?> _map;
-        final RemapMissingBehavior _missing;
-
-        public RemapColumn(final int index, Map<?, ?> map, RemapMissingBehavior missing)
-        {
-            _inputColumn = _data.getSupplier(index);
-            _map = map;
-            _missing = missing;
-        }
-
-        public RemapColumn(Supplier call, Map<?, ?> map, RemapMissingBehavior missing)
-        {
-            _inputColumn = call;
-            _map = map;
-            _missing = missing;
-        }
-
-        @Override
-        public Object get()
-        {
-            Object k = _inputColumn.get();
-            if (null == k)
-                return null;
-            Object v = _map.get(k);
-            if (null != v || _map.containsKey(k))
-                return v;
-            switch (_missing)
-            {
-                case Null:          return null;
-                case OriginalValue: return k;
-                case Error:
-                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
-            }
-        }
-    }
-    
 
     protected class NullColumn implements Supplier
     {
@@ -1454,19 +1398,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         ColumnInfo col = new BaseColumnInfo(name, JdbcType.TIMESTAMP);
         return addColumn(col, new TimestampColumn());
-    }
-
-    /**
-     * Translate values from the source data iterator to those contained in the in-memory <code>map</code>.
-     * @param fromIndex Source column to wrap.
-     * @param map Mapping from source to value.
-     * @param missing Tell me how to handle incoming values not present in the map.
-     */
-    public int addRemapColumn(int fromIndex, @NotNull Map<?, ?> map, RemapMissingBehavior missing)
-    {
-        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
-        RemapColumn remap = new RemapColumn(fromIndex, map, missing);
-        return addColumn(col, remap);
     }
 
     public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk,

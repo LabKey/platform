@@ -144,7 +144,7 @@ public class RemapCache
     {
         return remapCache.computeIfAbsent(key, (k) -> {
             TableInfo table = key.getTable();
-            return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null, _allowBulkLoads, includePkLookup);
+            return new SimpleTranslator.RemapPostConvert(table, true, _allowBulkLoads, includePkLookup);
         });
     }
 
