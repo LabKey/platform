@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -63,6 +64,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final Container c;
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
+
+    final Set<String> _pkKeysSeen = new HashSet<>();
 
     final DataIteratorContext _context;
 
@@ -255,12 +258,17 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
                 sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
+                List<String> pkKeys = new ArrayList<>();
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
                     sqlf.append(",?");
                     sqlf.add(pkSuppliers.get(p).get());
                 }
                 sqlf.append(")");
+                String pkKey = StringUtils.join(pkKeys, ", ");
+                if (_pkKeysSeen.contains(pkKey))
+                    _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + pkKey));
+                _pkKeysSeen.add(pkKey);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
@@ -370,8 +378,19 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 {
                     lastPrefetchRowNumber = (Integer) _delegate.get(0);
                     Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
+                    List<String> pkKeys = new ArrayList<>();
                     for (int p=0 ; p<pkColumns.size() ; p++)
-                        keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
+                    {
+                        Object pkVal = pkSuppliers.get(p).get();
+                        keyMap.put(pkColumns.get(p).getColumnName(), pkVal);
+                        pkKeys.add(pkVal.toString());
+                    }
+
+                    String pkKey = StringUtils.join(pkKeys, ", ");
+                    if (_pkKeysSeen.contains(pkKey))
+                        _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + pkKey));
+                    _pkKeysSeen.add(pkKey);
+
                     keysMap.put(lastPrefetchRowNumber, keyMap);
                     existingRecords.put(lastPrefetchRowNumber, Map.of());
                 }

@@ -145,6 +145,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
@@ -3023,8 +3024,12 @@ public class ExpDataIterators
                 {
                     String name = (String) row.get("name");
                     String dataContainer = (String) row.get("container");
-                    int dataRowId = typeData.dataIds.indexOf(name);
-                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(dataRowId);
+                    // could be updating the same data multiple times in a single import, the import will later be rejected
+                    List<Integer> dataRowIds =
+                            IntStream.range(0, typeData.dataIds.size()).boxed()
+                                    .filter(i -> typeData.dataIds.get(i).equals(name))
+                                    .toList();
+                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
                 }
 
                 for (String containerId : containerRows.keySet())

@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -720,6 +721,28 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             return Table.delete(getDbTable(), SimpleFilter.createContainerFilter(container));
 
        return Table.delete(getDbTable());
+    }
+
+    @Override
+    protected void checkDuplicateUpdate(@NotNull Set<Object> updatedRows, @NotNull Map<String, Object> updatedRow, @NotNull Container container) throws InvalidKeyException
+    {
+        Object[] keysObj = getKeys(updatedRow, container);
+        if (keysObj == null)
+            return;
+        if (keysObj.length == 1)
+        {
+            if (updatedRows.contains(keysObj[0]))
+                throw new InvalidKeyException("Duplicate key provided: " + keysObj[0]);
+            updatedRows.add(keysObj[0]);
+            return;
+        }
+
+        List<String> keys = new ArrayList<>();
+        for (Object key : keysObj)
+            keys.add(String.valueOf(key));
+        if (updatedRows.contains(keys))
+            throw new InvalidKeyException("Duplicate key provided: " + StringUtils.join(keys, ", "));
+        updatedRows.add(keys);
     }
 
     protected Object[] getKeys(Map<String, Object> map, Container container) throws InvalidKeyException

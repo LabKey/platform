@@ -107,6 +107,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -780,6 +781,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
+        Set<Object> updatedRows = new HashSet<>();
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -805,6 +807,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     result.add(updatedRow);
                     oldRows.add(oldRow);
+                    checkDuplicateUpdate(updatedRows, updatedRow, container);
                 }
             }
             catch (ValidationException vex)
@@ -832,6 +835,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows);
 
         return result;
+    }
+
+    protected void checkDuplicateUpdate(@NotNull Set<Object> updatedRows, @NotNull Map<String, Object> updatedRow, @NotNull Container container) throws InvalidKeyException
+    {
+
     }
 
     @Override
