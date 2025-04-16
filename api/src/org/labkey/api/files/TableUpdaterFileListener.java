@@ -230,7 +230,7 @@ public class TableUpdaterFileListener implements FileListener
             sharedSQL.append("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
-        sharedSQL.append(dbColumnName);
+        sharedSQL.appendIdentifier(dbColumnName);
         sharedSQL.append(" = ");
 
         String srcPath = getSourcePath(src, container);
@@ -248,14 +248,14 @@ public class TableUpdaterFileListener implements FileListener
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
         singleEntrySQL.append("? WHERE (");
-        singleEntrySQL.append(dbColumnName);
+        singleEntrySQL.appendIdentifier(dbColumnName);
         singleEntrySQL.append(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
         if (null != srcPathWithout)
         {
             singleEntrySQL.append(" OR ");
-            singleEntrySQL.append(dbColumnName);
+            singleEntrySQL.appendIdentifier(dbColumnName);
             singleEntrySQL.append(" = ?");
             singleEntrySQL.add(srcPathWithout);
         }
@@ -286,11 +286,11 @@ public class TableUpdaterFileListener implements FileListener
                 srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
             SQLFragment whereClause = new SQLFragment(" WHERE ");
-            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(dbColumnName))).append(" = 1");
+            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment().appendIdentifier(dbColumnName))).append(" = 1");
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(new SQLFragment().appendIdentifier(dbColumnName), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
