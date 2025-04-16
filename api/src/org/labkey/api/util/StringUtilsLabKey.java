@@ -567,6 +567,7 @@ public class StringUtilsLabKey
     private static final byte NON_ASCII_MASK = (byte)0b1000_0000;
     private static final byte START_BYTE_MASK = (byte)0b1100_0000;
 
+    // Truncates a string to UTF-8 bytes <= maxBytes starting from the first character (truncating the end of the string)
     public static String truncateToUtf8ByteLimit(String s, int maxBytes)
     {
         if (maxBytes < 0)
@@ -593,6 +594,29 @@ public class StringUtilsLabKey
                 }
             }
             s = new String(bytes, 0, maxBytes, StandardCharsets.UTF_8);
+        }
+        return s;
+    }
+
+    // Truncates a string to UTF-8 bytes <= maxBytes starting from the LAST character (truncating the start of the string)
+    public static String truncateStartToUtf8ByteLimit(String s, int maxBytes)
+    {
+        if (maxBytes < 0)
+            throw new IllegalStateException("maxBytes cannot be negative");
+
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        int length = bytes.length;
+        if (length > maxBytes)
+        {
+            int start = length - maxBytes;
+            if (maxBytes > 0)
+            {
+                // Starting at the min possible truncation point, inspect the byte to determine if it's in the middle
+                // of a character; if so, move forward by one byte and test again.
+                while (start < length && (bytes[start] & START_BYTE_MASK) == NON_ASCII_MASK)
+                    start++;
+            }
+            s = new String(bytes, start, length - start, StandardCharsets.UTF_8);
         }
         return s;
     }
@@ -986,33 +1010,22 @@ public class StringUtilsLabKey
             assertTrue(isValidJavaIdentifier("$ABC"));
         }
 
-        @Test
-        public void testTruncateToUtf8ByteLimit()
-        {
-            // First, a few basic checks
-            assertEquals("abc", truncateToUtf8ByteLimit("abc", 3));
-            assertEquals("ab", truncateToUtf8ByteLimit("abc", 2));
-            assertEquals("☃☃", truncateToUtf8ByteLimit("☃☃", 10));
-            assertEquals("☃", truncateToUtf8ByteLimit("☃☃", 3));
-            assertEquals("", truncateToUtf8ByteLimit("☃☃", 2));
+        private final List<String> truncationTestStrings = List.of(
+            "",
+            "A",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+            "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
+            "°±²³´µ¶·¸¹º»¼½¾¿",
+            "こんにちは世界!",
+            "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
+            "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
+            "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
+            "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
+        );
 
-            List<String> testStrings = List.of(
-                "",
-                "A",
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-                "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
-                "°±²³´µ¶·¸¹º»¼½¾¿",
-                "こんにちは世界!",
-                "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
-                "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
-                "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
-                "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
-            );
-
-            testStrings.forEach(this::testTruncateSingleString);
-
-            // Create a list with all distinct characters (including surrogate pairs) from the above test strings
-            List<String> uniqueChars = testStrings.stream().flatMap(s -> {
+        // Create a list with all distinct characters (including surrogate pairs) from the above test strings
+        private final List<String> uniqueChars = truncationTestStrings.stream()
+            .flatMap(s -> {
                 List<String> moreStrings = new LinkedList<>();
                 for (int i = 0; i < s.length(); i++)
                 {
@@ -1034,16 +1047,29 @@ public class StringUtilsLabKey
             .sorted()
             .collect(Collectors.toCollection(ArrayList::new));
 
+        @Test
+        public void testTruncateToUtf8ByteLimit()
+        {
+            // First, a few basic checks
+            assertEquals("abc", truncateToUtf8ByteLimit("abc", 3));
+            assertEquals("ab", truncateToUtf8ByteLimit("abc", 2));
+            assertEquals("☃☃", truncateToUtf8ByteLimit("☃☃", 10));
+            assertEquals("☃", truncateToUtf8ByteLimit("☃☃", 3));
+            assertEquals("", truncateToUtf8ByteLimit("☃☃", 2));
+
+            truncationTestStrings.forEach(this::testTruncateSingleString);
+
             // Test the character list sorted and then reversed
-            testTruncateSingleString(String.join("", uniqueChars));
-            Collections.reverse(uniqueChars);
-            testTruncateSingleString(String.join("", uniqueChars));
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueChars);
+            testTruncateSingleString(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testTruncateSingleString(String.join("", uniqueCharsCopy));
 
             // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
             for (int i = 0; i < 10; i++)
             {
-                Collections.shuffle(uniqueChars);
-                String test = String.join("", uniqueChars);
+                Collections.shuffle(uniqueCharsCopy);
+                String test = String.join("", uniqueCharsCopy);
                 testTruncateSingleString(test);
             }
         }
@@ -1058,6 +1084,50 @@ public class StringUtilsLabKey
                 String truncated = truncateToUtf8ByteLimit(s, maxBytes);
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, s.startsWith(truncated));
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.startsWith(prev));
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
+                int minChars = maxBytes / 4;
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.length() >= minChars);
+                prev = truncated;
+            }
+        }
+
+        @Test
+        public void testTruncateStartToUtf8ByteLimit()
+        {
+            // First, a few basic checks
+            assertEquals("abc", truncateStartToUtf8ByteLimit("abc", 3));
+            assertEquals("bc", truncateStartToUtf8ByteLimit("abc", 2));
+            assertEquals("☃☃", truncateStartToUtf8ByteLimit("☃☃", 10));
+            assertEquals("☃", truncateStartToUtf8ByteLimit("☃☃", 3));
+            assertEquals("", truncateStartToUtf8ByteLimit("☃☃", 2));
+
+            truncationTestStrings.forEach(this::testTruncateStartSingleString);
+
+            // Test the character list sorted and then reversed
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueChars);
+            testTruncateStartSingleString(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testTruncateStartSingleString(String.join("", uniqueCharsCopy));
+
+            // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
+            for (int i = 0; i < 10; i++)
+            {
+                Collections.shuffle(uniqueCharsCopy);
+                String test = String.join("", uniqueCharsCopy);
+                testTruncateStartSingleString(test);
+            }
+        }
+
+        // Test truncating this string at every possible byte length from 0 to byte length + 1
+        private void testTruncateStartSingleString(String s)
+        {
+            int byteLength = s.getBytes(StandardCharsets.UTF_8).length;
+            String prev = "";
+            for (int maxBytes = 0; maxBytes <= byteLength + 1; maxBytes++)
+            {
+                String truncated = truncateStartToUtf8ByteLimit(s, maxBytes);
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, s.endsWith(truncated));
+                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.endsWith(prev));
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
                 int minChars = maxBytes / 4;
                 assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.length() >= minChars);
