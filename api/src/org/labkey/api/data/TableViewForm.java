@@ -803,7 +803,10 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 // Just the PK and version values
                 _oldValues = new JSONObject(oldValues).toMap();
             }
-            catch (JSONException ignore) {}
+            catch (JSONException e)
+            {
+                _log.debug("Failed to parse '.oldValues' JSON", e);
+            }
         }
     }
 
