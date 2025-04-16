@@ -1027,15 +1027,25 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return null;
 
             boolean triedPrimary = false;
-            Object value = o;
-            value = convertWithPrimaryColumn(o, triedPrimary);
-            triedPrimary = true;
+            Object value = convertWithPrimaryColumn(o, triedPrimary);
+
             if (value != null)
                 return value;
+            triedPrimary = true;
             value = convertWithRemapper(o);
             if (value != null)
                 return value;
             value = convertWithPrimaryColumn(o, triedPrimary);
+            if (value == null)
+            {
+                return switch (_missing)
+                {
+                    case Null -> null;
+                    case OriginalValue -> o;
+                    default ->
+                            throw new ConversionExceptionWithMessage("Invalid value '" + String.valueOf(o) + "' for " + _toCol.getName() + ".");
+                };
+            }
             return value;
         }
     }
