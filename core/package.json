@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.36.3-fb-package-updates-0425.4",
+    "@labkey/components": "6.36.4-fb-package-updates-0425.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
