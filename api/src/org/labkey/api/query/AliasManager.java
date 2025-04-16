@@ -32,6 +32,7 @@ import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.StringUtilsLabKey;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 
@@ -279,6 +280,28 @@ public class AliasManager
             assertEquals("select_", m.decideAlias("select"));
 
             assertEquals(identifierMaxCharLength.addAndGet(-3), m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
+        }
+
+        @Test
+        public void testNullDialect()
+        {
+            AliasManager m = new AliasManager((SqlDialect) null);
+            assertEquals("fred", m.decideAlias("fred"));
+            assertEquals("fred1", m.decideAlias("fred"));
+            assertEquals("fred2", m.decideAlias("fred"));
+            assertEquals("X__bob", m.decideAlias("_bob"));
+
+            String truncated = m.decideAlias("1234567890123456789012345678901234567890");
+            assertEquals(27, truncated.length());
+            assertTrue(truncated.getBytes(StandardCharsets.UTF_8).length < 60);
+            assertEquals("X13599947545678901234567890", truncated);
+            // For now, not an interesting test at the moment since every non-alphanumeric gets replaced with _. But
+            // this will become interesting if we start allowing Unicode characters in identifier names in the future.
+            String unicode = "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2";
+            truncated = m.decideAlias(unicode);
+            assertEquals(27, truncated.length());
+            assertTrue(truncated.getBytes(StandardCharsets.UTF_8).length < 60);
+            assertEquals("X1665827962________________", truncated);
         }
     }
 }
