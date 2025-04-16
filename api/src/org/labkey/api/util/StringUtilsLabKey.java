@@ -576,22 +576,13 @@ public class StringUtilsLabKey
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > maxBytes)
         {
-            // Inspect the byte at the max truncation point to determine if it's in the middle of a character.
-            // High bit on means non-ASCII, which means we may need to back up one or more bytes to avoid an
-            // incomplete character.
-            if (maxBytes > 0 && (bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
+            if (maxBytes > 0)
             {
-                // Inspect the byte just after the max truncation point; anything other than a follow-on byte means
-                // max truncation point is the end of a character. The check below is true if the byte is 0b10xx_xxxx.
-                if ((bytes[maxBytes] & START_BYTE_MASK) == NON_ASCII_MASK)
-                {
-                    // Find the first start byte (iterating backwards) and truncate just before it
-                    do
-                    {
-                        maxBytes--;
-                    }
-                    while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
-                }
+                // Inspect the byte just after the possible truncation point; a start byte (ASCII or non-ASCII) there
+                // means the truncation point is the end of a character. If it's not a start byte, back up one byte at
+                // a time until one is found and truncate before it. The check below is true if the byte is 0b10xx_xxxx.
+                while ((bytes[maxBytes] & START_BYTE_MASK) == NON_ASCII_MASK)
+                    maxBytes--;
             }
             s = new String(bytes, 0, maxBytes, StandardCharsets.UTF_8);
         }
@@ -611,8 +602,9 @@ public class StringUtilsLabKey
             int start = length - maxBytes;
             if (maxBytes > 0)
             {
-                // Starting at the min possible truncation point, inspect each byte to determine if it's in the middle
-                // of a character; move forward one byte at a time until a start byte (ASCII or non-ASCII) is found.
+                // Inspect the byte at the possible truncation point; a start byte (ASCII or non-ASCII) here means it's
+                // safe to truncate here. If it's not a start byte, move forward one byte at a time until one is found.
+                // The check below is true if the byte is 0b10xx_xxxx.
                 while (start < length && (bytes[start] & START_BYTE_MASK) == NON_ASCII_MASK)
                     start++;
             }
