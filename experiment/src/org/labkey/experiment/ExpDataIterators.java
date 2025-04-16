@@ -2655,7 +2655,8 @@ public class ExpDataIterators
                     _context.getErrors().addRowError(new ValidationException("No value provided for '" + _typeColName + "'."));
                 else
                 {
-                    if (_isCrossFolder && _folderColIndex != null)
+                    // Issue 52626 and Issue 52609 - don't check folders during update
+                    if (_isCrossFolder && _folderColIndex != null && !_context.getInsertOption().updateOnly)
                     {
                         String rowFolderId = StringUtils.trim((String) get(_folderColIndex));
                         if (!StringUtils.isEmpty(rowFolderId))
@@ -2881,6 +2882,8 @@ public class ExpDataIterators
             validFields.add(ALIQUOTED_FROM_INPUT);
             validFields.add("StorageUnit");
             validFields.add("Storage Unit");
+            validFields.add("StorageUnitLabel");
+            validFields.add("Storage Unit Label");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
             List<Integer> fieldIndexes = new ArrayList<>();

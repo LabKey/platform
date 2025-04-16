@@ -30,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -172,7 +173,7 @@ public class JsonUtil
             }
             else
             {
-                throw new IllegalStateException("Can't convert array object to a Map: " + o.getClass());
+                throw new ApiUsageException("Can't convert array object to a Map: " + o.getClass());
             }
         }
         return result;
@@ -190,7 +191,7 @@ public class JsonUtil
             }
             else
             {
-                throw new IllegalStateException("Array contains something other than a JSONObject, a " + o.getClass());
+                throw new ApiUsageException("Array contains something other than a JSONObject, a " + o.getClass());
             }
         }
 
