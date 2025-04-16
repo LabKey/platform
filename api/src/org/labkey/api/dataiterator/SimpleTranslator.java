@@ -1043,7 +1043,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     case Null -> null;
                     case OriginalValue -> o;
                     default ->
-                            throw new ConversionExceptionWithMessage("Invalid value '" + String.valueOf(o) + "' for " + _toCol.getName() + ".");
+                            throw new ConversionExceptionWithMessage("Invalid " + _toCol.getName() + " value '" + o + "'.");
                 };
             }
             return value;
