@@ -944,7 +944,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
         final boolean _includeTitleColumn;
-        final LookupResolutionType _lookupResolutionType;
+        LookupResolutionType _lookupResolutionType;
 
         final private RemapPostConvert _remapper;
 
@@ -1013,13 +1013,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             Object value = convertWithPrimaryColumn(o, false);
             if (value != null)
+            {
+                _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
                 return value;
+            }
 
             value = convertWithRemapper(o);
             if (value != null)
+            {
+                _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
                 return value;
+            }
 
             value = convertWithPrimaryColumn(o, true);
+            _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
             if (value == null)
             {
                 return switch (_missing)
