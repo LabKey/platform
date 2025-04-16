@@ -262,9 +262,9 @@ public class LookupColumn extends BaseColumnInfo
 
     /**
      * generate a unique table name for the joined in table
-     * NOTE: postgres may ignore characters past 64 resulting in spurious duplicate alias errors
+     * NOTE: postgres may ignore characters past 64 bytes, resulting in spurious duplicate alias errors
      * ref 10493
-     * @param baseAlias alias of table on "left hand side" of the lookup
+     * @param baseAlias alias of table on the "left-hand side" of the lookup
      */
     @Override
     public String getTableAlias(String baseAlias)
