@@ -9556,11 +9556,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (ExpData data : classObjects)
                     {
                         Map<String, Object> oldRecordMap = new CaseInsensitiveHashMap<>();
-                        oldRecordMap.put("Container", sourceContainer.getName());
+                        oldRecordMap.put("Folder", sourceContainer.getName());
                         oldRecordMap.put("rowId", data.getRowId());
                         oldRows.add(oldRecordMap);
                         Map<String, Object> newRecordMap = new CaseInsensitiveHashMap<>();
-                        newRecordMap.put("Container", targetContainer.getName());
+                        newRecordMap.put("Folder", targetContainer.getName());
                         newRecordMap.put("rowId", data.getRowId());
                         newRows.add(newRecordMap);
                     }
