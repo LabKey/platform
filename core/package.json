@@ -58,11 +58,11 @@
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
-    "@labkey/build": "8.4.1-fb-package-updates-0425.1",
+    "@labkey/build": "8.4.1-fb-package-updates-0425.2",
     "@labkey/eslint-config-react": "0.0.15",
     "@types/jest": "29.5.14",
-    "@types/react": "18.3.12",
-    "@types/react-dom": "18.3.1",
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.6",
     "fs-extra": "11.3.0",
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",

@@ -15,9 +15,9 @@
     "@labkey/components": "6.36.3-fb-package-updates-0425.4"
   },
   "devDependencies": {
-    "@labkey/build": "8.4.1-fb-package-updates-0425.1",
+    "@labkey/build": "8.4.1-fb-package-updates-0425.2",
     "@types/jest": "29.5.14",
-    "@types/react": "18.3.12",
-    "@types/react-dom": "18.3.1"
+    "@types/react": "18.3.20",
+    "@types/react-dom": "18.3.6"
   }
 }
