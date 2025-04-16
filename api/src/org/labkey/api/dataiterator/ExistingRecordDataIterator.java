@@ -262,7 +262,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
                     sqlf.append(",?");
-                    sqlf.add(pkSuppliers.get(p).get());
+                    Object pkVal = pkSuppliers.get(p).get();
+                    sqlf.add(pkVal);
+                    pkKeys.add(pkVal.toString());
                 }
                 sqlf.append(")");
                 String pkKey = StringUtils.join(pkKeys, ", ");
