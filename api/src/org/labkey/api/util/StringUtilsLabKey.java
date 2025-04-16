@@ -581,11 +581,11 @@ public class StringUtilsLabKey
             // incomplete character.
             if (maxBytes > 0 && (bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
             {
-                // Inspect the byte just after the max truncation point; anything other than a subsequent byte means
-                // max truncation point is the end of character. The check below is true if byte is 0b10xx_xxxx.
-                if (((~bytes[maxBytes] ^ NON_ASCII_MASK) & START_BYTE_MASK) == START_BYTE_MASK)
+                // Inspect the byte just after the max truncation point; anything other than a follow-on byte means
+                // max truncation point is the end of a character. The check below is true if the byte is 0b10xx_xxxx.
+                if ((bytes[maxBytes] & START_BYTE_MASK) == NON_ASCII_MASK)
                 {
-                    // Find the first start character (iterating backwards) and truncate just before it
+                    // Find the first start byte (iterating backwards) and truncate just before it
                     do
                     {
                         maxBytes--;
@@ -611,8 +611,8 @@ public class StringUtilsLabKey
             int start = length - maxBytes;
             if (maxBytes > 0)
             {
-                // Starting at the min possible truncation point, inspect the byte to determine if it's in the middle
-                // of a character; if so, move forward by one byte and test again.
+                // Starting at the min possible truncation point, inspect each byte to determine if it's in the middle
+                // of a character; move forward one byte at a time until a start byte (ASCII or non-ASCII) is found.
                 while (start < length && (bytes[start] & START_BYTE_MASK) == NON_ASCII_MASK)
                     start++;
             }
