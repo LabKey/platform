@@ -30,16 +30,57 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.Collection;
 import java.util.Map;
 
 public class AliasManager
 {
+    // SqlDialect to use when null dialect is provided. This implements "least-common denominator" rules for
+    // identifiers, ensuring aliases will work on all databases.
+    private static final SqlDialect FALL_BACK_DIALECT = new MockSqlDialect()
+    {
+        @Override
+        protected int getIdentifierMaxCharLength()
+        {
+            // Old Oracle rule is 30 characters max
+            return 30;
+        }
+
+        @Override
+        public boolean isLegalNameChar(char ch, boolean first)
+        {
+            // oracle doesn't allow leading underscore
+            return super.isLegalNameChar(ch, first) && !(first && ch == '_');
+        }
+
+        @Override
+        public String makeLegalName(String str, boolean truncate, int reserveCount)
+        {
+            // Oracle rule
+            String ret = super.makeLegalName(str, truncate, reserveCount);
+            // PostgreSQL rule
+            if (truncate)
+                ret = StringUtilsLabKey.truncateToUtf8ByteLimit(ret, 60 - reserveCount);
+            return ret;
+        }
+
+        @Override
+        public String makeLegalName(FieldKey key)
+        {
+            // Oracle rule
+            String legal = super.makeLegalName(key);
+            // PostgreSQL rule
+            return StringUtilsLabKey.truncateToUtf8ByteLimit(legal,60);
+        }
+    };
+
     private final SqlDialect _dialect;
     private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
-    public AliasManager(SqlDialect d)
+    // null dialect is tolerated, but not recommended
+    public AliasManager(@Nullable SqlDialect d)
     {
         _dialect = d;
     }
@@ -67,26 +108,28 @@ public class AliasManager
         return makeLegalName(str, _dialect, true, reserveCount);
     }
 
-    public static String makeLegalName(String str, @NotNull SqlDialect dialect)
+    // null dialect is tolerated, but not recommended
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
     {
         return makeLegalName(str, dialect, true);
     }
 
-    public static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate)
+    // null dialect is tolerated, but not recommended
+    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate)
     {
         return makeLegalName(str, dialect, truncate, 0);
     }
 
-    private static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate, int reserveCount)
+    // null dialect is tolerated, but not recommended
+    private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, int reserveCount)
     {
-        // TODO: accommodate null dialect -- subclass of MockSqlDialect that implements lowest-common denominator rules
-        return dialect.makeLegalName(str, truncate, reserveCount);
+        return (dialect != null ? dialect : FALL_BACK_DIALECT).makeLegalName(str, truncate, reserveCount);
     }
 
-    public static String makeLegalName(FieldKey key, @NotNull SqlDialect dialect)
+    // null dialect is tolerated, but not recommended
+    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
     {
-        // TODO: accommodate null dialect -- subclass of MockSqlDialect that implements lowest-common denominator rules
-        return dialect.makeLegalName(key);
+        return (dialect != null ? dialect : FALL_BACK_DIALECT).makeLegalName(key);
     }
 
     public String decideAlias(String name)
