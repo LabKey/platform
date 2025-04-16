@@ -54,7 +54,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -324,11 +324,10 @@ public abstract class SqlDialect
             return i;
         else
         {
-            LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using OTHER instead.");
+            LOG.info("Unknown SQL Type Name \"{}\"; using OTHER instead.", sqlTypeName);
             return Types.OTHER;
         }
     }
-
 
     @Nullable
     public String getSqlTypeName(JdbcType type)
@@ -923,6 +922,143 @@ public abstract class SqlDialect
         return ch == '_';
     }
 
+    public String legalNameFromName(String str)
+    {
+        int i;
+        char ch=0;
+
+        int length = str.length();
+        for (i = 0; i < length; i ++)
+        {
+            ch = str.charAt(i);
+            if (!isLegalNameChar(ch, i==0))
+                break;
+        }
+        if (i==length)
+            return str;
+
+        StringBuilder sb = new StringBuilder(length+20);
+        if (i==0)
+        {
+            sb.append("X_");
+            if (isLegalNameChar(ch, false))
+            {
+                sb.append(ch);
+                i++;
+            }
+        }
+        else
+        {
+            sb.append(str, 0, i);
+        }
+
+        for ( ; i < length ; i ++)
+        {
+            ch = str.charAt(i);
+            boolean isLegal = isLegalNameChar(ch, false);
+            if (isLegal)
+            {
+                sb.append(ch);
+            }
+            else
+            {
+                switch (ch)
+                {
+                    case '+' : sb.append("_plus_"); break;
+                    case '-' : sb.append("_minus_"); break;
+                    case '(' : sb.append("_lp_"); break;
+                    case ')' : sb.append("_rp_"); break;
+                    case '/' : sb.append("_fs_"); break;
+                    case '\\' : sb.append("_bs_"); break;
+                    case '&' : sb.append("_amp_"); break;
+                    case '<' : sb.append("_lt_"); break;
+                    case '>' : sb.append("_gt_"); break;
+                    default: sb.append("_"); break;
+                }
+            }
+        }
+        var ret = sb.toString();
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    public String makeLegalName(String str, boolean truncate, int reserveCount)
+    {
+        String ret = legalNameFromName(str);
+        if (isReserved(ret))
+            ret = ret + "_";
+        int length = ret.length();
+        if (0 == length)
+            ret = "X_";
+        ret = makeLegalIdentifierName(ret);
+        int maxLength = getMaxLength();
+        if (reserveCount > 0)
+            maxLength -= reserveCount;
+        if (maxLength < 5)
+            throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
+        ret = truncate ? truncate(ret, maxLength) : ret;
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    public String makeLegalName(FieldKey key)
+    {
+        if (key.getParent() == null)
+            return makeLegalName(key.getName(), true, 0);
+        StringBuilder sb = new StringBuilder();
+        String connector = "";
+        for (String part : key.getParts())
+        {
+            sb.append(connector);
+            sb.append(legalNameFromName(part));
+            connector = "_";
+        }
+        var ret = truncate(sb.toString(), getMaxLength());
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    private int getMaxLength()
+    {
+        int max = getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
+
+        // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
+        // TODO: Unfortunate that this is here, since it only applies to provisioned column names
+        return Math.min(100, max);
+    }
+
+    public String truncateAndJoin(int reserveCount, String... parts)
+    {
+        int length = getIdentifierMaxCharLength() - reserveCount;
+        String ret = String.join("$", parts);
+
+        if (ret.length() > length)
+        {
+            StringBuilder sb = new StringBuilder(length);
+            int partsLength = parts.length;
+            int remainingLength = length - partsLength + 1; // Make room for dollar signs
+            for (int i = 0; i < partsLength; i++)
+            {
+                String truncated = truncate(parts[i], remainingLength / (partsLength - i));
+                sb.append(truncated);
+                remainingLength -= truncated.length();
+            }
+            ret = sb.toString();
+        }
+
+        assert ret.length() <= length;
+        return ret;
+    }
+
+    private static String truncate(String str, int to)
+    {
+        int len = str.length();
+        if (len <= to)
+            return str;
+        String n = String.valueOf((str.hashCode()&0x7fffffff));
+        return str.charAt(0) + n + str.substring(len - (to - n.length() - 1));
+    }
+
     public void testDialectKeywords(SqlExecutor executor)
     {
         Set<String> candidates = KeywordCandidates.get().getCandidates();
@@ -991,8 +1127,8 @@ public abstract class SqlDialect
      * @return The absolute maximum identifier character length for this database. Callers are responsible for
      * truncating generated names, handing suffixes, etc.
      */
-    @Deprecated // Make protected - callers shouldn't concern themselves with this
-    public int getIdentifierMaxCharLength()
+    // Callers shouldn't concern themselves with this
+    protected int getIdentifierMaxCharLength()
     {
         return 63;
     }

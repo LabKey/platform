@@ -945,7 +945,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public int getIdentifierMaxCharLength()
+    protected int getIdentifierMaxCharLength()
     {
         return 63; // TODO: Set to some invalid value, like -1
     }

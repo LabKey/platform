@@ -576,7 +576,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             value = map.get(key + "_");
 
         if (null == value)
-            value = map.get(AliasManager.legalNameFromName(key, getDbTable().getSqlDialect()));
+            value = map.get(getDbTable().getSqlDialect().legalNameFromName(key));
 
         return value;
     }

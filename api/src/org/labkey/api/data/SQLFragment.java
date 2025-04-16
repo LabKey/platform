@@ -236,7 +236,7 @@ public class SQLFragment implements Appendable, CharSequence
         StringBuilder ret = new StringBuilder("WITH" + (recursive ? " RECURSIVE" : ""));
 
         // generate final aliases for each CTE */
-        AliasManager am = new AliasManager(DbScope.getLabKeyScope().getSqlDialect()); // TODO: Temporary!! Generate a random alias here
+        AliasManager am = new AliasManager(DbScope.getLabKeyScope().getSqlDialect());
         List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
                 .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
                 .collect(Collectors.toList());

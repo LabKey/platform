@@ -143,6 +143,32 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _columnLogging = ColumnLogging.defaultLogging(this);
     }
 
+    public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
+    {
+        this(FieldKey.fromParts(name), parentTable, type);
+    }
+
+    public BaseColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
+    {
+        this(key, parentTable);
+        setJdbcType(type);
+    }
+
+    public BaseColumnInfo(ColumnInfo from)
+    {
+        this(from, from.getParentTable());
+    }
+
+
+    public BaseColumnInfo(ColumnInfo from, TableInfo parent)
+    {
+        this(from.getFieldKey(), parent, from.getJdbcType());
+        copyAttributesFrom(from);
+        copyURLFrom(from, null, null);
+    }
+
+// The following five constructors fail to pass in a TableInfo, therefore, they don't know their SqlDialect!!
+
     public BaseColumnInfo(FieldKey key, JdbcType t)
     {
         this(key, (TableInfo)null);
@@ -176,38 +202,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setNullable(nullable);
     }
 
-
     public BaseColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
         setAlias(rsmd.getColumnName(col));
     }
-
-    public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
-    {
-        this(FieldKey.fromParts(name), parentTable, type);
-    }
-
-    public BaseColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
-    {
-        this(key, parentTable);
-        setJdbcType(type);
-    }
-
-    public BaseColumnInfo(ColumnInfo from)
-    {
-        this(from, from.getParentTable());
-    }
-
-
-    public BaseColumnInfo(ColumnInfo from, TableInfo parent)
-    {
-        this(from.getFieldKey(), parent, from.getJdbcType());
-        copyAttributesFrom(from);
-        copyURLFrom(from, null, null);
-    }
-
 
     /* used by TableInfo.addColumn */
     public boolean lockName()

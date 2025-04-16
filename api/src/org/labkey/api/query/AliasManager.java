@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -35,8 +36,8 @@ import java.util.Map;
 
 public class AliasManager
 {
-    SqlDialect _dialect;
-    Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
+    private final SqlDialect _dialect;
+    private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
     public AliasManager(SqlDialect d)
     {
@@ -54,66 +55,6 @@ public class AliasManager
         claimAliases(table.getColumns());
         if (columns != null)
             claimAliases(columns);
-    }
-
-    public static String legalNameFromName(String str, @NotNull SqlDialect dialect)
-    {
-        int i;
-        char ch=0;
-
-        int length = str.length();
-        for (i = 0; i < length; i ++)
-        {
-            ch = str.charAt(i);
-            if (!dialect.isLegalNameChar(ch, i==0))
-                break;
-        }
-        if (i==length)
-            return str;
-
-        StringBuilder sb = new StringBuilder(length+20);
-        if (i==0)
-        {
-            sb.append("X_");
-            if (dialect.isLegalNameChar(ch, false))
-            {
-                sb.append(ch);
-                i++;
-            }
-        }
-        else
-        {
-            sb.append(str, 0, i);
-        }
-
-        for ( ; i < length ; i ++)
-        {
-            ch = str.charAt(i);
-            boolean isLegal = dialect.isLegalNameChar(ch, false);
-            if (isLegal)
-            {
-                sb.append(ch);
-            }
-            else
-            {
-                switch (ch)
-                {
-                    case '+' : sb.append("_plus_"); break;
-                    case '-' : sb.append("_minus_"); break;
-                    case '(' : sb.append("_lp_"); break;
-                    case ')' : sb.append("_rp_"); break;
-                    case '/' : sb.append("_fs_"); break;
-                    case '\\' : sb.append("_bs_"); break;
-                    case '&' : sb.append("_amp_"); break;
-                    case '<' : sb.append("_lt_"); break;
-                    case '>' : sb.append("_gt_"); break;
-                    default: sb.append("_"); break;
-                }
-            }
-        }
-        var ret = sb.toString();
-        assert dialect.isLegalName(ret);
-        return ret;
     }
 
     private String makeLegalName(String str)
@@ -138,57 +79,14 @@ public class AliasManager
 
     private static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate, int reserveCount)
     {
-        String ret = legalNameFromName(str, dialect);
-        if (dialect.isReserved(ret))
-            ret = ret + "_";
-        int length = ret.length();
-        if (0 == length)
-            ret = "X_";
-        ret = dialect.makeLegalIdentifierName(ret);
-        int maxLength = getMaxLength(dialect);
-        if (reserveCount > 0)
-            maxLength -= reserveCount;
-        if (maxLength < 5)
-            throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
-        ret = (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
-        assert dialect.isLegalName(ret);
-        return ret;
+        // TODO: accommodate null dialect -- subclass of MockSqlDialect that implements lowest-common denominator rules
+        return dialect.makeLegalName(str, truncate, reserveCount);
     }
-
 
     public static String makeLegalName(FieldKey key, @NotNull SqlDialect dialect)
     {
-        if (key.getParent() == null)
-            return makeLegalName(key.getName(), dialect);
-        StringBuilder sb = new StringBuilder();
-        String connector = "";
-        for (String part : key.getParts())
-        {
-            sb.append(connector);
-            sb.append(legalNameFromName(part, dialect));
-            connector = "_";
-        }
-        var ret = truncate(sb.toString(), getMaxLength(dialect));
-        assert dialect.isLegalName(ret);
-        return ret;
-    }
-
-    // TODO: Replace this and truncate() with calls to dialect.truncateIdentifier()
-    private static int getMaxLength(@NotNull SqlDialect dialect)
-    {
-        int max = dialect.getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
-
-        // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
-        return Math.min(100, max);
-    }
-
-    public static String truncate(String str, int to)
-    {
-        int len = str.length();
-        if (len <= to)
-            return str;
-        String n = String.valueOf((str.hashCode()&0x7fffffff));
-        return str.charAt(0) + n + str.substring(len-(to-n.length()-1));
+        // TODO: accommodate null dialect -- subclass of MockSqlDialect that implements lowest-common denominator rules
+        return dialect.makeLegalName(key);
     }
 
     public String decideAlias(String name)
@@ -297,22 +195,29 @@ public class AliasManager
         public void test_legalNameFromName()
         {
             SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-            assertEquals("bob", legalNameFromName("bob", dialect));
-            assertEquals("bob1", legalNameFromName("bob1", dialect));
-            assertEquals("X_1", legalNameFromName("1", dialect));
-            assertEquals("X_1bob", legalNameFromName("1bob", dialect));
-            assertEquals("X__bob", legalNameFromName("_bob", dialect));
-            assertEquals("X__bob", legalNameFromName("?bob", dialect));
-            assertEquals("bob_", legalNameFromName("bob?", dialect));
-            assertEquals("bob_by", legalNameFromName("bob?by", dialect));
-            assertNotEquals(legalNameFromName("bob+", dialect), legalNameFromName("bob-", dialect));
+            assertEquals("bob", dialect.legalNameFromName("bob"));
+            assertEquals("bob1", dialect.legalNameFromName("bob1"));
+            assertEquals("_bob", dialect.legalNameFromName("_bob"));
+            assertEquals("X_1", dialect.legalNameFromName("1"));
+            assertEquals("X_1bob", dialect.legalNameFromName("1bob"));
+            assertEquals("X__bob", dialect.legalNameFromName("?bob"));
+            assertEquals("bob_", dialect.legalNameFromName("bob?"));
+            assertEquals("bob_by", dialect.legalNameFromName("bob?by"));
+            assertNotEquals(dialect.legalNameFromName("bob+"), dialect.legalNameFromName("bob-"));
         }
 
         @Test
         public void test_decideAlias()
         {
+            MutableInt identifierMaxCharLength = new MutableInt();
+
             AliasManager m = new AliasManager(new MockSqlDialect()
             {
+                {{
+                    // Capture the dialect's identifier max for testing below
+                    identifierMaxCharLength.setValue(getIdentifierMaxCharLength());
+                }}
+
                 @Override
                 public boolean isReserved(String word)
                 {
@@ -330,7 +235,7 @@ public class AliasManager
 
             assertEquals("select_", m.decideAlias("select"));
 
-            assertEquals(m._dialect.getIdentifierMaxCharLength() - 3, m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
+            assertEquals(identifierMaxCharLength.addAndGet(-3), m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
         }
     }
 }

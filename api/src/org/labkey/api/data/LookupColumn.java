@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -130,10 +129,7 @@ public class LookupColumn extends BaseColumnInfo
         _lookupColumn = lookupColumn;
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
-        String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxCharLength() - 3; // Leave room for "$" and possible suffixes
-        if (alias.length() > maxLength)
-            alias = AliasManager.truncate(foreignKey.getAlias(),maxLength/2) + "$" + AliasManager.truncate(lookupColumn.getAlias(),maxLength/2);
+        String alias = lookupColumn.getSqlDialect().truncateAndJoin(3, foreignKey.getAlias(), lookupColumn.getAlias());
         setAlias(alias);
     }
 
@@ -278,9 +274,11 @@ public class LookupColumn extends BaseColumnInfo
 
     public static String getTableAlias(String baseAlias, String fkAlias, SqlDialect dialect)
     {
-        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
+        String alias = baseAlias + (baseAlias.endsWith("$") ? "" : "$") + fkAlias + "$";
 
-        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxCharLength() - 3 /* leave room for possible suffixes */);
+        /* leave room for possible suffixes */
+        // TODO: Should this be dialect.makeLegalIdentifier(alias, true, 0)? Seems like that's safer...
+        alias = dialect.truncateIdentifier(alias, 3);
         return alias;
     }
 
