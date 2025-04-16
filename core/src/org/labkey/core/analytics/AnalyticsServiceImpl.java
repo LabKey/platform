@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
@@ -117,10 +119,12 @@ public class AnalyticsServiceImpl implements AnalyticsService
     public void resetCSP()
     {
         ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY);
+        ContentSecurityPolicyFilter.unregisterAllowedSources(Directive.Image, ANALYTICS_CSP_KEY);
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
             ContentSecurityPolicyFilter.registerAllowedSources(Directive.Connection, ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
+            ContentSecurityPolicyFilter.registerAllowedSources(Directive.Image, ANALYTICS_CSP_KEY, "https://www.googletagmanager.com");
         }
     }
 
@@ -162,15 +166,19 @@ public class AnalyticsServiceImpl implements AnalyticsService
             Container c = ContainerManager.getRoot();
             makeWriteable(c);
 
-            String statusString = StringUtils.trimToNull(StringUtils.join(trackingStatus.toArray(), SEPARATOR));
-            storeStringValue(AnalyticsProperty.trackingStatus.toString(), statusString);
-            storeStringValue(AnalyticsProperty.measurementId.toString(), StringUtils.trimToNull(measurementId));
-            storeStringValue(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
+            try (DbScope.Transaction t = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                String statusString = StringUtils.trimToNull(StringUtils.join(trackingStatus.toArray(), SEPARATOR));
+                storeStringValue(AnalyticsProperty.trackingStatus.toString(), statusString);
+                storeStringValue(AnalyticsProperty.measurementId.toString(), StringUtils.trimToNull(measurementId));
+                storeStringValue(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
+
+                save();
+                writeAuditLogEvent(c, user);
+                t.commit();
+            }
 
             get().resetCSP();
-
-            save();
-            writeAuditLogEvent(c, user);
         }
     }
 
