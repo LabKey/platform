@@ -2130,9 +2130,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null);
-                assertEquals(t.getColumnCount(), 1);
-                assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
-                assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
                 try
                 {
                     assertFalse(t.next());
@@ -2151,9 +2151,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null);
-                assertEquals(t.getColumnCount(), 1);
-                assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
-                assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
                 for (int i=1 ; i<=4 ; i++)
                 {
                     assertTrue(t.next());
