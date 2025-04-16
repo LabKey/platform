@@ -93,7 +93,7 @@ public class RolapCubeDef
 
     // Use the labkey scope's dialect for the purpose of creating column aliases used in getAllColumnsSQL(). This seems
     // like a safe assumption.
-    private final AliasManager columnAliases = new AliasManager(DbScope.getLabKeyScope().getSqlDialect());
+    private final AliasManager columnAliases = new AliasManager((SqlDialect) null);
 
 
     public RolapCubeDef(String schema, String cubeName)

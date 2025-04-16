@@ -1018,6 +1018,36 @@ public abstract class SqlDialect
         return ret;
     }
 
+    /**
+     * @return The absolute maximum identifier character length for this database. Callers are responsible for
+     * truncating generated names, handing suffixes, etc.
+     */
+    // Callers shouldn't concern themselves with this
+    protected int getIdentifierMaxCharLength()
+    {
+        return 63;
+    }
+
+    /**
+     * Truncates a candidate identifier based on this database's rules. If non-zero, the truncation leaves room for
+     * one or more ASCII characters (e.g., to allow callers to add an ASCII suffix of that length). Note that the
+     * lengths and rules differ by database; for example, most databases limit identifiers based on character length,
+     * but PostgreSQL limits based on byte length.
+     * @param identifier The candidate identifier name
+     * @param extraAsciiCharsToReserve Number of ASCII characters to reserve (e.g., for a suffix)
+     * @return The truncated identifier
+     */
+    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserve)
+    {
+        int maxLength = getIdentifierMaxCharLength() - extraAsciiCharsToReserve;
+        return identifier.length() > maxLength ? identifier.substring(0, maxLength) : identifier;
+    }
+
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.length() > getIdentifierMaxCharLength();
+    }
+
     private int getMaxLength()
     {
         int max = getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
@@ -1121,35 +1151,6 @@ public abstract class SqlDialect
 
         if (!KeywordCandidates.get().containsAll(_reservedWordSet, getProductName()))
             throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
-    }
-
-    /**
-     * @return The absolute maximum identifier character length for this database. Callers are responsible for
-     * truncating generated names, handing suffixes, etc.
-     */
-    // Callers shouldn't concern themselves with this
-    protected int getIdentifierMaxCharLength()
-    {
-        return 63;
-    }
-
-    /**
-     * Truncates a candidate identifier based on this database's rules. If non-zero, the truncation leaves room for
-     * one or more ASCII characters (e.g., to allow callers to add an ASCII suffix of that length). Note that the
-     * lengths and rules differ by database; for example, most databases limit identifiers based on character length,
-     * but PostgreSQL limits based on byte length.
-     * @param identifier The candidate identifier name
-     * @param extraAsciiCharsToReserve Number of ASCII characters to reserve (e.g., for a suffix)
-     * @return The truncated identifier
-     */
-    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserve)
-    {
-        return identifier.substring(0, getIdentifierMaxCharLength() - extraAsciiCharsToReserve);
-    }
-
-    public boolean isIdentifierTooLong(String identifier)
-    {
-        return identifier.length() > getIdentifierMaxCharLength();
     }
 
     protected SQLFragment getIdentifierTestSql(String candidate)

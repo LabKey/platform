@@ -276,10 +276,8 @@ public class LookupColumn extends BaseColumnInfo
     {
         String alias = baseAlias + (baseAlias.endsWith("$") ? "" : "$") + fkAlias + "$";
 
-        /* leave room for possible suffixes */
-        // TODO: Should this be dialect.makeLegalIdentifier(alias, true, 0)? Seems like that's safer...
-        alias = dialect.truncateIdentifier(alias, 3);
-        return alias;
+        /* Always reserves three characters for possible suffixes */
+        return dialect.makeLegalName(alias, true, 0);
     }
 
     @Override
