@@ -63,7 +63,7 @@ public class AliasManager
             String ret = super.makeLegalName(str, truncate, reserveCount);
             // PostgreSQL rule
             if (truncate)
-                ret = StringUtilsLabKey.truncateToUtf8ByteLimit(ret, 60 - reserveCount);
+                ret = StringUtilsLabKey.truncateStartToUtf8ByteLimit(ret, 60 - reserveCount);
             return ret;
         }
 
@@ -73,7 +73,7 @@ public class AliasManager
             // Oracle rule
             String legal = super.makeLegalName(key);
             // PostgreSQL rule
-            return StringUtilsLabKey.truncateToUtf8ByteLimit(legal,60);
+            return StringUtilsLabKey.truncateStartToUtf8ByteLimit(legal, 60);
         }
     };
 

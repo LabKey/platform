@@ -381,13 +381,13 @@ public class DbScope
                 // with a misleading message, so we proactively look for this and throw. Issue #51676.
                 String name = _dialect.getDatabaseName(_url);
 
-                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect we
+                // This isn't ideal because the dialect isn't versioned to the database. But if we can't connect, we
                 // don't know what database version is there.
                 if (_dialect.isIdentifierTooLong(name))
                     throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
             }
 
-            // Validate that data source is using a supported connection pool
+            // Validate that the data source is using a supported connection pool
             validateConnectionPool();
 
             // Populate LabKey-specific data source properties like LogQueries and DisplayName

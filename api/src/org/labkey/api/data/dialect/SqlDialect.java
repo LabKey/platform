@@ -991,12 +991,7 @@ public abstract class SqlDialect
         if (0 == length)
             ret = "X_";
         ret = makeLegalIdentifierName(ret);
-        int maxLength = getMaxLength();
-        if (reserveCount > 0)
-            maxLength -= reserveCount;
-        if (maxLength < 5)
-            throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
-        ret = truncate ? truncate(ret, maxLength) : ret;
+        ret = truncate ? truncate(ret, reserveCount) : ret;
         assert isLegalName(ret);
         return ret;
     }
@@ -1013,34 +1008,15 @@ public abstract class SqlDialect
             sb.append(legalNameFromName(part));
             connector = "_";
         }
-        var ret = truncate(sb.toString(), getMaxLength());
+        var ret = truncate(sb.toString(), 0);
         assert isLegalName(ret);
         return ret;
     }
 
-    /**
-     * @return The absolute maximum identifier character length for this database. Callers are responsible for
-     * truncating generated names, handing suffixes, etc.
-     */
-    // Callers shouldn't concern themselves with this
+    // For internal use only
     protected int getIdentifierMaxCharLength()
     {
         return 63;
-    }
-
-    /**
-     * Truncates a candidate identifier based on this database's rules. If non-zero, the truncation leaves room for
-     * one or more ASCII characters (e.g., to allow callers to add an ASCII suffix of that length). Note that the
-     * lengths and rules differ by database; for example, most databases limit identifiers based on character length,
-     * but PostgreSQL limits based on byte length.
-     * @param identifier The candidate identifier name
-     * @param extraAsciiCharsToReserve Number of ASCII characters to reserve (e.g., for a suffix)
-     * @return The truncated identifier
-     */
-    public String truncateIdentifier(String identifier, int extraAsciiCharsToReserve)
-    {
-        int maxLength = getIdentifierMaxCharLength() - extraAsciiCharsToReserve;
-        return identifier.length() > maxLength ? identifier.substring(0, maxLength) : identifier;
     }
 
     public boolean isIdentifierTooLong(String identifier)
@@ -1069,24 +1045,36 @@ public abstract class SqlDialect
             int remainingLength = length - partsLength + 1; // Make room for dollar signs
             for (int i = 0; i < partsLength; i++)
             {
-                String truncated = truncate(parts[i], remainingLength / (partsLength - i));
+                String truncated = truncateCharacters(parts[i], remainingLength / (partsLength - i));
+                if (i > 0)
+                    sb.append("$");
                 sb.append(truncated);
                 remainingLength -= truncated.length();
             }
             ret = sb.toString();
+            assert ret.length() <= length;
         }
 
-        assert ret.length() <= length;
         return ret;
     }
 
-    private static String truncate(String str, int to)
+    /**
+     * Override to implement database-specific truncation rules
+     */
+    protected String truncate(String str, int reserved)
     {
+        return truncateCharacters(str, getMaxLength() - reserved);
+    }
+
+    private static String truncateCharacters(String str, int maxLength)
+    {
+        if (maxLength < 5)
+            throw new IllegalStateException("maxLength for legal name too small: " + maxLength);
         int len = str.length();
-        if (len <= to)
+        if (len <= maxLength)
             return str;
-        String n = String.valueOf((str.hashCode()&0x7fffffff));
-        return str.charAt(0) + n + str.substring(len - (to - n.length() - 1));
+        String prefix = str.charAt(0) + String.valueOf((str.hashCode() & 0x7fffffff));
+        return prefix + str.substring(len - (maxLength - prefix.length()));
     }
 
     public void testDialectKeywords(SqlExecutor executor)
