@@ -854,10 +854,10 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     JSONObject group = groupArr.getJSONObject(i);
 
-                    GroupType type = GroupType.valueOf(group.getString("type"));
-
                     try
                     {
+                        GroupType type = GroupType.valueOf(group.getString("type"));
+
                         int id = group.getInt("id");
                         int categoryId = id;
 
