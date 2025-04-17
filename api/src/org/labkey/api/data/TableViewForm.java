@@ -34,6 +34,8 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -572,6 +574,14 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 values.put(column.getName(), getTypedValue(column));
             else if (includeUntyped && contains(column))
                 values.put(column.getName(), get(column));
+            else if (column.getName().contains("\""))
+            {
+                // TODO: only match when request is of "multipart/form-data" content type?
+                String quoteEncodedName = DataIteratorUtil.MatchType.mutiPartFormData.getMatchedName(column.getName());
+                Object value = getTypedValues().get(QueryUpdateForm.PREFIX + quoteEncodedName);
+                if (value != null)
+                    values.put(column.getName(), value);
+            }
 
             // Check if there was a file uploaded for the column's value
             if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)

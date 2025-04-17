@@ -141,7 +141,31 @@ public class DataIteratorUtil
 
     // rank of a match of import column NAME matching various properties of target column
     // MatchType.low is used for matches based on something other than name
-    enum MatchType {propertyuri, name, alias, jdbcname, tsvColumn, low}
+    public enum MatchType
+    {
+        propertyuri,
+        name,
+        alias,
+        jdbcname,
+        tsvColumn,
+        mutiPartFormData()
+                {
+                    @Override
+                    public String getMatchedName(@Nullable String name)
+                    {
+                        if (name == null)
+                            return null;
+                        // " is encoded as %22 when content-type is "multipart/form-data"
+                        return name.replaceAll("\"", "%22");
+                    }
+                },
+        low;
+
+        public String getMatchedName(@Nullable String name)
+        {
+            return name;
+        }
+    }
 
 
     /**
@@ -157,6 +181,9 @@ public class DataIteratorUtil
                 .toList();
 
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
+
+        for (ColumnInfo col : cols)
+            targetAliasesMap.put(MatchType.mutiPartFormData.getMatchedName(col.getName()), new Pair<>(col, MatchType.mutiPartFormData));
 
         // should this be under the useImportAliases flag???
         for (ColumnInfo col : cols)
