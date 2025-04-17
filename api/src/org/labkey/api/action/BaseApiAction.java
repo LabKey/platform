@@ -32,6 +32,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
@@ -502,13 +503,20 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return _requestedApiVersion < 0 ? 0 : _requestedApiVersion;
     }
 
+    protected long getMaximumJsonInputLength()
+    {
+        JsonInputLimit limitAnnotation = getClass().getAnnotation(JsonInputLimit.class);
+        return limitAnnotation == null ? JsonInputLimit.DEFAULT : limitAnnotation.value();
+    }
 
     private @Nullable JSONObject getJsonObject() throws IOException
     {
-        try (Reader r = getViewContext().getRequest().getReader())
+        long maxLength = getMaximumJsonInputLength();
+        try (Reader r = getViewContext().getRequest().getReader();
+            Reader jsonReader = maxLength > 0 ? new StrictBoundedReader(r, maxLength) : r)
         {
             JSONTokener tokener = new JSONTokener(r);
-            return tokener.more() ? new JSONObject(new JSONTokener(r)) : null;
+            return tokener.more() ? new JSONObject(new JSONTokener(jsonReader)) : null;
         }
     }
 
