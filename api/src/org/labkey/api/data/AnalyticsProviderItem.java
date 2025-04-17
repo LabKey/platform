@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -86,12 +87,12 @@ public class AnalyticsProviderItem
         _name = name;
     }
 
-    public String getLabel()
+    public @Nullable String getLabel()
     {
         return _label;
     }
 
-    public void setLabel(String label)
+    public void setLabel(@Nullable String label)
     {
         _label = label;
     }
@@ -146,19 +147,27 @@ public class AnalyticsProviderItem
                     : FieldKey.fromString(val.getKey().substring(apPrefix.length()));
 
                 List<String> values = new ArrayList<>();
-                if (val.getValue() instanceof String)
-                    values.add((String) val.getValue());
+                if (val.getValue() instanceof String s)
+                    values.add(s);
                 else
                     Collections.addAll(values, (String[]) val.getValue());
 
                 for (String s : values)
                 {
-                    Map<String, String> properties = decodeUrlProperties(s);
-                    String label = properties.containsKey("label") ? properties.get("label") : null;
-                    ColumnAnalyticsProvider analyticsProvider = getAnalyticsProviderFromType(properties.get("type"));
+                    try
+                    {
+                        Map<String, String> properties = decodeUrlProperties(s);
+                        String label = properties.get("label");
+                        ColumnAnalyticsProvider analyticsProvider = getAnalyticsProviderFromType(properties.get("type"));
 
-                    if (analyticsProvider != null)
-                        analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, analyticsProvider, label));
+                        if (analyticsProvider != null)
+                            analyticsProviderItems.add(new AnalyticsProviderItem(fieldKey, analyticsProvider, label));
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        LOG.debug("Failed to parse analytics URL value: {}", s, e);
+                        throw new ApiUsageException(e);
+                    }
                 }
             }
         }
@@ -229,10 +238,8 @@ public class AnalyticsProviderItem
         if (getLabel() == null)
             return getName();
 
-        StringBuilder ret = new StringBuilder();
-        ret.append(PageFlowUtil.encode("label=" + getLabel()));
-        ret.append(PageFlowUtil.encode("&type=" + getName()));
-        return ret.toString();
+        return PageFlowUtil.encode("label=" + getLabel()) +
+                PageFlowUtil.encode("&type=" + getName());
     }
 
     /**
@@ -253,9 +260,8 @@ public class AnalyticsProviderItem
         {
             AnalyticsProviderRegistry apRegistry = AnalyticsProviderRegistry.get();
             ColumnAnalyticsProvider analyticsProvider = apRegistry != null ? apRegistry.getColumnAnalyticsProvider(getName()) : null;
-            if (analyticsProvider != null && analyticsProvider instanceof BaseAggregatesAnalyticsProvider)
+            if (analyticsProvider instanceof BaseAggregatesAnalyticsProvider baseAggProvider)
             {
-                BaseAggregatesAnalyticsProvider baseAggProvider = (BaseAggregatesAnalyticsProvider) analyticsProvider;
                 return createAggregates(baseAggProvider, getFieldKey(), getLabel());
             }
         }
