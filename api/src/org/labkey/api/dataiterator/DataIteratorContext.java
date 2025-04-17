@@ -238,12 +238,17 @@ public class DataIteratorContext
         _alternateKeys.addAll(alternateKeys);
     }
 
+    public boolean shouldCancel()
+    {
+        if (!_errors.hasErrors())
+            return false;
+        return _failFast || _errors.getRowErrors().size() > _maxRowErrors;
+    }
+
     /** if this etl should be killed, will execute <code>throw _errors;</code> */
     public void checkShouldCancel() throws BatchValidationException
     {
-        if (!_errors.hasErrors())
-            return;
-        if (_failFast || _errors.getRowErrors().size() > _maxRowErrors)
+        if (shouldCancel())
             throw _errors;
     }
 

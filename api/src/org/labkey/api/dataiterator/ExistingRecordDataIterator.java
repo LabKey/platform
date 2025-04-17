@@ -173,7 +173,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
         {
             prefetchExisting();
-            if (_context.getErrors().hasErrors())
+            if (_context.shouldCancel())
                 return false;
         }
         return ret;
