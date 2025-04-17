@@ -985,7 +985,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    protected String truncate(String str, int reserved)
+    public String truncate(String str, int reserved)
     {
         String ret = truncateBytes(str, getIdentifierMaxByteLength() - reserved - 3);
         String ret2 = super.truncate(ret, reserved);

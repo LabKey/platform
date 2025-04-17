@@ -276,8 +276,7 @@ public class LookupColumn extends BaseColumnInfo
     {
         String alias = baseAlias + (baseAlias.endsWith("$") ? "" : "$") + fkAlias + "$";
 
-        /* Always reserves three characters for possible suffixes */
-        return dialect.makeLegalName(alias, true, 0);
+        return dialect.truncate(alias, 3 /* leave room for possible suffixes */);
     }
 
     @Override

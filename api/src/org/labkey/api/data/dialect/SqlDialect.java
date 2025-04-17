@@ -1061,7 +1061,7 @@ public abstract class SqlDialect
     /**
      * Override to implement database-specific truncation rules
      */
-    protected String truncate(String str, int reserved)
+    public String truncate(String str, int reserved)
     {
         return truncateCharacters(str, getMaxLength() - reserved);
     }
