@@ -254,16 +254,6 @@ public class AliasManager
         return checkAndFinishAlias(makeLegalName(name), name);
     }
 
-    public String decideAlias(String name, String preferred)
-    {
-        if (!_aliases.containsKey(preferred))
-        {
-            _aliases.put(preferred, name);
-            return preferred;
-        }
-        return checkAndFinishAlias(makeLegalName(name), name);
-    }
-
     public String decideAlias(String name, int reserveCount)
     {
         return checkAndFinishAlias(makeLegalName(name, reserveCount), name);

@@ -86,11 +86,6 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.property.DomainTemplate.findProperty;
 
-/**
- * User: Nick
- * Date: 5/8/13
- * Time: 4:12 PM
- */
 public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindProperties>
 {
     /*
@@ -229,7 +224,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         {
             if (pd.getName().equalsIgnoreCase(list.getKeyName()))
             {
-                PropertyStorageSpec key = this.getKeyProperty(list);
+                PropertyStorageSpec key = getKeyProperty(list, pd.getStorageColumnName());
                 assert key.isPrimaryKey();
                 _list = null;
                 return key;
@@ -238,7 +233,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return super.getPropertySpec(pd, domain);
     }
 
-    abstract PropertyStorageSpec getKeyProperty(ListDefinition list);
+    abstract PropertyStorageSpec getKeyProperty(ListDefinition list, String storageColumnName);
 
     abstract KeyType getDefaultKeyType();
 
