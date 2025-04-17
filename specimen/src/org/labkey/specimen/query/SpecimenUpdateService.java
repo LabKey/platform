@@ -325,7 +325,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
-            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException // TODO
     {
         if (oldKeys != null && rows.size() != oldKeys.size())
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
@@ -340,6 +340,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             Map<String, Object> row = rows.get(i);
             Map<String, Object> keys = oldKeys == null ? row : oldKeys.get(i);
             long rowId = keyFromMap(keys);
+            try
+            {
+                checkDuplicateUpdate(rowId);
+            }
+            catch (ValidationException e)
+            {
+                throw new BatchValidationException(e);
+            }
             rowIds.add(rowId);
             uniqueRows.put(rowId, row);
         }

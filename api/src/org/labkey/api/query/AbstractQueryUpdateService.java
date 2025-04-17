@@ -112,6 +112,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -138,6 +140,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
      */
     protected boolean _enableExistingRecordsDataIterator = true;
+    protected Set<Object> _previouslyUpdatedRows = new HashSet<>();
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -149,6 +152,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected TableInfo getQueryTable()
     {
         return _queryTable;
+    }
+
+    public @NotNull Set<Object> getPreviouslyUpdatedRows()
+    {
+        return _previouslyUpdatedRows == null ? new HashSet<>() : _previouslyUpdatedRows;
     }
 
     @Override
@@ -781,7 +789,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // TODO: Support update/delete without selecting the existing row -- unfortunately, we currently get the existing row to check its container matches the incoming container
         boolean streaming = false; //_queryTable.canStreamTriggers(container) && _queryTable.getAuditBehavior() != AuditBehaviorType.NONE;
 
-        Set<Object> updatedRows = new HashSet<>();
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
@@ -807,7 +814,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 {
                     result.add(updatedRow);
                     oldRows.add(oldRow);
-                    checkDuplicateUpdate(updatedRows, updatedRow, container);
                 }
             }
             catch (ValidationException vex)
@@ -837,9 +843,41 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    protected void checkDuplicateUpdate(@NotNull Set<Object> updatedRows, @NotNull Map<String, Object> updatedRow, @NotNull Container container) throws InvalidKeyException
+    protected void checkDuplicateUpdate(Object pkVals) throws ValidationException
     {
+        if (pkVals == null)
+            return;
 
+        Set<Object> updatedRows = getPreviouslyUpdatedRows();
+
+        Object[] keysObj;
+        if (pkVals.getClass().isArray())
+            keysObj = (Object[]) pkVals;
+        else if (pkVals instanceof Map map)
+        {
+            List<Object> orderedKeyVals = new ArrayList<>();
+            SortedSet<String> sortedKeys = new TreeSet<>(map.keySet());
+            for (String key : sortedKeys)
+                orderedKeyVals.add(map.get(key));
+            keysObj = orderedKeyVals.toArray();
+        }
+        else
+            keysObj = new Object[]{pkVals};
+
+        if (keysObj.length == 1)
+        {
+            if (updatedRows.contains(keysObj[0]))
+                throw new ValidationException("Duplicate key provided: " + keysObj[0]);
+            updatedRows.add(keysObj[0]);
+            return;
+        }
+
+        List<String> keys = new ArrayList<>();
+        for (Object key : keysObj)
+            keys.add(String.valueOf(key));
+        if (updatedRows.contains(keys))
+            throw new ValidationException("Duplicate key provided: " + StringUtils.join(keys, ", "));
+        updatedRows.add(keys);
     }
 
     @Override
