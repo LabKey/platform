@@ -2111,14 +2111,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         for (String fileField : fileFields)
         {
-            String columnName = assayResultTable.getSchema().getSqlDialect().getColumnSelectName(fileField);
-
-            TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", columnName), filter, null);
+            TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", fileField), filter, null);
             Map<String, Object>[] resultFiles = ts.getMapArray();
+            String columnAlias = assayResultTable.getColumn(fileField).getAlias(); // Issue 52888
+            String columnSelectName = assayResultTable.getColumn(fileField).getSelectName();
 
             for (Map<String, Object> resultRow : resultFiles)
             {
-                String sourceFileName = (String) resultRow.get(columnName);
+                String sourceFileName = (String) resultRow.get(columnAlias);
                 if (StringUtils.isEmpty(sourceFileName))
                     continue;
                 Integer resultRowId = (Integer) resultRow.get("rowid");
@@ -2149,7 +2149,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
                             .append(" SET ")
-                            .append(columnName)
+                            .append(columnSelectName)
                             .append(" = ").appendValue(updatedFile.getAbsolutePath())
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
