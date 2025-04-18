@@ -48,10 +48,10 @@ public enum AllowListType
         }
 
         @Override
-        public void setValues(Collection<String> hosts, User user)
+        public void setValues(Collection<String> allowedHosts, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
-            props.setExternalRedirectHosts(hosts);
+            props.setExternalRedirectHosts(allowedHosts);
             props.save(user);
         }
 
@@ -136,7 +136,7 @@ public enum AllowListType
 
     public abstract HtmlString getDescription();
     public abstract List<String> getValues();
-    public abstract void setValues(Collection<String> redirectHosts, User user);
+    public abstract void setValues(Collection<String> allowedValues, User user);
     public abstract void validateValueFormat(String value, BindException errors);
     public abstract HtmlString getTitle();
     public abstract HtmlString getLabel();
