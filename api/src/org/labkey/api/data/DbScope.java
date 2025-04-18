@@ -2718,18 +2718,21 @@ public class DbScope
                             conn.commit();
                             conn.setAutoCommit(true);
                             LOG.debug("setAutoCommit(true)");
-                            if (null != _closeOnClose)
-                                try { _closeOnClose.close(); } catch (Exception ignore) {}
+
+                            // Issue 52885 - Use the same DB connection for the commit tasks
+                            CommitTaskOption.POSTCOMMIT.run(this);
+
+                            // Then finish unwinding the transaction stack
+                            popCurrentTransaction();
                         }
                         finally
                         {
+                            if (null != _closeOnClose)
+                                try { _closeOnClose.close(); } catch (Exception ignore) {}
                             if (null != conn)
                                 conn.internalClose();
                         }
 
-                        popCurrentTransaction();
-
-                        CommitTaskOption.POSTCOMMIT.run(this);
                     }
                     catch (SQLException e)
                     {

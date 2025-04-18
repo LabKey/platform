@@ -160,8 +160,8 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    // Use double the max count as the size since we cache by both EntityId and Path
-    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 2, CacheManager.DAY, "Containers");
+    // Use triple the max count as the size since we cache by EntityId, RowId, and Path
+    private static final Cache<String, Container> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers() * 3, CacheManager.DAY, "Containers");
     private static final Cache<String, List<String>> CACHE_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     private static final Cache<String, Set<Container>> CACHE_ALL_CHILDREN = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Child Container objects of Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
@@ -1112,9 +1112,26 @@ public class ContainerManager
 
     public static Container getForRowId(int id)
     {
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
-        return selector.getObject(Container.class);
-    }
+        Container d = getFromCacheId(Integer.toString(id));
+        if (null != d)
+            return d;
+
+        try (DbScope.Transaction t = ensureTransaction())
+        {
+            Container result = new SqlSelector(
+                    CORE.getSchema(),
+                    "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?",
+                    id).getObject(Container.class);
+            if (result != null)
+            {
+                result = _addToCache(result);
+            }
+            // No database changes to commit, but need to decrement the counter
+            t.commit();
+
+            return result;
+        }
+   }
 
     public static Container getForId(@NotNull GUID id)
     {
@@ -2076,7 +2093,8 @@ public class ContainerManager
 
     private static String toString(Path p)
     {
-        return StringUtils.strip(p.toString(), "/").toLowerCase();
+        // Differentiate paths from other types of cache keys with the "/" prefix
+        return "/" + StringUtils.strip(p.toString(), "/").toLowerCase();
     }
 
     private static Container _addToCache(Container c)
@@ -2085,6 +2103,7 @@ public class ContainerManager
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         CACHE.put(toString(c), c);
         CACHE.put(c.getId(), c);
+        CACHE.put(Integer.toString(c.getRowId()), c);
         return c;
     }
 
@@ -2099,6 +2118,7 @@ public class ContainerManager
     {
         CACHE.remove(toString(c));
         CACHE.remove(c.getId());
+        CACHE.remove(Integer.toString(c.getRowId()));
 
         // Blow away the children caches, which can be outdated even if the hierarchy hasn't changed
         // For example, changing the folder type or enabled modules in a parent can impact child workbooks
