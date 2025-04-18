@@ -301,8 +301,8 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         public Set<Index> getPropertyIndices(Domain domain)
         {
             Set<Index> indexes = super.getPropertyIndices(domain);
-            indexes.add(new Index(false, COLUMN_NAME_USER));
-            indexes.add(new Index(false, COLUMN_NAME_GROUP));
+//            indexes.add(new Index(false, COLUMN_NAME_USER));
+//            indexes.add(new Index(false, COLUMN_NAME_GROUP));
             return indexes;
         }
 
