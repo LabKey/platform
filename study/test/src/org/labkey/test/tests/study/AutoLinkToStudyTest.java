@@ -310,7 +310,6 @@ public class AutoLinkToStudyTest extends BaseWebDriverTest
         newCategoryField.sendKeys(name);
         sleep(500);
         newCategoryField.sendKeys(Keys.ENTER);
-        sleep(500);
         waitForElement(Ext4Helper.Locators.window("Manage Categories").append("//div").withText(name));
         clickButton("Done", 0);
         _extHelper.waitForExtDialogToDisappear("Manage Categories");
