@@ -58,7 +58,7 @@
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
-    "@labkey/build": "8.4.1-fb-package-updates-0425.2",
+    "@labkey/build": "8.4.1-fb-package-updates-0425.3",
     "@labkey/eslint-config-react": "0.0.15",
     "@types/jest": "29.5.14",
     "@types/react": "18.3.20",
