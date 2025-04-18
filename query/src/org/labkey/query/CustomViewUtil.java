@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.AnalyticsProviderItem;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
@@ -55,7 +56,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.query.CustomViewInfo.CONTAINER_FILTER_NAME;
@@ -69,13 +69,17 @@ public class CustomViewUtil
         List<Map.Entry<FieldKey, Map<CustomViewInfo.ColumnProperty, String>>> fields = new ArrayList<>();
 
         JSONArray jsonColumns = jsonView.optJSONArray("columns");
-        if (jsonColumns == null || jsonColumns.length() == 0)
+        if (jsonColumns == null || jsonColumns.isEmpty())
             throw new IllegalArgumentException("You must select at least one field to display in the grid.");
 
-        for (Map<String, Object> column : JsonUtil.toMapList(jsonColumns))
+        for (JSONObject column : JsonUtil.toJSONObjectList(jsonColumns))
         {
-            FieldKey key = FieldKey.fromString((String)column.get("fieldKey"));
-            String title = column.containsKey("title") ? StringUtils.trimToNull((String)column.get("title")) : null;
+            FieldKey key = FieldKey.fromString(column.optString("fieldKey", null));
+            if (key == null)
+            {
+                throw new ApiUsageException("No fieldKey for column");
+            }
+            String title = StringUtils.trimToNull(column.optString("title", null));
             Map<CustomViewInfo.ColumnProperty, String> map = Collections.emptyMap();
             if (title != null)
             {
@@ -92,25 +96,33 @@ public class CustomViewUtil
         ActionURL url = new ActionURL();
 
         JSONArray jsonFilters = jsonView.optJSONArray("filter");
-        if (jsonFilters != null && jsonFilters.length() > 0)
+        if (jsonFilters != null && !jsonFilters.isEmpty())
         {
-            for (Map<String, Object> filterInfo : JsonUtil.toMapList(jsonFilters))
+            for (JSONObject filterInfo : JsonUtil.toJSONObjectList(jsonFilters))
             {
-                String fieldKey = (String)filterInfo.get("fieldKey");
-                String op = Objects.toString(filterInfo.get("op"), "");
-                String value = Objects.toString(filterInfo.get("value"), "");
+                String fieldKey = filterInfo.optString("fieldKey", null);
+                if (fieldKey == null)
+                {
+                    throw new ApiUsageException("No fieldKey for filter");
+                }
+                String op = filterInfo.optString("op");
+                String value = filterInfo.optString("value");
                 url.addParameter(FILTER_PARAM_PREFIX + "." + fieldKey + "~" + op, value);
             }
         }
 
         JSONArray jsonSorts = jsonView.optJSONArray("sort");
-        if (jsonSorts != null && jsonSorts.length() > 0)
+        if (jsonSorts != null && !jsonSorts.isEmpty())
         {
             Sort sort = new Sort();
-            for (Map<String, Object> sortInfo : JsonUtil.toMapList(jsonSorts))
+            for (JSONObject sortInfo : JsonUtil.toJSONObjectList(jsonSorts))
             {
-                String fieldKey = (String)sortInfo.get("fieldKey");
-                String dir = (String)sortInfo.get("dir");
+                String fieldKey = sortInfo.optString("fieldKey", null);
+                if (fieldKey == null)
+                {
+                    throw new ApiUsageException("No fieldKey for sort");
+                }
+                String dir = sortInfo.optString("dir", null);
 
                 Sort.SortDirection sortDir = Sort.SortDirection.fromString(dir);
                 sort.appendSortColumn(FieldKey.fromString(fieldKey), sortDir, true);
@@ -121,12 +133,12 @@ public class CustomViewUtil
         // aggregates have been deprecated in favor of analyticsProviders,
         // so map any saved "aggregates" to use the analytics provider param key
         JSONArray jsonAggregates = jsonView.optJSONArray("aggregates");
-        if (jsonAggregates != null && jsonAggregates.length() > 0)
+        if (jsonAggregates != null && !jsonAggregates.isEmpty())
         {
-            for (Map<String, Object> aggInfo : JsonUtil.toMapList(jsonAggregates))
+            for (JSONObject aggInfo : JsonUtil.toJSONObjectList(jsonAggregates))
             {
-                String fieldKey = StringUtils.trimToNull((String)aggInfo.get("fieldKey"));
-                String type = StringUtils.trimToNull((String)aggInfo.get("type"));
+                String fieldKey = StringUtils.trimToNull(aggInfo.optString("fieldKey", null));
+                String type = StringUtils.trimToNull(aggInfo.optString("type", null));
 
                 if (fieldKey == null || type == null)
                     continue;
@@ -137,12 +149,12 @@ public class CustomViewUtil
         }
 
         JSONArray jsonAnalyticsProviders = jsonView.optJSONArray("analyticsProviders");
-        if (jsonAnalyticsProviders != null && jsonAnalyticsProviders.length() > 0)
+        if (jsonAnalyticsProviders != null && !jsonAnalyticsProviders.isEmpty())
         {
-            for (Map<String, Object> apInfo : JsonUtil.toMapList(jsonAnalyticsProviders))
+            for (JSONObject apInfo : JsonUtil.toJSONObjectList(jsonAnalyticsProviders))
             {
-                String fieldKey = StringUtils.trimToNull((String)apInfo.get("fieldKey"));
-                String name = StringUtils.trimToNull((String)apInfo.get("name"));
+                String fieldKey = StringUtils.trimToNull(apInfo.optString("fieldKey", null));
+                String name = StringUtils.trimToNull(apInfo.optString("name", null));
                 if (fieldKey == null || name == null)
                     continue;
 
@@ -284,9 +296,7 @@ public class CustomViewUtil
                 analyticsProvidersInfos.add(apInfo);
             }
         }
-        catch (URISyntaxException e)
-        {
-        }
+        catch (URISyntaxException ignored) {}
 
         ret.put("filter", filterInfos);
         ret.put("sort", sortInfos);

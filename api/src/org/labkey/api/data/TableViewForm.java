@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
@@ -797,8 +798,15 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         String oldValues = request.getParameter(DataRegion.OLD_VALUES_NAME);
         if (null != StringUtils.trimToNull(oldValues))
         {
-            // Just the PK and version values
-            _oldValues = new JSONObject(oldValues).toMap();
+            try
+            {
+                // Just the PK and version values
+                _oldValues = new JSONObject(oldValues).toMap();
+            }
+            catch (JSONException e)
+            {
+                _log.debug("Failed to parse '.oldValues' JSON", e);
+            }
         }
     }
 

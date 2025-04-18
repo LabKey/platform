@@ -284,7 +284,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     public QueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         this(schema);
-        _errors = errors;
+        // TODO: stop passing in null Errors. For now, new one up if null.
+        _errors = errors != null ? errors : new BindException(new Object(), "form");
         if (null != settings)
             setSettings(settings);
     }
