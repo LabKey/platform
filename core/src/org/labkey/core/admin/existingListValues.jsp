@@ -99,7 +99,7 @@
                 <td><br/>
                     <input type="hidden" id="saveAll" name="saveAll">
                     <%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
-                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class)).usePost("Are you sure you want to delete all the " + bean.getTypeEnum().getTitle() + "s?") : HtmlString.EMPTY_STRING%>
+                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class)).usePost("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s?") : HtmlString.EMPTY_STRING%>
                 </td>
             </tr>
         <% } %>
