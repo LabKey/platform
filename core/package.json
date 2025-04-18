@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.36.5-fb-scanner-darkly.0",
+    "@labkey/components": "6.36.5",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {

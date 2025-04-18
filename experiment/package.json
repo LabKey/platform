@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "6.36.5-fb-scanner-darkly.0"
+    "@labkey/components": "6.36.5"
   },
   "devDependencies": {
     "@labkey/build": "8.4.0",
