@@ -146,7 +146,6 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         _path = new String[names.length];
         _length = names.length;
         _parent = new AtomicReference<>();
-        int hash = 0;
         for (int i = 0; i < _length; i++)
             _path[i] = names[i].toString();
         _isAbsolute = false;
@@ -408,9 +407,9 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
         for (int i=0 ; i<_length ; i++)
         {
             String part = _path[i];
-            if (part.length()==0 || ".".equals(part))
+            if (part.isEmpty() || ".".equals(part))
             {
-                /* pass */;
+                /* pass */
             }
             else if ("..".equals(part))
             {
@@ -719,7 +718,8 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             return _name.subSequence(start, end);
         }
 
-        public String toString()
+        @Override
+        public @NotNull String toString()
         {
             return _name;
         }
@@ -773,15 +773,15 @@ public class Path implements Serializable, Comparable<Path>, Iterable<String>
             Path r;
             Path base = Path.parse("/a/b/c");
             r = base.relativize(Path.parse("/a/b/c/d"));
-            assertEquals(r, new Path("d"));
+            assertEquals(new Path("d"), r);
             r = base.relativize(new Path("a","b","c"));
-            assertEquals(r, Path.emptyPath);
+            assertEquals(Path.emptyPath, r);
             r = base.relativize(new Path("a","b"));
-            assertEquals(r, new Path(".."));
+            assertEquals(new Path(".."), r);
             r = base.relativize(new Path("a","b","x"));
-            assertEquals(r, new Path("..","x"));
+            assertEquals(new Path("..","x"), r);
             r = base.relativize(new Path("y"));
-            assertEquals(r, new Path("..","..","..","y"));
+            assertEquals(new Path("..","..","..","y"), r);
         }
 
         @Test

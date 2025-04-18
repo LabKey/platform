@@ -961,7 +961,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            if (_form.getSchema() != null)
+            if (_form != null && _form.getSchema() != null)
                 addSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
     }
