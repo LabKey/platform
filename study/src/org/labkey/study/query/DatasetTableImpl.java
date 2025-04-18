@@ -1243,7 +1243,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         {
             return ((DatasetUpdateService) getUpdateService()).getParticipant(row, getUserSchema().getUser(), getUserSchema().getContainer());
         }
-        catch (ValidationException|QueryUpdateServiceException ex)
+        catch (QueryUpdateServiceException ex)
         {
             return null;
         }
