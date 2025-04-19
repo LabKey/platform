@@ -35,11 +35,11 @@ public class VarcharListDomainKind extends ListDomainKind
     }
 
     @Override
-    PropertyStorageSpec getKeyProperty(ListDefinition list, String columnStorageName)
+    PropertyStorageSpec getKeyProperty(ListDefinition list, String storageColumnName)
     {
         // See Issue 52271. Consider: Are there any other PropertyDescriptor properties that need to be copied into this
         // PropertyStorageSpec?
-        PropertyStorageSpec key = new PropertyStorageSpec(columnStorageName, JdbcType.VARCHAR);
+        PropertyStorageSpec key = new PropertyStorageSpec(storageColumnName, JdbcType.VARCHAR);
         key.setPrimaryKey(true);
         return key;
     }
