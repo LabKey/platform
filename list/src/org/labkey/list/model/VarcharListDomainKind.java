@@ -22,11 +22,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * User: Nick
- * Date: 5/9/13
- * Time: 12:57 PM
- */
 public class VarcharListDomainKind extends ListDomainKind
 {
     protected static final String NAMESPACE_PREFIX = "VarList";
@@ -40,9 +35,11 @@ public class VarcharListDomainKind extends ListDomainKind
     }
 
     @Override
-    PropertyStorageSpec getKeyProperty(ListDefinition list)
+    PropertyStorageSpec getKeyProperty(ListDefinition list, String columnStorageName)
     {
-        PropertyStorageSpec key = new PropertyStorageSpec(list.getKeyName(), JdbcType.VARCHAR);
+        // See Issue 52271. Consider: Are there any other PropertyDescriptor properties that need to be copied into this
+        // PropertyStorageSpec?
+        PropertyStorageSpec key = new PropertyStorageSpec(columnStorageName, JdbcType.VARCHAR);
         key.setPrimaryKey(true);
         return key;
     }

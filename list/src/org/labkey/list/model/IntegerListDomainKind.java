@@ -23,11 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * User: Nick
- * Date: 5/9/13
- * Time: 12:57 PM
- */
 public class IntegerListDomainKind extends ListDomainKind
 {
     protected static final String NAMESPACE_PREFIX = "IntList";
@@ -45,9 +40,11 @@ public class IntegerListDomainKind extends ListDomainKind
 
 
     @Override
-    PropertyStorageSpec getKeyProperty(ListDefinition list)
+    PropertyStorageSpec getKeyProperty(ListDefinition list, String columnStorageName)
     {
-        PropertyStorageSpec key = new PropertyStorageSpec(list.getKeyName(), JdbcType.INTEGER);
+        // See Issue 52271. Consider: Are there any other PropertyDescriptor properties that need to be copied into this
+        // PropertyStorageSpec?
+        PropertyStorageSpec key = new PropertyStorageSpec(columnStorageName, JdbcType.INTEGER);
         key.setPrimaryKey(true);
 
         if (list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
