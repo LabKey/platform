@@ -166,8 +166,13 @@ public class NetworkDrive
     /**
      * Force mounting of the drive if it's not already available.
      */
-    public static void ensureDrive(String path)
+    public static void ensureDrive(@Nullable String path)
     {
+        if (path == null)
+        {
+            return;
+        }
+
         if (path.length() != 1)
         {
             if (path.length() < 2 || path.charAt(1) != ':')
