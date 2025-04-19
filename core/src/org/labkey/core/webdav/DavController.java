@@ -28,10 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.IgnoresAllocationTracking;
@@ -174,6 +176,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -181,7 +184,6 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -194,8 +196,6 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
 /**
  * User: matthewb
  * Date: Oct 3, 2007
- * Time: 3:54:42 PM
- *
  * Derived from Tomcat's WebdavServlet
  */
 public class DavController extends SpringActionController
@@ -715,9 +715,7 @@ public class DavController extends SpringActionController
                 _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
                 if (1==0) // verbose
                 {
-                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> {
-                        _log.debug(name + ": " + request.getHeader(name));
-                    });
+                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> _log.debug(name + ": " + request.getHeader(name)));
                 }
                 start = System.currentTimeMillis();
             }
@@ -804,7 +802,7 @@ public class DavController extends SpringActionController
 
             if (_log.isDebugEnabled())
             {
-                if (getResponse().sbLogResponse.length() > 0)
+                if (!getResponse().sbLogResponse.isEmpty())
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getWebdavStatus();
                 _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
@@ -843,9 +841,7 @@ public class DavController extends SpringActionController
             {
                 depth = Math.min(maxDepth, Math.max(0,Integer.parseInt(depthStr.trim())));
             }
-            catch (NumberFormatException x)
-            {
-            }
+            catch (NumberFormatException ignored) {}
             return new Pair<>(depth, depth>0 && noroot);
         }
     }
@@ -933,7 +929,7 @@ public class DavController extends SpringActionController
             if (resource.isCollection() && !resource.canList(getUser(), true) || !resource.canRead(getUser(), true))
                 return unauthorized(resource);
 
-            Collection<? extends WebdavResource> resources = null;
+            Collection<? extends WebdavResource> resources;
             if (resource.isCollection())
                 resources = resource.list();
             else
@@ -943,7 +939,6 @@ public class DavController extends SpringActionController
             Writer out = getResponse().getWriter();
             for (WebdavResource r : resources)
             {
-                String md5;
                 try
                 {
                     // CONSIDER: replace with json response with file name
@@ -1128,7 +1123,7 @@ public class DavController extends SpringActionController
                 StringBuilder sb = new StringBuilder();
                 sb.append("<dm:mount xmlns:dm=\"http://purl.org/NET/webdav/mount\">\n");
                 sb.append("  <dm:url>").append(PageFlowUtil.filter(root)).append("</dm:url>\n");
-                if (open.length() > 0)
+                if (!open.isEmpty())
                     sb.append("  <dm:open>").append(PageFlowUtil.filter(open)).append("</dm:open>\n");
                 sb.append("</dm:mount>\n");
 
@@ -1306,7 +1301,7 @@ public class DavController extends SpringActionController
     }
 
 
-    class ResourceFilter
+    static class ResourceFilter
     {
         boolean accept(WebdavResource r)
         {
@@ -1328,7 +1323,7 @@ public class DavController extends SpringActionController
                 return Boolean.FALSE;
             return ConvertHelper.convert(v, Boolean.class);
         }
-        catch (Exception x) {}
+        catch (Exception ignored) {}
         return null;
     }
 
@@ -1486,8 +1481,7 @@ public class DavController extends SpringActionController
                         type = Find.FIND_BY_PROPERTY;
                         if (propNames != null && propNames.length > 0)
                         {
-                            properties = new Vector<>();
-                            properties.addAll(Arrays.asList(getRequest().getParameterValues("propname")));
+                            properties = new Vector<>(Arrays.asList(getRequest().getParameterValues("propname")));
                         }
                     }
                     else
@@ -1614,7 +1608,7 @@ public class DavController extends SpringActionController
                         resourceWriter.endResponse();
                         resourceWriter.sendData();
                     }
-                    catch (Exception e) { }
+                    catch (Exception ignored) { }
                 }
             }
 
@@ -1646,18 +1640,24 @@ public class DavController extends SpringActionController
             if (props.contains("sort"))
             {
                 Object sort = props.getPropertyValue("sort").getValue();
-                if (sort instanceof String[])
+                if (sort instanceof String[] sortArray)
                 {
-                    String[] sortArray = (String[])sort;
                     assert sortArray.length == 1 : "Unsupported sort array length";
 
-                    JSONArray jsonArray = new JSONArray(sortArray[0]);
-                    JSONObject sortObj = jsonArray.getJSONObject(0);
+                    try
+                    {
+                        JSONArray jsonArray = new JSONArray(sortArray[0]);
+                        JSONObject sortObj = jsonArray.getJSONObject(0);
 
-                    _sort = new HashMap<>();
+                        _sort = new HashMap<>();
 
-                    _sort.put(SORT_PROP, sortObj.get(SORT_PROP).toString());
-                    _sort.put(SORT_DIR, sortObj.get(SORT_DIR).toString());
+                        _sort.put(SORT_PROP, sortObj.get(SORT_PROP).toString());
+                        _sort.put(SORT_DIR, sortObj.get(SORT_DIR).toString());
+                    }
+                    catch (JSONException e)
+                    {
+                        throw new ApiUsageException(e);
+                    }
                 }
             }
         }
@@ -2016,7 +2016,7 @@ public class DavController extends SpringActionController
         {
             xml = new XMLWriter(writer);
             String userAgent = getRequest().getHeader("User-Agent");
-            if (null != userAgent && -1 != userAgent.indexOf("gvfs"))
+            if (null != userAgent && userAgent.contains("gvfs"))
                 gvfs = true;
         }
 
@@ -2058,7 +2058,7 @@ public class DavController extends SpringActionController
             xml.writeText(href);
             xml.writeElement(null, "href", XMLWriter.CLOSING);
 
-            String displayName = resource.getPath().equals("/") ? "/" : resource.getName();
+            String displayName = resource.getPath().toString().equals("/") ? "/" : resource.getName();
 
             switch (type)
             {
@@ -2198,254 +2198,247 @@ public class DavController extends SpringActionController
 
                     for (String property : propertiesVector)
                     {
-                        if (property.equals("path"))
+                        switch (property)
                         {
-                            Path path = resource.getPath();
-                            String pathStr = path.encode("/", isFile ? "" : "/");
-                            xml.writeProperty(null, "path", pathStr);
-                        }
-                        else if (property.equals("actions"))
-                        {
-                            Collection<NavTree> actions = resource.getActions(getUser());
-                            xml.writeElement(null, "actions", XMLWriter.OPENING);
-                            for (NavTree action : actions)
+                            case "path" ->
                             {
-                                xml.writeElement(null, "action", XMLWriter.OPENING);
-                                if (action.getText() != null)
+                                Path path = resource.getPath();
+                                String pathStr = path.encode("/", isFile ? "" : "/");
+                                xml.writeProperty(null, "path", pathStr);
+                            }
+                            case "actions" ->
+                            {
+                                Collection<NavTree> actions = resource.getActions(getUser());
+                                xml.writeElement(null, "actions", XMLWriter.OPENING);
+                                for (NavTree action : actions)
                                 {
-                                    xml.writeProperty(null, "message", action.getText());
+                                    xml.writeElement(null, "action", XMLWriter.OPENING);
+                                    if (action.getText() != null)
+                                    {
+                                        xml.writeProperty(null, "message", action.getText());
+                                    }
+                                    if (action.getHref() != null)
+                                    {
+                                        xml.writeProperty(null, "href", action.getHref());
+                                    }
+                                    xml.writeElement(null, "action", XMLWriter.CLOSING);
                                 }
-                                if (action.getHref() != null)
-                                {
-                                    xml.writeProperty(null, "href", action.getHref());
-                                }
-                                xml.writeElement(null, "action", XMLWriter.CLOSING);
+                                xml.writeElement(null, "actions", XMLWriter.CLOSING);
                             }
-                            xml.writeElement(null, "actions", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("creationdate"))
-                        {
-                            long created = resource.getCreated();
-                            if (created == Long.MIN_VALUE)
-                                xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
-                            else
-                                xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
-                        }
-                        else if (property.equals("createdby"))
-                        {
-                            User createdby = resource.getCreatedBy();
-                            if (null != createdby)
-                                xml.writeProperty(null, "createdby", UserManager.getDisplayName(createdby.getUserId(), getUser()));
-                            else
-                                xml.writeElement(null, "createdby", XMLWriter.NO_CONTENT);
-                        }
-                        else if (property.equals("modifiedby"))
-                        {
-                            User modifiedBy = resource.getModifiedBy();
-                            if (null != modifiedBy)
-                                xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedBy.getUserId(), getUser()));
-                            else
-                                xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
-                        }
-                        else if (property.equals("description"))
-                        {
-                            String description = resource.getDescription();
-                            if (null != description)
-                                xml.writeProperty(null, "description", description);
-                            else
-                                xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
-                        }
-                        else if (property.equals("displayname"))
-                        {
-                            if (null == displayName)
+                            case "creationdate" ->
                             {
-                                xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
-                            }
-                            else
-                            {
-                                xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                                xml.writeText(displayName);
-                                xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                            }
-                        }
-                        else if (property.equals("getcontentlanguage"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else
-                            {
-                                xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                            }
-                        }
-                        else if (property.equals("getcontentlength"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else
-                            {
-                                xml.writeProperty(null, "getcontentlength", (String.valueOf(_contentLength(resource))));
-                            }
-                        }
-                        else if (property.equals("getcontenttype"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else
-                            {
-                                xml.writeProperty(null, "getcontenttype", resource.getContentType());
-                            }
-                        }
-                        else if (property.equals("absolutePath"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else if (isFileSystemFileOrDirectory(resource))
-                            {
-                                String absolutePath = resource.getAbsolutePath(getUser());
-                                if (null != absolutePath)
-                                    xml.writeProperty(null, "absolutePath", absolutePath);
-                            }
-                        }
-                        else if (property.equals("getetag"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else
-                            {
-                                xml.writeProperty(null, "getetag", resource.getETag());
-                            }
-                        }
-                        else if (property.equals("getlastmodified"))
-                        {
-                            if (!exists)
-                            {
-                                propertiesNotFound.add(property);
-                            }
-                            else
-                            {
-                                long modified = resource.getLastModified();
-                                if (modified == Long.MIN_VALUE)
-                                    xml.writeProperty(null, "getlastmodified", "");
+                                long created = resource.getCreated();
+                                if (created == Long.MIN_VALUE)
+                                    xml.writeElement(null, "creationdate", XMLWriter.NO_CONTENT);
                                 else
-                                    xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
+                                    xml.writeProperty(null, "creationdate", getISOCreationDate(resource.getCreated()));
                             }
-                        }
-                        else if (property.equals("href"))
-                        {
-                            xml.writeElement(null, "href", XMLWriter.OPENING);
-                            xml.writeText(resource.getLocalHref(getViewContext()));
-                            xml.writeElement(null, "href", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("iconHref"))
-                        {
-                            xml.writeProperty(null, "iconHref", resource.getIconHref());
-                        }
-                        else if (property.equals("iconFontCls"))
-                        {
-                            xml.writeProperty(null, "iconFontCls", resource.getIconFontCls());
-                        }
-                        else if (property.equals("ishidden"))
-                        {
-                            xml.writeElement(null, "ishidden", XMLWriter.OPENING);
-                            xml.writeText("0");
-                            xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("isreadonly"))
-                        {
-                            xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
-                            xml.writeText(resource.canWrite(getUser(), false) ? "0" : "1");
-                            xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("resourcetype"))
-                        {
-                            if (resource.isCollection())
+                            case "createdby" ->
                             {
-                                xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                                xml.writeProperty(null, "collection", "1");
-                                xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                                User createdby = resource.getCreatedBy();
+                                if (null != createdby)
+                                    xml.writeProperty(null, "createdby", UserManager.getDisplayName(createdby.getUserId(), getUser()));
+                                else
+                                    xml.writeElement(null, "createdby", XMLWriter.NO_CONTENT);
                             }
-                            else
+                            case "modifiedby" ->
                             {
-                                xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                                User modifiedBy = resource.getModifiedBy();
+                                if (null != modifiedBy)
+                                    xml.writeProperty(null, "modifiedby", UserManager.getDisplayName(modifiedBy.getUserId(), getUser()));
+                                else
+                                    xml.writeElement(null, "modifiedby", XMLWriter.NO_CONTENT);
                             }
-                        }
-                        else if (property.equals("source"))
-                        {
-                            xml.writeProperty(null, "source", "");
-                        }
-                        else if (property.equals("md5sum"))
-                        {
-                            String md5sum = null;
-                            try
+                            case "description" ->
                             {
-                                md5sum = resource.getMD5(getUser());
+                                String description = resource.getDescription();
+                                if (null != description)
+                                    xml.writeProperty(null, "description", description);
+                                else
+                                    xml.writeElement(null, "description", XMLWriter.NO_CONTENT);
                             }
-                            catch (IOException x)
+                            case "displayname" ->
                             {
-                                /* */
-                            }
-                            if (null == md5sum)
-                            {
-                                xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
-                            }
-                            else
-                            {
-                                xml.writeElement(null, "md5sum", XMLWriter.OPENING);
-                                xml.writeText(md5sum);
-                                xml.writeElement(null, "md5sum", XMLWriter.CLOSING);
-                            }
-                        }
-                        else if (property.equals("history"))
-                        {
-                            xml.writeElement(null, "history", XMLWriter.OPENING);
-                            Collection<WebdavResolver.History> list = resource.getHistory();
-                            for (WebdavResolver.History history : list)
-                            {
-                                xml.writeElement(null, "entry", XMLWriter.OPENING);
-                                xml.writeElement(null, "date", XMLWriter.OPENING);
-                                xml.writeText(DateUtil.toISO(history.getDate()));
-                                xml.writeElement(null, "date", XMLWriter.CLOSING);
-                                xml.writeElement(null, "user", XMLWriter.OPENING);
-                                xml.writeText(history.getUser().getDisplayName(null));
-                                xml.writeElement(null, "user", XMLWriter.CLOSING);
-                                xml.writeElement(null, "message", XMLWriter.OPENING);
-                                xml.writeText(history.getMessage());
-                                xml.writeElement(null, "message", XMLWriter.CLOSING);
-                                if (null != history.getHref())
+                                if (null == displayName)
                                 {
-                                    xml.writeElement(null, "href", XMLWriter.OPENING);
-                                    xml.writeText(history.getHref());
-                                    xml.writeElement(null, "href", XMLWriter.CLOSING);
+                                    xml.writeElement(null, "displayname", XMLWriter.NO_CONTENT);
                                 }
-                                xml.writeElement(null, "entry", XMLWriter.CLOSING);
+                                else
+                                {
+                                    xml.writeElement(null, "displayname", XMLWriter.OPENING);
+                                    xml.writeText(displayName);
+                                    xml.writeElement(null, "displayname", XMLWriter.CLOSING);
+                                }
                             }
-                            xml.writeElement(null, "history", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("options"))
-                        {
-                            StringBuilder methodsAllowed = determineMethodsAllowed(resource);
-                            xml.writeProperty(null, "options", methodsAllowed.toString());
-                        }
-                        else if (property.equals("custom"))
-                        {
-                            xml.writeElement(null, "custom", XMLWriter.OPENING);
-                            for (Map.Entry<String, String> entry : resource.getCustomProperties(getUser()).entrySet())
+                            case "getcontentlanguage" ->
                             {
-                                xml.writeProperty(null, entry.getKey(), entry.getValue());
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else
+                                {
+                                    xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                                }
                             }
-                            xml.writeElement(null, "custom", XMLWriter.CLOSING);
-                        }
-                        // UNDONE: Direct get/put properties are not currently used by client
+                            case "getcontentlength" ->
+                            {
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else
+                                {
+                                    xml.writeProperty(null, "getcontentlength", (String.valueOf(_contentLength(resource))));
+                                }
+                            }
+                            case "getcontenttype" ->
+                            {
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else
+                                {
+                                    xml.writeProperty(null, "getcontenttype", resource.getContentType());
+                                }
+                            }
+                            case "absolutePath" ->
+                            {
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else if (isFileSystemFileOrDirectory(resource))
+                                {
+                                    String absolutePath = resource.getAbsolutePath(getUser());
+                                    if (null != absolutePath)
+                                        xml.writeProperty(null, "absolutePath", absolutePath);
+                                }
+                            }
+                            case "getetag" ->
+                            {
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else
+                                {
+                                    xml.writeProperty(null, "getetag", resource.getETag());
+                                }
+                            }
+                            case "getlastmodified" ->
+                            {
+                                if (!exists)
+                                {
+                                    propertiesNotFound.add(property);
+                                }
+                                else
+                                {
+                                    long modified = resource.getLastModified();
+                                    if (modified == Long.MIN_VALUE)
+                                        xml.writeProperty(null, "getlastmodified", "");
+                                    else
+                                        xml.writeProperty(null, "getlastmodified", getHttpDateFormat(modified));
+                                }
+                            }
+                            case "href" ->
+                            {
+                                xml.writeElement(null, "href", XMLWriter.OPENING);
+                                xml.writeText(resource.getLocalHref(getViewContext()));
+                                xml.writeElement(null, "href", XMLWriter.CLOSING);
+                            }
+                            case "iconHref" -> xml.writeProperty(null, "iconHref", resource.getIconHref());
+                            case "iconFontCls" -> xml.writeProperty(null, "iconFontCls", resource.getIconFontCls());
+                            case "ishidden" ->
+                            {
+                                xml.writeElement(null, "ishidden", XMLWriter.OPENING);
+                                xml.writeText("0");
+                                xml.writeElement(null, "ishidden", XMLWriter.CLOSING);
+                            }
+                            case "isreadonly" ->
+                            {
+                                xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
+                                xml.writeText(resource.canWrite(getUser(), false) ? "0" : "1");
+                                xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
+                            }
+                            case "resourcetype" ->
+                            {
+                                if (resource.isCollection())
+                                {
+                                    xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                                    xml.writeProperty(null, "collection", "1");
+                                    xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                                }
+                                else
+                                {
+                                    xml.writeElement(null, "resourcetype", XMLWriter.NO_CONTENT);
+                                }
+                            }
+                            case "source" -> xml.writeProperty(null, "source", "");
+                            case "md5sum" ->
+                            {
+                                String md5sum = null;
+                                try
+                                {
+                                    md5sum = resource.getMD5(getUser());
+                                }
+                                catch (IOException x)
+                                {
+                                    /* */
+                                }
+                                if (null == md5sum)
+                                {
+                                    xml.writeElement(null, "md5sum", XMLWriter.NO_CONTENT);
+                                }
+                                else
+                                {
+                                    xml.writeElement(null, "md5sum", XMLWriter.OPENING);
+                                    xml.writeText(md5sum);
+                                    xml.writeElement(null, "md5sum", XMLWriter.CLOSING);
+                                }
+                            }
+                            case "history" ->
+                            {
+                                xml.writeElement(null, "history", XMLWriter.OPENING);
+                                Collection<WebdavResolver.History> list = resource.getHistory();
+                                for (WebdavResolver.History history : list)
+                                {
+                                    xml.writeElement(null, "entry", XMLWriter.OPENING);
+                                    xml.writeElement(null, "date", XMLWriter.OPENING);
+                                    xml.writeText(DateUtil.toISO(history.getDate()));
+                                    xml.writeElement(null, "date", XMLWriter.CLOSING);
+                                    xml.writeElement(null, "user", XMLWriter.OPENING);
+                                    xml.writeText(history.getUser().getDisplayName(null));
+                                    xml.writeElement(null, "user", XMLWriter.CLOSING);
+                                    xml.writeElement(null, "message", XMLWriter.OPENING);
+                                    xml.writeText(history.getMessage());
+                                    xml.writeElement(null, "message", XMLWriter.CLOSING);
+                                    if (null != history.getHref())
+                                    {
+                                        xml.writeElement(null, "href", XMLWriter.OPENING);
+                                        xml.writeText(history.getHref());
+                                        xml.writeElement(null, "href", XMLWriter.CLOSING);
+                                    }
+                                    xml.writeElement(null, "entry", XMLWriter.CLOSING);
+                                }
+                                xml.writeElement(null, "history", XMLWriter.CLOSING);
+                            }
+                            case "options" ->
+                            {
+                                StringBuilder methodsAllowed = determineMethodsAllowed(resource);
+                                xml.writeProperty(null, "options", methodsAllowed.toString());
+                            }
+                            case "custom" ->
+                            {
+                                xml.writeElement(null, "custom", XMLWriter.OPENING);
+                                for (Map.Entry<String, String> entry : resource.getCustomProperties(getUser()).entrySet())
+                                {
+                                    xml.writeProperty(null, entry.getKey(), entry.getValue());
+                                }
+                                xml.writeElement(null, "custom", XMLWriter.CLOSING);
+                            }
+                            // UNDONE: Direct get/put properties are not currently used by client
 //                        else if (property.equals("directget"))
 //                        {
 //                            if (!exists)
@@ -2457,11 +2450,12 @@ public class DavController extends SpringActionController
 //                        {
 //                            writeDirectRequest("directput", resource.getDirectPutRequest(getViewContext()));
 //                        }
-                        else
-                        {
-                            // ignore not well-formed property names, must be a valid XML element
-                            if (XMLWriter.isValidXmlElementName(property))
-                                propertiesNotFound.add(property);
+                            default ->
+                            {
+                                // ignore not well-formed property names, must be a valid XML element
+                                if (XMLWriter.isValidXmlElementName(property))
+                                    propertiesNotFound.add(property);
+                            }
                         }
                     }
 
@@ -2471,7 +2465,7 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "status", XMLWriter.CLOSING);
                     xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                    if (propertiesNotFound.size() > 0)
+                    if (!propertiesNotFound.isEmpty())
                     {
                         xml.writeElement(null, "propstat", XMLWriter.OPENING);
                         xml.writeElement(null, "prop", XMLWriter.OPENING);
@@ -2614,51 +2608,36 @@ public class DavController extends SpringActionController
 
                     for (String property : propertiesVector)
                     {
-                        if (property.equals("creationdate"))
+                        switch (property)
                         {
-                            xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
-                        }
-                        else if (property.equals("displayname"))
-                        {
-                            xml.writeElement(null, "displayname", XMLWriter.OPENING);
-                            xml.writeText(resource.getName());
-                            xml.writeElement(null, "displayname", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("getcontentlanguage"))
-                        {
-                            xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
-                        }
-                        else if (property.equals("getcontentlength"))
-                        {
-                            xml.writeProperty(null, "getcontentlength", (String.valueOf(0)));
-                        }
-                        else if (property.equals("getcontenttype"))
-                        {
-                            xml.writeProperty(null, "getcontenttype", "");
-                        }
-                        else if (property.equals("getetag"))
-                        {
-                            xml.writeProperty(null, "getetag", "");
-                        }
-                        else if (property.equals("getlastmodified"))
-                        {
-                            xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
-                        }
-                        else if (property.equals("resourcetype"))
-                        {
-                            xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
-                            xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
-                            xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
-                        }
-                        else if (property.equals("source"))
-                        {
-                            xml.writeProperty(null, "source", "");
-                        }
-                        else
-                        {
-                            // ignore not well-formed property names, must be a valid XML element
-                            if (XMLWriter.isValidXmlElementName(property))
-                                propertiesNotFound.add(property);
+                            case "creationdate" ->
+                                    xml.writeProperty(null, "creationdate", getISOCreationDate(lock.creationDate.getTime()));
+                            case "displayname" ->
+                            {
+                                xml.writeElement(null, "displayname", XMLWriter.OPENING);
+                                xml.writeText(resource.getName());
+                                xml.writeElement(null, "displayname", XMLWriter.CLOSING);
+                            }
+                            case "getcontentlanguage" ->
+                                    xml.writeElement(null, "getcontentlanguage", XMLWriter.NO_CONTENT);
+                            case "getcontentlength" -> xml.writeProperty(null, "getcontentlength", (String.valueOf(0)));
+                            case "getcontenttype" -> xml.writeProperty(null, "getcontenttype", "");
+                            case "getetag" -> xml.writeProperty(null, "getetag", "");
+                            case "getlastmodified" ->
+                                    xml.writeProperty(null, "getlastmodified", getHttpDateFormat(lock.creationDate.getTime()));
+                            case "resourcetype" ->
+                            {
+                                xml.writeElement(null, "resourcetype", XMLWriter.OPENING);
+                                xml.writeElement(null, "lock-null", XMLWriter.NO_CONTENT);
+                                xml.writeElement(null, "resourcetype", XMLWriter.CLOSING);
+                            }
+                            case "source" -> xml.writeProperty(null, "source", "");
+                            default ->
+                            {
+                                // ignore not well-formed property names, must be a valid XML element
+                                if (XMLWriter.isValidXmlElementName(property))
+                                    propertiesNotFound.add(property);
+                            }
                         }
 
                     }
@@ -2669,7 +2648,7 @@ public class DavController extends SpringActionController
                     xml.writeElement(null, "status", XMLWriter.CLOSING);
                     xml.writeElement(null, "propstat", XMLWriter.CLOSING);
 
-                    if (propertiesNotFound.size() > 0)
+                    if (!propertiesNotFound.isEmpty())
                     {
                         status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND;
                         xml.writeElement(null, "propstat", XMLWriter.OPENING);
@@ -3209,10 +3188,8 @@ public class DavController extends SpringActionController
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing of html files is not allowed");
                     if (null != AntiVirusService.get())
                         throw new DavException(WebdavStatus.SC_FORBIDDEN, "Partial writing not supported with virus scanner enabled");
-                    if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
-                        throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
                     // CONSIDER: use temp file
-                    _ByteArrayOutputStream bos = new _ByteArrayOutputStream((int)(range.end-range.start));
+                    _ByteArrayOutputStream bos = new _ByteArrayOutputStream((int) (range.end - range.start));
                     FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
                     if (bos.size() != range.end-range.start)
                         throw new DavException(WebdavStatus.SC_BAD_REQUEST);
@@ -3220,17 +3197,19 @@ public class DavController extends SpringActionController
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
                     raf = new RandomAccessFile(file,"rw");
                     assert track(raf);
+                    if (range.start > raf.length() || (range.end - range.start) > Integer.MAX_VALUE)
+                        throw new DavException(WebdavStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
                     raf.seek(range.start);
                     bos.writeTo(raf);
                     raf.getFD().sync();
-                    resource.notify(getViewContext(), "modified range " + range.toString());
+                    resource.notify(getViewContext(), "modified range " + range);
                 }
                 else
                 {
 
                     if (resource.getContentType().startsWith("text/html") && !isBrowserDev)
                     {
-                        _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
+                        _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4 * 1025);
                         FileUtil.copyData(getFileStream(resource.getName()).openInputStream(), bos);
                         byte[] buf = bos.toByteArray();
                         String html = new String(buf, StringUtilsLabKey.DEFAULT_CHARSET);
@@ -3467,7 +3446,7 @@ public class DavController extends SpringActionController
                     {
                         data.setComment(getUser(), getRequest().getParameter("description"));
                     }
-                    catch (ValidationException e) {}
+                    catch (ValidationException ignored) {}
                 }
             }
         }
@@ -3734,7 +3713,7 @@ public class DavController extends SpringActionController
                 boolean _inLastModified = false;
 
                 @Override
-                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
+                public void startElement(String uri, String localName, String qName, Attributes attributes)
                 {
                     if (WINDOWS_LAST_MODIFIED_TIME_ELEMENT.equalsIgnoreCase(localName) || (qName != null && qName.endsWith(":" + WINDOWS_LAST_MODIFIED_TIME_ELEMENT)))
                     {
@@ -3777,7 +3756,7 @@ public class DavController extends SpringActionController
         }
         catch (ParserConfigurationException e)
         {
-            throw new UnexpectedException(e);
+            throw UnexpectedException.wrap(e);
         }
         catch (SAXException e)
         {
@@ -3976,8 +3955,8 @@ public class DavController extends SpringActionController
         // Don't allow creating text/html via rename (circumventing script checking)
         if (src.isFile() && !getContainer().hasPermission(getUser(), BrowserDeveloperPermission.class))
         {
-            String contentTypeSrc = StringUtils.defaultString(src.getContentType(),"");
-            String contentTypeDest = StringUtils.defaultString(dest.getContentType(),"");
+            String contentTypeSrc = Objects.toString(src.getContentType(),"");
+            String contentTypeDest = Objects.toString(dest.getContentType(),"");
             if (contentTypeDest.startsWith("text/html") && !contentTypeDest.equals(contentTypeSrc))
                 return false;
         }
@@ -3989,9 +3968,9 @@ public class DavController extends SpringActionController
     // each collection is syncrhonized which is good for isLocked()
     // however, modifying locks should use the lockingLock
     private static final Object lockingLock = new Object();
-    private static final Map<Path,List<Path>> lockNullResources = Collections.synchronizedMap(new HashMap<Path,List<Path>>());
-    private static final Map<Path,LockInfo> resourceLocks = Collections.synchronizedMap(new HashMap<Path,LockInfo>());
-    private static final List<LockInfo> collectionLocks = Collections.synchronizedList(new ArrayList<LockInfo>());
+    private static final Map<Path,List<Path>> lockNullResources = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<Path,LockInfo> resourceLocks = Collections.synchronizedMap(new HashMap<>());
+    private static final List<LockInfo> collectionLocks = Collections.synchronizedList(new ArrayList<>());
     private static final AtomicInteger lockCounter = new AtomicInteger(); // helps with debugging
     private static final int maxDepth = 3;
 
@@ -4048,11 +4027,7 @@ public class DavController extends SpringActionController
 
             int lockDuration = DEFAULT_TIMEOUT;
             String lockDurationStr = getRequest().getHeader("Timeout");
-            if (lockDurationStr == null)
-            {
-                lockDuration = DEFAULT_TIMEOUT;
-            }
-            else
+            if (lockDurationStr != null)
             {
                 int commaPos = lockDurationStr.indexOf(",");
                 // If multiple timeouts, just use the first
@@ -4107,11 +4082,7 @@ public class DavController extends SpringActionController
                 Element rootElement = document.getDocumentElement();
                 lockInfoNode = rootElement;
             }
-            catch (IOException e)
-            {
-                lockRequestType = LOCK_REFRESH;
-            }
-            catch (SAXException e)
+            catch (IOException | SAXException e)
             {
                 lockRequestType = LOCK_REFRESH;
             }
@@ -4416,12 +4387,7 @@ public class DavController extends SpringActionController
                                 // "Creating" a lock-null resource
                                 Path parentPath = lock.path.getParent();
 
-                                List<Path> lockNulls = lockNullResources.get(parentPath);
-                                if (lockNulls == null)
-                                {
-                                    lockNulls = Collections.synchronizedList(new ArrayList<Path>());
-                                    lockNullResources.put(parentPath, lockNulls);
-                                }
+                                List<Path> lockNulls = lockNullResources.computeIfAbsent(parentPath, k -> Collections.synchronizedList(new ArrayList<Path>()));
 
                                 lockNulls.add(lock.path);
 
@@ -4450,7 +4416,7 @@ public class DavController extends SpringActionController
                         // At least one of the tokens of the locks must have been given
                         for (String token : toRenew.tokens.toArray(new String[0]))
                         {
-                            if (ifHeader.indexOf(token) != -1)
+                            if (ifHeader.contains(token))
                             {
                                 toRenew.expiresAt = lock.expiresAt;
                                 lock = toRenew;
@@ -4466,7 +4432,7 @@ public class DavController extends SpringActionController
                         {
                             for (String token : toRenewColl.tokens.toArray(new String[0]))
                             {
-                                if (ifHeader.indexOf(token) != -1)
+                                if (ifHeader.contains(token))
                                 {
                                     toRenewColl.expiresAt = lock.expiresAt;
                                     lock = toRenewColl;
@@ -4499,7 +4465,7 @@ public class DavController extends SpringActionController
             close(writer, "lock writer");
 
             if (_log.isDebugEnabled())
-                _log.debug("lock: " + String.valueOf(lock));
+                _log.debug("lock: " + lock);
 
             if (null != resource && resource.exists())
                 return WebdavStatus.SC_OK;
@@ -4550,7 +4516,7 @@ public class DavController extends SpringActionController
                     // At least one of the tokens of the locks must have been given
                     for (String token : lock.tokens.toArray(new String[0]))
                     {
-                        if (lockTokenHeader.indexOf(token) != -1)
+                        if (lockTokenHeader.contains(token))
                         {
                             lock.tokens.remove(token);
                         }
@@ -4573,7 +4539,7 @@ public class DavController extends SpringActionController
                     {
                         for (String token : lockColl.tokens.toArray(new String[0]))
                         {
-                            if (lockTokenHeader.indexOf(token) != -1)
+                            if (lockTokenHeader.contains(token))
                             {
                                 lockColl.tokens.remove(token);
                                 break;
@@ -4683,7 +4649,7 @@ public class DavController extends SpringActionController
             boolean tokenMatch = false;
             for (String token : lock.tokens)
             {
-                if (ifHeader.indexOf(token) != -1)
+                if (ifHeader.contains(token))
                 {
                     tokenMatch = true;
                     ret = LockResult.HAS_LOCK;
@@ -4705,7 +4671,7 @@ public class DavController extends SpringActionController
                 boolean tokenMatch = false;
                 for (String token : lockColl.tokens)
                 {
-                    if (ifHeader.indexOf(token) != -1)
+                    if (ifHeader.contains(token))
                     {
                         tokenMatch = true;
                         ret = LockResult.HAS_LOCK;
@@ -4820,7 +4786,7 @@ public class DavController extends SpringActionController
      * JSON clients can use this API for more robust/easier error description than might be available over web-dav
      */
     @RequiresNoPermission
-    public class LastErrorAction extends ReadOnlyApiAction
+    public class LastErrorAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException bindErrors)
@@ -4970,7 +4936,7 @@ public class DavController extends SpringActionController
             {
                 String rParent = rFile.getParent();
                 String gzParent = gzFile.getParent();
-                if (null != rParent && null != gzParent && rParent.equals(gzParent))
+                if (null != rParent && rParent.equals(gzParent))
                 {
                     if (null == hasZip)
                         hasZipMap.put(r.getPath(), Boolean.TRUE);
@@ -5282,7 +5248,7 @@ public class DavController extends SpringActionController
     }
 
 
-    protected void copy(WebdavResource resource, OutputStream ostream, Iterator ranges, String contentType) throws IOException, DavException
+    protected void copy(WebdavResource resource, OutputStream ostream, Iterator<DavController.Range> ranges, String contentType) throws IOException, DavException
     {
         while (ranges.hasNext())
         {
@@ -5291,7 +5257,7 @@ public class DavController extends SpringActionController
             InputStream istream = new BufferedInputStream(resourceInputStream, 16*1024);
             assert track(istream);
 
-            Range currentRange = (Range) ranges.next();
+            Range currentRange = ranges.next();
 
             // Writing MIME header.
             println(ostream);
@@ -6146,7 +6112,7 @@ public class DavController extends SpringActionController
     /**
      * Holds a lock information.
      */
-    private class LockInfo
+    private static class LockInfo
     {
         public LockInfo()
         {
@@ -6261,7 +6227,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private class Range
+    private static class Range
     {
         long start;
         long end;
@@ -6406,7 +6372,7 @@ public class DavController extends SpringActionController
 
 
 
-    class UnauthorizedException extends DavException
+    static class UnauthorizedException extends DavException
     {
         UnauthorizedException(WebdavResource resource)
         {
@@ -6531,7 +6497,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    class _ByteArrayOutputStream extends ByteArrayOutputStream
+    static class _ByteArrayOutputStream extends ByteArrayOutputStream
     {
         _ByteArrayOutputStream(int len)
         {
