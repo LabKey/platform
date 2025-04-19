@@ -11121,6 +11121,28 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class DeleteAllValuesAction extends FormHandlerAction<AllowListForm>
+    {
+        @Override
+        public void validateCommand(AllowListForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(AllowListForm form, BindException errors) throws Exception
+        {
+            form.getTypeEnum().setValues(Collections.emptyList(), getUser());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AllowListForm form)
+        {
+            return form.getTypeEnum().getSuccessURL(getContainer());
+        }
+    }
+
     public static class ExternalSourcesForm
     {
         private boolean _delete;
