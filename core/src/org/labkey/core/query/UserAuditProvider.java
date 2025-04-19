@@ -144,8 +144,8 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
             PropertyStorageSpec.Index createdIndex = new PropertyStorageSpec.Index(false,  "Created");
             Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
             indexes.remove(createdIndex);
-//            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
-//            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
             return indexes;
         }
 

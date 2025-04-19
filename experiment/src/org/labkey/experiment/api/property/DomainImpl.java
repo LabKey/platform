@@ -1415,8 +1415,13 @@ public class DomainImpl implements Domain
             }
         }
 
-        // Create a legal storage name, always leaving room for MV suffix in case it's changed to MV later
-        final String storage = _aliasManager.decideAlias(pd.getName(), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
+        // Keep the names the same if short enough,
+        // But always leave room for MV suffix in case it's changed to MV later
+        final String storage;
+        if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
+            storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
+        else
+            storage = _aliasManager.decideAlias(pd.getName(), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
         pd.setStorageColumnName(storage);
     }
 
