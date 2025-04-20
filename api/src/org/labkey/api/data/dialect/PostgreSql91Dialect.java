@@ -946,19 +946,19 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private int getIdentifierMaxByteLength()
     {
-        return 63;
+        return _maxIdentifierByteLength;
     }
 
     @Override
     public boolean isIdentifierTooLong(String identifier)
     {
-        return identifier.getBytes(StandardCharsets.UTF_8).length > _maxIdentifierByteLength;
+        return identifier.getBytes(StandardCharsets.UTF_8).length > getIdentifierMaxByteLength();
     }
 
     @Override
-    public String truncateAndJoin(int reserveCount, String... parts)
+    public String truncateAndJoin(String... parts)
     {
-        int maxBytes = getIdentifierMaxByteLength() - reserveCount;
+        int maxBytes = getIdentifierMaxByteLength();
         String ret = String.join("$", parts);
 
         if (ret.getBytes(StandardCharsets.UTF_8).length > maxBytes)
@@ -978,7 +978,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             assert ret.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
         }
 
-        String ret2 = super.truncateAndJoin(reserveCount, parts);
+        String ret2 = super.truncateAndJoin(parts);
         assert ret2.equals(ret); // TODO: Temporary - should match for now
 
         return ret;
@@ -987,26 +987,29 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String truncate(String str, int reserved)
     {
-        String ret = truncateBytes(str, getIdentifierMaxByteLength() - reserved - 3);
+        String ret = truncateBytes(str, getIdentifierMaxByteLength() - reserved);
         String ret2 = super.truncate(ret, reserved);
 
         // At the moment, these methods should return the same value. This will no longer be the case if we allow
         // Unicode characters in identifiers.
-        assert ret.equals(ret2);
+        assert ret.equals(ret2); // TODO: Temporary - should match for now
 
         return ret;
     }
 
     // Truncates based on UTF-8 bytes
-    private String truncateBytes(String str, int maxBytes)
+    private static String truncateBytes(String str, int maxBytes)
     {
-        if (maxBytes < 5)
+        if (maxBytes < 13)
             throw new IllegalStateException("maxBytes for legal name too small: " + maxBytes);
         int len = str.getBytes(StandardCharsets.UTF_8).length;
-        if (len <= maxBytes)
-            return StringUtils.truncate(str, 100); // Also truncate to 100 characters because StorageColumnName is VARCHAR(100)
-        String prefix = str.charAt(0) + String.valueOf(str.hashCode() & 0x7fffffff);
-        return prefix + StringUtilsLabKey.truncateStartToUtf8ByteLimit(str, maxBytes - prefix.length()); // Never more than 100 characters
+        if (len > maxBytes)
+        {
+            String prefix = generateIdentifierPrefix(str);
+            str = prefix + StringUtilsLabKey.truncateStartToUtf8ByteLimit(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
+        }
+        assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        return str;
     }
 
     @Override

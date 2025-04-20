@@ -63,17 +63,17 @@ public class AliasManager
             String ret = super.makeLegalName(str, truncate, reserveCount);
             // PostgreSQL rule
             if (truncate)
-                ret = StringUtilsLabKey.truncateStartToUtf8ByteLimit(ret, 60 - reserveCount);
+                ret = StringUtilsLabKey.truncateToUtf8ByteLimit(ret, 63 - reserveCount);
             return ret;
         }
 
         @Override
-        public String makeLegalName(FieldKey key)
+        public String makeLegalName(FieldKey key, int reserveCount)
         {
-            // Oracle rule
-            String legal = super.makeLegalName(key);
-            // PostgreSQL rule
-            return StringUtilsLabKey.truncateStartToUtf8ByteLimit(legal, 60);
+            // Oracle rule - truncate to 30 characters
+            String legal = super.makeLegalName(key, reserveCount);
+            // PostgreSQL rule - truncate to 63 b
+            return StringUtilsLabKey.truncateToUtf8ByteLimit(legal, 63 - reserveCount);
         }
     };
 
@@ -99,16 +99,6 @@ public class AliasManager
             claimAliases(columns);
     }
 
-    private String makeLegalName(String str)
-    {
-        return makeLegalName(str, _dialect);
-    }
-
-    private String makeLegalName(String str, int reserveCount)
-    {
-        return makeLegalName(str, _dialect, true, reserveCount);
-    }
-
     // null dialect is tolerated but not recommended
     public static String makeLegalName(String str, @Nullable SqlDialect dialect)
     {
@@ -132,33 +122,14 @@ public class AliasManager
     public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
     {
         // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
-        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key);
+        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
     }
 
     public String decideAlias(String name)
     {
-        return checkAndFinishAlias(makeLegalName(name), name);
-    }
-
-    public String decideAlias(String name, String preferred)
-    {
-        if (!_aliases.containsKey(preferred))
-        {
-            _aliases.put(preferred, name);
-            return preferred;
-        }
-        return checkAndFinishAlias(makeLegalName(name), name);
-    }
-
-    public String decideAlias(String name, int reserveCount)
-    {
-        return checkAndFinishAlias(makeLegalName(name, reserveCount), name);
-    }
-
-    private String checkAndFinishAlias(String legalName, String name)
-    {
+        String legalName = makeLegalName(name, _dialect, true, 3 /* Leave room for suffix */);
         String ret = legalName;
-        for (int i = 1; _aliases.containsKey(ret); i ++)
+        for (int i = 1; _aliases.containsKey(ret); i++)
         {
             ret = legalName + i;
         }

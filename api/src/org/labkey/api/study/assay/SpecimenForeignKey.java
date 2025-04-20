@@ -473,7 +473,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 //            assert lookupKey.getValueSql("test") != null;
             _lookupColumn = lookupColumn;
             setSqlTypeName(lookupColumn.getSqlTypeName());
-            String alias = lookupColumn.getSqlDialect().truncateAndJoin(3, foreignKey.getAlias(), lookupColumn.getAlias());
+            String alias = lookupColumn.getSqlDialect().truncateAndJoin(foreignKey.getAlias(), lookupColumn.getAlias());
             setAlias(alias);
             copyAttributesFrom(lookupColumn);
             copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);

@@ -129,7 +129,7 @@ public class LookupColumn extends BaseColumnInfo
         _lookupColumn = lookupColumn;
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
-        String alias = lookupColumn.getSqlDialect().truncateAndJoin(3, foreignKey.getAlias(), lookupColumn.getAlias());
+        String alias = lookupColumn.getSqlDialect().truncateAndJoin(foreignKey.getAlias(), lookupColumn.getAlias());
         setAlias(alias);
     }
 

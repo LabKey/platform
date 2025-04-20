@@ -61,7 +61,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTIndex;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -108,7 +107,7 @@ public class DomainImpl implements Domain
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
-    transient AliasManager _aliasManager = null;
+    transient StorageNameGenerator _storageNameGenerator = null;
 
     public DomainImpl(DomainDescriptor dd)
     {
@@ -1393,33 +1392,27 @@ public class DomainImpl implements Domain
 
     public void generateStorageColumnName(PropertyDescriptor pd)
     {
-        if (null == _aliasManager)
+        if (null == _storageNameGenerator)
         {
-            _aliasManager = new AliasManager(ExperimentService.get().getSchema());
+            _storageNameGenerator = new StorageNameGenerator(ExperimentService.get().getSchema().getSqlDialect());
             DomainKind<?> k = getDomainKind();
             if (null != k)
             {
                 for (PropertyStorageSpec s : k.getBaseProperties(this))
                 {
-                    _aliasManager.claimAlias(s.getName(),s.getName());
+                    _storageNameGenerator.claimName(s.getName());
                 }
             }
             for (DomainPropertyImpl dp : this.getProperties())
             {
                 // Issue 23295: Don't claim deleted names
                 if (null != dp._pd && !dp._deleted && null != dp._pd.getStorageColumnName())
-                    _aliasManager.claimAlias(dp._pd.getStorageColumnName(), dp.getName());
+                    _storageNameGenerator.claimName(dp._pd.getStorageColumnName());
             }
         }
 
-        // Keep the names the same if short enough,
-        // But always leave room for MV suffix in case it's changed to MV later
-        final String storage;
-        if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
-            storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
-        else
-            storage = _aliasManager.decideAlias(pd.getName(), OntologyManager.MV_INDICATOR_SUFFIX.length() + 1);
-        pd.setStorageColumnName(storage);
+        final String storageName = _storageNameGenerator.generateName(pd.getName());
+        pd.setStorageColumnName(storageName);
     }
 
     @Override

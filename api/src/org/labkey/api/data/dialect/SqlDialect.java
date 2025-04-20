@@ -898,7 +898,7 @@ public abstract class SqlDialect
     public boolean isLegalName(String str)
     {
         int length = str.length();
-        for (int i = 0; i < length; i ++)
+        for (int i = 0; i < length; i++)
         {
             if (!isLegalNameChar(str.charAt(i), i == 0))
                 return false;
@@ -996,10 +996,10 @@ public abstract class SqlDialect
         return ret;
     }
 
-    public String makeLegalName(FieldKey key)
+    public String makeLegalName(FieldKey key, int reserveCount)
     {
         if (key.getParent() == null)
-            return makeLegalName(key.getName(), true, 0);
+            return makeLegalName(key.getName(), true, reserveCount);
         StringBuilder sb = new StringBuilder();
         String connector = "";
         for (String part : key.getParts())
@@ -1008,7 +1008,7 @@ public abstract class SqlDialect
             sb.append(legalNameFromName(part));
             connector = "_";
         }
-        var ret = truncate(sb.toString(), 0);
+        var ret = truncate(sb.toString(), reserveCount);
         assert isLegalName(ret);
         return ret;
     }
@@ -1024,18 +1024,9 @@ public abstract class SqlDialect
         return identifier.length() > getIdentifierMaxCharLength();
     }
 
-    private int getMaxLength()
+    public String truncateAndJoin(String... parts)
     {
-        int max = getIdentifierMaxCharLength() - 3; /* leave room for possible suffixes */
-
-        // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
-        // TODO: Unfortunate that this is here, since it only applies to provisioned column names
-        return Math.min(100, max);
-    }
-
-    public String truncateAndJoin(int reserveCount, String... parts)
-    {
-        int length = getIdentifierMaxCharLength() - reserveCount;
+        int length = getIdentifierMaxCharLength();
         String ret = String.join("$", parts);
 
         if (ret.length() > length)
@@ -1063,18 +1054,37 @@ public abstract class SqlDialect
      */
     public String truncate(String str, int reserved)
     {
-        return truncateCharacters(str, getMaxLength() - reserved);
+        return truncateCharacters(str, getIdentifierMaxCharLength() - reserved);
     }
 
     private static String truncateCharacters(String str, int maxLength)
     {
-        if (maxLength < 5)
+        if (maxLength < 11)
             throw new IllegalStateException("maxLength for legal name too small: " + maxLength);
         int len = str.length();
-        if (len <= maxLength)
-            return str;
-        String prefix = str.charAt(0) + String.valueOf((str.hashCode() & 0x7fffffff));
-        return prefix + str.substring(len - (maxLength - prefix.length()));
+        if (len > maxLength)
+        {
+            String prefix = generateIdentifierPrefix(str);
+            String substring = str.substring(len - (maxLength - prefix.length()));
+            if (Character.isLowSurrogate(substring.charAt(0)))
+                substring = substring.substring(1); // Don't split a surrogate pair
+            str = prefix + substring;
+        }
+        assert str.length() <= maxLength;
+        return str;
+    }
+
+    // Prefix is the string's first character followed by a full-string hash.
+    protected static String generateIdentifierPrefix(String str)
+    {
+        String hash = String.valueOf(str.hashCode() & 0x7fffffff);
+        char firstChar = str.charAt(0);
+        String prefix;
+        if (Character.isHighSurrogate(firstChar)) // Don't split a surrogate pair
+            prefix = "" + firstChar + str.charAt(1) + hash;
+        else
+            prefix = firstChar + hash;
+        return prefix;
     }
 
     public void testDialectKeywords(SqlExecutor executor)
