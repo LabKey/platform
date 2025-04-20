@@ -29,11 +29,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -50,8 +46,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.audit.AbstractAuditTypeProvider.COLUMN_NAME_USER_COMMENT;
 
 /**
  * User: klum
@@ -142,14 +136,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     final ColumnInfo protocolRunCol = getColumn(FieldKey.fromParts(COLUMN_NAME_PROTOCOL_RUN));
 
                     col.setLabel("Assay/Protocol");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new ProtocolColumn(colInfo, containerCol, protocolRunCol);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new ProtocolColumn(colInfo, containerCol, protocolRunCol));
                 }
                 else if (COLUMN_NAME_RUN_LSID.equalsIgnoreCase(col.getName()))
                 {
@@ -157,14 +144,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     final ColumnInfo protocolRunCol = getColumn(FieldKey.fromParts(COLUMN_NAME_PROTOCOL_RUN));
 
                     col.setLabel("Run");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new RunColumn(colInfo, containerCol, protocolRunCol);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new RunColumn(colInfo, containerCol, protocolRunCol));
                 }
                 else if (COLUMN_NAME_RUN_GROUP.equalsIgnoreCase(col.getName()))
                 {
@@ -172,14 +152,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     final ColumnInfo protocolRunCol = getColumn(FieldKey.fromParts(COLUMN_NAME_PROTOCOL_RUN));
 
                     col.setLabel("Run Group");
-                    col.setDisplayColumnFactory(new DisplayColumnFactory()
-                    {
-                        @Override
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            return new RunGroupColumn(colInfo, containerCol, protocolRunCol);
-                        }
-                    });
+                    col.setDisplayColumnFactory(colInfo -> new RunGroupColumn(colInfo, containerCol, protocolRunCol));
                 }
                 else if (COLUMN_NAME_QCSTATE.equalsIgnoreCase(col.getName()))
                 {

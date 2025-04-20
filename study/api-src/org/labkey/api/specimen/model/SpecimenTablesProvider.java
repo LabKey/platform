@@ -47,9 +47,6 @@ public class SpecimenTablesProvider
     public static final String PRIMARYTYPE_TABLENAME = "SpecimenPrimaryType";
     public static final String DERIVATIVETYPE_TABLENAME = "SpecimenDerivative";
     public static final String ADDITIVETYPE_TABLENAME = "SpecimenAdditive";
-    public static final String SPECIMENVIALCOUNT_TABLENAME = "SpecimenVialCount";
-    public static final String SPECIMENREQUEST_TABLENAME = "SpecimenRequest";
-    public static final String VIALREQUEST_TABLENAME = "VialRequest";
 
     private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Specimen domain creation", null);
 
@@ -113,7 +110,7 @@ public class SpecimenTablesProvider
                     domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
                     domain.save(_user);
 
-                    // Refresh the domain. save() doesn't populate provisioned schema & table names, e.g.
+                    // Refresh the domain. save() doesn't populate provisioned schema and table names, e.g.
                     return PropertyService.get().getDomain(_container, domainURI);
                 }
                 catch (ChangePropertyDescriptorException e)
@@ -148,6 +145,8 @@ public class SpecimenTablesProvider
             return createTableInfo(domain);
         return null;
     }
+
+    // TODO: Does this need to be hooked up?
 
     public void deleteTables()
     {
