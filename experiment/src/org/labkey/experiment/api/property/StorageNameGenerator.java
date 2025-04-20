@@ -27,7 +27,8 @@ public class StorageNameGenerator
 
     public String claimName(String name)
     {
-        if (!_names.add(name))
+        // For now, make an exception for "RowId", since a bunch of DomainKinds claim this multiple times
+        if (!_names.add(name) && !name.equalsIgnoreCase("RowId"))
             throw new IllegalStateException("This name was already claimed! " + name);
 
         return name;
