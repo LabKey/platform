@@ -41,6 +41,4 @@ public class PicklistDomainKind extends IntegerListDomainKind
         Container c = domain.getContainer();
         return c.hasPermission("ListDomainKind.canEditDefinition for picklist", user, ManagePicklistsPermission.class);
     }
-
-
 }
