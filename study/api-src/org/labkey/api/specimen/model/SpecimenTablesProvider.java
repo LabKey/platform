@@ -47,6 +47,9 @@ public class SpecimenTablesProvider
     public static final String PRIMARYTYPE_TABLENAME = "SpecimenPrimaryType";
     public static final String DERIVATIVETYPE_TABLENAME = "SpecimenDerivative";
     public static final String ADDITIVETYPE_TABLENAME = "SpecimenAdditive";
+    public static final String SPECIMENVIALCOUNT_TABLENAME = "SpecimenVialCount";
+    public static final String SPECIMENREQUEST_TABLENAME = "SpecimenRequest";
+    public static final String VIALREQUEST_TABLENAME = "VialRequest";
 
     private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Specimen domain creation", null);
 
