@@ -2669,7 +2669,7 @@ public class ExpDataIterators
                             }
                             else if (_container.getEntityId() != targetContainer.getEntityId() && !_container.hasAncestor(targetContainer) && !targetContainer.hasAncestor(_container))
                             {
-                                _context.getErrors().addRowError(new ValidationException("Import or update from folder " + _container.getName() + " into folder " + targetContainer.getName() + " not allowed."));
+                                _context.getErrors().addRowError(new ValidationException("Import or update from folder " + _container.getName() + " into folder " + targetContainer.getName() + " not allowed. Change to a folder where data from " + targetContainer.getName() + " is visible."));
                                 return true;
                             }
                         }
