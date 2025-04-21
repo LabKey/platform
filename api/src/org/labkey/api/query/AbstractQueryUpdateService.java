@@ -1334,6 +1334,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // test new row
             assertEquals("THREE", rows.get(3).get("s"));
             assertNull(rows.get(3).get("i"));
+
+            // merge should fail if duplicate keys are provided
+            errors = new BatchValidationException();
+            mergeRows = new ArrayList<Map<String,Object>>();
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
+            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            assertTrue(errors.hasErrors());
+            assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
         }
 
         @Test
@@ -1371,6 +1380,35 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
+
+            // Issue 52728: update should fail if duplicate key is provide
+            updateRows = new ArrayList<Map<String,Object>>();
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
+
+            // use DIB
+            context = new DataIteratorContext();
+            context.setInsertOption(InsertOption.UPDATE);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            assertTrue(context.getErrors().hasErrors());
+            assertTrue("Duplicate key error: " + context.getErrors().getMessage(), context.getErrors().getMessage().contains("Duplicate key provided: 2"));
+
+            // use updateRows
+            if (!_useAlias) // _update using alias is not supported
+            {
+                BatchValidationException errors = new BatchValidationException();
+                try
+                {
+                    qus.updateRows(user, c, updateRows, null, errors, null, null);
+                }
+                catch (Exception e)
+                {
+
+                }
+                assertTrue(errors.hasErrors());
+                assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
+
+            }
         }
 
         @Test
