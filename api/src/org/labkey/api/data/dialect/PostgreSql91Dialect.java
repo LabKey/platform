@@ -978,23 +978,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             assert ret.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
         }
 
-        String ret2 = super.truncateAndJoin(parts);
-        assert ret2.equals(ret); // TODO: Temporary - should match for now
-
         return ret;
     }
 
     @Override
     public String truncate(String str, int reserved)
     {
-        String ret = truncateBytes(str, getIdentifierMaxByteLength() - reserved);
-        String ret2 = super.truncate(ret, reserved);
-
-        // At the moment, these methods should return the same value. This will no longer be the case if we allow
-        // Unicode characters in identifiers.
-        assert ret.equals(ret2); // TODO: Temporary - should match for now
-
-        return ret;
+        return truncateBytes(str, getIdentifierMaxByteLength() - reserved);
     }
 
     // Truncates based on UTF-8 bytes

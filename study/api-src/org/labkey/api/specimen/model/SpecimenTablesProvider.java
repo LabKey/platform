@@ -149,7 +149,7 @@ public class SpecimenTablesProvider
         return null;
     }
 
-    // TODO: Does this need to be hooked up?
+    // TODO: Does this need to be hooked up or removed?
 
     public void deleteTables()
     {
