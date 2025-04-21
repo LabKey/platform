@@ -149,8 +149,6 @@ public class SpecimenTablesProvider
         return null;
     }
 
-    // TODO: Does this need to be hooked up or removed?
-
     public void deleteTables()
     {
         List<String> tableNames = Arrays.asList(SPECIMENEVENT_TABLENAME, VIAL_TABLENAME, SPECIMEN_TABLENAME, LOCATION_TABLENAME,
@@ -171,20 +169,6 @@ public class SpecimenTablesProvider
                 // ignore
             }
         }
-    }
-
-    public void addTableIndices(String tableName)
-    {
-        Domain domain = getDomain(tableName, false);
-        if (null != domain)
-            StorageProvisioner.get().addOrDropTableIndices(domain, null, true, null);
-    }
-
-    public void dropTableIndices(String tableName)
-    {
-        Domain domain = getDomain(tableName, false);
-        if (null != domain)
-            StorageProvisioner.get().addOrDropTableIndices(domain, null, false, null);
     }
 
     private AbstractSpecimenDomainKind getDomainKind(String tableName)
