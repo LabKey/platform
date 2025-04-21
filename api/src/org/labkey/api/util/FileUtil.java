@@ -813,11 +813,11 @@ public class FileUtil
 
 
     /** Only returns a child path */
-    public static File appendPath(File dir, org.labkey.api.util.Path path)
+    public static File appendPath(File dir, org.labkey.api.util.Path originalPath)
     {
-        path = path.normalize();
-        if (path.size() > 0 && "..".equals(path.get(0)))
-            throw new IllegalArgumentException(path.toString());
+        org.labkey.api.util.Path path = originalPath.normalize();
+        if (path == null || (!path.isEmpty() && "..".equals(path.get(0))))
+            throw new IllegalArgumentException("Bad path: " + originalPath);
         @SuppressWarnings("SSBasedInspection")
         var ret = new File(dir, path.toString());
         if (!URIUtil.isDescendant(dir.toURI(), ret.toURI()))

@@ -961,7 +961,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            if (_form.getSchema() != null)
+            if (_form != null && _form.getSchema() != null)
                 addSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
     }
@@ -1515,6 +1515,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+            _form = form;
+
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, true);
 
@@ -1536,7 +1538,6 @@ public class QueryController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             setHelpTopic("customSQL");
-            _form = form;
             _queryView = queryView;
             return queryView;
         }

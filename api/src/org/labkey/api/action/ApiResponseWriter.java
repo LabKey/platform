@@ -526,7 +526,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 key = fe.getField();
 
                 // Strip off nested exception details from field error messages in JSON responses, Issue 45567
-                int idx = msg.indexOf("; nested exception");
+                int idx = msg == null ? -1 : msg.indexOf("; nested exception");
                 if (idx != -1)
                     msg = msg.substring(0, idx);
             }
