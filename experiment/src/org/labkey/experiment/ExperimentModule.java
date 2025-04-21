@@ -716,6 +716,9 @@ public class ExperimentModule extends SpringModule
 
                 results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
+                results.put("sampleNullAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount IS NULL").getObject(Long.class));
+                results.put("sampleNegativeAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount < 0").getObject(Long.class));
+                results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit\n").getObject(Long.class));
 
                 results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
