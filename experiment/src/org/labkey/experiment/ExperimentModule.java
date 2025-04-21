@@ -112,6 +112,7 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
@@ -473,7 +474,6 @@ public class ExperimentModule extends SpringModule
                         rowIds.add(rowId);
                         rowIdIdentifierMap.put(rowId, resourceIdentifier);
                     }
-
                 }
 
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
@@ -487,7 +487,6 @@ public class ExperimentModule extends SpringModule
 
                 return searchJsonMap;
             }
-
         });
     }
 
@@ -942,16 +941,17 @@ public class ExperimentModule extends SpringModule
         return Set.of(
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExperimentServiceImpl.TestCase.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
+            ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,
+            PropertyServiceImpl.TestCase.class,
+            StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class,
-            PropertyServiceImpl.TestCase.class
+            UniqueValueCounterTestCase.class
         );
     }
 

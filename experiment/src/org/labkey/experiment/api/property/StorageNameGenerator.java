@@ -1,11 +1,19 @@
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.util.StringUtilsLabKey;
 
+import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Truncates names based on dialect-specific rules and guarantees case-insensitive uniqueness among all claimed and
@@ -27,7 +35,7 @@ public class StorageNameGenerator
 
     public String claimName(String name)
     {
-        // Consider: Warn/error on duplicates? Note that provisioned domains current registry RowId and Label repeatedly.
+        // Consider: Warn/error on duplicates? Note that provisioned domains currently register "RowId" and "Label" repeatedly.
         _names.add(name);
         return name;
     }
@@ -50,6 +58,53 @@ public class StorageNameGenerator
             ret = legalName + i;
         }
 
+        if (_dialect.isIdentifierTooLong(ret))
+            throw new IllegalStateException("generateName() produced a name that was too long: \"" + ret + "\" was generated from \"" + candidateName + "\"");
+
         return claimName(ret);
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGenerateName()
+        {
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+
+            // Test progressively larger substrings of a single, large, randomly generated string
+            List<String> longRandomCharacters = StringUtilsLabKey.generateSpecialCharacterList(255);
+            testCandidates(255, dialect, i -> longRandomCharacters.stream().limit(i).collect(Collectors.joining()));
+
+            // Test progressively larger randomly generated strings
+            testCandidates(255, dialect, StringUtilsLabKey::generateSpecialCharacterString);
+
+            // Test that the same string over and over again generates a unique name
+            testCandidates(255, dialect, i -> "kumquat");
+            // Same, but test case sensitivity
+            testCandidates(255, dialect, i -> i % 2 == 0 ? "kumquat" : "KUMQUAT");
+            String randomString = StringUtilsLabKey.generateSpecialCharacterString(255);
+            testCandidates(255, dialect, i -> randomString);
+        }
+
+        private void testCandidates(int count, SqlDialect dialect, Function<Integer, String> candidateSupplier)
+        {
+            StorageNameGenerator generator = new StorageNameGenerator(dialect);
+            Set<String> uniqueNames = new CaseInsensitiveHashSet();
+
+            for (int i = 1; i < count; i++)
+            {
+                String candidate = candidateSupplier.apply(i);
+                String generated = generator.generateName(candidate);
+                boolean exists = uniqueNames.contains(candidate);
+
+                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", RESERVED_LENGTH)) || dialect.truncate(candidate, RESERVED_LENGTH).length() > 97 /* TODO: Remove last check */)
+                    assertNotEquals(candidate, generated);
+                else
+                    assertEquals(candidate, generated);
+
+                // No matter what, the generated name must be unique
+                assertTrue(uniqueNames.add(generated));
+            }
+        }
     }
 }

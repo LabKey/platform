@@ -51,8 +51,68 @@ public class StringUtilsLabKey
     /** Instead of relying on the platform default character encoding, use this Charset */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
+    /** Special character strings that can be used by tests in this class and others */
+    public static final List<String> specialCharacterTestStrings = List.of(
+        "",
+        "A",
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
+        "°±²³´µ¶·¸¹º»¼½¾¿",
+        "こんにちは世界!",
+        "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
+        "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
+        "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
+        "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
+    );
+
+    /** A list with all distinct characters (including surrogate pairs) from the above test strings */
+    public static final List<String> uniqueSpecialChars = specialCharacterTestStrings.stream()
+        .flatMap(s -> {
+            List<String> moreStrings = new LinkedList<>();
+            for (int i = 0; i < s.length(); i++)
+            {
+                char c = s.charAt(i);
+                if (Character.isSurrogate(c))
+                {
+                    char c2 = s.charAt(i + 1);
+                    moreStrings.add(c + "" + c2);
+                    i++;
+                }
+                else
+                {
+                    moreStrings.add(String.valueOf(c));
+                }
+            }
+            return moreStrings.stream();
+        })
+        .distinct()
+        .sorted()
+        .collect(Collectors.toCollection(ArrayList::new));
+
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
+
+    public static String generateSpecialCharacterString(int length)
+    {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++)
+        {
+            int index = RANDOM.nextInt(uniqueSpecialChars.size());
+            sb.append(uniqueSpecialChars.get(index));
+        }
+        return sb.toString();
+    }
+
+    public static List<String> generateSpecialCharacterList(int length)
+    {
+        List<String> ret = new LinkedList<>();
+        for (int i = 0; i < length; i++)
+        {
+            int index = RANDOM.nextInt(uniqueSpecialChars.size());
+            ret.add(uniqueSpecialChars.get(index));
+        }
+        return ret;
+    }
 
     public static @Nullable String validateLegalNames(String s, @NotNull String illegalCharset, String type)
     {
@@ -458,17 +518,17 @@ public class StringUtilsLabKey
     {
         return switch (i)
         {
-            case 0: yield "zero";
-            case 1: yield "one";
-            case 2: yield "two";
-            case 3: yield "three";
-            case 4: yield "four";
-            case 5: yield "five";
-            case 6: yield "six";
-            case 7: yield "seven";
-            case 8: yield "eight";
-            case 9: yield "nine";
-            default: yield String.valueOf(i);
+            case 0 -> "zero";
+            case 1 -> "one";
+            case 2 -> "two";
+            case 3 -> "three";
+            case 4 -> "four";
+            case 5 -> "five";
+            case 6 -> "six";
+            case 7 -> "seven";
+            case 8 -> "eight";
+            case 9 -> "nine";
+            default -> String.valueOf(i);
         };
     }
 
@@ -1002,43 +1062,6 @@ public class StringUtilsLabKey
             assertTrue(isValidJavaIdentifier("$ABC"));
         }
 
-        private final List<String> truncationTestStrings = List.of(
-            "",
-            "A",
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-            "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
-            "°±²³´µ¶·¸¹º»¼½¾¿",
-            "こんにちは世界!",
-            "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
-            "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
-            "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
-            "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
-        );
-
-        // Create a list with all distinct characters (including surrogate pairs) from the above test strings
-        private final List<String> uniqueChars = truncationTestStrings.stream()
-            .flatMap(s -> {
-                List<String> moreStrings = new LinkedList<>();
-                for (int i = 0; i < s.length(); i++)
-                {
-                    char c = s.charAt(i);
-                    if (Character.isSurrogate(c))
-                    {
-                        char c2 = s.charAt(i + 1);
-                        moreStrings.add(c + "" + c2);
-                        i++;
-                    }
-                    else
-                    {
-                        moreStrings.add(String.valueOf(c));
-                    }
-                }
-                return moreStrings.stream();
-            })
-            .distinct()
-            .sorted()
-            .collect(Collectors.toCollection(ArrayList::new));
-
         @Test
         public void testTruncateToUtf8ByteLimit()
         {
@@ -1049,10 +1072,10 @@ public class StringUtilsLabKey
             assertEquals("☃", truncateToUtf8ByteLimit("☃☃", 3));
             assertEquals("", truncateToUtf8ByteLimit("☃☃", 2));
 
-            truncationTestStrings.forEach(this::testTruncateSingleString);
+            specialCharacterTestStrings.forEach(this::testTruncateSingleString);
 
             // Test the character list sorted and then reversed
-            List<String> uniqueCharsCopy = new ArrayList<>(uniqueChars);
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
             testTruncateSingleString(String.join("", uniqueCharsCopy));
             Collections.reverse(uniqueCharsCopy);
             testTruncateSingleString(String.join("", uniqueCharsCopy));
@@ -1093,10 +1116,10 @@ public class StringUtilsLabKey
             assertEquals("☃", truncateStartToUtf8ByteLimit("☃☃", 3));
             assertEquals("", truncateStartToUtf8ByteLimit("☃☃", 2));
 
-            truncationTestStrings.forEach(this::testTruncateStartSingleString);
+            specialCharacterTestStrings.forEach(this::testTruncateStartSingleString);
 
             // Test the character list sorted and then reversed
-            List<String> uniqueCharsCopy = new ArrayList<>(uniqueChars);
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
             testTruncateStartSingleString(String.join("", uniqueCharsCopy));
             Collections.reverse(uniqueCharsCopy);
             testTruncateStartSingleString(String.join("", uniqueCharsCopy));
