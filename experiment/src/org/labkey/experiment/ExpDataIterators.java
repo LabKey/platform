@@ -2667,6 +2667,11 @@ public class ExpDataIterators
                                 _context.getErrors().addRowError(new ValidationException("Invalid value '" + rowFolderId +"' provided for '" + getColumnInfo(_folderColIndex).getName() + "'."));
                                 return true;
                             }
+                            else if (_container.getEntityId() != targetContainer.getEntityId() && !_container.hasAncestor(targetContainer) && !targetContainer.hasAncestor(_container))
+                            {
+                                _context.getErrors().addRowError(new ValidationException("Import or update from folder " + _container.getName() + " into folder " + targetContainer.getName() + " not allowed."));
+                                return true;
+                            }
                         }
                     }
 
