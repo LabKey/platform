@@ -1,4 +1,4 @@
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { ExperimentCRUDUtils, hookServer, RequestOptions, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -9,7 +9,7 @@ import {
     initProject,
     verifyRequiredLineageInsertUpdate,
 } from './utils';
-import { DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
+import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
 
@@ -234,4 +234,108 @@ describe('Data Class - Required Lineage', () => {
         await verifyRequiredLineageInsertUpdate(server, false, false, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
     });
 
+});
+
+describe('CRUD actions', () => {
+
+    it("Issue 52728: don't allow updating the same data twice", async () => {
+        const dataType = "TestIssue52728";
+        const createPayload = {
+            kind: 'DataClass',
+            domainDesign: { name: dataType, fields: [{ name: 'Prop' }] },
+            options: {
+                name: dataType,
+            }
+        };
+
+        await server.post('property', 'createDomain', createPayload,
+            {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+        let errorResp;
+        await server.post('query', 'insertRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                name: 'duplicateShouldFail',
+            },{
+                name: 'duplicateShouldFail',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp.exception.indexOf('duplicate key') > -1).toBeTruthy();
+        });
+        // import
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nduplicateShouldFail\tbad\nduplicateShouldFail\tbad", dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('duplicate key') > -1).toBeTruthy();
+
+        // merge
+        const duplicateKeyErrorPrefix = 'Duplicate key provided: ';
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nduplicateShouldFail\tbad\nduplicateShouldFail\tbad", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf(duplicateKeyErrorPrefix + 'duplicateShouldFail') > -1).toBeTruthy();
+
+        const dataName1 = "up-dataId-1";
+        const dataName2 = "up-dataId-2";
+        const dataRows = await ExperimentCRUDUtils.insertRows(server, [{
+            name: dataName1,
+            description: 'created'
+        },{
+            name: dataName2,
+            description: 'created'
+        }], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        const data1RowId = caseInsensitive(dataRows[0], 'rowId');
+        const data1Lsid = caseInsensitive(dataRows[0], 'lsid');
+        const data2RowId = caseInsensitive(dataRows[1], 'rowId');
+        const data2Lsid = caseInsensitive(dataRows[1], 'lsid');
+
+        // update data2 twice using updateRows, using rowId
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                description: 'update',
+                rowId: data1RowId
+            },{
+                description: 'update',
+                rowId: data2RowId
+            },{
+                description: 'update',
+                rowId: data2RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2RowId);
+        });
+
+        // update data2 twice using updateRows, using lsid (data iterator)
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                description: 'update',
+                lsid: data1Lsid
+            },{
+                description: 'update',
+                lsid: data2Lsid
+            },{
+                description: 'update',
+                lsid: data2Lsid
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2Lsid);
+        });
+
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n" + dataName1 + "\tupdate\n" + dataName2 + "\tupdate\n" + dataName2 + "\tupdate", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('Duplicate key provided: ' + dataName2) > -1).toBeTruthy();
+
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n" + dataName1 + "\tupdate\n" + dataName2 + "\tupdate\n" + dataName2 + "\tupdate", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('Duplicate key provided: ' + dataName2) > -1).toBeTruthy();
+
+        // confirm rows are not updated
+        let dataResults = await ExperimentCRUDUtils.getRows(server, [data1RowId, data2RowId], 'exp.data', dataType, 'rowId,description', topFolderOptions, adminOptions);
+        expect(caseInsensitive(dataResults[0], 'description')).toBe('created');
+        expect(caseInsensitive(dataResults[1], 'description')).toBe('created');
+
+    });
 });

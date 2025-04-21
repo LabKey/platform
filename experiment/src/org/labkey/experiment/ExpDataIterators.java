@@ -78,6 +78,7 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -2351,7 +2352,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
 
             // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
