@@ -906,10 +906,6 @@ public abstract class SqlDialect
         return true;
     }
 
-    /**
-     *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
-     *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
-     */
     public boolean isLegalNameChar(char ch, boolean first)
     {
         // quick check
