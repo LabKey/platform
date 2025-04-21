@@ -1711,8 +1711,6 @@ public class DavController extends SpringActionController
     @RequiresNoPermission
     public class JsonAction extends PropfindAction
     {
-        JsonForm form;
-
         // depth > 1 NYI
         public JsonAction()
         {
@@ -1720,13 +1718,14 @@ public class DavController extends SpringActionController
             defaultListRoot = false;
             defaultDepth = 1;
 
-            // Map Bind Parameters
-            form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
         }
 
         @Override
         public WebdavStatus doMethod() throws DavException, IOException
         {
+            // Map Bind Parameters
+            JsonForm form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
+
             WebdavResource root = getResource();
             if (root == null || !root.exists())
                 return notFound();
@@ -1803,7 +1802,7 @@ public class DavController extends SpringActionController
                                 {
                                     try
                                     {
-                                        return doCompare(o1, o2);
+                                        return doCompare(o1, o2, form);
                                     }
                                     catch (IOException e)
                                     {
@@ -1889,7 +1888,7 @@ public class DavController extends SpringActionController
             return new JSONResourceWriter(writer);
         }
 
-        private int doCompare(WebdavResource o1, WebdavResource o2) throws IOException
+        private int doCompare(WebdavResource o1, WebdavResource o2, JsonForm form) throws IOException
         {
             String sortDir = form.getSort().get(JsonForm.SORT_DIR);
             Sort.SortDirection direction = Sort.SortDirection.fromString(sortDir != null ? sortDir : Sort.SortDirection.ASC.name());
@@ -2438,18 +2437,6 @@ public class DavController extends SpringActionController
                                 }
                                 xml.writeElement(null, "custom", XMLWriter.CLOSING);
                             }
-                            // UNDONE: Direct get/put properties are not currently used by client
-//                        else if (property.equals("directget"))
-//                        {
-//                            if (!exists)
-//                                propertiesNotFound.add(property);
-//                            else
-//                                writeDirectRequest("directget", resource.getDirectGetRequest(getViewContext(), null));
-//                        }
-//                        else if (property.equals("directput"))
-//                        {
-//                            writeDirectRequest("directput", resource.getDirectPutRequest(getViewContext()));
-//                        }
                             default ->
                             {
                                 // ignore not well-formed property names, must be a valid XML element
@@ -2482,48 +2469,6 @@ public class DavController extends SpringActionController
 
             xml.writeElement(null, "response", XMLWriter.CLOSING);
         }
-
-        /**
-         * Writes direct request xml as:
-         * <pre>
-         *     <directget>
-         *         <method>GET</method>
-         *         <endpoint>url</endpoint>
-         *         <headers>
-         *             <header>
-         *                 <name>Authorization</name>
-         *                 <value>AWS ...</value>
-         *             </header>
-         *         </headers>
-         *     </directget>
-         * </pre>
-         */
-        private void writeDirectRequest(@NotNull String nodeName, @Nullable DirectRequest request)
-        {
-            if (request == null)
-            {
-                xml.writeElement(null, nodeName, XMLWriter.NO_CONTENT);
-                return;
-            }
-
-            xml.writeElement(null, nodeName, XMLWriter.OPENING);
-            xml.writeProperty(null, "method", request.getMethod());
-            xml.writeProperty(null, "endpoint", request.getEndpoint().toASCIIString());
-            xml.writeElement(null, "headers", XMLWriter.OPENING);
-            for (String header : request.getHeaders().keySet())
-            {
-                xml.writeElement(null, "header", XMLWriter.OPENING);
-                xml.writeProperty(null, "name", header);
-
-                Collection<String> col = request.getHeaders().get(header);
-                String firstValue = col.iterator().next();
-                xml.writeProperty(null, "value", firstValue);
-                xml.writeElement(null, "header", XMLWriter.CLOSING);
-            }
-            xml.writeElement(null, "headers", XMLWriter.CLOSING);
-            xml.writeElement(null, nodeName, XMLWriter.CLOSING);
-        }
-
 
         @Override
         public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector)
@@ -2808,39 +2753,6 @@ public class DavController extends SpringActionController
 
             json.endObject();
             out.newLine();
-        }
-
-        /**
-         * Creates JSONObject of the form:
-         * <pre>
-         * {
-         *   "method": "[http verb]",
-         *   "endpoint": "[url]",
-         *   "headers": {
-         *       "header1": value,
-         *       "header2": value,
-         *   }
-         * }
-         * </pre>
-         */
-        private JSONObject writeDirectRequest(@Nullable DirectRequest request)
-        {
-            if (request == null)
-                return null;
-
-            JSONObject obj = new JSONObject();
-            obj.put("method", request.getMethod());
-            obj.put("endpoint", request.getEndpoint());
-
-            JSONObject headers = new JSONObject();
-            for (String header : request.getHeaders().keySet())
-            {
-                Collection<String> col = request.getHeaders().get(header);
-                String firstValue = col.iterator().next();
-                headers.put(header, firstValue);
-            }
-            obj.put("headers", headers);
-            return obj;
         }
 
         @Override
