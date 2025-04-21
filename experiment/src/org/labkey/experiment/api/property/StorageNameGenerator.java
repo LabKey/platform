@@ -47,10 +47,6 @@ public class StorageNameGenerator
     public String generateName(String candidateName)
     {
         String legalName = _dialect.truncate(candidateName, RESERVED_LENGTH);
-        // TODO: expand StorageColumnName column to 255 and remove this check
-        if (legalName.length() > 97)
-            legalName = legalName.substring(0, 97);
-
         String ret = legalName;
 
         for (int i = 1; _names.contains(ret); i++)
@@ -59,7 +55,10 @@ public class StorageNameGenerator
         }
 
         if (_dialect.isIdentifierTooLong(ret))
-            throw new IllegalStateException("generateName() produced a name that was too long: \"" + ret + "\" was generated from \"" + candidateName + "\"");
+            throw new IllegalStateException("generateName() produced a name that was too long for " + _dialect.getProductName() + ": \"" + ret + "\" was generated from \"" + candidateName + "\"");
+
+        if (ret.length() > 255)
+            throw new IllegalStateException("generateName() produced a name that was > 255 characters: \"" + ret + "\" was generated from \"" + candidateName + "\"");
 
         return claimName(ret);
     }
@@ -97,7 +96,7 @@ public class StorageNameGenerator
                 String generated = generator.generateName(candidate);
                 boolean exists = uniqueNames.contains(candidate);
 
-                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", RESERVED_LENGTH)) || dialect.truncate(candidate, RESERVED_LENGTH).length() > 97 /* TODO: Remove last check */)
+                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", RESERVED_LENGTH)))
                     assertNotEquals(candidate, generated);
                 else
                     assertEquals(candidate, generated);
