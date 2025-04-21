@@ -65,7 +65,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
 
-    final Set<String> _pkKeysSeen = new HashSet<>();
+    final Set<Object> _pkKeysSeen = new HashSet<>();
 
     final DataIteratorContext _context;
 
@@ -267,10 +267,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     pkKeys.add(pkVal.toString());
                 }
                 sqlf.append(")");
-                String pkKey = StringUtils.join(pkKeys, ", ");
-                if (_pkKeysSeen.contains(pkKey))
-                    _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + pkKey));
-                _pkKeysSeen.add(pkKey);
+                if (_pkKeysSeen.contains(pkKeys))
+                    _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
+                _pkKeysSeen.add(pkKeys);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
@@ -388,10 +387,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         pkKeys.add(pkVal.toString());
                     }
 
-                    String pkKey = StringUtils.join(pkKeys, ", ");
-                    if (_pkKeysSeen.contains(pkKey))
-                        _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + pkKey));
-                    _pkKeysSeen.add(pkKey);
+                    if (_pkKeysSeen.contains(pkKeys))
+                        _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
+                    _pkKeysSeen.add(pkKeys);
 
                     keysMap.put(lastPrefetchRowNumber, keyMap);
                     existingRecords.put(lastPrefetchRowNumber, Map.of());
