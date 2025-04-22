@@ -192,6 +192,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public static class RemapPostConvert
     {
+        private final String _fieldName;
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
         private final RemapMissingBehavior _missing;
@@ -206,16 +207,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads)
         {
-            this(targetTable, includeTitleColumn, missing, allowBulkLoads, false);
+            this(targetTable, includeTitleColumn, missing, allowBulkLoads, false, null);
         }
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup)
+        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup, @Nullable String fieldName)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
             _missing = missing;
             _allowBulkLoads = allowBulkLoads;
             _includePkLookup = includePkLookup;
+            _fieldName = fieldName;
         }
 
         public void setIncludePkLookup(boolean includePkLookup)
@@ -317,7 +319,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 case Null:          return null;
                 case OriginalValue: return k;
                 case Error:
-                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+                default:
+                    if (_fieldName != null)
+                        throw new ConversionExceptionWithMessage("Value '" + k + "' not found for field " + _fieldName + ".");
+                    else
+                        throw new ConversionException("Could not translate value: " + k);
+
             }
         }
 
@@ -959,7 +966,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true);
+            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true, _convertCol.fieldName);
         }
 
         @Override
