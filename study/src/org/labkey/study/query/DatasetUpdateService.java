@@ -585,6 +585,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         aliasColumns(_columnMapping, row);
 
         String lsid = keyFromMap(oldRow);
+        checkDuplicateUpdate(lsid);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
         String newLsid = null;

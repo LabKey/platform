@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -64,9 +65,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
 
+    final Set<String> _sharedKeys = new CaseInsensitiveHashSet(); // common keys, such as data.classId, material.MaterialSourceId
+    final Set<Object> _pkKeysSeen = new HashSet<>();
+
     final DataIteratorContext _context;
 
-    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, boolean useMark, DataIteratorContext context, boolean detailed)
+    ExistingRecordDataIterator(DataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useMark, DataIteratorContext context, boolean detailed)
     {
         super(in);
         _context = context;
@@ -90,6 +94,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         containerCol = map.get("Container");
 
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
+
+        if (sharedKeys != null)
+            _sharedKeys.addAll(sharedKeys);
 
         _dataColumnNames.addAll(detailed ? map.keySet() : keyNames);
 
@@ -170,12 +177,19 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
         {
             prefetchExisting();
-            if (_context.getErrors().hasErrors())
+            if (_context.shouldCancel())
                 return false;
         }
         return ret;
     }
 
+    protected void checkDuplicateKeys(List<String> pkKeys)
+    {
+        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.get(0) : pkKeys;
+        if (_pkKeysSeen.contains(pkKeysObj))
+            _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
+        _pkKeysSeen.add(pkKeysObj);
+    }
 
     @Override
     public boolean supportsGetExistingRecord()
@@ -194,10 +208,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys)
     {
-        return createBuilder(dib, target, keys, false);
+        return createBuilder(dib, target, keys, null, false);
     }
 
-    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, boolean useGetRows)
+    public static DataIteratorBuilder createBuilder(DataIteratorBuilder dib, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, boolean useGetRows)
     {
         return context ->
         {
@@ -215,9 +229,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     auditType = target.getAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
                 boolean detailed = auditType == DETAILED;
                 if (useGetRows)
-                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, context, detailed);
+                    return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
                 else
-                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, context, detailed);
+                    return new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
             }
             return di;
         };
@@ -229,9 +243,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final Set<String> allowedContainers = new HashSet<>();
 
-        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
+        ExistingDataIteratorsTableInfo(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true, context, detailed);
+            super(in, target, keys, sharedKeys, true, context, detailed);
             if (c != null)
                 allowedContainers.add(c.getId());
         }
@@ -255,12 +269,17 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
                 sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
+                List<String> pkKeys = new ArrayList<>();
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
                     sqlf.append(",?");
-                    sqlf.add(pkSuppliers.get(p).get());
+                    Object pkVal = pkSuppliers.get(p).get();
+                    sqlf.add(pkVal);
+                    if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
+                        pkKeys.add(pkVal.toString());
                 }
                 sqlf.append(")");
+                checkDuplicateKeys(pkKeys);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
@@ -347,9 +366,9 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     {
         final QueryUpdateService qus;
 
-        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, DataIteratorContext context, boolean detailed)
+        ExistingDataIteratorsGetRows(CachingDataIterator in, TableInfo target, @Nullable Set<String> keys, @Nullable Set<String> sharedKeys, DataIteratorContext context, boolean detailed)
         {
-            super(in, target, keys, true, context, detailed);
+            super(in, target, keys, sharedKeys, true, context, detailed);
             qus = target.getUpdateService();
         }
 
@@ -370,8 +389,17 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 {
                     lastPrefetchRowNumber = (Integer) _delegate.get(0);
                     Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
+                    List<String> pkKeys = new ArrayList<>();
                     for (int p=0 ; p<pkColumns.size() ; p++)
-                        keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
+                    {
+                        Object pkVal = pkSuppliers.get(p).get();
+                        keyMap.put(pkColumns.get(p).getColumnName(), pkVal);
+                        if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
+                            pkKeys.add(pkVal.toString());
+                    }
+
+                    checkDuplicateKeys(pkKeys);
+
                     keysMap.put(lastPrefetchRowNumber, keyMap);
                     existingRecords.put(lastPrefetchRowNumber, Map.of());
                 }
@@ -419,7 +447,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             assertFalse(di.supportsGetExistingRecord());
             var context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.INSERT);
-            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, context, true);
+            DataIterator existing = new ExistingDataIteratorsTableInfo(new CachingDataIterator(di), CoreSchema.getInstance().getTableInfoModules(), null, null, context, true);
             assertTrue(existing.supportsGetExistingRecord());
             return existing;
         }
