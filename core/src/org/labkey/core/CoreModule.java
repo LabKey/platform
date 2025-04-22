@@ -1164,6 +1164,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
             results.put("customLog4JConfig", customLog4JConfig);
+            results.put("containerRelativeURL", AppProps.getInstance().getUseContainerRelativeURL());
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
