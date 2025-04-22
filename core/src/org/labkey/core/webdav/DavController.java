@@ -351,11 +351,7 @@ public class DavController extends SpringActionController
             }
             catch (Exception ex)
             {
-                if (!ExceptionUtil.isIgnorable(ex))
-                {
-                    _log.error("unexpected exception", ex);
-                    ExceptionUtil.logExceptionToMothership(request, ex);
-                }
+                ExceptionUtil.logExceptionToMothership(request, ex);
                 _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
             }
         }
