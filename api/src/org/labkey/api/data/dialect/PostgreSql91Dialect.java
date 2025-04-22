@@ -958,11 +958,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String truncateAndJoin(String... parts)
     {
-        int maxBytes = getIdentifierMaxByteLength();
         String ret = String.join("$", parts);
 
-        if (ret.getBytes(StandardCharsets.UTF_8).length > maxBytes)
+        if (isIdentifierTooLong(ret))
         {
+            int maxBytes = getIdentifierMaxByteLength();
             StringBuilder sb = new StringBuilder(maxBytes);
             int partsLength = parts.length;
             int remainingBytes = maxBytes - partsLength + 1; // Make room for dollar signs
@@ -996,9 +996,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (len > maxBytes)
         {
             String prefix = generateIdentifierPrefix(str);
-            str = prefix + StringUtilsLabKey.truncateStartToUtf8ByteLimit(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
+            str = prefix + StringUtilsLabKey.rightUtf8Bytes(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
         }
         assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
         return str;
     }
 

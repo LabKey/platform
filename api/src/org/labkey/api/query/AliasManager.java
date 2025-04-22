@@ -63,7 +63,7 @@ public class AliasManager
             String ret = super.makeLegalName(str, truncate, reserveCount);
             // PostgreSQL rule
             if (truncate)
-                ret = StringUtilsLabKey.truncateToUtf8ByteLimit(ret, 63 - reserveCount);
+                ret = StringUtilsLabKey.leftUtf8Bytes(ret, 63 - reserveCount);
             return ret;
         }
 
@@ -72,8 +72,8 @@ public class AliasManager
         {
             // Oracle rule - truncate to 30 characters
             String legal = super.makeLegalName(key, reserveCount);
-            // PostgreSQL rule - truncate to 63 b
-            return StringUtilsLabKey.truncateToUtf8ByteLimit(legal, 63 - reserveCount);
+            // PostgreSQL rule - truncate to 63 bytes
+            return StringUtilsLabKey.leftUtf8Bytes(legal, 63 - reserveCount);
         }
     };
 
@@ -268,8 +268,8 @@ public class AliasManager
             assertEquals(27, truncated.length());
             assertTrue(truncated.getBytes(StandardCharsets.UTF_8).length < 60);
             assertEquals("X13599947545678901234567890", truncated);
-            // For now, not an interesting test at the moment since every non-alphanumeric gets replaced with _. But
-            // this will become interesting if we start allowing Unicode characters in identifier names in the future.
+            // Not an interesting test at the moment since every non-alphanumeric gets replaced with _. But this will
+            // become interesting if we start allowing Unicode characters in alias names in the future.
             String unicode = "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2";
             truncated = m.decideAlias(unicode);
             assertEquals(27, truncated.length());

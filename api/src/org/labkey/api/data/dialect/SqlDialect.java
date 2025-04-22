@@ -1061,12 +1061,10 @@ public abstract class SqlDialect
         if (len > maxLength)
         {
             String prefix = generateIdentifierPrefix(str);
-            String substring = str.substring(len - (maxLength - prefix.length()));
-            if (Character.isLowSurrogate(substring.charAt(0)))
-                substring = substring.substring(1); // Don't split a surrogate pair
-            str = prefix + substring;
+            str = prefix + StringUtilsLabKey.rightSurrogatePairFriendly(str, maxLength - prefix.length());
         }
         assert str.length() <= maxLength;
+        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
         return str;
     }
 
