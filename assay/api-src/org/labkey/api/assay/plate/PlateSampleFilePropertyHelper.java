@@ -40,8 +40,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.template.PageConfig;
@@ -357,7 +358,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
 
                     out.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
-                    out.write(PageFlowUtil.link("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
+                    out.write(LinkBuilder.labkeyLink("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
                     out.write(HtmlString.BR);
 
                     if (reshowFile != null)
@@ -376,7 +377,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
                         TABLE(
                             TR(
-                                TD(new InputBuilder<>().type("radio").id("optionPrevUpload").name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_PREVUPLOAD).checked(true)),
+                                TD(InputBuilder.radio().id("optionPrevUpload").name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_PREVUPLOAD).checked(true)),
                                 TD("Use the metadata that was already uploaded to the server")
                             ),
                             TR(
@@ -390,8 +391,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                             ),
                             TR(
                                 TD(
-                                        new InputBuilder<>().type("hidden").name(METADATA_PREVUPLOAD_LOCATION).value(filePath),
-                                        new InputBuilder<>().type("radio").id("optionNewUpload").name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_NEWUPLOAD)
+                                    InputBuilder.hidden().name(METADATA_PREVUPLOAD_LOCATION).value(filePath),
+                                    InputBuilder.radio().id("optionNewUpload").name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_NEWUPLOAD)
                                 ),
                                 TD("Upload a data file")
                             ),
@@ -400,7 +401,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                                 TD(
                                     DIV(
                                         id("newMetadataFileName").at(style, "display:none"),
-                                        new InputBuilder<>().type("file").id(SAMPLE_FILE_INPUT_NAME).name(SAMPLE_FILE_INPUT_NAME).size(40).addStyle("border: none")
+                                        InputBuilder.file().id(SAMPLE_FILE_INPUT_NAME).name(SAMPLE_FILE_INPUT_NAME).size(40).addStyle("border: none")
                                     )
                                 )
                             )
@@ -415,8 +416,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                             TR(
                                 TD(),
                                 TD(
-                                    new InputBuilder<>().type("hidden").name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_NEWUPLOAD),
-                                    new InputBuilder<>().type("file").name(SAMPLE_FILE_INPUT_NAME).size(40).addStyle("border: none")
+                                    InputBuilder.hidden().name(METADATA_PROVIDER_INPUT_NAME).value(METADATA_PROVIDER_OPTION_NEWUPLOAD),
+                                    InputBuilder.file().name(SAMPLE_FILE_INPUT_NAME).size(40).addStyle("border: none")
                                 )
                             )
                         ).appendTo(out);

@@ -20,7 +20,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -48,7 +48,7 @@ public class SampleTypeDisplayColumn extends SimpleDisplayColumn
         {
             ActionURL url = new ActionURL(ExperimentController.ShowSampleTypeAction.class, st.getContainer());
             url.addParameter("rowId", Integer.toString(st.getRowId()));
-            out.write(new LinkBuilder(st.getName()).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(st.getName(), url));
         }
     }
 }

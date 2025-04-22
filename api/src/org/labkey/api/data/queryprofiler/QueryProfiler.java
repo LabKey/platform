@@ -40,7 +40,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.HashHelpers;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -410,10 +410,10 @@ public class QueryProfiler
                 Arrays.stream(ExecutionPlanType.values()).
                     filter(tracker::canShowExecutionPlan).
                     map(type -> DOM.DIV(
-                        new Link.LinkBuilder("Show " + type.getDescription()).
-                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
-                        ExecutionPlanType.Actual == type ? DOM.DIV(new Link.LinkBuilder("Log " + type.getDescription() + " to primary site log").
-                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
+                        LinkBuilder.labkeyLink("Show " + type.getDescription(),
+                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
+                        ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
+                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
                     )),
                 DOM.BR(),
                 tracker.renderStackTraces()
@@ -423,9 +423,9 @@ public class QueryProfiler
         }
     }
 
-    private Link copyToClipboardLink(String linkId, String targetId)
+    private LinkBuilder.Link copyToClipboardLink(String linkId, String targetId)
     {
-        return new Link.LinkBuilder("copy to clipboard").
+        return LinkBuilder.labkeyLink("copy to clipboard").
             onClick("return false;").
             id(linkId).
             attributes(Collections.singletonMap("data-clipboard-target", "#" + targetId)).

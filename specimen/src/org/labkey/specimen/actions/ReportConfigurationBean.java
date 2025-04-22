@@ -51,7 +51,7 @@ public class ReportConfigurationBean
         if (study != null)
         {
             boolean enableSpecimenRequest = SettingsManager.get().getRepositorySettings(study.getContainer()).isEnableRequests();
-            if (!study.isAncillaryStudy() && !study.isSnapshotStudy() && enableSpecimenRequest)
+            if (!study.isSnapshotStudy() && enableSpecimenRequest)
             {
                 registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
                 registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestLocationReportFactory());

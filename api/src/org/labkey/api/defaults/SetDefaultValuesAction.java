@@ -39,6 +39,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -321,7 +322,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         if (!domain.getContainer().equals(getContainer()) && domain.getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ActionURL url = buildSetInheritedDefaultsURL(domain, domainIdForm);
-            headerHtml.append(PageFlowUtil.link("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
+            headerHtml.append(LinkBuilder.labkeyLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
         headerHtml.unsafeAppend("<p>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.</p>");
 

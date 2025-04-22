@@ -3,7 +3,7 @@ package org.labkey.api.action;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ViewContext;
 
 public class LabKeyErrorWithLink extends LabKeyError
@@ -28,7 +28,7 @@ public class LabKeyErrorWithLink extends LabKeyError
         if (adviceHref != null)
         {
             builder.append(" ");
-            builder.append(new LinkBuilder(getAdviceText()).href(getAdviceHref()).clearClasses());
+            builder.append(LinkBuilder.simpleLink(getAdviceText(), getAdviceHref()));
         }
 
         return builder.getHtmlString();

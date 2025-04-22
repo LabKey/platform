@@ -19,8 +19,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.specimen.report.SpecimenTypeLevel;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
 
@@ -42,12 +42,12 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 
         if (!SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting())
         {
-            Select.SelectBuilder builder = new Select.SelectBuilder();
+            SelectBuilder builder = new SelectBuilder();
             builder.name(PARAMS.typeLevel.name());
 
             for (SpecimenTypeLevel level : SpecimenTypeLevel.values())
             {
-                builder.addOption(new Option.OptionBuilder()
+                builder.addOption(new OptionBuilder()
                     .value(level.name())
                     .label("Show results by: " + level.getLabel())
                     .selected(getTypeLevelEnum() == level)

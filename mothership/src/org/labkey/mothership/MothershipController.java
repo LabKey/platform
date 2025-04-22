@@ -67,7 +67,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -843,7 +843,7 @@ public class MothershipController extends SpringActionController
                             FORM(at(method, "POST"),
                                 TEXTAREA(at(name, "json", rows, "20", cols, "80"), manualImportForm.getJson()),
                                 BR(),
-                                new Button.ButtonBuilder("Save").submit(true).build()
+                                new ButtonBuilder("Save").submit(true).build()
                             ))
                     );
         }

@@ -2114,6 +2114,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             var fileColumn = assayResultTable.getColumn(fileField);
             TableSelector ts = new TableSelector(assayResultTable, assayResultTable.getColumns("rowid", "run", fileField), filter, null);
             Map<String, Object>[] resultFiles = ts.getMapArray();
+            String columnAlias = assayResultTable.getColumn(fileField).getAlias(); // Issue 52888
+            String columnSelectName = assayResultTable.getColumn(fileField).getSelectName();
 
             for (Map<String, Object> resultRow : resultFiles)
             {

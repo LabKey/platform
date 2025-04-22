@@ -24,8 +24,7 @@ import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.WebPartView;
 
@@ -214,7 +213,7 @@ public interface TemplateProperties
         return currentSetting;
     }
 
-    default List<Option> getOptions()
+    default List<OptionBuilder.Option> getOptions()
     {
         Map<String, String> modules = new LinkedHashMap<>();  // Keep the options in insertion order
 

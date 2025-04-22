@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -118,7 +117,7 @@
             }
 
             String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
-            tds.add(TR(TD(link(datasetLabel).href(datasetURL.replaceParameter("datasetId", dataset.getDatasetId())).clearClasses())));
+            tds.add(TR(TD(simpleLink(datasetLabel, datasetURL.replaceParameter("datasetId", dataset.getDatasetId())))));
         }
 
         return TABLE(tds);

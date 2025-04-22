@@ -755,15 +755,6 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     }
 
     @Override
-    public boolean isAncillaryStudy()
-    {
-        // prior to 15.1 we couldn't actually correctly distinquish between publish and ancillary studies,
-        // because of this we have to have the second check for if the study has a source study but isn't of type publish
-        return StudySnapshotType.ancillary.equals(getStudySnapshotType())
-            || (hasSourceStudy() && !StudySnapshotType.publish.equals(getStudySnapshotType()));
-    }
-
-    @Override
     public boolean hasSourceStudy()
     {
         return getSourceStudy() != null;
@@ -772,7 +763,7 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     @Override
     public boolean isSnapshotStudy()
     {
-        // StudySnapshot includes both Ancillary and Published Studies (as of 12.3)
+        // StudySnapshot always means a Published study (as of 25.5)
         return getStudySnapshot() != null;
     }
 
@@ -794,19 +785,8 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     {
         if (_studySnapshotType == null && getStudySnapshot() != null)
         {
-            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(getStudySnapshot());
-            if (snapshot != null)
-            {
-                _studySnapshotType = snapshot.getType();
-            }
-
-            // prior to 15.1, we didn't store the snapshot type in the SnapshotSettings, so use the "guess type" method
-            // NOTE: this is not reliable because we can't determine if it is a Specimen Study and a Publish Study
-            //       can also have a source study if it was configured with data refresh = Manual
-            if (_studySnapshotType == null)
-            {
-                _studySnapshotType = getSourceStudy() != null ? StudySnapshotType.ancillary : StudySnapshotType.publish;
-            }
+            // The only snapshot type we support
+            _studySnapshotType = StudySnapshotType.publish;
         }
 
         return _studySnapshotType;

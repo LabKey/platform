@@ -18,15 +18,15 @@ package org.labkey.specimen.report.participant;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.User;
-import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.actions.SpecimenReportActions;
+import org.labkey.specimen.model.SpecimenTypeSummary;
 import org.labkey.specimen.report.SpecimenVisitReport;
 import org.labkey.specimen.report.SpecimenVisitReportAction;
 import org.labkey.specimen.report.SpecimenVisitReportParameters;
@@ -37,10 +37,6 @@ import java.util.List;
 
 import static org.labkey.api.util.HtmlString.unsafe;
 
-/**
- * User: brittp
- * Created: Jan 30, 2008 3:40:07 PM
- */
 public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 {
     private String _selectedType;
@@ -81,7 +77,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return Collections.singletonList(getSpecimenTypePicker());
     }
 
-    private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, Select.SelectBuilder builder, String parentId, String selectedId, int indent)
+    private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, SelectBuilder builder, String parentId, String selectedId, int indent)
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
@@ -90,7 +86,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
             HtmlString encodedLabel = unsafe(spacing + HtmlString.of(label));
 
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
-            builder.addOption(new Option.OptionBuilder()
+            builder.addOption(new OptionBuilder()
                     .value(id)
                     .label(encodedLabel)
                     .selected(id.equals(selectedId))
@@ -171,23 +167,23 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     protected Pair<String, HtmlString> getSpecimenTypePicker()
     {
-        Select.SelectBuilder select = new Select.SelectBuilder();
+        SelectBuilder select = new SelectBuilder();
         SpecimenTypeSummary summary = SpecimenManager.get().getSpecimenTypeSummary(getContainer(), getUser());
         select.name("selectedType");
 
-        select.addOption(new Option.OptionBuilder()
+        select.addOption(new OptionBuilder()
             .value(ALL_PRIMARY_TYPES_FORM_VALUE)
             .label("One report per primary type")
             .selected(ALL_PRIMARY_TYPES_FORM_VALUE.equals(_selectedType))
             .build());
 
-        select.addOption(new Option.OptionBuilder()
+        select.addOption(new OptionBuilder()
             .value(ALL_DERIVATIVE_TYPES_FORM_VALUE)
             .label("One report per derivative type")
             .selected(ALL_DERIVATIVE_TYPES_FORM_VALUE.equals(_selectedType))
             .build());
 
-        select.addOption(new Option.OptionBuilder()
+        select.addOption(new OptionBuilder()
             .value(ALL_ADDITIVE_TYPES_FORM_VALUE)
             .label("One report per additive type")
             .selected(ALL_ADDITIVE_TYPES_FORM_VALUE.equals(_selectedType))

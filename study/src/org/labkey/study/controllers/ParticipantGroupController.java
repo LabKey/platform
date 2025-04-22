@@ -19,9 +19,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -852,17 +854,26 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     JSONObject group = groupArr.getJSONObject(i);
 
-                    GroupType type = GroupType.valueOf(group.getString("type"));
+                    try
+                    {
+                        GroupType type = GroupType.valueOf(group.getString("type"));
 
-                    int id = group.getInt("id");
-                    int categoryId = id;
+                        int id = group.getInt("id");
+                        int categoryId = id;
 
-                    // prior to 12.3 the api didn't return a categoryId for cohorts, now the categoryId is the
-                    // same as the cohort id but because of saved reports we can't assume we will always get one.
-                    if (group.has("categoryId"))
-                        categoryId = group.getInt("categoryId");
+                        // prior to 12.3 the api didn't return a categoryId for cohorts, now the categoryId is the
+                        // same as the cohort id but because of saved reports we can't assume we will always get one.
+                        if (group.has("categoryId"))
+                        {
+                            categoryId = group.getInt("categoryId");
+                        }
 
-                    _groups.add(new Group(type, id, categoryId));
+                        _groups.add(new Group(type, id, categoryId));
+                    }
+                    catch (JSONException e)
+                    {
+                        throw new ApiUsageException(e);
+                    }
                 }
             }
         }

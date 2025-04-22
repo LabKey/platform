@@ -213,7 +213,7 @@
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%></td>
                                 <% if (url != null) { %>
-                                <td nowrap="true"><%=link(entry.getValue()).href(url)%></td>
+                                <td nowrap="true"><%=link(entry.getValue(), url)%></td>
                                 <% } else { %>
                                 <td nowrap="true"><%=h(entry.getValue())%></td>
                                 <% } %>

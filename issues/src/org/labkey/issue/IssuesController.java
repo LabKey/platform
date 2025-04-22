@@ -104,7 +104,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
@@ -113,7 +113,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -685,7 +685,7 @@ public class IssuesController extends SpringActionController
                         String.format("'%s' not specified.", IssuesListView.ISSUE_LIST_DEF_NAME)) :
                 String.format("There is no issues list '%s' defined in this folder.", issueDefName);
         boolean userHasAdmin = context.getContainer().hasPermission(context.getUser(), AdminPermission.class);
-        Button button = PageFlowUtil.button(userHasAdmin ? "Manage Issue List Definitions" : "Show Available Issue Lists").href(QueryService.get().urlFor(context.getUser(),
+        ButtonBuilder.Button button = PageFlowUtil.button(userHasAdmin ? "Manage Issue List Definitions" : "Show Available Issue Lists").href(QueryService.get().urlFor(context.getUser(),
                 context.getContainer(),
                 QueryAction.executeQuery,
                 "issues",
@@ -1988,7 +1988,7 @@ public class IssuesController extends SpringActionController
             String status = ctx.getActionURL().getParameter("status");
             if (status != null)
             {
-                return new InputBuilder<>().type("hidden").id("search-type").name("status").value(status).getHtmlString();
+                return InputBuilder.hidden().id("search-type").name("status").value(status).getHtmlString();
             }
 
             return null;

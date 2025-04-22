@@ -830,7 +830,7 @@ public class Table
 
             if (!column.isAutoIncrement() &&
                     column.isRequired() &&
-                    (null == value || value instanceof String && 0 == ((String) value).length()) &&
+                    (null == value || value instanceof String s && s.isEmpty()) &&
                     !Table.AUTOPOPULATED_COLUMN_NAMES.contains(column.getName()) &&
                     column.getJdbcDefaultValue() == null)
             {
@@ -840,7 +840,7 @@ public class Table
             columnSQL.append(comma);
             columnSQL.appendIdentifier(column.getSelectIdentifier());
             valueSQL.append(comma);
-            if (null == value || value instanceof String && 0 == ((String) value).length())
+            if (null == value || value instanceof String s && s.isEmpty())
                 valueSQL.append("NULL");
             else
             {
@@ -862,7 +862,7 @@ public class Table
             comma = ", ";
         }
 
-        if (comma.length() == 0)
+        if (comma.isEmpty())
         {
             // NO COLUMNS TO INSERT
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
@@ -1050,7 +1050,7 @@ public class Table
             setSQL.append(comma);
             setSQL.appendIdentifier(column.getSelectIdentifier());
 
-            if (null == value || value instanceof String && 0 == ((String) value).length())
+            if (null == value || value instanceof String s && s.isEmpty())
             {
                 setSQL.append("=NULL");
             }

@@ -22,16 +22,16 @@
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.Link" %>
-<%@ page import="org.labkey.api.util.element.Input" %>
-<%@ page import="org.labkey.api.util.element.Option" %>
-<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.InputBuilder.Input" %>
+<%@ page import="org.labkey.api.util.LinkBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder.Option" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>
 <%@ page import="org.labkey.assay.plate.PlateManager" %>
-<%@ page import="java.lang.Integer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
@@ -118,7 +118,7 @@
             if (layout.name() != null)
                 designerURL.replaceParameter("templateType", layout.name());
 
-            options.add(new Option.OptionBuilder()
+            options.add(new OptionBuilder()
                     .label("new " + layout.description() + " template")
                     .value(designerURL.toString())
                     .build());
@@ -126,7 +126,7 @@
 %>
 <h4>Create New Plate</h4>
 <labkey:form method="POST" layout="inline" id="qc_form">
-    <%= new Select.SelectBuilder()
+    <%= new SelectBuilder()
             .name("template")
             .id("plate_template")
             .layout(Input.Layout.INLINE)
@@ -154,12 +154,12 @@
     {
         Integer runCount = plateRunCount.get(plate);
 
-        Link.LinkBuilder editLink = new Link.LinkBuilder("edit");
+        LinkBuilder editLink = LinkBuilder.labkeyLink("edit");
         if (runCount > 0)
         {
             editLink.tooltip("Plate template is used by " + runCount + " runs and can't be edited")
-                    .clearClasses()
-                    .addClass("labkey-disabled-text-link");
+                .clearClasses()
+                .addClass("labkey-disabled-text-link");
         }
         else
         {
@@ -198,12 +198,12 @@
             {
                 if (plates.size() > 1)
                 {
-                    Link.LinkBuilder deleteLink = new Link.LinkBuilder("delete");
+                    LinkBuilder deleteLink = LinkBuilder.labkeyLink("delete");
                     if (runCount > 0)
                     {
                         deleteLink.tooltip("Plate template is used by " + runCount + " runs and can't be deleted")
-                                .clearClasses()
-                                .addClass("labkey-disabled-text-link");
+                            .clearClasses()
+                            .addClass("labkey-disabled-text-link");
                     }
                     else
                     {

@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
@@ -181,7 +181,7 @@ function restoreDefaultPage()
                 }
                 return new OptionBuilder(c.getPath(), c.getId()).selected(selected);
             }))%>
-    <span class="help-block">You can also <%=link("restore to this folder's default page.").onClick("restoreDefaultPage();").clearClasses()%></span><br>
+    <span class="help-block">You can also <%=simpleLink("restore to this folder's default page.").onClick("restoreDefaultPage();")%></span><br>
     <%
         final Stream<OptionBuilder> builders;
 

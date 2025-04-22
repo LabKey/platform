@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
@@ -88,8 +88,6 @@
     ArrayList<Group> noReadGroups = new ArrayList<>();
     for (Group g : groups)
     {
-        if (g.getUserId() == Group.groupAdministrators)
-            continue;
         if (studyPolicy.hasNonInheritedPermission(g, ReadPermission.class))
             readGroups.add(g);
         else if (studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class))
@@ -103,7 +101,7 @@ These groups can read ALL datasets.
 <%
     boolean guestsCanRead = false;
     boolean usersCanRead = false;
-    if (readGroups.size() == 0)
+    if (readGroups.isEmpty())
     {
         %><li><i>none</i></li><%
     }
@@ -132,7 +130,7 @@ else
     These groups do not have read permissions. (Note: a user may belong to more than one group, see documentation.)
     <ul class="minus">
     <%
-        if (noReadGroups.size() == 0)
+        if (noReadGroups.isEmpty())
         {
     %>
         <li><i>none</i></li>

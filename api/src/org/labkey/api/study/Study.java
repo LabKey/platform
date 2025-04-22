@@ -118,8 +118,6 @@ public interface Study extends StudyEntity
 
     List<Attachment> getProtocolDocuments ();
 
-    boolean isAncillaryStudy();
-
     boolean hasSourceStudy();
 
     boolean isSnapshotStudy();

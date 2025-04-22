@@ -71,7 +71,7 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=link("Search").href(ShowSearchAction.getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
+<%=link("Search", ShowSearchAction.getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
 <%=link("Reports", urlFor(SpecimenController.AutoReportListAction.class)) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())

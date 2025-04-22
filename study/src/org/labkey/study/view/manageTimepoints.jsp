@@ -54,7 +54,7 @@
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
-        <td><%=link("Recompute Timepoints").href(urlFor(UpdateParticipantVisitsAction.class)).usePost()%></td>
+        <td><%=link("Recompute Timepoints", urlFor(UpdateParticipantVisitsAction.class)).usePost()%></td>
     </tr>
 <% if (timepoints.size() > 0) { %>
     <tr>
@@ -106,7 +106,7 @@
 
 <% if (timepoints.size() > 0) { %>
 <labkey:panel title="Timepoints" width="800">
-<p>NOTE: If you edit the day range of timepoints, use <%=link("Recompute Timepoints").href(urlFor(UpdateParticipantVisitsAction.class)).clearClasses().usePost()%>
+<p>NOTE: If you edit the day range of timepoints, use <%=simpleLink("Recompute Timepoints", urlFor(UpdateParticipantVisitsAction.class)).usePost()%>
 to assign dataset data to the correct timepoints.</p>
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>

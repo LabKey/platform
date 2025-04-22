@@ -61,7 +61,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -98,49 +97,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             _setContainerFilter(cf);
         else
             _setContainerFilter(getDefaultContainerFilter());
-
-        if (includeSourceStudyData && getParticipantColumnName() != null)
-        {
-            // If we're in an ancillary study, show the parent folder's specimens, but filter to include only those
-            // that relate to subjects in the ancillary study.  This filter will have no effect on samples uploaded
-            // directly in this study folder (since all local specimens should have an associated subject ID
-            // already in the participant table.
-            StudyImpl currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
-            if (currentStudy != null && currentStudy.isAncillaryStudy())
-            {
-                List<String> ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(schema.getContainer());
-                if (!ptids.isEmpty())
-                {
-                    StudyImpl sourceStudy = currentStudy.getSourceStudy();
-                    if ("specimentables".equalsIgnoreCase(getRealTable().getSchema().getName()) ||
-                            StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(getName()) ||
-                            StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME.equalsIgnoreCase(getName()) ||
-                            StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME.equalsIgnoreCase(getName()) ||
-                            StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME.equalsIgnoreCase(getName()))
-                    {
-                        // Do nothing
-                        int i = 1;
-                    }
-                    else
-                    {   // TODO: are there cases here?
-                        SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " ");
-                        condition.add(sourceStudy.getContainer());
-                        getSqlDialect().appendInClauseSql(condition, ptids);
-                        condition.append(") OR Container = ?");
-                        condition.add(currentStudy.getContainer());
-                        addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
-                    }
-                }
-            }
-        }
     }
-
-
-    protected String getParticipantColumnName()
-    {
-        return null;
-    }
-
 
     protected MutableColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {

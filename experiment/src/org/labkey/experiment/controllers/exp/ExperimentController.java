@@ -215,7 +215,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JSoupUtil;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -225,7 +225,7 @@ import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DataView;
@@ -1237,7 +1237,7 @@ public class ExperimentController extends SpringActionController
                     // container context on the generated expr.
                     ((DetailsURL) expr).setContainerContext(st.getContainer());
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
-                    updateLinks.append(PageFlowUtil.link("edit").href(url)).append(" ");
+                    updateLinks.append(LinkBuilder.labkeyLink("edit", url)).append(" ");
                 }
             }
 
@@ -1248,7 +1248,7 @@ public class ExperimentController extends SpringActionController
                 if (st != null)
                     deriveURL.addParameter("targetSampleTypeId", st.getRowId());
 
-                updateLinks.append(PageFlowUtil.link("derive samples from this sample").href(deriveURL)).append(" ");
+                updateLinks.append(LinkBuilder.labkeyLink("derive samples from this sample", deriveURL)).append(" ");
             }
 
             vbox.addView(new HtmlView(updateLinks));
@@ -1402,9 +1402,7 @@ public class ExperimentController extends SpringActionController
             if (!inDefinitionContainer)
             {
                 ActionURL definitionURL = urlProvider(ExperimentUrls.class).getShowDataClassURL(_dataClass.getContainer(), _dataClass.getRowId());
-                Link.LinkBuilder link = PageFlowUtil.link(_dataClass.getContainer().getPath())
-                        .href(definitionURL)
-                        .clearClasses();
+                LinkBuilder link = LinkBuilder.simpleLink(_dataClass.getContainer().getPath(), definitionURL);
                 SimpleDisplayColumn definedInCol = new SimpleDisplayColumn(link.toString());
                 definedInCol.setCaption("Defined In");
                 detailsView.getDataRegion().addDisplayColumn(definedInCol);
@@ -1930,8 +1928,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (editor.isProtocolEditor(form.lookupRun().getProtocol()))
                 {
-                    updateLinks.append(PageFlowUtil.link("edit " + editor.getDisplayName() + " run")
-                            .href(editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
+                    updateLinks.append(LinkBuilder.labkeyLink("edit " + editor.getDisplayName() + " run", editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
                 }
             }
 

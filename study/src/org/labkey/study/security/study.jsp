@@ -64,8 +64,6 @@ Any user with READ access to this folder may view some summary data. However, ac
     List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
     {
-        if (group.getUserId() == Group.groupAdministrators)
-            continue;
         String name = group.getName();
         if (group.getUserId() == Group.groupUsers)
             name = "All site users";

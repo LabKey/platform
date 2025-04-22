@@ -30,8 +30,8 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.SafeToRender" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
-<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.pipeline.PipelineController.PermissionView" %>
@@ -78,9 +78,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         List<Role> assignedRoles = policy.getAssignedRoles(g);
         Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : null;
         final HtmlString name;
-        if (g.isAdministrators())
-            name = HtmlString.unsafe("Site&nbsp;Administrators");
-        else if (g.isUsers())
+        if (g.isUsers())
             name = HtmlString.of("All Users");
         else
             name = h(g.getName());

@@ -34,8 +34,7 @@ public interface StudyInternalService
     }
 
     /**
-     * Clears all the study caches in this container plus those of any associated ancillary/published studies. Does not
-     * clear caches associated with datasets.
+     * Clears all the study caches in this container. Does not clear caches associated with datasets.
      * @param container The study container where cache clearing will take place
      */
     void clearCaches(Container container);

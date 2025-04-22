@@ -18,7 +18,7 @@ package org.labkey.core.view.template.bootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -542,8 +542,7 @@ public class ViewServiceImpl implements ViewService
                         if (StringUtils.isNotEmpty(link.getHref()) || null != link.getScript())
                         {
                             // Display this NavTree as a simple link. Delegate to LinkBuilder to avoid replicating all its rendering code.
-                            final Link.LinkBuilder lb = link.toSimpleLinkBuilder();
-                            lb.clearClasses();
+                            final LinkBuilder lb = link.toSimpleLinkBuilder();
 
                             out.println(lb);
                         }

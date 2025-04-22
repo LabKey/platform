@@ -18,7 +18,6 @@ package org.labkey.study.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
@@ -43,12 +42,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-/**
- * User: adam
- * Date: 9/22/12
- * Time: 7:03 AM
- */
 
 // Simple bean for persisting/loading from study.StudySnapshot
 public class StudySnapshot

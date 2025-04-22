@@ -76,11 +76,11 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -902,7 +902,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         @Override
         public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
         {
-            out.write(new Input.InputBuilder<>().type("text").name(_inputName).value(value == null ? null : value.toString()));
+            out.write(InputBuilder.text().name(_inputName).value(value == null ? null : value.toString()));
         }
 
         @Override
@@ -1213,7 +1213,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 {
                     sb.append("<br>");
                     String script = "uploadWizard_showPopup('extraErrors', 'All Errors', " + PageFlowUtil.jsString(msgBox.toString()) + "); return false;";
-                    sb.append(new Link.LinkBuilder("Too many errors to display (click to show all).").id("extraErrors").onClick(script).getHtmlString());
+                    sb.append(LinkBuilder.labkeyLink("Too many errors to display (click to show all).").id("extraErrors").onClick(script).getHtmlString());
                     sb.append("<br>");
                 }
                 return sb.getHtmlString();

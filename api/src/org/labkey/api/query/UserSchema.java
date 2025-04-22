@@ -16,8 +16,10 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -571,10 +573,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             webPart.getPropertyMap().put(QueryParam.viewName.name(), null);
 
         QuerySettings settings = createQuerySettings(dataRegionName, null, null);
-        (new BoundMap(settings)).putAll(webPart.getPropertyMap());
-        settings.init(context);
-
-        return settings;
+        try
+        {
+            (new BoundMap(settings)).putAll(webPart.getPropertyMap());
+            settings.init(context);
+            return settings;
+        }
+        catch (ConversionException e)
+        {
+            throw new ApiUsageException(e);
+        }
     }
 
     public final QuerySettings getSettings(ViewContext context, String dataRegionName)

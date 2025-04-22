@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -46,6 +47,6 @@ public class UrlColumn extends SimpleDisplayColumn
         String url = renderURL(ctx);
 
         if (value != null && url != null)
-            oldWriter.write(PageFlowUtil.link(value.toString()).href(url).target(_linkTarget).toString());
+            oldWriter.write(LinkBuilder.labkeyLink(value.toString(), url).target(_linkTarget).toString());
     }
 }

@@ -84,6 +84,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
@@ -283,7 +284,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     public QueryView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
     {
         this(schema);
-        _errors = errors;
+        // TODO: stop passing in null Errors. For now, new one up if null.
+        _errors = errors != null ? errors : new BindException(new Object(), "form");
         if (null != settings)
             setSettings(settings);
     }
@@ -393,7 +395,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
-                        out.print(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL));
+                        out.print(LinkBuilder.labkeyLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
                     }
                 }
                 out.write("<br>");

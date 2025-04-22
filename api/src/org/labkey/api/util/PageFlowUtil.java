@@ -72,9 +72,7 @@ import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
 import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
-import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DOM.Renderable;
-import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -1345,14 +1343,16 @@ public class PageFlowUtil
         return new ButtonBuilder(text);
     }
 
+    @Deprecated(forRemoval = true) // Use LinkBuilder.simpleLink() or LinkBuilder.labkeyLink() instead
     public static LinkBuilder link(String text)
     {
-        return new LinkBuilder(text);
+        return LinkBuilder.labkeyLink(text);
     }
 
+    @Deprecated(forRemoval = true) // Use LinkBuilder.simpleLink() or LinkBuilder.labkeyLink() instead
     public static LinkBuilder link(String text, URLHelper url)
     {
-        return new LinkBuilder(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)

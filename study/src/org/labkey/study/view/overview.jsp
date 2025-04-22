@@ -31,8 +31,8 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.Link.LinkBuilder" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.LinkBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -130,8 +130,8 @@
         hasHiddenData = !datasets.get(i).isShowByDefault();
     if (hasHiddenData)
     {
-        LinkBuilder viewLink = bean.showAll ? link("Show Default Datasets").href(baseURL) :
-                link("Show All Datasets").href(baseURL.addParameter("showAll", "1"));
+        LinkBuilder viewLink = bean.showAll ? link("Show Default Datasets", baseURL) :
+                link("Show All Datasets", baseURL.addParameter("showAll", "1"));
         out.print(viewLink);
     }
 %>
@@ -319,7 +319,7 @@
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, DatasetQueryView.DATAREGION, container);
                 defaultReportURL.addParameter("skipDataVisibility", 1);
 
-                %><%=link(innerHtml, defaultReportURL).clearClasses()%><%
+                %><%=simpleLink(innerHtml, defaultReportURL)%><%
             }
             else
             {
@@ -365,7 +365,7 @@
                     if (bean.qcStates != null && StringUtils.isNumeric(bean.qcStates.getFormValue()))
                         datasetLink.replaceParameter(qcUrlFilterKey, QCStateManager.getInstance().getStateForRowId(container, Integer.parseInt(bean.qcStates.getFormValue())).getLabel());
 
-                    innerHtml = HtmlStringBuilder.of(link(innerHtml, datasetLink).clearClasses());
+                    innerHtml = HtmlStringBuilder.of(simpleLink(innerHtml, datasetLink));
                 }
                 %>
             <td align="center" nowrap="true"><%=innerHtml%></td>

@@ -240,7 +240,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
@@ -255,7 +255,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTracker.HeldReference;
@@ -3190,8 +3190,8 @@ public class AdminController extends SpringActionController
 
             HtmlStringBuilder html = HtmlStringBuilder.of();
 
-            html.append(PageFlowUtil.link("Clear Caches and Refresh", getCachesURL(true, false)));
-            html.append(PageFlowUtil.link("Refresh", getCachesURL(false, false)));
+            html.append(LinkBuilder.labkeyLink("Clear Caches and Refresh", getCachesURL(true, false)));
+            html.append(LinkBuilder.labkeyLink("Refresh", getCachesURL(false, false)));
 
             html.unsafeAppend("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats, false);
@@ -3262,7 +3262,7 @@ public class AdminController extends SpringActionController
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
-                html.unsafeAppend("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
+                html.unsafeAppend("<td>").append(LinkBuilder.labkeyLink("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
 
                 if (null != limit && maxSize >= limit)
                     html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
@@ -4230,7 +4230,7 @@ public class AdminController extends SpringActionController
                                     DOM.TR(DOM.TD("Delay between iterations (ms)"), DOM.TD(DOM.INPUT(at(name, "delay", value, memoryStressForm._delay)))),
                                     DOM.TR(DOM.TD("Percent churn per iteration (0.0 - 1.0)"), DOM.TD(DOM.INPUT(at(name, "percentChurn", value, memoryStressForm._percentChurn))))
                             ),
-                            new Button.ButtonBuilder("Perform stress test").submit(true).build())
+                            new ButtonBuilder("Perform stress test").submit(true).build())
             );
         }
 
@@ -4582,7 +4582,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "container");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 
@@ -4597,7 +4597,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "descriptor");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 
@@ -6576,9 +6576,6 @@ public class AdminController extends SpringActionController
                     List<DisplayColumn> columns = new ArrayList<>();
                     SecurityPolicy policy = getContainer().getPolicy();
                     Set<String> assignmentSet = new HashSet<>();
-
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());
 
                     for (RoleAssignment assignment : policy.getAssignments())
                     {
@@ -9001,7 +8998,7 @@ public class AdminController extends SpringActionController
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.link("Click here to ignore null, " + lowestSchemaVersion + " and unmanaged modules").href(url).getHtmlString();
+                    managedLink = LinkBuilder.labkeyLink("Click here to ignore null, " + lowestSchemaVersion + " and unmanaged modules", url).getHtmlString();
                 }
                 else
                 {
@@ -9020,7 +9017,7 @@ public class AdminController extends SpringActionController
                 {
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("unmanagedOnly", true);
-                    unmanagedLink = PageFlowUtil.link("Click here to show unmanaged modules only").href(url).getHtmlString();
+                    unmanagedLink = LinkBuilder.labkeyLink("Click here to show unmanaged modules only", url).getHtmlString();
                 }
                 else
                 {
@@ -9037,7 +9034,7 @@ public class AdminController extends SpringActionController
                         "To delete a module that does not have a delete link, first delete its .module file and exploded module directory from your Labkey deployment directory, and restart the server. " +
                         "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.")
                     .unsafeAppend("<br><br>").append(
-                        PageFlowUtil.link("Create new empty module").href(getCreateURL()));
+                                LinkBuilder.labkeyLink("Create new empty module", getCreateURL()));
             }
 
             HtmlStringBuilder docLink = HtmlStringBuilder.of();
@@ -9157,9 +9154,9 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-                                        !AppProps.getInstance().isDevMode() ? null : TD((null == moduleEditorUrl) ? NBSP : PageFlowUtil.link("Edit module").href(moduleEditorUrl)),
-                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Upload Module").href(getUpdateURL(moduleContext.getName()))),
-                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
+                                        !AppProps.getInstance().isDevMode() ? null : TD((null == moduleEditorUrl) ? NBSP : LinkBuilder.labkeyLink("Edit module", moduleEditorUrl)),
+                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : LinkBuilder.labkeyLink("Upload Module", getUpdateURL(moduleContext.getName()))),
+                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP : LinkBuilder.labkeyLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())))
                                     );
                                 })
                         )
@@ -11121,6 +11118,28 @@ public class AdminController extends SpringActionController
             String trimValue = StringUtils.trimToEmpty(value);
             if (!valueSet.add(trimValue))
                 errors.addError(new LabKeyError(String.format("'%1$s' already exists. Duplicate values not allowed.", trimValue)));
+        }
+    }
+
+    @AdminConsoleAction
+    public static class DeleteAllValuesAction extends FormHandlerAction<AllowListForm>
+    {
+        @Override
+        public void validateCommand(AllowListForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(AllowListForm form, BindException errors) throws Exception
+        {
+            form.getTypeEnum().setValues(Collections.emptyList(), getUser());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AllowListForm form)
+        {
+            return form.getTypeEnum().getSuccessURL(getContainer());
         }
     }
 
