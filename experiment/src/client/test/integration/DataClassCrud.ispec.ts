@@ -236,7 +236,7 @@ describe('Data Class - Required Lineage', () => {
 
 });
 
-describe('CRUD actions', () => {
+describe('Duplicate IDs', () => {
 
     it("Issue 52728: don't allow updating the same data twice", async () => {
         const dataType = "TestIssue52728";
