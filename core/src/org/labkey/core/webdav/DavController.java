@@ -344,14 +344,8 @@ public class DavController extends SpringActionController
             {
                 ExceptionUtil.doErrorRedirect(response, ex.getURL());
             }
-            catch (ConfigurationException ex)
-            {
-                _log.error("Unexpected exception, might be related to server configuration problems", ex);
-                _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
-            }
             catch (Exception ex)
             {
-                ExceptionUtil.logExceptionToMothership(request, ex);
                 _webdavresponse.sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
             }
         }
@@ -431,7 +425,12 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Exception x)
         {
-            _log.error(x instanceof ConfigurationException ? "Configuration Exception" : "Unexpected exception", x);
+            ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            if (x instanceof ConfigurationException)
+            {
+                // These exceptions are skipped in the logExceptionToMothership() call. They're useful to log here
+                _log.error("Unexpected exception, likely caused by server configuration problems", x);
+            }
             String message = x.getMessage() != null ? x.getMessage() : status.message;
             if (x instanceof ConfigurationException)
                 message += "\nThis may be a server configuration problem.  Contact the site administrator.";
@@ -501,10 +500,7 @@ public class DavController extends SpringActionController
             }
             catch (Exception x)
             {
-                if (!ExceptionUtil.isClientAbortException(x))
-                {
-                    _log.error("unexpected error", x);
-                }
+                ExceptionUtil.logExceptionToMothership(getRequest(), x);
             }
             return _status;
         }
@@ -518,7 +514,7 @@ public class DavController extends SpringActionController
             }
             catch (Exception x)
             {
-                _log.error("unexpected error", x);
+                ExceptionUtil.logExceptionToMothership(getRequest(), x);
             }
             _status = status;
             return status;
@@ -779,7 +775,6 @@ public class DavController extends SpringActionController
             }
             catch (ConfigurationException ex)
             {
-                _log.error("Unexpected exception, might be related to server configuration problems", ex);
                 getResponse().sendError(WebdavStatus.SC_INTERNAL_SERVER_ERROR, ex);
             }
             catch (DavException dex)
