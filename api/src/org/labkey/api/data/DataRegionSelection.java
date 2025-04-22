@@ -368,6 +368,10 @@ public class DataRegionSelection
         view.setShowUpdateColumn(false);
 
         TableInfo table = view.getTable();
+        if (table == null)
+        {
+            throw new NotFoundException("Could not find table");
+        }
 
         DataView v = view.createDataView();
         DataRegion rgn = v.getDataRegion();

@@ -631,10 +631,11 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             if (key == null || key.isEmpty())
                 return null;
 
-            // Issue 52119: account for leading/trailing single quotes and decode double quotes
+            // Issue 52119: account for leading/trailing single quotes and decode double quotes and %
             if (key.startsWith("'") && key.endsWith("'"))
                 key = key.substring(1, key.length()-1);
             key = key.replaceAll("%22", "\"");
+            key = key.replaceAll("%25", "%");
 
             return key;
         }
