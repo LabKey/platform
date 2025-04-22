@@ -151,7 +151,13 @@ export class App extends React.Component<any, State> {
     onComplete = (model: AssayProtocolModel): void => {
         if (this.shouldInferDomainFromFile()) {
             const { path, file } = ActionURL.getParameters();
-            this.navigate(ActionURL.buildURL('assay', 'pipelineDataCollectorRedirect', undefined, { protocolId: model.protocolId, path, file }));
+            this.navigate(
+                ActionURL.buildURL('assay', 'pipelineDataCollectorRedirect', undefined, {
+                    protocolId: model.protocolId,
+                    path,
+                    file,
+                })
+            );
         } else {
             this.navigate(ActionURL.buildURL('assay', 'assayBegin', undefined, { rowId: model.protocolId }));
         }
@@ -248,9 +254,9 @@ export class App extends React.Component<any, State> {
                                     </table>
                                 </div>
                             </div>
-                            {model.domains.map((domain, index) => (
-                                <DomainFieldsDisplay key={index} domain={domain} />
-                            ))}
+                            {model.domains
+                                .map((domain, index) => <DomainFieldsDisplay key={index} domain={domain} />)
+                                .toArray()}
                         </>
                     )}
                 </BeforeUnload>
