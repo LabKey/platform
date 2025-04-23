@@ -1651,6 +1651,11 @@ public class DbScope
         }
     }
 
+    public static boolean isCancelled()
+    {
+        return BANNED_THREADS.contains(Thread.currentThread());
+    }
+
     // Enumerate each jdbc DataSource and initialize them
     public static void initializeDataSources()
     {

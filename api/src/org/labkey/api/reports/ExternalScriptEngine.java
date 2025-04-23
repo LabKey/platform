@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -325,6 +326,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         try
         {
             pb.redirectErrorStream(true);
+
+            if (DbScope.isCancelled())
+            {
+                throw new RuntimeException("Cancelled - cannot start a new process");
+            }
+
             proc = pb.start();
         }
         catch (SecurityException se)
