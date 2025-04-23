@@ -892,7 +892,7 @@ public abstract class SqlDialect
         }
 
         @Override
-        public String toString()
+        public @NotNull String toString()
         {
             assert false : "[id=" + id + " sql=" + sql.getRawSQL() + "]";
             return "[id=" + id + " sql=" + sql.getRawSQL() + "]";
@@ -901,12 +901,12 @@ public abstract class SqlDialect
 
     // Use this method to wrap a name provided by the database for an existing object (schema, table, column etc).
     // In this case the name must be preserved exactly as-is.
-    public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
     {
         return new _DatabaseIdentifier(metaDataName, quoteIdentifier(metaDataName), this);
     }
 
-    // Create a DialectIdentifier for the desired alias
+    // Create a DatabaseIdentifier for the desired alias
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
         if (getIdentifierMaxLength() < alias.length())
@@ -923,7 +923,7 @@ public abstract class SqlDialect
         return new _DatabaseIdentifier(alias, sql, null);
     }
 
-    // Create comma-separated list of legal identifiers
+    // Create a comma-separated list of legal identifiers
     @Deprecated
     public String makeLegalIdentifiers(String[] names)
     {

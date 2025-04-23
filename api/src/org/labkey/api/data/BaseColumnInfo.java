@@ -572,7 +572,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setMetaDataName(String metaDataName)
     {
         checkLocked();
-        _metaDataName = getSqlDialect().makeIdentiferFromMetaDataName(metaDataName);
+        _metaDataName = getSqlDialect().makeIdentifierFromMetaDataName(metaDataName);
     }
 
     public void setMetaDataName(DatabaseIdentifier metaDataName)
@@ -1709,7 +1709,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     String sqlTypeName = reader.getSqlTypeName();
                     var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(sqlType, sqlTypeName));
 
-                    col._metaDataName = dialect.makeIdentiferFromMetaDataName(metaDataName);
+                    col._metaDataName = dialect.makeIdentifierFromMetaDataName(metaDataName);
                     col._sqlTypeName = sqlTypeName;
                     col._isAutoIncrement = reader.isAutoIncrement();
 

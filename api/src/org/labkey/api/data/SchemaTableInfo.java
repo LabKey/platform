@@ -121,7 +121,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     {
         _parentSchema = parentSchema;
         _name = tableName;
-        _metaDataName = parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(Objects.requireNonNull(metaDataName));
+        _metaDataName = parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(Objects.requireNonNull(metaDataName));
         _selectName = selectName;
         _tableType = tableType;
         _title = title;
@@ -130,8 +130,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public static SchemaTableInfo newSchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
         var dialect = parentSchema.getSqlDialect();
-        var schemaPart = dialect.makeIdentiferFromMetaDataName(parentSchema.getName());
-        var tablePart = dialect.makeIdentiferFromMetaDataName(tableMetaDataName);
+        var schemaPart = dialect.makeIdentifierFromMetaDataName(parentSchema.getName());
+        var tablePart = dialect.makeIdentifierFromMetaDataName(tableMetaDataName);
         var full = new SQLFragment().appendIdentifier(schemaPart).append(".").appendIdentifier(tablePart);
         return new SchemaTableInfo(parentSchema, tableType, tableMetaDataName, tableMetaDataName, full);
     }
@@ -139,7 +139,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
         this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
-                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentiferFromMetaDataName(tableMetaDataName)));
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(tableMetaDataName)));
     }
 
     /**

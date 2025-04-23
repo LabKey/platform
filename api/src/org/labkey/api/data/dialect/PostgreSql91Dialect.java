@@ -298,8 +298,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
-        var columnName = column.getSelectIdentifier();
-        sql.append("\nRETURNING ").appendIdentifier(columnName);
+        var columnIdentifier = column.getSelectIdentifier();
+        sql.append("\nRETURNING ").appendIdentifier(columnIdentifier);
         if (null != proposedVariable)
             sql.append(" INTO ").appendIdentifier(proposedVariable);
 
@@ -640,7 +640,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public String getCreateDatabaseSql(String dbName)
     {
         // This will handle both mixed case and special characters on PostgreSQL
-        var legal = makeIdentiferFromMetaDataName(dbName);
+        var legal = makeIdentifierFromMetaDataName(dbName);
         return new SQLFragment("CREATE DATABASE ").appendIdentifier(legal).append(" WITH ENCODING 'UTF8'").getRawSQL();
     }
 
@@ -902,7 +902,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public DatabaseIdentifier makeIdentiferFromMetaDataName(String metaDataName)
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
     {
         // In addition to quoting keywords and names with special characters, quote any name with an upper case
         // character. PostgreSQL normally stores column/table names in all lower case, so an upper case character
@@ -910,10 +910,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (StringUtilsLabKey.containsUpperCase(metaDataName))
             return new _DatabaseIdentifier(metaDataName, new SQLFragment().appendIdentifier(quoteIdentifier(metaDataName)), this);
         else
-            return super.makeIdentiferFromMetaDataName(metaDataName);
+            return super.makeIdentifierFromMetaDataName(metaDataName);
     }
 
-    // Create a DialectIdentifier for the desired alias
+    // Create a DatabaseIdentifier for the desired alias
+    @Override
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
         if (getIdentifierMaxLength() < alias.length())
