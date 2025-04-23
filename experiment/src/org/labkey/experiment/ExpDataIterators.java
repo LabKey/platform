@@ -2415,7 +2415,7 @@ public class ExpDataIterators
 
     public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
-        private static final String INVALID_FOLDER_MESSAGE = "Import or update from folder %s into folder %s is not allowed. Either you lack the proper permissions or data from that folder is not visible here.";
+        private static final String INVALID_FOLDER_MESSAGE = "Import or update of data in folder %s from folder %s is not allowed. Verify the folder exists, you have proper permissions, and data from that folder is visible here.";
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
         private static final Set<String> CONTAINER_FIELD_NAMES = Set.of("Container", "Folder");
@@ -2673,7 +2673,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, _container.getName(), rowFolderId)));
+                                _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, rowFolderId, _container.getName())));
                                 return true;
                             }
                         }
@@ -3049,7 +3049,7 @@ public class ExpDataIterators
                     if (container == null)
                     {
                         Container folder = ContainerManager.getForId(containerId);
-                        _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, _container.getName(), (folder != null ? folder.getName() : containerId))));
+                        _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, (folder != null ? folder.getName() : containerId), _container.getName())));
                         return;
                     }
 
