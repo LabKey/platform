@@ -1466,8 +1466,14 @@ public class FileContentController extends SpringActionController
            if (null == renderAs)
                return FileContentController.RenderStyle.PAGE;
 
-           //Will throw illegal argument exception for other values...
-           return FileContentController.RenderStyle.valueOf(renderAs.toUpperCase());
+           try
+           {
+               return FileContentController.RenderStyle.valueOf(renderAs.toUpperCase());
+           }
+           catch (IllegalArgumentException e)
+           {
+               throw new NotFoundException("Invalid renderAs value");
+           }
        }
 
        public String getFileSet()
