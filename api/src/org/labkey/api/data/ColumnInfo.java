@@ -128,11 +128,10 @@ public interface ColumnInfo extends ColumnRenderProperties
     boolean isAliasSet();
 
     /**
-     * This is the alias that will represent the column if it is selected using
-     * TableSelector or QueryService
-     * e.g. to generate a SELECT (see TableSelector) a typical usage would be
+     * This is the alias that will represent the column if it is selected using TableSelector or QueryService.
+     * For example, to generate a SELECT (see TableSelector), a typical usage would be
      * new SQLFragment().append(col.getValueSql("R")).append(" AS ").appendIdentifier(col.getAlias())
-     * The returned ResultSet will contain a column names col.getAlias()
+     * The returned ResultSet will contain a column named col.getAlias()
      *
      * NOTE: if you directly bind your results using BeanObjectFactory (e.g. TableSelector.getArrayList(MyClass.class))
      * you should
@@ -142,18 +141,17 @@ public interface ColumnInfo extends ColumnRenderProperties
     DatabaseIdentifier getAlias();
 
     /**
-     * If this column represents a column in the database, this is the name as returned by database metadata
+     * If this column represents a column in the database, this is the name as returned by database metadata.
      * This is the name you would find in the ResultSet using "SELECT * FROM " + ti.getSelectName()"
-     * with a SchemaTableInfo.
-     * This may a different result than what you get using TableSelector
+     * with a SchemaTableInfo. This may a different result than what you get using TableSelector.
      *
      * TODO I'm pretty sure we can make do with only getMetaDataIdentifer() OR getSelectIdentifier()
      */
     DatabaseIdentifier getMetaDataIdentifier();
 
     /**
-     * If this column represents a column in the database (see getMetaDataName()),
-     * then this method will return the name escaped in a way that is suitable for using in SQL (e.g. quoted)
+     * If this column represents a column in the database (see getMetaDataName()), then this method will return the
+     * name escaped in a way that is suitable for using in SQL (e.g., quoted).
      * <p>
      * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
      * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
