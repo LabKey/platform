@@ -70,6 +70,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -1461,6 +1462,11 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         if (qus == null)
         {
             throw new IllegalArgumentException("getUpdateServer() returned null from " + table);
+        }
+        if (!container.hasPermission(user, InsertPermission.class))
+        {
+            // Could also swap in a service user, like User.getAdminServiceUser()
+            return;
         }
 
         synchronized (_fileDataUpToDateCache)
