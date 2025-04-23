@@ -257,7 +257,7 @@ public class TableUpdaterFileListener implements FileListener
         if (null != srcPathWithout)
         {
             singleEntrySQL.append(" OR ");
-            singleEntrySQL.append(_pathColumn.getSelectIdentifier());
+            singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
             singleEntrySQL.append(" = ?");
             singleEntrySQL.add(srcPathWithout);
         }

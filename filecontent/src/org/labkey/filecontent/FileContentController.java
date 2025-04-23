@@ -17,6 +17,7 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -1466,6 +1467,7 @@ public class FileContentController extends SpringActionController
            if (null == renderAs)
                return FileContentController.RenderStyle.PAGE;
 
+           EnumUtils.getEnum(FileContentController.RenderStyle.class, renderAs.toUpperCase(), FileContentController.RenderStyle.PAGE);
            //Will throw illegal argument exception for other values...
            return FileContentController.RenderStyle.valueOf(renderAs.toUpperCase());
        }
