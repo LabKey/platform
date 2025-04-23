@@ -331,7 +331,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             {
                 throw new RuntimeException("Cancelled - cannot start a new process");
             }
-
+            LOG.info("Starting external script process");
             proc = pb.start();
         }
         catch (SecurityException se)
