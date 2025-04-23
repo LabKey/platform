@@ -2668,8 +2668,8 @@ public class SpecimenImporter extends SpecimenTableManager
                 hash.add(new SQLFragment("'~'"));
                 if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
                 {
-                    SQLFragment columnName = new SQLFragment().appendIdentifier(innerTable).append(".").appendIdentifier(col.getLegalDbColumnName(schema.getSqlDialect()));
-                    hash.add(new SQLFragment(" COALESCE(CAST(").append(columnName).append(" AS ").append(strType).append("),'')"));
+                    SQLFragment columnNameFragment = new SQLFragment().appendIdentifier(innerTable).append(".").appendIdentifier(col.getLegalDbColumnName(schema.getSqlDialect()));
+                    hash.add(new SQLFragment(" COALESCE(CAST(").append(columnNameFragment).append(" AS ").append(strType).append("),'')"));
                 }
             }
         });

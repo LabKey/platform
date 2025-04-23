@@ -89,7 +89,7 @@ public class Aggregate
             return getSQLColumnFragment(dialect, c, as, jdbcType, distinct, tableInnerSql);
         }
 
-        default SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+        default SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnNameFragment, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
         {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
@@ -98,7 +98,7 @@ public class Aggregate
             sb.append(getSQLFunctionName(dialect)).append("(");
             if (distinct)
                 sb.append("DISTINCT ");
-            sb.append(columnName);
+            sb.append(columnNameFragment);
             sb.append(")");
             if (asName != null)
             {
@@ -145,7 +145,7 @@ public class Aggregate
         SUM("Sum")
         {
             @Override
-            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnNameFragment, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
             {
                 if (jdbcType != null && !isLegal(jdbcType))
                     return null;
@@ -158,12 +158,12 @@ public class Aggregate
                         sb.append("DISTINCT ");
                     if (dialect.isSqlServer() && castType(jdbcType) != null)
                     {
-                        sb.append("CAST(").append(columnName).append(" AS ")
+                        sb.append("CAST(").append(columnNameFragment).append(" AS ")
                             .append(castType(jdbcType)).append(")");
                     }
                     else
                     {
-                        sb.append(columnName);
+                        sb.append(columnNameFragment);
                     }
                     sb.append(")");
                     if (null != asName)
@@ -172,7 +172,7 @@ public class Aggregate
                 }
                 else
                 {
-                    return super.getSQLColumnFragment(dialect, columnName, asName, null, distinct, tableInnerSql);
+                    return super.getSQLColumnFragment(dialect, columnNameFragment, asName, null, distinct, tableInnerSql);
                 }
             }
 
@@ -211,7 +211,7 @@ public class Aggregate
             }
 
             @Override
-            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnName, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+            public SQLFragment getSQLColumnFragment(SqlDialect dialect, SQLFragment columnNameFragment, @Nullable DatabaseIdentifier asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
             {
                 if (jdbcType != null && !isLegal(jdbcType))
                     return null;
@@ -223,7 +223,7 @@ public class Aggregate
                     sb.append(getSQLFunctionName(dialect)).append("(");
                     if (distinct)
                         sb.append("DISTINCT ");
-                    sb.append("CAST(").append(columnName).append(" AS FLOAT)");
+                    sb.append("CAST(").append(columnNameFragment).append(" AS FLOAT)");
                     sb.append(")");
 
                     if (asName != null)
@@ -235,7 +235,7 @@ public class Aggregate
                 }
                 else
                 {
-                    return super.getSQLColumnFragment(dialect, columnName, asName, jdbcType, distinct, tableInnerSql);
+                    return super.getSQLColumnFragment(dialect, columnNameFragment, asName, jdbcType, distinct, tableInnerSql);
                 }
             }
 
