@@ -36,6 +36,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
@@ -179,7 +180,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException
         {
             Map<String, Object> existingRow = getRow(user, container, oldRow);
             if (existingRow != null)
@@ -189,6 +190,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
                 Map<String, Object> pks = new CaseInsensitiveHashMap<>();
                 pks.put("UserId", oldTargets.getKey().getUserId());
                 pks.put("MessageId", oldTargets.getValue().getRowId());
+                checkDuplicateUpdate(pks);
                 Table.update(user, getRealTable(), createDatabaseMap(newTargets), pks);
             }
 

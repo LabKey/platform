@@ -340,6 +340,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             Map<String, Object> row = rows.get(i);
             Map<String, Object> keys = oldKeys == null ? row : oldKeys.get(i);
             long rowId = keyFromMap(keys);
+            try
+            {
+                checkDuplicateUpdate(rowId);
+            }
+            catch (ValidationException e)
+            {
+                throw new BatchValidationException(e);
+            }
             rowIds.add(rowId);
             uniqueRows.put(rowId, row);
         }

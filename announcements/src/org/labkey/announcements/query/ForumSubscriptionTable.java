@@ -35,6 +35,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -263,7 +264,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException
         {
             Map<String, Object> existingRow = getRow(user, container, oldRow);
             if (existingRow != null)
@@ -275,6 +276,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
                 pks.put("Container", oldTargets.getContainer().getEntityId());
                 pks.put("Type", "messages");
                 pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
+                checkDuplicateUpdate(pks);
                 Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
             }
 

@@ -78,6 +78,7 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -145,6 +146,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
@@ -2350,7 +2352,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
 
             // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
@@ -3026,8 +3028,12 @@ public class ExpDataIterators
                 {
                     String name = (String) row.get("name");
                     String dataContainer = (String) row.get("container");
-                    int dataRowId = typeData.dataIds.indexOf(name);
-                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(dataRowId);
+                    // could be updating the same data multiple times in a single import, the import will later be rejected
+                    List<Integer> dataRowIds =
+                            IntStream.range(0, typeData.dataIds.size()).boxed()
+                                    .filter(i -> typeData.dataIds.get(i).equals(name))
+                                    .toList();
+                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
                 }
 
                 for (String containerId : containerRows.keySet())
