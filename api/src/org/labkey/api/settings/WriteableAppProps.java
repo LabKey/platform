@@ -240,7 +240,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setAllowedFileExtensions(Collection<String> allowedFileExtensions)
     {
         setExternalHosts(RandomStartupProperties.allowedFileExtensions, allowedFileExtensions);
-        FileUtil.setExtensionChecker(AppProps.getInstance());
     }
 
     public void setAllowedExternalResourceHosts(String jsonArray)
