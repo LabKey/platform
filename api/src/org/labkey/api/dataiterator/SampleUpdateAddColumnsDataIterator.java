@@ -129,7 +129,7 @@ public class SampleUpdateAddColumnsDataIterator extends WrapperDataIterator
             else if (keyObj instanceof Number)
                 key = keyObj.toString();
             if (StringUtils.isEmpty(key))
-                throw new IllegalArgumentException("Key value not provided on row " + lastPrefetchRowNumber);
+                throw new IllegalArgumentException(KEY_COLUMN_NAME + " value not provided on row " + lastPrefetchRowNumber);
 
             rowKeyMap.put(lastPrefetchRowNumber, key);
             keyRowMap.put(key, lastPrefetchRowNumber);

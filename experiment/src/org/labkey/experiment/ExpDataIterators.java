@@ -3099,7 +3099,7 @@ public class ExpDataIterators
                 else if (index == _dataIdIndex && _isCrossFolderUpdate)
                 {
                     // Issue 52922: Samples with blank sample id in the file are getting ignored
-                    throw new IllegalArgumentException("Key value not provided on row " + get(0));
+                    throw new IllegalArgumentException("Name value not provided on row " + get(0));
                 }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));

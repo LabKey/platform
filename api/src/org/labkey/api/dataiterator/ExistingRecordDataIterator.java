@@ -257,6 +257,10 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 comma = "\n,";
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
+                    // Issue 52922: Rows with blank key in the file are getting ignored in update from file
+                    if (pkSuppliers.get(p).get() == null)
+                        _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+
                     sqlf.append(",?");
                     sqlf.add(pkSuppliers.get(p).get());
                 }
@@ -371,7 +375,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     lastPrefetchRowNumber = (Integer) _delegate.get(0);
                     Map<String,Object> keyMap = CaseInsensitiveHashMap.of();
                     for (int p=0 ; p<pkColumns.size() ; p++)
+                    {
+                        // Issue 52922: Rows with blank key in the file are getting ignored in update from file
+                        if (pkSuppliers.get(p).get() == null)
+                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+
                         keyMap.put(pkColumns.get(p).getColumnName(), pkSuppliers.get(p).get());
+                    }
                     keysMap.put(lastPrefetchRowNumber, keyMap);
                     existingRecords.put(lastPrefetchRowNumber, Map.of());
                 }
