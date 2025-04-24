@@ -1457,16 +1457,12 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public void ensureFileData(@NotNull ExpDataTable table)
     {
         Container container = table.getUserSchema().getContainer();
-        User user = table.getUserSchema().getUser();
+        // The current user may not have insert permission, and they didn't necessarily upload the files anyway
+        User user = User.getAdminServiceUser();
         QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
         {
             throw new IllegalArgumentException("getUpdateServer() returned null from " + table);
-        }
-        if (!container.hasPermission(user, InsertPermission.class))
-        {
-            // Could also swap in a service user, like User.getAdminServiceUser()
-            return;
         }
 
         synchronized (_fileDataUpToDateCache)
