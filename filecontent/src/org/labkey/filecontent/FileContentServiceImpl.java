@@ -70,6 +70,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -1456,7 +1457,8 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     public void ensureFileData(@NotNull ExpDataTable table)
     {
         Container container = table.getUserSchema().getContainer();
-        User user = table.getUserSchema().getUser();
+        // The current user may not have insert permission, and they didn't necessarily upload the files anyway
+        User user = User.getAdminServiceUser();
         QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
         {
