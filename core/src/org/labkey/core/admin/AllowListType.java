@@ -167,7 +167,7 @@ public enum AllowListType
         public void testAllowedExtensions()
         {
             List<String> existing = FileExtension.getValues();
-//            Assume.assumeTrue("Initial allowed extensions list should be empty to prevent overriding existing values", existing.isEmpty());
+            Assume.assumeTrue("Initial allowed extensions list should be empty to prevent overriding existing values", existing.isEmpty());
 
             try
             {
