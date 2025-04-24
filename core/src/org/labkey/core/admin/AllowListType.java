@@ -118,7 +118,7 @@ public enum AllowListType
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setAllowedFileExtensions(allowedExtensions);
             props.save(user);
-            FileUtil.clearExtensionChecker();
+            FileUtil.clearExtensionChecker(); // Should be redundant, but going to leave this here
         }
 
         @Override
