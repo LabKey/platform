@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.util.DOM" %>
 <%@ page import="static org.labkey.api.util.DOM.SPAN" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.style" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -47,6 +48,7 @@
     Container project = c.getProject();
     String requestOrigin = (request.getParameter("origin") != null) ? request.getParameter("origin") : "here";
     boolean canCreateSharedDatasets = false;
+    boolean showFailForUndefinedVisits = false;
     boolean isAdvancedImportOptionEnabled = OptionalFeatureService.get().isFeatureEnabled("advancedImportFlag");
 
     String sharedDatasetsHelpText = "By default, datasets will be created in this container. For Dataspace projects, shared " +
@@ -72,6 +74,9 @@
                 Study studyProject = svc.getStudy(project);
                 if (null != studyProject && studyProject.getShareDatasetDefinitions())
                     canCreateSharedDatasets = true;
+
+                TimepointType timepointType = studyProject != null ? studyProject.getTimepointType() : null;
+                showFailForUndefinedVisits = (timepointType == null || timepointType == TimepointType.VISIT) && ((studyProject == null) || !studyProject.isFailForUndefinedTimepoints());
             }
         }
     }
@@ -152,10 +157,10 @@
     <tr>
         <td id="SourcePicker" style="padding-top: 5px;"/>
     </tr>
-<%
-    if (canCreateSharedDatasets)
-    {
-%>
+    <%
+        if (canCreateSharedDatasets)
+        {
+    %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="createSharedDatasets" <%=h(form.isCreateSharedDatasets() ? "checked" : "")%> value="true">
@@ -163,9 +168,9 @@
             </label>
         </td>
     </tr>
-<%
-    }
-%>
+    <%
+        }
+    %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="validateQueries" <%=h(form.isValidateQueries() ? "checked" : "")%> value="true">
@@ -173,6 +178,10 @@
             </label>
         </td>
     </tr>
+    <%
+        if (showFailForUndefinedVisits)
+        {
+    %>
     <tr>
         <td style="padding-left: 15px; padding-top: 5px;">
             <label><input type="checkbox" name="failForUndefinedVisits" <%=h(form.isFailForUndefinedVisits() ? "checked" : "")%> value="true">
@@ -180,6 +189,9 @@
             </label>
         </td>
     </tr>
+    <%
+        }
+    %>
     <%
         if (isAdvancedImportOptionEnabled)
         {
