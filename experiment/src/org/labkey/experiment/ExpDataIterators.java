@@ -2646,9 +2646,12 @@ public class ExpDataIterators
             }
 
             Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+
+            Set<String> notFoundIds = new HashSet<>(typeData.dataIds);
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
+                notFoundIds.remove(name);
                 String dataContainer = (String) row.get("container");
                 int sampleRowId = typeData.dataIds.indexOf(name) + 1 /* header row */;
 
@@ -2659,6 +2662,11 @@ public class ExpDataIterators
                 }
 
                 containerRows.get(dataContainer).add(sampleRowId);
+            }
+            if (!notFoundIds.isEmpty())
+            {
+                _context.getErrors().addRowError(new ValidationException(_isSamples ? "Samples" : "Data" + " not found for " + StringUtils.join(notFoundIds)));
+                return false;
             }
 
             if (!hasCrossFolderData)
