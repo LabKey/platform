@@ -18,6 +18,7 @@ package org.labkey.announcements;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
@@ -1094,12 +1095,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (reshow)
             {
-                String rendererTypeName = form.get("rendererType");
-
-                if (null == rendererTypeName)
-                    currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
-                else
-                    currentRendererType = WikiRendererType.valueOf(rendererTypeName);
+                currentRendererType = EnumUtils.getEnum(WikiRendererType.class, form.get("rendererType"), DEFAULT_MESSAGE_RENDERER_TYPE);
 
                 AnnouncementModel ann = form.getBean();
                 assignedTo = ann.getAssignedTo();
@@ -2336,23 +2332,23 @@ public class AnnouncementsController extends SpringActionController
         public ThreadView(Container c, URLHelper currentURL, User user, String rowId, String entityId)
         {
             this();
-            init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false, user);
+            init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
         public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm, User user)
         {
             this();
-            init(c, ann, url, perm, true, false, user);
+            init(c, ann, url, perm, true, false);
         }
         
         public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print, User user)
         {
             this();
             AnnouncementModel ann = findThread(c, form.get("rowId"), form.get("entityId"));
-            init(c, ann, url, perm, false, print, user);
+            init(c, ann, url, perm, false, print);
         }
 
-        protected void init(Container c, AnnouncementModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print, User user)
+        protected void init(Container c, AnnouncementModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
         {
             if (null == c || !perm.allowRead(ann))
             {
