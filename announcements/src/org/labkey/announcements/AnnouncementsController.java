@@ -955,7 +955,7 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm, getUser());
+            ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
 
             HttpView<?> respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow, false);
@@ -1355,7 +1355,7 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
-            ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint(), getUser());
+            ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
             threadView.setFrame(WebPartView.FrameType.PORTAL);
 
             AnnouncementModel ann = threadView.getAnnouncement();
@@ -2335,13 +2335,13 @@ public class AnnouncementsController extends SpringActionController
             init(c, findThread(c, rowId, entityId), currentURL, getPermissions(c, user, getSettings(c)), false, false);
         }
 
-        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm, User user)
+        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm)
         {
             this();
             init(c, ann, url, perm, true, false);
         }
         
-        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print, User user)
+        public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
         {
             this();
             AnnouncementModel ann = findThread(c, form.get("rowId"), form.get("entityId"));
