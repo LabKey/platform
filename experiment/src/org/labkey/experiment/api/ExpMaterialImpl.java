@@ -22,6 +22,8 @@ import org.apache.commons.math3.exception.OutOfRangeException;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -52,6 +54,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -79,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.api.util.StringUtilsLabKey.append;
 
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
@@ -311,7 +315,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.insert);
             }
         }
-        index(null);
+        index(null, null);
     }
 
     @Override
@@ -381,7 +385,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     };
 
-    public void index(@Nullable SearchService.IndexTask task)
+    public void index(@Nullable SearchService.IndexTask task, @Nullable ExpMaterialTableImpl tableInfo)
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples
@@ -399,17 +403,16 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // do the least possible amount of work here
         final SearchService.IndexTask indexTask = task;
-        var document = createIndexDocument();
+        var document = createIndexDocument(tableInfo);
         if (document != null)
         {
             indexTask.addResource(document, SearchService.PRIORITY.item);
         }
     }
 
-
     /** returns null if the parent container is no longer available */
     @Nullable
-    public WebdavResource createIndexDocument()
+    public WebdavResource createIndexDocument(ExpMaterialTableImpl tableInfo)
     {
         Container container = getContainer();
         if (container == null)
@@ -438,7 +441,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title.toString());
         props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
-        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         StringBuilder body = new StringBuilder();
 
@@ -449,11 +451,16 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         append(body, getSourceApplication());
 
         // Add all String and Integer custom property descriptions and values to body
-        CustomProperties.iterate(getContainer(), getObjectProperties().values(), RENDERER_MAP, (indent, description, value) ->
+        if (null != getSampleType())
         {
-            append(body, description);
-            append(body, value);
-        });
+            if (tableInfo == null)
+                tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
+
+            if (tableInfo != null)
+                getCustomIndexValues(tableInfo, identifiersHi, new JSONObject());
+        }
+
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         ExpSampleType st = getSampleType();
         if (null != st)
@@ -503,6 +510,21 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 }
             }
         };
+    }
+
+    // Get all text and int strings from the material properties for indexing
+    private void getCustomIndexValues(
+            ExpMaterialTableImpl table,
+            Set<String> identifiersHi,
+            JSONObject jsonData
+    )
+    {
+        CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet();
+        for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
+            skipColumns.add(column.name());
+
+        processIndexValues(table, skipColumns, identifiersHi, Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), jsonData);
+
     }
 
     static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();

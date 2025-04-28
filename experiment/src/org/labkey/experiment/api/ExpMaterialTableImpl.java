@@ -1601,7 +1601,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask());
+                                    expMaterial.index(searchService.defaultTask(), this);
                             })
                         );
 
@@ -1609,7 +1609,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask());
+                                        expMaterial.index(searchService.defaultTask(), this);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)
