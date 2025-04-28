@@ -47,15 +47,6 @@ public class ContextListener implements ServletContextListener
     // On startup on some platforms, some modules will die if java.awt.headless is not set to false.
     static
     {
-        try
-        {
-            Class.forName("org.apache.tools.ant.Task");
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw new ConfigurationException("Unable to find org.apache.tools.ant.Task", e);
-        }
-
         String headless = "java.awt.headless";
         if (System.getProperty(headless) == null)
             System.setProperty(headless, "true");
