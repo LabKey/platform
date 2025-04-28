@@ -381,6 +381,29 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             }
         }
 
+        // Issue 51126: need to track and resync run/sample lineage on delete in the same way we do for update
+        if (datatableInfo.getDomain() != null)
+        {
+            for (DomainProperty dp : datatableInfo.getDomain().getNonBaseProperties())
+            {
+                if (AssaySampleLookupContext.checkSampleLookup(container, user, dp).isLookup())
+                    _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn("SampleId"), run);
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        var result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
+
+        BatchValidationException errors = new BatchValidationException();
+        _assaySampleLookupContext.syncLineage(container, user, errors);
+        if (errors.hasErrors())
+            throw errors;
+
         return result;
     }
 
