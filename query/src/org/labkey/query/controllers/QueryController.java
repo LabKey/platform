@@ -961,7 +961,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            if (_form.getSchema() != null)
+            if (_form != null && _form.getSchema() != null)
                 addSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
     }
@@ -1515,6 +1515,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+            _form = form;
+
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, true);
 
@@ -1536,7 +1538,6 @@ public class QueryController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             setHelpTopic("customSQL");
-            _form = form;
             _queryView = queryView;
             return queryView;
         }
@@ -2387,7 +2388,7 @@ public class QueryController extends SpringActionController
     }
 
     // Uck. Supports the old and new view designer.
-    protected Map<String, Object> saveCustomView(Container container, QueryDefinition queryDef,
+    protected JSONObject saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName, boolean replaceExisting,
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
@@ -2480,7 +2481,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, returnUrl, errors);
+                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, returnUrl, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2552,7 +2553,7 @@ public class QueryController extends SpringActionController
             }
         }
 
-        Map<String, Object> ret = new HashMap<>();
+        JSONObject ret = new JSONObject();
         ret.put("redirect", returnUrl);
         if (view != null)
             ret.put("view", CustomViewUtil.toMap(view, getUser(), true));
@@ -2574,6 +2575,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Configure.class)
+    @JsonInputLimit(100_000)
     public class SaveQueryViewsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
@@ -2598,10 +2600,10 @@ public class QueryController extends SpringActionController
             if (queryDef == null)
                 throw new NotFoundException("query not found");
 
-            Map<String, Object> response = new HashMap<>();
+            JSONObject response = new JSONObject();
             response.put(QueryParam.schemaName.toString(), schemaName);
             response.put(QueryParam.queryName.toString(), queryName);
-            List<Map<String, Object>> views = new ArrayList<>();
+            JSONArray views = new JSONArray();
             response.put("views", views);
 
             ActionURL redirect = null;
@@ -2637,7 +2639,7 @@ public class QueryController extends SpringActionController
                     throw new NotFoundException("No such container: " + containerPath);
                 }
 
-                Map<String, Object> savedView = saveCustomView(
+                JSONObject savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName, replace,
                         shared, inherit, session, true, hidden, jsonView, null, errors);
 
@@ -2645,7 +2647,7 @@ public class QueryController extends SpringActionController
                 {
                     if (redirect == null)
                         redirect = (ActionURL)savedView.get("redirect");
-                    views.add((Map<String, Object>)savedView.get("view"));
+                    views.put(savedView.getJSONObject("view"));
                 }
             }
 

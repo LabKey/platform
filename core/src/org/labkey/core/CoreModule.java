@@ -207,6 +207,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.AllowListType;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -1164,6 +1165,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
             results.put("customLog4JConfig", customLog4JConfig);
+            results.put("containerRelativeURL", AppProps.getInstance().getUseContainerRelativeURL());
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
@@ -1357,6 +1359,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AdminController.WorkbookDeleteTestCase.class,
+            AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
             DataRegion.TestCase.class,

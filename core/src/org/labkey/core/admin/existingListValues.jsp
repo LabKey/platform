@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -78,7 +79,7 @@
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(value)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
             <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
 
@@ -95,7 +96,11 @@
             <input type="hidden" id="existingValues" name="existingValues" value="" />
             <tr>
                 <td></td>
-                <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
+                <td><br/>
+                    <input type="hidden" id="saveAll" name="saveAll">
+                    <%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
+                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class).addParameter("type", bean.getTypeEnum().name())).usePost("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s?") : HtmlString.EMPTY_STRING%>
+                </td>
             </tr>
         <% } %>
 </labkey:form>

@@ -36,7 +36,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
@@ -80,6 +79,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -125,8 +125,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.net.URL;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -300,7 +298,7 @@ public class FileContentController extends SpringActionController
                     case INCLUDE:
                     case INLINE:
                     {
-                        WebPartView webPart = new WebPartView(WebPartView.FrameType.DIV)
+                        WebPartView<?> webPart = new WebPartView<>(WebPartView.FrameType.DIV)
                         {
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
@@ -324,7 +322,7 @@ public class FileContentController extends SpringActionController
                     }
                     case TEXT:
                     {
-                        WebPartView webPart = new WebPartView(_resource.getName())
+                        WebPartView<?> webPart = new WebPartView<>(_resource.getName())
                         {
                             @Override
                             protected void renderView(Object model, PrintWriter out)
@@ -358,7 +356,7 @@ public class FileContentController extends SpringActionController
         {
             StringBuilder contents = new StringBuilder();
             String line;
-            String newline = System.getProperty("line.separator");
+            String newline = System.lineSeparator();
             final int MAX_SIZE = 5000;
             int size = 0;
 
@@ -375,16 +373,14 @@ public class FileContentController extends SpringActionController
 
                 if (size > MAX_SIZE)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    String sb = "<span class='labkey-error'>" +
+                            "The requested file is too large to display on a page, only part of the file is shown. To download the entire file contents " +
+                            "click on the download link below." + "</span><br>" +
+                            "<br>" + "<a href=\"" + resource.getHref(getViewContext()) + "?contentDisposition=attachment" +
+                            "\">download " + PageFlowUtil.filter(resource.getName()) + "</a>" +
+                            "<br><br>";
 
-                    sb.append("<span class='labkey-error'>");
-                    sb.append("The requested file is too large to display on a page, only part of the file is shown. To download the entire file contents ");
-                    sb.append("click on the download link below.").append("</span><br>");
-                    sb.append("<br>").append("<a href=\"").append(resource.getHref(getViewContext())).append("?contentDisposition=attachment");
-                    sb.append("\">download ").append(PageFlowUtil.filter(resource.getName())).append("</a>");
-                    sb.append("<br><br>");
-
-                    out.write(sb.toString());
+                    out.write(sb);
                 }
 
                 out.write(PageFlowUtil.filter(contents.toString(), true, true));
@@ -426,7 +422,7 @@ public class FileContentController extends SpringActionController
 
 
    @RequiresPermission(ReadPermission.class)
-   public class FrameAction extends SimpleViewAction<SrcForm>
+   public static class FrameAction extends SimpleViewAction<SrcForm>
    {
        @Override
        public ModelAndView getView(SrcForm srcForm, BindException errors)
@@ -443,7 +439,7 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction<FileContentForm>
+    public static class BeginAction extends SimpleViewAction<FileContentForm>
     {
         public BeginAction()
         {
@@ -466,9 +462,7 @@ public class FileContentController extends SpringActionController
                     Path path = Path.decode(form.getPath());
                     part.getModelBean().setDirectory(path);
                 }
-                catch (Throwable t)
-                {
-                }
+                catch (Throwable ignored) {}
             }
             if (null != form.getRootOffset())
             {
@@ -505,7 +499,7 @@ public class FileContentController extends SpringActionController
 
 
    @RequiresPermission(AdminOperationsPermission.class)
-   public class ShowAdminAction extends FormViewAction<FileContentForm>
+   public static class ShowAdminAction extends FormViewAction<FileContentForm>
    {
        @Override
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors)
@@ -568,7 +562,7 @@ public class FileContentController extends SpringActionController
 
 
    @RequiresPermission(AdminOperationsPermission.class)
-   public class AddAttachmentDirectoryAction extends ShowAdminAction
+   public static class AddAttachmentDirectoryAction extends ShowAdminAction
    {
        public static final int MAX_NAME_LENGTH = 80;
        public static final int MAX_PATH_LENGTH = 255;
@@ -619,7 +613,7 @@ public class FileContentController extends SpringActionController
 
 
    @RequiresPermission(AdminOperationsPermission.class)
-   public class DeleteAttachmentDirectoryAction extends ShowAdminAction
+   public static class DeleteAttachmentDirectoryAction extends ShowAdminAction
    {
        @Override
        public boolean handlePost(FileContentForm form, BindException errors)
@@ -701,7 +695,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class FileContentSummaryAction extends FileTreeNodeAction
+    public static class FileContentSummaryAction extends FileTreeNodeAction
     {
         @Override
         public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors)
@@ -735,7 +729,7 @@ public class FileContentController extends SpringActionController
      * Returns information for project file web part administrative information on a per project basis
      */
     @RequiresPermission(ReadPermission.class)
-    public class FileContentProjectSummaryAction extends FileTreeNodeAction
+    public static class FileContentProjectSummaryAction extends FileTreeNodeAction
     {
         private static final String NODE_LABEL = "file web part";
 
@@ -775,7 +769,7 @@ public class FileContentController extends SpringActionController
                     children.add(node);
                 }
             }
-            catch (MissingRootDirectoryException | UnsetRootDirectoryException e){}
+            catch (MissingRootDirectoryException | UnsetRootDirectoryException ignored) {}
 
             // include all child containers
             for (Container child : c.getChildren())
@@ -833,7 +827,7 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
+    public static class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
         public URLHelper getRedirectURL(ReturnUrlForm form)
@@ -866,7 +860,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class UpdateFilePropsAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class UpdateFilePropsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         private List<Map<String, Object>> _files;
 
@@ -1019,7 +1013,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetFileOptionsAction extends MutatingApiAction<ResetType>
+    public static class ResetFileOptionsAction extends MutatingApiAction<ResetType>
     {
         @Override
         public ApiResponse execute(ResetType form, BindException errors)
@@ -1048,7 +1042,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetEmailPrefAction extends ReadOnlyApiAction<Object>
+    public static class GetEmailPrefAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -1070,7 +1064,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFileRootsAction extends ReadOnlyApiAction<Object>
+    public static class GetFileRootsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -1114,8 +1108,8 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class SetEmailPrefAction extends MutatingApiAction<EmailPrefForm>
+    @RequiresPermission(ReadPermission.class) @RequiresLogin
+    public static class SetEmailPrefAction extends MutatingApiAction<EmailPrefForm>
     {
         @Override
         public ApiResponse execute(EmailPrefForm form, BindException errors)
@@ -1131,7 +1125,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetDefaultEmailPrefAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
+    public static class SetDefaultEmailPrefAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
@@ -1158,7 +1152,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowFilesHistoryAction extends SimpleViewAction
+    public static class ShowFilesHistoryAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1182,12 +1176,12 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class FileEmailPreferenceAction extends SimpleViewAction
+    public static class FileEmailPreferenceAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView("/org/labkey/filecontent/view/configureEmail.jsp");
+            return new JspView<>("/org/labkey/filecontent/view/configureEmail.jsp");
         }
 
         @Override
@@ -1199,7 +1193,7 @@ public class FileContentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
-    public class SendShortDigestAction extends MutatingApiAction
+    public static class SendShortDigestAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -1211,7 +1205,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetCustomPropertiesAction extends ReadOnlyApiAction<CustomPropertiesForm>
+    public static class GetCustomPropertiesAction extends ReadOnlyApiAction<CustomPropertiesForm>
     {
         @Override
         public ApiResponse execute(CustomPropertiesForm form, BindException errors)
@@ -1291,7 +1285,7 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class GetZiploaderPatternsAction extends ReadOnlyApiAction
+    public static class GetZiploaderPatternsAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1472,8 +1466,14 @@ public class FileContentController extends SpringActionController
            if (null == renderAs)
                return FileContentController.RenderStyle.PAGE;
 
-           //Will throw illegal argument exception for other values...
-           return FileContentController.RenderStyle.valueOf(renderAs.toUpperCase());
+           try
+           {
+               return FileContentController.RenderStyle.valueOf(renderAs.toUpperCase());
+           }
+           catch (IllegalArgumentException e)
+           {
+               throw new NotFoundException("Invalid renderAs value");
+           }
        }
 
        public String getFileSet()
@@ -1521,42 +1521,7 @@ public class FileContentController extends SpringActionController
     }
 
 
-    private AttachmentDirectory getAttachmentParent(AttachmentForm form) throws NotFoundException
-    {
-        AttachmentDirectory attachmentParent;
-        FileContentService svc = FileContentService.get();
-        try
-        {
-            if (null == form.getEntityId() || form.getEntityId().equals(getContainer().getId()))
-                attachmentParent = svc.getMappedAttachmentDirectory(getContainer(), true);
-            else
-                attachmentParent = svc.getRegisteredDirectoryFromEntityId(getContainer(), form.getEntityId());
-        }
-        catch (UnsetRootDirectoryException e)
-        {
-            throw new NotFoundException("The web root for this project is not set. Please contact an administrator.", e);
-        }
-        catch (MissingRootDirectoryException e)
-        {
-            throw new NotFoundException("The web root for this project is set to a non-existent directory. Please contact an administrator", e);
-        }
-
-        boolean exists = false;
-        try
-        {
-            exists = Files.exists(attachmentParent.getFileSystemDirectoryPath());
-        }
-        catch (MissingRootDirectoryException ex)
-        {
-            /* */
-        }
-        if (!exists)
-            throw new NotFoundException("Directory for saving file does not exist. Please contact an administrator.");
-
-        return attachmentParent;
-    }
-
-    static MimeMap mimeMap = new MimeMap();
+    static final MimeMap mimeMap = new MimeMap();
 
     public static RenderStyle defaultRenderStyle(String name)
     {
@@ -1591,39 +1556,39 @@ public class FileContentController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
                 controller.new SendFileAction(),
-                controller.new FrameAction(),
-                controller.new BeginAction(),
-                controller.new FileContentSummaryAction(),
-                controller.new FileContentProjectSummaryAction(),
-                controller.new GetEmailPrefAction(),
-                controller.new GetFileRootsAction(),
-                controller.new SetEmailPrefAction(),
-                controller.new FileEmailPreferenceAction()
+                    new FrameAction(),
+                    new BeginAction(),
+                    new FileContentSummaryAction(),
+                    new FileContentProjectSummaryAction(),
+                    new GetEmailPrefAction(),
+                    new GetFileRootsAction(),
+                    new SetEmailPrefAction(),
+                    new FileEmailPreferenceAction()
             );
 
             // @RequiresPermission(InsertPermission.class)
             assertForInsertPermission(user,
-                controller.new UpdateFilePropsAction()
+                    new UpdateFilePropsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new DesignerAction(),
-                controller.new ResetFileOptionsAction(),
-                controller.new SetDefaultEmailPrefAction(),
-                controller.new ShowFilesHistoryAction()
+                    new DesignerAction(),
+                    new ResetFileOptionsAction(),
+                    new SetDefaultEmailPrefAction(),
+                    new ShowFilesHistoryAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new ShowAdminAction(),
-                controller.new AddAttachmentDirectoryAction(),
-                controller.new DeleteAttachmentDirectoryAction()
+                    new ShowAdminAction(),
+                    new AddAttachmentDirectoryAction(),
+                    new DeleteAttachmentDirectoryAction()
             );
 
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
-                controller.new SendShortDigestAction()
+                    new SendShortDigestAction()
             );
         }
     }

@@ -929,6 +929,11 @@ public class DateUtil
         return ISO_DATE_TIME_FORMAT_STRING;
     }
 
+    public static String getJsonTimeFormatString()
+    {
+        return ISO_LONG_TIME_FORMAT_STRING;
+    }
+
     /**
      * Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
      * form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
@@ -1121,18 +1126,12 @@ public class DateUtil
     }
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
-    private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(ISO_TIME_FORMAT_STRING);
+    private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(getJsonTimeFormatString());
 
     public static String formatJsonDateTime(Date date)
     {
         if (date instanceof Time)
-        {
-            ViewContext context = HttpView.currentContext();
-            if (context != null && context.getContainer() != null)
-                return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
-
             return jsonTimeFormat.format(date);
-        }
 
         return jsonDateFormat.format(date);
     }
