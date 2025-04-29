@@ -16,8 +16,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -34,7 +32,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.StringExpressionType;
 
@@ -44,6 +41,7 @@ import java.net.URISyntaxException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -61,9 +59,6 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
 
 /**
  * Factory for creating {@link StringExpression} instances from a string that defines the pattern.
- * User: migra
- * Date: Dec 28, 2004
- *
  * TODO: Use a real expression or interpolation library:
  *  - JEXL: http://commons.apache.org/proper/commons-jexl/
  *  - Unified Expression Language: http://juel.sourceforge.net/index.html
@@ -72,8 +67,6 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
  */
 public class StringExpressionFactory
 {
-    private static final Logger LOG = LogManager.getLogger(StringExpressionFactory.class);
-
     private static final Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
     private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(10000, CacheManager.DAY, "StringExpression template URLs");
 
@@ -121,19 +114,14 @@ public class StringExpressionFactory
 
 
     /**
-     * HANDLES three cases
-     *
+     * HANDLES three cases:
      *  a) http[s]://*?param=${Column}
-     *
      *  b) /Controller/Action.view?param=${Column}
      *     /Controller-Action.view?param=${Column}
      *     org.labkey.module.Controller$Action.class?param=${Column}\s
      *     special w/ some container support
-     *
      *  c) freeform, whatever
-     *
      * CONSIDER javascript: (permissions!)
-     *
      */
     public static StringExpression createURL(String str)
     {
@@ -1222,9 +1210,8 @@ public class StringExpressionFactory
 
             for (StringPart stringPart : clone.getParsedExpression())
             {
-                if (stringPart instanceof FieldPart)
+                if (stringPart instanceof FieldPart fieldPart)
                 {
-                    FieldPart fieldPart = (FieldPart)stringPart;
                     // Removes the parent if the first part of the FieldKey matches the parent name
                     FieldKey newFieldKey = fieldPart._key.removeParent(parentName);
                     if (newFieldKey != null)
@@ -1341,12 +1328,15 @@ public class StringExpressionFactory
         {
             Map<Object,Object> m = new HashMap<>();
 
-            FieldKeyStringExpression fkse = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
+            FieldKeyStringExpression e = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
             m.put(FieldKey.fromParts("A","rowid"), "BUG");
             m.put(new FieldKey(null, "lookup"), 5);
             m.put(FieldKey.fromParts("A","title"), "title one");
             Map<FieldKey,FieldKey> remap = new HashMap<>();
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
+
+            e.remapFieldKeys(null, remap);
+            assertEquals("whoknows", e.eval(m));
         }
 
 
@@ -1378,7 +1368,7 @@ public class StringExpressionFactory
         @Test
         public void testDateFormats()
         {
-            Date d = new GregorianCalendar(2011, 11, 3).getTime();
+            Date d = new GregorianCalendar(2011, Calendar.DECEMBER, 3).getTime();
             Map<Object, Object> m = new HashMap<>();
             m.put("d", d);
 
@@ -1511,6 +1501,54 @@ public class StringExpressionFactory
         }
 
         @Test
+        public void testOptions()
+        {
+            Map<Object, Object> partialMap = new HashMap<>();
+            partialMap.put("a", "%A");
+            partialMap.put("null", null);
+            Map<Object, Object> fullMap = new HashMap<>(partialMap);
+            fullMap.put("b", "B");
+
+            final String expression = "${a}${b}${null}";
+
+            // NullResult is the default NullValueBehavior
+            StringExpression e = StringExpressionFactory.create(expression, false);
+            assertNull(e.eval(partialMap));
+            assertNull(e.eval(fullMap));
+            e = StringExpressionFactory.create(expression, true);
+            assertNull(e.eval(partialMap));
+            assertNull(e.eval(fullMap));
+
+            e = StringExpressionFactory.create(expression, false, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+            assertNull(e.eval(partialMap));
+            assertEquals("%AB", e.eval(fullMap));
+            e = StringExpressionFactory.create(expression, true, AbstractStringExpression.NullValueBehavior.ReplaceNullWithBlank);
+            assertNull(e.eval(partialMap));
+            assertEquals("%25AB", e.eval(fullMap));
+
+            e = StringExpressionFactory.create(expression, false, AbstractStringExpression.NullValueBehavior.OutputNull);
+            assertNull(e.eval(partialMap));
+            assertEquals("%ABnull", e.eval(fullMap));
+            e = StringExpressionFactory.create(expression, true, AbstractStringExpression.NullValueBehavior.OutputNull);
+            assertNull(e.eval(partialMap));
+            assertEquals("%25ABnull", e.eval(fullMap));
+
+            e = StringExpressionFactory.create(expression, false, AbstractStringExpression.NullValueBehavior.ReplaceNullAndMissingWithBlank);
+            assertEquals("%A", e.eval(partialMap));
+            assertEquals("%AB", e.eval(fullMap));
+            e = StringExpressionFactory.create(expression, true, AbstractStringExpression.NullValueBehavior.ReplaceNullAndMissingWithBlank);
+            assertEquals("%25A", e.eval(partialMap));
+            assertEquals("%25AB", e.eval(fullMap));
+
+            e = StringExpressionFactory.create(expression, false, AbstractStringExpression.NullValueBehavior.KeepSubstitution);
+            assertEquals("%A${b}${null}", e.eval(partialMap));
+            assertEquals("%AB${null}", e.eval(fullMap));
+            e = StringExpressionFactory.create(expression, true, AbstractStringExpression.NullValueBehavior.KeepSubstitution);
+            assertEquals("%25A${b}${null}", e.eval(partialMap));
+            assertEquals("%25AB${null}", e.eval(fullMap));
+        }
+
+        @Test
         public void testUndefined()
         {
             Map<Object, Object> m = new HashMap<>();
@@ -1527,7 +1565,7 @@ public class StringExpressionFactory
                 // SimpleStringExpression default behavior is to emit blank for null values
                 StringExpression se1 = new SimpleStringExpression("${null}", false);
                 String s1 = se1.eval(m);
-                assertEquals(null, s1);
+                assertNull(s1);
 
                 // For backwards compatibility, FieldKeyStringExpression default behavior is to emit empty string for null values
                 FieldKeyStringExpression se2 = new FieldKeyStringExpression("${null}");
@@ -1537,14 +1575,14 @@ public class StringExpressionFactory
                 // ... but can be overridden to emit a null result
                 FieldKeyStringExpression se3 = new FieldKeyStringExpression("${null}", true, AbstractStringExpression.NullValueBehavior.NullResult);
                 String s3 = se3.eval(m);
-                assertEquals(null, s3);
+                assertNull(s3);
             }
 
             {
                 // Undefined values always result in a null result
                 StringExpression se1 = new FieldKeyStringExpression("${doesNotExist}");
                 String s1 = se1.eval(m);
-                assertEquals(null, s1);
+                assertNull(s1);
 
                 // ... unless it has a defaultValue
                 StringExpression se2 = new FieldKeyStringExpression("${doesNotExist:defaultValue('fred')}");
@@ -1557,8 +1595,6 @@ public class StringExpressionFactory
         public void testCreateUrl()
         {
             Container container = JunitUtil.getTestContainer();
-            String containerPath = container.getPath();
-            String contextPath = AppProps.getInstance().getContextPath();
             ActionURL url = new ActionURL("controller","action",container);
             ActionURL urlBegin = new ActionURL("project","begin",container);
             String s;

@@ -392,9 +392,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions(".SOURCES}", 0);
                     // Should have been substitution in init()
                     verifySubstitutionInPolicyExpressions("${CSP.REPORT.PARAMS}", 0);
-                    // A single substitution parameter (${REQUEST.SCRIPT.NONCE}) should remain
-                    verifySubstitutionInPolicyExpressions("${REQUEST.SCRIPT.NONCE}", 1);
-                    verifySubstitutionInPolicyExpressions("${", 1);
+                    verifySubstitutionInPolicyExpressions("${", 0);
 
                     // Now unregister and register sources for each Directive, testing expectations along the way
                     unregisterAllowedSources(Directive.Connection, "foo");
