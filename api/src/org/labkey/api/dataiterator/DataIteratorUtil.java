@@ -155,7 +155,7 @@ public class DataIteratorUtil
                     {
                         if (name == null)
                             return null;
-                        // " is encoded as %22 when content-type is "multipart/form-data"
+                        // " is encoded as %22 when content-type is "multipart/form-data" (but is not otherwise encoded so decode() does not work)
                         return name.replaceAll("\"", "%22");
                     }
                 },
