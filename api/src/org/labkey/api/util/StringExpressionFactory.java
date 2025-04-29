@@ -1329,17 +1329,22 @@ public class StringExpressionFactory
             Map<Object,Object> m = new HashMap<>();
 
             FieldKeyStringExpression original = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
-            m.put(FieldKey.fromParts("lookup","rowid"), "BUG");
+            m.put(FieldKey.fromParts("lookup","rowid"), 6);
             m.put(FieldKey.fromParts("lookup"), 5);
             m.put(FieldKey.fromParts("lookup","title"), "title one");
+
+            // Approach #1 - prefix explicitly, column by column
             Map<FieldKey,FieldKey> remap = new HashMap<>();
             remap.put(FieldKey.fromParts("rowid"), FieldKey.fromParts("lookup"));
             remap.put(FieldKey.fromParts("title"), FieldKey.fromParts("lookup", "title"));
-
             FieldKeyStringExpression remapped = original.remapFieldKeys(null, remap);
-
             assertNull(original.eval(m));
             assertEquals("details.view?id=5&title=title%20one", remapped.eval(m));
+
+            // Approach #2 - remap everything with a prefix
+            remapped = original.remapFieldKeys(FieldKey.fromParts("lookup"), null);
+            assertNull(original.eval(m));
+            assertEquals("details.view?id=6&title=title%20one", remapped.eval(m));
         }
 
 
