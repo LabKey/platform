@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.38.1-validateSampleLookup.0",
+    "@labkey/components": "6.38.2-validateSampleLookup.1",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
