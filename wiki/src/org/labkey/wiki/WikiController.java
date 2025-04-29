@@ -717,6 +717,7 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(FORM form, BindException errors)
         {
+            getPageConfig().setRobotsNone();
             Container c = getContainer();
             Set<WikiTree> wikiTrees = getWikiTrees(form, c);
 
