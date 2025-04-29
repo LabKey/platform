@@ -385,10 +385,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         if (datatableInfo.getDomain() != null)
         {
             for (DomainProperty dp : datatableInfo.getDomain().getNonBaseProperties())
-            {
-                if (AssaySampleLookupContext.checkSampleLookup(container, user, dp).isLookup())
-                    _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn(dp.getName()), run);
-            }
+                _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn(dp.getName()), run);
         }
 
         return result;
