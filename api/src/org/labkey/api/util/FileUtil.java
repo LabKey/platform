@@ -349,12 +349,17 @@ public class FileUtil
         return extensionChecker.matcher(filename).matches() ? null : extension;
     }
 
-    public static void setExtensionChecker(AppProps appProps)
+    private static void setExtensionChecker(AppProps appProps)
     {
         // Regex encode the allowed extensions (escape periods and add '|' optional matcher)
         String allowedExtensions = appProps.getAllowedExtensions().stream().map(Pattern::quote).collect(Collectors.joining("|"));
         // Allow any extension in the list unless it is preceeded by a '.' which we use as a proxy for double/multi extensions
         extensionChecker = Pattern.compile(String.format("^[^\\.]*(%1$s)$", allowedExtensions), Pattern.CASE_INSENSITIVE);
+    }
+
+    public static void clearExtensionChecker()
+    {
+        extensionChecker = null;
     }
 
     public static void checkAllowedFileName(String s, boolean checkFileExtension) throws IOException

@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONParserConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -2555,8 +2556,15 @@ public class QueryController extends SpringActionController
 
         JSONObject ret = new JSONObject();
         ret.put("redirect", returnUrl);
-        if (view != null)
-            ret.put("view", CustomViewUtil.toMap(view, getUser(), true));
+        Map<String, Object> viewAsMap = CustomViewUtil.toMap(view, getUser(), true);
+        try
+        {
+            ret.put("view", new JSONObject(viewAsMap, new JSONParserConfiguration().withMaxNestingDepth(10)));
+        }
+        catch (JSONException e)
+        {
+            LOG.error("Failed to save view: {}", jsonView, e);
+        }
         return ret;
     }
 

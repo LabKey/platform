@@ -91,6 +91,7 @@ import org.labkey.api.query.FileColumnValueMapper;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
@@ -2414,6 +2415,7 @@ public class ExpDataIterators
 
     public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
+        private static final String INVALID_FOLDER_MESSAGE = "Import or update of data in folder %s from folder %s is not allowed. Verify the folder exists, you have proper permissions, and data from that folder is visible here.";
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
         private static final Set<String> CONTAINER_FIELD_NAMES = Set.of("Container", "Folder");
@@ -2511,7 +2513,12 @@ public class ExpDataIterators
                 {
                     ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
-                        cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                    {
+                        if (container.isProject())
+                            cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                        else if (!QueryService.get().isProductFoldersDataListingScopedToProject())
+                            cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+                    }
                     Collection<GUID> validContainerIds =  cf.getIds();
                     if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
                     {
@@ -2666,7 +2673,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Invalid value '" + rowFolderId +"' provided for '" + getColumnInfo(_folderColIndex).getName() + "'."));
+                                _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, rowFolderId, _container.getName())));
                                 return true;
                             }
                         }
@@ -3042,7 +3049,7 @@ public class ExpDataIterators
                     if (container == null)
                     {
                         Container folder = ContainerManager.getForId(containerId);
-                        _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the folder: " + (folder != null ? folder.getName() : containerId)));
+                        _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, (folder != null ? folder.getName() : containerId), _container.getName())));
                         return;
                     }
 
