@@ -1328,15 +1328,18 @@ public class StringExpressionFactory
         {
             Map<Object,Object> m = new HashMap<>();
 
-            FieldKeyStringExpression e = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
-            m.put(FieldKey.fromParts("A","rowid"), "BUG");
-            m.put(new FieldKey(null, "lookup"), 5);
-            m.put(FieldKey.fromParts("A","title"), "title one");
+            FieldKeyStringExpression original = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
+            m.put(FieldKey.fromParts("lookup","rowid"), "BUG");
+            m.put(FieldKey.fromParts("lookup"), 5);
+            m.put(FieldKey.fromParts("lookup","title"), "title one");
             Map<FieldKey,FieldKey> remap = new HashMap<>();
-            remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
+            remap.put(FieldKey.fromParts("rowid"), FieldKey.fromParts("lookup"));
+            remap.put(FieldKey.fromParts("title"), FieldKey.fromParts("lookup", "title"));
 
-            e.remapFieldKeys(null, remap);
-            assertEquals("whoknows", e.eval(m));
+            FieldKeyStringExpression remapped = original.remapFieldKeys(null, remap);
+
+            assertNull(original.eval(m));
+            assertEquals("details.view?id=5&title=title%20one", remapped.eval(m));
         }
 
 
