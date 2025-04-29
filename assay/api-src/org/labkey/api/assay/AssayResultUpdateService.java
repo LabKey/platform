@@ -387,7 +387,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
             for (DomainProperty dp : datatableInfo.getDomain().getNonBaseProperties())
             {
                 if (AssaySampleLookupContext.checkSampleLookup(container, user, dp).isLookup())
-                    _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn("SampleId"), run);
+                    _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn(dp.getName()), run);
             }
         }
 
@@ -400,6 +400,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         var result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
 
         BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
         _assaySampleLookupContext.syncLineage(container, user, errors);
         if (errors.hasErrors())
             throw errors;
