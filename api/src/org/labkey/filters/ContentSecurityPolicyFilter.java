@@ -209,7 +209,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 .eval(ALLOWED_SOURCES_SUBSTITUTION_MAP);
         }
 
-        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.KeepSubstitution);
+        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
     }
 
     @Override

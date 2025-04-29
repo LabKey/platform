@@ -107,7 +107,7 @@ public class StringExpressionFactory
         if (!expMatcher.find())
             return new ConstantStringExpression(str);
 
-        String key = "simple:" + str + "(" + urlEncodeSubstitutions + ")";
+        String key = "simple:" + str + "(" + urlEncodeSubstitutions + ", " + nullValueBehavior + ", " + allowSideEffects + ")";
 
         StringExpression expr = templates.get(key);
         if (null != expr)
