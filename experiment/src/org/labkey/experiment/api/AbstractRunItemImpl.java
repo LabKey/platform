@@ -335,13 +335,14 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     }
 
     public void processIndexValues(
+            Map<String, Object> props,
             ExpRunItemTableImpl<?> table,
             CaseInsensitiveHashSet skipColumns,
             Set<String> identifiersHi,
             Set<String> identifiersMed,
             Set<String> identifiersLo,
-            Set<String> keywordHi,
-            Set<String> keywordMed,
+            Set<String> keywordsHi,
+            Set<String> keywordsMed,
             Set<String> keywordsLo,
             JSONObject jsonData
     )
@@ -430,11 +431,11 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                                 continue;
                             }
                             case keywordsHi -> {
-                                keywordHi.addAll(values);
+                                keywordsHi.addAll(values);
                                 continue;
                             }
                             case keywordsMed -> {
-                                keywordMed.addAll(values);
+                                keywordsMed.addAll(values);
                                 continue;
                             }
                             case keywordsLo -> {
@@ -461,6 +462,19 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         {
             // ignore
         }
+
+        // === Not stemmed
+
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
+        props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
+
+
+        // === Stemmed
+
+        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
 
     }
 }

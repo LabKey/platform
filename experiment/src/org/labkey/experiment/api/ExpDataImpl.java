@@ -486,6 +486,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     // Get all text and int strings from the data class for indexing
     private void getIndexValues(
+        Map<String, Object> props,
         ExpDataClassDataTableImpl table,
         Set<String> identifiersHi,
         Set<String> identifiersMed,
@@ -502,7 +503,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         skipColumns.add("Ancestors");
         skipColumns.add("Container");
 
-        processIndexValues(table, skipColumns, identifiersHi, identifiersMed, identifiersLo, keywordHi, keywordMed, keywordsLo, jsonData);
+        processIndexValues(props, table, skipColumns, identifiersHi, identifiersMed, identifiersLo, keywordHi, keywordMed, keywordsLo, jsonData);
     }
 
     @Override
@@ -743,12 +744,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
         }
 
-        if (tableInfo != null)
-        {
-            // Collect other text columns and lookup display columns
-            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
-        }
-
         if (null != dc)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
@@ -760,22 +755,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             body.append(dc.getName());
         }
 
-
-        // === Not stemmed
-
-        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
-        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
-        props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
-
-
-        // === Stemmed
-
-        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
+        if (tableInfo != null)
+        {
+            // Collect other text columns and lookup display columns
+            getIndexValues(props, tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
+        }
 
         // === Stored, not indexed
-
         if (dc != null && dc.isMedia())
             props.put(SearchService.PROPERTY.categories.toString(), expMediaDataCategory.toString());
         else

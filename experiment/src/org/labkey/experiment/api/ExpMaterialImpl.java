@@ -451,16 +451,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         append(body, getSourceApplication());
 
         // Add all String and Integer custom property descriptions and values to body
+        JSONObject jsonData = new JSONObject();
         if (null != getSampleType())
         {
             if (tableInfo == null)
                 tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
 
             if (tableInfo != null)
-                getCustomIndexValues(tableInfo, identifiersHi, new JSONObject());
+                getCustomIndexValues(props, tableInfo, jsonData);
         }
 
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+        props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
         ExpSampleType st = getSampleType();
         if (null != st)
@@ -514,8 +516,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     // Get all text and int strings from the material properties for indexing
     private void getCustomIndexValues(
+            Map<String, Object> props,
             ExpMaterialTableImpl table,
-            Set<String> identifiersHi,
             JSONObject jsonData
     )
     {
@@ -523,8 +525,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
             skipColumns.add(column.name());
 
-        processIndexValues(table, skipColumns, identifiersHi, Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), jsonData);
-
+        processIndexValues(props, table, skipColumns, new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), jsonData);
     }
 
     static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
