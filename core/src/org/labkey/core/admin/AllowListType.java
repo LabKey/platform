@@ -3,16 +3,25 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -109,6 +118,7 @@ public enum AllowListType
             WriteableAppProps props = AppProps.getWriteableInstance();
             props.setAllowedFileExtensions(allowedExtensions);
             props.save(user);
+            FileUtil.clearExtensionChecker(); // Should be redundant, but going to leave this here
         }
 
         @Override
@@ -149,5 +159,43 @@ public enum AllowListType
     public URLHelper getSuccessURL(Container container)
     {
         return new ActionURL(AdminController.AllowListAction.class, container).addParameter("type", name());
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testAllowedExtensions()
+        {
+            List<String> existing = FileExtension.getValues();
+            Assume.assumeTrue("Initial allowed extensions list should be empty to prevent overriding existing values", existing.isEmpty());
+
+            try
+            {
+                List<String> newValues = Arrays.asList(".tar.gz", ".bar");
+                FileExtension.setValues(newValues, User.getAdminServiceUser());
+
+                try
+                {
+                    FileUtil.checkAllowedFileName("test.tar.gz", true);
+                    FileUtil.checkAllowedFileName("foo.bar", true);
+                }
+                catch (IOException e)
+                {
+                    fail("Filename should've been accepted: " + e.getMessage());
+                }
+
+                Assert.assertThrows("We dont allow 'extra' extensions", IOException.class, () -> FileUtil.checkAllowedFileName("test.foo.tar.gz", true));
+                Assert.assertThrows("We dont allow partial extensions, first segment", IOException.class, () -> FileUtil.checkAllowedFileName("test.tar", true));
+                Assert.assertThrows("We dont allow partial extensions, second segment", IOException.class, () -> FileUtil.checkAllowedFileName("test.gz", true));
+                Assert.assertThrows("We dont allow files with no extensions", IOException.class, () -> FileUtil.checkAllowedFileName("test", true));
+            }
+            finally
+            {
+                // Verify values were restored to original state.
+                FileExtension.setValues(existing, User.getAdminServiceUser());
+                List<String> current = FileExtension.getValues();
+                assertEquals(existing, current);
+            }
+        }
     }
 }
