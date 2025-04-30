@@ -844,8 +844,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
         }
 
+        if (!isProject && ILLEGAL_FOLDER_NAMES.contains(name))
+        {
+            error.append("Folder name \"").append(name).append("\" is not allowed.");
+            return false;
+        }
         return true;
     }
+
+    private static final Set<String> ILLEGAL_FOLDER_NAMES = Sets.newCaseInsensitiveHashSet("home");
 
     // Any names that we register as special servlets won't work as project names
     private static final Set<String> ILLEGAL_PROJECT_NAMES = Sets.newCaseInsensitiveHashSet("cas", "_rstudio", "_webdav", "filecontent");
