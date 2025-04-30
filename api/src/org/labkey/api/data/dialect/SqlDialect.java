@@ -908,8 +908,10 @@ public abstract class SqlDialect
     // Create a DatabaseIdentifier for the desired alias
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
-        if (getIdentifierMaxLength() < alias.length())
-            throw new UnsupportedOperationException("Name longer than " + getIdentifierMaxLength() + " characters");
+        if (isIdentifierTooLong(alias))
+            throw new UnsupportedOperationException("Name is too long: " + alias);
+
+
         // what we want:
         //   SQLFragment quoted = new SQLFragment().appendIdentifier(quoteIdentifier(alias));
         //   return new _DatabaseIdentifier(alias, quoted, this);

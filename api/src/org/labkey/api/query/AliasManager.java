@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
@@ -43,7 +42,7 @@ public class AliasManager
 {
     // SqlDialect to use when null dialect is provided. This implements "least-common denominator" rules for
     // identifiers, ensuring aliases will work on all databases.
-    private static class FallBackDialect extends  MockSqlDialect
+    private static class FallBackDialect extends MockSqlDialect
     {
         @Override
         protected int getIdentifierMaxCharLength()
@@ -78,7 +77,7 @@ public class AliasManager
             // PostgreSQL rule - truncate to 63 bytes
             return StringUtilsLabKey.leftUtf8Bytes(legal, 63 - reserveCount);
         }
-    };
+    }
 
     final @NotNull SqlDialect _dialect;
     final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
@@ -126,21 +125,7 @@ public class AliasManager
     }
 
     // null dialect is tolerated but not recommended
-    @Deprecated // TODO: Unused?
     public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
-    {
-        // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
-        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
-    }
-
-    @Deprecated // TODO: Unused?
-    public static String truncate(DatabaseIdentifier id, int to)
-    {
-        return truncate(id.getId(), to);
-    }
-  
-    @Deprecated // TODO: Unused?
-    public static String truncate(String str, int to)
     {
         // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
         return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
@@ -270,12 +255,6 @@ public class AliasManager
         public String makeLegalIdentifierName(String id)
         {
             return super.makeLegalIdentifierName(id);
-        }
-
-        @Override
-        public int getIdentifierMaxLength()
-        {
-            return 200;
         }
     }
 

@@ -933,8 +933,9 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public DatabaseIdentifier makeDatabaseIdentifier(String alias)
     {
-        if (getIdentifierMaxLength() < alias.length())
-            throw new UnsupportedOperationException("Name longer than " + getIdentifierMaxLength() + " characters");
+        if (isIdentifierTooLong(alias))
+            throw new UnsupportedOperationException("Name is too long: " + alias);
+
         // TODO always quote, for now be as backward compatible as possible
         SQLFragment id;
         if (shouldQuoteIdentifier(alias))
