@@ -17,12 +17,14 @@ package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfoFactory;
 import org.labkey.api.data.TableInfo;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by adam on 8/14/2015.
@@ -62,7 +64,7 @@ public class StandardTableResolver implements TableResolver
     @Override
     public JdbcMetaDataLocator getSingleTableLocator(DbScope scope, String schemaName, TableInfo tableInfo) throws SQLException
     {
-        return getSingleTableLocator(scope, schemaName, tableInfo.getMetaDataName());
+        return getSingleTableLocator(scope, schemaName, Objects.requireNonNull(tableInfo.getMetaDataIdentifier()).getId());
     }
 
     private static final ForeignKeyResolver STANDARD_RESOLVER = new StandardForeignKeyResolver();
@@ -75,6 +77,11 @@ public class StandardTableResolver implements TableResolver
 
     // We must escape LIKE wild card characters in cases where we're passing a single table or schema name as a pattern
     // parameter, see #43821
+    public static String escapeName(DbScope scope, @NotNull DatabaseIdentifier id)
+    {
+        return escapeName(scope, id.getId());
+    }
+
     public static String escapeName(DbScope scope, @NotNull String name)
     {
         String escape = scope.getDatabaseSearchStringEscape();

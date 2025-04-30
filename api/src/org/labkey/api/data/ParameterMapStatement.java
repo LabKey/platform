@@ -103,7 +103,7 @@ public class ParameterMapStatement implements AutoCloseable
     }
 
 
-    /** throws RuntimeSQLException if getConnection) fails */
+    /** throws RuntimeSQLException if getConnection() fails */
     public static ParameterMapStatement create(@NotNull DbScope scope, SQLFragment sql, Map<String, String> remap)
     {
         Connection conn;

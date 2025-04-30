@@ -39,6 +39,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.ParameterMapStatement;
@@ -193,7 +194,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             List<PropertyStorageSpec.Index> indices = new ArrayList<>();
             indices.addAll(kind.getPropertyIndices(domain));
             indices.addAll(domain.getPropertyIndices());
-            change.setIndexedColumns(indices);
+            change.setIndexedColumns(domain, indices);
 
             change.setForeignKeys(domain.getPropertyForeignKeys());
 
@@ -575,21 +576,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
     public TableInfo createTableInfoImpl(@NotNull Domain domain)
     {
         SchemaTableInfo sti = getSchemaTableInfo(domain);
-
-        // NOTE we could handle this in ProvisionedSchemaOptions.afterLoadTable(), but that would require
-        // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
-        CaseInsensitiveHashMap<String> map = new CaseInsensitiveHashMap<>();
-        for (DomainProperty dp : domain.getProperties())
-        {
-            String scn = dp.getPropertyDescriptor().getStorageColumnName();
-            String name = dp.getName();
-            if (null != scn && !scn.equals(name))
-                map.put(scn, name);
-        }
-
-        _VirtualTable wrapper = new _VirtualTable(sti.getSchema(), sti.getName(), sti, map, domain);
+        // TODO Can we handle everything _ProvisionedTable does in fixupProvisionedDomain()?
+        _ProvisionedTable wrapper = new _ProvisionedTable(sti.getSchema(), sti.getName(), sti, domain);
         wrapper.wrapAllColumns();
-
         return wrapper;
     }
 
@@ -606,51 +595,47 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @NotNull
     private static DomainKind<?> getDomainKind(@NotNull Domain domain)
     {
-        if (null == domain)
-            throw new NullPointerException("domain is null");
+        Objects.requireNonNull(domain);
         DomainKind<?> kind = domain.getDomainKind();
         if (null == kind)  // TODO: Consider using TableNotFoundException or something similar
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
         return kind;
     }
 
-    public static class _VirtualTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
+    private static class _ProvisionedTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
     {
         private final SchemaTableInfo _inner;
-        private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
         private Domain _domain;
 
-        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
+        _ProvisionedTable(DbSchema schema, String name, SchemaTableInfo inner, Domain domain)
         {
             super(schema, name, null);
             _inner = inner;
-            _map.putAll(map);
-        }
-
-        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map, Domain domain)
-        {
-            this(schema, name, inner, map);
             _domain = domain;
+            if (StringUtils.isNotBlank(domain.getTitle()))
+                setTitle(domain.getTitle());
         }
 
         public void wrapAllColumns()
         {
+            CaseInsensitiveHashMap<DomainProperty> map = new CaseInsensitiveHashMap<>();
+            for (var dp : _domain.getProperties())
+            {
+                if (null != dp.getPropertyDescriptor().getStorageColumnName())
+                    map.put(dp.getPropertyDescriptor().getStorageColumnName(), dp);
+            }
+            var d = getSqlDialect();
+            AliasManager am = new AliasManager(d);
             for (ColumnInfo from : _inner.getColumns())
             {
-                String name = Objects.toString(_map.get(from.getName()), from.getName());
+                var dp = map.get(from.getName());
+                String name = null == dp ? from.getName() : dp.getName();
                 AliasedColumn to = new AliasedColumn(this, new FieldKey(null, name), from, true)
                 {
                     @Override
-                    public String getSelectName()
+                    public DatabaseIdentifier getSelectIdentifier()
                     {
-                        return _column.getSelectName();
-                    }
-
-                    @Override
-                    public String getAlias()
-                    {
-                        // it seems that alias like selectname in some places (CompareClause.toSQLFragment())
-                        return _column.getAlias();
+                        return _column.getSelectIdentifier();
                     }
 
                     @Override
@@ -658,8 +643,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     {
                         return super.getValueSql(tableAlias);
                     }
-
                 };
+                to.setAlias(d.makeDatabaseIdentifier(am.decideAlias(name)));
+
+                if (null != dp)
+                    to.setPropertyURI(dp.getPropertyURI());
                 to.setHidden(from.isHidden());
                 if (from.isUniqueIdField())
                 {
@@ -724,11 +712,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
             return _inner.getSQLName();
         }
 
-        @Nullable
         @Override
-        public String getMetaDataName()
+        public @Nullable DatabaseIdentifier getMetaDataIdentifier()
         {
-            return _inner.getMetaDataName();
+            return _inner.getMetaDataIdentifier();
         }
 
         @NotNull
@@ -786,7 +773,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
         @Override
         public CaseInsensitiveHashMap<String> remapSchemaColumns()
         {
-            return _map;
+            CaseInsensitiveHashMap<String> map = new CaseInsensitiveHashMap<>();
+            for (DomainProperty dp : _domain.getProperties())
+            {
+                String scn = dp.getPropertyDescriptor().getStorageColumnName();
+                if (null != scn && !scn.equals(dp.getName()))
+                    map.put(scn, dp.getName());
+            }
+            return map;
         }
 
         @Nullable
@@ -1064,14 +1058,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
             change.setIndexSizeMode(sizeMode);
 
         // If indices not passed in, get them from domain definition
-        if(null == indices)
+        if (null == indices)
         {
             indices = new HashSet<>();
             indices.addAll(kind.getPropertyIndices(domain));
             indices.addAll(domain.getPropertyIndices());
         }
 
-        change.setIndexedColumns(indices);
+        change.setIndexedColumns(domain, indices);
 
         try (Transaction transaction = scope.ensureTransaction())
         {
@@ -1429,9 +1423,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
                 // Ignore the hashed columns generated for unique constraint over large text columns required for SQLServer
                 // Unfortunately, the domain doesn't record the intended unique indices, so we'll just ignore all columns that have the "_hashed_" prefix.
+                var dialect = getSqlDialect(domain);
                 if (getSqlDialect(domain).isSqlServer() && domainProp.getJdbcType().isText())
                 {
-                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + getSqlDialect(domain).makeLegalIdentifier(propDescriptor.getName());
+                    String hashedColumnName = PropertyStorageSpec.HASHED_COLUMN_PREFIX + propDescriptor.getName();
                     hardColumnNames.remove(hashedColumnName);
                 }
 

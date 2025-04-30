@@ -1,6 +1,7 @@
 package org.labkey.specimen.importer;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -122,9 +123,9 @@ public class ImportableColumn
         return _dbColumnName;
     }
 
-    private String _legalDbColumnName;
+    private DatabaseIdentifier _legalDbColumnName;
 
-    public String getLegalDbColumnName(SqlDialect dialect)
+    public DatabaseIdentifier getLegalDbColumnName(SqlDialect dialect)
     {
         if (null == _legalDbColumnName)
             _legalDbColumnName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, getDbColumnName());

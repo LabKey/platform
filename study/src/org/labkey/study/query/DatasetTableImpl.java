@@ -734,7 +734,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 {
                     sqlf.append(" AND __PV__.Container = ").appendValue(getContainer());
                 }
-                sqlf.append(") ").append(innerAlias).append(" ");
+                sqlf.append(") ").appendIdentifier(innerAlias).append(" ");
 
                 Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
                 SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), innerAlias, columnMap);
@@ -806,7 +806,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 sqlf.append("\n").append(hasWhere ? "AND " : "WHERE ").append(frag);
             }
 
-            sqlf.append(") AS ").append(alias);
+            sqlf.append(") AS ").appendIdentifier(alias);
         }
 
         return sqlf;

@@ -73,6 +73,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,7 +90,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private String _name;
     // _propertyName is computed from getName();
     private String _propertyName = null;
-    private String _alias;
+    private DatabaseIdentifier _alias;
     private String _sqlTypeName;
     private JdbcType _jdbcType = null;
     private String _textAlign = null;
@@ -104,8 +105,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private boolean _isUserEditable = true;
     private boolean _isUnselectable = false;
     private TableInfo _parentTable = null;
-    protected String _metaDataName = null;
-    protected String _selectName = null;
+    protected DatabaseIdentifier _metaDataName = null;
+    protected DatabaseIdentifier _selectName = null;
     protected ColumnInfo _displayField;
     private List<FieldKey> _sortFieldKeys = null;
     private List<ConditionalFormat> _conditionalFormats = List.of();
@@ -206,7 +207,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
-        setAlias(rsmd.getColumnName(col));
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
     }
 
     /* used by TableInfo.addColumn */
@@ -269,23 +270,34 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return null != _alias;
     }
 
+    private static final SQLFragment NOT_IN_DATABASE = new SQLFragment("/* NOT_IN_DATABASE */ . . . ");
 
     @Override
-    public String getAlias()
+    public DatabaseIdentifier getAlias()
     {
+        // TODO ensure all aliases in table constructor and get rid of lazy evaluation here so we don't have to avoid checkLocked()
         if (_alias == null)
             _alias = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
+
         return _alias;
     }
 
-
     @Override
-    public void setAlias(String alias)
+    public void setAlias(DatabaseIdentifier alias)
     {
         checkLocked();
         _alias = alias;
     }
 
+    @Override
+    public void setAlias(String alias)
+    {
+        checkLocked();
+        if (null == alias)
+            _alias = null;
+        else
+            _alias = getSqlDialect().makeDatabaseIdentifier(alias);
+    }
 
     public void copyAttributesFrom(ColumnInfo col)
     {
@@ -549,22 +561,27 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
-
     @Override
     public void setMetaDataName(String metaDataName)
+    {
+        checkLocked();
+        _metaDataName = getSqlDialect().makeIdentifierFromMetaDataName(metaDataName);
+    }
+
+    public void setMetaDataName(DatabaseIdentifier metaDataName)
     {
         checkLocked();
         _metaDataName = metaDataName;
     }
 
     @Override
-    public String getMetaDataName()
+    public DatabaseIdentifier getMetaDataIdentifier()
     {
         return _metaDataName;
     }
 
     @Override
-    public String getSelectName()
+    public DatabaseIdentifier getSelectIdentifier()
     {
         assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
         if (null == _selectName)
@@ -575,14 +592,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return generateSelectName();
     }
 
-    private String generateSelectName()
+    // why is getSelectName() !== getMetaDataName()?
+    // e.g. sometimes getSelectName() != null when getMetaData() == null
+    // TODO find out and add a comment
+    private DatabaseIdentifier generateSelectName()
     {
         if (null == _selectName)
         {
-            if (null == getMetaDataName())
-                _selectName = getSqlDialect().getColumnSelectName(getName());
+            if (null == getMetaDataIdentifier())
+                _selectName = getSqlDialect().makeDatabaseIdentifier(getName());
             else
-                _selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
+                _selectName = getMetaDataIdentifier();
         }
         return _selectName;
     }
@@ -591,11 +611,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public SQLFragment getValueSql(String tableAliasName)
     {
         // call generateSelectName() to avoid asserts in getSelectName()
-        String colIdentifier = generateSelectName();
+        var colIdentifier = generateSelectName();
         if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
             return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
         else
-            return new SQLFragment().appendIdentifier(tableAliasName).append(".").appendIdentifier(colIdentifier);
+            return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
     }
 
     @Override
@@ -885,7 +905,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
         {
             TableInfo t = getParentTable();
-            return new SQLFragment("nextval('" + t.getSelectName() + "_ts')");
+            String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataIdentifier()).getId() + "_ts";
+            String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
+            return new SQLFragment("nextval(" + sqlString + ")");
         }
         return null;
     }
@@ -1680,8 +1702,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     String sqlTypeName = reader.getSqlTypeName();
                     var col = new BaseColumnInfo(metaDataName, parentTable, dialect.getJdbcType(sqlType, sqlTypeName));
 
-                    col._metaDataName = metaDataName;
-                    col._selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
+                    col._metaDataName = dialect.makeIdentifierFromMetaDataName(metaDataName);
                     col._sqlTypeName = sqlTypeName;
                     col._isAutoIncrement = reader.isAutoIncrement();
 
@@ -1807,7 +1828,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         String colName = col.getName();
         DbSchema schema = col.getParentTable().getSchema();
 
-        if (col._metaDataName.startsWith("_"))
+        if (null != col._metaDataName && col._metaDataName.getId().startsWith("_"))
         {
             col.setHidden(true);
         }
@@ -1866,7 +1887,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             if (getParentTable() == null)
                 d = CoreSchema.getInstance().getSqlDialect();
             else
-                d = getParentTable().getSqlDialect();
+                d = getSqlDialect();
 
             JdbcType jt = _propertyType != null ? _propertyType.getJdbcType() : _jdbcType;
             _sqlTypeName = d.getSqlTypeName(jt);
@@ -2083,41 +2104,50 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
+    public int findColumn(ResultSet rs) throws SQLException
+    {
+        return rs.findColumn(getAlias().getId());
+    }
+
+    @Override
     public Object getValue(ResultSet rs) throws SQLException
     {
         if (rs == null)
             return null;
         // UNDONE
-        return rs.getObject(getAlias());
+        return rs.getObject(getAlias().getId());
     }
 
     @Override
     public int getIntValue(ResultSet rs) throws SQLException
     {
         // UNDONE
-        return rs.getInt(getAlias());
+        return rs.getInt(getAlias().getId());
     }
 
     @Override
     public String getStringValue(ResultSet rs) throws SQLException
     {
         // UNDONE
-        return rs.getString(getAlias());
+        return rs.getString(getAlias().getId());
     }
 
     @Override
     public Object getValue(RenderContext context)
     {
-        return context.get(getFieldKey());
+        if (context.containsKey(getFieldKey()))
+            return context.get(getFieldKey());
+        return context.get(getAlias().getId());
     }
 
     @Override
-    public Object getValue(Map<String, ?> map)
+    public Object getValue(Map<?, ?> map)
     {
         if (map == null)
             return null;
-        // UNDONE
-        return map.get(getAlias());
+        if (map.containsKey(getAlias().getId()))
+            return map.get(getAlias().getId());
+        return map.get(getFieldKey());
     }
 
     @Override

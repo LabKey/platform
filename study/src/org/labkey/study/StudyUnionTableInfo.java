@@ -294,19 +294,19 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         {
             unionSql.append("((");
             unionSql.append(sqlf);
-            unionSql.append(")) ").append(alias);
+            unionSql.append(")) ").appendIdentifier(alias);
         }
         else if (distinct)
         {
             unionSql.append("(SELECT DISTINCT ParticipantId, SequenceNum FROM (");
             unionSql.append(sqlf);
-            unionSql.append(" _u) ").append(alias);
+            unionSql.append(" _u) ").appendIdentifier(alias);
         }
         else
         {
             unionSql.append("(");
             unionSql.append(sqlf);
-            unionSql.append(") ").append(alias);
+            unionSql.append(") ").appendIdentifier(alias);
         }
         unionSql.appendComment("</StudyUnionTableInfo>", getSchema().getSqlDialect());
         return unionSql;

@@ -88,6 +88,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
@@ -171,6 +172,12 @@ public class DomainImpl implements Domain
     public String getName()
     {
         return _dd.getName();
+    }
+
+    @Override
+    public String getTitle()
+    {
+        return _dd.getTitle();
     }
 
     @Override
@@ -267,6 +274,12 @@ public class DomainImpl implements Domain
     public void setName(String name)
     {
         _dd = _dd.edit().setName(name).build();
+    }
+
+    @Override
+    public void setTitle(String title)
+    {
+        _dd = _dd.edit().setTitle(title).build();
     }
 
     @Override
@@ -876,7 +889,7 @@ public class DomainImpl implements Domain
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).append(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
         sql.append(" WHERE ");
@@ -1411,8 +1424,22 @@ public class DomainImpl implements Domain
             }
         }
 
-        final String storageName = _storageNameGenerator.generateName(pd.getName());
+        final String storageName = _storageNameGenerator.generateName(fuzz(pd.getName()));
         pd.setStorageColumnName(storageName);
+    }
+
+    private static String fuzz(String s)
+    {
+        if (1==0)
+        {
+            var r = new Random();
+            if (r.nextBoolean())
+                s = s.toUpperCase();
+            else if (r.nextBoolean())
+                s = StringUtils.capitalize(s.toLowerCase());
+            s = "." + s;
+        }
+        return s;
     }
 
     @Override

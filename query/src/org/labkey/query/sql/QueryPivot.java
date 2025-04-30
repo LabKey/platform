@@ -818,7 +818,7 @@ public class QueryPivot extends AbstractQueryRelation
                     sql.append(" IS NULL");
                 else
                     sql.append("=").append(value.getSourceText());
-                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").append(alias);
+                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
         }

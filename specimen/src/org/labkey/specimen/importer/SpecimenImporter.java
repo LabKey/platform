@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -230,9 +231,9 @@ public class SpecimenImporter extends SpecimenTableManager
     private List<SpecimenColumn> _specimenCols;
     private List<SpecimenColumn> _vialCols;
     private List<SpecimenColumn> _vialEventCols;
-    private String _specimenColsSql;
-    private String _vialColsSql;
-    private String _vialEventColsSql;
+    private SQLFragment _specimenColsSql;
+    private SQLFragment _vialColsSql;
+    private SQLFragment _vialEventColsSql;
     private Logger _logger;
     private PipelineJob _job;
 
@@ -815,7 +816,7 @@ public class SpecimenImporter extends SpecimenTableManager
         final Map<Integer, Location> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
-        StringBuilder vialPropertiesSB = new StringBuilder("UPDATE ").append(vialTable.getSelectName())
+        SQLFragment vialPropertiesSql = new SQLFragment("UPDATE ").append(vialTable.getSelectName())
             .append(" SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), FirstProcessedByInitials = ?, AtRepository = ?, LatestComments = ?, LatestQualityComments = ? ");
 
         for (List<RollupInstance<EventVialRollup>> rollupList : getEventToVialRollups().values())
@@ -826,14 +827,12 @@ public class SpecimenImporter extends SpecimenTableManager
                 ColumnInfo column = vialTable.getColumn(colName);
                 if (null == column)
                     throw new IllegalStateException("Expected Vial table column to exist.");
-                vialPropertiesSB.append(", ").append(column.getSelectName()).append(" = ")
+                vialPropertiesSql.append(", ").appendIdentifier(column.getSelectIdentifier()).append(" = ")
                     .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().getSqlCastTypeName(column.getJdbcType()) + ")");
             }
         }
 
-        vialPropertiesSB.append(" WHERE RowId = ?");
-
-        final String vialPropertiesSql = vialPropertiesSB.toString();
+        vialPropertiesSql.append(" WHERE RowId = ?");
 
         _iTimer.setPhase(ImportPhases.HandleComments);
 
@@ -966,11 +965,11 @@ public class SpecimenImporter extends SpecimenTableManager
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
                             if (null == column)
                                 throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                            String eventColSelectName = column.getSelectName();
+                            var eventColSelectName = column.getSelectIdentifier();
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
                                 String vialColName = rollupItem.first;
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName,
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName.getId(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 if (!Objects.equals(vial.get(vialColName), rollupResult))
                                 {
@@ -1000,10 +999,10 @@ public class SpecimenImporter extends SpecimenTableManager
                             ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
                             if (null == column)
                                 throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                            String eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
+                            var eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
                             for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                             {
-                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias,
+                                Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias.getId(),
                                         rollupItem.getFromType(), rollupItem.getToType());
                                 params.add(rollupResult);
                             }
@@ -1051,7 +1050,10 @@ public class SpecimenImporter extends SpecimenTableManager
 
                 _iTimer.setPhase(ImportPhases.UpdateVials);
                 if (!vialPropertiesParams.isEmpty())
-                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql, vialPropertiesParams);
+                {
+                    assert vialPropertiesSql.getParams().isEmpty();
+                    Table.batchExecute(SpecimenSchema.get().getSchema(), vialPropertiesSql.getRawSQL(), vialPropertiesParams);
+                }
 
                 _iTimer.setPhase(ImportPhases.UpdateComments);
                 if (!commentParams.isEmpty())
@@ -1171,20 +1173,20 @@ public class SpecimenImporter extends SpecimenTableManager
         return _specimenCols;
     }
 
-    private String getSpecimenColsSql(List<SpecimenColumn> availableColumns, boolean seenVisitValue)
+    private SQLFragment getSpecimenColsSql(List<SpecimenColumn> availableColumns, boolean seenVisitValue)
     {
         if (_specimenColsSql == null)
         {
             String sep = "";
-            StringBuilder cols = new StringBuilder();
+            SQLFragment cols = new SQLFragment();
             for (SpecimenColumn col : getSpecimenCols(availableColumns))
             {
-                cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
+                cols.append(sep).appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n   ";
             }
             if (!seenVisitValue)
                 cols.append(sep).append(VISIT_VALUE.getDbColumnName());
-            _specimenColsSql = cols.toString();
+            _specimenColsSql = cols;
         }
         return _specimenColsSql;
     }
@@ -1204,18 +1206,18 @@ public class SpecimenImporter extends SpecimenTableManager
         return _vialCols;
     }
 
-    private String getVialColsSql(List<SpecimenColumn> availableColumns)
+    private SQLFragment getVialColsSql(List<SpecimenColumn> availableColumns)
     {
         if (_vialColsSql == null)
         {
             String sep = "";
-            StringBuilder cols = new StringBuilder();
+            SQLFragment cols = new SQLFragment();
             for (SpecimenColumn col : getVialCols(availableColumns))
             {
                 cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n   ";
             }
-            _vialColsSql = cols.toString();
+            _vialColsSql = cols;
         }
         return _vialColsSql;
     }
@@ -1235,18 +1237,18 @@ public class SpecimenImporter extends SpecimenTableManager
         return _vialEventCols;
     }
 
-    private String getSpecimenEventColsSql(List<SpecimenColumn> availableColumns)
+    private SQLFragment getSpecimenEventColsSql(List<SpecimenColumn> availableColumns)
     {
         if (_vialEventColsSql == null)
         {
             String sep = "";
-            StringBuilder cols = new StringBuilder();
+            SQLFragment cols = new SQLFragment();
             for (SpecimenColumn col : getSpecimenEventCols(availableColumns))
             {
                 cols.append(sep).append(col.getLegalDbColumnName(getSqlDialect()));
                 sep = ",\n    ";
             }
-            _vialEventColsSql = cols.toString();
+            _vialEventColsSql = cols;
         }
         return _vialEventColsSql;
     }
@@ -1381,17 +1383,17 @@ public class SpecimenImporter extends SpecimenTableManager
         info("exp.Material: Update complete.");
     }
 
-    private String getSpecimenEventTempTableColumns(SpecimenLoadInfo info)
+    private SQLFragment getSpecimenEventTempTableColumns(SpecimenLoadInfo info)
     {
-        StringBuilder columnList = new StringBuilder();
+        SQLFragment columnList = new SQLFragment();
         String prefix = "";
         for (SpecimenColumn col : getSpecimenEventCols(info.getAvailableColumns()))
         {
             columnList.append(prefix);
             prefix = ", ";
-            columnList.append("\n    ").append(info.getTempTableName()).append(".").append(col.getLegalDbColumnName(getSqlDialect()));
+            columnList.append("\n    ").append(info.getTempTableName()).append(".").appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
         }
-        return columnList.toString();
+        return columnList;
     }
 
     // NOTE: In merge case, we've already checked the specimen hash columns are not in conflict.
@@ -1399,7 +1401,7 @@ public class SpecimenImporter extends SpecimenTableManager
                                             @Nullable SpecimenColumn castColumn)
     {
         // If castColumn no null, then we still count col, but then cast col's value to castColumn's type and name it castColumn's name
-        String selectCol = tempTableName + "." + col.getLegalDbColumnName(getSqlDialect());
+        SQLFragment selectCol = new SQLFragment(tempTableName).append(".").appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
 
         if (col.getAggregateEventFunction() != null)
         {
@@ -2021,7 +2023,15 @@ public class SpecimenImporter extends SpecimenTableManager
         pump.run();
         if (dix.getErrors().hasErrors())
         {
-            throw new ValidationException(dix.getErrors().getLastRowError().getMessage() + " (File: " + file.getTableType().getName() + ")");
+            var last = dix.getErrors().getLastRowError();
+            var vex = new ValidationException(last.getMessage() + " (File: " + file.getTableType().getName() + ")")
+            {
+                @Override
+                public synchronized Throwable getCause()
+                {
+                    return last;
+                }
+            };
         }
         rowCount = pump.getRowCount();
 
@@ -2160,13 +2170,13 @@ public class SpecimenImporter extends SpecimenTableManager
 
             for (final ImportableColumn ic : sib.importColumns)
             {
-                if (seen.add(ic.getLegalDbColumnName(d)))
+                if (seen.add(ic.getLegalDbColumnName(d).getId()))
                 {
                     String boundInputColumnName = null;
                     if (tsvColumnNames.contains(ic.getPrimaryTsvColumnName()))
                         boundInputColumnName = ic.getPrimaryTsvColumnName();
                     final String name = boundInputColumnName;
-                    ColumnInfo col = new BaseColumnInfo(ic.getLegalDbColumnName(d), ic.getJdbcType());
+                    ColumnInfo col = new BaseColumnInfo(ic.getLegalDbColumnName(d).getId(), ic.getJdbcType());
                     Supplier<Object> call = () -> {
                         Object ret = null;
                         if (null != name)
@@ -2448,13 +2458,13 @@ public class SpecimenImporter extends SpecimenTableManager
             info("Checking for conflicting specimens before merging...");
 
             // Columns used in the specimen hash
-            StringBuilder hashCols = new StringBuilder();
+            SQLFragment hashCols = new SQLFragment();
             for (SpecimenColumn col : loadedColumns)
             {
                 if (col.getTargetTable().isSpecimens() && col.getAggregateEventFunction() == null)
                 {
                     hashCols.append(",\n\t");
-                    hashCols.append(col.getLegalDbColumnName(getSqlDialect()));
+                    hashCols.appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
                 }
             }
             hashCols.append("\n");
@@ -2581,22 +2591,22 @@ public class SpecimenImporter extends SpecimenTableManager
             if (col.getTargetTable().isSpecimens())
             {
                 conflictResolvingSubselect.append(",\n\t");
-                String selectCol = tempTableName + "." + col.getLegalDbColumnName(getSqlDialect());
+                SQLFragment selectCol = new SQLFragment(tempTableName).append(".").appendIdentifier(col.getLegalDbColumnName(getSqlDialect()));
 
                 if (col.getAggregateEventFunction() != null)
                     conflictResolvingSubselect.append(col.getAggregateEventFunction()).append("(").append(selectCol).append(")");
                 else
                 {
-                    String singletonAggregate;
+                    SQLFragment singletonAggregate;
                     if (col.getJavaClass().equals(Boolean.class))
                     {
                         // gross nested calls to cast the boolean to an int, get its min, then cast back to a boolean.
                         // this is needed because most aggregates don't work on boolean values.
-                        singletonAggregate = "CAST(MIN(CAST(" + selectCol + " AS INTEGER)) AS " + schema.getSqlDialect().getBooleanDataType()  + ")";
+                        singletonAggregate = new SQLFragment("CAST(MIN(CAST(").append(selectCol).append(" AS INTEGER)) AS ").append(schema.getSqlDialect().getBooleanDataType()).append(")");
                     }
                     else
                     {
-                        singletonAggregate = "MIN(" + selectCol + ")";
+                        singletonAggregate = new SQLFragment("MIN(").append(selectCol).append(")");
                     }
                     conflictResolvingSubselect.append("CASE WHEN");
                     conflictResolvingSubselect.append(" COUNT(DISTINCT ").append(selectCol).append(") = 1 THEN ");
@@ -2609,7 +2619,7 @@ public class SpecimenImporter extends SpecimenTableManager
         conflictResolvingSubselect.append("\nFROM ").append(tempTableName).append("\nGROUP BY GlobalUniqueId");
 
         SQLFragment updateHashSql = new SQLFragment("SELECT (");
-        makeUpdateSpecimenHashSql(schema, getContainer(), loadedColumns, "InnerTable.", updateHashSql);
+        makeUpdateSpecimenHashSql(schema, getContainer(), loadedColumns, "InnerTable", updateHashSql);
         updateHashSql.append(") AS SpecimenHash, ")
             .append("InnerTable.GlobalUniqueId")
             .append("\n\tINTO ")
@@ -2652,15 +2662,11 @@ public class SpecimenImporter extends SpecimenTableManager
         SpecimenColumns.BASE_SPECIMEN_COLUMNS.forEach(col -> {
             if (col.getTargetTable().isSpecimens())
             {
+                hash.add(new SQLFragment("'~'"));
                 if (loadedColumnMap.isEmpty() || loadedColumnMap.containsKey(col.getPrimaryTsvColumnName()))
                 {
-                    String columnName = innerTable + col.getLegalDbColumnName(schema.getSqlDialect());
-                    hash.add(new SQLFragment("'~'"));
-                    hash.add(new SQLFragment(" CASE WHEN " + columnName + " IS NOT NULL THEN CAST(" + columnName + " AS " + strType + ") ELSE '' END"));
-                }
-                else
-                {
-                    hash.add(new SQLFragment("'~'"));
+                    SQLFragment columnNameFragment = new SQLFragment().appendIdentifier(innerTable).append(".").appendIdentifier(col.getLegalDbColumnName(schema.getSqlDialect()));
+                    hash.add(new SQLFragment(" COALESCE(CAST(").append(columnNameFragment).append(" AS ").append(strType).append("),'')"));
                 }
             }
         });
@@ -2712,7 +2718,7 @@ public class SpecimenImporter extends SpecimenTableManager
         info("Creating temp table to hold archive data...");
         SqlDialect dialect = DbSchema.getTemp().getSqlDialect();
 
-        StringBuilder sql = new StringBuilder();
+        SQLFragment sql = new SQLFragment();
         String uniquifier = StringUtilsLabKey.getUniquifier(9);
 
         ArrayList<BaseColumnInfo> columns = new ArrayList<>();
@@ -2737,9 +2743,9 @@ public class SpecimenImporter extends SpecimenTableManager
 
         for (SpecimenColumn col : _specimenColumns)
         {
-            String name = col.getLegalDbColumnName(getSqlDialect());
-            sql.append(",\n    ").append(name).append(" ").append(col.getDbType());
-            BaseColumnInfo colInfo = new BaseColumnInfo(name, col.getJdbcType(), col.getMaxSize(), true);
+            DatabaseIdentifier name = col.getLegalDbColumnName(getSqlDialect());
+            sql.append(",\n    ").appendIdentifier(name).append(" ").append(col.getDbType());
+            BaseColumnInfo colInfo = new BaseColumnInfo(name.getId(), col.getJdbcType(), col.getMaxSize(), true);
             Collection<String> aliases = col.getImportAliases();
             if (!aliases.isEmpty())
                 colInfo.setImportAliasesSet(new HashSet<>(aliases));

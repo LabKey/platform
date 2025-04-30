@@ -24,11 +24,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.MockSqlDialect;
+import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -48,7 +51,7 @@ public class AliasManager
             // Old Oracle rule is 30 characters max
             return 30;
         }
-
+    
         @Override
         public boolean isLegalNameChar(char ch, boolean first)
         {
@@ -77,13 +80,12 @@ public class AliasManager
         }
     };
 
-    private final SqlDialect _dialect;
-    private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
+    final @NotNull SqlDialect _dialect;
+    final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
-    // null dialect is tolerated but not recommended
-    public AliasManager(@Nullable SqlDialect d)
+    public AliasManager(@NotNull SqlDialect d)
     {
-        _dialect = d != null ? d : new FallBackDialect();
+        _dialect = d;
     }
 
     public AliasManager(@NotNull DbSchema schema)
@@ -97,6 +99,11 @@ public class AliasManager
         claimAliases(table.getColumns());
         if (columns != null)
             claimAliases(columns);
+    }
+
+    public static AliasManager createLabKeyAliasManager()
+    {
+        return new AliasManager(new _LabKeyDialect());
     }
 
     // null dialect is tolerated but not recommended
@@ -119,7 +126,21 @@ public class AliasManager
     }
 
     // null dialect is tolerated but not recommended
+    @Deprecated // TODO: Unused?
     public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
+    {
+        // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
+        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
+    }
+
+    @Deprecated // TODO: Unused?
+    public static String truncate(DatabaseIdentifier id, int to)
+    {
+        return truncate(id.getId(), to);
+    }
+  
+    @Deprecated // TODO: Unused?
+    public static String truncate(String str, int to)
     {
         // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
         return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
@@ -173,7 +194,7 @@ public class AliasManager
     {
         if (column == null)
             return;
-        claimAlias(column.getAlias(), column.getName());
+        claimAlias(column.getAlias().getId(), column.getName());
     }
 
     public void ensureAlias(MutableColumnInfo column)
@@ -184,10 +205,10 @@ public class AliasManager
             if (null != (name = _aliases.get(column.getAlias())))
             {
                 if (!name.equals(column.getName()))
-                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
+                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias().getId() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
             }
             else
-                claimAlias(column.getAlias(), column.getName());
+                claimAlias(column.getAlias().getId(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName()));
@@ -205,6 +226,60 @@ public class AliasManager
     {
         _aliases.remove(column.getAlias());
     }
+
+
+    private static class _LabKeyDialect extends PostgreSql91Dialect
+    {
+        @Override
+        protected void initializeInClauseGenerator(DbScope scope)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getProductName()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getMedianFunction()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public JdbcHelper getJdbcHelper()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected boolean shouldQuoteIdentifier(String id)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isReserved(String word)
+        {
+            return super.isReserved(word);
+        }
+
+        @Override
+        public String makeLegalIdentifierName(String id)
+        {
+            return super.makeLegalIdentifierName(id);
+        }
+
+        @Override
+        public int getIdentifierMaxLength()
+        {
+            return 200;
+        }
+    }
+
+
 
     public static class TestCase extends Assert
     {

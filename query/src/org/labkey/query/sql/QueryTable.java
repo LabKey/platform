@@ -324,7 +324,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             ret.append("(");
         ret.append(sql);
         if (_generateSelectSQL)
-            ret.append(") ").append(getAlias());
+            ret.append(") ").appendIdentifier(getAlias());
 
         assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return ret;
@@ -473,7 +473,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
                 throw new NullPointerException("col is null");
             _key = key;
             _col = col;
-            _alias = _aliasManager.decideAlias(col.getAlias());
+            _alias = _aliasManager.decideAlias(col.getAlias().getId());
             _parent = parent;
 
             _query.addUniqueRelationColumn(this);

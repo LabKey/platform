@@ -287,6 +287,11 @@ public class ParseDateTimeEN implements DateParser
 //        return null;
 //    }
 
+    private boolean isSpace(char c)
+    {
+        return ' ' == c || 0x0A0 == c || 0x202F == c;
+    }
+
     // TODO interface DateScanner.scan()
     public boolean scan(String s, ParsePosition pos, CalendarParts parts)
     {
@@ -308,7 +313,7 @@ public class ParseDateTimeEN implements DateParser
         {
             c = s.charAt(i);
             i++;
-            if (c <= ' ' || c == ',' || c == '-')
+            if (isSpace(c) || c == ',' || c == '-')
             {
                 if (i < limit)
                 {
@@ -491,7 +496,7 @@ public class ParseDateTimeEN implements DateParser
                         {
                             monthexpected = true;
                         }
-                        else if (c > ' ' && -1 == ",-ZTaApP".indexOf(c))
+                        else if (c > ' ' && !isSpace(c) && -1 == ",-ZTaApP".indexOf(c))
                         {
                             throw new ConversionException(s);
                         }

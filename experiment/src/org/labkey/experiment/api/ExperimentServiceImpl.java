@@ -5683,10 +5683,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN (\n" +
-                            "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
-        sql.append(in1.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
-        sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
-        sql.append(in2.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
+                            "(SELECT di.TargetApplicationId FROM exp.DataInput di ");
+        TableInfo dataInput = getExpSchema().getTable("DataInput");
+        sql.append(new SimpleFilter().addClause(in1).getSQLFragment(dataInput, "di"));
+        sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d ");
+        TableInfo data = getExpSchema().getTable("Data");
+        sql.append(new SimpleFilter().addClause(in2).getSQLFragment(data,"d"));
         sql.append("))) ORDER BY Created DESC");
 
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
@@ -9899,10 +9901,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 query.append(unionAll);
                 query.append("SELECT LSID, ")
-                        .append("CAST (").appendIdentifier(col.getSelectName()).append(" AS VARCHAR)")
+                        .append("CAST (").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
                 query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
-                query.append(" WHERE ").appendIdentifier(col.getSelectName()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
+                query.append(" WHERE ").appendIdentifier(col.getSelectIdentifier()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }
         }

@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 /**
  * Holds both the SQL text and JDBC parameter values to use during invocation.
  * User: Matthew
@@ -398,13 +400,35 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    @Deprecated
+    public SQLFragment append(DatabaseIdentifier id)
+    {
+        return append(id.getSql());
+    }
+    public SQLFragment appendIdentifier(DatabaseIdentifier id)
+    {
+        return append(id.getSql());
+    }
 
     /** Functionally the same as append(CharSequence).  This method just has different asserts */
     public SQLFragment appendIdentifier(CharSequence charseq)
     {
         if (null == charseq)
             return this;
+        if (charseq instanceof SQLFragment sqlf)
+        {
+            if (0 != sqlf.getParamsArray().length)
+                throw new IllegalStateException("Unexpected SQL in appendIdentifier()");
+            charseq = sqlf.getRawSQL();
+        }
+
         String identifier = charseq.toString().strip();
+
+        if (STR_TABLE_ALIAS.equals(identifier))
+        {
+            getStringBuilder().append(identifier);
+            return this;
+        }
 
         boolean malformed;
         if (identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\""))
@@ -420,6 +444,23 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    // just to save some typing
+    public SQLFragment appendDottedIdentifiers(CharSequence table, DatabaseIdentifier col)
+    {
+        return appendIdentifier(table).append(".").appendIdentifier(col);
+    }
+
+    // just to save some typing
+    public SQLFragment appendDottedIdentifiers(CharSequence... ids)
+    {
+        var dot = "";
+        for (var id : ids)
+        {
+            append(dot).appendIdentifier(id);
+            dot = ".";
+        }
+        return this;
+    }
 
     /** append End Of Statement */
     public SQLFragment appendEOS()
@@ -462,7 +503,7 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment appendValue(Boolean B, @NotNull SqlDialect dialect)
     {
         if (null == B)
-            return appendNull();
+            return append("CAST(NULL AS ").append(dialect.getBooleanDataType()).append(")");
         getStringBuilder().append(B ? dialect.getBooleanTRUE() : dialect.getBooleanFALSE());
         return this;
     }

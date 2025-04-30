@@ -70,7 +70,7 @@ public interface AuditHandler
             String nameFromAlias = null != col
                     ? col.getName()
                     : columns.stream()
-                        .filter(column -> column.getAlias().equalsIgnoreCase(key))
+                        .filter(column -> column.getAlias().getId().equalsIgnoreCase(key))
                         .map((ColumnInfo::getName))
                         .findFirst()
                         .orElse(key);

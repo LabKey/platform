@@ -33,6 +33,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
@@ -831,31 +832,105 @@ public abstract class SqlDialect
         return _reservedWordSet.contains(word);
     }
 
-    // TODO: Return SQLFragment to ensure columnName gets added with appendIdentifier()
-    public String getColumnSelectName(String columnName)
+    public SQLFragment getColumnSelectName(String columnName)
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()
         if ("*".equals(columnName))
-            return columnName;
+            return new SQLFragment("*");
         else
-            return makeLegalIdentifier(columnName);
+            return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
+    private Map<String,Boolean> _validatedIds = new HashMap<>();
 
-    // Translates database metadata name into a name that can be used in a select.  Most dialects simply turn them into
-    // legal identifiers (e.g., adding quotes if special symbols are present).
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    private boolean validateIdentifier(DatabaseIdentifier id)
     {
-        return makeLegalIdentifier(metaDataName);
+        if (LOG.isTraceEnabled())
+        {
+            final var me = this;
+            return _validatedIds.computeIfAbsent(id.getId(), key ->
+            {
+                var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
+                if (optScope.isPresent())
+                {
+                    SQLFragment sql = new SQLFragment("SELECT NULL AS ").appendIdentifier(id);
+                    try (var results = new SqlSelector(optScope.get(), sql).getResultSet(false))
+                    {
+                        assert id.getId().equals(results.getMetaData().getColumnName(1));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return true;
+            });
+        }
+        return true;
     }
 
-    // Create comma-separated list of legal identifiers
+    // dialect is just for debugging reference
+    protected record _DatabaseIdentifier(String id, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
+    {
+        _DatabaseIdentifier(String id, String sql, SqlDialect dialect)
+        {
+            this(id, new SQLFragment().appendIdentifier(sql), dialect);
+            assert null==dialect || dialect.validateIdentifier(this);
+        }
+
+        @Override
+        public String getId()
+        {
+            return id;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            return sql;
+        }
+
+        @Override
+        public @NotNull String toString()
+        {
+            assert false : "[id=" + id + " sql=" + sql.getRawSQL() + "]";
+            return "[id=" + id + " sql=" + sql.getRawSQL() + "]";
+        }
+    }
+
+    // Use this method to wrap a name provided by the database for an existing object (schema, table, column etc).
+    // In this case the name must be preserved exactly as-is.
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
+    {
+        return new _DatabaseIdentifier(metaDataName, quoteIdentifier(metaDataName), this);
+    }
+
+    // Create a DatabaseIdentifier for the desired alias
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (getIdentifierMaxLength() < alias.length())
+            throw new UnsupportedOperationException("Name longer than " + getIdentifierMaxLength() + " characters");
+        // what we want:
+        //   SQLFragment quoted = new SQLFragment().appendIdentifier(quoteIdentifier(alias));
+        //   return new _DatabaseIdentifier(alias, quoted, this);
+        return new _DatabaseIdentifier(alias, makeLegalIdentifier(alias), this);
+    }
+
+    /* ONLY use for special cases! */
+    public static DatabaseIdentifier makeDatabaseIdentifier(String alias, SQLFragment sql)
+    {
+        return new _DatabaseIdentifier(alias, sql, null);
+    }
+
+    // Create a comma-separated list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names)
     {
         return makeLegalIdentifiers(names, ", ");
     }
 
     // Create list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names, String sep)
     {
         String s = "";
@@ -870,6 +945,7 @@ public abstract class SqlDialect
 
 
     // If necessary, quote identifier
+    @Deprecated
     public String makeLegalIdentifier(String id)
     {
         if (shouldQuoteIdentifier(id))
@@ -883,10 +959,10 @@ public abstract class SqlDialect
         return id;
     }
 
-    // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
+    // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
-        return "\"" + id.replaceAll("\"", "\"\"") + "\"";
+        return "\"" + StringUtils.replace(id, "\"", "\"\"") + "\"";
     }
 
 
