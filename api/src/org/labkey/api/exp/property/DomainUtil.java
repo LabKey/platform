@@ -38,6 +38,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -1337,14 +1338,20 @@ public class DomainUtil
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
+        Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
+        Set<String> seenFields = new CaseInsensitiveHashSet();
         for (Object f : updates.getFields(true))
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 
             String name = field.getName();
+            if (seenFields.contains(name))
+            {
+
+            }
 
             if (null == name || name.trim().isEmpty())
             {
@@ -1406,6 +1413,19 @@ public class DomainUtil
             {
                 exception.addFieldError(name, getDomainErrorMessage(updates,"The value expression for '" + name
                         + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));
+            }
+
+            // Issue 52827: File/attachment fields with special characters
+            if (altNameMap.containsKey(name) || altNameMap.containsKey(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name)))
+            {
+                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' cannot be used with another field '" + altNameMap.get(name) + "'. Please provide a different name for the field.");
+                PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
+                exception.addError(propertyValidationError);
+            }
+            else
+            {
+                altNameMap.put(name, name);
+                altNameMap.put(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name), name);
             }
         }
 
