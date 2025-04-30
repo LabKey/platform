@@ -424,6 +424,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment)
     {
+        auditRunEvent(user, protocol, run, runGroup, comment, userComment, null);
+    }
+
+    @Override
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment, @Nullable String message)
+    {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         ExperimentAuditEvent event = new ExperimentAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -433,7 +439,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (run != null)
             event.setRunLsid(run.getLSID());
         event.setProtocolRun(ExperimentAuditProvider.getKey3(protocol, run));
-
+        if (message != null)
+            event.setMessage(message);
         AuditLogService.get().addEvent(user, event);
     }
 
@@ -9779,7 +9786,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         for (ExpRun run : runs)
                         {
                             run.setContainer(targetContainer);
-                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment);
+
+                            // Issue 52570: include source and target containers in the audit event message
+                            String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
+                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
                         }
                     }
                 }

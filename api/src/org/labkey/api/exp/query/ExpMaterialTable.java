@@ -17,6 +17,7 @@
 package org.labkey.api.exp.query;
 
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.query.FieldKey;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
@@ -60,7 +61,12 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         SourceProtocolLSID,
         StoredAmount,
         Units,
-        IsPlated,
+        IsPlated;
+
+        public FieldKey fieldKey()
+        {
+            return FieldKey.fromParts(name());
+        }
     }
 
     default void setSupportTableRules(boolean supportTableRules)

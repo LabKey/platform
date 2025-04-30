@@ -33,8 +33,8 @@ public class OptionsTag extends SimpleTagBase
 
     public boolean isSelected(Object test)
     {
-        if (_value instanceof Collection)
-            return ((Collection)_value).contains(test);
+        if (_value instanceof Collection<?> c)
+            return c.contains(test);
         else
             return Objects.equals(test, _value);
     }

@@ -74,7 +74,7 @@ public class ExpSchema extends AbstractExpSchema
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
     public static final SchemaKey SCHEMA_EXP_MATERIALS = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.materials.name());
 
-    private static final Set<String> ADDITIONAL_SOURCES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
+    private static final Set<String> ADDITIONAL_SOURCES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name", "RowId");
 
     public enum NestedSchemas
     {
