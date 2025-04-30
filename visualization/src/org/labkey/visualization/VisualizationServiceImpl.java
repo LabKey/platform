@@ -16,7 +16,6 @@
 package org.labkey.visualization;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -104,7 +103,7 @@ public class VisualizationServiceImpl implements VisualizationService
     @Override
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest)
     {
-        VisualizationProvider provider = getProvider(c, u, measureRequest);
+        VisualizationProvider<?> provider = getProvider(c, u, measureRequest);
         return provider.getDimensions(measureRequest.getQueryName());
     }
 
@@ -119,7 +118,7 @@ public class VisualizationServiceImpl implements VisualizationService
             for (String filter : measureRequest.getFilters())
             {
                 MeasureFilter mf = new MeasureFilter(filter);
-                VisualizationProvider provider = getProvider(c, u, mf);
+                VisualizationProvider<?> provider = getProvider(c, u, mf);
 
                 if (measureRequest.isZeroDateMeasures())
                 {
@@ -151,7 +150,7 @@ public class VisualizationServiceImpl implements VisualizationService
         else
         {
             // get all tables in this container
-            for (VisualizationProvider provider : createVisualizationProviders(c, u, measureRequest.isShowHidden()).values())
+            for (VisualizationProvider<?> provider : createVisualizationProviders(c, u, measureRequest.isShowHidden()).values())
             {
                 if (measureRequest.isZeroDateMeasures())
                     measures.putAll(provider.getZeroDateMeasures(VisualizationProvider.QueryType.all));
@@ -173,13 +172,13 @@ public class VisualizationServiceImpl implements VisualizationService
     }
 
 
-    private Map<String, ? extends VisualizationProvider> createVisualizationProviders(Container c, User u, boolean showHidden)
+    private Map<String, ? extends VisualizationProvider<?>> createVisualizationProviders(Container c, User u, boolean showHidden)
     {
-        Map<String, VisualizationProvider> result = new HashMap<>();
+        Map<String, VisualizationProvider<?>> result = new HashMap<>();
         DefaultSchema defaultSchema = DefaultSchema.get(u, c);
         for (QuerySchema querySchema : defaultSchema.getSchemas(showHidden))
         {
-            VisualizationProvider provider = querySchema.createVisualizationProvider();
+            VisualizationProvider<?> provider = querySchema.createVisualizationProvider();
             if (provider != null)
             {
                 result.put(querySchema.getName(), provider);
@@ -190,21 +189,21 @@ public class VisualizationServiceImpl implements VisualizationService
 
 
     @NotNull
-    private VisualizationProvider getProvider(Container c, User u, MeasureFilter mf)
+    private VisualizationProvider<?> getProvider(Container c, User u, MeasureFilter mf)
     {
         return getProvider(c, u, mf.getSchema());
     }
 
 
     @NotNull
-    private VisualizationProvider getProvider(Container c, User u, MeasureSetRequest measureRequest)
+    private VisualizationProvider<?> getProvider(Container c, User u, MeasureSetRequest measureRequest)
     {
         return getProvider(c, u, measureRequest.getSchemaName());
     }
 
 
     @NotNull
-    private VisualizationProvider getProvider(Container c, User u, String schema)
+    private VisualizationProvider<?> getProvider(Container c, User u, String schema)
     {
         UserSchema userSchema = QueryService.get().getUserSchema(u, c, schema);
         if (userSchema == null)
@@ -212,7 +211,7 @@ public class VisualizationServiceImpl implements VisualizationService
             throw new IllegalArgumentException("No measure schema found for " + schema);
         }
 
-        VisualizationProvider provider = userSchema.createVisualizationProvider();
+        VisualizationProvider<?> provider = userSchema.createVisualizationProvider();
         if (provider == null)
         {
             throw new IllegalArgumentException("No measure provider found for schema " + userSchema.getSchemaPath());
@@ -245,7 +244,7 @@ public class VisualizationServiceImpl implements VisualizationService
     {
         List<Map<String, Object>> measuresJSON = new ArrayList<>();
         Map<QueryDefinition, TableInfo> _tableInfoMap = new HashMap<>();
-        Map<String, VisualizationProvider> _schemaVisualizationProviderMap = new HashMap<>();
+        Map<String, VisualizationProvider<?>> _schemaVisualizationProviderMap = new HashMap<>();
         int count = 1;
 
         for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
