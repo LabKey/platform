@@ -540,7 +540,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                         if (!results.containsKey(agg.getFieldKey().toString()))
                             results.put(agg.getFieldKey().toString(), new ArrayList<>());
 
-                        results.get(agg.getFieldKey().toString()).add(agg.getResult(rs, sqlFactory._columnMap));
+                        results.get(agg.getFieldKey().toString()).add(agg.getResult(rs, sqlFactory._columnMap, getScope().getSqlDialect()));
                     }
                 }
             }

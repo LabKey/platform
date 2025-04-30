@@ -419,7 +419,6 @@ public class ApiModule extends CodeOnlyModule
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             ReplacedRunFilter.TestCase.class,
-            ResultSetUtil.TestCase.class,
             SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
             SchemaKey.TestCase.class,

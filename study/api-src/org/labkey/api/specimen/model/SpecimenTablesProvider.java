@@ -113,7 +113,7 @@ public class SpecimenTablesProvider
                     domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
                     domain.save(_user);
 
-                    // Refresh the domain. save() doesn't populate provisioned schema & table names, e.g.
+                    // Refresh the domain. save() doesn't populate provisioned schema and table names, e.g.
                     return PropertyService.get().getDomain(_container, domainURI);
                 }
                 catch (ChangePropertyDescriptorException e)
@@ -169,20 +169,6 @@ public class SpecimenTablesProvider
                 // ignore
             }
         }
-    }
-
-    public void addTableIndices(String tableName)
-    {
-        Domain domain = getDomain(tableName, false);
-        if (null != domain)
-            StorageProvisioner.get().addOrDropTableIndices(domain, null, true, null);
-    }
-
-    public void dropTableIndices(String tableName)
-    {
-        Domain domain = getDomain(tableName, false);
-        if (null != domain)
-            StorageProvisioner.get().addOrDropTableIndices(domain, null, false, null);
     }
 
     private AbstractSpecimenDomainKind getDomainKind(String tableName)

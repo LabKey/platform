@@ -36,7 +36,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -61,9 +60,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: jeckels
- * Date: May 7, 2009
- *
  * If you touch this file, run AssayTest, FlowSpecimenTest, ElispotAssay, and TargetStudyTest
  */
 public class SpecimenForeignKey extends LookupForeignKey
@@ -482,9 +478,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 //            assert lookupKey.getValueSql("test") != null;
             _lookupColumn = lookupColumn;
             setSqlTypeName(lookupColumn.getSqlTypeName());
-            String alias = foreignKey.getAlias().getId() + "$" + lookupColumn.getAlias().getId();
-            if (alias.length() > 60)
-                alias = AliasManager.truncate(foreignKey.getAlias(), 30) + "$" + AliasManager.truncate(lookupColumn.getAlias(),30);
+            String alias = lookupColumn.getSqlDialect().truncateAndJoin(foreignKey.getAlias().getId(), lookupColumn.getAlias().getId());
             setAlias(alias);
             copyAttributesFrom(lookupColumn);
             copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
@@ -498,7 +492,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            boolean assertEnabled = false; // needed to generate SQL for logging/debugging
+            boolean assertEnabled = false; // needed to generate SQL for logging/debnugging
             assert assertEnabled = true;
 
             String baseAlias = getBaseAlias(parentAlias, _foreignKey.getAlias());

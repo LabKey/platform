@@ -240,7 +240,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
             if (null != result)
             {
                 ((BaseColumnInfo)result).setFieldKey(new FieldKey(null,name));
-                ((BaseColumnInfo)result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect(), true, false));
+                ((BaseColumnInfo)result).setAlias("_DataSetTableImpl_resolvefield$" + AliasManager.makeLegalName(name, getSqlDialect()));
             }
         }
         return result;

@@ -1068,9 +1068,6 @@ public class SpecimenImporter extends SpecimenTableManager
             throw new RuntimeSQLException(e);
         }
 
-//        if (!merge)
-//            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         setStatus(GENERAL_JOB_STATUS_MSG + " (update counts)");
         _iTimer.setPhase(ImportPhases.UpdateSpecimenProcessingInfo);

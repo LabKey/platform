@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,8 +52,69 @@ public class StringUtilsLabKey
     /** Instead of relying on the platform default character encoding, use this Charset */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
+    /** Special character strings that can be used by tests in this class and others */
+    public static final List<String> specialCharacterTestStrings = List.of(
+        "",
+        "A",
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
+        "°±²³´µ¶·¸¹º»¼½¾¿",
+        "こんにちは世界!",
+        "Відношення об'єму великих тромбоцитів (P-LCR)",
+        "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
+        "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
+        "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
+        "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
+    );
+
+    /** A list with all distinct characters (keeping surrogate pairs together) from the above test strings */
+    public static final List<String> uniqueSpecialChars = specialCharacterTestStrings.stream()
+        .flatMap(s -> {
+            List<String> moreStrings = new LinkedList<>();
+            for (int i = 0; i < s.length(); i++)
+            {
+                char c = s.charAt(i);
+                if (Character.isSurrogate(c))
+                {
+                    char c2 = s.charAt(i + 1);
+                    moreStrings.add(c + "" + c2);
+                    i++;
+                }
+                else
+                {
+                    moreStrings.add(String.valueOf(c));
+                }
+            }
+            return moreStrings.stream();
+        })
+        .distinct()
+        .sorted()
+        .collect(Collectors.toCollection(ArrayList::new));
+
     private static final Random RANDOM = new Random();
     private static final int MAX_LONG_LENGTH = String.valueOf(Long.MAX_VALUE).length() - 1;
+
+    public static String generateSpecialCharacterString(int length)
+    {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++)
+        {
+            int index = RANDOM.nextInt(uniqueSpecialChars.size());
+            sb.append(uniqueSpecialChars.get(index));
+        }
+        return sb.toString();
+    }
+
+    public static List<String> generateSpecialCharacterList(int length)
+    {
+        List<String> ret = new LinkedList<>();
+        for (int i = 0; i < length; i++)
+        {
+            int index = RANDOM.nextInt(uniqueSpecialChars.size());
+            ret.add(uniqueSpecialChars.get(index));
+        }
+        return ret;
+    }
 
     public static @Nullable String validateLegalNames(String s, @NotNull String illegalCharset, String type)
     {
@@ -458,17 +520,17 @@ public class StringUtilsLabKey
     {
         return switch (i)
         {
-            case 0: yield "zero";
-            case 1: yield "one";
-            case 2: yield "two";
-            case 3: yield "three";
-            case 4: yield "four";
-            case 5: yield "five";
-            case 6: yield "six";
-            case 7: yield "seven";
-            case 8: yield "eight";
-            case 9: yield "nine";
-            default: yield String.valueOf(i);
+            case 0 -> "zero";
+            case 1 -> "one";
+            case 2 -> "two";
+            case 3 -> "three";
+            case 4 -> "four";
+            case 5 -> "five";
+            case 6 -> "six";
+            case 7 -> "seven";
+            case 8 -> "eight";
+            case 9 -> "nine";
+            default -> String.valueOf(i);
         };
     }
 
@@ -567,34 +629,105 @@ public class StringUtilsLabKey
     private static final byte NON_ASCII_MASK = (byte)0b1000_0000;
     private static final byte START_BYTE_MASK = (byte)0b1100_0000;
 
-    public static String truncateToUtf8ByteLimit(String s, int maxBytes)
+    // Truncates a string to UTF-8 bytes <= maxBytes starting from the first character (truncating the end of the string)
+    public static String leftUtf8Bytes(String s, int maxBytes)
     {
         if (maxBytes < 0)
-            throw new IllegalStateException("maxBytes cannot be negative");
+            throw new IllegalArgumentException("maxBytes cannot be negative");
 
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
         if (bytes.length > maxBytes)
         {
-            // Inspect the byte at the max truncation point to determine if it's in the middle of a character.
-            // High bit on means non-ASCII, which means we may need to back up one or more bytes to avoid an
-            // incomplete character.
-            if (maxBytes > 0 && (bytes[maxBytes - 1] & NON_ASCII_MASK) == NON_ASCII_MASK)
+            if (maxBytes > 0)
             {
-                // Inspect the byte just after the max truncation point; anything other than a subsequent byte means
-                // max truncation point is the end of character. The check below is true if byte is 0b10xx_xxxx.
-                if (((~bytes[maxBytes] ^ NON_ASCII_MASK) & START_BYTE_MASK) == START_BYTE_MASK)
-                {
-                    // Find the first start character (iterating backwards) and truncate just before it
-                    do
-                    {
-                        maxBytes--;
-                    }
-                    while (maxBytes > 0 && (bytes[maxBytes] & START_BYTE_MASK) != START_BYTE_MASK);
-                }
+                // Inspect the byte just after the possible truncation point; a start byte (ASCII or non-ASCII) there
+                // means the truncation point is the end of a character. If it's not a start byte, back up one byte at
+                // a time until one is found and truncate before it. The check below is true if the byte is 0b10xx_xxxx.
+                while ((bytes[maxBytes] & START_BYTE_MASK) == NON_ASCII_MASK)
+                    maxBytes--;
             }
             s = new String(bytes, 0, maxBytes, StandardCharsets.UTF_8);
         }
         return s;
+    }
+
+    // Truncates a string to UTF-8 bytes <= maxBytes starting from the LAST character (truncating the start of the string)
+    public static String rightUtf8Bytes(String s, int maxBytes)
+    {
+        if (maxBytes < 0)
+            throw new IllegalArgumentException("maxBytes cannot be negative");
+
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        int length = bytes.length;
+        if (length > maxBytes)
+        {
+            int start = length - maxBytes;
+            if (maxBytes > 0)
+            {
+                // Inspect the byte at the possible truncation point; a start byte (ASCII or non-ASCII) here means it's
+                // safe to truncate here. If it's not a start byte, move forward one byte at a time until one is found.
+                // The check below is true if the byte is 0b10xx_xxxx.
+                while (start < length && (bytes[start] & START_BYTE_MASK) == NON_ASCII_MASK)
+                    start++;
+            }
+            s = new String(bytes, start, length - start, StandardCharsets.UTF_8);
+        }
+        return s;
+    }
+
+    // Truncates a string to characters <= maxCharacters starting from the first character (truncating the end of the
+    // string) but without splitting a surrogate pair at the end.
+    public static String leftSurrogatePairFriendly(String s, int maxCharacters)
+    {
+        if (maxCharacters < 0)
+            throw new IllegalArgumentException("maxCharacters cannot be negative");
+
+        if (s.length() > maxCharacters)
+        {
+            s = s.substring(0, maxCharacters);
+            // Don't split a surrogate pair at the end
+            if (maxCharacters > 0 && Character.isHighSurrogate(s.charAt(s.length() - 1)))
+                s = s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
+
+    // Truncates a string to characters <= maxCharacters starting from the LAST character (truncating the start of the
+    // string) but without splitting a surrogate pair at the start.
+    public static String rightSurrogatePairFriendly(String s, int maxCharacters)
+    {
+        if (maxCharacters < 0)
+            throw new IllegalArgumentException("maxCharacters cannot be negative");
+
+        if (s.length() > maxCharacters)
+        {
+            s = s.substring(s.length() - maxCharacters);
+            // Don't split a surrogate pair at the beginning
+            if (maxCharacters > 0 && Character.isLowSurrogate(s.charAt(0)))
+                s = s.substring( 1);
+        }
+        return s;
+    }
+
+    public static boolean hasBrokenSurrogate(String s)
+    {
+        for (int i = 0; i < s.length(); i++)
+        {
+            char ch = s.charAt(i);
+            if (Character.isHighSurrogate(ch))
+            {
+                if (i + 1 >= s.length() || !Character.isLowSurrogate(s.charAt(i + 1)))
+                {
+                    return true; // High surrogate not followed by low surrogate
+                }
+                i++; // Skip the low surrogate
+            }
+            else if (Character.isLowSurrogate(ch))
+            {
+                return true; // Low surrogate without preceding high surrogate
+            }
+        }
+        return false;
     }
 
     public static class TestCase extends Assert
@@ -987,82 +1120,258 @@ public class StringUtilsLabKey
         }
 
         @Test
-        public void testTruncateToUtf8ByteLimit()
+        public void testLeftUtf8Bytes()
         {
             // First, a few basic checks
-            assertEquals("abc", truncateToUtf8ByteLimit("abc", 3));
-            assertEquals("ab", truncateToUtf8ByteLimit("abc", 2));
-            assertEquals("☃☃", truncateToUtf8ByteLimit("☃☃", 10));
-            assertEquals("☃", truncateToUtf8ByteLimit("☃☃", 3));
-            assertEquals("", truncateToUtf8ByteLimit("☃☃", 2));
+            assertEquals("abc", leftUtf8Bytes("abc", 3));
+            assertEquals("ab", leftUtf8Bytes("abc", 2));
+            assertEquals("☃☃", leftUtf8Bytes("☃☃", 10));
+            assertEquals("☃", leftUtf8Bytes("☃☃", 3));
+            assertEquals("", leftUtf8Bytes("☃☃", 2));
+            assertEquals("", leftUtf8Bytes("abc", 0));
+            assertEquals("", leftUtf8Bytes("☃☃", 0));
 
-            List<String> testStrings = List.of(
-                "",
-                "A",
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-                "A \" ' ` ~ ! @#$%^&*()_-+= { } [ ] \\ | : ; < > , . ? / 你好 \uD83D\uDC7E",
-                "°±²³´µ¶·¸¹º»¼½¾¿",
-                "こんにちは世界!",
-                "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2",
-                "こんにちは世界!\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E",
-                "こAんBにCちDはE世F界G\uD83D\uDC7EH\uD83D\uDC7E☃\uD83D\uDC7EJ\uD83D\uDC7EK\uD83D\uDC7EL\uD83D\uDC7EM\uD83D\uDC7E!",
-                "\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E\uD83D\uDC7E"
-            );
-
-            testStrings.forEach(this::testTruncateSingleString);
-
-            // Create a list with all distinct characters (including surrogate pairs) from the above test strings
-            List<String> uniqueChars = testStrings.stream().flatMap(s -> {
-                List<String> moreStrings = new LinkedList<>();
-                for (int i = 0; i < s.length(); i++)
-                {
-                    char c = s.charAt(i);
-                    if (Character.isSurrogate(c))
-                    {
-                        char c2 = s.charAt(i + 1);
-                        moreStrings.add(c + "" + c2);
-                        i++;
-                    }
-                    else
-                    {
-                        moreStrings.add(String.valueOf(c));
-                    }
-                }
-                return moreStrings.stream();
-            })
-            .distinct()
-            .sorted()
-            .collect(Collectors.toCollection(ArrayList::new));
+            specialCharacterTestStrings.forEach(this::testLeftUtf8Bytes);
 
             // Test the character list sorted and then reversed
-            testTruncateSingleString(String.join("", uniqueChars));
-            Collections.reverse(uniqueChars);
-            testTruncateSingleString(String.join("", uniqueChars));
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
+            testLeftUtf8Bytes(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testLeftUtf8Bytes(String.join("", uniqueCharsCopy));
 
             // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
             for (int i = 0; i < 10; i++)
             {
-                Collections.shuffle(uniqueChars);
-                String test = String.join("", uniqueChars);
-                testTruncateSingleString(test);
+                Collections.shuffle(uniqueCharsCopy);
+                String test = String.join("", uniqueCharsCopy);
+                testLeftUtf8Bytes(test);
             }
         }
 
         // Test truncating this string at every possible byte length from 0 to byte length + 1
-        private void testTruncateSingleString(String s)
+        private void testLeftUtf8Bytes(String s)
         {
             int byteLength = s.getBytes(StandardCharsets.UTF_8).length;
             String prev = "";
             for (int maxBytes = 0; maxBytes <= byteLength + 1; maxBytes++)
             {
-                String truncated = truncateToUtf8ByteLimit(s, maxBytes);
-                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, s.startsWith(truncated));
-                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.startsWith(prev));
-                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
-                int minChars = maxBytes / 4;
-                assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.length() >= minChars);
+                String truncated = leftUtf8Bytes(s, maxBytes);
+                standardUtf8TruncationChecks(s, truncated, prev, maxBytes, String::startsWith);
                 prev = truncated;
             }
+        }
+
+        private void standardUtf8TruncationChecks(String s, String truncated, String previous, int maxBytes, BiFunction<String, String, Boolean> checkFunction)
+        {
+            assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, checkFunction.apply(s, truncated));
+            assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, checkFunction.apply(truncated, previous));
+            assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.getBytes(StandardCharsets.UTF_8).length <= maxBytes);
+            int minChars = maxBytes / 4;
+            assertTrue("Failed with: " + s + ", maxBytes: " + maxBytes, truncated.length() >= minChars);
+            assertFalse(hasBrokenSurrogate(truncated));
+        }
+
+        @Test
+        public void testRightUtf8Bytes()
+        {
+            // First, a few basic checks
+            assertEquals("abc", rightUtf8Bytes("abc", 3));
+            assertEquals("bc", rightUtf8Bytes("abc", 2));
+            assertEquals("☃☃", rightUtf8Bytes("☃☃", 10));
+            assertEquals("☃", rightUtf8Bytes("☃☃", 3));
+            assertEquals("", rightUtf8Bytes("☃☃", 2));
+            assertEquals("", rightUtf8Bytes("abc", 0));
+            assertEquals("", rightUtf8Bytes("☃☃", 0));
+
+            specialCharacterTestStrings.forEach(this::testRightUtf8Bytes);
+
+            // Test the character list sorted and then reversed
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
+            testRightUtf8Bytes(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testRightUtf8Bytes(String.join("", uniqueCharsCopy));
+
+            // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
+            for (int i = 0; i < 10; i++)
+            {
+                Collections.shuffle(uniqueCharsCopy);
+                String test = String.join("", uniqueCharsCopy);
+                testRightUtf8Bytes(test);
+            }
+        }
+
+        // Test truncating this string at every possible byte length from 0 to byte length + 1
+        private void testRightUtf8Bytes(String s)
+        {
+            int byteLength = s.getBytes(StandardCharsets.UTF_8).length;
+            String prev = "";
+            for (int maxBytes = 0; maxBytes <= byteLength + 1; maxBytes++)
+            {
+                String truncated = rightUtf8Bytes(s, maxBytes);
+                standardUtf8TruncationChecks(s, truncated, prev, maxBytes, String::endsWith);
+                prev = truncated;
+            }
+        }
+
+        @Test
+        public void testLeftSurrogatePairFriendly()
+        {
+            // Simple ASCII
+            String test = "abc";
+            assertEquals("abc", leftSurrogatePairFriendly(test, 10));
+            assertEquals("abc", leftSurrogatePairFriendly(test, 3));
+            assertEquals("ab", leftSurrogatePairFriendly(test, 2));
+            assertEquals("a", leftSurrogatePairFriendly(test, 1));
+            assertEquals("", leftSurrogatePairFriendly(test, 0));
+
+            // No surrogate pairs
+            test = "☃☃☃";
+            assertEquals("☃☃☃", leftSurrogatePairFriendly(test, 10));
+            assertEquals("☃☃☃", leftSurrogatePairFriendly(test, 3));
+            assertEquals("☃☃", leftSurrogatePairFriendly(test, 2));
+            assertEquals("☃", leftSurrogatePairFriendly(test, 1));
+            assertEquals("", leftSurrogatePairFriendly(test, 0));
+
+            // Surrogate pairs
+            test = "\uD83D\uDC7E\uD83D\uDC7E";
+            assertEquals("\uD83D\uDC7E\uD83D\uDC7E", leftSurrogatePairFriendly(test, 7));
+            assertEquals("\uD83D\uDC7E\uD83D\uDC7E", leftSurrogatePairFriendly(test, 4));
+            assertEquals("\uD83D\uDC7E", leftSurrogatePairFriendly(test, 3));
+            assertEquals("\uD83D\uDC7E", leftSurrogatePairFriendly(test, 2));
+            assertEquals("", leftSurrogatePairFriendly(test, 1));
+            assertEquals("", leftSurrogatePairFriendly(test, 0));
+
+            // Surrogate pairs and ASCII intermingled
+            test = "A\uD83D\uDC7EB\uD83D\uDC7EC";
+            assertEquals("A\uD83D\uDC7EB\uD83D\uDC7EC", leftSurrogatePairFriendly(test, 10));
+            assertEquals("A\uD83D\uDC7EB\uD83D\uDC7EC", leftSurrogatePairFriendly(test, 7));
+            assertEquals("A\uD83D\uDC7EB\uD83D\uDC7E", leftSurrogatePairFriendly(test, 6));
+            assertEquals("A\uD83D\uDC7EB", leftSurrogatePairFriendly(test, 5));
+            assertEquals("A\uD83D\uDC7EB", leftSurrogatePairFriendly(test, 4));
+            assertEquals("A\uD83D\uDC7E", leftSurrogatePairFriendly(test, 3));
+            assertEquals("A", leftSurrogatePairFriendly(test, 2));
+            assertEquals("A", leftSurrogatePairFriendly(test, 1));
+            assertEquals("", leftSurrogatePairFriendly(test, 0));
+
+            specialCharacterTestStrings.forEach(this::testLeftSurrogatePairFriendly);
+
+            // Test the character list sorted and then reversed
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
+            testLeftSurrogatePairFriendly(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testLeftSurrogatePairFriendly(String.join("", uniqueCharsCopy));
+
+            // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
+            for (int i = 0; i < 10; i++)
+            {
+                Collections.shuffle(uniqueCharsCopy);
+                test = String.join("", uniqueCharsCopy);
+                testLeftSurrogatePairFriendly(test);
+            }
+        }
+
+        // Test truncating this string at every possible byte length from 0 to byte length + 1
+        private void testLeftSurrogatePairFriendly(String s)
+        {
+            String prev = "";
+            for (int len = 0; len <= s.length() + 1; len++)
+            {
+                String truncated = leftSurrogatePairFriendly(s, len);
+                assertTrue("Failed with: " + s + ", len: " + len, s.startsWith(truncated));
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.startsWith(prev));
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.length() <= len);
+                int minChars = len / 2;
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.length() >= minChars);
+                assertFalse(hasBrokenSurrogate(truncated));
+                prev = truncated;
+            }
+        }
+
+        @Test
+        public void testRightSurrogatePairFriendly()
+        {
+            // Simple ASCII
+            String test = "abc";
+            assertEquals("abc", rightSurrogatePairFriendly(test, 10));
+            assertEquals("abc", rightSurrogatePairFriendly(test, 3));
+            assertEquals("bc", rightSurrogatePairFriendly(test, 2));
+            assertEquals("c", rightSurrogatePairFriendly(test, 1));
+            assertEquals("", rightSurrogatePairFriendly(test, 0));
+
+            // No surrogate pairs
+            test = "☃☃☃";
+            assertEquals("☃☃☃", rightSurrogatePairFriendly(test, 10));
+            assertEquals("☃☃☃", rightSurrogatePairFriendly(test, 3));
+            assertEquals("☃☃", rightSurrogatePairFriendly(test, 2));
+            assertEquals("☃", rightSurrogatePairFriendly(test, 1));
+            assertEquals("", rightSurrogatePairFriendly(test, 0));
+
+            // Surrogate pairs
+            test = "\uD83D\uDC7E\uD83D\uDC7E";
+            assertEquals("\uD83D\uDC7E\uD83D\uDC7E", rightSurrogatePairFriendly(test, 7));
+            assertEquals("\uD83D\uDC7E\uD83D\uDC7E", rightSurrogatePairFriendly(test, 4));
+            assertEquals("\uD83D\uDC7E", rightSurrogatePairFriendly(test, 3));
+            assertEquals("\uD83D\uDC7E", rightSurrogatePairFriendly(test, 2));
+            assertEquals("", rightSurrogatePairFriendly(test, 1));
+            assertEquals("", rightSurrogatePairFriendly(test, 0));
+
+            // Surrogate pairs and ASCII intermingled
+            test = "A\uD83D\uDC7EB\uD83D\uDC7EC";
+            assertEquals("A\uD83D\uDC7EB\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 10));
+            assertEquals("A\uD83D\uDC7EB\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 7));
+            assertEquals("\uD83D\uDC7EB\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 6));
+            assertEquals("B\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 5));
+            assertEquals("B\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 4));
+            assertEquals("\uD83D\uDC7EC", rightSurrogatePairFriendly(test, 3));
+            assertEquals("C", rightSurrogatePairFriendly(test, 2));
+            assertEquals("C", rightSurrogatePairFriendly(test, 1));
+            assertEquals("", rightSurrogatePairFriendly(test, 0));
+
+            specialCharacterTestStrings.forEach(this::testRightSurrogatePairFriendly);
+
+            // Test the character list sorted and then reversed
+            List<String> uniqueCharsCopy = new ArrayList<>(uniqueSpecialChars);
+            testRightSurrogatePairFriendly(String.join("", uniqueCharsCopy));
+            Collections.reverse(uniqueCharsCopy);
+            testRightSurrogatePairFriendly(String.join("", uniqueCharsCopy));
+
+            // Now randomly shuffle all the characters to create a new string and test it (repeat 10 times)
+            for (int i = 0; i < 10; i++)
+            {
+                Collections.shuffle(uniqueCharsCopy);
+                test = String.join("", uniqueCharsCopy);
+                testRightSurrogatePairFriendly(test);
+            }
+        }
+
+        // Test truncating this string at every possible character length from 0 to length + 1
+        private void testRightSurrogatePairFriendly(String s)
+        {
+            String prev = "";
+            for (int len = 0; len <= s.length() + 1; len++)
+            {
+                String truncated = rightSurrogatePairFriendly(s, len);
+                assertTrue("Failed with: " + s + ", len: " + len, s.endsWith(truncated));
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.endsWith(prev));
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.length() <= len);
+                int minChars = len / 2;
+                assertTrue("Failed with: " + s + ", len: " + len, truncated.length() >= minChars);
+                assertFalse(hasBrokenSurrogate(truncated));
+                prev = truncated;
+            }
+        }
+
+        @Test
+        public void testHasBrokenSurrogate()
+        {
+            assertFalse(hasBrokenSurrogate("abc"));
+            assertFalse(hasBrokenSurrogate("☃☃☃"));
+            assertFalse(hasBrokenSurrogate("😊"));
+            assertFalse(hasBrokenSurrogate("\uD83D\uDC7EB\uD83D\uDC7EC"));
+
+            assertTrue(hasBrokenSurrogate("\uD83D")); // High surrogate without low
+            assertTrue(hasBrokenSurrogate("\uDE0A")); // Low surrogate without high
+            assertTrue(hasBrokenSurrogate("\uDE0A\uD83D")); // Low before high
         }
     }
 }
