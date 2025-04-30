@@ -91,10 +91,9 @@ public class RolapCubeDef
     protected final Map<String,String> annotations = new TreeMap<>();
     protected final Map<String,Object> uniqueNameMap = new TreeMap<>();
 
-    // Use the labkey scope's dialect for the purpose of creating column aliases used in getAllColumnsSQL(). This seems
-    // like a safe assumption.
-    private final AliasManager columnAliases = new AliasManager((SqlDialect) null);
-
+    // Use the labkey scope's dialect to create column aliases used in getAllColumnsSQL(). This seems like a safe
+    // assumption.
+    private final AliasManager columnAliases = new AliasManager(DbScope.getLabKeyScope().getSqlDialect());
 
     public RolapCubeDef(String schema, String cubeName)
     {

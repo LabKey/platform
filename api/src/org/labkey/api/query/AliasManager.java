@@ -28,11 +28,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.MockSqlDialect;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.util.StringUtilsLabKey;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -40,45 +37,6 @@ import java.util.Map;
 
 public class AliasManager
 {
-    // SqlDialect to use when null dialect is provided. This implements "least-common denominator" rules for
-    // identifiers, ensuring aliases will work on all databases.
-    private static class FallBackDialect extends MockSqlDialect
-    {
-        @Override
-        protected int getIdentifierMaxCharLength()
-        {
-            // Old Oracle rule is 30 characters max
-            return 30;
-        }
-    
-        @Override
-        public boolean isLegalNameChar(char ch, boolean first)
-        {
-            // oracle doesn't allow leading underscore
-            return super.isLegalNameChar(ch, first) && !(first && ch == '_');
-        }
-
-        @Override
-        public String makeLegalName(String str, boolean truncate, int reserveCount)
-        {
-            // Oracle rule
-            String ret = super.makeLegalName(str, truncate, reserveCount);
-            // PostgreSQL rule
-            if (truncate)
-                ret = StringUtilsLabKey.leftUtf8Bytes(ret, 63 - reserveCount);
-            return ret;
-        }
-
-        @Override
-        public String makeLegalName(FieldKey key, int reserveCount)
-        {
-            // Oracle rule - truncate to 30 characters
-            String legal = super.makeLegalName(key, reserveCount);
-            // PostgreSQL rule - truncate to 63 bytes
-            return StringUtilsLabKey.leftUtf8Bytes(legal, 63 - reserveCount);
-        }
-    }
-
     private final @NotNull SqlDialect _dialect;
     private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
@@ -98,12 +56,6 @@ public class AliasManager
         claimAliases(table.getColumns());
         if (columns != null)
             claimAliases(columns);
-    }
-
-    @Deprecated(forRemoval = true) // TODO: Unused
-    public static AliasManager createLabKeyAliasManager()
-    {
-        return new AliasManager(new _LabKeyDialect());
     }
 
     public static String makeLegalName(String str, @NotNull SqlDialect dialect)
@@ -137,33 +89,6 @@ public class AliasManager
         _aliases.put(ret, name);
         return ret;
     }
-
-/*
-    public String decideAlias(FieldKey key)
-    {
-        String alias = _keys.get(key);
-        if (null != alias)
-            return alias;
-        String name = null == key.getParent() ? key.getName() : key.toString();
-        alias = decideAlias(name);
-        _keys.put(key,alias);
-        return alias;
-    }
-
-
-    // only for ColumnInfo.setAlias()
-    public void claimAlias(FieldKey key, String proposed)
-    {
-        String alias = _keys.get(key);
-        assert null == alias || alias.equals(proposed);
-        if (null != alias)
-            return;
-        assert null == _aliases.get(proposed) : "duplicate alias";
-        String name = null == key.getParent() ? key.getName() : key.toString();
-        _aliases.put(proposed,name);
-        _keys.put(key,proposed);
-    }
-*/
 
     public void claimAlias(String alias, String name)
     {
@@ -206,54 +131,6 @@ public class AliasManager
     {
         _aliases.remove(column.getAlias().getId());
     }
-
-
-    private static class _LabKeyDialect extends PostgreSql91Dialect
-    {
-        @Override
-        protected void initializeInClauseGenerator(DbScope scope)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getProductName()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String getMedianFunction()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public JdbcHelper getJdbcHelper()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected boolean shouldQuoteIdentifier(String id)
-        {
-            return true;
-        }
-
-        @Override
-        public boolean isReserved(String word)
-        {
-            return super.isReserved(word);
-        }
-
-        @Override
-        public String makeLegalIdentifierName(String id)
-        {
-            return super.makeLegalIdentifierName(id);
-        }
-    }
-
-
 
     public static class TestCase extends Assert
     {
