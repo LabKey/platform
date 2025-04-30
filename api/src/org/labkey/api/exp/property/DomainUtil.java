@@ -1416,7 +1416,7 @@ public class DomainUtil
             }
 
             // Issue 52827: File/attachment fields with special characters
-            if (altNameMap.containsKey(name) || altNameMap.containsKey(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name)))
+            if (altNameMap.containsKey(name))
             {
                 String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' cannot be used with another field '" + altNameMap.get(name) + "'. Please provide a different name for the field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
@@ -1426,6 +1426,7 @@ public class DomainUtil
             {
                 altNameMap.put(name, name);
                 altNameMap.put(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name), name);
+                altNameMap.put(name.replaceAll("%22", "\""), name);
             }
         }
 
