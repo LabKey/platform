@@ -205,11 +205,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
         private Pair<ColumnInfo, Map<?, ?>> _pkColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads)
-        {
-            this(targetTable, includeTitleColumn, missing, allowBulkLoads, false, null);
-        }
-
         public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup, @Nullable String fieldName)
         {
             _targetTable = targetTable;
@@ -321,7 +316,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 case Error:
                 default:
                     if (_fieldName != null)
-                        throw new ConversionExceptionWithMessage("Value '" + k + "' not found for field " + _fieldName + ".");
+                        throw new ConversionExceptionWithMessage("Value '" + k + "' not found for field " + _fieldName + " in the current context.");
                     else
                         throw new ConversionException("Could not translate value: " + k);
 
@@ -1257,14 +1252,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     /**
      * Add convert column using the input DataIterator source column at the given
      * <code>fromIndex</code> and the missing value column at <code>mvIndex</code>.
-     *
+     * <p>
      * Converts the source data value at <code>fromIndex</code> using the
      * column's PropertyType or JdbcType, handles missing values, remapping lookup
      * display values to the lookup primary key, and converts multi-value foreign keys
      * into collections.
-     * @param col       Use this column's type to perform conversion.
-     * @param fromIndex Source column to create the output column from.
-     * @param mvIndex   Missing value column index.
+     *
+     * @param col                  Use this column's type to perform conversion.
+     * @param fromIndex            Source column to create the output column from.
+     * @param mvIndex              Missing value column index.
      * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
      */
     public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, @Nullable RemapMissingBehavior remapMissingBehavior)
@@ -1277,15 +1273,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * Add convert column using the input DataIterator source column at the given
      * <code>fromIndex</code> but converts values using the target <code>toType</code>
      * and <code>toFK</code>.
-     *
+     * <p>
      * Converts the source data value at <code>fromIndex</code> using the
      * column's PropertyType or JdbcType, handles missing values, remapping lookup
      * display values to the lookup primary key, and converts multi-value foreign keys
      * into collections.
-     * @param name      Output column name to add to this SimpleTranslator.
-     * @param fromIndex Source column to create the output column from and pull data from.
-     * @param toType    Convert the source data values to this type.
-     * @param toFk      When <code>isAllowImportLookupByAlternateKey</code> is turned on, remap lookup values using the foreign key if there is a conversion failure.
+     *
+     * @param name                 Output column name to add to this SimpleTranslator.
+     * @param fromIndex            Source column to create the output column from and pull data from.
+     * @param toType               Convert the source data values to this type.
+     * @param toFk                 When <code>isAllowImportLookupByAlternateKey</code> is turned on, remap lookup values using the foreign key if there is a conversion failure.
      * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
      */
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, @Nullable ForeignKey toFk, @Nullable RemapMissingBehavior remapMissingBehavior)
@@ -1303,16 +1300,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * Add convert column using the input DataIterator source column at the given
      * <code>fromIndex</code> and the missing value column at <code>mvIndex</code>
      * but converts values using the target <code>pd</code> and <code>pt</code>.
-     *
+     * <p>
      * Converts the source data value at <code>fromIndex</code> using the
      * column's PropertyType or JdbcType, handles missing values, remapping lookup
      * display values to the lookup primary key, and converts multi-value foreign keys
      * into collections.
      *
-     * @param col       Use this column's type to perform conversion.
-     * @param fromIndex Source column to create the output column from and pull data from.
-     * @param pd        PropertyDescriptor used for missing value enabled-ness.
-     * @param pt        Convert the source data values to this type.
+     * @param col                  Use this column's type to perform conversion.
+     * @param fromIndex            Source column to create the output column from and pull data from.
+     * @param pd                   PropertyDescriptor used for missing value enabled-ness.
+     * @param pt                   Convert the source data values to this type.
      * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
      */
     public int addConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable RemapMissingBehavior remapMissingBehavior)
@@ -1363,7 +1360,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public int addCoaleseColumn(String name, int firstIndex, Supplier second)
+    public int addCoalesceColumn(String name, int firstIndex, Supplier second)
     {
         var col = new BaseColumnInfo(_data.getColumnInfo(firstIndex));
         col.setName(name);
@@ -1371,9 +1368,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public int addCoaleseColumn(String name, int firstIndex, int secondIndex)
+    public int addCoalesceColumn(String name, int firstIndex, int secondIndex)
     {
-        return addCoaleseColumn(name, firstIndex, _data.getSupplier(secondIndex));
+        return addCoalesceColumn(name, firstIndex, _data.getSupplier(secondIndex));
     }
 
 
@@ -2101,7 +2098,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             DataIteratorContext context = new DataIteratorContext();
             simpleData.beforeFirst();
             SimpleTranslator t = new SimpleTranslator(simpleData, context);
-            int c = t.addCoaleseColumn("IntNotNull", 3, new GuidColumn());
+            int c = t.addCoalesceColumn("IntNotNull", 3, new GuidColumn());
             for (int i=1 ; i<=4 ; i++)
             {
                 assertTrue(t.next());

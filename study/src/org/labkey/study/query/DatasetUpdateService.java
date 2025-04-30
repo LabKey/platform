@@ -32,7 +32,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -359,7 +358,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                         if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
                         {
                             // make sure guid is not null (12884)
-                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            result.addCoalesceColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
                             foundKeyCol = true;
                         }
                         else
