@@ -67,6 +67,7 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -4491,7 +4492,7 @@ public class QueryController extends SpringActionController
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
-                        addRowAttachments(rowMap, idx, commandIndex);
+                        addRowAttachments(table, rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4643,7 +4644,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4687,6 +4688,9 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
+
+            for (ColumnInfo col : tableInfo.getColumns())
+                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()

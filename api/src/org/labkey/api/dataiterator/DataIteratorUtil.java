@@ -21,6 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,7 +57,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -148,7 +148,7 @@ public class DataIteratorUtil
         alias,
         jdbcname,
         tsvColumn,
-        mutiPartFormData()
+        multiPartFormData()
                 {
                     @Override
                     public String getMatchedName(@Nullable String name)
@@ -158,12 +158,41 @@ public class DataIteratorUtil
                         // " is encoded as %22 when content-type is "multipart/form-data" (but is not otherwise encoded so decode() does not work)
                         return name.replaceAll("\"", "%22");
                     }
+
+                    @Override
+                    public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
+                    {
+                        if (col.getName().contains("\"") && File.class.equals(col.getJavaClass()))
+                        {
+                            // Issue 52827: File/attachment fields with special characters
+                            String quoteEncodedName = DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(col.getName());
+                            if (rowMap.containsKey(quoteEncodedName))
+                            {
+                                rowMap.put(col.getName(), rowMap.get(quoteEncodedName));
+                                rowMap.remove(quoteEncodedName);
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
                 },
         low;
 
         public String getMatchedName(@Nullable String name)
         {
             return name;
+        }
+
+        /**
+         * Update rowMap content based on passed in col.
+         * For example, the original rowMap may contain encoded field name. This util substitute the key in rowMap to reflect the actual col name
+         * @param col
+         * @param rowMap
+         * @return If rowMap has been updated
+         */
+        public boolean updateRowMap(@NotNull ColumnInfo col, Map<String, Object> rowMap)
+        {
+            return false;
         }
     }
 
@@ -183,7 +212,7 @@ public class DataIteratorUtil
         Map<String, Pair<ColumnInfo,MatchType>> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
 
         for (ColumnInfo col : cols)
-            targetAliasesMap.put(MatchType.mutiPartFormData.getMatchedName(col.getName()), new Pair<>(col, MatchType.mutiPartFormData));
+            targetAliasesMap.put(MatchType.multiPartFormData.getMatchedName(col.getName()), new Pair<>(col, MatchType.multiPartFormData));
 
         // should this be under the useImportAliases flag???
         for (ColumnInfo col : cols)

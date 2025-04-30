@@ -560,6 +560,22 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _values;
     }
 
+    private boolean setFileColumn(ColumnInfo column, String formFieldName, Map<String, Object> values)
+    {
+        if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
+        {
+            MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
+            MultipartFile f = request.getFile(formFieldName);
+            // Only set the parameter value if there was a form element that was posted
+            if (f != null)
+            {
+                values.put(column.getName(), f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty() ? null : f);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Get case-insensitive map of typed values for each of the columns and mvColumns in the table if available.
      * @param includeUntyped The result map will include the String value that wasn't converted.
@@ -577,23 +593,18 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             else if (column.getName().contains("\""))
             {
                 // TODO: only match when request is of "multipart/form-data" content type?
-                String quoteEncodedName = DataIteratorUtil.MatchType.mutiPartFormData.getMatchedName(column.getName());
-                Object value = getTypedValues().get(QueryUpdateForm.PREFIX + quoteEncodedName);
-                if (value != null)
-                    values.put(column.getName(), value);
+                String quoteEncodedFieldName = QueryUpdateForm.PREFIX + DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(column.getName());
+                boolean isFileColSet = setFileColumn(column, quoteEncodedFieldName, values);
+                if (!isFileColSet)
+                {
+                    Object value = getTypedValues().get(quoteEncodedFieldName);
+                    if (value != null)
+                        values.put(column.getName(), value);
+                }
             }
 
             // Check if there was a file uploaded for the column's value
-            if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
-            {
-                MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
-                MultipartFile f = request.getFile(getFormFieldName(column));
-                // Only set the parameter value if there was a form element that was posted
-                if (f != null)
-                {
-                    values.put(column.getName(), f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty() ? null : f);
-                }
-            }
+            setFileColumn(column, getFormFieldName(column), values);
 
             if (column.isMvEnabled())
             {
