@@ -79,8 +79,8 @@ public class AliasManager
         }
     }
 
-    final @NotNull SqlDialect _dialect;
-    final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
+    private final @NotNull SqlDialect _dialect;
+    private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
     public AliasManager(@NotNull SqlDialect d)
     {
@@ -100,35 +100,30 @@ public class AliasManager
             claimAliases(columns);
     }
 
+    @Deprecated(forRemoval = true) // TODO: Unused
     public static AliasManager createLabKeyAliasManager()
     {
         return new AliasManager(new _LabKeyDialect());
     }
 
-    // null dialect is tolerated but not recommended
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect)
     {
         return makeLegalName(str, dialect, true);
     }
 
-    // null dialect is tolerated but not recommended
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate)
     {
         return makeLegalName(str, dialect, truncate, 0);
     }
 
-    // null dialect is tolerated but not recommended
-    private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, int reserveCount)
+    private static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
     {
-        // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
-        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(str, truncate, reserveCount);
+        return dialect.makeLegalName(str, truncate, reserveCount);
     }
 
-    // null dialect is tolerated but not recommended
-    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect)
+    public static String makeLegalName(FieldKey key, @NotNull  SqlDialect dialect)
     {
-        // New FallBackDialect on every call to avoid SqlDialect mem-tracker leak
-        return (dialect != null ? dialect : new FallBackDialect()).makeLegalName(key, 0);
+        return dialect.makeLegalName(key, 0);
     }
 
     public String decideAlias(String name)
