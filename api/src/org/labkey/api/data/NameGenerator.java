@@ -69,6 +69,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -256,9 +257,9 @@ public class NameGenerator
     private final FieldKeyStringExpression _parsedNameExpression;
 
 
-    public record SampleNameExpressionSummary(boolean hasProjectSampleCounter, boolean hasProjectSampleRootCounter, long minProjectSampleCounter, long minProjectSampleRootCounter) {};
+    public record SampleNameExpressionSummary(boolean hasProjectSampleCounter, boolean hasProjectSampleRootCounter, long minProjectSampleCounter, long minProjectSampleRootCounter) {}
 
-    public record ExpressionSummary(SampleNameExpressionSummary sampleSummary, boolean hasDateBasedSampleCounter, boolean hasParentInputs, boolean hasParentLookup, boolean hasAncestorSearch) {};
+    public record ExpressionSummary(SampleNameExpressionSummary sampleSummary, boolean hasDateBasedSampleCounter, boolean hasParentInputs, boolean hasParentLookup, boolean hasAncestorSearch) {}
 
     // extracted from name expression after parsing
     private ExpressionSummary _expressionSummary;
@@ -666,7 +667,7 @@ public class NameGenerator
             }
 
             if (!openIndexes.isEmpty())
-                unmatchedOpen.addAll(openIndexes.stream().map(index -> index+1).collect(Collectors.toList()));
+                unmatchedOpen.addAll(openIndexes.stream().map(index -> index+1).toList());
             start = subInd;
         }
         if (!unmatchedOpen.isEmpty())
@@ -726,9 +727,8 @@ public class NameGenerator
                 }
             }
         }
-        else if (value instanceof Collection)
+        else if (value instanceof Collection<?> coll)
         {
-            Collection<?> coll = (Collection)value;
             values = coll.stream().map(String::valueOf);
         }
         else if (value instanceof JSONArray jsonArray)
@@ -755,12 +755,7 @@ public class NameGenerator
         if (!isParentInputToken(fieldParts.get(0), importAliases, false))
             return false;
 
-        if (fieldParts.size() == 2 && isParentInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, false, container, user))
-        {
-            return false;
-        }
-
-        return true;
+        return fieldParts.size() != 2 || !isParentInputWithDataType(fieldParts.toArray(String[]::new), currentDataTypeName, false, container, user);
     }
 
     public static boolean isAncestorSearch(List<String> fieldParts, @Nullable Map<String, String> importAliases, Container container, User user)
@@ -1083,7 +1078,10 @@ public class NameGenerator
                 for (SubstitutionFormat format : formats)
                 {
                     if (format == dailySampleCount || format == weeklySampleCount || format == monthlySampleCount || format == yearlySampleCount)
+                    {
                         hasDateBasedSampleCounterFormat = true;
+                        break;
+                    }
                 }
 
                 String sTok = QueryKey.decodePart(token.toString());
@@ -1145,7 +1143,7 @@ public class NameGenerator
                                 }
 
                                 if (!isColPresent)
-                                    _syntaxErrors.add("Invalid substitution token: ${" + token.toString() + "}.");
+                                    _syntaxErrors.add("Invalid substitution token: ${" + token + "}.");
                                 else if (pt != null)
                                     previewCtx.put(fieldName, getNamePartPreviewValue(pt, fieldName));
                             }
@@ -1265,7 +1263,7 @@ public class NameGenerator
                 List<String> fieldParts = fieldKey.getParts();
 
                 if (hasParentInputs && fieldParts.size() == 3)
-                    continue;;
+                    continue;
 
                 assert _validateSyntax || fieldParts.size() == 2;
 
@@ -1354,7 +1352,7 @@ public class NameGenerator
                 {
                     if (!lookupExist)
                     {
-                        _syntaxErrors.add("Lookup field does not exist: " + fieldKey.toString());
+                        _syntaxErrors.add("Lookup field does not exist: " + fieldKey);
                     }
                     else if (pt != null)
                     {
@@ -1851,12 +1849,12 @@ public class NameGenerator
             // allow using alternative expression for evaluation.
             // for example, use AliquotNameExpression instead of NameExpression if sample is aliquot
             FieldKeyStringExpression expression = altExpression != null ? altExpression : _parsedNameExpression;
-            String name = null;
+            String name;
             if (expression instanceof NameGenerationExpression)
                 name = ((NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
             else
                 name = expression.eval(ctx);
-            if (name == null || name.length() == 0)
+            if (name == null || name.isEmpty())
                 throw new IllegalArgumentException("The data provided are not sufficient to create a name using the naming pattern '" + expression.getSource() + "'.  Check the pattern syntax and data values.");
 
             return name;
@@ -2360,9 +2358,7 @@ public class NameGenerator
                         if (parentImportAliases.containsKey(colName))
                             inputs.computeIfAbsent(colName,  (s) -> new LinkedHashSet<>()).addAll(parents);
                         Optional<Map.Entry<String, String>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(colName)).findFirst();
-                        aliasEntry.ifPresent(entry -> {
-                            inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents);
-                        });
+                        aliasEntry.ifPresent(entry -> inputs.computeIfAbsent(entry.getKey(),  (s) -> new LinkedHashSet<>()).addAll(parents));
                     }
                 }
             }
@@ -2465,7 +2461,7 @@ public class NameGenerator
             _parsedExpression = new ArrayList<>();
             int start = 0;
             int openIndex;
-            int openCount = 0;
+            int openCount;
             final String openTag = "${";
             final char closeTag = '}';
 
@@ -2540,7 +2536,6 @@ public class NameGenerator
          *
          * @param context The map of values to evaluate from
          * @param prefixCounterSequences if prefixCounterSequences is null, dont' use cache. Otherwise, put counter DBSequence in cache for reuse
-         * @return
          */
         public String eval(Map context, @Nullable Map<String, Map<String, DbSequence>> prefixCounterSequences)
         {
@@ -2644,7 +2639,7 @@ public class NameGenerator
         private DbSequence getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences, boolean noCache)
         {
             String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
-            DbSequence counterSeq = null;
+            DbSequence counterSeq;
             if (noCache || !counterSequences.containsKey(prefix))
             {
                 long existingCount = -1;
@@ -2694,7 +2689,7 @@ public class NameGenerator
 
 
                 boolean noCache = counterSequences == null;
-                DbSequence counterSeq = null;
+                DbSequence counterSeq;
 
                 if (_strictIncremental || ExperimentService.get().useStrictCounter())
                 {
@@ -2741,7 +2736,7 @@ public class NameGenerator
         }
     }
 
-    public class NameGenerationException extends Exception
+    public static class NameGenerationException extends Exception
     {
         private final int _rowNumber;
 
@@ -2763,7 +2758,7 @@ public class NameGenerator
         }
     }
 
-    public class DuplicateNameException extends NameGenerationException
+    public static class DuplicateNameException extends NameGenerationException
     {
         private final String _name;
 
@@ -2787,7 +2782,7 @@ public class NameGenerator
         @Test
         public void testDateFormats()
         {
-            Date d = new GregorianCalendar(2011, 11, 3, 8, 30, 15).getTime();
+            Date d = new GregorianCalendar(2011, Calendar.DECEMBER, 3, 8, 30, 15).getTime();
             java.sql.Date donly = new java.sql.Date(d.getTime());
             Time t = new Time(d.getTime());
             Map<Object, Object> m = new HashMap<>();
