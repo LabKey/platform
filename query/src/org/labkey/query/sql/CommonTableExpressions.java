@@ -295,7 +295,7 @@ public class CommonTableExpressions
         {
             _sql = new SQLFragment();
             _cteKey = cteKey;
-            _cteToken = _sql.createCommonTableExpressionToken(cteKey, legalName);
+            _cteToken = _sql.createCommonTableExpressionToken(_dialect, cteKey, legalName);
         }
 
         public void setCTE(boolean isRecursive)

@@ -143,7 +143,7 @@ public class VisTestSchema extends UserSchema
         {
             SQLFragment cte = new SQLFragment(this.sql);
             SQLFragment ret = new SQLFragment();
-            String token = ret.addCommonTableExpression(this.getName(), this.getName(), cte);
+            String token = ret.addCommonTableExpression(getSqlDialect(), this.getName(), this.getName(), cte);
             ret.append(token).append(" ").appendIdentifier(alias);
             return ret;
         }
