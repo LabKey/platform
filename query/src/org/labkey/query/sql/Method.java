@@ -17,7 +17,6 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -45,7 +44,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.Queryable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -464,7 +462,7 @@ public abstract class Method
                     {
                         SQLFragment cte = new SQLFragment("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression("__test__two__", "_two", cte);
+                        String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
                     }
@@ -482,7 +480,7 @@ public abstract class Method
                     {
                         SQLFragment cte = new SQLFragment("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression("__test_three__", "_three", cte);
+                        String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
                     }
@@ -501,7 +499,7 @@ public abstract class Method
                         SQLFragment cte = new SQLFragment();
                         cte.append("SELECT (").append(arguments[0]).append(")*(").append(arguments[1]).append(") as x");
                         SQLFragment ret = new SQLFragment();
-                        String token = ret.addCommonTableExpression(GUID.makeGUID(), "_times", cte);
+                        String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
                         ret.append("(SELECT x FROM ").append(token).append(" y)");
                         return ret;
                     }

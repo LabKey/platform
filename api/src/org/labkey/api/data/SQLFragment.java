@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -65,21 +66,23 @@ public class SQLFragment implements Appendable, CharSequence
 
     private static class CTE
     {
-        CTE(@NotNull String name)
+        CTE(@NotNull SqlDialect dialect, @NotNull String name)
         {
+            this.dialect = dialect;
             this.preferredName = name;
             tokens.add("/*$*/" + GUID.makeGUID() + ":" + name + "/*$*/");
         }
 
-        CTE(@NotNull String name, SQLFragment sqlf, boolean recursive)
+        CTE(@NotNull SqlDialect dialect, @NotNull String name, SQLFragment sqlf, boolean recursive)
         {
-            this(name);
+            this(dialect, name);
             this.sqlf = sqlf;
             this.recursive = recursive;
         }
 
         CTE(CTE from)
         {
+            this.dialect = from.dialect;
             this.preferredName = from.preferredName;
             this.tokens.addAll(from.tokens);
             this.sqlf = from.sqlf;
@@ -99,6 +102,7 @@ public class SQLFragment implements Appendable, CharSequence
             return  tokens.iterator().next();
         }
 
+        private final @NotNull SqlDialect dialect;
         final String preferredName;
         boolean recursive = false;        // NOTE this is dialect dependant (getSql() does not take a dialect)
         final Set<String> tokens = new TreeSet<>();
@@ -232,16 +236,18 @@ public class SQLFragment implements Appendable, CharSequence
             return null != sb ? sb.toString() : null != sql ? sql : "";
 
         List<SQLFragment.CTE> commonTableExpressions = collectCommonTableExpressions();
+        assert !commonTableExpressions.isEmpty();
 
         boolean recursive = commonTableExpressions.stream()
                 .anyMatch(cte -> cte.recursive);
         StringBuilder ret = new StringBuilder("WITH" + (recursive ? " RECURSIVE" : ""));
 
         // generate final aliases for each CTE */
-        AliasManager am = new AliasManager((SqlDialect)null);
+        SqlDialect dialect = Objects.requireNonNull(commonTableExpressions.get(0).dialect);
+        AliasManager am = new AliasManager(dialect);
         List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
-                .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
-                .collect(Collectors.toList());
+                    .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
+                    .collect(Collectors.toList());
 
         String comma = "\n/*CTE*/\n\t";
         for (Pair<String,CTE> p : ctes)
@@ -839,31 +845,31 @@ public class SQLFragment implements Appendable, CharSequence
      *
      * if you don't have a key you can just use sqlf.toString()
      */
-    public String addCommonTableExpression(Object key, String proposedName, SQLFragment sqlf)
+    public String addCommonTableExpression(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf)
     {
-        return addCommonTableExpression(key, proposedName, sqlf, false);
+        return addCommonTableExpression(dialect, key, proposedName, sqlf, false);
     }
 
-    public String addCommonTableExpression(Object key, String proposedName, SQLFragment sqlf, boolean recursive)
+    public String addCommonTableExpression(SqlDialect dialect, Object key, String proposedName, SQLFragment sqlf, boolean recursive)
     {
         if (null == commonTableExpressionsMap)
             commonTableExpressionsMap = new LinkedHashMap<>();
         CTE prev = commonTableExpressionsMap.get(key);
         if (null != prev)
             return prev.token();
-        CTE cte = new CTE(proposedName, sqlf, recursive);
+        CTE cte = new CTE(dialect, proposedName, sqlf, recursive);
         commonTableExpressionsMap.put(key, cte);
         return cte.token();
     }
 
-    public String createCommonTableExpressionToken(Object key, String proposedName)
+    public String createCommonTableExpressionToken(SqlDialect dialect, Object key, String proposedName)
     {
         if (null == commonTableExpressionsMap)
             commonTableExpressionsMap = new LinkedHashMap<>();
         CTE prev = commonTableExpressionsMap.get(key);
         if (null != prev)
             throw new IllegalStateException("Cannot create CTE token from already used key.");
-        CTE cte = new CTE(proposedName);
+        CTE cte = new CTE(dialect ,proposedName);
         commonTableExpressionsMap.put(key, cte);
         return cte.token();
     }
@@ -970,6 +976,8 @@ public class SQLFragment implements Appendable, CharSequence
 
     public static class UnitTestCase extends Assert
     {
+        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+
         @Test
         public void cte()
         {
@@ -978,7 +986,7 @@ public class SQLFragment implements Appendable, CharSequence
             assertEquals("SELECT a FROM b WHERE x=5", a.toDebugString());
 
             SQLFragment b = new SQLFragment("SELECT * FROM CTE WHERE y=?","xxyzzy");
-            b.addCommonTableExpression(new Object(), "CTE", a);
+            b.addCommonTableExpression(dialect, new Object(), "CTE", a);
             assertEquals("""
                     WITH
                     /*CTE*/
@@ -1019,7 +1027,7 @@ public class SQLFragment implements Appendable, CharSequence
             // combining
 
             SQLFragment sqlf = new SQLFragment();
-            String token = sqlf.addCommonTableExpression("KEY_A", "cte1", new SQLFragment("SELECT * FROM a"));
+            String token = sqlf.addCommonTableExpression(dialect, "KEY_A", "cte1", new SQLFragment("SELECT * FROM a"));
             sqlf.append("SELECT * FROM ").append(token).append(" _1");
 
             assertEquals("""
@@ -1030,7 +1038,7 @@ public class SQLFragment implements Appendable, CharSequence
                     sqlf.getSQL());
 
             SQLFragment sqlf2 = new SQLFragment();
-            String token2 = sqlf2.addCommonTableExpression("KEY_A", "cte2", new SQLFragment("SELECT * FROM a"));
+            String token2 = sqlf2.addCommonTableExpression(dialect, "KEY_A", "cte2", new SQLFragment("SELECT * FROM a"));
             sqlf2.append("SELECT * FROM ").append(token2).append(" _2");
             assertEquals("""
                     WITH
@@ -1040,7 +1048,7 @@ public class SQLFragment implements Appendable, CharSequence
                     sqlf2.getSQL());
 
             SQLFragment sqlf3 = new SQLFragment();
-            String token3 = sqlf3.addCommonTableExpression("KEY_B", "cte3", new SQLFragment("SELECT * FROM b"));
+            String token3 = sqlf3.addCommonTableExpression(dialect, "KEY_B", "cte3", new SQLFragment("SELECT * FROM b"));
             sqlf3.append("SELECT * FROM ").append(token3).append(" _3");
             assertEquals("""
                     WITH
@@ -1077,7 +1085,7 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteToken = b.addCommonTableExpression(new Object(), "CTE", a);
+                String cteToken = b.addCommonTableExpression(dialect, new Object(), "CTE", a);
                 b.append("SELECT * FROM ").append(cteToken).append(" WHERE p=?").add("parameterTWO");
                 assertEquals("""
                         WITH
@@ -1093,10 +1101,10 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
+                String cteTokenA = b.addCommonTableExpression(dialect, new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenB = c.addCommonTableExpression(dialect, new Object(), "B_", b);
                 c.append("SELECT * FROM ").append(cteTokenB).append(" WHERE i=?").add(3);
                 assertEquals("""
                         WITH
@@ -1118,11 +1126,11 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
+                String cteTokenA = b.addCommonTableExpression(dialect, new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(new Object(), "A2_", a2);
+                String cteTokenB  = c.addCommonTableExpression(dialect, new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(dialect, new Object(), "A2_", a2);
                 c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
@@ -1147,11 +1155,11 @@ public class SQLFragment implements Appendable, CharSequence
             {
                 SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "A_", cf);
+                String cteTokenA = b.addCommonTableExpression(dialect, "CTE_KEY_CF", "A_", cf);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
-                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "A2_", cf);
+                String cteTokenB  = c.addCommonTableExpression(dialect, new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(dialect, "CTE_KEY_CF", "A2_", cf);
                 c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
