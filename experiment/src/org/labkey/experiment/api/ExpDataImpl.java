@@ -487,7 +487,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     // Get all text and int strings from the data class for indexing
     private void getIndexValues(
         Map<String, Object> props,
-        ExpDataClassDataTableImpl table,
+        @NotNull ExpDataClassDataTableImpl table,
         Set<String> identifiersHi,
         Set<String> identifiersMed,
         Set<String> identifiersLo,

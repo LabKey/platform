@@ -412,7 +412,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     /** returns null if the parent container is no longer available */
     @Nullable
-    public WebdavResource createIndexDocument(ExpMaterialTableImpl tableInfo)
+    public WebdavResource createIndexDocument(@Nullable ExpMaterialTableImpl tableInfo)
     {
         Container container = getContainer();
         if (container == null)
@@ -458,10 +458,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
 
             if (tableInfo != null)
-                getCustomIndexValues(props, tableInfo, jsonData);
+                getCustomIndexValues(props, tableInfo, identifiersHi, jsonData);
         }
 
-        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
         ExpSampleType st = getSampleType();
@@ -517,7 +516,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     // Get all text and int strings from the material properties for indexing
     private void getCustomIndexValues(
             Map<String, Object> props,
-            ExpMaterialTableImpl table,
+            @NotNull ExpMaterialTableImpl table,
+            Set<String> identifiersHi,
             JSONObject jsonData
     )
     {
@@ -525,7 +525,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
             skipColumns.add(column.name());
 
-        processIndexValues(props, table, skipColumns, new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), jsonData);
+        processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), jsonData);
     }
 
     static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
