@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -372,7 +373,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             FieldKey fkey = e.getKey();
             assert fkey.equals(col.getFieldKey());
 
-            String alias = oldLegalName(fkey, col.getSqlDialect());
+            // col.getSqlDialect() is sometimes NULL, but this parameter is required
+            // null==dialect effectively used the slightly stricter Oracle rule (no leading _)
+            // TODO: pass in the actual schema/dialect used to create Results
+            SqlDialect d = col.getSqlDialect();
+            if (null == d)
+                d = CoreSchema.getInstance().getSqlDialect();
+            String alias = oldLegalName(fkey, d);
 
             if (!aliases.add(alias))
             {
