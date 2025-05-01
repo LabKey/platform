@@ -67,6 +67,7 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -4491,7 +4492,7 @@ public class QueryController extends SpringActionController
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
-                        addRowAttachments(rowMap, idx, commandIndex);
+                        addRowAttachments(table, rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4643,7 +4644,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4651,26 +4652,34 @@ public class QueryController extends SpringActionController
                 {
                     // Allow for the fileMap key to include the row index, and optionally command index, for defining
                     // which row to attach this file to
-                    String fieldKey = fileEntry.getKey();
-                    int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
-                    if (delimIndex > -1)
+                    String fullKey = fileEntry.getKey();
+                    String fieldKey = fullKey;
+                    // Issue 52827: Cannot attach a file if the field name contains ::
+                    // use lastIndexOf instead of split to get the proper parts
+                    int lastDelimIndex = fullKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                    if (lastDelimIndex > -1)
                     {
-                        String[] parts = fileEntry.getKey().split(ROW_ATTACHMENT_INDEX_DELIM);
+                        String fieldKeyExcludeIndex = fullKey.substring(0, lastDelimIndex);
+                        String fieldRowIndex = fullKey.substring(lastDelimIndex + ROW_ATTACHMENT_INDEX_DELIM.length());
+                        if (!fieldRowIndex.equals(rowIndex+"")) continue;
 
                         if (commandIndex == null)
                         {
                             // Single command, so we're parsing file names in the format of: FileField::0
-                            fieldKey = parts[0];
-                            String fieldRowIndex = parts[1];
-                            if (!fieldRowIndex.equals(rowIndex+"")) continue;
+                            fieldKey = fieldKeyExcludeIndex;
                         }
                         else
                         {
                             // Multi-command, so we're parsing file names in the format of: FileField::0::1
-                            fieldKey = parts[0];
-                            String fieldCommandIndex = parts[1];
-                            String fieldRowIndex = parts[2];
-                            if (!fieldCommandIndex.equals(commandIndex+"") || !fieldRowIndex.equals(rowIndex+""))
+                            int subDelimIndex = fieldKeyExcludeIndex.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                            if (subDelimIndex > -1)
+                            {
+                                fieldKey = fieldKeyExcludeIndex.substring(0, subDelimIndex);
+                                String fieldCommandIndex = fieldKeyExcludeIndex.substring(subDelimIndex + ROW_ATTACHMENT_INDEX_DELIM.length());
+                                if (!fieldCommandIndex.equals(commandIndex+""))
+                                    continue;
+                            }
+                            else
                                 continue;
                         }
                     }
@@ -4679,6 +4688,9 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
+
+            for (ColumnInfo col : tableInfo.getColumns())
+                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()
