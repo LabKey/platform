@@ -110,20 +110,20 @@ public class ExcelColumn extends RenderColumn
     private String _name = null;
     private String _caption = null;
     private final Map<ConditionalFormat, CellStyle> _formats = new HashMap<>();
-    private final Workbook _workbook;
+    protected final Workbook _workbook;
 
-    public static class ExcelFormatDescriptor extends Pair<Class, String>
+    public static class ExcelFormatDescriptor extends Pair<Class<?>, String>
     {
-        private ExcelFormatDescriptor(Class aClass, String format)
+        private ExcelFormatDescriptor(Class<?> aClass, String format)
         {
             super(aClass, format);
         }
     }
 
-    private DisplayColumn _dc;
+    protected final DisplayColumn _dc;
     private final Map<ExcelFormatDescriptor, CellStyle> _formatters;
 
-    ExcelColumn(DisplayColumn dc, Map<ExcelFormatDescriptor, CellStyle> formatters, Workbook workbook)
+    public ExcelColumn(DisplayColumn dc, Map<ExcelFormatDescriptor, CellStyle> formatters, Workbook workbook)
     {
         super();
         _dc = dc;
@@ -182,7 +182,7 @@ public class ExcelColumn extends RenderColumn
 
         if (_simpleType == ExcelCellUtils.TYPE_UNKNOWN)
         {
-            Class valueClass = dc.getDisplayValueClass();
+            Class<?> valueClass = dc.getDisplayValueClass();
             _log.error("init: Unknown Class " + valueClass + " " + getName());
         }
     }
@@ -266,7 +266,7 @@ public class ExcelColumn extends RenderColumn
         ColumnInfo columnInfo = _dc.getColumnInfo();
         Row rowObject = getRow(sheet, row);
 
-        Cell cell = null;
+        Cell cell;
         if (null == o)
         {
             // For null values, don't create the cell unless there's a conditional format that applies
@@ -291,7 +291,7 @@ public class ExcelColumn extends RenderColumn
                 if (_style != null)
                     cell.setCellStyle(_style);
 
-                Drawing drawing = (Drawing)ctx.get(ExcelWriter.SHEET_DRAWING);
+                Drawing<?> drawing = (Drawing<?>)ctx.get(ExcelWriter.SHEET_DRAWING);
                 if (drawing != null && _dc instanceof AbstractFileDisplayColumn)
                 {
                     String path = (String)o;
@@ -385,7 +385,7 @@ public class ExcelColumn extends RenderColumn
         }
         catch(ClassCastException cce)
         {
-            _log.error("Can't cast '" + o.toString() + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");
+            _log.error("Can't cast '" + o + "', class '" + o.getClass().getName() + "', to class corresponding to simple type '" + _simpleType + "'");
             _log.error("DisplayColumn.getCaption(): " + _dc.getCaption());
             _log.error("DisplayColumn.getClass().getName(): " + _dc.getClass().getName());
             _log.error("DisplayColumn.getDisplayValueClass(): " + _dc.getDisplayValueClass());
@@ -631,16 +631,14 @@ public class ExcelColumn extends RenderColumn
                 adjustedHeight = (int) (originalHeight * rowHeight / originalHeight);
             }
 
-            if (pict instanceof XSSFPicture)
+            if (pict instanceof XSSFPicture picture)
             {
-                XSSFPicture picture = (XSSFPicture) pict;
                 XSSFAnchor anchor = picture.getAnchor();
                 anchor.setDx2(adjustedWidth * Units.EMU_PER_POINT);
                 anchor.setDy2(adjustedHeight * Units.EMU_PER_POINT);
             }
-            else if (pict instanceof  HSSFPicture)
+            else if (pict instanceof HSSFPicture picture)
             {
-                HSSFPicture picture = (HSSFPicture) pict;
                 HSSFClientAnchor anchor = (HSSFClientAnchor) picture.getAnchor();
 
                 double xRatio = 1023.0 * PIXELS_TO_CHARACTERS / sheet.getColumnWidth(anchor.getCol2());
@@ -676,16 +674,12 @@ public class ExcelColumn extends RenderColumn
         if (0 == _autoSizeWidth)
             _autoSizeWidth = _caption != null ? _caption.length() : 10;  // Start with caption width as minimum
 
-        switch (_simpleType)
+        format = switch (_simpleType)
         {
-            case(ExcelCellUtils.TYPE_DATE):
-                format = FastDateFormat.getInstance(getFormatString());
-                break;
-            case(ExcelCellUtils.TYPE_INT):
-            case(ExcelCellUtils.TYPE_DOUBLE):
-                format = new DecimalFormat(getFormatString());
-                break;
-        }
+            case (ExcelCellUtils.TYPE_DATE) -> FastDateFormat.getInstance(getFormatString());
+            case (ExcelCellUtils.TYPE_INT), (ExcelCellUtils.TYPE_DOUBLE) -> new DecimalFormat(getFormatString());
+            default -> format;
+        };
 
         // Assumes column has same cell type from startRow to endRow, and that cell type matches the Excel column type (which it should, since we just wrote it)
         for (int row = startRow; row <= endRow; row++)
@@ -814,9 +808,7 @@ public class ExcelColumn extends RenderColumn
             qf.setSchemaName("lists");
             qf.setQueryName(LISTNAME);
             qf.setViewContext(ViewContext.getMockViewContext(TestContext.get().getUser(), getProject(), getProject().getStartURL(TestContext.get().getUser()), false));
-            List<FieldKey> fields = Arrays.stream(FIELDS).map(x -> {
-                return FieldKey.fromString(x[0].toString());
-            }).collect(Collectors.toList());
+            List<FieldKey> fields = Arrays.stream(FIELDS).map(x -> FieldKey.fromString(x[0].toString())).collect(Collectors.toList());
             qf.getQuerySettings().setFieldKeys(fields);
 
             BindException errors = new NullSafeBindException(new Object(), "command");

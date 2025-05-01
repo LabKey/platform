@@ -124,7 +124,8 @@ public class ExcelWriter implements ExportWriter
             {
                 // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
                 // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
-                return new SXSSFWorkbook(1000){
+                // Need to use a shared strings table to support rich text formatting
+                return new SXSSFWorkbook(null,1000, false, true) {
                     @Override
                     public void close() throws IOException
                     {
@@ -570,7 +571,7 @@ public class ExcelWriter implements ExportWriter
 
         for (DisplayColumn dc : columns)
         {
-            ExcelColumn column = new ExcelColumn(dc, _formatters, workbook);
+            ExcelColumn column = dc.createExcelColumn(_formatters, workbook);
             if (column.isVisible(ctx))
             {
                 column.setAutoSize(_autoSize);
