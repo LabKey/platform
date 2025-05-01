@@ -297,7 +297,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         SQLFragment sql = new SQLFragment(String.format("SELECT coalesce(MAX(%s(%s)),0) FROM %s.%s",
                 dialect.getVarcharLengthFunction(),
                 //Lowercase names for postgres (MSSQL is case-insensitive in this case)
-                prop.getPropertyDescriptor().getLegalSelectName(dialect).getSql().getRawSQL(),  // TODO
+                prop.getPropertyDescriptor().getLegalSelectName(dialect).getSql().getRawSQL(),  // TODO String.format() is not the best way to handle SQLFragment.  use .append()
                 dialect.makeLegalIdentifier(schema.toLowerCase()),
                 dialect.makeLegalIdentifier(domain.getStorageTableName().toLowerCase())
         ));
