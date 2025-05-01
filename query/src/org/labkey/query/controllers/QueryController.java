@@ -3813,54 +3813,54 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            SimpleFilter filter = getFilterFromQueryForm(form);
-
-            // Strip out filters on columns that don't exist - issue 21669
-            service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
-            QueryLogging queryLogging = new QueryLogging();
-            QueryService.SelectBuilder builder = service.getSelectBuilder(table)
-                    .columns(columns.values())
-                    .filter(filter)
-                    .queryLogging(queryLogging)
-                    .distinct(true);
-            SQLFragment selectSql = builder.buildSqlFragment();
-
-            // TODO: queryLogging.isShouldAudit() is always false at this point.
-            // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()
-            if (queryLogging.isShouldAudit() && null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
-            {
-                // this is probably a more helpful message
-                errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
-                return null;
-            }
-
-            // Regenerate the column since the alias may have changed after call to getSelectSQL()
-            columns = service.getColumns(table, settings.getFieldKeys());
-            var colGetAgain = columns.get(settings.getFieldKeys().get(0));
-            // I don't believe the above comment, so here's an assert
-            assert(colGetAgain.getAlias().equals(col.getAlias()));
-
-            SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
-            sql.append(selectSql);
-            sql.append(") S ORDER BY value");
-
-            sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
-
-            // 18875: Support Parameterized queries in Select Distinct
-            Map<String, Object> _namedParameters = settings.getQueryParameters();
-
             try
             {
+                SimpleFilter filter = getFilterFromQueryForm(form);
+
+                // Strip out filters on columns that don't exist - issue 21669
+                service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
+                QueryLogging queryLogging = new QueryLogging();
+                QueryService.SelectBuilder builder = service.getSelectBuilder(table)
+                        .columns(columns.values())
+                        .filter(filter)
+                        .queryLogging(queryLogging)
+                        .distinct(true);
+                SQLFragment selectSql = builder.buildSqlFragment();
+
+                // TODO: queryLogging.isShouldAudit() is always false at this point.
+                // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()
+                if (queryLogging.isShouldAudit() && null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
+                {
+                    // this is probably a more helpful message
+                    errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
+                    return null;
+                }
+
+                // Regenerate the column since the alias may have changed after call to getSelectSQL()
+                columns = service.getColumns(table, settings.getFieldKeys());
+                var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+                // I don't believe the above comment, so here's an assert
+                assert(colGetAgain.getAlias().equals(col.getAlias()));
+
+                SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
+                sql.append(selectSql);
+                sql.append(") S ORDER BY value");
+
+                sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
+
+                // 18875: Support Parameterized queries in Select Distinct
+                Map<String, Object> _namedParameters = settings.getQueryParameters();
+
                 service.bindNamedParameters(sql, _namedParameters);
                 service.validateNamedParameters(sql);
+
+                return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
             }
             catch (ConversionException | QueryService.NamedParameterNotProvided e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return null;
             }
-
-            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
         }
     }
 
