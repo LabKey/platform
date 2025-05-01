@@ -31,7 +31,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 
@@ -182,25 +181,37 @@ public class AliasManager
         }
 
         @Test
-        public void testNullDialect()
+        public void testLongNameTruncation()
         {
-            AliasManager m = new AliasManager((SqlDialect) null);
-            assertEquals("fred", m.decideAlias("fred"));
-            assertEquals("fred1", m.decideAlias("fred"));
-            assertEquals("fred2", m.decideAlias("fred"));
-            assertEquals("X__bob", m.decideAlias("_bob"));
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            AliasManager m = new AliasManager(dialect);
 
-            String truncated = m.decideAlias("1234567890123456789012345678901234567890");
-            assertEquals(27, truncated.length());
-            assertTrue(truncated.getBytes(StandardCharsets.UTF_8).length < 60);
-            assertEquals("X13599947545678901234567890", truncated);
+            String nums = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+            String truncatedNums1 = m.decideAlias(nums);
+            String truncatedNums2 = m.decideAlias(nums);
+            String truncatedNums3 = m.decideAlias(nums);
+
+            if (dialect.isSqlServer())
+            {
+                assertEquals(125, truncatedNums1.length());
+                assertEquals(126, truncatedNums2.length());
+                assertEquals(126, truncatedNums3.length());
+                assertEquals("X1483201190789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", truncatedNums1);
+            }
+            else
+            {
+                assertEquals(60, truncatedNums1.length());
+                assertEquals(61, truncatedNums2.length());
+                assertEquals(61, truncatedNums3.length());
+                assertEquals("X14832011902345678901234567890123456789012345678901234567890", truncatedNums1);
+            }
+
             // Not an interesting test at the moment since every non-alphanumeric gets replaced with _. But this will
             // become interesting if we start allowing Unicode characters in alias names in the future.
             String unicode = "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2";
-            truncated = m.decideAlias(unicode);
-            assertEquals(27, truncated.length());
-            assertTrue(truncated.getBytes(StandardCharsets.UTF_8).length < 60);
-            assertEquals("X1665827962________________", truncated);
+            String truncatedUnicode = m.decideAlias(unicode);
+            assertEquals(29, truncatedUnicode.length());
+            assertEquals("X___A________________________", truncatedUnicode);
         }
     }
 }
