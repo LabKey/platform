@@ -720,7 +720,7 @@ public class DomainUtil
 
         // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
         boolean strictFieldValidation = arguments != null ? (Boolean) arguments.getOrDefault("strictFieldValidation", true) : true;
-        DomainKind validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
+        DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
         if (ve.hasErrors())
@@ -1109,7 +1109,7 @@ public class DomainUtil
                     errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
                 }
             }
-            Lookup lu = new Lookup(c, from.getLookupSchema(), from.getLookupQuery());
+            Lookup lu = new Lookup(c, SchemaKey.fromString(from.getLookupSchema()), from.getLookupQuery());
             to.setLookup(lu);
         }
         else
@@ -1316,7 +1316,7 @@ public class DomainUtil
         }
     }
 
-    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
     {
         if (domain != null && domain.getName() != null)
         {
@@ -1331,7 +1331,7 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain<?> updates, @Nullable DomainKind domainKind, @Nullable GWTDomain<?> orig, @Nullable User user)
     {
         Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
@@ -1340,10 +1340,8 @@ public class DomainUtil
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        for (Object f : updates.getFields(true))
+        for (GWTPropertyDescriptor field : updates.getFields(true))
         {
-            GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
-
             String name = field.getName();
 
             if (null == name || name.trim().isEmpty())
@@ -1413,15 +1411,14 @@ public class DomainUtil
     }
 
     @Nullable
-    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain orig)
+    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain<?> orig)
     {
         if (null != orig)
         {
             Map<Integer, String> propertyIdMap = new HashMap<>();
 
-            for (Object f : orig.getFields())
+            for (GWTPropertyDescriptor origField : orig.getFields())
             {
-                GWTPropertyDescriptor origField = (GWTPropertyDescriptor) f;
                 propertyIdMap.put(origField.getPropertyId(), origField.getName());
             }
             return propertyIdMap;
