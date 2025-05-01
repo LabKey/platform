@@ -578,7 +578,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 String quoteEncodedFieldName = getMultiPartFormFieldName(column);
                 boolean isFileColFileRemoved = false;
-                if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
+                if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()))
                 {
                     MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
                     MultipartFile f = request.getFile(quoteEncodedFieldName);
