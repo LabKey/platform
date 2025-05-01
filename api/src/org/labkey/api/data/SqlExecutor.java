@@ -104,7 +104,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
         return execute(sql, resultsExecutor, handler);
     }
 
-    public <T, C> T execute(SQLFragment sql, StatementExecutor<T, C> statementExecutor, @Nullable C context)
+    private <T, C> T execute(SQLFragment sql, StatementExecutor<T, C> statementExecutor, @Nullable C context)
     {
         Connection conn = null;
 
@@ -113,7 +113,7 @@ public class SqlExecutor extends JdbcCommand<SqlExecutor>
             conn = getConnection();
             return statementExecutor.execute(conn, getScope().getSqlDialect(), sql, context);
         }
-        catch(SQLException e)
+        catch (SQLException e)
         {
             Table.logException(sql, conn, e, getLogLevel());
             // StatementWrapper will have decorated the exception already, but not with the parameter substituted version

@@ -18,12 +18,6 @@ package org.labkey.api.data.dialect;
 
 import org.labkey.api.data.SQLFragment;
 
-/*
-* User: adam
-* Date: Aug 13, 2011
-* Time: 3:51:09 PM
-*/
-
 // Methods for escaping and parsing SQL identifiers and string literals, based on a particular database's rules.
 public interface DialectStringHandler
 {

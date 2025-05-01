@@ -74,7 +74,7 @@ public class PropertyColumn extends LookupColumn
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
         setName(pd.getName());
-        setAlias(null);
+        setAlias((String)null);
 
         _pd = pd;
         _container = container;

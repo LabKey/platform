@@ -720,13 +720,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (hasProvisionedColumns)
             sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
         String subAlias = alias + "_dc_sub";
-        sql.append(") ").append(subAlias);
+        sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
+        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }

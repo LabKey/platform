@@ -162,7 +162,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                         .toList();
                 for (ColumnInfo column : cols)
                 {
-                    Object value = tableProps.get(column.getAlias());
+                    Object value = column.getValue(tableProps);
                     if (null != value)
                         map.put(column.getName(), new ObjectProperty(parentLSID, c, column.getName(), value, column.getLabel()));
                 }

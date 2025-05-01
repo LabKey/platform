@@ -104,7 +104,7 @@ import static org.labkey.api.exp.property.DefaultPropertyValidator.createValidat
 
 public class PropertyServiceImpl implements PropertyService, UsageMetricsProvider
 {
-    private final List<DomainKind> _domainTypes = new CopyOnWriteArrayList<>();
+    private final List<DomainKind<?>> _domainTypes = new CopyOnWriteArrayList<>();
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
     private final Map<String, ConceptURIVocabularyDomainProvider> _conceptUriVocabularyProvider = new ConcurrentHashMap<>();
 
@@ -227,17 +227,17 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
 
 
     @Override
-    public List<DomainKind> getDomainKinds()
+    public List<DomainKind<?>> getDomainKinds()
     {
-        ArrayList<DomainKind> l = new ArrayList<>(_domainTypes);
+        ArrayList<DomainKind<?>> l = new ArrayList<>(_domainTypes);
         return Collections.unmodifiableList(l);
     }
 
     @Override
-    public List<DomainKind> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
+    public List<DomainKind<?>> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
         List<? extends Domain> domains = getDomains(container, user, domainKinds, null, includeProjectAndShared);
-        List<DomainKind> dks = new ArrayList<>();
+        List<DomainKind<?>> dks = new ArrayList<>();
         domains.forEach(d -> {
             if(null != d.getDomainKind())
                 dks.add((d.getDomainKind()));
@@ -412,6 +412,8 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             lsid = LsidUtils.resolveLsidFromTemplate(lsid, context, "Domain");
         Domain domain = createDomain(c, lsid, xDomain.getName());
         domain.setDescription(xDomain.getDescription());
+        if (xDomain.isSetTableTitle())
+            domain.setTitle(xDomain.getTableTitle());
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
 
         if (xDomain.getPropertyDescriptorArray() != null)

@@ -510,7 +510,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "innerResults", columnMap);
             result.append("\n").append(filterFrag);
         }
-        result.append(") ").append(alias);
+        result.append(") ").appendIdentifier(alias);
         return result;
     }
 

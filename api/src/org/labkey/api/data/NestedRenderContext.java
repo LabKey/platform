@@ -125,8 +125,8 @@ public class NestedRenderContext extends RenderContext
             String groupBySQL = sortSQL.replaceAll(" DESC", "").replaceAll(" ASC", "").replaceAll("ORDER BY ", "GROUP BY ");
 
             // Add one to the limit so we can tell if there are more groups or not, and should therefore show pagination
-            SQLFragment fullSQL = new SQLFragment(" " + groupColumn.getAlias() + " IN (SELECT " + groupColumn.getAlias() + " FROM (");
-            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT "  + groupColumn.getAlias() + " "),
+            SQLFragment fullSQL = new SQLFragment(" ").appendIdentifier(groupColumn.getAlias()).append(" IN (SELECT ").appendIdentifier(groupColumn.getAlias()).append(" FROM (");
+            fullSQL.append(tinfo.getSchema().getSqlDialect().limitRows(new SQLFragment("SELECT ").appendIdentifier(groupColumn.getAlias()).append(" "),
                     fromSQL, null, maxRows != Table.ALL_ROWS || offset > 0 ? new SQLFragment(sortSQL) : null, new SQLFragment(groupBySQL), maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS ? maxRows : maxRows + 1, offset));
             fullSQL.append(" ) Limited )");
 
@@ -157,9 +157,9 @@ public class NestedRenderContext extends RenderContext
         Sort sort = new Sort(_nestingOption.getRowIdFieldKey());
         final SQLFragment fromSQL = new SQLFragment();
         ColumnInfo groupColumn = appendFromSQL(tinfo, dataRegionName, sort, fromSQL, _nestingOption.getAggregateRowIdFieldKey(), false);
-        fromSQL.insert(0, "SELECT " + groupColumn.getAlias() + " FROM (");
+        fromSQL.insert(0, "SELECT " + groupColumn.getAlias().getSql().getRawSQL() + " FROM (");
         fromSQL.append(") FilterOnly GROUP BY ");
-        fromSQL.append(groupColumn.getAlias());
+        fromSQL.appendIdentifier(groupColumn.getAlias());
 
         // Create a TableInfo that wraps the GROUP BY query
         VirtualTable<?> aggTableInfo = new VirtualTable<>(tinfo.getSchema(), "AggTable", tinfo.getUserSchema())

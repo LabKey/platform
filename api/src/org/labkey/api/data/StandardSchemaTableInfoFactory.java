@@ -42,7 +42,7 @@ public class StandardSchemaTableInfoFactory implements SchemaTableInfoFactory
     @Override
     public SchemaTableInfo getSchemaTableInfo(DbSchema schema)
     {
-        SchemaTableInfo ti = new SchemaTableInfo(schema, _tableType, _tableName);
+        SchemaTableInfo ti = SchemaTableInfo.newSchemaTableInfo(schema, _tableType, _tableName);
         ti.setDescription(_description);
         return ti;
     }

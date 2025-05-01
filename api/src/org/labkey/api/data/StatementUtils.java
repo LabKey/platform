@@ -461,7 +461,7 @@ public class StatementUtils
         {
             // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
             sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
-            sqlfPreselectObject.append("SELECT ").appendIdentifier(table.getColumn(objectURIColumnName).getSelectName());
+            sqlfPreselectObject.append("SELECT ").appendIdentifier(table.getColumn(objectURIColumnName).getSelectIdentifier());
             sqlfPreselectObject.append(" FROM ").append(table.getSQLName());
             sqlfPreselectObject.append(getPkWhereClause(keys));
             sqlfPreselectObject.append("),");
@@ -499,7 +499,7 @@ public class StatementUtils
         UpdateableTableInfo updatable = (UpdateableTableInfo) _targetTable;
         TableInfo table = updatable.getSchemaTableInfo();
 
-        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
+        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataIdentifier())
             throw new IllegalArgumentException();
 
         if (Operation.merge == _operation)
@@ -817,7 +817,7 @@ public class StatementUtils
                 {
                     sqlfInsertInto.append(comma);
                     comma = ", ";
-                    sqlfInsertInto.appendIdentifier(colInfo.getSelectName());
+                    sqlfInsertInto.appendIdentifier(colInfo.getSelectIdentifier());
                 }
                 sqlfInsertInto.append(")");
 
@@ -874,7 +874,7 @@ public class StatementUtils
 
                 sqlfUpdate.append(comma);
                 comma = ", ";
-                sqlfUpdate.appendIdentifier(cols.get(i).getSelectName());
+                sqlfUpdate.appendIdentifier(cols.get(i).getSelectIdentifier());
                 sqlfUpdate.append(" = ");
                 sqlfUpdate.append(values.get(i));
                 updateCount++;
@@ -885,7 +885,7 @@ public class StatementUtils
                 if (checkUpdatableColumns)
                     throw new TableInsertUpdateDataIterator.NoUpdatableColumnInDataException(table.getName());
 
-                sqlfUpdate.appendIdentifier(keys.values().iterator().next().getSelectName());
+                sqlfUpdate.appendIdentifier(keys.values().iterator().next().getSelectIdentifier());
                 sqlfUpdate.append(" = 'noop' WHERE 1 <> 1").appendEOS();;
             }
             else
@@ -1153,13 +1153,13 @@ public class StatementUtils
 
             sqlfWherePK.append(and);
             sqlfWherePK.append("(");
-            sqlfWherePK.appendIdentifier(keyCol.getSelectName());
+            sqlfWherePK.appendIdentifier(keyCol.getSelectIdentifier());
             sqlfWherePK.append(" = ");
             appendParameterOrVariable(sqlfWherePK, keyColPh);
             if (keyCol.isNullable())
             {
                 sqlfWherePK.append(" OR ");
-                sqlfWherePK.appendIdentifier(keyCol.getSelectName());
+                sqlfWherePK.appendIdentifier(keyCol.getSelectIdentifier());
                 sqlfWherePK.append(" IS NULL AND ");
                 appendParameterOrVariable(sqlfWherePK, keyColPh);
                 sqlfWherePK.append(" IS NULL");

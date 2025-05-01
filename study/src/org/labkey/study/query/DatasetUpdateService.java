@@ -868,9 +868,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
             assertNotNull(t);
-            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias()));
-            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias()));
-            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias()));
+            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias().getId()));
+            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias().getId()));
+            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias().getId()));
             var up = t.getUpdateService();
             assertNotNull(up);
             var errors = new BatchValidationException();

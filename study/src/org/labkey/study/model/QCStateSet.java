@@ -18,6 +18,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
@@ -134,16 +135,21 @@ public class QCStateSet
         return _label;
     }
 
-    public String getStateInClause(String rowIdColumnAlias)
+    public SQLFragment getStateInClause(String name)
+    {
+        return getStateInClause(new SQLFragment().appendIdentifier(name));
+    }
+
+    public SQLFragment getStateInClause(SQLFragment rowIdColumnAlias)
     {
         // degenerate case: we've been asked to filter down to a QC state set that contains
         // no states, and doesn't include unmarked items.  This can happen, for example, when
         // all states are defined as 'private' and a user selects the default 'Public' set for viewing.
         // In this case, we'll simply return filter ensures zero rows are returned:
         if (_states.isEmpty() && !_includeUnmarked)
-            return "0 = 1";
+            return new SQLFragment("0 = 1");
         
-        StringBuilder sql = new StringBuilder();
+        SQLFragment sql = new SQLFragment();
         sql.append("(");
         if (!_states.isEmpty())
         {
@@ -151,7 +157,7 @@ public class QCStateSet
             String comma = "";
             for (DataState state : _states)
             {
-                sql.append(comma).append(state.getRowId());
+                sql.append(comma).appendValue(state.getRowId());
                 comma = ", ";
             }
             sql.append(")");
@@ -164,7 +170,7 @@ public class QCStateSet
             sql.append(rowIdColumnAlias).append(" IS NULL");
         }
         sql.append(")");
-        return sql.toString();
+        return sql;
     }
 
     private boolean isIncludeUnmarked()

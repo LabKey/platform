@@ -838,7 +838,7 @@ public class Table
             }
 
             columnSQL.append(comma);
-            columnSQL.appendIdentifier(column.getSelectName());
+            columnSQL.appendIdentifier(column.getSelectIdentifier());
             valueSQL.append(comma);
             if (null == value || value instanceof String s && s.isEmpty())
                 valueSQL.append("NULL");
@@ -990,7 +990,7 @@ public class Table
 
         if (null != filter)
         {
-            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
+            SQLFragment fragment = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
             whereSQL.append(fragment);
             whereAND = " AND ";
         }
@@ -998,7 +998,7 @@ public class Table
         for (ColumnInfo col : columnPK)
         {
             whereSQL.append(whereAND);
-            whereSQL.appendIdentifier(col.getSelectName());
+            whereSQL.appendIdentifier(col.getSelectIdentifier());
             whereSQL.append("=?");
             whereSQL.add(keys.get(col.getName()));
             whereAND = " AND ";
@@ -1024,7 +1024,7 @@ public class Table
                 if (null != expr)
                 {
                     setSQL.append(comma);
-                    setSQL.appendIdentifier(column.getSelectName());
+                    setSQL.appendIdentifier(column.getSelectIdentifier());
                     setSQL.append("=");
                     setSQL.append(expr);
                     comma = ", ";
@@ -1039,7 +1039,7 @@ public class Table
                 if (DataIntegrationService.Columns.TransformImportHash.getColumnName().equals(column.getName()))
                 {
                     setSQL.append(comma);
-                    setSQL.appendIdentifier(column.getSelectName());
+                    setSQL.appendIdentifier(column.getSelectIdentifier());
                     setSQL.append("=NULL");
                     comma = ", ";
                 }
@@ -1048,7 +1048,7 @@ public class Table
 
             Object value = fields.get(column.getName());
             setSQL.append(comma);
-            setSQL.appendIdentifier(column.getSelectName());
+            setSQL.appendIdentifier(column.getSelectIdentifier());
 
             if (null == value || value instanceof String s && s.isEmpty())
             {
@@ -1143,7 +1143,7 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
 
-        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
+        SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createMetaDataNameMap(table));
 
         SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
 
@@ -1187,7 +1187,7 @@ public class Table
         {
             if (cols.containsKey(column.getFieldKey()))
                 continue;
-            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
+            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias().getId())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
                 cols.put(column.getFieldKey(), column);
             else if (column.isKeyField())
                 cols.put(column.getFieldKey(), column);
@@ -1545,6 +1545,22 @@ public class Table
         return ret;
     }
 
+    /**
+     *  Create a map that can be passed into Filter.getSQLFragment() that create a SQL fragment using getMetaDataName() instead of
+     * getAlias().
+     */
+    static private Map<FieldKey, ColumnInfo> createMetaDataNameMap(TableInfo table)
+    {
+        Map<FieldKey, ColumnInfo> ret = new HashMap<>();
+        for (var column : table.getColumns())
+        {
+            var wrapped = WrappedColumnInfo.wrap(column);
+            wrapped.setAlias(column.getMetaDataIdentifier());
+            ret.put(column.getFieldKey(), wrapped);
+        }
+        return ret;
+    }
+
 
     public static boolean checkAllColumns(TableInfo table, Collection<ColumnInfo> columns, String prefix)
     {
@@ -1565,9 +1581,9 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
+            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias().getId(), column)) && prev != column)
             {
-                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
+                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias().getId() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;
             }
         }
@@ -1613,7 +1629,7 @@ public class Table
 
         if (!(table instanceof SchemaTableInfo))
             throw new IllegalArgumentException();
-        if (null == table.getMetaDataName())
+        if (null == table.getMetaDataIdentifier())
             throw new IllegalArgumentException();
 
         SqlDialect d = tableDelete.getSqlDialect();
@@ -1632,7 +1648,7 @@ public class Table
             ColumnInfo pk = columnPK.get(i);
             Parameter p = paramPK.get(i);
             sqlfWhere.append(and); and = " AND ";
-            sqlfWhere.append(pk.getSelectName()).append("=?");
+            sqlfWhere.appendIdentifier(pk.getSelectIdentifier()).append("=?");
             sqlfWhere.add(p);
         }
         if (null != table.getColumn("container"))
@@ -1668,7 +1684,7 @@ public class Table
             {
                 String keyName = StringUtils.defaultString(objectIdColumnName, objectURIColumnName);
                 ColumnInfo keyCol = table.getColumn(keyName);
-                sqlfSelectKey.append("SELECT ").append(keyCol.getSelectName());
+                sqlfSelectKey.append("SELECT ").appendIdentifier(keyCol.getSelectIdentifier());
                 sqlfSelectKey.append("FROM ").append(table.getFromSQL("X"));
                 sqlfSelectKey.append(sqlfWhere);
             }

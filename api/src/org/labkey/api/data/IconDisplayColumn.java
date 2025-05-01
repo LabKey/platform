@@ -74,7 +74,7 @@ public class IconDisplayColumn extends DataColumn
     public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
         ActionURL linkURL = _linkURL.clone();
-        Object value = ctx.getRow().get(getColumnInfo().getAlias());
+        Object value = getColumnInfo().getValue(ctx);
         if (value != null)
         {
             linkURL.addParameter(_parameterName, value.toString());

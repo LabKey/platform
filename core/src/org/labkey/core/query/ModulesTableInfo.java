@@ -222,7 +222,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(")\n");
 
         String tableName = alias + "$m";
-        String token = ret.addCommonTableExpression("modulestableconstants", tableName, cte);
+        String token = ret.addCommonTableExpression(getSqlDialect(), "modulestableconstants", tableName, cte);
 
         // join with core.modules
         ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
@@ -234,7 +234,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(getFromTable(), null);
-        ret.append("\n").append(filterFrag).append(") ").append(alias);
+        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return ret;
     }

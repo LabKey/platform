@@ -490,7 +490,7 @@ public enum JdbcType
     }
     
     // Return Object class or TYPE
-    public Class getJavaClass(boolean isNullable)
+    public Class<?> getJavaClass(boolean isNullable)
     {
         return isNullable || null == typeCls ? cls : typeCls;
     }

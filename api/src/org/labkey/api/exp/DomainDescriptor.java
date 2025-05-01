@@ -55,6 +55,7 @@ public final class DomainDescriptor
     private final Object _ts;     // for optimistic concurrency
     private final int _domainId;
     private final String name;
+    private final String title;
     private final String _domainURI;
     private final String _description;
     // DomainDescriptor is cached, so don't hold onto container object see DOMAIN_DESC_BY_ID_CACHE DOMAIN_PROPERTIES_CACHE
@@ -72,7 +73,7 @@ public final class DomainDescriptor
     private final String _systemFieldConfig;
 
     private DomainDescriptor(
-            String domainURI, Container c, String name,
+            String domainURI, Container c, String name, String title,
             int domainId, String description, String storageTableName, String storageSchemaName,
             int titlePropertyId, Object ts,
             @Nullable TemplateInfo templateInfo,
@@ -102,6 +103,7 @@ public final class DomainDescriptor
                 _name = PageFlowUtil.decode(domainURI.substring(pos + 1));
         }
         this.name = _name;
+        this.title = title;
 
         _containerId = c.getEntityId();
         _storageTableName = storageTableName;
@@ -126,6 +128,8 @@ public final class DomainDescriptor
             _domainId = 0;
 
         name = (String) map.get("Name");
+        title = (String) map.get("Title");
+
         _containerId = (GUID)JdbcType.GUID.convert(map.get("Container"));
         _description = (String) map.get("Description");
         _storageSchemaName = (String) map.get("StorageSchemaName");
@@ -180,6 +184,11 @@ public final class DomainDescriptor
     public String getName()
     {
         return name;
+    }
+
+    public String getTitle()
+    {
+        return title;
     }
 
     public String getDomainURI()
@@ -273,6 +282,7 @@ public final class DomainDescriptor
     {
         return (d.getDomainId() == 0 || Objects.equals(getDomainId(), d.getDomainId())) &&
                 Objects.equals(getName(), d.getName()) &&
+                Objects.equals(getTitle(), d.getTitle()) &&
                 Objects.equals(getStorageTableName(), d.getStorageTableName()) &&
                 Objects.equals(getStorageSchemaName(), d.getStorageSchemaName()) &&
                 Objects.equals(getTitlePropertyId(), d.getTitlePropertyId()) &&
@@ -302,6 +312,7 @@ public final class DomainDescriptor
         private String storageSchemaName;
         private String systemFieldConfig;
         private TemplateInfo templateInfo;
+        private String title;
 
         public Builder()
         {
@@ -324,6 +335,7 @@ public final class DomainDescriptor
             setDomainId(dd.getDomainId());
 
             setName(dd.getName());
+            setTitle(dd.getTitle());
             setDescription(dd.getDescription());
             setTitlePropertyId(dd.getTitlePropertyId());
 
@@ -338,7 +350,7 @@ public final class DomainDescriptor
         public DomainDescriptor build()
         {
             return new DomainDescriptor(
-                    domainURI, container, name, domainId,
+                    domainURI, container, name, title, domainId,
                     description, storageTableName, storageSchemaName,
                     titlePropertyId, _ts, templateInfo, systemFieldConfig
             );
@@ -353,6 +365,12 @@ public final class DomainDescriptor
         public Builder setName(String name)
         {
             this.name = name;
+            return this;
+        }
+
+        public Builder setTitle(String title)
+        {
+            this.title = title;
             return this;
         }
 

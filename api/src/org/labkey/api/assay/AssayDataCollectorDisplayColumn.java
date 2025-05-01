@@ -22,6 +22,8 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.HttpView;
@@ -33,11 +35,11 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     private final AssayRunUploadForm _form;
     private ColumnInfo _col;
 
-    public AssayDataCollectorDisplayColumn(AssayRunUploadForm form)
+    public AssayDataCollectorDisplayColumn(TableInfo table, AssayRunUploadForm form)
     {
         _form = form;
         setCaption("Run Data");
-        var col = new BaseColumnInfo("Run Data");
+        var col = new BaseColumnInfo(FieldKey.fromParts("Run Data"), table);
         col.setInputType("file");
         _col = col;
     }
