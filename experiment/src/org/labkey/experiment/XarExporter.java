@@ -1521,6 +1521,8 @@ public class XarExporter
                 }
                 DomainDescriptorType xDomain = domainDefs.addNewDomain();
                 xDomain.setName(domain.getName());
+                if (StringUtils.isNotBlank(domain.getTitle()))
+                    xDomain.setTableTitle(domain.getTitle());
                 if (domain.getDescription() != null)
                 {
                     xDomain.setDescription(domain.getDescription());

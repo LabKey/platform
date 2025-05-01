@@ -103,9 +103,9 @@ public class SpecimenReportManager
             for (SpecimenTypeBeanProperty typeProperty : level.getGroupingColumns())
             {
                 ColumnInfo col = colMap.get(typeProperty.getTypeKey());
-                builder.append(sep).append(col.getAlias());
+                builder.append(sep).append(col.getAlias().getId());
                 sep = ", ";
-                aliasToTypeProperty.put(col.getAlias(), typeProperty);
+                aliasToTypeProperty.put(col.getAlias().getId(), typeProperty);
             }
             groupingColSql = builder.toString();
         }

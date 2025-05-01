@@ -81,7 +81,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
                     throw new QueryException("Error generating SQL");
             }
             SQLFragment f = new SQLFragment();
-            f.append("(").append(sql).append(") ").append(alias);
+            f.append("(").append(sql).append(") ").appendIdentifier(alias);
             return f;
         }
     }

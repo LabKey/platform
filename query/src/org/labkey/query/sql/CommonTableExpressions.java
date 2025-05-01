@@ -221,7 +221,7 @@ public class CommonTableExpressions
             // Reference to With
             SQLFragment sql = new SQLFragment()
                     .append(_cteToken).append(" ")
-                    .append(alias);
+                    .appendIdentifier(alias);
 
             if (!_parsingWith)
                 sql.prepend(getQueryWithSql(_cteKey));
@@ -295,7 +295,7 @@ public class CommonTableExpressions
         {
             _sql = new SQLFragment();
             _cteKey = cteKey;
-            _cteToken = _sql.createCommonTableExpressionToken(cteKey, legalName);
+            _cteToken = _sql.createCommonTableExpressionToken(_dialect, cteKey, legalName);
         }
 
         public void setCTE(boolean isRecursive)

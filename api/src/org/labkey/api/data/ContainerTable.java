@@ -107,12 +107,13 @@ public class ContainerTable extends FilteredTable<UserSchema>
         sortOrderCol.setUserEditable(false);
 
         PropertySchema propertySchema = PropertySchema.getInstance();
-        SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM " + propertySchema.getTableInfoProperties() + " p, " +
-                propertySchema.getTableInfoPropertySets() + " ps WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS +
-                ".EntityId AND ps.Category = ? AND ps." + getSqlDialect().getColumnSelectName("set") + " = p." +
-                getSqlDialect().getColumnSelectName("set") + " AND p.Name = ?)");
-        folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
-        folderTypeSQL.add(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
+        TableInfo propertiesTable = propertySchema.getTableInfoProperties();
+        TableInfo propertiesSets = propertySchema.getTableInfoPropertySets();
+        SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM ").append(propertiesTable).append(" p, ")
+                .append(propertySchema.getTableInfoPropertySets()).append(" ps ")
+                .append("WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".EntityId AND ps.Category = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME)
+                .append(    " AND ").append(propertiesSets.getColumn("set").getValueSql("ps")).append(" = ").append(propertiesTable.getColumn("set").getValueSql("p"))
+                .append(    " AND p.Name = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_NAME).append(")");
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         folderTypeColumn.setReadOnly(true);
         addColumn(folderTypeColumn);

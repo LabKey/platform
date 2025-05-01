@@ -307,6 +307,11 @@ public class TableChange
         _indices = indices;
     }
 
+    public void setIndexedColumns(Domain domain, Collection<Index> indices)
+    {
+        _indices = indices.stream().map(i -> i.translateToStorageNames(domain)).toList();
+    }
+
     public Set<String> getIndicesToBeDroppedByName(){
         return _indicesToBeDroppedByName;
     }

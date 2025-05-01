@@ -76,7 +76,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(getTableAlias(tableAliasName) + "." + _display.getAlias());
+        return new SQLFragment(getTableAlias(tableAliasName)).append(".").appendIdentifier(_display.getAlias());
     }
 
     @Override
@@ -172,7 +172,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             }
 
             strJoin.append(" AS ");
-            strJoin.append(lc.getAlias());
+            strJoin.appendIdentifier(lc.getAlias());
         }
 
         strJoin.append("\n\t\tFROM ");
@@ -191,7 +191,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
         strJoin.append("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
-        strJoin.append("\n\t) ").append(alias);
+        strJoin.append("\n\t) ").appendIdentifier(alias);
         strJoin.appendComment("</MultiValuedForeignKey target=" + lookupTable.getName() + ">", dialect );
         return strJoin;
     }

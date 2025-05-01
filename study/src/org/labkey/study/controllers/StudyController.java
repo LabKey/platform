@@ -3493,7 +3493,7 @@ public class StudyController extends BaseStudyController
                     queryView.getSettings().setShowRows(ShowRows.ALL);
                     try (Results results = ctx.getResults(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false))
                     {
-                        int ptidIndex = results.findColumn(ptidColumnInfo.getAlias());
+                        int ptidIndex = ptidColumnInfo.findColumn(results);
 
                         Set<String> participantSet = new LinkedHashSet<>();
                         while (results.next() && ptidIndex > 0)

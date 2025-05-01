@@ -43,15 +43,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
- * Created by matthew on 8/16/14.
- *
- * Read monrdrian schema xml.  Although we have no reason or intention to reimplement Mondrian functionality,
- * we don't really need Mondrian to implement the CountDistinct API.  Parsing the mondrian schema xml
+ * Read mondrian schema XML. Although we have no reason or intention to reimplement Mondrian functionality,
+ * we don't really need Mondrian to implement the CountDistinct API. Parsing the mondrian schema XML
  * allows us to duplicate that functionality while better integrating with arbitrary SQL filters and joins.
  */
 
@@ -263,7 +262,7 @@ public class RolapReader
         _currentDim = new RolapCubeDef.DimensionDef();
 
         _currentDim.cube = _currentCube;
-        _currentDim.name = StringUtils.defaultString(name, getStringAttribute(dimNode, "name"));
+        _currentDim.name = Objects.toString(name, getStringAttribute(dimNode, "name"));
         _currentDim.foreignKey = getStringAttribute(dimNode,"foreignKey");
 
         for (Node node : it(dimNode.getChildNodes()))

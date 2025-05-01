@@ -168,7 +168,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             // NOTE : temporarily disable assert for merge to develop
             // this assert is stricter than necessary, but still probably good hygiene (see following check which is necessary)
             // assert null == prev : "Collection<ColumnInfo> should not contain duplicates";
-            if (prev != null && !StringUtils.equals(prev.getAlias(), column.getAlias()))
+            if (prev != null && !Objects.equals(prev.getAlias(), column.getAlias()))
                 throw new IllegalStateException("Collection<ColumnInfo> should not contain duplicates");
         }
 
@@ -540,7 +540,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
                         if (!results.containsKey(agg.getFieldKey().toString()))
                             results.put(agg.getFieldKey().toString(), new ArrayList<>());
 
-                        results.get(agg.getFieldKey().toString()).add(agg.getResult(rs, sqlFactory._columnMap));
+                        results.get(agg.getFieldKey().toString()).add(agg.getResult(rs, sqlFactory._columnMap, getScope().getSqlDialect()));
                     }
                 }
             }

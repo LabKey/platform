@@ -2150,7 +2150,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     var realFileColumn = realTable.getColumn(fileField);
                     updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
                             .append(" SET ")
-                            .appendIdentifier(realFileColumn.getSelectName())
+                            .appendIdentifier(realFileColumn.getSelectIdentifier())
                             .append(" = ").appendValue(updatedFile.getAbsolutePath())
                             .append(" WHERE rowId = ").appendValue(resultRowId);
                     new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);

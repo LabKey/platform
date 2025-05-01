@@ -59,12 +59,12 @@ public class CrosstabDimension
 
     public FieldKey getFieldKey()
     {
-        return FieldKey.fromParts(_sourceColumn.getAlias());
+        return FieldKey.fromParts(_sourceColumn.getAlias().getId());
     }
 
     public String getName()
     {
-        return _sourceColumn.getAlias();
+        return _sourceColumn.getAlias().getId();
     }
 
     public void setSourceColumn(ColumnInfo sourceColumn)

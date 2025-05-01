@@ -1182,7 +1182,7 @@ public void testInsertOptionUpdate() throws Exception
     QueryUpdateService qus = table.getUpdateService();
     assertNotNull(qus);
 
-    String longFieldAlias = table.getColumn(longFieldName).getAlias();
+    String longFieldAlias = table.getColumn(longFieldName).getAlias().getId();
     assertFalse("Unexpected long field alias", longFieldName.equalsIgnoreCase(longFieldAlias));
 
     // import samples

@@ -1606,7 +1606,7 @@ public class QueryController extends SpringActionController
                     ti = fti.getRealTable();
 
                 if (ti instanceof SchemaTableInfo)
-                    _dbTableName = ti.getMetaDataName();
+                    _dbTableName = ti.getMetaDataIdentifier().getId();
                 else if (ti instanceof LinkedTableInfo)
                     _dbTableName = ti.getName();
 
@@ -1614,7 +1614,7 @@ public class QueryController extends SpringActionController
                 {
                     TableInfo tableInfo = dbSchema.getTable(ti.getName());
                     if (null != tableInfo)
-                        _dbTableName = tableInfo.getMetaDataName();
+                        _dbTableName = tableInfo.getMetaDataIdentifier().getId();
                 }
             }
 
@@ -3843,7 +3843,7 @@ public class QueryController extends SpringActionController
                 // I don't believe the above comment, so here's an assert
                 assert(colGetAgain.getAlias().equals(col.getAlias()));
 
-                SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
+                SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
                 sql.append(selectSql);
                 sql.append(") S ORDER BY value");
 

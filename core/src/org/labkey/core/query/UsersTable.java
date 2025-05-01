@@ -433,7 +433,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     SQLFragment sql = new SQLFragment();
 
                     if (col != null)
-                        sql.append(col.getAlias());
+                        sql.appendIdentifier(col.getAlias());
                     else
                         sql.append(userIdColumnFieldKey);
                     sql.append(" IN (SELECT members.UserId ");
