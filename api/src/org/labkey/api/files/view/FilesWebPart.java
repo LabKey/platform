@@ -401,7 +401,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
     @NotNull
     private static URI _getRootPath(Container c, @Nullable URI relativePath, boolean skipDavPrefix)
     {
-        String webdavPrefix = skipDavPrefix ? "" : PageFlowUtil.encodeURIComponent(AppProps.getInstance().getContextPath()) + "/" + PageFlowUtil.encodeURIComponent(WebdavService.getServletPath());
+        String webdavPrefix = skipDavPrefix ? "" : (AppProps.getInstance().getContextPath() + "/" + PageFlowUtil.encodeURIComponent(WebdavService.getServletPath()));
         URI rootPath = URIUtil.toURI(webdavPrefix + c.getEncodedPath());
         relativePath = relativePath == null || relativePath.toString().endsWith("/") ?
                 relativePath :

@@ -143,20 +143,29 @@ LABKEY.Mothership = (function () {
     // matches: ?_dc=12345 or ?12345
     var _defeatCacheRegex = /\?(_dc=)?\d+/;
 
+    // Issue 52908: Ignore webpack:// source paths
+    // Workaround suggested here https://github.com/stacktracejs/stacktrace-gps/issues/65
+    function filterRequest(location, opts) {
+        if (location.includes('webpack://')) return '';
+        return fetch(location, opts).then((res) => res.status === 200 ? res.text() : '');
+    }
+
+    // Remove stacktrace.js and mothership.js from the stack
+    const fileNameFilters = ['/stacktrace.min.js', '/mothership.js'];
+
     function filterTrace(stackframe) {
         "use strict";
 
-        var fileName = stackframe.getFileName();
+        const fileName = stackframe.getFileName();
 
         // remove stack elements for errors generated from within the Chrome console
-        if (!fileName)
+        if (!fileName) {
             return false;
+        }
 
-        // remove stacktrace.js and mothership.js from the stack
-        if (_filterStacktrace &&
-                fileName.indexOf("/stacktrace.min.js") > -1 ||
-                fileName.indexOf("/mothership.js") != -1)
+        if (_filterStacktrace && fileNameFilters.some(s => fileName.includes(s))) {
             return false;
+        }
 
         // remove defeat cache and server-session number from URLs
         // so stack doesn't change between server requests.
@@ -383,10 +392,10 @@ LABKEY.Mothership = (function () {
 
         if (window.Promise) {
             if (error instanceof Error) {
-                promise = StackTrace.fromError(error, {filter: filterTrace});
+                promise = StackTrace.fromError(error, { ajax: filterRequest, filter: filterTrace });
             }
             else if (_generateStacktrace) {
-                promise = StackTrace.get({filter: filterTrace});
+                promise = StackTrace.get({ ajax: filterRequest, filter: filterTrace });
             }
         }
 
