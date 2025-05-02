@@ -23,7 +23,9 @@ import java.util.stream.Collectors;
 public class StorageNameGenerator
 {
     // Leave room for MV suffix in case the column is changed to MV later and leave room for uniquifying suffix
-    private static final int RESERVED_LENGTH = OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 + 3;
+    private static final int COLUMN_RESERVED_LENGTH = OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 + 3;
+    // Reserve three characters for "_pk"
+    private static final int TABLE_RESERVED_LENGTH = 3;
 
     private final SqlDialect _dialect;
     private final Set<String> _names = new CaseInsensitiveHashSet();
@@ -41,12 +43,31 @@ public class StorageNameGenerator
     }
 
     /**
-     * Generate a storage name based on the provided candidate name. If needed, the name is truncated based on
+     * Generate a table storage name based on the provided candidate name, reserving room for the "_pk" suffix.
+     */
+    public String generateTableName(String candidateName)
+    {
+        // TODO: Switch to calling generateName(), but that requires downstream work to make the name "legal"
+        String tableName = _dialect.makeLegalName(candidateName.toLowerCase(), true, TABLE_RESERVED_LENGTH);
+        tableName = tableName.replaceAll("_+", "_");
+        return tableName;
+    }
+
+    /**
+     * Generate a column storage name based on the provided candidate name, reserving room for MV and uniquifying suffixes.
+     */
+    public String generateColumnName(String candidateName)
+    {
+        return generateName(candidateName, COLUMN_RESERVED_LENGTH);
+    }
+
+    /**
+     * Generate a storage name based on the provided candidate name. If needed, the name is truncated using
      * dialect-specific rules and uniquified with an incrementing suffix (1, 2, 3, ...).
      */
-    public String generateName(String candidateName)
+    private String generateName(String candidateName, int reserved)
     {
-        String legalName = _dialect.truncate(candidateName, RESERVED_LENGTH);
+        String legalName = _dialect.truncate(candidateName, reserved);
         String ret = legalName;
 
         for (int i = 1; _names.contains(ret); i++)
@@ -93,10 +114,10 @@ public class StorageNameGenerator
             for (int i = 1; i < count; i++)
             {
                 String candidate = candidateSupplier.apply(i);
-                String generated = generator.generateName(candidate);
+                String generated = generator.generateColumnName(candidate);
                 boolean exists = uniqueNames.contains(candidate);
 
-                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", RESERVED_LENGTH)))
+                if (exists || dialect.isIdentifierTooLong(candidate + StringUtils.repeat("x", COLUMN_RESERVED_LENGTH)))
                     assertNotEquals(candidate, generated);
                 else
                     assertEquals(candidate, generated);

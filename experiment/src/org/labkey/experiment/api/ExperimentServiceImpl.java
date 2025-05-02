@@ -1040,7 +1040,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            var doc = expMaterial.createIndexDocument();
+            var doc = expMaterial.createIndexDocument(null);
             if (doc != null)
             {
                 task.addResource(doc, SearchService.PRIORITY.bulk);

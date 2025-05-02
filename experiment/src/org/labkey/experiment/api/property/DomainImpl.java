@@ -1424,7 +1424,7 @@ public class DomainImpl implements Domain
             }
         }
 
-        final String storageName = _storageNameGenerator.generateName(fuzz(pd.getName()));
+        final String storageName = _storageNameGenerator.generateColumnName(fuzz(pd.getName()));
         pd.setStorageColumnName(storageName);
     }
 

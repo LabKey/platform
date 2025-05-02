@@ -551,8 +551,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         TableChange propChange = new TableChange(domain, ChangeType.ChangeColumnTypes);
 
         Set<String> base = Sets.newCaseInsensitiveHashSet();
-        kind.getBaseProperties(domain).forEach(s ->
-                base.add(s.getName()));
+        kind.getBaseProperties(domain).forEach(s -> base.add(s.getName()));
 
         if (!base.contains(prop.getName()))
             propChange.addColumn(prop.getPropertyDescriptor());
@@ -564,9 +563,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
         SqlDialect dialect = kind.getScope().getSqlDialect();
-        String alias = AliasManager.makeLegalName(rawTableName.toLowerCase(), dialect);
-        alias = alias.replaceAll("_+", "_");
-        return alias;
+        return new StorageNameGenerator(dialect).generateTableName(rawTableName);
     }
 
     /**
