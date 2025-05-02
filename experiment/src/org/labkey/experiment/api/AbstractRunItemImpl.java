@@ -16,9 +16,17 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.MultiValuedRenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -33,14 +41,22 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Base class for both types of objects that can be the input and output from an experiment run - material and data.
@@ -49,6 +65,8 @@ import java.util.List;
  */
 public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdentifiableBaseImpl<Type> implements ExpRunItem
 {
+    private static final Logger LOG = LogManager.getLogger(AbstractRunItemImpl.class);
+
     private ExpProtocolApplicationImpl _sourceApp;
     private List<ExpProtocolApplicationImpl> _successorAppList;
     private List<Integer> _successorRunIdList = null;
@@ -316,5 +334,149 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             });
             return ret;
         });
+    }
+
+    protected void processIndexValues(
+            Map<String, Object> props,
+            @NotNull ExpRunItemTableImpl<?> table,
+            CaseInsensitiveHashSet skipColumns,
+            Set<String> identifiersHi,
+            Set<String> identifiersMed,
+            Set<String> identifiersLo,
+            Set<String> keywordsHi,
+            Set<String> keywordsMed,
+            Set<String> keywordsLo,
+            JSONObject jsonData
+    )
+    {
+        skipColumns.add("genId");
+        skipColumns.add("rowId");
+        // collect the set of columns to index
+        Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
+            // skip the base-columns - they will be added to the index separately and/or we don't want to index them (Issue 52467)
+            if (skipColumns.contains(col.getName()))
+                return false;
+
+            // skip non-text and non-int columns or columns that aren't lookups
+            if (!(col.getJdbcType().isText() || col.getJdbcType().isInteger() || col.getFk() != null))
+                return false;
+
+            // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
+            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
+                return false;
+
+            return true;
+        }).collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (columns.isEmpty())
+            return;
+
+        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(ExpDataClassDataTable.Column.RowId.fieldKey(), getRowId()), null);
+        ts.setForDisplay(true);
+        try (Results r = ts.getResults())
+        {
+            Map<FieldKey, ColumnInfo> fields = r.getFieldMap();
+            if (r.next())
+            {
+                Map<FieldKey, Object> map = r.getFieldKeyRowMap();
+                for (Map.Entry<FieldKey, ColumnInfo> entry : fields.entrySet())
+                {
+                    FieldKey fieldKey = entry.getKey();
+                    ColumnInfo col = entry.getValue();
+                    if (!col.getJdbcType().isText() && !col.getJdbcType().isInteger())
+                        continue;
+
+                    if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
+                        continue;
+
+                    Object o = map.get(fieldKey);
+                    String s;
+                    // Issue 52961: DataClass: Integer fields are not index for data class
+                    if (o instanceof String)
+                        s = (String)o;
+                    else if (o instanceof Integer)
+                        s = String.valueOf(o);
+                    else
+                        continue;
+
+                    List<String> values;
+
+                    if (col instanceof MultiValuedLookupColumn)
+                        values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
+                    else
+                        values = Arrays.asList(s);
+
+                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
+                    if (searchProperty != null)
+                    {
+                        // Fow now only add indexed field values to search jsonData
+                        if (!values.isEmpty())
+                        {
+                            if (values.size() == 1)
+                                jsonData.put(fieldKey.toString(), values.get(0));
+                            else
+                                jsonData.put(fieldKey.toString(), values);
+                        }
+
+                        switch (searchProperty)
+                        {
+                            case identifiersHi -> {
+                                identifiersHi.addAll(values);
+                                continue;
+                            }
+                            case identifiersMed -> {
+                                identifiersMed.addAll(values);
+                                continue;
+                            }
+                            case identifiersLo -> {
+                                identifiersLo.addAll(values);
+                                continue;
+                            }
+                            case keywordsHi -> {
+                                keywordsHi.addAll(values);
+                                continue;
+                            }
+                            case keywordsMed -> {
+                                keywordsMed.addAll(values);
+                                continue;
+                            }
+                            case keywordsLo -> {
+                                keywordsLo.addAll(values);
+                                continue;
+                            }
+                            default -> LOG.debug("Unable to index column " + fieldKey.toString() + " with property: " + searchProperty.name() + ". Not yet supported.");
+                        }
+                    }
+
+                    if ("textarea".equalsIgnoreCase(col.getInputType()))
+                    {
+                        // treat multi-line text values as keywords, otherwise treat as an identifier
+                        keywordsLo.addAll(values);
+                    }
+                    else
+                    {
+                        identifiersMed.addAll(values);
+                    }
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            // ignore
+        }
+
+        // === Not stemmed
+
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
+        props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
+
+
+        // === Stemmed
+
+        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
+        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
+
     }
 }
