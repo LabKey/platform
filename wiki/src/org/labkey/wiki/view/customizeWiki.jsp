@@ -59,7 +59,8 @@ function updatePageList()
         select.options[select.options.length] = new Option('loading...', '', true, true);
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('wiki', 'getPages.api', undefined, { id: containerId }),
+            // Issue 52992: Use containerId as the containerPath, which is one of the supported URL structures
+            url: LABKEY.ActionURL.buildURL('wiki', 'getPages.api', containerId),
             method: 'GET',
             success: onSuccess.bind(this, containerId),
             failure: onError
