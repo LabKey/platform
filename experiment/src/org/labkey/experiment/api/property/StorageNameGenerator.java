@@ -43,23 +43,28 @@ public class StorageNameGenerator
     }
 
     /**
-     * Generate a table storage name based on the provided candidate name. If needed, the name is truncated based on
-     * dialect-specific rules.
+     * Generate a table storage name based on the provided candidate name, reserving room for the "_pk" suffix.
      */
     public String generateTableName(String candidateName)
     {
-        return generateName(candidateName, TABLE_RESERVED_LENGTH);
+        // TODO: Switch to calling generateName(), but that requires downstream work to make the name "legal"
+        String tableName = _dialect.makeLegalName(candidateName.toLowerCase(), true, TABLE_RESERVED_LENGTH);
+        tableName = tableName.replaceAll("_+", "_");
+        return tableName;
     }
 
     /**
-     * Generate a column storage name based on the provided candidate name. If needed, the name is truncated based on
-     * dialect-specific rules and uniquified with an incrementing suffix (1, 2, 3, ...).
+     * Generate a column storage name based on the provided candidate name, reserving room for MV and uniquifying suffixes.
      */
     public String generateColumnName(String candidateName)
     {
         return generateName(candidateName, COLUMN_RESERVED_LENGTH);
     }
 
+    /**
+     * Generate a storage name based on the provided candidate name. If needed, the name is truncated using
+     * dialect-specific rules and uniquified with an incrementing suffix (1, 2, 3, ...).
+     */
     private String generateName(String candidateName, int reserved)
     {
         String legalName = _dialect.truncate(candidateName, reserved);

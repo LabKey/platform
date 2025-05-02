@@ -563,9 +563,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
         SqlDialect dialect = kind.getScope().getSqlDialect();
-        String tableName = new StorageNameGenerator(dialect).generateTableName(rawTableName.toLowerCase());
-        tableName = tableName.replaceAll("_+", "_"); // TODO: This is fairly pointless now since we no longer replace chars with underscore
-        return tableName;
+        return new StorageNameGenerator(dialect).generateTableName(rawTableName);
     }
 
     /**
