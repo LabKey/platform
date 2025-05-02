@@ -564,9 +564,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
         SqlDialect dialect = kind.getScope().getSqlDialect();
-        String alias = AliasManager.makeLegalName(rawTableName.toLowerCase(), dialect);
-        alias = alias.replaceAll("_+", "_");
-        return alias;
+        String tableName = new StorageNameGenerator(dialect).generateTableName(rawTableName.toLowerCase());
+        tableName = tableName.replaceAll("_+", "_");
+        return tableName;
     }
 
     /**
