@@ -1,6 +1,7 @@
 package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
@@ -88,14 +89,16 @@ public class StudyUtils
         return Collections.emptySet();
     }
 
+    public static boolean isFieldTrue(RenderContext ctx, ColumnInfo col)
+    {
+        Object value = col.getValue(ctx.getRow());
+        return null!=value && (Boolean)JdbcType.BOOLEAN.convert(value);
+    }
+
     public static boolean isFieldTrue(RenderContext ctx, String fieldName)
     {
         Object value = ctx.getRow().get(fieldName);
-        if (value instanceof Integer)
-            return ((Integer) value).intValue() != 0;
-        else if (value instanceof Boolean)
-            return ((Boolean) value).booleanValue();
-        return false;
+        return null!=value && (Boolean)JdbcType.BOOLEAN.convert(value);
     }
 
     public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)

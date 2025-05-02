@@ -26,6 +26,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,10 +83,11 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
                 "JOIN (SELECT * FROM study.DataSet ");
-        SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(getSqlDialect());
+        TableInfo dataset = StudySchema.getInstance().getTableInfoDataset();
+        SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(dataset, "DataSet");
         result.append(datasetFilter);
         result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
-        result.append(alias);
+        result.appendIdentifier(alias);
         result.appendComment("</DataSetColumnsTable>", getSqlDialect());
         return result;
     }

@@ -15,34 +15,21 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
-import org.labkey.api.data.CachedResultSets;
-import org.labkey.api.data.ResultSetMetaDataImpl;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.beans.Introspector;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 
 public class ResultSetUtil
@@ -224,233 +211,6 @@ public class ResultSetUtil
         }
     }
 
-    public static String legalNameFromName(String str)
-    {
-        StringBuilder buf = null;
-
-        for (int i = 0; i < str.length(); i++)
-        {
-            if (AliasManager.isLegalNameChar(str.charAt(i), i == 0))
-                continue;
-            if (buf == null)
-            {
-                buf = new StringBuilder(str.length());
-            }
-            buf.append(str, buf.length(), i);
-            buf.append("_");
-        }
-
-        if (buf == null)
-            return str;
-
-        buf.append(str.substring(buf.length()));
-        return buf.toString();
-    }
-
-
-    private static String legalJsName(String name)
-    {
-        // UNDONE: handle JS specific cases (keywords)
-        return legalNameFromName(name);
-    }
-
-
-    private static String legalXMLName(String name)
-    {
-        // UNDONE: handle XML specific cases
-        return legalNameFromName(name);
-    }
-
-
-    public static void exportAsJSON(Writer out, ResultSet rs) throws SQLException, IOException
-    {
-        ResultSetMetaData md = rs.getMetaData();
-        ExportCol[] cols = new ExportCol[md.getColumnCount()+1];
-        int columnCount = md.getColumnCount();
-
-        for (int i = 1; i <= columnCount; i++)
-        {
-            String label = md.getColumnLabel(i);
-            String legalLabel = legalJsName(label);
-            cols[i] = new ExportCol(legalLabel + ":", i == columnCount ? "" : ",");
-        }
-
-        ExportResultSet export = new ExportResultSet()
-        {
-            @Override
-            void writeNull() throws IOException
-            {
-                _out.write("null");
-            }
-
-            @Override
-            void writeString(String s) throws IOException
-            {
-                _out.write(PageFlowUtil.jsString(s));
-            }
-
-            @Override
-            void writeDate(Date d) throws IOException
-            {
-                _out.write("new Date(");
-                _out.write(String.valueOf(d.getTime()));
-                _out.write(")");
-            }
-
-//            SimpleDateFormat formatTZ = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
-//
-//            void writeDate(Date d) throws IOException
-//            {
-//                _out.write("new Date('");
-//                _out.write(formatTZ.format(d));
-//                _out.write("')");
-//            }
-
-//            void writeDate(Date d) throws IOException
-//            {
-//                _out.write("'@");
-//                _out.write(String.valueOf(d.getTime()));
-//                _out.write("@'");
-//            }
-
-            @Override
-            void writeObject(Object o) throws IOException
-            {
-                _out.write(ConvertUtils.convert(o));
-            }
-        };
-
-        out.write("[");
-        export.write(out, rs, "{", "}", ",", cols);
-        out.write("]");
-    }
-
-
-    /** Writer should be UTF-8 */
-    public static void exportAsXML(Writer out, ResultSet rs, String collectionName, String typeName) throws SQLException, IOException
-    {
-        collectionName = Objects.toString(collectionName, "rowset");
-        typeName = Objects.toString(typeName, "row");
-
-        ResultSetMetaData md = rs.getMetaData();
-        int columnCount = md.getColumnCount();
-        ExportCol[] cols = new ExportCol[columnCount+1];
-
-        for (int i = 1; i <= columnCount; i++)
-        {
-            String name = md.getColumnName(i);
-            String legalName = legalXMLName(name);
-            cols[i] = new ExportCol("<" + legalName + ">", "</" + legalName + ">");
-        }
-
-        String startRow = "<" + typeName + ">";
-        String endRow = "</" + typeName + ">";
-
-        out.write("<" + collectionName + ">\n");
-
-        ExportResultSet export = new ExportResultSet()
-        {
-            @Override
-            void writeString(String s) throws IOException
-            {
-                _out.write(encodeXml(s));
-            }
-
-            @Override
-            void writeObject(Object o) throws IOException
-            {
-                _out.write(ConvertUtils.convert(o));
-            }
-        };
-
-        export.write(out, rs, startRow, endRow, "\n", cols);
-        out.write("</" + collectionName + ">\n");
-    }
-
-
-    public static class ExportCol
-    {
-        ExportCol(String pre, String post)
-        {
-            prefix = pre;
-            postfix = post;
-        }
-
-        String prefix;
-        String postfix;
-    }
-
-    
-    static class ExportResultSet
-    {
-        Writer _out;
-
-        void writeNull() throws IOException
-        {
-        }
-
-        void writeString(String s) throws IOException
-        {
-            _out.write(s);
-        }
-
-        void writeDate(Date d) throws IOException
-        {
-            _out.write(DateUtil.toISO(d));
-        }
-
-        void writeObject(Object o) throws IOException
-        {
-            _out.write(String.valueOf(o));
-        }
-
-        void write(Object o) throws IOException
-        {
-            if (null == o)
-                writeNull();
-            else if (o instanceof String)
-                writeString((String)o);
-            else if (o instanceof Date)
-                writeDate((Date)o);
-            else
-                writeObject(o);
-        }
-        
-        /** CONSIDER: wrap TSV and CSV as well? */
-        void write(Writer out, ResultSet rs, String startRow, String endRow, String connector, ExportCol[] cols)
-                throws SQLException, IOException
-        {
-            _out = out;
-            int columnCount = rs.getMetaData().getColumnCount();
-            String and = "";
-
-            while (rs.next())
-            {
-                _out.write(and);
-                _out.write(startRow);
-
-                for (int i = 1; i <= columnCount; i++)
-                {
-                    _out.write(cols[i].prefix);
-                    Object o = rs.getObject(i);
-                    write(o);
-                    _out.write(cols[i].postfix);
-                }
-
-                _out.write(endRow);
-                and = connector;
-            }
-        }
-    }
-
-    
-    static String encodeXml(String s)
-    {
-        // is this actually xml compatible???
-        return PageFlowUtil.filter(s, false, false);
-    }
-
-
     public static final double POSITIVE_INFINITY_DB_VALUE = 1e300;
     public static final double NEGATIVE_INFINITY_DB_VALUE = -POSITIVE_INFINITY_DB_VALUE;
     public static final double NAN_DB_VALUE = -1e306;
@@ -477,54 +237,5 @@ public class ResultSetUtil
             return Double.NaN;
         else
             return databaseValue;
-    }
-    
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void testExport() throws IOException, SQLException
-        {
-            ArrayList<Map<String, Object>> maps = new ArrayList<>();
-            Map<String,Object> m;
-
-            m = new HashMap<>();
-            m.put("int", 1);
-            m.put("s", "one");
-            maps.add(m);
-            m = new HashMap<>();
-            m.put("int", 2);
-            m.put("s", "1<2");
-            maps.add(m);
-            m = new HashMap<>();
-            m.put("int", null);
-            m.put("s", null);
-            maps.add(m);
-
-            try (ResultSet rs = CachedResultSets.create(new TestMetaData(), maps, true))
-            {
-                StringWriter swXML = new StringWriter(1000);
-                rs.beforeFirst();
-                exportAsXML(swXML, rs, null, null);
-//            System.out.println(swXML);
-
-                StringWriter swJS = new StringWriter(1000);
-                rs.beforeFirst();
-                exportAsJSON(swJS, rs);
-//            System.out.println(swJS);
-            }
-        }
-        
-        private static class TestMetaData extends ResultSetMetaDataImpl
-        {
-            TestMetaData()
-            {
-                ColumnMetaData colInt = new ColumnMetaData();
-                colInt.columnName = colInt.columnLabel = "int";
-                addColumn(colInt);
-                ColumnMetaData colS = new ColumnMetaData();
-                colS.columnName = colS.columnLabel = "s";
-                addColumn(colS);
-            }
-        }
     }
 }

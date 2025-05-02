@@ -40,8 +40,8 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -306,7 +306,8 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return scope.executeWithRetryReadOnly(tx ->
         {
             var ret = new HashMap<String,ObjectProperty>();
-            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
+            var selector = new TableSelector(ti, TableSelector.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
+            selector.forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
                 {

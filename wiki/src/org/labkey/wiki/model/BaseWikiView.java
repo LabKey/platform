@@ -98,7 +98,6 @@ public abstract class BaseWikiView extends JspView<Object>
                 String aliasedName = WikiSelectManager.getNameForAlias(c, name);
                 if (aliasedName != null)
                     wiki = WikiSelectManager.getWiki(c, aliasedName);
-
             }
 
             //this is a non-existent wiki
@@ -127,7 +126,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 }
             }
             else
-                html = HtmlString.EMPTY_STRING; //wiki.jsp will display appropriate message if user doesn't have read perms
+                html = HtmlString.EMPTY_STRING; //wiki.jsp will display an appropriate message if the user doesn't have read perms
 
             //set title if page has content and user has permission to see it
             if (html != null && perms.allowRead(wiki))

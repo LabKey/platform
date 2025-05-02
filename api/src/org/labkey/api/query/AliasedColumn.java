@@ -19,7 +19,6 @@ package org.labkey.api.query;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.ContainerContext;
 
@@ -56,9 +55,7 @@ public class AliasedColumn extends BaseColumnInfo
             setLabel(null);
 
         _column = column;
-        _metaDataName = column.getMetaDataName();
-        if (parent instanceof SchemaTableInfo)
-            _selectName = column.getSelectName();
+        setMetaDataName(column.getMetaDataIdentifier());
     }
 
     public AliasedColumn(TableInfo parent, String name, ColumnInfo column)

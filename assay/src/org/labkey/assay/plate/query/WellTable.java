@@ -331,13 +331,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             sql.append(" INNER JOIN ").append(wellProperties, "p").append(" ON d.lsid = p.lsid");
         }
         String subAlias = alias + "_wp_sub";
-        sql.append(") ").append(subAlias);
+        sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 
         // add the WHERE clause
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
+        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return sql;
     }

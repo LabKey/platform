@@ -36,6 +36,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -549,7 +550,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         var ti = null == st ? null : st.getTinfo();
         if (null != ti)
         {
-            new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
+            var selector = new TableSelector(ti, TableSelector.ALL_COLUMNS, new SimpleFilter(FieldKey.fromParts("lsid"), getLSID()), null);
+            selector.forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
                 {

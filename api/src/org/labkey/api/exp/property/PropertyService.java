@@ -58,9 +58,9 @@ public interface PropertyService
     @Nullable
     Domain getDomain(int domainId);
 
-    List<DomainKind> getDomainKinds();
+    List<DomainKind<?>> getDomainKinds();
 
-    List<DomainKind> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
+    List<DomainKind<?>> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
 
     /** Get all the domains in the specified container. */
     List<? extends Domain> getDomains(Container container);

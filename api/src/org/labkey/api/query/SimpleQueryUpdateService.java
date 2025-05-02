@@ -103,7 +103,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
         TableInfo table = getQueryTable().getSchemaTableInfo();
 
-        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
+        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataIdentifier())
             return false;
 
         if (getQueryTable().hasTriggers(container)) // dib not yet supported for simple tables with triggers

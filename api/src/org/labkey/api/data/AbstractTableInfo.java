@@ -372,9 +372,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSelectName())
-            return new SQLFragment().appendIdentifier(getSelectName()).append(" ").append(alias);
+            return new SQLFragment().appendIdentifier(getSelectName()).append(" ").appendIdentifier(alias);
         else
-            return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
+            return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
     }
 
     /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumns we need to make sure that
@@ -1741,9 +1741,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-    @Nullable
     @Override
-    public String getMetaDataName()
+    public @Nullable DatabaseIdentifier getMetaDataIdentifier()
     {
         return null;
     }

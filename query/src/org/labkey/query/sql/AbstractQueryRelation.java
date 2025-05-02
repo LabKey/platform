@@ -144,7 +144,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         ret.append("(");
         ret.append(sql);
         ret.append(") ");
-        ret.append(getAlias());
+        ret.appendIdentifier(getAlias());
         return ret;
     }
 
@@ -260,7 +260,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
             assert ref.count() > 0;
             String tableName = getTable().getAlias();
             String columnName = getDialect(this).makeLegalIdentifier(getAlias());
-            return new SQLFragment(tableName + "." + columnName);
+            return new SQLFragment().appendIdentifier(tableName).append(".").appendIdentifier(columnName);
         }
 
         abstract void copyColumnAttributesTo(@NotNull BaseColumnInfo to);
@@ -393,7 +393,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
         @Override
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment(tableAlias + "." + getParentTable().getSqlDialect().makeLegalIdentifier(getAlias()));
+            return new SQLFragment().appendDottedIdentifiers(tableAlias, getAlias());
         }
 
         @Override

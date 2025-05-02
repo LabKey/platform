@@ -69,6 +69,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -134,7 +135,7 @@ public class BitSetQueryImpl
 
         String cubeId = cube.getUniqueName() +
                 ((cube instanceof CachedCube)?"@" + ((CachedCube)cube).getLongHashCode() : "");
-        this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/" + cubeId + "/";
+        this.cachePrefix = c.getRowId() + "/" + sd.getId() + "/" + cubeId + "/";
 
         initCube();
         initDistinctMeasure();
@@ -1801,7 +1802,7 @@ public class BitSetQueryImpl
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
-                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getQuerySchemaName(),"core"));
+                QuerySchema qs = DefaultSchema.get(user, container, Objects.toString(rolap.getQuerySchemaName(), "core"));
                 return QueryService.get().select(qs, query, null, true, false);
             }
             catch (QueryParseException|AssertionError x)
