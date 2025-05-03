@@ -124,8 +124,8 @@ public class ExcelWriter implements ExportWriter
             {
                 // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
                 // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
-                // Need to use a shared strings table to support rich text formatting
-                return new SXSSFWorkbook(null,1000, false, true) {
+                return new SXSSFWorkbook(null, 1000)
+                {
                     @Override
                     public void close() throws IOException
                     {
@@ -138,7 +138,7 @@ public class ExcelWriter implements ExportWriter
             @Override
             public String getMimeType()
             {
-                return "application/" + ExcelFactory.SUB_TYPE_XSSF; 
+                return "application/" + ExcelFactory.SUB_TYPE_XSSF;
             }
 
             @Override
@@ -164,6 +164,54 @@ public class ExcelWriter implements ExportWriter
                     metadata.forEach(props::addProperty);
                 }
             }
+        },
+        xlsxSharedStrings
+        {
+            @Override
+            public Workbook createWorkbook()
+            {
+                // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
+                // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
+                // Need to use a shared strings table to support rich text formatting
+                return new SXSSFWorkbook(null,1000, false, true) {
+                    @Override
+                    public void close() throws IOException
+                    {
+                        super.close();
+                        dispose(); // Required to clean up temp/poifiles, #46060
+                    }
+                };
+            }
+
+            @Override
+            public String getMimeType()
+            {
+                return xlsx.getMimeType();
+            }
+
+            @Override
+            public int getMaxRows()
+            {
+                return xlsx.getMaxRows();
+            }
+
+            @Override
+            public int getMaxColumns()
+            {
+                return xlsx.getMaxColumns();
+            }
+
+            @Override
+            public void setMetadata(Workbook workbook, Map<String, String> metadata)
+            {
+                xlsx.setMetadata(workbook, metadata);
+            }
+
+            @Override
+            public @Nullable String getFileExtension()
+            {
+                return xlsx.getFileExtension();
+            }
         };
 
         public abstract Workbook createWorkbook();
@@ -172,6 +220,11 @@ public class ExcelWriter implements ExportWriter
         public abstract int getMaxRows();
         public abstract int getMaxColumns();
         public abstract void setMetadata(Workbook workbook, Map<String, String> metadata);
+
+        public @Nullable String getFileExtension()
+        {
+            return name();
+        }
     }
 
     protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
@@ -622,7 +675,7 @@ public class ExcelWriter implements ExportWriter
         // so that your browser doesn't put the generated file into its cache
 
 
-        String filename = fullFileName == null ? FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name()) : FileUtil.makeLegalName(fullFileName);
+        String filename = fullFileName == null ? FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.getFileExtension()) : FileUtil.makeLegalName(fullFileName);
         ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
 
         try

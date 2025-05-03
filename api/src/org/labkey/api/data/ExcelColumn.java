@@ -813,7 +813,7 @@ public class ExcelColumn extends RenderColumn
 
             BindException errors = new NullSafeBindException(new Object(), "command");
             QueryView view = us.createView(qf, errors);
-            ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
+            ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx, null);
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
             {
                 excel.renderWorkbook(baos);
