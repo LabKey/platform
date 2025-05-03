@@ -895,7 +895,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 assertEquals("Incorrect WebDavUrlRelative", tc.getUrlRelative(), webDavUrlRelative);
                 assertEquals("Incorrect WebDavUrl", tc.getUrl(), webDavUrl);
 
-                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
+                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx, null);
                 try (VirtualFile f = new MemoryVirtualFile())
                 {
                     try (OutputStream os = f.getOutputStream("excel.xlsx"))
