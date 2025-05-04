@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -34,7 +35,7 @@ import java.util.function.Supplier;
 public class NameExpressionDataIterator extends WrapperDataIterator
 {
     private final DataIteratorContext _context;
-    private Map<String, Pair<NameGenerator, NameGenerator.State>> _nameGeneratorMap = new HashMap<>();
+    private Map<String, Pair<NameGenerator, NameGeneratorState>> _nameGeneratorMap = new HashMap<>();
     private Map<String, String> _newNames = new HashMap<>();
     private final Integer _nameCol;
     private Integer _expressionCol;
@@ -90,7 +91,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private void addNameGenerator(String nameExpression)
     {
         NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _importAliases, _container, _getNonConflictCountFn, _counterSeqPrefix);
-        NameGenerator.State state = nameGen.createState(false);
+        NameGeneratorState state = nameGen.createState(false);
         _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }
 
@@ -107,9 +108,9 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
     public void syncCounterSeqs()
     {
-        for (Map.Entry<String, Pair<NameGenerator, NameGenerator.State>> nameGenerator: _nameGeneratorMap.entrySet())
+        for (Map.Entry<String, Pair<NameGenerator, NameGeneratorState>> nameGenerator: _nameGeneratorMap.entrySet())
         {
-            NameGenerator.State state = nameGenerator.getValue().second;
+            NameGeneratorState state = nameGenerator.getValue().second;
             state.cleanUp(); // explicitly call state.cleanUp so DB sequence gets cleaned up in transaction
         }
     }
@@ -150,7 +151,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
                 if (_newNames.get(nameExpression) == null)
                 {
-                    Pair<NameGenerator, NameGenerator.State> nameGenPair = _nameGeneratorMap.get(nameExpression);
+                    Pair<NameGenerator, NameGeneratorState> nameGenPair = _nameGeneratorMap.get(nameExpression);
                     _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow, null, null, _extraPropsFns, null));
                 }
                 String newName = _newNames.get(nameExpression);

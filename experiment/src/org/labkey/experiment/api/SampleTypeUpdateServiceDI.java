@@ -43,6 +43,7 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -1622,7 +1623,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         final ExpSampleTypeImpl sampleType;
         final NameGenerator nameGen;
         final NameGenerator aliquotNameGen;
-        final NameGenerator.State nameState;
+        final NameGeneratorState nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
         final Container _container;
@@ -1667,7 +1668,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
                 }
             }
-            nameState = nameGen != null ? nameGen.createState(true) : null;
+            nameState = nameGen != null ? nameGen.createState(true) : aliquotNameGen.createState(true);
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;
@@ -1777,10 +1778,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                 }
 
-                if (nameGen != null)
-                {
-                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
-                }
+                if (isAliquot && aliquotNameGen != null)
+                    generatedName = nameState.nextName(map, null, null, _extraPropsFns, aliquotNameGen);
+                else if (!isAliquot && nameGen != null)
+                    generatedName = nameState.nextName(map, null, null, _extraPropsFns, null);
                 else
                     addRowError("Error creating naming pattern generator.");
             }

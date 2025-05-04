@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -533,7 +534,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 throw new ExperimentException("Error creating name expression generator");
         }
 
-        try (NameGenerator.State state = nameGen.createState(true))
+        try (NameGeneratorState state = nameGen.createState(true))
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> Map.of("genId", sequence.next());
@@ -584,7 +585,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
-        try (NameGenerator.State state = nameGen.createState(true))
+        try (NameGeneratorState state = nameGen.createState(true))
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> {
