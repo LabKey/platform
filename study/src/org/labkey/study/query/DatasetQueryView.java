@@ -552,9 +552,13 @@ public class DatasetQueryView extends StudyQueryView
     {
         MenuButton button =  super.createViewButton(filter);
 
-        ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
-        url.addParameter("datasetId", _dataset.getDatasetId());
-        button.addMenuItem("Set Default", url);
+        // Don't allow guests to set a default view, Issue 52863
+        if (!getUser().isGuest())
+        {
+            ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
+            url.addParameter("datasetId", _dataset.getDatasetId());
+            button.addMenuItem("Set Default", url);
+        }
 
         return button;
     }
