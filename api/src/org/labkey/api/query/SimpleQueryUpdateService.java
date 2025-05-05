@@ -177,7 +177,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                     for (int i=1 ; i<=it.getColumnCount() ; i++)
                     {
                         if (null != objectUriIndex && i == objectUriIndex)
-                            out.addCoaleseColumn(objectUriColumn.getName(), i, ()->getQueryTable().createObjectURI());
+                            out.addCoalesceColumn(objectUriColumn.getName(), i, ()->getQueryTable().createObjectURI());
                         else
                             out.addColumn(i);
                     }
