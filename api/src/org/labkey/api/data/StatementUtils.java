@@ -55,15 +55,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: 2/26/12
- * Time: 3:54 PM
- */
-
-// I pulled these methods out of Table.java in an attempt get Clover to provide coverage information on them. (Clover seems
-// to skip any class that includes a junit TestCase.) I'm looking to refactor the re-select behavior, but want Cover to
-// identify tests that exercise the code paths that will be changed.
+// I pulled these methods out of Table.java in an attempt to get Clover to provide coverage information on them.
+// (Clover seems to skip any class that includes a junit TestCase.) I'm looking to refactor the re-select behavior,
+// but want Clover to identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
     private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");

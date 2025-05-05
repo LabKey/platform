@@ -94,6 +94,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -1481,6 +1482,7 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     public class EmailPrefsAction extends FormViewAction<EmailPrefsForm>
     {
@@ -1489,11 +1491,6 @@ public class IssuesController extends SpringActionController
         @Override
         public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors)
         {
-            if (getUser().isGuest())
-            {
-                throw new UnauthorizedException();
-            }
-
             form.setSavedPrefs(IssueManager.getUserEmailPreferences(getContainer(), getUser().getUserId()));
             form.setIssueId(form.getIssueId() == null ? 0 : form.getIssueId().intValue());
             form.setMessage(_message);
