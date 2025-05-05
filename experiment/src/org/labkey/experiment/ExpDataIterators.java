@@ -2514,7 +2514,7 @@ public class ExpDataIterators
                     ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
                     {
-                        // Note that this is slightly different than our treatment of lookups:
+                        // Note that this is slightly different from our treatment of lookups:
                         //    - when in a project, we allow import or update to all subfolders,
                         //    - when in a folder, we only allow references to data up the folder tree
                         if (container.isProject())
