@@ -304,9 +304,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 if (event.getNewRecordMap() != null)
                 {
                     Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                    if (newRecord.containsKey("RowId"))
+                    if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
                         sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
-                    else if (newRecord.containsKey("LSID"))
+                    else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
                         lsids.add(newRecord.get("LSID"));
 
                 }
