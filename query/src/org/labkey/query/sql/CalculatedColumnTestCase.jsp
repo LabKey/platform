@@ -1,46 +1,47 @@
-<%@ page import="org.labkey.api.data.DbSchema" %>
-<%@ page import="org.labkey.data.xml.TablesDocument" %>
-<%@ page import="org.apache.xmlbeans.XmlException" %>
-<%@ page import="org.labkey.api.data.StandardSchemaTableInfoFactory" %>
-<%@ page import="org.labkey.api.data.DatabaseTableType" %>
-<%@ page import="org.labkey.api.data.MutableColumnInfo" %>
-<%@ page import="org.labkey.api.data.JdbcType" %>
-<%@ page import="org.labkey.api.data.BaseColumnInfo" %>
-<%@ page import="org.labkey.api.data.SchemaTableInfo" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.query.sql.CalculatedExpressionColumn" %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="java.sql.Timestamp" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="org.labkey.api.data.DbSchemaType" %>
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
-<%@ page import="org.labkey.data.xml.TableType" %>
-<%@ page import="org.junit.Test" %>
-<%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="java.sql.ResultSet" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="static org.junit.Assert.*" %>
-<%@ page import="org.labkey.api.util.ConfigurationException" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.apache.commons.lang3.tuple.Triple" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
-<%@ page import="org.labkey.api.util.TestContext" %>
-<%@ page import="org.labkey.api.util.JunitUtil" %>
-<%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="org.labkey.api.query.QueryDefinition" %>
-<%@ page import="org.labkey.api.query.QueryService" %>
-<%@ page import="org.labkey.api.query.QueryException" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="org.apache.xmlbeans.XmlException" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.jetbrains.annotations.Nullable" %>
+<%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.data.BaseColumnInfo" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="org.labkey.api.data.DatabaseIdentifier" %>
+<%@ page import="org.labkey.api.data.DatabaseTableType" %>
+<%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.DbSchemaType" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.MutableColumnInfo" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SchemaTableInfo" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.StandardSchemaTableInfoFactory" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.query.FilteredTable" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
+<%@ page import="org.labkey.api.query.QueryException" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.UserSchema" %>
+<%@ page import="org.labkey.api.util.ConfigurationException" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.JunitUtil" %>
+<%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.data.xml.TableType" %>
+<%@ page import="org.labkey.data.xml.TablesDocument" %>
+<%@ page import="org.labkey.query.sql.CalculatedExpressionColumn" %>
+<%@ page import="java.sql.ResultSet" %>
+<%@ page import="java.sql.Timestamp" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.api.query.FilteredTable" %>
-<%@ page import="java.util.Collection" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -66,7 +67,7 @@ DbSchema getDbSchema(String columns) throws XmlException
             BaseColumnInfo c = new BaseColumnInfo(name, null, type)
             {
                 @Override
-                public String getAlias()
+                public DatabaseIdentifier getAlias()
                 {
                     return super.getAlias();
                 }
@@ -77,8 +78,8 @@ DbSchema getDbSchema(String columns) throws XmlException
                     super.setAlias(alias);
                 }
             };
-            c.setMetaDataName(alias);
-            c.setAlias(alias);
+            c.setMetaDataName(SqlDialect.makeDatabaseIdentifier(alias, new SQLFragment().appendIdentifier(alias)));
+            c.setAlias(SqlDialect.makeDatabaseIdentifier(alias, new SQLFragment().appendIdentifier(alias)));
             return c;
         }
 
@@ -181,8 +182,8 @@ public void testBasicSchemaXML() throws Exception
 
     sql = new SQLFragment()
             .append("SELECT\n")
-            .append("  ").append(wrapped.getValueSql("t")).append(" AS ").append(wrapped.getAlias()).append(",\n")
-            .append("  ").append(calculated.getValueSql("t")).append(" AS ").append(calculated.getAlias()).append(",\n")
+            .append("  ").append(wrapped.getValueSql("t")).append(" AS ").appendIdentifier(wrapped.getAlias()).append(",\n")
+            .append("  ").append(calculated.getValueSql("t")).append(" AS ").appendIdentifier(calculated.getAlias()).append(",\n")
             .append("  ").append("*")
             .append("\nFROM ").append(t.getFromSQL("t"))
             .append("\nWHERE ").append(t.getColumn("ZED").getValueSql("t")).append(" = 0 AND ").append(t.getColumn("SIX").getValueSql("t")).append(" = 6");
@@ -462,13 +463,13 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
 
         // getFromSQL(five)
-        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf = new SQLFragment("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
@@ -489,7 +490,7 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_", Set.of(column.getFieldKey())));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);
@@ -512,7 +513,7 @@ public void testUserSchemaDependantColumns() throws Exception
         var column = table.getColumn(columnName);
         assertNotNull(column);
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").append(column.getAlias())
+        sqlf.append("SELECT ").append(column.getValueSql("q_")).append(" ").appendIdentifier(column.getAlias())
                 .append("\nFROM ").append(table.getFromSQL("q_"));
         var result = new SqlSelector(scope, sqlf).getObject((Class<?>) type.getJavaClass());
         assertEquals(expected, result);

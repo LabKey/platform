@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -55,6 +56,7 @@ import static org.labkey.api.data.CompareType.CONTAINS_NONE_OF;
 import static org.labkey.api.data.CompareType.CONTAINS_ONE_OF;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.CompareType.NOT_IN;
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -62,6 +64,8 @@ import static org.labkey.api.data.CompareType.NOT_IN;
 public class SimpleFilter implements Filter
 {
     public static final String SEPARATOR_CHAR = "~";
+
+    private ArrayList<FilterClause> _clauses = new ArrayList<>();
 
     public static SimpleFilter createContainerFilter(Container c)
     {
@@ -341,6 +345,7 @@ public class SimpleFilter implements Filter
         private final SQLFragment _fragment;
         private final List<FieldKey> _fieldKeys;
 
+        @Deprecated //use SQLClause(SQLFragment)
         public SQLClause(String fragment, @Nullable Object[] paramVals, FieldKey... fieldKeys)
         {
             _needsTypeConversion = false;
@@ -356,6 +361,18 @@ public class SimpleFilter implements Filter
             _needsTypeConversion = false;
             _fragment = new SQLFragment(fragment);
             _fieldKeys = Arrays.asList(fieldKeys);
+        }
+
+        /* NOTE: FilterClause allows you to override toSQLFragment(Map,SqlDialect) w/o toSQLFragment(String,Map,SqlDialect).
+         * Preserve that behavior by having this method call toSQLFragment(Map,SqlDialect).
+         */
+        @Override
+        public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            var ret = toSQLFragment(columnMap, dialect);
+            tableAlias = StringUtils.trimToEmpty(tableAlias);
+            ret.setSqlUnsafe(StringUtils.replace(ret.getRawSQL(), STR_TABLE_ALIAS+".", tableAlias+"."));
+            return ret;
         }
 
         @Override
@@ -636,6 +653,14 @@ public class SimpleFilter implements Filter
         }
     }
 
+    public static DatabaseIdentifier getAliasForColumnFilter(SqlDialect dialect, ColumnInfo colInfo, FieldKey fieldKey)
+    {
+        if (null != colInfo)
+            return colInfo.getAlias();
+        return dialect.makeDatabaseIdentifier(fieldKey.getName());   // isn't this just a guess???
+    }
+
+
     public static class InClause extends MultiValuedFilterClause
     {
         public InClause(FieldKey fieldKey, Collection<?> params)
@@ -739,12 +764,12 @@ public class SimpleFilter implements Filter
             return in.toString();
         }
 ;
-        private void handleEmptyParams(String alias, SQLFragment in)
+        private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
-                in.append(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
+                in.appendIdentifier(alias).append(" IS ").append(isNegated() ? " NOT " : "").append("NULL");
             else if (!isNegated())
-                in.append(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+                in.appendIdentifier(alias).append(" IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
             else
                 in.append("1=1");
         }
@@ -755,8 +780,7 @@ public class SimpleFilter implements Filter
             Object[] params = getParamVals();
 
             @Nullable ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-            String name = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
-            String alias = dialect.getColumnSelectName(name);
+            var alias = getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
             SQLFragment in = new SQLFragment();
 
@@ -805,7 +829,7 @@ public class SimpleFilter implements Filter
             if (isNegated())
                 in.append("NOT ");
 
-            in.append(alias);
+            in.appendIdentifier(alias);
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
             dialect.appendInClauseSql(in, convertedParams);
@@ -813,14 +837,14 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND ").append(alias).append(" IS NOT NULL)");
+                    in.append(") AND ").appendIdentifier(alias).append(" IS NOT NULL)");
                 else
-                    in.append(") OR ").append(alias).append(" IS NULL)");
+                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR ").append(alias).append(" IS NULL)");
+                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
                 else
                     in.append("))");
             }
@@ -849,7 +873,6 @@ public class SimpleFilter implements Filter
                 FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(col, value))
                 {
-                    var b = 1==1;
                     return !_negated;
                 }
             }
@@ -898,14 +921,14 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
-            String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
+            var alias = getAliasForColumnFilter(dialect, colInfo, getFieldKey());
 
             SQLFragment in = new SQLFragment();
             OperationClause oc = getContainsClause(colInfo);
             if(!oc.getClauses().isEmpty())
                 return in.append(oc.toSQLFragment(columnMap, dialect));
 
-            return in.append(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
+            return in.appendIdentifier(alias).append(isNegated() ? " NOT IN " : " IN ").append("(NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
         }
 
         private OperationClause getContainsClause(ColumnInfo colInfo)
@@ -974,9 +997,6 @@ public class SimpleFilter implements Filter
             return _negated;
         }
     }
-
-    private ArrayList<FilterClause> _clauses = new ArrayList<>();
-
 
     public SimpleFilter()
     {
@@ -1210,6 +1230,7 @@ public class SimpleFilter implements Filter
         return this;
     }
 
+    @Deprecated  //use addWhereClause(SQLFragment)
     public SimpleFilter addWhereClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
     {
         _clauses.add(new SQLClause(fragment, paramVals, fieldKeys));
@@ -1307,7 +1328,7 @@ public class SimpleFilter implements Filter
      *  SELECT ... FROM (SELECT FROM JOIN ..) x {SimpleFilter: WHERE ...}
      * Then pass in tableAlias="x", this removes some opportunities for column name ambiguity when generating the SQL clause.
      */
-    public SQLFragment getSQLFragment(TableInfo t, @Nullable String tableAlias)
+    public SQLFragment getSQLFragment(@NotNull TableInfo t, @Nullable String tableAlias)
     {
         if (null == _clauses || _clauses.isEmpty())
             return new SQLFragment();
@@ -1688,19 +1709,21 @@ public class SimpleFilter implements Filter
             test("((NOT Foo IN ('Bar', 'Blip')) AND Foo IS NOT NULL)", "Foo IS NOT ANY OF (Bar, Blip, BLANK)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
 
             // Ignore params that cannot be parsed
-            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, new BaseColumnInfo("Foo", JdbcType.INTEGER));
+            BaseColumnInfo foo = new BaseColumnInfo(fieldKey, JdbcType.INTEGER);
+            foo.setAlias(SqlDialect.makeDatabaseIdentifier("Foo", new SQLFragment().appendIdentifier("\"FOO\"")));
+            Map<FieldKey, ColumnInfo> columnInfoMap = Map.of(fieldKey, foo);
 
             InClause in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"));
             in._needsTypeConversion = true;
-            test("((Foo IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+            test("((\"FOO\" IN (1, 2)))", "Foo IS ONE OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
 
             in = new InClause(fieldKey, PageFlowUtil.set(1, 2, "S-3"), true, true);
             in._needsTypeConversion = true;
-            test("((NOT Foo IN (1, 2)) OR Foo IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
+            test("((NOT \"FOO\" IN (1, 2)) OR \"FOO\" IS NULL)", "Foo IS NOT ANY OF (1, 2, S-3)", in, mockDialect, columnInfoMap);
 
             in =  new InClause(fieldKey, PageFlowUtil.set("S-3"));
             in._needsTypeConversion = true;
-            test("Foo IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
+            test("\"FOO\" IN (NULL)", "Foo IS ONE OF (S-3)", in, mockDialect, columnInfoMap);
 
             in = new InClause(fieldKey, PageFlowUtil.set("S-3"), true, true);
             in._needsTypeConversion = true;

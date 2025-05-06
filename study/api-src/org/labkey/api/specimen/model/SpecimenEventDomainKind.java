@@ -182,7 +182,6 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 
     public SpecimenEventDomainKind(String vialDomainURI)
     {
-        super();
         _vialDomainURI = vialDomainURI;
     }
 
@@ -210,7 +209,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         Set<PropertyStorageSpec.ForeignKey> foreignKeys = new HashSet<>();
         foreignKeys.add(new PropertyStorageSpec.ForeignKey(LABID, "study", "Site", "RowId", null, true));
         foreignKeys.add(new PropertyStorageSpec.ForeignKey(VIALID, "study", "Vial", "RowId", _vialDomainURI, true));
-        setForeignKeyTableInfos(container, foreignKeys, provider);
+        setForeignKeyTableInfos(foreignKeys, provider);
         return foreignKeys;
     }
 

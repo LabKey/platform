@@ -26,9 +26,11 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Transient;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -220,20 +222,20 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
             _mvIndicatorStorageColumnName = makeMvIndicatorStorageColumnName();
     }
 
-    public String getLegalSelectName(SqlDialect dialect)
+    public DatabaseIdentifier getLegalSelectName(SqlDialect dialect)
     {
         return getLegalSelectNameFromStorageName(dialect, getStorageColumnName());
     }
 
-    public static String getLegalSelectNameFromStorageName(SqlDialect dialect, String storageName)
+    public static DatabaseIdentifier getLegalSelectNameFromStorageName(SqlDialect dialect, String storageName)
     {
         String legalName = dialect.makeLegalIdentifier(storageName);
-        if (storageName.equals(legalName))
-            return storageName;
-        if (dialect.isPostgreSQL())
-            legalName = dialect.makeLegalIdentifier(storageName.toLowerCase());      // Our PG code deep down makes these lowercase, so we need to, too
-        return legalName;
-
+        if (!storageName.equals(legalName) && dialect.isPostgreSQL())
+        {
+            storageName = storageName.toLowerCase();
+            legalName = dialect.makeLegalIdentifier(storageName);      // Our PG code deep down makes these lowercase, so we need to, too
+        }
+        return dialect.makeDatabaseIdentifier(storageName, new SQLFragment().appendIdentifier(legalName));
     }
 
     public void setRangeURI(String dataTypeURI)

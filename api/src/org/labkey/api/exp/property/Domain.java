@@ -44,6 +44,7 @@ public interface Domain extends IPropertyType
     Container getContainer();
     DomainKind<?> getDomainKind();
     String getName();
+    String getTitle();
     String getDescription();
     int getTypeId();
     @Override
@@ -53,6 +54,7 @@ public interface Domain extends IPropertyType
     Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm);
 
     void setName(String name);
+    void setTitle(String title);
     void setDescription(String description);
     void setPropertyIndex(DomainProperty prop, int index);
     @NotNull

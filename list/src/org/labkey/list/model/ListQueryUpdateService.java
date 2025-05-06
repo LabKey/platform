@@ -42,7 +42,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.lists.permissions.ManagePicklistsPermission;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
@@ -577,7 +576,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             value = map.get(key + "_");
 
         if (null == value)
-            value = map.get(AliasManager.legalNameFromName(key));
+            value = map.get(getDbTable().getSqlDialect().legalNameFromName(key));
 
         return value;
     }

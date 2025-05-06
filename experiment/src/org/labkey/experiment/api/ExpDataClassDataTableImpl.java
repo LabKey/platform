@@ -103,7 +103,6 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
-import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -721,13 +720,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         if (hasProvisionedColumns)
             sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
         String subAlias = alias + "_dc_sub";
-        sql.append(") ").append(subAlias);
+        sql.append(") ").appendIdentifier(subAlias);
         sql.append("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
+        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }

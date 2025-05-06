@@ -29,6 +29,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -61,6 +62,7 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -113,6 +115,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
+
+    // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
+    // the future, servers can be compiled with a different limit, and Redshift purports to having a 127-byte limit, so
+    // we query this setting on first connection to each database.
+    private int _maxIdentifierByteLength = 63;
 
     public boolean getStandardConformingStrings()
     {
@@ -297,8 +304,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
-        String columnName = column.getSelectName();
-        sql.append("\nRETURNING ").appendIdentifier(columnName);
+        var columnIdentifier = column.getSelectIdentifier();
+        sql.append("\nRETURNING ").appendIdentifier(columnIdentifier);
         if (null != proposedVariable)
             sql.append(" INTO ").appendIdentifier(proposedVariable);
 
@@ -639,14 +646,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public String getCreateDatabaseSql(String dbName)
     {
         // This will handle both mixed case and special characters on PostgreSQL
-        String legal = getSelectNameFromMetaDataName(dbName);
-        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8'";
+        var legal = makeIdentifierFromMetaDataName(dbName);
+        return new SQLFragment("CREATE DATABASE ").appendIdentifier(legal).append(" WITH ENCODING 'UTF8'").getRawSQL();
     }
 
     @Override
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
+        if (!isLegalName(schemaName) || isReserved(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
 
         //Quoted schema names are bad news
@@ -866,6 +873,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
             _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
+
+            String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
+            try
+            {
+                _maxIdentifierByteLength = Integer.valueOf(value);
+            }
+            catch (NumberFormatException e)
+            {
+                LOG.error("Couldn't parse max_identifier_length; continuing with default value of {}", _maxIdentifierByteLength, e);
+            }
         }
     }
 
@@ -901,15 +918,34 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
     {
         // In addition to quoting keywords and names with special characters, quote any name with an upper case
         // character. PostgreSQL normally stores column/table names in all lower case, so an upper case character
         // coming out of metadata means the name must have been quoted at creation time and needs to be quoted. #11181
         if (StringUtilsLabKey.containsUpperCase(metaDataName))
-            return quoteIdentifier(metaDataName);
+            return new _DatabaseIdentifier(metaDataName, new SQLFragment().appendIdentifier(quoteIdentifier(metaDataName)), this);
         else
-            return super.getSelectNameFromMetaDataName(metaDataName);
+            return super.makeIdentifierFromMetaDataName(metaDataName);
+    }
+
+    // Create a DatabaseIdentifier for the desired alias
+    @Override
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (isIdentifierTooLong(alias))
+            throw new UnsupportedOperationException("Name is too long: " + alias);
+
+        // TODO always quote, for now be as backward compatible as possible
+        SQLFragment id;
+        if (shouldQuoteIdentifier(alias))
+        {
+            return new _DatabaseIdentifier(alias, quoteIdentifier(alias), this);
+        }
+        else
+        {
+            return new _DatabaseIdentifier(alias.toLowerCase(), alias, this);
+        }
     }
 
     private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,?\\s*(\\w*)\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
@@ -926,6 +962,65 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     protected Pattern getSQLScriptProcPattern()
     {
         return PROC_PATTERN;
+    }
+
+    private int getIdentifierMaxByteLength()
+    {
+        return _maxIdentifierByteLength;
+    }
+
+    @Override
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.getBytes(StandardCharsets.UTF_8).length > getIdentifierMaxByteLength();
+    }
+
+    @Override
+    public String truncateAndJoin(String... parts)
+    {
+        String ret = String.join("$", parts);
+
+        if (isIdentifierTooLong(ret))
+        {
+            int maxBytes = getIdentifierMaxByteLength();
+            StringBuilder sb = new StringBuilder(maxBytes);
+            int partsLength = parts.length;
+            int remainingBytes = maxBytes - partsLength + 1; // Make room for dollar signs
+            for (int i = 0; i < partsLength; i++)
+            {
+                String truncated = truncateBytes(parts[i], remainingBytes / (partsLength - i));
+                if (i > 0)
+                    sb.append("$");
+                sb.append(truncated);
+                remainingBytes -= truncated.getBytes(StandardCharsets.UTF_8).length;
+            }
+            ret = sb.toString();
+            assert ret.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        }
+
+        return ret;
+    }
+
+    @Override
+    public String truncate(String str, int reserved)
+    {
+        return truncateBytes(str, getIdentifierMaxByteLength() - reserved);
+    }
+
+    // Truncates based on UTF-8 bytes
+    private static String truncateBytes(String str, int maxBytes)
+    {
+        if (maxBytes < 13)
+            throw new IllegalStateException("maxBytes for legal name too small: " + maxBytes);
+        int len = str.getBytes(StandardCharsets.UTF_8).length;
+        if (len > maxBytes)
+        {
+            String prefix = generateIdentifierPrefix(str);
+            str = prefix + StringUtilsLabKey.rightUtf8Bytes(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
+        }
+        assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
+        return str;
     }
 
     @Override
@@ -1411,7 +1506,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String makeTableIdentifier(TableChange change)
     {
-        assert AliasManager.isLegalName(change.getTableName());
+        assert isLegalName(change.getTableName());
         return change.getSchemaName() + "." + change.getTableName();
     }
 

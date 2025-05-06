@@ -717,6 +717,7 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(FORM form, BindException errors)
         {
+            getPageConfig().setRobotsNone();
             Container c = getContainer();
             Set<WikiTree> wikiTrees = getWikiTrees(form, c);
 
@@ -1224,7 +1225,8 @@ public class WikiController extends SpringActionController
                 WikiPrintBean printBean = new WikiPrintBean(version);
                 JspView<WikiPrintBean> view = new JspView<>("/org/labkey/wiki/view/wikiPrint.jsp", printBean);
                 // Render content early so we can set the dependencies on the view
-                printBean.setHtml(version.render(view, _wiki.lookupContainer(), _wiki));
+                if (version != null)
+                    printBean.setHtml(version.render(view, _wiki.lookupContainer(), _wiki));
                 view.setFrame(WebPartView.FrameType.NONE);
                 return view;
             }

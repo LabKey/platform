@@ -116,7 +116,7 @@ public class CustomViewSetKey implements Serializable
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
         {
-            fullMap = new HashMap<>();
+            fullMap = Collections.synchronizedMap(new HashMap<>());
         }
 
         Map<String, CstmView> map = fullMap.computeIfAbsent(new CustomViewSetKey(queryDef), k -> new HashMap<>());

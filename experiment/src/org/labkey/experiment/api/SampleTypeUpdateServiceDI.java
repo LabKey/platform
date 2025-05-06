@@ -147,6 +147,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -522,14 +523,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (rowId != null)
                             orderedRowIds.add(rowId);
                     }
+                    // Issue 51263: order by RowId to reduce deadlock
                     Collections.sort(orderedRowIds);
 
-                    // Issue 51263: order by RowId to reduce deadlock
+                    ExpMaterialTableImpl tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(_sampleType.getName());
                     ListUtils.partition(orderedRowIds, 100).forEach(sublist ->
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask());
+                                    expMaterial.index(searchService.defaultTask(), tableInfo);
                             })
                     );
                 }, DbScope.CommitTaskOption.POSTCOMMIT);

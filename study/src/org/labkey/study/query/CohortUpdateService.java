@@ -114,6 +114,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException
     {
         int rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
+        checkDuplicateUpdate(rowId);
         CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
         if (cohort == null)
             throw new IllegalArgumentException("No cohort found for rowId: " + rowId);

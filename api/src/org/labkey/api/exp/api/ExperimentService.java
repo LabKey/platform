@@ -994,8 +994,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     HttpView<?> createFileExportView(Container container, User user, String defaultFilenamePrefix);
 
-    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
-    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message, String userComment);
+    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment);
+    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment);
+    void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment, @Nullable String message);
 
     List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
 

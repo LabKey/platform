@@ -258,7 +258,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 String rootMaterialRowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RootMaterialRowId.name();
                 String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts(Column.IsAliquot.name()), new SQLFragment(
-                        "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE()).append(" ELSE ").append(getSqlDialect().getBooleanTRUE()).append(" END)"), JdbcType.BOOLEAN);
+                        "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE())
+                        .append(" WHEN ").append(rowIdField).append(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
+                        .append(" ELSE NULL END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -791,8 +793,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             sql = new SQLFragment()
                     .append("CASE WHEN EXISTS (")
                     .append(existsSubquery)
-                    .append(") THEN 'Plated' ELSE 'Not Plated'")
-                    .append(" END");
+                    .append(") THEN 'Plated' ")
+                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId").append(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
+                    .append("ELSE NULL END");
         }
         else
         {
@@ -1055,7 +1058,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(" WHERE ");
             sql.append("CpasType = ").appendValue(_ss.getLSID());
         }
-        sql.append(") ").append(alias);
+        sql.append(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }
@@ -1412,17 +1415,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
                     if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                         hasAliquotColumns = true;
                     }
                     else if (rootField)
                     {
-                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                         hasSampleColumns = true;
                     }
                     else
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                         hasAliquotColumns = true;
                     }
                     comma = ", ";
@@ -1601,7 +1604,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask());
+                                    expMaterial.index(searchService.defaultTask(), this);
                             })
                         );
 
@@ -1609,7 +1612,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask());
+                                        expMaterial.index(searchService.defaultTask(), this);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)

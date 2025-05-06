@@ -32,7 +32,11 @@ public class DimensionColumnInfo extends BaseColumnInfo
     {
         super(dimension.getSourceColumn(), table);
         _crosstabDimension = dimension;
-        setName(_crosstabDimension.getSourceColumn().getAlias());
+        // TODO Don't know why we're using getAlias() here.  Let's try to preserve case (MS2Test)
+        String alias = _crosstabDimension.getSourceColumn().getAlias().getId();
+        if (alias.equalsIgnoreCase(_crosstabDimension.getSourceColumn().getName()))
+            alias = _crosstabDimension.getSourceColumn().getName();
+        setName(alias);
         setLabel(_crosstabDimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
         setDimension(true);
@@ -54,6 +58,6 @@ public class DimensionColumnInfo extends BaseColumnInfo
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + _crosstabDimension.getSourceColumn().getAlias());
+        return new SQLFragment().appendDottedIdentifiers(tableAliasName,_crosstabDimension.getSourceColumn().getAlias());
     }
 }

@@ -33,6 +33,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
@@ -54,7 +55,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -324,11 +325,10 @@ public abstract class SqlDialect
             return i;
         else
         {
-            LOG.info("Unknown SQL Type Name \"" + sqlTypeName + "\"; using OTHER instead.");
+            LOG.info("Unknown SQL Type Name \"{}\"; using OTHER instead.", sqlTypeName);
             return Types.OTHER;
         }
     }
-
 
     @Nullable
     public String getSqlTypeName(JdbcType type)
@@ -832,31 +832,107 @@ public abstract class SqlDialect
         return _reservedWordSet.contains(word);
     }
 
-    // TODO: Return SQLFragment to ensure columnName gets added with appendIdentifier()
-    public String getColumnSelectName(String columnName)
+    public SQLFragment getColumnSelectName(String columnName)
     {
         // Special case "*"... otherwise, just makeLegalIdentifier()
         if ("*".equals(columnName))
-            return columnName;
+            return new SQLFragment("*");
         else
-            return makeLegalIdentifier(columnName);
+            return new SQLFragment().appendIdentifier(makeLegalIdentifier(columnName));
     }
 
+    private Map<String,Boolean> _validatedIds = new HashMap<>();
 
-    // Translates database metadata name into a name that can be used in a select.  Most dialects simply turn them into
-    // legal identifiers (e.g., adding quotes if special symbols are present).
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    private boolean validateIdentifier(DatabaseIdentifier id)
     {
-        return makeLegalIdentifier(metaDataName);
+        if (LOG.isTraceEnabled())
+        {
+            final var me = this;
+            return _validatedIds.computeIfAbsent(id.getId(), key ->
+            {
+                var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
+                if (optScope.isPresent())
+                {
+                    SQLFragment sql = new SQLFragment("SELECT NULL AS ").appendIdentifier(id);
+                    try (var results = new SqlSelector(optScope.get(), sql).getResultSet(false))
+                    {
+                        assert id.getId().equals(results.getMetaData().getColumnName(1));
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return true;
+            });
+        }
+        return true;
     }
 
-    // Create comma-separated list of legal identifiers
+    // dialect is just for debugging reference
+    protected record _DatabaseIdentifier(String id, SQLFragment sql, SqlDialect dialect) implements DatabaseIdentifier
+    {
+        _DatabaseIdentifier(String id, String sql, SqlDialect dialect)
+        {
+            this(id, new SQLFragment().appendIdentifier(sql), dialect);
+            assert null==dialect || dialect.validateIdentifier(this);
+        }
+
+        @Override
+        public String getId()
+        {
+            return id;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            return sql;
+        }
+
+        @Override
+        public @NotNull String toString()
+        {
+            assert false : "[id=" + id + " sql=" + sql.getRawSQL() + "]";
+            return "[id=" + id + " sql=" + sql.getRawSQL() + "]";
+        }
+    }
+
+    // Use this method to wrap a name provided by the database for an existing object (schema, table, column etc).
+    // In this case the name must be preserved exactly as-is.
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
+    {
+        return new _DatabaseIdentifier(metaDataName, quoteIdentifier(metaDataName), this);
+    }
+
+    // Create a DatabaseIdentifier for the desired alias
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (isIdentifierTooLong(alias))
+            throw new UnsupportedOperationException("Name is too long: " + alias);
+
+
+        // what we want:
+        //   SQLFragment quoted = new SQLFragment().appendIdentifier(quoteIdentifier(alias));
+        //   return new _DatabaseIdentifier(alias, quoted, this);
+        return new _DatabaseIdentifier(alias, makeLegalIdentifier(alias), this);
+    }
+
+    /* ONLY use for special cases! */
+    public static DatabaseIdentifier makeDatabaseIdentifier(String alias, SQLFragment sql)
+    {
+        return new _DatabaseIdentifier(alias, sql, null);
+    }
+
+    // Create a comma-separated list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names)
     {
         return makeLegalIdentifiers(names, ", ");
     }
 
     // Create list of legal identifiers
+    @Deprecated
     public String makeLegalIdentifiers(String[] names, String sep)
     {
         String s = "";
@@ -871,6 +947,7 @@ public abstract class SqlDialect
 
 
     // If necessary, quote identifier
+    @Deprecated
     public String makeLegalIdentifier(String id)
     {
         if (shouldQuoteIdentifier(id))
@@ -884,18 +961,203 @@ public abstract class SqlDialect
         return id;
     }
 
-    // Escape quotes and quote the identifier  // TODO: Move to DialectStringHandler?
+    // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
-        return "\"" + id.replaceAll("\"", "\"\"") + "\"";
+        return "\"" + StringUtils.replace(id, "\"", "\"\"") + "\"";
     }
 
 
     protected boolean shouldQuoteIdentifier(String id)
     {
-        return isReserved(id) || !AliasManager.isLegalName(id, this);
+        return isReserved(id) || !isLegalName(id);
     }
 
+    public boolean isLegalName(String str)
+    {
+        int length = str.length();
+        for (int i = 0; i < length; i++)
+        {
+            if (!isLegalNameChar(str.charAt(i), i == 0))
+                return false;
+        }
+        return true;
+    }
+
+    public boolean isLegalNameChar(char ch, boolean first)
+    {
+        // quick check
+        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
+            return true;
+        if (!first && ch >= '0' && ch <= '9')
+            return true;
+
+        // TODO be more lenient here (allow more unicode characters as "legal")
+        return ch == '_';
+    }
+
+    public String legalNameFromName(String str)
+    {
+        int i;
+        char ch=0;
+
+        int length = str.length();
+        for (i = 0; i < length; i ++)
+        {
+            ch = str.charAt(i);
+            if (!isLegalNameChar(ch, i==0))
+                break;
+        }
+        if (i==length)
+            return str;
+
+        StringBuilder sb = new StringBuilder(length+20);
+        if (i==0)
+        {
+            sb.append("X_");
+            if (isLegalNameChar(ch, false))
+            {
+                sb.append(ch);
+                i++;
+            }
+        }
+        else
+        {
+            sb.append(str, 0, i);
+        }
+
+        for ( ; i < length ; i ++)
+        {
+            ch = str.charAt(i);
+            boolean isLegal = isLegalNameChar(ch, false);
+            if (isLegal)
+            {
+                sb.append(ch);
+            }
+            else
+            {
+                switch (ch)
+                {
+                    case '+' : sb.append("_plus_"); break;
+                    case '-' : sb.append("_minus_"); break;
+                    case '(' : sb.append("_lp_"); break;
+                    case ')' : sb.append("_rp_"); break;
+                    case '/' : sb.append("_fs_"); break;
+                    case '\\' : sb.append("_bs_"); break;
+                    case '&' : sb.append("_amp_"); break;
+                    case '<' : sb.append("_lt_"); break;
+                    case '>' : sb.append("_gt_"); break;
+                    default: sb.append("_"); break;
+                }
+            }
+        }
+        var ret = sb.toString();
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    public String makeLegalName(String str, boolean truncate, int reserveCount)
+    {
+        String ret = legalNameFromName(str);
+        if (isReserved(ret))
+            ret = ret + "_";
+        int length = ret.length();
+        if (0 == length)
+            ret = "X_";
+        ret = makeLegalIdentifierName(ret);
+        ret = truncate ? truncate(ret, reserveCount) : ret;
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    public String makeLegalName(FieldKey key, int reserveCount)
+    {
+        if (key.getParent() == null)
+            return makeLegalName(key.getName(), true, reserveCount);
+        StringBuilder sb = new StringBuilder();
+        String connector = "";
+        for (String part : key.getParts())
+        {
+            sb.append(connector);
+            sb.append(legalNameFromName(part));
+            connector = "_";
+        }
+        var ret = truncate(sb.toString(), reserveCount);
+        assert isLegalName(ret);
+        return ret;
+    }
+
+    // For internal use only
+    protected int getIdentifierMaxCharLength()
+    {
+        return 63;
+    }
+
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.length() > getIdentifierMaxCharLength();
+    }
+
+    public String truncateAndJoin(String... parts)
+    {
+        int length = getIdentifierMaxCharLength();
+        String ret = String.join("$", parts);
+
+        if (ret.length() > length)
+        {
+            StringBuilder sb = new StringBuilder(length);
+            int partsLength = parts.length;
+            int remainingLength = length - partsLength + 1; // Make room for dollar signs
+            for (int i = 0; i < partsLength; i++)
+            {
+                String truncated = truncateCharacters(parts[i], remainingLength / (partsLength - i));
+                if (i > 0)
+                    sb.append("$");
+                sb.append(truncated);
+                remainingLength -= truncated.length();
+            }
+            ret = sb.toString();
+            assert ret.length() <= length;
+        }
+
+        return ret;
+    }
+
+    /**
+     * Override to implement database-specific truncation rules
+     */
+    public String truncate(String str, int reserved)
+    {
+        return truncateCharacters(str, getIdentifierMaxCharLength() - reserved);
+    }
+
+    private static String truncateCharacters(String str, int maxLength)
+    {
+        if (maxLength < 11)
+            throw new IllegalStateException("maxLength for legal name too small: " + maxLength);
+        int len = str.length();
+        if (len > maxLength)
+        {
+            String prefix = generateIdentifierPrefix(str);
+            str = prefix + StringUtilsLabKey.rightSurrogatePairFriendly(str, maxLength - prefix.length());
+        }
+        assert str.length() <= maxLength;
+        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
+        return str;
+    }
+
+    // Prefix is the string's first character followed by a full-string hash.
+    protected static String generateIdentifierPrefix(String str)
+    {
+        String hash = String.valueOf(str.hashCode() & 0x7fffffff);
+        char firstChar = str.charAt(0);
+        String prefix;
+        if (Character.isHighSurrogate(firstChar)) // Don't split a surrogate pair
+            prefix = "" + firstChar + str.charAt(1) + hash;
+        else
+            prefix = firstChar + hash;
+        return prefix;
+    }
 
     public void testDialectKeywords(SqlExecutor executor)
     {
@@ -950,7 +1212,6 @@ public abstract class SqlDialect
         }
     }
 
-
     public void testKeywordCandidates(SqlExecutor executor) throws IOException, SQLException
     {
         Set<String> jdbcKeywords = getJdbcKeywords(executor);
@@ -962,15 +1223,6 @@ public abstract class SqlDialect
             throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
-    /**
-     * @return The absolute maximum length for this database. Callers are responsible for truncating generated names,
-     * handing suffixes, etc.
-     */
-    public int getIdentifierMaxLength()
-    {
-        return 63;
-    }
-
     protected SQLFragment getIdentifierTestSql(String candidate)
     {
         String keyword = getTempTableKeyword();
@@ -980,7 +1232,6 @@ public abstract class SqlDialect
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
                "DROP TABLE " + name + ";");
     }
-
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
     {
