@@ -358,7 +358,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                         if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
                         {
                             // make sure guid is not null (12884)
-                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            result.addCoalesceColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
                             foundKeyCol = true;
                         }
                         else

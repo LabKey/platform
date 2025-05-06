@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.39.1-dataFieldKey52556.0",
+    "@labkey/components": "6.40.0",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
