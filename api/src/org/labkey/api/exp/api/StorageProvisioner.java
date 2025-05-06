@@ -35,14 +35,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
  * Will do CREATE TABLE and ALTER TABLE statements to make sure the table has the right set of requested columns.
- * User: newton
- * Date: Aug 11, 2010
  */
 public interface StorageProvisioner
 {
@@ -80,32 +77,8 @@ public interface StorageProvisioner
      */
     String ensureStorageTable(Domain domain, DomainKind<?> kind, DbScope scope);
 
-    enum RequiredIndicesAction
-    {
-        Drop
-            {
-                @Override
-                public void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-                {
-                    StorageProvisioner.get().dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-                }
-            },
-        Add
-            {
-                @Override
-                public void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-                {
-                    StorageProvisioner.get().addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-                }
-            };
-
-        public abstract void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
-    }
-
     void dropNotRequiredIndices(Domain domain);
-    void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
     void addMissingRequiredIndices(Domain domain);
-    void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
     void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode);
     void dropTableIndices(Domain domain, Set<String> indexNames);
 

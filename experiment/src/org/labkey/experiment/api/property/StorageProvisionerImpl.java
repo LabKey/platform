@@ -833,28 +833,27 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return tableName;
     }
 
-//    enum RequiredIndicesAction
-//    {
-//        Drop
-//            {
-//                @Override
-//                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-//                {
-//                    dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-//                }
-//            },
-//        Add
-//            {
-//                @Override
-//                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-//                {
-//                    addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-//
-//                }
-//            };
-//
-//        protected abstract void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
-//    }
+    enum RequiredIndicesAction
+    {
+        Drop
+        {
+            @Override
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            {
+                provisioner.dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+            }
+        },
+        Add
+        {
+            @Override
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            {
+                provisioner.addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+            }
+        };
+
+        public abstract void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
+    }
 
     @Override
     public void dropNotRequiredIndices(Domain domain)
@@ -879,7 +878,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         Map<String, PropertyStorageSpec.Index> requiredIndicesMap = getRequiredIndices(domain, sqlDialect);
 
-        requiredIndicesAction.doOperation(domain, schemaTableInfo, requiredIndicesMap);
+        requiredIndicesAction.doOperation(this, domain, schemaTableInfo, requiredIndicesMap);
     }
 
     @NotNull
@@ -904,8 +903,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return requiredIndicesMap;
     }
 
-    @Override
-    public void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
     {
         Set<String> indicesToDrop = new HashSet<>();
 
@@ -943,8 +941,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    @Override
-    public void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
     {
         Set<PropertyStorageSpec.Index> indicesToAdd = new HashSet<>();
 
