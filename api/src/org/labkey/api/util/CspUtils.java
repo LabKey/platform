@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 
 public class CspUtils
 {
-    public static void enumerateCspViolations(Document doc, Consumer<String> consumer)
+    public static void enumerateScriptViolations(Document doc, Consumer<String> consumer)
     {
         // Enumerate nonce-less script tags
         NodeList nl = doc.getElementsByTagName("script");

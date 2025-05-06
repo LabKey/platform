@@ -2998,6 +2998,11 @@ public class ExpDataIterators
                             _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                     }
                 }
+                else if (index == _dataIdIndex && _isCrossFolderUpdate)
+                {
+                    // Issue 52922: Samples with blank sample id in the file are getting ignored
+                    throw new IllegalArgumentException("Name value not provided on row " + get(0));
+                }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
@@ -3031,9 +3036,12 @@ public class ExpDataIterators
                 }
 
                 Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+
+                Set<String> notFoundIds = new HashSet<>(typeData.dataIds);
                 for (Map<String, Object> row : rows)
                 {
                     String name = (String) row.get("name");
+                    notFoundIds.remove(name);
                     String dataContainer = (String) row.get("container");
                     // could be updating the same data multiple times in a single import, the import will later be rejected
                     List<Integer> dataRowIds =
@@ -3041,6 +3049,11 @@ public class ExpDataIterators
                                     .filter(i -> typeData.dataIds.get(i).equals(name))
                                     .toList();
                     containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
+                }
+                if (!notFoundIds.isEmpty())
+                {
+                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
+                    return;
                 }
 
                 for (String containerId : containerRows.keySet())
