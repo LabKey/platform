@@ -426,9 +426,11 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
+        Set<String> keyworksHi = new HashSet<>();
 
         // Name is identifier with the highest weight
         identifiersHi.add(getName());
+        keyworksHi.add(getName()); // support "Boosting syntax (^4)" on name
 
         // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder("Sample - " + getName());
@@ -459,7 +461,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
 
             if (tableInfo != null)
-                getCustomIndexValues(props, tableInfo, identifiersHi, jsonData);
+                getCustomIndexValues(props, tableInfo, identifiersHi, keyworksHi, jsonData);
         }
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
@@ -519,6 +521,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             Map<String, Object> props,
             @NotNull ExpMaterialTableImpl table,
             Set<String> identifiersHi,
+            Set<String> keywordsHi,
             JSONObject jsonData
     )
     {
@@ -526,7 +529,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
             skipColumns.add(column.name());
 
-        processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), new HashSet<>(), jsonData);
+        processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
     }
 
     static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
