@@ -870,7 +870,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         updateTableIndices(domain, RequiredIndicesAction.Add);
     }
 
-    private void updateTableIndices(Domain domain,@NotNull RequiredIndicesAction requiredIndicesAction)
+    private void updateTableIndices(Domain domain, @NotNull RequiredIndicesAction requiredIndicesAction)
     {
         SchemaTableInfo schemaTableInfo = getSchemaTableInfo(domain);
 
@@ -898,7 +898,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         for (PropertyStorageSpec.Index index : requiredIndices)
         {
-            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames),index);
+            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
         }
         return requiredIndicesMap;
     }
@@ -945,13 +945,18 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         Set<PropertyStorageSpec.Index> indicesToAdd = new HashSet<>();
 
-        buildListOfIndicesToAdd(schemaTableInfo, requiredIndicesMap, indicesToAdd);
+        // Build the list of indices to add
+        CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
+        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
+        {
+            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
+            if (requiredIndexNotFoundInTable)
+            {
+                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
+                indicesToAdd.add(requiredIndexEntry.getValue());
+            }
+        }
 
-        addIndicesToTable(domain, indicesToAdd);
-    }
-
-    private void addIndicesToTable(Domain domain, Set<PropertyStorageSpec.Index> indicesToAdd)
-    {
         if (!indicesToAdd.isEmpty())
         {
             TableChange change;
@@ -970,20 +975,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 change.execute();
                 transaction.commit();
-            }
-        }
-    }
-
-    private static void buildListOfIndicesToAdd(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<PropertyStorageSpec.Index> indicesToAdd)
-    {
-        CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
-        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
-        {
-            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
-            if (requiredIndexNotFoundInTable)
-            {
-                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
-                indicesToAdd.add(requiredIndexEntry.getValue());
             }
         }
     }
