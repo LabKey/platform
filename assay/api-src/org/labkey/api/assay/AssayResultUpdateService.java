@@ -274,9 +274,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
             if (col != null)
             {
-                String entryKey = col.getAlias().getId(); // getRow() ends up using TableSelector.getMap() which is keyed by column alias
-                Object oldValue = originalRow.get(entryKey);
-                Object newValue = updatedValues.get(entryKey);
+                Object oldValue = col.getValue(originalRow);
+                Object newValue = col.getValue(updatedValues);
                 boolean hasValueChanged = !Objects.equals(oldValue, newValue);
 
                 if (hasValueChanged)
@@ -284,7 +283,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
-                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entryKey))
+                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
                     ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
