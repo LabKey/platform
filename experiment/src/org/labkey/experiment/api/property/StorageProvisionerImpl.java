@@ -1006,6 +1006,58 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
+    @Override
+    public void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == indices)
+            throw new IllegalArgumentException("indices cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.AddIndices);
+
+        if (null != sizeMode)
+            change.setIndexSizeMode(sizeMode);
+
+        change.setIndexedColumns(domain, indices);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
+        }
+    }
+
+    private DbScope validateDomain(Domain domain)
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        String tableName = domain.getStorageTableName();
+        if (null == tableName)
+            throw new IllegalStateException("Table must already exist.");
+
+        return scope;
+    }
+
+    @Override
+    public void dropTableIndices(Domain domain, Set<String> indexNames)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == indexNames)
+            throw new IllegalArgumentException("indices cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
+        change.setIndicesToBeDroppedByName(indexNames);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
+        }
+    }
+
     private static DbScope getScope(Domain domain)
     {
         return getDomainKind(domain).getScope();
@@ -1038,38 +1090,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
 
         return getSchemaTableInfo(domain, schemaName, tableName, schema);
-    }
-
-    @Override
-    public void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode)
-    {
-        DomainKind<?> kind = domain.getDomainKind();
-        DbScope scope = kind.getScope();
-
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
-            throw new IllegalStateException("Table must already exist.");
-
-        TableChange change = new TableChange(domain, doAdd ? ChangeType.AddIndices : ChangeType.DropIndices);
-
-        if(null != sizeMode)
-            change.setIndexSizeMode(sizeMode);
-
-        // If indices not passed in, get them from domain definition
-        if (null == indices)
-        {
-            indices = new HashSet<>();
-            indices.addAll(kind.getPropertyIndices(domain));
-            indices.addAll(domain.getPropertyIndices());
-        }
-
-        change.setIndexedColumns(domain, indices);
-
-        try (Transaction transaction = scope.ensureTransaction())
-        {
-            change.execute();
-            transaction.commit();
-        }
     }
 
     @Override

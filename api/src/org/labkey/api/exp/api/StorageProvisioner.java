@@ -106,10 +106,10 @@ public interface StorageProvisioner
     void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
     void addMissingRequiredIndices(Domain domain);
     void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
+    void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode);
+    void dropTableIndices(Domain domain, Set<String> indexNames);
 
     SchemaTableInfo getSchemaTableInfo(Domain domain);
-
-    void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode);
 
     /**
      * This helper can be used to update domain type if columns are added to DomainKind.getBaseProperties().

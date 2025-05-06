@@ -1134,7 +1134,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             case DropColumns -> sql.add(getDropColumnsStatement(change));
             case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
             case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
-            case DropIndices -> sql.addAll(getDropIndexStatements(change));
             case AddIndices -> sql.addAll(getCreateIndexStatements(change));
             case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
@@ -1438,23 +1437,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
                         change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
             }
-        }
-    }
-
-    private List<String> getDropIndexStatements(TableChange change)
-    {
-        List<String> statements = new ArrayList<>();
-        addDropIndexStatements(statements, change);
-        return statements;
-    }
-
-    private void addDropIndexStatements(List<String> statements, TableChange change)
-    {
-        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
-        {
-            statements.add(String.format("DROP INDEX IF EXISTS %s.%s",
-                    change.getSchemaName(),
-                    nameIndex(change.getTableName(), index.columnNames)));
         }
     }
 

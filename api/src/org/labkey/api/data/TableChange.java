@@ -113,7 +113,7 @@ public class TableChange
                     {
                         case AddColumns, DropColumns, ResizeColumns -> !getColumns().isEmpty();
                         case RenameColumns -> !getColumnRenames().isEmpty();
-                        case DropIndices, AddIndices -> !getIndexedColumns().isEmpty();
+                        case AddIndices -> !getIndexedColumns().isEmpty();
                         case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
                         case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
                         default -> valid;
@@ -360,7 +360,6 @@ public class TableChange
         RenameColumns,
         ResizeColumns,
         ChangeColumnTypes,
-        DropIndices,
         DropIndicesByName,
         AddIndices,
         DropConstraints,
