@@ -787,7 +787,12 @@ public class NameGeneratorState implements AutoCloseable
         String[] parts = colName.split("/", 2);
         String prefix = null;
         String decodedDataType = null;
-        if (parts.length == 1 && parentImportAliases != null && parentImportAliases.containsKey(colName))
+        if (ALIQUOTED_FROM_INPUT.equalsIgnoreCase(colName))
+        {
+            prefix = ExpMaterial.MATERIAL_INPUT_PARENT;
+            decodedDataType = getParentTable() != null ? getParentTable().getName() : null;
+        }
+        else if (parts.length == 1 && parentImportAliases != null && parentImportAliases.containsKey(colName))
         {
             FieldKey aliasField = parentImportAliases.get(colName);
             prefix = aliasField.getParent().getName();
@@ -821,7 +826,7 @@ public class NameGeneratorState implements AutoCloseable
                 {
                     inputs.computeIfAbsent(FieldKey.fromParts(INPUT_PARENT, dataTypeAltName),  (s) -> new LinkedHashSet<>()).addAll(parents); // add Inputs/SampleType1
                     if (!parents.isEmpty()) // convert "parent1,parent2" to [parent1, parent2]
-                        inputs.computeIfAbsent(FieldKey.fromParts(parts[0], dataTypeAltName),  (s) -> new LinkedHashSet<>()).addAll(parents);
+                        inputs.computeIfAbsent(FieldKey.fromParts(inputsCategory, dataTypeAltName),  (s) -> new LinkedHashSet<>()).addAll(parents);
                 }
 
                 // if import aliases are defined, also add in the inputs under the aliases in case those are used in the name expression
