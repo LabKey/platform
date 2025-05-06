@@ -858,7 +858,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     @Override
     public void dropNotRequiredIndices(Domain domain)
     {
-        if(!domain.isProvisioned()){
+        if (!domain.isProvisioned()){
             return;
         }
         updateTableIndices(domain, RequiredIndicesAction.Drop);
@@ -892,12 +892,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         String storageTableName = domain.getStorageTableName();
 
-        if(storageTableName == null){
+        if (storageTableName == null)
+        {
             storageTableName = makeTableName(getDomainKind(domain),domain);
         }
 
         for (PropertyStorageSpec.Index index : requiredIndices)
         {
+            // TODO: Bad!! Shouldn't be making up an index name here! Ideally, we use the AbstractAuditTypeProvider.updateIndices() approach instead.
             requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
         }
         return requiredIndicesMap;
@@ -907,13 +909,18 @@ public class StorageProvisionerImpl implements StorageProvisioner
     {
         Set<String> indicesToDrop = new HashSet<>();
 
-        buildListOfIndicesToDrop(schemaTableInfo, requiredIndicesMap, indicesToDrop);
+        // Determine indices to drop
+        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
+        {
+            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
+            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
 
-        dropIndicesFromTable(domain, indicesToDrop);
-    }
+            if (!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices)
+            {
+                indicesToDrop.add(index.getKey());
+            }
+        }
 
-    private static void dropIndicesFromTable(Domain domain, Set<String> indicesToDrop)
-    {
         if (!indicesToDrop.isEmpty())
         {
             TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
@@ -924,19 +931,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 change.execute();
                 transaction.commit();
-            }
-        }
-    }
-
-    private static void buildListOfIndicesToDrop(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<String> indicesToDrop)
-    {
-        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
-        {
-            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
-            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
-
-            if(!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices){
-                indicesToDrop.add(index.getKey());
             }
         }
     }

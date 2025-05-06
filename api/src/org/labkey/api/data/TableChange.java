@@ -39,8 +39,6 @@ import java.util.stream.Collectors;
 /**
  * Aggregated changes to be performed via SQL DDL statements against a target table by
  * {@link org.labkey.api.exp.api.StorageProvisioner}
- * User: newton
- * Date: Aug 19, 2010
  */
 public class TableChange
 {
@@ -110,14 +108,14 @@ public class TableChange
         if (valid)
         {
             valid = switch (_type)
-                    {
-                        case AddColumns, DropColumns, ResizeColumns -> !getColumns().isEmpty();
-                        case RenameColumns -> !getColumnRenames().isEmpty();
-                        case AddIndices -> !getIndexedColumns().isEmpty();
-                        case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
-                        case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
-                        default -> valid;
-                    };
+            {
+                case AddColumns, DropColumns, ResizeColumns -> !getColumns().isEmpty();
+                case RenameColumns -> !getColumnRenames().isEmpty();
+                case AddIndices -> !getIndexedColumns().isEmpty();
+                case DropIndicesByName -> !getIndicesToBeDroppedByName().isEmpty();
+                case AddConstraints, DropConstraints -> !getConstraints().isEmpty();
+                default -> true;
+            };
         }
         return valid;
     }
@@ -145,35 +143,34 @@ public class TableChange
 
             // Get any custom indices added to the domain -- these aren't saved anywhere except in the database
             DbSchema schema = DbSchema.get(_schemaName);
-                       TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
-                if (storageTableInfo != null)
+            TableInfo storageTableInfo = schema.getTable(_domain.getStorageTableName());
+            if (storageTableInfo != null)
+            {
+                for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : storageTableInfo.getAllIndices().values())
                 {
-                    for (Pair<TableInfo.IndexType, List<ColumnInfo>> index : storageTableInfo.getAllIndices().values())
+                    List<String> columnNames = index.getValue().stream().map(ColumnInfo::getName).collect(Collectors.toList());
+
+                    // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
+                    // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
+                    // The uniqueness is enforced by a database trigger.
+                    boolean unique = index.first == TableInfo.IndexType.Unique ||
+                            (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
+
+                    // remove the _hashed_ column prefix for SQLServer
+                    if (schema.getSqlDialect().isSqlServer() && unique)
+                        columnNames = columnNames.stream().map(s -> s.startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX) ? s.substring(PropertyStorageSpec.HASHED_COLUMN_PREFIX.length()) : s).collect(Collectors.toList());
+
+                    Index idx = new Index(unique, columnNames);
+
+                    for (String columnName : columnNames)
                     {
-                        List<String> columnNames = index.getValue().stream().map(ColumnInfo::getName).collect(Collectors.toList());
+                        if (!columnIndexMap.containsKey(columnName))
+                            columnIndexMap.put(columnName, new ArrayList<>());
 
-                        // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
-                        // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
-                        // The uniqueness is enforced by a database trigger.
-                        boolean unique = index.first == TableInfo.IndexType.Unique ||
-                                (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.get(0).startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
-
-                        // remove the _hashed_ column prefix for SQLServer
-                        if (schema.getSqlDialect().isSqlServer() && unique)
-                            columnNames = columnNames.stream().map(s -> s.startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX) ? s.substring(PropertyStorageSpec.HASHED_COLUMN_PREFIX.length()) : s).collect(Collectors.toList());
-
-                        Index idx = new Index(unique, columnNames);
-
-                        for (String columnName : columnNames)
-                        {
-                            if (!columnIndexMap.containsKey(columnName))
-                                columnIndexMap.put(columnName, new ArrayList<>());
-
-                            columnIndexMap.get(columnName).add(idx);
-                        }
+                        columnIndexMap.get(columnName).add(idx);
                     }
                 }
-
+            }
 
             for (String name : getColumnResizes().keySet())
             {
