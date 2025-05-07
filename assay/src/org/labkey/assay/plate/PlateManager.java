@@ -3830,28 +3830,35 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         try (Results results = new TableSelector(metadataTable, filter, null).getResults())
         {
+            Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
+
             while (results.next())
             {
                 var row = results.getFieldKeyRowMap();
-                var lsid = (String) row.get(WellTable.Column.Lsid.fieldKey());
                 var metadata = new CaseInsensitiveHashMap<>();
 
-                for (var key : row.keySet())
-                {
-                    // Issue 53017: usages of getWellData are expecting the WellData metadata map to be keyed by column names
-                    // (see savePlateImpl wellQus.insertRows() which requires rows to be keyed by column names)
-                    String colName = results.getFieldMap().get(key).getName();
-                    if (row.get(key) != null && !ignoredKeys.contains(colName))
-                        metadata.put(colName, row.get(key));
-                }
+                row.forEach((key, value) -> {
+                    if (value != null)
+                    {
+                        // Issue 53017: usages of getWellData are expecting the WellData metadata map to be keyed
+                        // by column names (see savePlateImpl wellQus.insertRows() which requires rows to be keyed
+                        // by column names)
+                        String colName = fieldMap.get(key).getName();
+                        if (!ignoredKeys.contains(colName))
+                            metadata.put(colName, value);
+                    }
+                });
 
                 if (!metadata.isEmpty())
+                {
+                    var lsid = (String) row.get(WellTable.Column.Lsid.fieldKey());
                     metadataMap.put(lsid, metadata);
+                }
             }
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
 
         if (!metadataMap.isEmpty())
