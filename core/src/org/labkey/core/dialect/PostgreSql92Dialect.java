@@ -47,8 +47,8 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
 
     // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
-    // the future, servers can be compiled with a different limit, and Redshift purports to having a 127-byte limit, so
-    // we query this setting on first connection to each database.
+    // the future plus servers can be compiled with a different limit, so we query this setting on first connection to
+    // each database.
     private int _maxIdentifierByteLength = 63;
 
     @NotNull
