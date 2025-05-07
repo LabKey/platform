@@ -2514,9 +2514,12 @@ public class ExpDataIterators
                     ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
                     {
+                        // Note that this is slightly different from our treatment of lookups:
+                        //    - when in a project, we allow import or update to all subfolders,
+                        //    - when in a folder, we only allow references to data up the folder tree
                         if (container.isProject())
                             cf = new ContainerFilter.AllInProjectPlusShared(container, user);
-                        else if (!QueryService.get().isProductFoldersDataListingScopedToProject())
+                        else
                             cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
                     }
                     Collection<GUID> validContainerIds =  cf.getIds();
