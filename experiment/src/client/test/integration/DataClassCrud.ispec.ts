@@ -307,7 +307,7 @@ describe('Import with update / merge', () => {
        // cross folder update not supported when folder type is "Collaboration"
        let crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
        expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
-       crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
+       crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
        expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
 
        // bogus name
