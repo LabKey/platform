@@ -585,7 +585,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (nameGen == null)
             throw new ExperimentException("Error creating name expression generator");
 
-        try (NameGeneratorState state = nameGen.createState(true))
+        try (SampleTypeUpdateServiceDI.SampleNameGeneratorState state = getNameGenState(false, true, container, user))
         {
             DbSequence sequence = genIdSequence();
             Supplier<Map<String, Object>> extraPropsFn = () -> {
@@ -595,7 +595,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                     map.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
                 return map;
             };
-            String generatedName = nameGen.generateName(state, rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
+            String generatedName = state.nextName(rowMap, parentDatas, parentSamples, List.of(extraPropsFn));
             state.cleanUp();
             return generatedName;
         }
@@ -603,6 +603,58 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             throw new ExperimentException("Failed to generate name for Sample", e);
         }
+    }
+
+    private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@Nullable NameGenerator nameGen, @Nullable NameGenerator aliquotNameGen)
+    {
+        if (nameGen == null && aliquotNameGen == null)
+            return null;
+
+        NameGenerator.ExpressionSummary expSummary = nameGen != null ? nameGen.getExpressionSummary() : null;
+        NameGenerator.ExpressionSummary aliquotExpSummary = aliquotNameGen != null ? aliquotNameGen.getExpressionSummary() : null;
+        if (expSummary == null && aliquotExpSummary == null)
+            return null;
+
+        boolean hasProjectSampleCounter = false;
+        long minProjectSampleCounter = 0;
+        boolean hasProjectSampleRootCounter = false;
+        long minProjectSampleRootCounter = 0;
+
+        NameGenerator.SampleNameExpressionSummary nameSummary = expSummary != null ? expSummary.sampleSummary() : null;
+        NameGenerator.SampleNameExpressionSummary aliquotSummary = aliquotExpSummary != null ? aliquotExpSummary.sampleSummary() : null;
+        if ((nameSummary != null && nameSummary.hasProjectSampleCounter()) || (aliquotSummary != null && aliquotSummary.hasProjectSampleCounter()))
+        {
+            hasProjectSampleCounter = true;
+            minProjectSampleCounter = getMinSampleCounter();
+        }
+
+        if ((nameSummary != null && nameSummary.hasProjectSampleRootCounter()) || (aliquotSummary != null && aliquotSummary.hasProjectSampleRootCounter()))
+        {
+            hasProjectSampleRootCounter = true;
+            minProjectSampleRootCounter = getMinRootSampleCounter();
+        }
+
+        if (hasProjectSampleCounter || hasProjectSampleRootCounter)
+            return new NameGenerator.SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, minProjectSampleCounter, minProjectSampleRootCounter);
+
+        return null;
+    }
+
+    public SampleTypeUpdateServiceDI.SampleNameGeneratorState getNameGenState(boolean skipDuplicateCheck, boolean incrementSampleCounts, Container container, User user)
+    {
+        NameGenerator nameGen = getNameGenerator(container, user, skipDuplicateCheck);
+        NameGenerator aliquotNameGen = getAliquotNameGenerator(container, user, skipDuplicateCheck);
+
+        NameGenerator primaryGen = nameGen == null ? aliquotNameGen : nameGen;
+        // check for project scoped counter in both name and aliquot name to decide if they need to be included
+        NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
+        if (sampleNameExpressionSummary != null)
+        {
+            NameGenerator.ExpressionSummary expressionSummary = primaryGen.getExpressionSummary();
+            primaryGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
+        }
+
+        return new SampleTypeUpdateServiceDI.SampleNameGeneratorState(primaryGen, incrementSampleCounts, aliquotNameGen);
     }
 
     private Container getGenIdSequenceContainer()

@@ -1672,14 +1672,6 @@ public class NameGenerator
         return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, null);
     }
 
-    public String generateName(@NotNull NameGeneratorState state, @NotNull Map<String, Object> rowMap,
-                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
-                               @Nullable List<Supplier<Map<String, Object>>> extraPropsFns,
-                               @Nullable NameGenerator altNameGenerator) throws NameGenerationException
-    {
-        return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altNameGenerator);
-    }
-
     record ProjectSampleCounters(DbSequence sampleCounterSequence, DbSequence rootCounterSequence)
     {
         public void sync()

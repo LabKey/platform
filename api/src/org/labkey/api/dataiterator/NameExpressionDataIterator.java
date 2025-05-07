@@ -152,7 +152,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
                 if (_newNames.get(nameExpression) == null)
                 {
                     Pair<NameGenerator, NameGeneratorState> nameGenPair = _nameGeneratorMap.get(nameExpression);
-                    _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow, null, null, _extraPropsFns, null));
+                    _newNames.put(nameExpression, nameGenPair.first.generateName(nameGenPair.second, currentRow, null, null, _extraPropsFns));
                 }
                 String newName = _newNames.get(nameExpression);
                 if (!StringUtils.isEmpty(newName))

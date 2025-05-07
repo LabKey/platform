@@ -1621,9 +1621,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     static class _GenerateNamesDataIterator extends SimpleTranslator
     {
         final ExpSampleTypeImpl sampleType;
-        final NameGenerator nameGen;
-        final NameGenerator aliquotNameGen;
-        final NameGeneratorState nameState;
+        final SampleNameGeneratorState nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
         final Container _container;
@@ -1655,20 +1653,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // do nothing
             }
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
-            nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
-
-            if (nameGen != null)
-            {
-                // check for project scoped counter in both name and aliquot name to decide if they need to be included
-                NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
-                if (sampleNameExpressionSummary != null)
-                {
-                    NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
-                    nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
-                }
-            }
-            nameState = nameGen != null ? nameGen.createState(true) : aliquotNameGen.createState(true);
+            nameState = sampleType.getNameGenState(skipDuplicateCheck, true, dataContainer, user);
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;
@@ -1705,40 +1690,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             first = false;
         }
 
-        private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
-        {
-            if (sampleType == null || nameGen.getExpressionSummary() == null)
-                return null;
-
-            boolean hasProjectSampleCounter = false;
-            long minProjectSampleCounter = 0;
-            boolean hasProjectSampleRootCounter = false;
-            long minProjectSampleRootCounter = 0;
-
-            NameGenerator.SampleNameExpressionSummary nameSummary = nameGen.getExpressionSummary().sampleSummary();
-            NameGenerator.SampleNameExpressionSummary aliquotSummary = aliquotNameGen.getExpressionSummary().sampleSummary();
-            if (nameSummary.hasProjectSampleCounter() || aliquotSummary.hasProjectSampleCounter())
-            {
-                hasProjectSampleCounter = true;
-                minProjectSampleCounter = sampleType.getMinSampleCounter();
-            }
-
-            if (nameSummary.hasProjectSampleRootCounter() || aliquotSummary.hasProjectSampleRootCounter())
-            {
-                hasProjectSampleRootCounter = true;
-                minProjectSampleRootCounter = sampleType.getMinRootSampleCounter();
-            }
-
-            if (hasProjectSampleCounter || hasProjectSampleRootCounter)
-                return new NameGenerator.SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, minProjectSampleCounter, minProjectSampleRootCounter);
-
-            return null;
-        }
-
         @Override
         protected void processNextInput()
         {
-            Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
+            Map<String, Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
             Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
@@ -1778,12 +1733,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                 }
 
-                if (isAliquot && aliquotNameGen != null)
-                    generatedName = nameState.nextName(map, null, null, _extraPropsFns, aliquotNameGen);
-                else if (!isAliquot && nameGen != null)
-                    generatedName = nameState.nextName(map, null, null, _extraPropsFns, null);
-                else
-                    addRowError("Error creating naming pattern generator.");
+                generatedName = nameState.nextName(map, _extraPropsFns);
             }
 
             catch (NameGenerator.DuplicateNameException dup)
@@ -2053,6 +2003,55 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 return null; // for aliquot, initialize rollup count/amount to null
             }
+        }
+    }
+
+    public static class SampleNameGeneratorState extends NameGeneratorState
+    {
+        private final NameGenerator aliquotNameGenerator;
+
+        public SampleNameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, @Nullable NameGenerator aliquotNameGenerator)
+        {
+            super(nameGenerator, incrementSampleCounts, nameGenerator.getExpressionSummary() == null ? null : nameGenerator.getExpressionSummary().sampleSummary());
+            this.aliquotNameGenerator = aliquotNameGenerator;
+        }
+
+        public String nextName(Map<String, Object> map, @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
+        {
+            return nextName(map, null, null, _extraPropsFns);
+        }
+
+        public String nextName(Map<String, Object> map,
+                               @Nullable Set<ExpData> parentDatas,
+                               @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
+        {
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
+            String generatedName = null;
+            if (isAliquot && aliquotNameGenerator != null)
+                generatedName = nextName(map, null, null, _extraPropsFns, aliquotNameGenerator);
+            else if (!isAliquot)
+                generatedName = nextName(map, null, null, _extraPropsFns, null);
+
+            return generatedName;
         }
     }
 }
