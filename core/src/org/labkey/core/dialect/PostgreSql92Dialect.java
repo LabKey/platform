@@ -19,12 +19,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.core.admin.sql.ScriptReorderer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,10 +38,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /*
- * PostgreSQL 9.2 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
+ * This is the base class defining PostgreSQL-specific (i.e., not Redshift) behavior. PostgreSQL 9.2 is no longer
+ * supported; however, we keep this class to track changes we implemented specifically for this version.
  */
 abstract class PostgreSql92Dialect extends PostgreSql91Dialect
 {
+    public static final String PRODUCT_NAME = "PostgreSQL";
+    public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
+
+    // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
+    // the future, servers can be compiled with a different limit, and Redshift purports to having a 127-byte limit, so
+    // we query this setting on first connection to each database.
+    private int _maxIdentifierByteLength = 63;
+
     @NotNull
     @Override
     protected Set<String> getReservedWords()
@@ -59,7 +73,27 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     @Override
     public String getProductName()
     {
-        return PostgreSql91Dialect.PRODUCT_NAME;
+        return PRODUCT_NAME;
+    }
+
+    // Query PostgreSQL-specific settings
+    @Override
+    protected void determineSettings(DbScope scope)
+    {
+        if (getServerType().supportsSpecialMetadataQueries())
+        {
+            super.determineSettings(scope);
+
+            String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
+            try
+            {
+                _maxIdentifierByteLength = Integer.valueOf(value);
+            }
+            catch (NumberFormatException e)
+            {
+                LOG.error("Couldn't parse max_identifier_length; continuing with default value of {}", _maxIdentifierByteLength, e);
+            }
+        }
     }
 
     @Override
@@ -102,5 +136,72 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     protected void initializeInClauseGenerator(DbScope scope)
     {
         _inClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
+    }
+
+    @Override
+    public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
+    {
+        super.addAdminWarningMessages(warnings, showAllWarnings);
+        if (showAllWarnings)
+            warnings.add(HtmlString.of(PostgreSqlDialectFactory.getStandardWarningMessage("has not been tested against", getMajorVersion() + ".x")));
+    }
+
+    private int getIdentifierMaxByteLength()
+    {
+        return _maxIdentifierByteLength;
+    }
+
+    @Override
+    public boolean isIdentifierTooLong(String identifier)
+    {
+        return identifier.getBytes(StandardCharsets.UTF_8).length > getIdentifierMaxByteLength();
+    }
+
+    @Override
+    public String truncateAndJoin(String... parts)
+    {
+        String ret = String.join("$", parts);
+
+        if (isIdentifierTooLong(ret))
+        {
+            int maxBytes = getIdentifierMaxByteLength();
+            StringBuilder sb = new StringBuilder(maxBytes);
+            int partsLength = parts.length;
+            int remainingBytes = maxBytes - partsLength + 1; // Make room for dollar signs
+            for (int i = 0; i < partsLength; i++)
+            {
+                String truncated = truncateBytes(parts[i], remainingBytes / (partsLength - i));
+                if (i > 0)
+                    sb.append("$");
+                sb.append(truncated);
+                remainingBytes -= truncated.getBytes(StandardCharsets.UTF_8).length;
+            }
+            ret = sb.toString();
+            assert ret.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        }
+
+        return ret;
+    }
+
+    @Override
+    public String truncate(String str, int reserved)
+    {
+        return truncateBytes(str, getIdentifierMaxByteLength() - reserved);
+    }
+
+    // Truncates based on UTF-8 bytes
+    private static String truncateBytes(String str, int maxBytes)
+    {
+        if (maxBytes < 13)
+            throw new IllegalStateException("maxBytes for legal name too small: " + maxBytes);
+        int len = str.getBytes(StandardCharsets.UTF_8).length;
+        if (len > maxBytes)
+        {
+            String prefix = generateIdentifierPrefix(str);
+            str = prefix + StringUtilsLabKey.rightUtf8Bytes(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
+        }
+        assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
+        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
+        return str;
     }
 }

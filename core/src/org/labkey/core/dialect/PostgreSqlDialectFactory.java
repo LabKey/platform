@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.PostgreSqlServerType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
@@ -114,7 +113,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PostgreSql91Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSql91Dialect.RECOMMENDED;
+        return "LabKey Server " + warning + " " + PostgreSql92Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSql92Dialect.RECOMMENDED;
     }
 
     @Override
