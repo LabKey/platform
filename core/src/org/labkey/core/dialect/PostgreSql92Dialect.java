@@ -22,7 +22,7 @@ import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * This is the base class defining PostgreSQL-specific (i.e., not Redshift) behavior. PostgreSQL 9.2 is no longer
  * supported; however, we keep this class to track changes we implemented specifically for this version.
  */
-abstract class PostgreSql92Dialect extends PostgreSql91Dialect
+abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 {
     public static final String PRODUCT_NAME = "PostgreSQL";
     public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
