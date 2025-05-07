@@ -1014,19 +1014,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Object value = convertWithPrimaryColumn(o, false);
             if (value != null)
             {
-                _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
                 return value;
             }
 
             value = convertWithRemapper(o);
             if (value != null)
             {
-                _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
                 return value;
             }
 
             value = convertWithPrimaryColumn(o, true);
-            _lookupResolutionType = LookupResolutionType.primaryKey; // having converted, let's not try to do it again
             if (value == null)
             {
                 return switch (_missing)
@@ -1349,7 +1346,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         ForeignKey fk = col.getFk();
         LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
-        if (fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
+        if (!_context.hasBeenCoerced() && fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
             // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
             boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));

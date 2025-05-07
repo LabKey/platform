@@ -1504,13 +1504,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
 
                 SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
+                context.setHasBeenCoerced(true);
                 return LoggingDataIterator.wrap(c);
             }
 
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
-
+            context.setHasBeenCoerced(true);
             SimpleTranslator addColumns = new SimpleTranslator(c, context);
             addColumns.setDebugName("add genId and other requried columns");
             Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");

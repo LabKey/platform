@@ -61,6 +61,7 @@ public class DataIteratorContext
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
+    private boolean _hasBeenCoerced = false;
 
     private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
     private Logger _logger;
@@ -172,6 +173,16 @@ public class DataIteratorContext
     public void setLookupResolutionType(LookupResolutionType lookupResolutionType)
     {
         _lookupResolutionType = lookupResolutionType;
+    }
+
+    public boolean hasBeenCoerced()
+    {
+        return _hasBeenCoerced;
+    }
+
+    public void setHasBeenCoerced(boolean hasBeenCoerced)
+    {
+        _hasBeenCoerced = hasBeenCoerced;
     }
 
     /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */

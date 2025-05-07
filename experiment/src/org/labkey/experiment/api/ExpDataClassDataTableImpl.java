@@ -1077,7 +1077,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
-
+                context.setHasBeenCoerced(true);
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
                 if (c.hasProductFolders() && !c.isProject())
                 {
