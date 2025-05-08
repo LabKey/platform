@@ -84,7 +84,7 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
 
     Map<String, String> getHeaders(String requestUri) throws ServletException, IOException, URISyntaxException
     {
-        URLHelper url = new URLHelper(AppProps.getInstance().getContextPath() + requestUri);
+        URLHelper url = new URLHelper(requestUri);
         var req = new _ForwardWrapper(url);
         var res = new _MockHeaderResponse();
         req.getRequestDispatcher(url.getLocalURIString()).forward(TestContext.get().getRequest(), res);

@@ -33,7 +33,7 @@ public class WikiValidationProviderFactory implements SiteValidationProviderFact
     @Override
     public String getDescription()
     {
-        return "Detect wiki rendering and CSP violation issues";
+        return "Report rendering issues and in-line JavaScript in wikis";
     }
 
     @Override
@@ -69,7 +69,7 @@ public class WikiValidationProviderFactory implements SiteValidationProviderFact
                             errors.forEach(error -> addResult(list, wiki, title, "error while converting HTML to Document, \"" + error + "\""));
                             if (null != doc)
                             {
-                                CspUtils.enumerateCspViolations(doc, message -> addResult(list, wiki, title, message));
+                                CspUtils.enumerateScriptViolations(doc, message -> addResult(list, wiki, title, message));
                             }
                         }
                         catch (Exception e)

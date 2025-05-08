@@ -1015,12 +1015,12 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         public ColumnInfo getColumnInfo(int i)
         {
             if (i == 0)
-                return new BaseColumnInfo(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER);
+                return BaseColumnInfo.createNotInDatabase(ROWNUMBER_COLUMNNAME, JdbcType.INTEGER);
             ColumnDescriptor d = _columns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)
                 type = JdbcType.VARCHAR;
-            var ret = new BaseColumnInfo(d.name, type);
+            var ret = BaseColumnInfo.createNotInDatabase(d.name, type);
             if (null != d.propertyURI)
                 ret.setPropertyURI(d.propertyURI);
             return ret;
