@@ -39,10 +39,6 @@ import java.util.Map;
 
 /**
  * View class for rendering CrosstabTableInfos.
- *
- * User: Dave
- * Date: Jan 25, 2008
- * Time: 9:49:51 AM
  */
 public class CrosstabView extends QueryView
 {
@@ -235,7 +231,7 @@ public class CrosstabView extends QueryView
                     rowDimFilter.addClause(clause);
             }
 
-            if (aggFilter.getClauses().size() > 0)
+            if (!aggFilter.getClauses().isEmpty())
                 table.setAggregateFilter(aggFilter);
             view.getRenderContext().setBaseFilter(rowDimFilter);
         }
@@ -244,7 +240,7 @@ public class CrosstabView extends QueryView
     }
 
     @Override
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType)
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, @Nullable Map<String, String> renameColumnMap) throws IOException
     {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();

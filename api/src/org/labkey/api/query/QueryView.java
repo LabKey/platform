@@ -208,7 +208,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     private CustomView _customView;
     private UserSchema _schema;
     private Errors _errors;
-    private List<QueryException> _parseErrors = new ArrayList<>();
+    private final List<QueryException> _parseErrors = new ArrayList<>();
     private QuerySettings _settings;
     private boolean _showRecordSelectors = false;
 
@@ -274,8 +274,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     }
 
 
-    @Deprecated
     /** Use the constructor that takes an Errors object instead */
+    @Deprecated
     protected QueryView(UserSchema schema, QuerySettings settings)
     {
         this(schema, settings, null);
@@ -395,7 +395,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                     if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
-                        out.print(LinkBuilder.labkeyLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
+                        out.print(LinkBuilder.labkeyLink(Objects.toString(resolveText, "resolve"), resolveURL));
                     }
                 }
                 out.write("<br>");
@@ -732,8 +732,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         }
         if (parameterToAdd != null)
             url.addParameter(parameterToAdd, parameterValue);
-        ActionButton actionButton = new ActionButton(label, url);
-        return actionButton;
+        return new ActionButton(label, url);
     }
 
     protected String param(QueryParam param)
@@ -821,7 +820,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 {
                     // Prepend source sort parameter before target's existing sort
                     String targetSort = target.getParameter(key);
-                    if (targetSort != null && targetSort.length() > 0)
+                    if (targetSort != null && !targetSort.isEmpty())
                         value = value + "," + targetSort;
                     target.replaceParameter(newKey, value);
                 }
@@ -1430,7 +1429,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         exportUrl.replaceParameter("scriptType","r");
         TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey,
                 getColumnHeaderType(), exportUrl, null, null);
-        HttpView exportView = rss.getExportToRStudioView(textBean);
+        HttpView<?> exportView = rss.getExportToRStudioView(textBean);
         if (exportView == null)
             return;
         exportButton.addSubPanel("RStudio", exportView);
@@ -1478,7 +1477,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         // if we are not rendering a report or not showing reports, we use the current view name to set the menu item
         // selection, an empty string denotes the default view, a customized default view will have a null name.
         if (_report == null || !_showReports)
-            current = (_customView != null) ? StringUtils.defaultString(_customView.getName(), "") : "";
+            current = (_customView != null) ? Objects.toString(_customView.getName(), "") : "";
 
         URLHelper target = urlChangeView();
         MenuButton button = new MenuButton("Grid Views");
@@ -1660,8 +1659,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
     private static class WrappedItemFilter implements ReportService.ItemFilter
     {
-        private ReportService.ItemFilter _filter;
-        private Map<String, ViewOptions.ViewFilterItem> _filterItemMap = new HashMap<>();
+        private final ReportService.ItemFilter _filter;
+        private final Map<String, ViewOptions.ViewFilterItem> _filterItemMap = new HashMap<>();
 
 
         public WrappedItemFilter(ReportService.ItemFilter filter, QueryDefinition def)
@@ -1739,7 +1738,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 url.replaceParameter(propName, filterType.name());
                 NavTree filterItem = new NavTree(filterType.toString(), url);
 
-                filterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter:" + filterType.toString());
+                filterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter:" + filterType);
 
                 if (selectedFilterType == filterType)
                 {
@@ -1838,7 +1837,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             if (view.getContainer() != null && !view.getContainer().equals(getContainer()))
                 description.append("Inherited from '").append(PageFlowUtil.filter(view.getContainer().getPath())).append("'");
 
-            if (description.length() > 0)
+            if (!description.isEmpty())
                 item.setDescription(description.toString());
 
             try
@@ -1903,7 +1902,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             }
         }
 
-        if (views.size() > 0)
+        if (!views.isEmpty())
             menu.addSeparator();
 
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
@@ -1913,8 +1912,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             // sort the list of reports within each type grouping
             reports.sort((o1, o2) ->
             {
-                String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
-                String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+                String n1 = Objects.toString(o1.getDescriptor().getReportName(), "");
+                String n2 = Objects.toString(o2.getDescriptor().getReportName(), "");
 
                 return n1.compareToIgnoreCase(n2);
             });
@@ -1962,7 +1961,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             }
         }
 
-        if (views.size() > 0)
+        if (!views.isEmpty())
             menu.addSeparator();
 
         for (Map.Entry<String, List<Report>> entry : views.entrySet())
@@ -1971,8 +1970,8 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
             charts.sort((o1, o2) ->
             {
-                String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
-                String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+                String n1 = Objects.toString(o1.getDescriptor().getReportName(), "");
+                String n2 = Objects.toString(o2.getDescriptor().getReportName(), "");
 
                 return n1.compareToIgnoreCase(n2);
             });
@@ -2381,7 +2380,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return getTsvWriter(headerType, Collections.emptyMap());
     }
 
-    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap) throws IOException
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumnMap)
     {
         _exportView = true;
         DataView view = createDataView();
@@ -2451,15 +2450,10 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return ret;
     }
 
-    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
-    {
-        return getExcelWriter(docType, null);
-    }
-
-    public ExcelWriter getExcelWriter(@NotNull ExcelExportConfig config) throws IOException
+    public final ExcelWriter getExcelWriter(@NotNull ExcelExportConfig config) throws IOException
     {
         // Call the appropriate overridden method
-        ExcelWriter ew = getExcelWriter(config.getDocType());
+        ExcelWriter ew = getExcelWriter(config.getDocType(), null);
         return configureExcelWriter(ew, config);
     }
 
@@ -2481,7 +2475,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
      * Sets configuration settings for the provided ExcelWriter according the provided config and this QueryView
      * @param excelWriter to configure (CALLER TO CLOSE)
      * @param config additional properties to set on the writer
-     * @return
      */
     public ExcelWriter configureExcelWriter(ExcelWriter excelWriter, ExcelExportConfig config)
     {
@@ -2565,8 +2558,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 if (col != null && col.isUserEditable())
                 {
                     fieldKeys.add(key);
-                    if (requiredCols.contains(key))
-                        requiredCols.remove(key);
+                    requiredCols.remove(key);
                 }
             }
 
@@ -2836,7 +2828,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
-                ExcelWriter ew = getExcelWriter(docType);
+                ExcelWriter ew = getExcelWriter(docType, null);
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
@@ -2959,7 +2951,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         {
             //table was null--try to get parse errors
             List<QueryException> errors = getParseErrors();
-            if (null != errors && errors.size() > 0)
+            if (null != errors && !errors.isEmpty())
                 throw errors.get(0);
         }
     }

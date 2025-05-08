@@ -313,12 +313,15 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // TODO ensure all aliases in table constructor and get rid of lazy evaluation here so we don't have to avoid checkLocked()
         if (_alias == null)
         {
-            var legal = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
             // there are BaseColumnInfo instances that are not part of a database table (e.g., for a DataLoader)
             // these don't really need an alias, but we need something here
             SqlDialect dialect = getSqlDialect();
             if (null == dialect)
-                return new NotInDatabaseIdentifier(legal);
+            {
+                // CONSIDER set _alias if locked? always set?
+                return new NotInDatabaseIdentifier(getName());
+            }
+            var legal = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
             _alias = getSqlDialect().makeDatabaseIdentifier(legal);
         }
         return _alias;

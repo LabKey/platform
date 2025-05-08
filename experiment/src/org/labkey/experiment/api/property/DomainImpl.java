@@ -70,6 +70,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -1430,7 +1431,7 @@ public class DomainImpl implements Domain
 
     private static String fuzz(String s)
     {
-        if (1==0)
+        if (AppProps.getInstance().isOptionalFeatureEnabled(Domain.EXPERIMENTAL_FUZZ_STORAGE_NAME))
         {
             var r = new Random();
             if (r.nextBoolean())

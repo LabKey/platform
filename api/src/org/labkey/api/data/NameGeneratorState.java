@@ -835,9 +835,7 @@ public class NameGeneratorState implements AutoCloseable
                     if (parentImportAliases.containsKey(colName))
                         inputs.computeIfAbsent(inputField,  (s) -> new LinkedHashSet<>()).addAll(parents);
                     Optional<Map.Entry<String, FieldKey>> aliasEntry = parentImportAliases.entrySet().stream().filter(entry -> entry.getValue().equals(inputField)).findFirst();
-                    aliasEntry.ifPresent(entry -> {
-                        inputs.computeIfAbsent(FieldKey.fromParts(entry.getKey()),  (s) -> new LinkedHashSet<>()).addAll(parents);
-                    });
+                    aliasEntry.ifPresent(entry -> inputs.computeIfAbsent(FieldKey.fromParts(entry.getKey()),  (s) -> new LinkedHashSet<>()).addAll(parents));
                 }
             }
         }
