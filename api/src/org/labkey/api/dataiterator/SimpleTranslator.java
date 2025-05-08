@@ -1383,14 +1383,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public int addConstantColumn(String name, JdbcType type, Object val)
     {
-        ColumnInfo col = new BaseColumnInfo(name, type);
+        ColumnInfo col = BaseColumnInfo.createNotInDatabase(name, type);
         return addColumn(col, new ConstantColumn(val));
     }
 
 
     public int addTimestampColumn(String name)
     {
-        ColumnInfo col = new BaseColumnInfo(name, JdbcType.TIMESTAMP);
+        ColumnInfo col = BaseColumnInfo.createNotInDatabase(name, JdbcType.TIMESTAMP);
         return addColumn(col, new TimestampColumn());
     }
 

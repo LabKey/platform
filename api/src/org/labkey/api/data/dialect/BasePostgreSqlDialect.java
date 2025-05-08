@@ -62,7 +62,6 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -87,16 +86,13 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep the dialects versioned to
-// track changes we've implemented for each version over time.
-public abstract class PostgreSql91Dialect extends SqlDialect
+// Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
+// if not, put it in PostgreSql92Dialect.
+public abstract class BasePostgreSqlDialect extends SqlDialect
 {
     // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
-
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
-    public static final String PRODUCT_NAME = "PostgreSQL";
-    public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
 
     private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -111,15 +107,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
-    // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
+    // standard_conforming_strings is on by default; before 9.1, it was off by default. We check the server setting
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
-
-    // This has been the standard PostgreSQL identifier max byte length for many years. However, this could change in
-    // the future, servers can be compiled with a different limit, and Redshift purports to having a 127-byte limit, so
-    // we query this setting on first connection to each database.
-    private int _maxIdentifierByteLength = 63;
 
     public boolean getStandardConformingStrings()
     {
@@ -867,22 +858,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
-    private void determineSettings(DbScope scope)
+    protected void determineSettings(DbScope scope)
     {
         if (getServerType().supportsSpecialMetadataQueries())
         {
             Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
             _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
-
-            String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
-            try
-            {
-                _maxIdentifierByteLength = Integer.valueOf(value);
-            }
-            catch (NumberFormatException e)
-            {
-                LOG.error("Couldn't parse max_identifier_length; continuing with default value of {}", _maxIdentifierByteLength, e);
-            }
         }
     }
 
@@ -962,65 +943,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     protected Pattern getSQLScriptProcPattern()
     {
         return PROC_PATTERN;
-    }
-
-    private int getIdentifierMaxByteLength()
-    {
-        return _maxIdentifierByteLength;
-    }
-
-    @Override
-    public boolean isIdentifierTooLong(String identifier)
-    {
-        return identifier.getBytes(StandardCharsets.UTF_8).length > getIdentifierMaxByteLength();
-    }
-
-    @Override
-    public String truncateAndJoin(String... parts)
-    {
-        String ret = String.join("$", parts);
-
-        if (isIdentifierTooLong(ret))
-        {
-            int maxBytes = getIdentifierMaxByteLength();
-            StringBuilder sb = new StringBuilder(maxBytes);
-            int partsLength = parts.length;
-            int remainingBytes = maxBytes - partsLength + 1; // Make room for dollar signs
-            for (int i = 0; i < partsLength; i++)
-            {
-                String truncated = truncateBytes(parts[i], remainingBytes / (partsLength - i));
-                if (i > 0)
-                    sb.append("$");
-                sb.append(truncated);
-                remainingBytes -= truncated.getBytes(StandardCharsets.UTF_8).length;
-            }
-            ret = sb.toString();
-            assert ret.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
-        }
-
-        return ret;
-    }
-
-    @Override
-    public String truncate(String str, int reserved)
-    {
-        return truncateBytes(str, getIdentifierMaxByteLength() - reserved);
-    }
-
-    // Truncates based on UTF-8 bytes
-    private static String truncateBytes(String str, int maxBytes)
-    {
-        if (maxBytes < 13)
-            throw new IllegalStateException("maxBytes for legal name too small: " + maxBytes);
-        int len = str.getBytes(StandardCharsets.UTF_8).length;
-        if (len > maxBytes)
-        {
-            String prefix = generateIdentifierPrefix(str);
-            str = prefix + StringUtilsLabKey.rightUtf8Bytes(str, maxBytes - prefix.getBytes(StandardCharsets.UTF_8).length);
-        }
-        assert str.getBytes(StandardCharsets.UTF_8).length <= maxBytes;
-        assert !StringUtilsLabKey.hasBrokenSurrogate(str);
-        return str;
     }
 
     @Override
@@ -2006,8 +1928,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
-        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a generic warning
-            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. " + RECOMMENDED));
     }
 
     @Override

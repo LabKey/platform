@@ -40,6 +40,8 @@ import java.util.concurrent.locks.Lock;
 
 public interface Domain extends IPropertyType
 {
+    String EXPERIMENTAL_FUZZ_STORAGE_NAME = "DomainImpl.fuzzStorageName";
+
     Object get_Ts();
     Container getContainer();
     DomainKind<?> getDomainKind();
