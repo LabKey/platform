@@ -17,6 +17,7 @@
 package org.labkey.audit;
 
 import jakarta.servlet.ServletContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -287,9 +288,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                     if (detailedEvent.getNewRecordMap() != null)
                     {
                         Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(detailedEvent.getNewRecordMap()));
-                        if (newRecord.containsKey("RowId"))
+                        if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
                             sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
-                        else if (newRecord.containsKey("LSID"))
+                        else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
                             lsids.add(newRecord.get("LSID"));
                     }
                 }
@@ -303,9 +304,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 if (event.getNewRecordMap() != null)
                 {
                     Map<String, String> newRecord = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap()));
-                    if (newRecord.containsKey("RowId"))
+                    if (newRecord.containsKey("RowId") && !StringUtils.isEmpty(newRecord.get("RowId")))
                         sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
-                    else if (newRecord.containsKey("LSID"))
+                    else if (newRecord.containsKey("LSID") && !StringUtils.isEmpty(newRecord.get("LSID")))
                         lsids.add(newRecord.get("LSID"));
 
                 }

@@ -1244,9 +1244,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
-            ContainerFilter allCf = ContainerFilter.current(container, user); // use a relaxed CF to find existing data from cross containers
-            if (container.isProductFoldersEnabled())
-                allCf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
+            ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
 
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             existingDataFilter.addCondition(FieldKey.fromParts("Container"), allCf.getIds(), CompareType.IN);

@@ -38,6 +38,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
@@ -263,6 +264,12 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         var resolver = WebdavService.get().getResolver();
         // Resolve path under webdav root
         Path parsed = Path.parse(StringUtils.trim(davPath));
+
+        // Issue 52968: handle context path
+        Path contextPath = AppProps.getInstance().getParsedContextPath();
+        if (parsed.startsWith(contextPath))
+            parsed = parsed.subpath(contextPath.size(), parsed.size());
+
         WebdavResource resource = resolver.lookup(parsed);
         if ((null == resource || !resource.exists()) && !parsed.startsWith(new Path("_webdav")))
             resource = resolver.lookup(new Path("_webdav").append(parsed));
