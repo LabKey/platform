@@ -269,7 +269,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
                 try
                 {
-                    domain.save(user);
+                    domain.save(user);//
                 }
                 catch (ChangePropertyDescriptorException e)
                 {

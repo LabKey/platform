@@ -7939,7 +7939,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (kind != null)
                 domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
-            domain.save(u);
+            domain.save(u);//
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
@@ -7969,7 +7969,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
                                         @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
-                                        GWTDomain<? extends GWTPropertyDescriptor> update)
+                                        GWTDomain<? extends GWTPropertyDescriptor> update,
+                                        String auditUserComment)
     {
         ValidationException errors;
 
@@ -8026,7 +8027,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment, auditUserComment);//
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 

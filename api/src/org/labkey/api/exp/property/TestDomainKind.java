@@ -172,13 +172,13 @@ public class TestDomainKind extends DomainKind<JSONObject>
 
     @Override
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String auditUserComment)
     {
         throw new UnsupportedOperationException();
     }

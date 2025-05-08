@@ -396,7 +396,7 @@ public class ListDefinitionImpl implements ListDefinition
                 // The domain kind cannot lookup the list definition if the domain has not been saved
                 ((ListDomainKind) domain.getDomainKind()).setListDefinition(this);
 
-                domain.save(user);
+                domain.save(user);//
 
                 _def.setDomainId(domain.getTypeId());
                 ListDef inserted = ListManager.get().insert(user, _def, _preferredListIds);

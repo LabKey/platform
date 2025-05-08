@@ -157,10 +157,10 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
 
     @NotNull
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         JSONObject args = options != null ? options.toJSONObject() : null;
-        return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings);
+        return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings, auditUserComment);
     }
 
     @Override

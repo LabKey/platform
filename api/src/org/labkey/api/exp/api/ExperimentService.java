@@ -279,7 +279,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull ExpDataClass dataClass,
         @Nullable DataClassDomainKindProperties options,
         GWTDomain<? extends GWTPropertyDescriptor> original,
-        GWTDomain<? extends GWTPropertyDescriptor> update
+        GWTDomain<? extends GWTPropertyDescriptor> update,
+        String auditUserComment
     );
 
     /**

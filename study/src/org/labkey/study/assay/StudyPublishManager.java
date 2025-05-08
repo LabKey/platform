@@ -725,7 +725,7 @@ public class StudyPublishManager implements StudyPublishService
         if (domain == null)
         {
             domain = PropertyService.get().createDomain(dataset.getContainer(), dataset.getTypeURI(), dataset.getName());
-            domain.save(user);
+            domain.save(user);//
         }
         // Strip out any spaces from existing PropertyDescriptors in the dataset
         boolean propertyChanged = false;
@@ -740,7 +740,7 @@ public class StudyPublishManager implements StudyPublishService
         }
         if (propertyChanged)
         {
-            domain.save(user);
+            domain.save(user);//
         }
 
         // Strip out spaces from any proposed PropertyDescriptor names
@@ -862,7 +862,7 @@ public class StudyPublishManager implements StudyPublishService
                         property.setPropertyURI(property.getPropertyURI().replace("#Run", "#Batch"));
                         propertyNamesToUris.remove(oldName);
                         propertyNamesToUris.put(newPdName, property.getPropertyURI());
-                        domain.save(user);
+                        domain.save(user);//
                         return true;
                     }
                 }

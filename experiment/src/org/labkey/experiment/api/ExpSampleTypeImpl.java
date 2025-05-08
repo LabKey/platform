@@ -760,7 +760,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
                 try
                 {
-                    _domain.save(null);
+                    _domain.save(null);//
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
@@ -846,7 +846,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
                 try
                 {
-                    domain.save(user);
+                    domain.save(user);//
                 }
                 catch (ChangePropertyDescriptorException e)
                 {

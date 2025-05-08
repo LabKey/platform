@@ -76,6 +76,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _plateMetadata;
     private String _status;
     private List<String> _excludedContainerIds;
+    private String _auditUserComment;
 
     public GWTProtocol()
     {
@@ -436,4 +437,15 @@ public class GWTProtocol implements IsSerializable
     {
         _excludedContainerIds = excludedContainerIds;
     }
+
+    public String getAuditUserComment()
+    {
+        return _auditUserComment;
+    }
+
+    public void setAuditUserComment(String auditUserComment)
+    {
+        _auditUserComment = auditUserComment;
+    }
+
 }

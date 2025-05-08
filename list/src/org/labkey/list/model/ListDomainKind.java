@@ -455,7 +455,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings)
+                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         ValidationException exception;
 
@@ -576,7 +576,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
 
                 //update domain properties
-                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment));
+                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment, auditUserComment));
 
                 QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
             }
@@ -681,7 +681,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String userComment)
     {
         ListDefinition list = ListService.get().getList(domain);
         if (list == null)
@@ -689,7 +689,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         try
         {
-            list.delete(user);
+            list.delete(user); //
         }
         catch (DomainNotFoundException e)
         {

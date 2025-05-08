@@ -2329,7 +2329,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                     DomainUtil.addProperty(metadataDomain, pd, new HashMap<>(), new HashSet<>(), null);
                 }
-                metadataDomain.save(user);
+                metadataDomain.save(user);//
                 tx.commit();
             }
         }
@@ -2376,7 +2376,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (dp != null)
                         dp.delete();
                 }
-                metadataDomain.save(user);
+                metadataDomain.save(user);//
                 tx.commit();
             }
         }

@@ -1073,7 +1073,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             try
             {
-                replicateDomain.save(user);
+                replicateDomain.save(user);//
             }
             catch (ExperimentException e)
             {

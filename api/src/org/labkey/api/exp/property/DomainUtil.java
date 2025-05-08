@@ -744,9 +744,15 @@ public class DomainUtil
         return updateDomainDescriptor(orig, update, container, user, false, null);
     }
 
-    /** @return Errors encountered during the save attempt */
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment)
+    {
+        return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null);
+    }
+
+    /** @return Errors encountered during the save attempt */
+    @NotNull
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment)
     {
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -908,7 +914,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user, auditComment);
+                d.save(user, auditComment, auditUserComment);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try

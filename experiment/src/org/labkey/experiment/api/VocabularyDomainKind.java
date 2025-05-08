@@ -107,12 +107,12 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String auditUserComment)
     {
         try
         {
             if (domain.getContainer().hasPermission(user, DesignVocabularyPermission.class))
-                domain.delete(user);
+                domain.delete(user, auditUserComment);
         }
         catch (DomainNotFoundException e)
         {

@@ -605,7 +605,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             Domain d = source.getDomain();
-            d.delete(user);
+            d.delete(user, auditUserComment);
 
             ExperimentServiceImpl.get().deleteDomainObjects(source.getContainer(), source.getLSID());
 
@@ -880,7 +880,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u);
+                    domain.save(u);//
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
@@ -999,7 +999,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         ValidationException errors;
 
@@ -1086,7 +1086,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment, auditUserComment);
 
             if (!errors.hasErrors())
             {

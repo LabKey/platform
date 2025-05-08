@@ -123,13 +123,13 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable T options, Container container, User user, boolean includeWarnings)
+                                            @Nullable T options, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String auditUserComment)
     {
     }
 

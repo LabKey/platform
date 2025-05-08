@@ -88,11 +88,11 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings, String auditUserComment)
     {
         ValidationException validation = checkFieldNameLength(update);
         if (validation != null) return validation;
-        return super.updateDomain(original, update, options, container, user, includeWarnings);
+        return super.updateDomain(original, update, options, container, user, includeWarnings, auditUserComment);
     }
 
     // Issue 52666: Don't allow property names that might cause problems due to a storage vs user-facing name

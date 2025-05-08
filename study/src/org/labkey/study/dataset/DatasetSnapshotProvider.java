@@ -575,7 +575,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     }
                 }
                 if (dirty)
-                    snapshotDomain.save(user);
+                    snapshotDomain.save(user);//
             }
         }
     }

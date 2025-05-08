@@ -402,23 +402,24 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         @Nullable DataClassDomainKindProperties options,
         Container container,
         User user,
-        boolean includeWarnings
+        boolean includeWarnings,
+        String auditUserComment
     )
     {
         ExpDataClass dc = ExperimentService.get().getDataClass(original.getDomainURI());
         if (dc == null)
             return new ValidationException(String.format("Could not resolve data class from LSID \"%s\".", original.getDomainURI()));
-        return ExperimentService.get().updateDataClass(container, user, dc, options, original, update);
+        return ExperimentService.get().updateDataClass(container, user, dc, options, original, update, auditUserComment);
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String auditUserComment)
     {
         ExpDataClass dc = getDataClass(domain);
         if (dc == null)
             throw new NotFoundException("DataClass not found: " + domain.getTypeURI());
 
-        dc.delete(user);
+        dc.delete(user, auditUserComment);
     }
 
     @Override

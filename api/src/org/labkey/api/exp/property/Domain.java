@@ -88,8 +88,8 @@ public interface Domain extends IPropertyType
         delete(user);
     }
     void save(User user) throws ChangePropertyDescriptorException;
-    void save(User user, boolean auditComment) throws ChangePropertyDescriptorException;
-    void save(User user, @Nullable String allowAddBaseProperty) throws ChangePropertyDescriptorException;
+    void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException;
+    void save(User user, @Nullable String auditComment, @Nullable String auditUserComment) throws ChangePropertyDescriptorException;
 
     /** Returns true if this domain has not yet been saved. */
     boolean isNew();

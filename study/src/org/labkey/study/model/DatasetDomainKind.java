@@ -715,7 +715,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
+                                                     DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings, String userComment)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
         StudyImpl study = StudyManager.getInstance().getStudy(container);
@@ -760,7 +760,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, String userComment)//
     {
         DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(domain.getTypeURI());
         if (def == null)
