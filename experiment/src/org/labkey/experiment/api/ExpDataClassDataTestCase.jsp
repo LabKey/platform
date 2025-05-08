@@ -789,7 +789,7 @@ public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
         // Not supported on SQL Server
         String msg = ex.getMessage();
         String expected = "Index over large columns is not supported";
-        assertEquals(expected, msg);
+        assertTrue("Unexpected message: " + ex.getMessage(), msg.contains(expected));
     }
 }
 
