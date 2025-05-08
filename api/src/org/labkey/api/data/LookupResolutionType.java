@@ -2,7 +2,7 @@ package org.labkey.api.data;
 
 public enum LookupResolutionType
 {
-    primaryKey(true, false, true), // known that the use will always supply the pk value
+    primaryKey(true, false, true), // known that the user will always supply the pk value
     alternateThenPrimaryKey(true, true, false), // If there is a situation where it's sometimes a primary and sometimes an alternate key, check for the alternate key first
     primaryThenAlternateKey(true, true, true); // this most closely matches previous behavior when allowImportLookupByAlternateKey was true (added for compatibility; prefer the other options)
 
