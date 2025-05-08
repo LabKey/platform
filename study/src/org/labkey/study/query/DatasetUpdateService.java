@@ -573,11 +573,11 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     {
         try (DbScope.Transaction transaction = StudyService.get().getDatasetSchema().getScope().ensureTransaction())
         {
+            String lsid = keyFromMap(oldRow);
             checkDuplicateUpdate(lsid);// Make sure we've found the original participant before doing the update
             String oldParticipant = getParticipant(oldRow, user, container);
             String newLsid;
 
-            String lsid = keyFromMap(oldRow);
             Long rowId = (Long)oldRow.get(DatasetDomainKind.DSROWID);
             Map<String, Object> oldData = _dataset.getDatasetRow(user, lsid);
 
