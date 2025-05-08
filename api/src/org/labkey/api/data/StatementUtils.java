@@ -170,14 +170,14 @@ public class StatementUtils
     }
 
     /**
-     * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship
-     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
-     *
+     * Create a reusable SQL Statement for inserting rows into a labkey relationship. The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OntologyManager tables.
+     * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
-     *
+     * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
-     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * This shouldn't be a big problem since we don't usually need to optimize the one-row case, and we're moving
      * to provisioned tables for major datatypes.
      */
     public static ParameterMapStatement insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
@@ -206,14 +206,14 @@ public class StatementUtils
 
 
     /**
-     * Create a reusable SQL Statement for updating rows into an labkey relationship.  The relationship
-     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
+     * Create a reusable SQL Statement for updating rows into a labkey relationship. The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OntologyManager tables.
      * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
      * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
-     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * This shouldn't be a big problem since we don't usually need to optimize the one-row case, and we're moving
      * to provisioned tables for major datatypes.
      */
     public static ParameterMapStatement updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
@@ -890,7 +890,7 @@ public class StatementUtils
 
             if (Operation.merge == _operation)
             {
-                // updateCount can equal 0.  This happens particularly when inserting into junction tables where
+                // updateCount can equal 0. This happens particularly when inserting into junction tables where
                 // there are two columns and both are in the primary key
                 if (0 == updateCount)
                 {
@@ -1194,8 +1194,8 @@ public class StatementUtils
     }
 
 
-    /* We could use SQLFragment.appendValue() for most of these.  However, here it is important to force
-
+    /*
+     * We could use SQLFragment.appendValue() for most of these. However, here it is important to force
      * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
      */
     private void toLiteral(SQLFragment f, Object value)
