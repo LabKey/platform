@@ -89,16 +89,16 @@ public class VisualizationVisitTagTable extends VirtualTable
             // TODO: this is a temp fix for the Dataspace usecase
             from.append(ContainerFilter.Type.AllInProject.create(_study.getContainer(), _user).getSQLFragment(getSchema(), new SQLFragment("study.Participant.Container")));
 
-            from.append(") ").append(innerAlias);
+            from.append(") ").appendIdentifier(innerAlias);
             from.append(joinString);
-            from.append("\n) ").append(alias);
+            from.append("\n) ").appendIdentifier(alias);
             return from;
         }
         else
         {
             // allow caller to pass in their own query to use for the SQL to get the participant-to-zero day map (used for CDS study axis alignment by visit tag)
             // NOTE: it is assumed that the query will have the expected columns plus a column for VisitTagMap to filter on
-            return new SQLFragment("(SELECT * FROM " + _altQueryName + " WHERE VisitTagName = '" + _visitTagName + "')").append(alias);
+            return new SQLFragment("(SELECT * FROM " + _altQueryName + " WHERE VisitTagName = '" + _visitTagName + "')").appendIdentifier(alias);
         }
     }
 }

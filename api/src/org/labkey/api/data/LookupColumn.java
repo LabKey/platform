@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -130,10 +129,7 @@ public class LookupColumn extends BaseColumnInfo
         _lookupColumn = lookupColumn;
         _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
-        String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-        int maxLength = lookupColumn.getSqlDialect().getIdentifierMaxLength() - 3; // Leave room for "$" and possible suffixes
-        if (alias.length() > maxLength)
-            alias = AliasManager.truncate(foreignKey.getAlias(),maxLength/2) + "$" + AliasManager.truncate(lookupColumn.getAlias(),maxLength/2);
+        String alias = lookupColumn.getSqlDialect().truncateAndJoin(foreignKey.getAlias().getId(), lookupColumn.getAlias().getId());
         setAlias(alias);
     }
 
@@ -266,22 +262,21 @@ public class LookupColumn extends BaseColumnInfo
 
     /**
      * generate a unique table name for the joined in table
-     * NOTE: postgres may ignore characters past 64 resulting in spurious duplicate alias errors
+     * NOTE: postgres may ignore characters past 64 bytes, resulting in spurious duplicate alias errors
      * ref 10493
-     * @param baseAlias alias of table on "left hand side" of the lookup
+     * @param baseAlias alias of table on the "left-hand side" of the lookup
      */
     @Override
     public String getTableAlias(String baseAlias)
     {
-        return getTableAlias(baseAlias, _foreignKey.getAlias(), _foreignKey.getSqlDialect());
+        return getTableAlias(baseAlias, _foreignKey.getAlias().getId(), _foreignKey.getSqlDialect());
     }
 
     public static String getTableAlias(String baseAlias, String fkAlias, SqlDialect dialect)
     {
-        String alias = baseAlias + (baseAlias.endsWith("$")?"":"$") + fkAlias + "$";
+        String alias = baseAlias + (baseAlias.endsWith("$") ? "" : "$") + fkAlias + "$";
 
-        alias = AliasManager.truncate(alias, dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
-        return alias;
+        return dialect.truncate(alias, 3 /* leave room for possible suffixes */);
     }
 
     @Override

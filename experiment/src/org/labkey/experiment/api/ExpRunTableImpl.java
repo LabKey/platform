@@ -1066,6 +1066,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                 }
 
+                checkDuplicateUpdate(run.getRowId());
                 run.save(user);
 
                 String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);

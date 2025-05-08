@@ -70,7 +70,7 @@ public class RolapTestSchema extends UserSchema
 
     class TestTableInfo extends AbstractTableInfo
     {
-        String sql;
+        SQLFragment sql;
 
         TestTableInfo(String name, ColumnInfo[] columns, Object[][] data)
         {
@@ -82,7 +82,7 @@ public class RolapTestSchema extends UserSchema
             }
             SqlDialect d = getDbSchema().getSqlDialect();
             String union = "";
-            StringBuilder sql = new StringBuilder();
+            SQLFragment sql = new SQLFragment();
             for (Object[] row : data)
             {
                 sql.append(union);
@@ -104,14 +104,14 @@ public class RolapTestSchema extends UserSchema
                 }
             }
             sql.append("\n");
-            this.sql = sql.toString();
+            this.sql = sql;
         }
 
 
         @Override
         protected SQLFragment getFromSQL()
         {
-            return new SQLFragment(sql);
+            return sql;
         }
 
 

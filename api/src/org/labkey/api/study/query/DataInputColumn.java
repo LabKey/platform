@@ -41,8 +41,5 @@ public abstract class DataInputColumn extends PublishResultsQueryView.InputColum
     public Object getValue(RenderContext ctx)
     {
         return calculateValue(ctx);
-        //            if (_requiredColumn == null)
-//                return null;
-//            return ctx.getRow().get(_requiredColumn.getAlias());
     }
 }

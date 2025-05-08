@@ -710,10 +710,10 @@ public class VisualizationCDSGenerator
                     ColumnInfo dsCol = r.getColumnInfo(r.findColumn(new FieldKey(null,"http://cpas.labkey.com/Study#Dataset")));
                     List<Map<String, Object>> list = toList(r);
                     assertTrue(list.stream()
-                            .filter(m -> StringUtils.equals((String) m.get(dsCol.getAlias()), "x"))
+                            .filter(m -> StringUtils.equals((String) dsCol.getValue(m), "x"))
                             .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD4")));
                     assertTrue(list.stream()
-                            .filter(m -> StringUtils.equals((String) m.get(dsCol.getAlias()), "y"))
+                            .filter(m -> StringUtils.equals((String) dsCol.getValue(m), "y"))
                             .allMatch(m -> StringUtils.equals((String) m.get("vis_junit_flow_population"), "CD8")));
                 }
             }

@@ -18,6 +18,7 @@ package org.labkey.api.visualization;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -34,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -341,7 +343,8 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
         public void setFilters(String[] filters)
         {
-            _filters = filters;
+            // Strip out nulls
+            _filters = Arrays.stream(filters).filter(Objects::nonNull).toArray(String[]::new);
         }
 
         public boolean isDateMeasures()
@@ -415,7 +418,10 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         {
             String[] parts = filter.split("\\|");
 
-            assert(parts.length >= 2) : "Invalid filter value";
+            if (parts.length < 2)
+            {
+                throw new ApiUsageException("Invalid filter value");
+            }
 
             _schema = parts[0];
 

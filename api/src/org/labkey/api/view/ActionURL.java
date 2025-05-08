@@ -610,6 +610,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
 
     /** This subclass reuses the base class member _path, so we need to override getParsedPath() as well as getPath() */
+    @Override
     public Path getParsedPath()
     {
         return _contextPath.append(_controller).append(_path).append(_action + ".view");

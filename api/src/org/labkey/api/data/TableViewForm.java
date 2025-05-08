@@ -34,6 +34,8 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -572,6 +574,26 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 values.put(column.getName(), getTypedValue(column));
             else if (includeUntyped && contains(column))
                 values.put(column.getName(), get(column));
+            else if (column.getName().contains("\"") && getViewContext().getRequest() instanceof MultipartHttpServletRequest)
+            {
+                String quoteEncodedFieldName = getMultiPartFormFieldName(column);
+                boolean isFileColFileRemoved = false;
+                if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()))
+                {
+                    MultipartHttpServletRequest request = (MultipartHttpServletRequest) getRequest();
+                    MultipartFile f = request.getFile(quoteEncodedFieldName);
+                    isFileColFileRemoved = f != null && (f.getOriginalFilename() == null || f.getOriginalFilename().isEmpty());
+                }
+
+                if (isFileColFileRemoved)
+                    values.put(column.getName(), null);
+                else
+                {
+                    Object value = getTypedValues().get(quoteEncodedFieldName);
+                    if (value != null)
+                        values.put(column.getName(), value);
+                }
+            }
 
             // Check if there was a file uploaded for the column's value
             if (values.get(column.getName()) == null && File.class.equals(column.getJavaClass()) && getRequest() instanceof MultipartHttpServletRequest)
@@ -764,6 +786,12 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     {
         return column.getPropertyName();
     }
+
+    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
+    {
+        return getFormFieldName(column);
+    }
+
 
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)

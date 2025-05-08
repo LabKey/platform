@@ -373,15 +373,16 @@ public class CohortManager
         // assignment for every known participant/visit combination based on the results of this query.
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
-        SQLFragment pvCohortSql = new SQLFragment("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
-                "FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n" +
-                "  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n" +
-                "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
+        SQLFragment pvCohortSql = new SQLFragment()
+                .append("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ")
+                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
+                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n")
+                .append("  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n")
+                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
                     (!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "") +
-                    "\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n" +
-                "WHERE PV.Container = ? " + (study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "") + "\n" +
-                "ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
-        pvCohortSql.add(study.getContainer());
+                    "\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
+                .append("WHERE PV.Container = ").appendValue(study.getContainer()).append(study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "").append("\n")
+                .append("ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         return pvCohortSql;
     }
 
@@ -397,13 +398,13 @@ public class CohortManager
 
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
-        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ").append(cohortLabelCol.getValueSql("D")).append("\n" +
-                "FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n" +
-                "  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
-                    "\tP.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n" +
-                "WHERE P.Container = ? " + "\n" +
-                "ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNum" : ""));
-        pCohortSql.add(study.getContainer());
+        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
+                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
+                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n")
+                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON ")
+                .append("    P.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
+                .append("WHERE P.Container = ").appendValue(study.getContainer()).append("\n")
+                .append("ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNum" : ""));
         return pCohortSql;
     }
 
@@ -436,7 +437,7 @@ public class CohortManager
                 String participantId = rs.getString("ParticipantId");
                 Integer visitRowId = (Integer) rs.getObject("VisitRowId");
                 Integer assignedCohortId = (Integer) rs.getObject("CohortId");
-                String newCohortLabel = rs.getString(cohortLabelCol.getName());
+                String newCohortLabel = cohortLabelCol.getStringValue(rs);
                 Integer newCohortId = null;
 
                 if (newCohortLabel != null)

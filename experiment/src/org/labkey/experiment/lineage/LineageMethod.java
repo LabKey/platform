@@ -112,8 +112,7 @@ public class LineageMethod extends AbstractTableMethodInfo
     @Override
     public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
     {
-        String alias = _lsidColumn.getAlias();
-        return new SQLFragment(tableAlias + "." + alias);
+        return new SQLFragment().appendIdentifier(tableAlias).append(".").appendIdentifier(_lsidColumn.getAlias());
     }
 
     public static boolean isSimpleString(SQLFragment f)

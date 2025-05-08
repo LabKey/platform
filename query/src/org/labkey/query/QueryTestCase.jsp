@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="org.labkey.api.data.dialect.PostgreSql91Dialect" %>
+<%@ page import="org.labkey.api.data.dialect.BasePostgreSqlDialect" %>
 <%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
@@ -859,7 +859,7 @@ d,seven,twelve,day,month,date,duration,guid
 
     List<SqlTest> postgresOnlyFunctions()
     {
-        int majorVersion = ((PostgreSql91Dialect) CoreSchema.getInstance().getSqlDialect()).getMajorVersion();
+        int majorVersion = ((BasePostgreSqlDialect) CoreSchema.getInstance().getSqlDialect()).getMajorVersion();
 
         List<SqlTest> result = new ArrayList<>(
             List.of(

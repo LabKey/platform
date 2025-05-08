@@ -94,7 +94,7 @@ public class SchemaXMLTestCase extends Assert
         {
             SchemaTableInfo ti = schema.getTable(tableName);
             var xmlColMap = new CaseInsensitiveHashMap<ColumnType>();
-            TableType xmlTable = xmlTableMap.get(ti.getMetaDataName());
+            TableType xmlTable = xmlTableMap.get(ti.getMetaDataIdentifier());
             if (null != xmlTable)
             {
                 for (ColumnType ct : xmlTable.getColumns().getColumnArray())

@@ -373,7 +373,6 @@ public class AssaySampleLookupContext
 
         var column = sampleLookup.columnInfo;
         var table = tableInfoKey.table;
-        var columnName = table.getSqlDialect().getColumnSelectName(column.getAlias());
 
         var tableFilter = new SimpleFilter(tableInfoKey.keyColumn.getFieldKey(), expRunRowId);
         tableFilter.addCondition(column.getFieldKey(), null, CompareType.NONBLANK);
@@ -387,16 +386,16 @@ public class AssaySampleLookupContext
 
         if (column.getJdbcType().isInteger())
         {
-            sql.append("SELECT DA.").append(columnName).append(" AS MaterialRowId");
+            sql.append("SELECT DA.").appendIdentifier(column.getAlias()).append(" AS MaterialRowId");
             sql.append(", ?").add(role).append(" AS MaterialInputRole\n");
             sql.append(" FROM (").append(tableSql).append(") DA");
         }
         else if (column.getJdbcType().isText())
         {
-            sql.append("SELECT MA.RowId").append(" AS MaterialRowId");
-            sql.append(", ?").add(role).append(" AS MaterialInputRole\n");
+            sql.append("SELECT MA.RowId AS MaterialRowId");
+            sql.append(", ").appendValue(role).append(" AS MaterialInputRole\n");
             sql.append(" FROM exp.Material MA\n");
-            sql.append(" INNER JOIN (").append(tableSql).append(") DA ON MA.name = DA.").append(columnName).append("\n");
+            sql.append(" INNER JOIN (").append(tableSql).append(") DA ON MA.name = DA.").appendIdentifier(column.getAlias()).append("\n");
 
             if (sampleLookup.expSampleType != null)
                 sql.append(" WHERE MA.MaterialSourceId = ?").add(sampleLookup.expSampleType.getRowId()).append("\n");

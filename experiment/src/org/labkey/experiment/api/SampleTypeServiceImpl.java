@@ -295,7 +295,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Material m : batch)
             {
                 ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(task);
+                impl.index(task, null /* null tableInfo since samples may belong to multiple containers*/);
             }
         });
     }

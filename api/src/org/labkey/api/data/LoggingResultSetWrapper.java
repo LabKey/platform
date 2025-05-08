@@ -145,7 +145,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
                 {
                     try
                     {
-                        int index = findColumn(column.getAlias().toLowerCase());
+                        int index = column.findColumn(this);
                         return new Pair<>(column,index);
                     }
                     catch (SQLException e)

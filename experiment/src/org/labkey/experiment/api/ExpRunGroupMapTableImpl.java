@@ -120,7 +120,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container")));
         ret.append(") X ");
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        ret.append("\n").append(filterFrag).append(") ").append(alias);
+        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return ret;
     }

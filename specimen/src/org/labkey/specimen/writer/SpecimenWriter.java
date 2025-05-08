@@ -131,17 +131,17 @@ public class SpecimenWriter extends AbstractSpecimenWriter
                 {
                     col = new SQLFragment("NULL");
                 }
-                col.append(" AS ").append(dc.getDisplayColumnInfo().getAlias());
+                col.append(" AS ").appendIdentifier(dc.getDisplayColumnInfo().getAlias());
             }
             else
             {
                 // DisplayColumn will use getAlias() to retrieve the value from the map
-                col = new SQLFragment(column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias());
+                col = new SQLFragment(column.getFkTableAlias() + "." + column.getFkColumn() + " AS ").appendIdentifier(dc.getDisplayColumn().getAlias());
 
                 // Don't export values for columns set at or above the PHI export level
                 if (shouldRemovePhi(ctx.getPhiLevel(), column, queryColumn))
                 {
-                    col = new SQLFragment("NULL AS " + dc.getDisplayColumn().getAlias());
+                    col = new SQLFragment("NULL AS ").appendIdentifier(dc.getDisplayColumn().getAlias());
                 }
             }
 
@@ -167,7 +167,7 @@ public class SpecimenWriter extends AbstractSpecimenWriter
                     sql.append(column.getJoinType()).append(" ");
                 sql.append("JOIN ").append(specimenTableManager.getTableInfoFromFkTableName(column.getFkTable())).append(" AS ").append(column.getFkTableAlias()).append(" ON ");
                 sql.append("(se.");
-                sql.append(ci.getSelectName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
+                sql.appendIdentifier(ci.getSelectIdentifier()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
             }
         }
 
@@ -227,9 +227,9 @@ public class SpecimenWriter extends AbstractSpecimenWriter
             if (null != queryTable.getColumn(column.getDbColumnName()))
                 return queryTable.getColumn(column.getDbColumnName());
 
-            String legalName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, column.getDbColumnName());
-            if (null != queryTable.getColumn(legalName))
-                return queryTable.getColumn(legalName);
+            var legalName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, column.getDbColumnName());
+            if (null != queryTable.getColumn(legalName.getId()))
+                return queryTable.getColumn(legalName.getId());
 
             if (column.getDbColumnName().toLowerCase().endsWith("id"))
             {

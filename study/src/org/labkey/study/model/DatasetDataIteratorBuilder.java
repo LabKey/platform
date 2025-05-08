@@ -593,7 +593,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
+            ColumnInfo col = BaseColumnInfo.createNotInDatabase(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
@@ -603,9 +603,8 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             DatasetLsidImportHelper helper = new DatasetLsidImportHelper(_datasetDefinition);
             Callable<Object> callable = helper.getCallable(this, indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput, indexContainerOutput);
-            ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
+            ColumnInfo col = BaseColumnInfo.createNotInDatabase("lsid", JdbcType.VARCHAR);
             indexLSIDOutput = addColumn(col, callable);
-
             return indexLSIDOutput;
         }
 
@@ -613,7 +612,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             Callable<Object> callable = ParticipantSeqNumImportHelper.getCallable(this, indexPtidOutput, indexSequenceNumOutput);
 
-            var col = new BaseColumnInfo("participantsequencenum", JdbcType.VARCHAR);
+            var col = BaseColumnInfo.createNotInDatabase("participantsequencenum", JdbcType.VARCHAR);
             return addColumn(col, callable);
         }
 

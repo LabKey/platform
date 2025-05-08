@@ -5747,29 +5747,4 @@ public class SpecimenController extends SpringActionController
             root.addChild("Insert " + _form.getQueryName());
         }
     }
-/*
-    // Used for testing
-    @RequiresSiteAdmin
-    public class DropVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-
-    // Used for testing
-    @RequiresSiteAdmin
-    public class AddVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-*/
 }

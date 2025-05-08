@@ -391,9 +391,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         {
             TableInfo wellTable = getWellTable(container, user);
             TableInfo metadataTable = getPlateMetadataTable(container, user);
-            Set<FieldKey> metadataFields = emptySet();
+            List<ColumnInfo> metadataColumns = emptyList();
             if (metadataTable != null)
-                metadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+                metadataColumns = metadataTable.getColumns();
 
             for (Map<String, Object> dataMap : data)
             {
@@ -401,10 +401,11 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 if (dataRow.containsKey(WELL_LOCATION))
                 {
-                    for (String colName : dataRow.keySet())
+                    for (ColumnInfo metadataColumn : metadataColumns)
                     {
-                        ColumnInfo col = wellTable.getColumn(FieldKey.fromParts(colName));
-                        if (col != null && metadataFields.contains(col.getFieldKey()))
+                        // Issue 53017: well dataMap/dataRow is expected to be keyed by column name
+                        ColumnInfo col = wellTable.getColumn(metadataColumn.getFieldKey());
+                        if (col != null && dataRow.get(col.getName()) != null)
                         {
                             customFields.add(new PlateCustomField(col.getPropertyURI()));
                         }
@@ -1813,23 +1814,24 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         var sourceWellLSIDS = Arrays.stream(sourceWellData).map(data -> data.get("LSID")).toList();
         var sourceFilter = new SimpleFilter(FieldKey.fromParts("LSID"), sourceWellLSIDS, CompareType.IN);
 
-        final Set<FieldKey> wellMetadataFields;
+        final List<ColumnInfo> wellMetadataFields;
         final Map<String, Map<String, Object>> sourceMetaData;
 
         var metadataTable = getPlateMetadataTable(container, user);
         if (metadataTable != null)
         {
-            wellMetadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
-            wellMetadataFields.remove(FieldKey.fromParts("LSID"));
+            wellMetadataFields = metadataTable.getColumns()
+                    .stream().filter(c -> !FieldKey.fromParts("LSID").equals(c.getFieldKey()))
+                    .toList();
 
-            var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection();
+            var metaDataRows = new TableSelector(metadataTable, sourceFilter, null).getMapCollection(); // note that row map keys here are column.getAlias()
             sourceMetaData = new CaseInsensitiveHashMap<>();
             for (var row : metaDataRows)
                 sourceMetaData.put((String) row.get("LSID"), row);
         }
         else
         {
-            wellMetadataFields = emptySet();
+            wellMetadataFields = emptyList();
             sourceMetaData = emptyMap();
         }
 
@@ -1847,13 +1849,14 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (sourceMetaData.containsKey(sourceWellLSID))
             {
-                var sourceMetaDataRow = (Map<String, Object>) sourceMetaData.get(sourceWellLSID);
+                var sourceMetaDataRow = sourceMetaData.get(sourceWellLSID);
 
-                for (var field : wellMetadataFields)
+                for (ColumnInfo col : wellMetadataFields)
                 {
-                    var value = sourceMetaDataRow.get(field.toString());
+                    // Issue 53017: get row value based on ColumnInfo, and put in updateCopyRow using column name as key
+                    var value = col.getValue(sourceMetaDataRow);
                     if (value != null)
-                        updateCopyRow.put(FieldKey.fromParts(field.toString()).toString(), value);
+                        updateCopyRow.put(col.getName(), value);
                 }
             }
 
@@ -3825,19 +3828,38 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         var metadataMap = new HashMap<String, Map<String, Object>>();
         var ignoredKeys = CaseInsensitiveHashSet.of("_row", WellTable.Column.Lsid.name());
 
-        new TableSelector(metadataTable, filter, null).getMapCollection().forEach(row -> {
-            var lsid = (String) row.get(WellTable.Column.Lsid.name());
-            var metadata = new CaseInsensitiveHashMap<>();
+        try (Results results = new TableSelector(metadataTable, filter, null).getResults())
+        {
+            Map<FieldKey, ColumnInfo> fieldMap = results.getFieldMap();
 
-            for (var key : row.keySet())
+            while (results.next())
             {
-                if (row.get(key) != null && !ignoredKeys.contains(key))
-                    metadata.put(key, row.get(key));
-            }
+                var row = results.getFieldKeyRowMap();
+                var metadata = new CaseInsensitiveHashMap<>();
 
-            if (!metadata.isEmpty())
-                metadataMap.put(lsid, metadata);
-        });
+                row.forEach((key, value) -> {
+                    if (value != null)
+                    {
+                        // Issue 53017: usages of getWellData are expecting the WellData metadata map to be keyed
+                        // by column names (see savePlateImpl wellQus.insertRows() which requires rows to be keyed
+                        // by column names)
+                        String colName = fieldMap.get(key).getName();
+                        if (!ignoredKeys.contains(colName))
+                            metadata.put(colName, value);
+                    }
+                });
+
+                if (!metadata.isEmpty())
+                {
+                    var lsid = (String) row.get(WellTable.Column.Lsid.fieldKey());
+                    metadataMap.put(lsid, metadata);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         if (!metadataMap.isEmpty())
         {

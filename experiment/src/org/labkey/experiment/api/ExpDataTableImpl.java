@@ -219,7 +219,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                     // don't set container on property column so that inherited domain properties work
                     var projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
-                    customProps.add(projectColumn.getAlias());
+                    customProps.add(projectColumn.getAlias().getId());
                 }
                 setDomain(domain);
             }
@@ -897,7 +897,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 assertEquals("Incorrect WebDavUrlRelative", tc.getUrlRelative(), webDavUrlRelative);
                 assertEquals("Incorrect WebDavUrl", tc.getUrl(), webDavUrl);
 
-                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
+                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx, null);
                 try (VirtualFile f = new MemoryVirtualFile())
                 {
                     try (OutputStream os = f.getOutputStream("excel.xlsx"))

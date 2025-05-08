@@ -725,16 +725,16 @@ public class DbSchema
             {
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
-                    sbSql.append(" INSERT INTO "+ tempTableName );
-                    sbSql.append(" SELECT " + String.valueOf(++row) + " AS rowId, ").appendValue(t.getSelectName()).append(" AS TableName, ");
+                    sbSql.append(" INSERT INTO " + tempTableName );
+                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).append(" AS TableName, ");
                     List<ColumnInfo> pkColumns = t.getPkColumns();
 
                     if (pkColumns.size() == 1)
                     {
                         ColumnInfo pkColumn = pkColumns.get(0);
-                        sbSql.appendValue(pkColumn.getSelectName());
+                        sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
                         sbSql.append(" AS FirstPKColName, ");
-                        sbSql.append(" CAST( " + t.getSelectName() + "." + pkColumn.getSelectName() + " AS VARCHAR(100)) AS FirstPKValue, ");
+                        sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).append(" AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -747,10 +747,10 @@ public class DbSchema
                         sbSql.append(" NULL AS FirstPKValue, ");
                     }
                     sbSql.appendValue(moduleName).append(" AS ModuleName, ");
-                    sbSql.append(" CAST( " + t.getSelectName() + "." + col.getName() + " AS VARCHAR(100)) AS OrphanedContainer ");
-                    sbSql.append(" FROM " + t.getSelectName());
-                    sbSql.append( " LEFT OUTER JOIN " + " core.Containers C ");
-                    sbSql.append(" ON (" + t.getSelectName() + ".Container = C.EntityId ) ");
+                    sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).append(" AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.append(" FROM ").appendIdentifier(t.getSelectName());
+                    sbSql.append( " LEFT OUTER JOIN  core.Containers C ");
+                    sbSql.append(" ON (").appendIdentifier(t.getSelectName()).append(".").append("Container = C.EntityId ) ");
                     sbSql.append( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes

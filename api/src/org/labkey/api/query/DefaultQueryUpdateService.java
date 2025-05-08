@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -586,6 +587,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         {
             throw e.getLastRowError();
         }
+
+        checkDuplicateUpdate(keys);
 
         return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())
     }
