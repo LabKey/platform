@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -82,5 +83,11 @@ public class QueryUpdateForm extends TableViewForm
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
         return (_ignorePrefix ? "" : PREFIX) + column.getName();
+    }
+
+    @Override
+    public String getMultiPartFormFieldName(@NotNull ColumnInfo column)
+    {
+        return (_ignorePrefix ? "" : PREFIX) + DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(column.getName());
     }
 }

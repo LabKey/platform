@@ -1,5 +1,6 @@
 package org.labkey.api.data;
 
+import org.apache.poi.ss.usermodel.Row;
 import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
@@ -37,7 +38,7 @@ public class ExcelCellUtils
 
     public static int getSimpleType(DisplayColumn dc)
     {
-        Class valueClass = dc.getDisplayValueClass();
+        Class<?> valueClass = dc.getDisplayValueClass();
 
         if (Integer.class.isAssignableFrom(valueClass) || Integer.TYPE.isAssignableFrom(valueClass) ||
                 Long.class.isAssignableFrom(valueClass) || Long.TYPE.isAssignableFrom(valueClass) ||
@@ -188,6 +189,17 @@ public class ExcelCellUtils
                 if (s.length() > 32767)
                 {
                     s = s.substring(0, 32762) + "...";
+                }
+                // Ensure the row is tall enough to show the full values when there are newlines
+                int newlines = StringUtils.countMatches(s, '\n');
+                if (newlines > 0)
+                {
+                    Row row = cell.getRow();
+                    float minHeight = row.getSheet().getDefaultRowHeightInPoints() * newlines;
+                    if (row.getHeightInPoints() < minHeight)
+                    {
+                        row.setHeightInPoints(minHeight);
+                    }
                 }
 
                 cell.setCellValue(s);

@@ -15,6 +15,7 @@
  */
 package org.labkey.specimen.report;
 
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
@@ -288,10 +289,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         ParticipantGroup group = ParticipantGroupService.get().getParticipantGroup(getContainer(), getUser(), ptidListId);
         if (group != null)
         {
-            StringBuilder sql = new StringBuilder();
+            SQLFragment sql = new SQLFragment();
             sql.append("(").append(StudyService.get().getSubjectColumnName(getContainer())).append(" IN (SELECT ");
-            sql.append("ParticipantId FROM ").append(SpecimenSchema.get().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))");
-            filter.addWhereClause(sql.toString(), new Object[] { ptidListId });
+            sql.append("ParticipantId FROM ").append(SpecimenSchema.get().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))").add(ptidListId);
+            filter.addWhereClause(sql);
         }
     }
 

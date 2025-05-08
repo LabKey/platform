@@ -31,7 +31,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 
@@ -57,9 +56,9 @@ public class TableUpdaterFileListener implements FileListener
 
     private final TableInfo _table;
     private final SQLFragment _containerFrag;
-    private final String _pathColumn;
+    private final ColumnInfo _pathColumn;
     private final PathGetter _pathGetter;
-    private final String _keyColumn;
+    private final ColumnInfo _keyColumn;
 
     public interface PathGetter
     {
@@ -177,19 +176,23 @@ public class TableUpdaterFileListener implements FileListener
         this(table, pathColumn, pathGetter, keyColumn, null);
     }
 
-    public TableUpdaterFileListener(TableInfo table, String pathColumn, PathGetter pathGetter, @Nullable String keyColumn, @Nullable SQLFragment containerFrag)
+    public TableUpdaterFileListener(TableInfo table, String pathColumnName, PathGetter pathGetter, @Nullable String keyColumnName, @Nullable SQLFragment containerFrag)
     {
         _table = table;
-        _pathColumn = pathColumn;
+        _pathColumn = table.getColumn(pathColumnName);
+        if (null == _pathColumn)
+            throw new IllegalStateException("Column not found: " + pathColumnName);
+        _keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
+        if (null != keyColumnName && null == _keyColumn)
+            throw new IllegalStateException("Column not found: " + keyColumnName);
         _pathGetter = pathGetter;
-        _keyColumn = keyColumn;
         _containerFrag = containerFrag;
     }
 
     @Override
     public String getSourceName()
     {
-        return _table.getSchema().getName() + "." + _table.getName() + "." + _pathColumn;
+        return _table.getSchema().getName() + "." + _table.getName() + "." + _pathColumn.getName();
     }
 
     @Override
@@ -213,7 +216,6 @@ public class TableUpdaterFileListener implements FileListener
     {
         DbSchema schema = _table.getSchema();
         SqlDialect dialect = schema.getSqlDialect();
-        String dbColumnName = _table.getSqlDialect().makeLegalIdentifier(_pathColumn);
 
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
@@ -230,7 +232,7 @@ public class TableUpdaterFileListener implements FileListener
             sharedSQL.append("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
-        sharedSQL.appendIdentifier(dbColumnName);
+        sharedSQL.appendIdentifier(_pathColumn.getSelectIdentifier());
         sharedSQL.append(" = ");
 
         String srcPath = getSourcePath(src, container);
@@ -248,14 +250,14 @@ public class TableUpdaterFileListener implements FileListener
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
         singleEntrySQL.append("? WHERE (");
-        singleEntrySQL.appendIdentifier(dbColumnName);
+        singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
         singleEntrySQL.append(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
         if (null != srcPathWithout)
         {
             singleEntrySQL.append(" OR ");
-            singleEntrySQL.appendIdentifier(dbColumnName);
+            singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
             singleEntrySQL.append(" = ?");
             singleEntrySQL.add(srcPathWithout);
         }
@@ -286,11 +288,11 @@ public class TableUpdaterFileListener implements FileListener
                 srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
             SQLFragment whereClause = new SQLFragment(" WHERE ");
-            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment().appendIdentifier(dbColumnName))).append(" = 1");
+            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).append(" = 1");
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(new SQLFragment().appendIdentifier(dbColumnName), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(_pathColumn.getSelectIdentifier().getSql(), new SQLFragment(Integer.toString(srcPath.length() + 1)), new SQLFragment("5000")))));
             childPathsSQL.append(whereClause);
             childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
@@ -317,9 +319,9 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public Collection<File> listFiles(@Nullable Container container)
     {
-        Set<String> columns = Collections.singleton(_pathColumn);
+        Set<String> columns = Collections.singleton(_pathColumn.getName());
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts(_pathColumn), null, CompareType.NONBLANK);
+        filter.addCondition(_pathColumn, null, CompareType.NONBLANK);
         if (container != null)
         {
             ColumnInfo containerColumn = _table.getColumn("container");
@@ -332,7 +334,7 @@ public class TableUpdaterFileListener implements FileListener
                 filter.addCondition(new SimpleFilter.SQLClause("1 = 0", null));
         }
 
-        Sort sort = new Sort(_pathColumn);
+        Sort sort = new Sort(_pathColumn.getFieldKey());
         TableSelector selector = new TableSelector(_table, columns, filter, sort);
 
         selector.setMaxRows(Table.ALL_ROWS);
@@ -383,10 +385,10 @@ public class TableUpdaterFileListener implements FileListener
                 selectFrag.append("  NULL AS ModifiedBy,\n");
         }
 
-        selectFrag.append("  ").appendIdentifier(dialect.makeLegalIdentifier(_pathColumn)).append(" AS FilePath,\n");
+        selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" AS FilePath,\n");
 
         if (_keyColumn != null)
-            selectFrag.append("  ").appendIdentifier(dialect.makeLegalIdentifier(_keyColumn)).append(" AS SourceKey,\n");
+            selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).append(" AS SourceKey,\n");
         else
             selectFrag.append("  NULL AS SourceKey,\n");
 
@@ -394,7 +396,7 @@ public class TableUpdaterFileListener implements FileListener
         selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
-        selectFrag.append("WHERE ").appendIdentifier(dialect.makeLegalIdentifier(_pathColumn)).append(" IS NOT NULL\n");
+        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" IS NOT NULL\n");
 
         return selectFrag;
     }
@@ -430,7 +432,7 @@ public class TableUpdaterFileListener implements FileListener
                 (null != _table.getColumn("folder")) ?
                         SimpleFilter.createContainerFilter(container, "folder") :
                         new SimpleFilter();
-        filter.addCondition(FieldKey.fromString(_pathColumn), srcPath);
+        filter.addCondition(_pathColumn, srcPath);
         return new TableSelector(_table, filter, null).exists();
     }
 }

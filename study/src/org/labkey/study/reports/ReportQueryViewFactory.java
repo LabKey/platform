@@ -141,9 +141,14 @@ public class ReportQueryViewFactory
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
-            String id = getViewContext().getRequest().getParameter(Dataset.DATASET_KEY);
-            if (id != null)
-                button.addMenuItem("Set Default", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+
+            // Don't allow guests to set a default view, Issue 52863
+            if (!getUser().isGuest())
+            {
+                String id = getViewContext().getRequest().getParameter(Dataset.DATASET_KEY);
+                if (id != null)
+                    button.addMenuItem("Set Default", getViewContext().cloneActionURL().setAction(StudyController.ViewPreferencesAction.class));
+            }
 
             return button;
         }

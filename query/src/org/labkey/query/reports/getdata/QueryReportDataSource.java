@@ -25,24 +25,26 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: 5/15/13
- */
 public interface QueryReportDataSource extends ReportDataSource
 {
-    public QueryDefinition getQueryDefinition();
+    QueryDefinition getQueryDefinition();
 
-    public String getLabKeySQL();
+    String getLabKeySQL();
 
-    public Map<FieldKey, ColumnInfo> getColumnMap(Collection<FieldKey> requiredInputs);
+    Map<FieldKey, ColumnInfo> getColumnMap(Collection<FieldKey> requiredInputs);
 
-    @NotNull
-    public UserSchema getSchema();
+    @NotNull UserSchema getSchema();
 
-    public static class DummyQueryDataSource implements QueryReportDataSource
+    class DummyQueryDataSource implements QueryReportDataSource
     {
         private static final String DUMMY_SCHEMA_TABLE = "mySchema.myTable";
+
+        private final UserSchema _schema;
+
+        public DummyQueryDataSource(UserSchema schema)
+        {
+            _schema = schema;
+        }
 
         @Override
         public QueryDefinition getQueryDefinition()
@@ -60,7 +62,7 @@ public interface QueryReportDataSource extends ReportDataSource
         @Override
         public UserSchema getSchema()
         {
-            throw new UnsupportedOperationException();
+            return _schema;
         }
 
         @Override

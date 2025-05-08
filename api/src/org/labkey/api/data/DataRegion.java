@@ -1634,14 +1634,15 @@ public class DataRegion extends DisplayElement
                     continue;
 
                 ColumnInfo col = renderer.getColumnInfo();
-
                 final List<Aggregate.Result> result;
 
                 if (col != null)
                 {
-                    result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
-                    if (result == null)
-                        aggregateResults.get(renderer.getColumnInfo().getAlias());
+                    // Why is aggregateResults a map of FieldKey.toString()??
+                    var r = aggregateResults.get(col.getFieldKey().toString());
+                    if (r == null)
+                        r = aggregateResults.get(col.getAlias().getId());
+                    result = r;
                 }
                 else
                 {
@@ -2141,8 +2142,7 @@ public class DataRegion extends DisplayElement
             ColumnInfo col = entry.getValue();
             SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-            String safeColumnName = table.getSqlDialect().getColumnSelectName(col.getAlias());
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + safeColumnName + " AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
             sql.append(selectSql);
             sql.append(") AS D");
 

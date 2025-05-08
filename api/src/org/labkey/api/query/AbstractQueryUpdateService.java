@@ -107,10 +107,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -137,6 +140,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
      */
     protected boolean _enableExistingRecordsDataIterator = true;
+    protected Set<Object> _previouslyUpdatedRows = new HashSet<>();
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -148,6 +152,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected TableInfo getQueryTable()
     {
         return _queryTable;
+    }
+
+    public @NotNull Set<Object> getPreviouslyUpdatedRows()
+    {
+        return _previouslyUpdatedRows == null ? new HashSet<>() : _previouslyUpdatedRows;
     }
 
     @Override
@@ -834,6 +843,43 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    protected void checkDuplicateUpdate(Object pkVals) throws ValidationException
+    {
+        if (pkVals == null)
+            return;
+
+        Set<Object> updatedRows = getPreviouslyUpdatedRows();
+
+        Object[] keysObj;
+        if (pkVals.getClass().isArray())
+            keysObj = (Object[]) pkVals;
+        else if (pkVals instanceof Map map)
+        {
+            List<Object> orderedKeyVals = new ArrayList<>();
+            SortedSet<String> sortedKeys = new TreeSet<>(map.keySet());
+            for (String key : sortedKeys)
+                orderedKeyVals.add(map.get(key));
+            keysObj = orderedKeyVals.toArray();
+        }
+        else
+            keysObj = new Object[]{pkVals};
+
+        if (keysObj.length == 1)
+        {
+            if (updatedRows.contains(keysObj[0]))
+                throw new ValidationException("Duplicate key provided: " + keysObj[0]);
+            updatedRows.add(keysObj[0]);
+            return;
+        }
+
+        List<String> keys = new ArrayList<>();
+        for (Object key : keysObj)
+            keys.add(String.valueOf(key));
+        if (updatedRows.contains(keys))
+            throw new ValidationException("Duplicate key provided: " + StringUtils.join(keys, ", "));
+        updatedRows.add(keys);
+    }
+
     @Override
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
@@ -1288,6 +1334,15 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             // test new row
             assertEquals("THREE", rows.get(3).get("s"));
             assertNull(rows.get(3).get("i"));
+
+            // merge should fail if duplicate keys are provided
+            errors = new BatchValidationException();
+            mergeRows = new ArrayList<Map<String,Object>>();
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            mergeRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
+            qus.mergeRows(user, c, MapDataIterator.of(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            assertTrue(errors.hasErrors());
+            assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
         }
 
         @Test
@@ -1325,6 +1380,35 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
             count = qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
             assertTrue(context.getErrors().hasErrors());
+
+            // Issue 52728: update should fail if duplicate key is provide
+            updateRows = new ArrayList<Map<String,Object>>();
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-2"));
+            updateRows.add(CaseInsensitiveHashMap.of(pkName,2,colName,"TWO-UP-UP-2"));
+
+            // use DIB
+            context = new DataIteratorContext();
+            context.setInsertOption(InsertOption.UPDATE);
+            qus.loadRows(user, c, MapDataIterator.of(updateRows.get(0).keySet(), updateRows), context, null);
+            assertTrue(context.getErrors().hasErrors());
+            assertTrue("Duplicate key error: " + context.getErrors().getMessage(), context.getErrors().getMessage().contains("Duplicate key provided: 2"));
+
+            // use updateRows
+            if (!_useAlias) // _update using alias is not supported
+            {
+                BatchValidationException errors = new BatchValidationException();
+                try
+                {
+                    qus.updateRows(user, c, updateRows, null, errors, null, null);
+                }
+                catch (Exception e)
+                {
+
+                }
+                assertTrue(errors.hasErrors());
+                assertTrue("Duplicate key error: " + errors.getMessage(), errors.getMessage().contains("Duplicate key provided: 2"));
+
+            }
         }
 
         @Test

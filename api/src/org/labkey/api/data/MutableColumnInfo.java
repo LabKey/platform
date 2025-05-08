@@ -18,6 +18,8 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 {
     void setFieldKey(FieldKey key);
 
+    void setAlias(DatabaseIdentifier alias);
+
     void setAlias(String alias);
 
     void setMetaDataName(String metaDataName);

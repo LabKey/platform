@@ -19,7 +19,7 @@ public enum PostgreSqlServerType
         }
 
         @Override
-        boolean supportsSpecialMetadataQueries()
+        public boolean supportsSpecialMetadataQueries()
         {
             return true;
         }
@@ -39,7 +39,7 @@ public enum PostgreSqlServerType
         }
 
         @Override
-        boolean supportsSpecialMetadataQueries()
+        public boolean supportsSpecialMetadataQueries()
         {
             return false;
         }
@@ -47,7 +47,7 @@ public enum PostgreSqlServerType
 
     abstract boolean shouldTest();
     abstract boolean supportsGroupConcat();
-    abstract boolean supportsSpecialMetadataQueries();
+    public abstract boolean supportsSpecialMetadataQueries();
 
     public static PostgreSqlServerType getFromParameterStatuses(Map<String, String> parameterStatuses)
     {

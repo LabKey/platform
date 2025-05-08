@@ -27,6 +27,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -35,7 +36,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -60,9 +60,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: jeckels
- * Date: May 7, 2009
- *
  * If you touch this file, run AssayTest, FlowSpecimenTest, ElispotAssay, and TargetStudyTest
  */
 public class SpecimenForeignKey extends LookupForeignKey
@@ -330,6 +327,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         return null;
     }
 
+    String getBaseAlias(String parentAlias, DatabaseIdentifier fkAlias)
+    {
+        return getBaseAlias(parentAlias, fkAlias.getId());
+    }
 
     String getBaseAlias(String parentAlias, String fkAlias)
     {
@@ -419,14 +420,14 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 sql.append(assaySubqueryAlias);
                 sql.append(".");
-                sql.append(_assaySpecimenIdCol.getAlias());
+                sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
             }
             else
             {
                 sql.append("CAST(");
                 sql.append(assaySubqueryAlias);
                 sql.append(".");
-                sql.append(_assaySpecimenIdCol.getAlias());
+                sql.appendIdentifier(_assaySpecimenIdCol.getAlias());
                 sql.append(" AS ");
                 sql.append(dialect.getSqlTypeName(JdbcType.VARCHAR));
                 sql.append(")");
@@ -447,7 +448,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             else
             {
                 // Match based on the target study associated with the assay data
-                sql.append(" AND " + assaySubqueryAlias + "." + _assayTargetStudyCol.getAlias() + " = " + vialSubqueryAlias + ".Container");
+                sql.append(" AND ").appendDottedIdentifiers(assaySubqueryAlias,_assayTargetStudyCol.getAlias()).append(" = ").appendDottedIdentifiers(vialSubqueryAlias,"Container");
             }
 
             sql.appendComment("</" + this.getClass().getName() + ".declareJoins()" + ">", dialect);
@@ -477,9 +478,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 //            assert lookupKey.getValueSql("test") != null;
             _lookupColumn = lookupColumn;
             setSqlTypeName(lookupColumn.getSqlTypeName());
-            String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
-            if (alias.length() > 60)
-                alias = AliasManager.truncate(foreignKey.getAlias(), 30) + "$" + AliasManager.truncate(lookupColumn.getAlias(),30);
+            String alias = lookupColumn.getSqlDialect().truncateAndJoin(foreignKey.getAlias().getId(), lookupColumn.getAlias().getId());
             setAlias(alias);
             copyAttributesFrom(lookupColumn);
             copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
@@ -493,7 +492,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            boolean assertEnabled = false; // needed to generate SQL for logging/debugging
+            boolean assertEnabled = false; // needed to generate SQL for logging/debnugging
             assert assertEnabled = true;
 
             String baseAlias = getBaseAlias(parentAlias, _foreignKey.getAlias());
@@ -549,11 +548,6 @@ public class SpecimenForeignKey extends LookupForeignKey
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             SqlDialect dialect = getSqlDialect();
-            Container targetStudy;
-            if (_targetStudyOverride != null)
-                targetStudy = _targetStudyOverride;
-            else
-                targetStudy = _schema.getTargetStudy();
 
             String baseAlias = getBaseAlias(parentAlias, _foreignKey.getAlias());
             String specimenSubqueryAlias = baseAlias + SPECIMEN_SUBQUERY_SUFFIX;
@@ -626,14 +620,14 @@ public class SpecimenForeignKey extends LookupForeignKey
                     // See if we need to cast - Postgres 8.3 is picky about these comparisons
                     if (_assayParticipantIdCol.getJavaClass() != String.class)
                     {
-                        sql.append("CAST(" + targetStudyAlias + "." + _assayParticipantIdCol.getAlias() + " AS VARCHAR)");
+                        sql.append("CAST(" + targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId() + " AS VARCHAR)");
                     }
                     else
                     {
-                        sql.append(targetStudyAlias + "." + _assayParticipantIdCol.getAlias());
+                        sql.append(targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId());
                     }
                     sql.append(" OR ");
-                    sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + _assayParticipantIdCol.getAlias() + " IS NULL))");
+                    sql.append("(" + specimenAlias + ".ParticipantId IS NULL AND " + targetStudyAlias + "." + _assayParticipantIdCol.getAlias().getId() + " IS NULL))");
                 }
                 if (_assayVisitIdCol != null || _assayDateCol != null)
                 {
@@ -647,10 +641,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                         // If we're in a visit-based study, check that both the visits match or are null. Also,
                         // if the assay has a date column and it has a value, it needs to match as well.
                         sql.append("((" + studyAlias + ".TimepointType IS NULL OR " + studyAlias + ".TimepointType = '" + TimepointType.VISIT + "')");
-                        sql.append(" AND (" + specimenAlias + ".SequenceNum = " + targetStudyAlias + "." + _assayVisitIdCol.getAlias() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + _assayVisitIdCol.getAlias() + " IS NULL))");
+                        sql.append(" AND (" + specimenAlias + ".SequenceNum = " + targetStudyAlias + "." + _assayVisitIdCol.getAlias().getId() + " OR (" + specimenAlias + ".Visit IS NULL AND " + targetStudyAlias + "." + _assayVisitIdCol.getAlias().getId() + " IS NULL))");
                         if (_assayDateCol != null)
                         {
-                            sql.append(" AND (" + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL))");
+                            sql.append(" AND (" + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL OR " + dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " + dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL))");
                             sql.append(")");
                             sql.append(" OR ");
                         }
@@ -664,7 +658,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                         // If we're in a relative date or continuous date study, check that the dates match or are both NULL
                         sql.append("((" + studyAlias + ".TimepointType = '" + TimepointType.DATE + "' OR " + studyAlias + ".TimepointType = '" + TimepointType.CONTINUOUS + "' OR " + studyAlias + ".TimepointType IS NULL) AND (" +
                                 dialect.getDateTimeToDateCast(specimenAlias + ".drawtimestamp") + " = " +
-                                dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias() + " IS NULL)))");
+                                dialect.getDateTimeToDateCast(targetStudyAlias + "." + _assayDateCol.getAlias().getId()) + " OR (" + specimenAlias + ".drawtimestamp IS NULL AND " + targetStudyAlias + "." + _assayDateCol.getAlias().getId() + " IS NULL)))");
                     }
                     sql.append(")");
                 }

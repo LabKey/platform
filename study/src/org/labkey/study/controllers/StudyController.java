@@ -3493,7 +3493,7 @@ public class StudyController extends BaseStudyController
                     queryView.getSettings().setShowRows(ShowRows.ALL);
                     try (Results results = ctx.getResults(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false))
                     {
-                        int ptidIndex = results.findColumn(ptidColumnInfo.getAlias());
+                        int ptidIndex = ptidColumnInfo.findColumn(results);
 
                         Set<String> participantSet = new LinkedHashSet<>();
                         while (results.next() && ptidIndex > 0)
@@ -4034,6 +4034,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @RequiresLogin // Don't set a default view for guests, Issue 52863
     public class ViewPreferencesAction extends FormViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
@@ -5524,21 +5525,27 @@ public class StudyController extends BaseStudyController
 
     public static String getDefaultView(ViewContext context, int datasetId)
     {
-        Map<String, String> viewMap = PropertyManager.getProperties(context.getUser(),
-                context.getContainer(), DEFAULT_DATASET_VIEW);
-
-        final String key = Integer.toString(datasetId);
-        if (viewMap.containsKey(key))
+        User user = context.getUser();
+        // Don't return a default view for guests, Issue 52863
+        if (!user.isGuest())
         {
-            return viewMap.get(key);
+            Map<String, String> viewMap = PropertyManager.getProperties(user, context.getContainer(), DEFAULT_DATASET_VIEW);
+
+            final String key = Integer.toString(datasetId);
+            if (viewMap.containsKey(key))
+            {
+                return viewMap.get(key);
+            }
         }
         return "";
     }
 
     private void setDefaultView(int datasetId, String view)
     {
-        WritablePropertyMap viewMap = PropertyManager.getWritableProperties(getUser(),
-                getContainer(), DEFAULT_DATASET_VIEW, true);
+        User user = getUser();
+        if (user.isGuest())
+            throw new IllegalStateException("Can't set a default view for guests");
+        WritablePropertyMap viewMap = PropertyManager.getWritableProperties(user, getContainer(), DEFAULT_DATASET_VIEW, true);
 
         viewMap.put(Integer.toString(datasetId), view);
         viewMap.save();

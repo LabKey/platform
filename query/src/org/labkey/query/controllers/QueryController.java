@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONParserConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -135,6 +136,7 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -1058,7 +1060,7 @@ public class QueryController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            if (_form.getSchema() != null)
+            if (_form != null && _form.getSchema() != null)
                 addSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
     }
@@ -1612,6 +1614,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
+            _form = form;
+
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, true);
 
@@ -1633,7 +1637,6 @@ public class QueryController extends SpringActionController
             queryView.setShadeAlternatingRows(true);
             queryView.setShowBorders(true);
             setHelpTopic("customSQL");
-            _form = form;
             _queryView = queryView;
             return queryView;
         }
@@ -1700,7 +1703,7 @@ public class QueryController extends SpringActionController
                     ti = fti.getRealTable();
 
                 if (ti instanceof SchemaTableInfo)
-                    _dbTableName = ti.getMetaDataName();
+                    _dbTableName = ti.getMetaDataIdentifier().getId();
                 else if (ti instanceof LinkedTableInfo)
                     _dbTableName = ti.getName();
 
@@ -1708,7 +1711,7 @@ public class QueryController extends SpringActionController
                 {
                     TableInfo tableInfo = dbSchema.getTable(ti.getName());
                     if (null != tableInfo)
-                        _dbTableName = tableInfo.getMetaDataName();
+                        _dbTableName = tableInfo.getMetaDataIdentifier().getId();
                 }
             }
 
@@ -2651,8 +2654,15 @@ public class QueryController extends SpringActionController
 
         JSONObject ret = new JSONObject();
         ret.put("redirect", returnUrl);
-        if (view != null)
-            ret.put("view", CustomViewUtil.toMap(view, getUser(), true));
+        Map<String, Object> viewAsMap = CustomViewUtil.toMap(view, getUser(), true);
+        try
+        {
+            ret.put("view", new JSONObject(viewAsMap, new JSONParserConfiguration().withMaxNestingDepth(10)));
+        }
+        catch (JSONException e)
+        {
+            LOG.error("Failed to save view: {}", jsonView, e);
+        }
         return ret;
     }
 
@@ -3901,54 +3911,54 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            SimpleFilter filter = getFilterFromQueryForm(form);
-
-            // Strip out filters on columns that don't exist - issue 21669
-            service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
-            QueryLogging queryLogging = new QueryLogging();
-            QueryService.SelectBuilder builder = service.getSelectBuilder(table)
-                    .columns(columns.values())
-                    .filter(filter)
-                    .queryLogging(queryLogging)
-                    .distinct(true);
-            SQLFragment selectSql = builder.buildSqlFragment();
-
-            // TODO: queryLogging.isShouldAudit() is always false at this point.
-            // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()
-            if (queryLogging.isShouldAudit() && null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
-            {
-                // this is probably a more helpful message
-                errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
-                return null;
-            }
-
-            // Regenerate the column since the alias may have changed after call to getSelectSQL()
-            columns = service.getColumns(table, settings.getFieldKeys());
-            var colGetAgain = columns.get(settings.getFieldKeys().get(0));
-            // I don't believe the above comment, so here's an assert
-            assert(colGetAgain.getAlias().equals(col.getAlias()));
-
-            SQLFragment sql = new SQLFragment("SELECT " + table.getSqlDialect().getColumnSelectName(col.getAlias()) + " AS value FROM (");
-            sql.append(selectSql);
-            sql.append(") S ORDER BY value");
-
-            sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
-
-            // 18875: Support Parameterized queries in Select Distinct
-            Map<String, Object> _namedParameters = settings.getQueryParameters();
-
             try
             {
+                SimpleFilter filter = getFilterFromQueryForm(form);
+
+                // Strip out filters on columns that don't exist - issue 21669
+                service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
+                QueryLogging queryLogging = new QueryLogging();
+                QueryService.SelectBuilder builder = service.getSelectBuilder(table)
+                        .columns(columns.values())
+                        .filter(filter)
+                        .queryLogging(queryLogging)
+                        .distinct(true);
+                SQLFragment selectSql = builder.buildSqlFragment();
+
+                // TODO: queryLogging.isShouldAudit() is always false at this point.
+                // The only place that seems to set this is ComplianceQueryLoggingProfileListener.queryInvoked()
+                if (queryLogging.isShouldAudit() && null != queryLogging.getExceptionToThrowIfLoggingIsEnabled())
+                {
+                    // this is probably a more helpful message
+                    errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
+                    return null;
+                }
+
+                // Regenerate the column since the alias may have changed after call to getSelectSQL()
+                columns = service.getColumns(table, settings.getFieldKeys());
+                var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+                // I don't believe the above comment, so here's an assert
+                assert(colGetAgain.getAlias().equals(col.getAlias()));
+
+                SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
+                sql.append(selectSql);
+                sql.append(") S ORDER BY value");
+
+                sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
+
+                // 18875: Support Parameterized queries in Select Distinct
+                Map<String, Object> _namedParameters = settings.getQueryParameters();
+
                 service.bindNamedParameters(sql, _namedParameters);
                 service.validateNamedParameters(sql);
+
+                return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
             }
             catch (ConversionException | QueryService.NamedParameterNotProvided e)
             {
                 errors.reject(ERROR_MSG, e.getMessage());
                 return null;
             }
-
-            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
         }
     }
 
@@ -4102,6 +4112,8 @@ public class QueryController extends SpringActionController
 
             _insertOption = form.getInsertOption();
             QueryDefinition query = form.getQueryDef();
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            query.setContainerFilter(QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
@@ -4579,7 +4591,7 @@ public class QueryController extends SpringActionController
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     JsonUtil.fillMapShallow(jsonObj, rowMap);
                     if (allowRowAttachments())
-                        addRowAttachments(rowMap, idx, commandIndex);
+                        addRowAttachments(table, rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
@@ -4731,7 +4743,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4739,26 +4751,34 @@ public class QueryController extends SpringActionController
                 {
                     // Allow for the fileMap key to include the row index, and optionally command index, for defining
                     // which row to attach this file to
-                    String fieldKey = fileEntry.getKey();
-                    int delimIndex = fieldKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
-                    if (delimIndex > -1)
+                    String fullKey = fileEntry.getKey();
+                    String fieldKey = fullKey;
+                    // Issue 52827: Cannot attach a file if the field name contains ::
+                    // use lastIndexOf instead of split to get the proper parts
+                    int lastDelimIndex = fullKey.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                    if (lastDelimIndex > -1)
                     {
-                        String[] parts = fileEntry.getKey().split(ROW_ATTACHMENT_INDEX_DELIM);
+                        String fieldKeyExcludeIndex = fullKey.substring(0, lastDelimIndex);
+                        String fieldRowIndex = fullKey.substring(lastDelimIndex + ROW_ATTACHMENT_INDEX_DELIM.length());
+                        if (!fieldRowIndex.equals(rowIndex+"")) continue;
 
                         if (commandIndex == null)
                         {
                             // Single command, so we're parsing file names in the format of: FileField::0
-                            fieldKey = parts[0];
-                            String fieldRowIndex = parts[1];
-                            if (!fieldRowIndex.equals(rowIndex+"")) continue;
+                            fieldKey = fieldKeyExcludeIndex;
                         }
                         else
                         {
                             // Multi-command, so we're parsing file names in the format of: FileField::0::1
-                            fieldKey = parts[0];
-                            String fieldCommandIndex = parts[1];
-                            String fieldRowIndex = parts[2];
-                            if (!fieldCommandIndex.equals(commandIndex+"") || !fieldRowIndex.equals(rowIndex+""))
+                            int subDelimIndex = fieldKeyExcludeIndex.lastIndexOf(ROW_ATTACHMENT_INDEX_DELIM);
+                            if (subDelimIndex > -1)
+                            {
+                                fieldKey = fieldKeyExcludeIndex.substring(0, subDelimIndex);
+                                String fieldCommandIndex = fieldKeyExcludeIndex.substring(subDelimIndex + ROW_ATTACHMENT_INDEX_DELIM.length());
+                                if (!fieldCommandIndex.equals(commandIndex+""))
+                                    continue;
+                            }
+                            else
                                 continue;
                         }
                     }
@@ -4767,6 +4787,9 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
+
+            for (ColumnInfo col : tableInfo.getColumns())
+                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()

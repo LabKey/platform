@@ -36,7 +36,6 @@ import java.io.IOException;
 public class FileServlet extends HttpServlet
 {
     private static final Logger _log = LogManager.getLogger(FileServlet.class);
-    private static final String PAGE_FLOW_ATTR = FileServlet.class.getName() + ".pageFlow";
 
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
@@ -65,11 +64,6 @@ public class FileServlet extends HttpServlet
             request.setAttribute(ViewServlet.ORIGINAL_URL_URLHELPER, helper);
         }
 
-        //The servlet path looks like a pageflow. Stash this away so that
-        //handlers can create links to other static files.
-        //We assume that this servlet is mapped to /something/*
-        String servletPath = request.getServletPath();
-        request.setAttribute(PAGE_FLOW_ATTR, servletPath.substring(1));
         String dispatchUrl = extraPath + "/filecontent-sendFile.view?" + (null == fileNameParam ? "fileName=" + PageFlowUtil.encodeURIComponent(fileName) : "");
         // NOTE other parameters seem to get magically propagated...
         RequestDispatcher r = request.getRequestDispatcher(dispatchUrl);

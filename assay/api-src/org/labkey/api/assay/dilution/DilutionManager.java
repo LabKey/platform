@@ -530,9 +530,8 @@ public class DilutionManager
                     ColumnInfo column = columns.get(fieldKeys.get(pd));
                     if (null != column)
                     {
-                        String columnAlias = column.getAlias();
-                        if (null != columnAlias)
-                            dataProperties.put(pd, rowMap.get(columnAlias));
+                        if (null != column.getAlias())
+                            dataProperties.put(pd, rowMap.get(column.getAlias().getId()));
                     }
                 }
             }

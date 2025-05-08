@@ -112,6 +112,7 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
@@ -181,7 +182,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 25.001;
+        return 25.002;
     }
 
     @Nullable
@@ -473,7 +474,6 @@ public class ExperimentModule extends SpringModule
                         rowIds.add(rowId);
                         rowIdIdentifierMap.put(rowId, resourceIdentifier);
                     }
-
                 }
 
                 Map<String, Map<String, Object>> searchJsonMap = new HashMap<>();
@@ -487,7 +487,6 @@ public class ExperimentModule extends SpringModule
 
                 return searchJsonMap;
             }
-
         });
     }
 
@@ -717,6 +716,9 @@ public class ExperimentModule extends SpringModule
 
                 results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
+                results.put("sampleNullAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount IS NULL").getObject(Long.class));
+                results.put("sampleNegativeAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount < 0").getObject(Long.class));
+                results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit\n").getObject(Long.class));
 
                 results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
@@ -942,16 +944,17 @@ public class ExperimentModule extends SpringModule
         return Set.of(
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
-            ExperimentServiceImpl.TestCase.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
+            ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,
+            PropertyServiceImpl.TestCase.class,
+            StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
-            UniqueValueCounterTestCase.class,
-            PropertyServiceImpl.TestCase.class
+            UniqueValueCounterTestCase.class
         );
     }
 

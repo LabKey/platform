@@ -171,7 +171,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
                 TableInfo schemaTable = table.getRealTable();
 
                 SQLFragment sql = new SQLFragment();
-                sql.append("SELECT o.ObjectId FROM " + schemaTable + " me, exp.object o WHERE me." + objectUriColumn.getSelectName() + " = o.ObjectURI");
+                sql.append("SELECT o.ObjectId FROM " + schemaTable + " me, exp.object o WHERE me." + objectUriColumn.getSelectIdentifier() + " = o.ObjectURI");
                 return sql;
             }
         }

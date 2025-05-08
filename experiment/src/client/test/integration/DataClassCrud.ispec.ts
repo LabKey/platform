@@ -1,4 +1,4 @@
-import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { ExperimentCRUDUtils, hookServer, RequestOptions, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -9,7 +9,7 @@ import {
     initProject,
     verifyRequiredLineageInsertUpdate,
 } from './utils';
-import { DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
+import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
 
@@ -229,9 +229,208 @@ describe('Data Class Designer', () => {
 
 });
 
+describe('Import with update / merge', () => {
+   it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
+       const BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION = 'Missing value for required property: Name';
+       const BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION = 'Name value not provided on row ';
+       const BOGUS_KEY_UPDATE_ERROR = 'Data not found for ';
+       const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Data doesn't belong to folder ";
+
+       const dataType = "NoExpressionNameRequired52922";
+       const createPayload = {
+           kind: 'DataClass',
+           domainDesign: { name: dataType, fields: [{ name: 'Prop' }] },
+           options: {
+               name: dataType,
+           }
+       };
+       await server.post('property', 'createDomain', createPayload,
+           {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+       const dataName = "Data1";
+       await ExperimentCRUDUtils.insertRows(server, [{
+           name: dataName,
+           description: 'created'
+       }], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+       // Issue 52922: Blank / bogus  id in the file are getting ignored in update from file
+       let blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "UPDATE", subfolder1Options, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataType, "MERGE", subfolder1Options, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataType, "MERGE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION) > -1).toBeTruthy();
+       // bogus name
+       let bogusKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nbogus\tisBogus", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(bogusKeyProvidedError.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
+       bogusKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\nbogus\tisBogus", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(bogusKeyProvidedError.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
+
+       const dataTypeWithExpression = "WithExpressionNameNotRequired52922";
+       let createPayloadWithExpression = {
+           kind: 'DataClass',
+           domainDesign: { name: dataTypeWithExpression, fields: [{ name: 'Prop' }] },
+           options: {
+               name: dataTypeWithExpression,
+               nameExpression: 'Src-${genId}',
+
+           }
+       };
+       await server.post('property', 'createDomain', createPayloadWithExpression,
+           {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+       await ExperimentCRUDUtils.insertRows(server, [{
+           name: dataName,
+           description: 'created'
+       }], 'exp.data', dataTypeWithExpression, topFolderOptions, editorUserOptions);
+
+       // blank name
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION + 2) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION + 2) > -1).toBeTruthy();
+       blankKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(blankKeyProvidedError.text.indexOf(BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION + 1) > -1).toBeTruthy();
+
+       // merge with blank name for data type with naming expression should not fail
+       let successResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", topFolderOptions, editorUserOptions);
+       expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+       successResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", topFolderOptions, editorUserOptions);
+       expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+       successResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
+       expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+       // cross folder update not supported when folder type is "Collaboration"
+       let crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
+       expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+       crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
+       expect(crossFolderErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+
+       // bogus name
+       bogusKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nbogus\tisBogus", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(bogusKeyProvidedError.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
+       bogusKeyProvidedError = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\nbogus\tisBogus", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
+       expect(bogusKeyProvidedError.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
+
+       // merge with bogus name should create a new data and not fail
+       successResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\nbogusShouldCreate\tisBogus", dataTypeWithExpression, "MERGE", topFolderOptions, editorUserOptions);
+       expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
+
+   });
+
+});
+
 describe('Data Class - Required Lineage', () => {
     it('Test dataclass with required dataclass parents', async () => {
         await verifyRequiredLineageInsertUpdate(server, false, false, topFolderOptions, subfolder1Options, designerReaderOptions, readerUserOptions, editorUserOptions, adminOptions);
     });
 
+});
+
+describe('Duplicate IDs', () => {
+
+    it("Issue 52728: don't allow updating the same data twice", async () => {
+        const dataType = "TestIssue52728";
+        const createPayload = {
+            kind: 'DataClass',
+            domainDesign: { name: dataType, fields: [{ name: 'Prop' }] },
+            options: {
+                name: dataType,
+            }
+        };
+
+        await server.post('property', 'createDomain', createPayload,
+            {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+        let errorResp;
+        await server.post('query', 'insertRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                name: 'duplicateShouldFail',
+            },{
+                name: 'duplicateShouldFail',
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp.exception.indexOf('duplicate key') > -1).toBeTruthy();
+        });
+        // import
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nduplicateShouldFail\tbad\nduplicateShouldFail\tbad", dataType, "IMPORT", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('duplicate key') > -1).toBeTruthy();
+
+        // merge
+        const duplicateKeyErrorPrefix = 'Duplicate key provided: ';
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nduplicateShouldFail\tbad\nduplicateShouldFail\tbad", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf(duplicateKeyErrorPrefix + 'duplicateShouldFail') > -1).toBeTruthy();
+
+        const dataName1 = "up-dataId-1";
+        const dataName2 = "up-dataId-2";
+        const dataRows = await ExperimentCRUDUtils.insertRows(server, [{
+            name: dataName1,
+            description: 'created'
+        },{
+            name: dataName2,
+            description: 'created'
+        }], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        const data1RowId = caseInsensitive(dataRows[0], 'rowId');
+        const data1Lsid = caseInsensitive(dataRows[0], 'lsid');
+        const data2RowId = caseInsensitive(dataRows[1], 'rowId');
+        const data2Lsid = caseInsensitive(dataRows[1], 'lsid');
+
+        // update data2 twice using updateRows, using rowId
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                description: 'update',
+                rowId: data1RowId
+            },{
+                description: 'update',
+                rowId: data2RowId
+            },{
+                description: 'update',
+                rowId: data2RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2RowId);
+        });
+
+        // update data2 twice using updateRows, using lsid (data iterator)
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                description: 'update',
+                lsid: data1Lsid
+            },{
+                description: 'update',
+                lsid: data2Lsid
+            },{
+                description: 'update',
+                lsid: data2Lsid
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2Lsid);
+        });
+
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n" + dataName1 + "\tupdate\n" + dataName2 + "\tupdate\n" + dataName2 + "\tupdate", dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('Duplicate key provided: ' + dataName2) > -1).toBeTruthy();
+
+        errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n" + dataName1 + "\tupdate\n" + dataName2 + "\tupdate\n" + dataName2 + "\tupdate", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf('Duplicate key provided: ' + dataName2) > -1).toBeTruthy();
+
+        // confirm rows are not updated
+        let dataResults = await ExperimentCRUDUtils.getRows(server, [data1RowId, data2RowId], 'exp.data', dataType, 'rowId,description', topFolderOptions, adminOptions);
+        expect(caseInsensitive(dataResults[0], 'description')).toBe('created');
+        expect(caseInsensitive(dataResults[1], 'description')).toBe('created');
+
+    });
 });

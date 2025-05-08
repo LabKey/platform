@@ -329,7 +329,7 @@ public abstract class ContainerFilter
             SQLFragment result = new SQLFragment(containerColumnSQL);
             String shortName = null != this.getType() ? this.getType().name() : this.getClass().getSimpleName();
             String cteKey = this.getClass().getName()+":"+ container.getId();
-            String token = result.addCommonTableExpression(cteKey, "cte" + shortName + System.identityHashCode(this), select);
+            String token = result.addCommonTableExpression(schema.getSqlDialect(), cteKey, "cte" + shortName + System.identityHashCode(this), select);
             result.append(" IN (SELECT EntityId");
             result.append(" FROM ").append(token);
             result.append(")");

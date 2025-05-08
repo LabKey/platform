@@ -189,10 +189,15 @@ public class AggregateColumnInfo extends BaseColumnInfo
 
     public static String getColumnName(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
+        // TODO it is odd to use a generated alias to then generate a column name... Comment?
+        // but MS2Test breaks if we don't get case right
+        String alias = measure.getSourceColumn().getAlias().getId();
+        if (alias.equalsIgnoreCase(measure.getSourceColumn().getName()))
+            alias = measure.getSourceColumn().getName();
         if (null == member)
-            return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
+            return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + alias;
         else
             return PIVOTED_NAME_PREFIX + member.getValueSQLAlias(measure.getSourceColumn().getSqlDialect()) + "_"
-                    + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
+                    + measure.getAggregateFunction().name() + "_" + alias;
     }
 }

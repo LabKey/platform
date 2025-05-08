@@ -448,7 +448,7 @@ abstract public class ExpTableImpl<C extends Enum>
             for (String pattern : patterns)
             {
                 condition.append(separator);
-                condition.append(_rootTable.getColumn(columnName).getAlias());
+                condition.appendIdentifier(_rootTable.getColumn(columnName).getAlias());
                 // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
                 // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol,
                 // and in other cases we're passed a pattern that matches against all protocols of a given type

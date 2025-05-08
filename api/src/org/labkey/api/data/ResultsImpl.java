@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
@@ -77,7 +78,7 @@ public class ResultsImpl implements Results, DataIterator
             {
                 String label = rsmd.getColumnLabel(i);
                 var col = new BaseColumnInfo(rsmd, i);
-                col.setAlias(label);
+                col.setAlias(SqlDialect.makeDatabaseIdentifier(label,new SQLFragment(label)));
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
                 _columnInfoList.add(col);
@@ -103,7 +104,7 @@ public class ResultsImpl implements Results, DataIterator
             try
             {
                 _fieldMap.put(col.getFieldKey(), col);
-                int find = rs.findColumn(col.getAlias());
+                int find = col.findColumn(rs);
                 _fieldIndexMap.put(col.getFieldKey(), find);
                 while (_columnInfoList.size() <= find)
                     _columnInfoList.add(null);
@@ -113,7 +114,7 @@ public class ResultsImpl implements Results, DataIterator
             {
                 TableInfo parentTable = col.getParentTable();
                 String parentTableName = parentTable != null ? parentTable.getName() : "[null parent table]";
-                throw new IllegalArgumentException("Column not found in resultset: [" + parentTableName + "." + col.getName() + ", " + col.getAlias() + ", " + col.getFieldKey() + "]", x);
+                throw new IllegalArgumentException("Column not found in resultset: [" + parentTableName + "." + col.getName() + ", " + col.getAlias().getId() + ", " + col.getFieldKey() + "]", x);
             }
         }
     }
@@ -133,7 +134,7 @@ public class ResultsImpl implements Results, DataIterator
             {
                 fk = e.getKey();
                 ColumnInfo col = e.getValue();
-                int find = rs.findColumn(col.getAlias());
+                int find = col.findColumn(rs);
                 _fieldIndexMap.put(fk, find);
                 while (_columnInfoList.size() <= find)
                     _columnInfoList.add(null);

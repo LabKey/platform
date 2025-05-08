@@ -474,6 +474,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 Iterator<JarEntry> entries = j.entries().asIterator();
                 while (entries.hasNext())
                 {
+                    // Keep this code in sync with org.labkey.embedded.EmbeddedExtractor.extractExecutableJar()
                     JarEntry entry = entries.next();
                     if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
                     {

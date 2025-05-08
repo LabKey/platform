@@ -67,10 +67,6 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
 
     abstract protected String getNamespacePrefix();
     abstract public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template);
-    public AbstractSpecimenDomainKind()
-    {
-        super();
-    }
 
     @Override
     public String getTypeLabel(Domain domain)
@@ -187,7 +183,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         return Collections.emptySet();
     }
 
-    protected void setForeignKeyTableInfos(Container container, Set<PropertyStorageSpec.ForeignKey> foreignKeys, SpecimenTablesProvider provider)
+    protected void setForeignKeyTableInfos(Set<PropertyStorageSpec.ForeignKey> foreignKeys, SpecimenTablesProvider provider)
     {
         // If this table requires FK to other provisioned tables (must be in same dbschema), get those tables
         for (PropertyStorageSpec.ForeignKey foreignKey : foreignKeys)

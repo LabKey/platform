@@ -804,10 +804,10 @@ public class ContainerManager
 
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Description=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, description, container.getRowId());
+        sql.append(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
         
         String oldValue = container.getDescription();
         _removeFromCache(container, false);
@@ -820,10 +820,10 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Searchable=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, searchable, container.getRowId());
+        sql.append(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
     }
@@ -832,10 +832,10 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, lockState, container.getRowId());
+        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
 
@@ -859,10 +859,10 @@ public class ContainerManager
     public static void setExcludedProjects(Collection<GUID> ids, @NotNull Runnable auditRunnable)
     {
         // First clear all existing "Excluded" states
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, LockState.Excluded);
+        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         // Now set the passed-in projects to "Excluded"
         if (!ids.isEmpty())
@@ -913,12 +913,12 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET ExpirationDate = ? WHERE RowID = ?");
-
         // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
-        new SqlExecutor(CORE.getSchema()).execute(sql, java.sql.Date.valueOf(expirationDate), container.getRowId());
+        sql.append(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
+
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
 
@@ -929,10 +929,10 @@ public class ContainerManager
     {
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Type=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, newType, container.getRowId());
+        sql.append(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
     }
@@ -944,10 +944,10 @@ public class ContainerManager
 
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
-        StringBuilder sql = new StringBuilder("UPDATE ");
+        SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Title=? WHERE RowID=?");
-        new SqlExecutor(CORE.getSchema()).execute(sql, title, container.getRowId());
+        sql.append(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
+        new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
         String oldValue = container.getTitle();

@@ -1099,9 +1099,11 @@ public class ListManager implements SearchService.DocumentProvider
             ColumnInfo keyColumn = sti.getColumn(list.getKeyName());
             if (null != keyColumn)
             {
-                String keySelectName = keyColumn.getSelectName();
-                new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
-                        keySelectName + " = ?", new Timestamp(ms), pk);
+                var keySelectName = keyColumn.getSelectIdentifier();
+                SQLFragment sqlf = new SQLFragment("UPDATE ").appendIdentifier(getListTableName(sti))
+                        .append(" SET LastIndexed = ").appendValue(new Timestamp(ms))
+                        .append(" WHERE ").appendIdentifier(keySelectName).append(" = ?").add(pk);
+                new SqlExecutor(sti.getSchema()).execute(sqlf);
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
             LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk + warning);

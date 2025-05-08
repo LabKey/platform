@@ -16,7 +16,6 @@
 package org.labkey.api.specimen.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.property.Domain;
@@ -107,12 +106,6 @@ public final class LocationDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return new HashSet<>(BASE_INDICES);
-    }
-
-    @Override
-    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container, SpecimenTablesProvider provider)
-    {
-        return Collections.emptySet();
     }
 
     @Override
