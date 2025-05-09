@@ -45,9 +45,9 @@
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.BitSet" %>
-<%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -246,6 +246,7 @@
                    setUnenrolled.andNot(memberSets[i]);
             }
         }
+
         if (hasGroups)
         {
             SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).append(")");
@@ -264,8 +265,6 @@
                 setNoGroup.andNot(memberSets[i]);
             }
         }
-
-
 %>
     var _ptidGroupMap = [<%
         String comma = "\n";

@@ -5578,8 +5578,6 @@ public class StudyController extends BaseStudyController
         private int datasetId;
         private double sequenceNum;
         private String action;
-        private int reportId;
-        private String _redirectUrl;
         private Map<String, String> aliases;
 
         @Override
@@ -5606,9 +5604,6 @@ public class StudyController extends BaseStudyController
 
         public String getAction(){return action;}
         public void setAction(String action){this.action = action;}
-
-        public int getReportId(){return reportId;}
-        public void setReportId(int reportId){this.reportId = reportId;}
     }
 
     public static class StudyPropertiesForm extends ReturnUrlForm

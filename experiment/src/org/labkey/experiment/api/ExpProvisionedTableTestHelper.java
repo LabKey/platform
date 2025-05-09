@@ -32,11 +32,11 @@ import static org.hamcrest.CoreMatchers.hasItem;
 public class ExpProvisionedTableTestHelper
 {
     public static final SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
-
-    final User user = TestContext.get().getUser();
     public static final String agePropertyName = "Age";
     public static final String colorPropertyName = "Color";
     public static final String typePropertyName = "Type";
+
+    final User user = TestContext.get().getUser();
 
     public Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
