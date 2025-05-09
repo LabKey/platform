@@ -7771,34 +7771,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public static class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object o, BindException errors)
-        {
-            // NOTE: copy pasta from initSources()
-            Collection<Map<String, Object>> sourcesAndSchemas = new LinkedList<>();
-            for (DbScope scope : DbScope.getDbScopes())
-            {
-                DataSourceInfo source = new DataSourceInfo(scope);
-                for (String schemaName : scope.getSchemaNames())
-                {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("dataSourceDisplayName", source.displayName);
-                    map.put("dataSourceSourceName", source.sourceName);
-                    map.put("schemaName", schemaName);
-                    sourcesAndSchemas.add(map);
-                }
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("schemas", sourcesAndSchemas);
-            return response;
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
@@ -8547,8 +8519,7 @@ public class QueryController extends SpringActionController
                 controller.new InternalDeleteView(),
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
-                new QueryExportAuditRedirectAction(),
-                new GetSchemasWithDataSourcesAction()
+                new QueryExportAuditRedirectAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)

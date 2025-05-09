@@ -929,7 +929,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
     }
 
-    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,?\\s*(\\w*)\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.(executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
     // No need to split up PostgreSQL scripts; execute all statements in a single block (unless we have a special stored proc call).

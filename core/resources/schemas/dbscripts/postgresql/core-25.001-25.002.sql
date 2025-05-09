@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS core.bulkImport(text, text, text, boolean);
