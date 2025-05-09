@@ -29,9 +29,13 @@
     boolean isTroubleshooter = !c.hasPermission(getUser(), ApplicationAdminPermission.class);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _formExisting;
+
+    LABKEY.Utils.onReady(function() {
+        _formExisting = new LABKEY.Form({formElement: 'form-existingValues'});
+    });
 
     function deleteExisting(valueToDelete) {
-
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
         document.getElementById("existingValue").value = valueToDelete;
@@ -39,7 +43,6 @@
     }
 
     function saveAll() {
-
         //clicking on save will save all the values - changed and unchanged values
         var num = 1;
         var inputNameExisting = "existingValue" + num;
@@ -55,11 +58,11 @@
         document.getElementById("saveAll").value = true;
         document.getElementById("existingValues").value = values;
         document.forms["existingValues"].submit();
+        _formExisting.setClean();
     }
 </script>
 
-<labkey:form method="post" name="existingValues">
-
+<labkey:form name="existingValues" id="form-existingValues" method="post">
     <%
         AllowListForm bean = (AllowListForm) HttpView.currentModel();
     %>
@@ -99,7 +102,8 @@
                 <td><br/>
                     <input type="hidden" id="saveAll" name="saveAll">
                     <%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
-                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class).addParameter("type", bean.getTypeEnum().name())).usePost("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s?") : HtmlString.EMPTY_STRING%>
+                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class).addParameter("type", bean.getTypeEnum().name()))
+                            .onClick("_formExisting.setClean(); return LABKEY.Utils.confirmAndPost('" + h("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s") + "', this.href);") : HtmlString.EMPTY_STRING%>
                 </td>
             </tr>
         <% } %>

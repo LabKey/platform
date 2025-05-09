@@ -40,17 +40,24 @@
     else
     {
 %>
-<labkey:form method="post">
+<labkey:form id="form-addValue" method="post">
     <table>
         <tr>
             <td class="labkey-form-label"><label for="newValueTextField"><%=bean.getTypeEnum().getLabel()%></label></td>
             <td><input name="newValue" id="newValueTextField" size="75" /></td>
         </tr>
         <tr>
-            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Save").submit(true) %></td>
+            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%=button("Save").submit(true).onClick("_form.setClean()")%></td>
         </tr>
     </table>
 </labkey:form>
 <%
     }
 %>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _form;
+
+    LABKEY.Utils.onReady(function() {
+        _form = new LABKEY.Form({formElement: 'form-addValue'});
+    });
+</script>
