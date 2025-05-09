@@ -152,7 +152,7 @@ public class LinkBuilder extends DisplayElementBuilder<LinkBuilder.Link, LinkBui
                     .at(DOM.Attribute.style, lb.style)
                     .at(DOM.Attribute.name, lb.name)
                     .at(DOM.Attribute.tabindex, lb.tabindex)
-                    .at(lb.enabled, disabled, true)
+                    .at(!lb.enabled, disabled, true)
                     .data(null != lb.tooltip, "tt", "tooltip")
                     .data(null != lb.tooltip, "placement","top")
                     .data(null != lb.tooltip, "original-title", lb.tooltip),
