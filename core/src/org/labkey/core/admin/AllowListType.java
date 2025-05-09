@@ -94,11 +94,11 @@ public enum AllowListType
             return HtmlString.unsafe("""
                 <div style="width: 700px">
                     <p>
-                        Specify a list of file extensions to restrict the file types that LabKey will accept for uploads.
-                        Add the extensions one-by-one via the "Extension" box below. Any extension that is not in the
-                        list below will be rejected. Multiple extensions must be provided explicitly; for example,
-                        specify ".tar.gz" to allow those files (".gz" is not sufficient). If the list is empty, then
-                        all file types will be allowed.
+                        Restrict the file types that LabKey will accept for uploads by specifying a list of all allowed
+                        file extensions. Add the extensions one-by-one via the "Extension" box. Any extension that is
+                        not in the list below will be rejected. Multiple extensions must be provided explicitly; for
+                        example, specify ".tar.gz" to allow those files (".gz" is not sufficient). If the list is empty
+                        then all file types will be allowed.
                     </p>
                 </div>
                 """);
