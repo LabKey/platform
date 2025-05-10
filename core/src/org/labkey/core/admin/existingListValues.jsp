@@ -102,8 +102,19 @@
                 <td><br/>
                     <input type="hidden" id="saveAll" name="saveAll">
                     <%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
-                    <%=!isTroubleshooter ? button("Delete All").href(urlFor(DeleteAllValuesAction.class).addParameter("type", bean.getTypeEnum().name()))
-                            .onClick("_formExisting.setClean(); return LABKEY.Utils.confirmAndPost('" + h("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s") + "', this.href);") : HtmlString.EMPTY_STRING%>
+                    <%=isTroubleshooter ? HtmlString.EMPTY_STRING :
+                            button("Delete All")
+                                .href(urlFor(DeleteAllValuesAction.class)
+                                .addParameter("type", bean.getTypeEnum().name()))
+                                // Can't use LABKEY.Utils.confirmAndPost() below because it always returns false, and we need to preserve the dirty state in the cancel case
+                                .onClick(
+                                    "if (confirm(" + q("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s") + "))\n" +
+                                    "{\n" +
+                                    "    _formExisting.setClean();\n" +
+                                    "    LABKEY.Utils.postToAction(this.href);\n" +
+                                    "}\n" +
+                                    "return false;"
+                                )%>
                 </td>
             </tr>
         <% } %>
