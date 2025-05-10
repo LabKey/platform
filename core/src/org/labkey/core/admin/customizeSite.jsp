@@ -33,10 +33,10 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.TreeMap" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
-<%@ page import="java.util.TreeMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>

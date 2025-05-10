@@ -11790,7 +11790,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
     {
-
         @Override
         public void addNavTrail(NavTree root)
         {
