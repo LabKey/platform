@@ -416,6 +416,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 if (assay.getAutoLinkCategory() != null && assay.getAutoLinkCategory().length() > 200)
                     throw new ValidationException("Linked Dataset Category name must be shorter than 200 characters.");
 
+                StringBuilder changeDetails = new StringBuilder();
                 ExpProtocol protocol;
                 boolean isNew = assay.getProtocolId() == null;
                 boolean hasNameChange = false;
@@ -451,7 +452,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                         else
                         {
                             GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                            updateDomainDescriptor(assayProvider, protocol, previous, domain, false);
+                            updateDomainDescriptor(assayProvider, protocol, previous, domain, false, null);
                             domainURIs.add(domain.getDomainURI());
                         }
                     }
@@ -475,12 +476,15 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     hasNameChange = !assay.getName().equals(oldAssayName);
                     if (hasNameChange)
                     {
+                        changeDetails.append("The name of the assay domain '" + oldAssayName + "' was changed to '" + assay.getName() + "'.");
                         String nameError = DomainUtil.validateDomainName(assay.getName(), "Assay Design", false);
                         if (nameError != null)
                             throw new ValidationException(nameError);
                     }
                     protocol.setName(assay.getName());
+                    changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", protocol.getProtocolDescription(), assay.getDescription()));
                     protocol.setProtocolDescription(assay.getDescription());
+                    changeDetails.append(DomainUtil.getStringPropChangeMsg("Status", protocol.getStatus().toString(), assay.getStatus()));
                     if (assay.getStatus() != null)
                         protocol.setStatus(ExpProtocol.Status.valueOf(assay.getStatus()));
                 }
@@ -556,10 +560,16 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (detectionMethod == null)
                         throw new ValidationException("The selected detection method could not be found.");
 
+                    String oldDetectionMethod = dmProvider.getSelectedDetectionMethod(getContainer(), protocol);
+                    changeDetails.append(DomainUtil.getPropChangeMsg("DetectionMethod", oldDetectionMethod, detectionMethod));
                     dmProvider.setSelectedDetectionMethod(getContainer(), protocol, detectionMethod);
                 }
 
-                ValidationException scriptValidation = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                Pair<ValidationException, String> scriptValidationResult = provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+                ValidationException scriptValidation = scriptValidationResult.first;
+                String transformScriptChangeMsg = scriptValidationResult.second;
+                if (transformScriptChangeMsg != null)
+                    changeDetails.append(transformScriptChangeMsg);
                 if (scriptValidation.hasErrors())
                 {
                     for (var error : scriptValidation.getErrors())
@@ -574,11 +584,17 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     }
                 }
 
+                changeDetails.append(DomainUtil.getPropChangeMsg("SaveScriptFiles", provider.isSaveScriptFiles(protocol), assay.isSaveScriptFiles()));
                 provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
+                changeDetails.append(DomainUtil.getPropChangeMsg("IsEditableResults", provider.isEditableResults(protocol), assay.isEditableResults()));
                 provider.setEditableResults(protocol, assay.isEditableResults());
+                changeDetails.append(DomainUtil.getPropChangeMsg("IsEditableRuns", provider.isEditableRuns(protocol), assay.isEditableRuns()));
                 provider.setEditableRuns(protocol, assay.isEditableRuns());
+                changeDetails.append(DomainUtil.getPropChangeMsg("IsBackgroundUpload", provider.isBackgroundUpload(protocol), assay.isBackgroundUpload()));
                 provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
+                changeDetails.append(DomainUtil.getPropChangeMsg("IsQcEnabled", provider.isQCEnabled(protocol), assay.isQcEnabled()));
                 provider.setQCEnabled(protocol, assay.isQcEnabled());
+                changeDetails.append(DomainUtil.getPropChangeMsg("IsPlateMetadataEnabled", provider.isPlateMetadataEnabled(protocol), assay.isPlateMetadata()));
                 provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
 
                 Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
@@ -590,12 +606,18 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     throw new ValidationException("No such auto-link target container id: " + autoLinkTargetContainerId);
                 }
 
+                ObjectProperty oldAutoLinkTargetContainer = props.get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
+                String oldAutoLinkTargetContainerId = oldAutoLinkTargetContainer == null ? null : oldAutoLinkTargetContainer.getStringValue();
+                changeDetails.append(DomainUtil.getPropChangeMsg("AutoCopyTargetContainer", oldAutoLinkTargetContainerId, autoLinkTargetContainerId));
                 if (autoLinkTargetContainerId != null)
                     props.put(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI, autoLinkTargetContainerId));
                 else
                     props.remove(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
 
                 String autoLinkCategory = assay.getAutoLinkCategory();
+                ObjectProperty oldAutoLinkCategory = props.get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
+                String oldAutoLinkCategoryValue = oldAutoLinkCategory == null ? null : oldAutoLinkCategory.getStringValue();
+                changeDetails.append(DomainUtil.getPropChangeMsg("AutoLinkCategory", oldAutoLinkCategoryValue, autoLinkCategory));
                 if (autoLinkCategory != null)
                     props.put(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI, autoLinkCategory));
                 else
@@ -608,7 +630,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
                     GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
-                    updateDomainDescriptor(provider, protocol, previous, domain, hasNameChange);
+                    updateDomainDescriptor(provider, protocol, previous, domain, hasNameChange, changeDetails.toString());
                     boolean hasExistingCalcFields = previous != null && !previous.getCalculatedFields().isEmpty();
 
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
@@ -642,7 +664,8 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
         ExpProtocol protocol,
         GWTDomain<GWTPropertyDescriptor> original,
         GWTDomain<GWTPropertyDescriptor> update,
-        boolean hasNameChange
+        boolean hasNameChange,
+        String auditComment
     ) throws ValidationException
     {
         for (GWTPropertyDescriptor prop : update.getFields())
@@ -650,10 +673,6 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
             if (prop.getLookupQuery() != null)
                 prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
         }
-
-        String auditComment = null;
-        if (hasNameChange)
-            auditComment = "The name of the assay domain '" + original.getName() + "' was changed to '" + update.getName() + "'.";
 
         // Before update
         provider.beforeDomainChange(getUser(), protocol, original, update);

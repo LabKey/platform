@@ -646,11 +646,30 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                       Container container, User user)
+    private @NotNull ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                       @Nullable DatasetDefinition oldDef, DatasetDomainKindProperties datasetPropertiesUpdate, Container container, User user, String userComment)
     {
+        StringBuilder changeDetails = new StringBuilder();
+        boolean hasNameChange = false;
+        if (oldDef != null)
+        {
+            hasNameChange = !datasetPropertiesUpdate.getName().equals(oldDef.getName());
+            if (hasNameChange)
+                changeDetails.append("The name of the dataset '" + oldDef.getName() + "' was changed to '" + datasetPropertiesUpdate.getName() + "'.");
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", oldDef.getDescription(), datasetPropertiesUpdate.getDescription()));
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Category", oldDef.getCategory(), datasetPropertiesUpdate.getCategory()));
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Label", oldDef.getLabel(), datasetPropertiesUpdate.getLabel()));
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("KeyPropertyName", oldDef.getKeyPropertyName(), datasetPropertiesUpdate.getKeyPropertyName()));
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("VisitDateColumnName", oldDef.getVisitDateColumnName(), datasetPropertiesUpdate.getVisitDatePropertyName()));
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Tag", oldDef.getTag(), datasetPropertiesUpdate.getTag()));
+            changeDetails.append(DomainUtil.getPropChangeMsg("KeyPropertyManaged", oldDef.getKeyManagementType() != Dataset.KeyManagementType.None, datasetPropertiesUpdate.isKeyPropertyManaged()));
+            changeDetails.append(DomainUtil.getPropChangeMsg("IsDemographicData", oldDef.isDemographicData(), datasetPropertiesUpdate.isDemographicData()));
+            changeDetails.append(DomainUtil.getPropChangeMsg("IsUseTimeKeyField", oldDef.getUseTimeKeyField(), datasetPropertiesUpdate.isUseTimeKeyField()));
+            changeDetails.append(DomainUtil.getPropChangeMsg("CohortId", oldDef.getCohortId(), datasetPropertiesUpdate.getCohortId()));
+        }
+
         ValidationException exception = new ValidationException();
-        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), userComment));
         return exception;
     }
 
@@ -736,7 +755,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         Lock[] locks = def == null ? new Lock[0] : new Lock[] { def.getDomainLoadingLock() };
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction(locks))
         {
-            ValidationException exception = updateDomainDescriptor(original, update, container, user);
+            ValidationException exception = updateDomainDescriptor(original, update, def, datasetProperties, container, user, userComment);
 
             QueryService.get().saveCalculatedFieldsMetadata("study", update.getQueryName(), hasNameChange ? datasetProperties.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
 

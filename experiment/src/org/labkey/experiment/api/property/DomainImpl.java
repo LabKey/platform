@@ -57,6 +57,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -654,11 +655,12 @@ public class DomainImpl implements Domain
             {
                 if (!impl._deleted)
                 {
+                    String newPropName = impl._pd.getName(); // remember the actual name before being substituted with tmpName
                     // make sure all properties have storageColumnName
                     if (null == impl._pd.getStorageColumnName())
                     {
-                        if (!allowAddBaseProperty && baseProperties.contains(impl._pd.getName()))
-                            impl._pd.setStorageColumnName(impl._pd.getName()); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
+                        if (!allowAddBaseProperty && baseProperties.contains(newPropName))
+                            impl._pd.setStorageColumnName(newPropName); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
                         else
                             generateStorageColumnName(impl._pd);
                     }
@@ -700,7 +702,7 @@ public class DomainImpl implements Domain
 
                         if (impl.isDirty())
                         {
-                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
+                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(newPropName))
                             {
                                 finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
                                 // Issue 17020: Save any fields whose name changed with a temp, guaranteed unique name.
@@ -744,9 +746,9 @@ public class DomainImpl implements Domain
 
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
-                    else if (null != pdOld)
+                    else if (pdOld != null)
                     {
-                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats);
+                        PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, newPropName, pdOld, oldValidators, oldFormats);
                         if (auditInfo.isChanged())
                             propertyAuditInfo.add(auditInfo);
                     }
@@ -965,6 +967,15 @@ public class DomainImpl implements Domain
         AuditLogService.get().addEvent(user, event);
     }
 
+    public static String getPropertyValidatorStringVal(Collection<PropertyValidator> validators)
+    {
+        if (validators == null || validators.isEmpty())
+            return "<none>";
+        List<String> strings = new ArrayList<>();
+        validators.forEach(validator -> strings.add(validator.getStringVal()));
+        return StringUtils.join(strings, ", ");
+    }
+
     private static class PropertyChangeAuditInfo
     {
         private final DomainProperty _prop;
@@ -978,12 +989,12 @@ public class DomainImpl implements Domain
             _details = isCreated ? makeNewPropAuditComment(prop) : "";
         }
 
-        public PropertyChangeAuditInfo(DomainPropertyImpl prop, PropertyDescriptor pdOld,
+        public PropertyChangeAuditInfo(DomainPropertyImpl prop, String newPropName, PropertyDescriptor pdOld,
                                        String oldValidators, String oldFormats)
         {
             _prop = prop;
             _action = "Modified";
-            _details = makeModifiedPropAuditComment(prop, pdOld, oldValidators, oldFormats);
+            _details = makeModifiedPropAuditComment(prop, newPropName, pdOld, oldValidators, oldFormats);
         }
 
         public DomainProperty getProp()
@@ -1045,11 +1056,11 @@ public class DomainImpl implements Domain
             return str.toString();
         }
 
-        private String makeModifiedPropAuditComment(DomainPropertyImpl prop, PropertyDescriptor pdOld, String oldValidators, String oldFormats)
+        private String makeModifiedPropAuditComment(DomainPropertyImpl prop, String newPropName, PropertyDescriptor pdOld, String oldValidators, String oldFormats)
         {
             StringBuilder str = new StringBuilder();
-            if (!pdOld.getName().equals(prop.getName()))
-                str.append("Name: ").append(renderOldVsNew(pdOld.getName(), prop.getName())).append("; ");
+            if (!pdOld.getName().equals(newPropName))
+                str.append("Name: ").append(renderOldVsNew(pdOld.getName(), newPropName)).append("; ");
             if (!StringUtils.equals(pdOld.getLabel(), prop.getLabel()))
                 str.append("Label: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getLabel()), renderCheckingBlank(prop.getLabel()))).append("; ");
             if (null != pdOld.getPropertyType() && !pdOld.getPropertyType().equals(prop.getPropertyType()))
@@ -1118,21 +1129,13 @@ public class DomainImpl implements Domain
         private static String renderValidators(PropertyDescriptor prop)
         {
             Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
-            if (validators.isEmpty())
-                return "<none>";
-            List<String> strings = new ArrayList<>();
-            validators.forEach(validator -> strings.add(validator.getName() + " [" +
-                StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
-            );
-            return StringUtils.join(strings, ", ");
+            return getPropertyValidatorStringVal(validators);
         }
 
         private static String renderConditionalFormats(PropertyDescriptor prop)
         {
             List<ConditionalFormat> formats = DomainPropertyManager.get().getConditionalFormats(prop);
-            if (formats.isEmpty())
-                return "<none>";
-            return Integer.toString(formats.size());
+            return ConditionalFormat.toStringVal(formats);
         }
 
         private void renderValidatorsDiff(DomainProperty prop, String oldValidators, StringBuilder str)

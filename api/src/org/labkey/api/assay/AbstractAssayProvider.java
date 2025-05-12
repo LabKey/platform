@@ -74,6 +74,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.files.FileContentService;
@@ -1246,7 +1247,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private static final String SCRIPT_PATH_DELIMITER = "|";
 
     @Override
-    public ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
+    public Pair<ValidationException, String> setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
@@ -1290,9 +1291,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // don't persist if any validation error has severity=ERROR
         if (validationErrors.getErrors().stream().anyMatch(e -> SEVERITY.ERROR == e.getSeverity()))
-            return validationErrors;
+            return new Pair<>(validationErrors, null);
 
         JSONArray json = AnalysisScript.toJson(scripts);
+        ObjectProperty oldProp = props.get(propertyURI);
+        String oldJson = oldProp == null ? null : oldProp.getStringValue();
+        String auditMsg = DomainUtil.getPropChangeMsg("TransformScript", oldJson, json);
         if (json != null)
         {
             ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
@@ -1305,7 +1309,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         protocol.setObjectProperties(props);
 
-        return validationErrors;
+        return new Pair<>(validationErrors, auditMsg);
     }
 
     /** For migrating legacy assay designs that have separate transform and validation script properties */

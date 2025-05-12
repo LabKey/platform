@@ -7973,6 +7973,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                         String auditUserComment)
     {
         ValidationException errors;
+        StringBuilder changeDetails = new StringBuilder();
 
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
@@ -7988,10 +7989,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
                 hasNameChange = true;
                 dataClass.setName(newName);
+                changeDetails.append("The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.");
             }
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", dataClass.getDescription(), options.getDescription()));
             dataClass.setDescription(options.getDescription());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("NameExpression", dataClass.getNameExpression(), options.getNameExpression()));
             dataClass.setNameExpression(options.getNameExpression());
+            changeDetails.append(DomainUtil.getPropChangeMsg("SampleType", dataClass.getSampleType() == null ? null : dataClass.getSampleType().getRowId(), options.getSampleType() == null ? null : options.getSampleType()));
             dataClass.setSampleType(options.getSampleType());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Category", dataClass.getCategory(), options.getCategory()));
             dataClass.setCategory(options.getCategory());
             Map<String, Map<String, Object>> newAliases = options.getImportAliases();
             if (newAliases != null && !newAliases.isEmpty())
@@ -8008,7 +8014,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw new RuntimeException(e);
                 }
             }
+            String oldImportAliasJson = null;
+            try
+            {
+                oldImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(dataClass.getImportAliasMap());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
             dataClass.setImportAliasMap(newAliases);
+            String newImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(newAliases);
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasJson, newImportAliasJson));
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
                 throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -8019,15 +8036,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             LOG.debug("Saving data class " +  dataClass.getName());
             dataClass.save(u);
 
-            String auditComment = null;
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
-                auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
-            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment, auditUserComment);//
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment);
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 

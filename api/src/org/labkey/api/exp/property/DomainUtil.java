@@ -750,6 +750,51 @@ public class DomainUtil
         return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null);
     }
 
+    public static String getStringPropChangeMsg(String propertyName, String oldProp, String newProp)
+    {
+        if (oldProp == null && newProp == null)
+            return "";
+
+        if ((oldProp == null && newProp.isEmpty()) || (newProp == null && oldProp.isEmpty()))
+            return "";
+
+        if (oldProp != null && newProp == null)
+            return propertyName + ": " + oldProp + " -> " + " <null>;";
+        if (oldProp == null)
+            return propertyName + ": <null> -> " + newProp + ";";
+
+        if (oldProp.equals(newProp))
+            return "";
+
+        return propertyName + ": " + oldProp + " -> " + newProp + ";";
+    }
+
+    public static String getPropChangeMsg(String propertyName, Object oldProp, Object newProp)
+    {
+        if (oldProp == newProp)
+            return "";
+
+        if (oldProp != null && newProp == null)
+            return getStringPropChangeMsg(propertyName, oldProp.toString(), null);
+        if (oldProp == null)
+            return getStringPropChangeMsg(propertyName, null, newProp.toString());
+
+        return getStringPropChangeMsg(propertyName, oldProp.toString(), newProp.toString());
+    }
+
+    public static <T> String getCollectionPropChangeMsg(String propertyName, Collection<T> oldProp, Collection<T> newProp)
+    {
+        if (oldProp == newProp)
+            return "";
+
+        if (oldProp != null && newProp == null)
+            return getPropChangeMsg(propertyName, StringUtils.join(oldProp), null);
+        if (oldProp == null)
+            return getPropChangeMsg(propertyName, null, StringUtils.join(newProp));
+
+        return getPropChangeMsg(propertyName, StringUtils.join(oldProp), StringUtils.join(newProp));
+    }
+
     /** @return Errors encountered during the save attempt */
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment)
@@ -779,9 +824,11 @@ public class DomainUtil
             return validationException;
         }
 
+        StringBuilder changeDetails = new StringBuilder();
         String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
+            changeDetails.append(getStringPropChangeMsg("Name", d.getName(), updatedName));
             updatedName = StringUtils.trimToEmpty(updatedName);
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
@@ -793,7 +840,9 @@ public class DomainUtil
             d.setName(updatedName);
         }
 
-        d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
+        List<String> disabledSystemFieldsUpdate = kind.getDisabledSystemFields(update.getDisabledSystemFields());
+        changeDetails.append(getCollectionPropChangeMsg("DisabledSystemFields",d.getDisabledSystemFields(), disabledSystemFieldsUpdate));
+        d.setDisabledSystemFields(disabledSystemFieldsUpdate);
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -875,7 +924,7 @@ public class DomainUtil
 
             if (old == null)
                 continue;
-            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
+            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd); //
             if (propTextChoiceValueUpdates != null)
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
             if (old.equals(pd))
@@ -914,7 +963,9 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user, auditComment, auditUserComment);
+                String changeDetail = changeDetails.toString();
+                String extraAuditComment = (auditComment == null ? "" : auditComment + (changeDetail.isEmpty() ? "" : " ")) + changeDetail;
+                d.save(user, extraAuditComment, auditUserComment);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -1191,11 +1242,13 @@ public class DomainUtil
             to.setDerivationDataScope(from.getDerivationDataScope());
     }
 
-    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
+    private static List<Map<String, Object>> updatePropertyValidators(DomainProperty dp, @Nullable GWTPropertyDescriptor oldPd, GWTPropertyDescriptor newPd)
     {
         Map<Integer, GWTPropertyValidator> newProps = new HashMap<>();
         List<Map<String, Object>> valueUpdates = new ArrayList<>();
 
+        PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
+        String oldValidatorStr = dp.getPropertyValidatorStringVal(); // record the old value before dp is mutated
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
@@ -1235,11 +1288,11 @@ public class DomainUtil
             // deal with removed validators
             for (GWTPropertyValidator gpv : deleted)
                 dp.removeValidator(gpv.getRowId());
-
-            return valueUpdates;
         }
 
-        return null;
+        dp.checkValidatorEdit(oldValidatorStr, oldPropertyDescriptor); // mark dirty as needed
+
+        return oldPd != null ? valueUpdates : null;
     }
 
     private static void updateTextChoiceValueRows(Domain domain, User user, String propName, Map<String, Object> valueUpdates, ValidationException errors)

@@ -1005,6 +1005,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
+        StringBuilder changeDetails = new StringBuilder();
+
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
         boolean hasNameChange = false;
@@ -1013,6 +1015,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
+            changeDetails.append("The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.");
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
@@ -1020,6 +1023,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (description == null || !description.equals(newDescription))
         {
             st.setDescription(newDescription);
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", description, newDescription));
         }
 
         boolean hasMetricUnitChanged = false;
@@ -1030,6 +1034,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
+                changeDetails.append(DomainUtil.getStringPropChangeMsg("NameExpression", oldPattern, sampleIdPattern));
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                     throw new ApiUsageException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -1039,12 +1044,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String oldAliquotPattern = st.getAliquotNameExpression();
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
             {
+                changeDetails.append(DomainUtil.getStringPropChangeMsg("AliquotNameExpression", oldAliquotPattern, aliquotIdPattern));
                 st.setAliquotNameExpression(aliquotIdPattern);
             }
 
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("LabelColor", st.getLabelColor(), options.getLabelColor()));
             st.setLabelColor(options.getLabelColor());
             String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
             String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
+
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("MetricUnit", oldMetricUnit, newMetricUnit));
 
             if (!Objects.equals(oldMetricUnit, newMetricUnit))
                 hasMetricUnitChanged = true;
@@ -1068,9 +1077,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
+            String oldImportAliasJson = null;
+            try
+            {
+                oldImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(st.getImportAliasMap());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
             st.setImportAliasMap(options.getImportAliases());
+            String newImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(options.getImportAliases());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasJson, newImportAliasJson));
             String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("AutoLinkTargetContainerId", st.getAutoLinkTargetContainer() == null ? null : st.getAutoLinkTargetContainer().getId(), options.getAutoLinkTargetContainerId()));
             st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("AutoLinkCategory", st.getAutoLinkCategory(), options.getAutoLinkCategory()));
             st.setAutoLinkCategory(options.getAutoLinkCategory());
             if (options.getCategory() != null) // update sample type category is currently not supported
                 st.setCategory(options.getCategory());
@@ -1079,14 +1101,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            String auditComment = null;
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
-                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
-            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment, auditUserComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment);
 
             if (!errors.hasErrors())
             {

@@ -8228,6 +8228,7 @@ public class QueryController extends SpringActionController
     {
         private String schemaName;
         private String queryName;
+        private String auditUserComment;
         private List<String> templateLabels;
         private List<String> templateUrls;
         private Long _lastKnownModified;
@@ -8281,6 +8282,16 @@ public class QueryController extends SpringActionController
         public void setLastKnownModified(Long lastKnownModified)
         {
             _lastKnownModified = lastKnownModified;
+        }
+
+        public String getAuditUserComment()
+        {
+            return auditUserComment;
+        }
+
+        public void setAuditUserComment(String auditUserComment)
+        {
+            this.auditUserComment = auditUserComment;
         }
 
     }
@@ -8517,6 +8528,7 @@ public class QueryController extends SpringActionController
                 }
 
                 DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), "Import templates updated.");
+                event.setUserComment(form.getAuditUserComment());
                 event.setDomainUri(_domain.getTypeURI());
                 event.setDomainName(_domain.getName());
                 AuditLogService.get().addEvent(user, event);

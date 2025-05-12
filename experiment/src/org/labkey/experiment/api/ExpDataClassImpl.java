@@ -511,6 +511,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
+    @Override
     public String getImportAliasJson()
     {
         return _object.getDataParentImportAliasMap();

@@ -240,7 +240,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    ValidationException setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException;
+    Pair<ValidationException, String> setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException;
 
     @NotNull
     List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);

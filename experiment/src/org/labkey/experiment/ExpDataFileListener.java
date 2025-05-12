@@ -76,7 +76,7 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             // if the data object moved containers, set that as well
             if (targetContainer != null && !targetContainer.equals(sourceContainer))
                 data.setContainer(targetContainer);
-            data.save(user);
+            data.save(user); // bad!!
             extra = 1;
         }
 

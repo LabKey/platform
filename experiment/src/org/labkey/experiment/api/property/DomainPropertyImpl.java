@@ -55,6 +55,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -576,6 +577,9 @@ public class DomainPropertyImpl implements DomainProperty
         if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
             return;
 
+        if (getDefaultValueType() == null && defaultValueTypeName == null)
+            return; // if both are null, don't call edit(), with marks property as dirty
+
         edit().setDefaultValueType(defaultValueTypeName);
     }
 
@@ -637,6 +641,23 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (scannable != isScannable())
             edit().setScannable(scannable);
+    }
+
+    @Override
+    public  String getPropertyValidatorStringVal()
+    {
+        return DomainImpl.getPropertyValidatorStringVal(DomainPropertyManager.get().getValidators(this));
+    }
+
+    @Override
+    public void checkValidatorEdit(String oldValidatorStr, PropertyDescriptor oldPropertyDescriptor)
+    {
+        if (isEdited())
+            return;
+
+        String newValidatorStr = DomainImpl.getPropertyValidatorStringVal(DomainPropertyManager.get().getValidators(this));
+        if (!oldValidatorStr.equals(newValidatorStr))
+            _pdOld = oldPropertyDescriptor.clone();
     }
 
     @Override
@@ -1056,6 +1077,12 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConditionalFormats(List<ConditionalFormat> formats)
     {
+        String newVal = ConditionalFormat.toStringVal(formats);
+        String oldVal = ConditionalFormat.toStringVal(getConditionalFormats());
+
+        if (!newVal.equals(oldVal))
+            edit();
+
         _formats = formats;
     }
 

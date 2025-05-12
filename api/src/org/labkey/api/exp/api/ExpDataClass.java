@@ -118,5 +118,7 @@ public interface ExpDataClass extends ExpObject
 
     void setImportAliasMap(Map<String, Map<String, Object>> aliasMap);
 
+    String getImportAliasJson();
+
     boolean hasData();
 }
