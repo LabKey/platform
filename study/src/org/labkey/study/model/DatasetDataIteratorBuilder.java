@@ -35,7 +35,6 @@ import org.labkey.api.dataiterator.ScrollableDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
@@ -52,7 +51,6 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -620,7 +618,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int translatePtid(Integer indexPtidInput, User user) throws ValidationException
         {
-            ColumnInfo col = new BaseColumnInfo(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
+            ColumnInfo col = BaseColumnInfo.createNotInDatabase(_datasetDefinition.getStudy().getSubjectColumnName(), JdbcType.VARCHAR);
             ParticipantIdImportHelper piih = new ParticipantIdImportHelper(_datasetDefinition.getStudy(), user, _datasetDefinition);
             Callable call = piih.getCallable(getInput(), indexPtidInput);
             return addColumn(col, call);
@@ -628,14 +626,14 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int addLSID()
         {
-            ColumnInfo col = new BaseColumnInfo("lsid", JdbcType.VARCHAR);
+            ColumnInfo col = BaseColumnInfo.createNotInDatabase("lsid", JdbcType.VARCHAR);
             indexLSIDOutput = addColumn(col, new LSIDColumn());
             return indexLSIDOutput;
         }
 
         int addParticipantSequenceNum()
         {
-            var col = new BaseColumnInfo("participantsequencenum", JdbcType.VARCHAR);
+            var col = BaseColumnInfo.createNotInDatabase("participantsequencenum", JdbcType.VARCHAR);
             return addColumn(col, new ParticipantSequenceNumColumn());
         }
 

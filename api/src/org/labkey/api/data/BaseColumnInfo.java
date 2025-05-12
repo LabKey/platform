@@ -210,6 +210,43 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
     }
 
+
+    /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
+     * e.g. for DataLoader or "fake" ResultsImpl.
+     * These columns do not have a SqlDialect.  This constructor method is useful in that case.  In particular it will
+     * create an alias without reference to a SqlDialect.
+     */
+    public static BaseColumnInfo createNotInDatabase(String name, JdbcType type)
+    {
+        BaseColumnInfo ret = new BaseColumnInfo(name, type);
+        ret.setAlias(new NotInDatabaseIdentifier(ret.getName()));
+        return ret;
+    }
+
+    private static class NotInDatabaseIdentifier implements DatabaseIdentifier
+    {
+        final String name;
+
+        NotInDatabaseIdentifier(String name)
+        {
+            this.name = name;
+        }
+
+        @Override
+        public String getId()
+        {
+            return name;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            // we should not be generating SQL using this alias (though I suppose someone might try this for display?)
+            throw new IllegalStateException("Can't generate SQL for '" + name + "'");
+        }
+    }
+
+
     /* used by TableInfo.addColumn */
     public boolean lockName()
     {
@@ -270,20 +307,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return null != _alias;
     }
 
-    private static final SQLFragment NOT_IN_DATABASE = new SQLFragment("/* NOT_IN_DATABASE */ . . . ");
-
     @Override
     public DatabaseIdentifier getAlias()
     {
         // TODO ensure all aliases in table constructor and get rid of lazy evaluation here so we don't have to avoid checkLocked()
         if (_alias == null)
         {
-            var legal = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
             // there are BaseColumnInfo instances that are not part of a database table (e.g., for a DataLoader)
             // these don't really need an alias, but we need something here
             SqlDialect dialect = getSqlDialect();
             if (null == dialect)
-                return SqlDialect.makeDatabaseIdentifier(legal, NOT_IN_DATABASE);
+            {
+                // CONSIDER set _alias if locked? always set?
+                return new NotInDatabaseIdentifier(getName());
+            }
+            var legal = AliasManager.makeLegalName(getFieldKey(), getSqlDialect());
             _alias = getSqlDialect().makeDatabaseIdentifier(legal);
         }
         return _alias;

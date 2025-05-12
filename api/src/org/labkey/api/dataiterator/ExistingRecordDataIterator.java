@@ -274,6 +274,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 {
                     sqlf.append(",?");
                     Object pkVal = pkSuppliers.get(p).get();
+
+                    // Issue 52922: Rows with blank key in the file are getting ignored in update from file
+                    if (pkVal == null)
+                    {
+                        _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                        continue;
+                    }
+
                     sqlf.add(pkVal);
                     if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                         pkKeys.add(pkVal.toString());
@@ -312,6 +320,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             // fetch N new rows into the existingRecords map
             Pair<SQLFragment, Map<Integer, String>> selectRowsSql = getSelectExistingSql(50);
+
             SQLFragment select = selectRowsSql.first;
             Map<Integer, String> rowNumContainers = selectRowsSql.second;
             var list = new SqlSelector(target.getSchema(), select, QueryLogging.noValidationNeededQueryLogging()).getArrayList(Map.class);
@@ -393,6 +402,13 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     for (int p=0 ; p<pkColumns.size() ; p++)
                     {
                         Object pkVal = pkSuppliers.get(p).get();
+                        // Issue 52922: Rows with blank key in the file are getting ignored in update from file
+                        if (pkVal == null)
+                        {
+                            _context.getErrors().addRowError(new ValidationException(pkColumns.get(p).getColumnName() + " value not provided on row " + lastPrefetchRowNumber));
+                            return;
+                        }
+
                         keyMap.put(pkColumns.get(p).getColumnName(), pkVal);
                         if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                             pkKeys.add(pkVal.toString());

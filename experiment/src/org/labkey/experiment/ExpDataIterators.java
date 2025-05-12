@@ -2514,9 +2514,12 @@ public class ExpDataIterators
                     ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
                     {
+                        // Note that this is slightly different from our treatment of lookups:
+                        //    - when in a project, we allow import or update to all subfolders,
+                        //    - when in a folder, we only allow references to data up the folder tree
                         if (container.isProject())
                             cf = new ContainerFilter.AllInProjectPlusShared(container, user);
-                        else if (!QueryService.get().isProductFoldersDataListingScopedToProject())
+                        else
                             cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
                     }
                     Collection<GUID> validContainerIds =  cf.getIds();
@@ -2587,6 +2590,8 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
+                        // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+                        qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(splitContainer, _user));
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2594,7 +2599,7 @@ public class ExpDataIterators
                             _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
                             return totalRowCount;
                         }
-                        totalRowCount +=_importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
+                        totalRowCount += _importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
                     }
                     return totalRowCount;
                 }
@@ -2842,6 +2847,8 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             DataClassUserSchema schema = new DataClassUserSchema(container, _user);
             QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo dataTable = qDef.getTable(schema, qpe, true);
             if (dataTable == null)
             {
@@ -2871,6 +2878,8 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {
@@ -2998,6 +3007,11 @@ public class ExpDataIterators
                             _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                     }
                 }
+                else if (index == _dataIdIndex && _isCrossFolderUpdate)
+                {
+                    // Issue 52922: Samples with blank sample id in the file are getting ignored
+                    throw new IllegalArgumentException("Name value not provided on row " + get(0));
+                }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
@@ -3031,9 +3045,12 @@ public class ExpDataIterators
                 }
 
                 Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+
+                Set<String> notFoundIds = new HashSet<>(typeData.dataIds);
                 for (Map<String, Object> row : rows)
                 {
                     String name = (String) row.get("name");
+                    notFoundIds.remove(name);
                     String dataContainer = (String) row.get("container");
                     // could be updating the same data multiple times in a single import, the import will later be rejected
                     List<Integer> dataRowIds =
@@ -3041,6 +3058,11 @@ public class ExpDataIterators
                                     .filter(i -> typeData.dataIds.get(i).equals(name))
                                     .toList();
                     containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
+                }
+                if (!notFoundIds.isEmpty())
+                {
+                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
+                    return;
                 }
 
                 for (String containerId : containerRows.keySet())

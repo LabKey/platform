@@ -11790,7 +11790,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
     {
-
         @Override
         public void addNavTrail(NavTree root)
         {
@@ -11938,6 +11937,17 @@ public class AdminController extends SpringActionController
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
+                    String blockedUri = cspReport.optString("blocked-uri", null);
+
+                    // Issue 52933 - suppress base-uri problems from a crawler or bot on labkey.org
+                    if (blockedUri != null &&
+                            blockedUri.startsWith("https://labkey.org%2C") &&
+                            blockedUri.endsWith("undefined") &&
+                            !_log.isDebugEnabled())
+                    {
+                        return ret;
+                    }
+
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {

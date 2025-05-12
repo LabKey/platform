@@ -833,33 +833,32 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return tableName;
     }
 
-//    enum RequiredIndicesAction
-//    {
-//        Drop
-//            {
-//                @Override
-//                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-//                {
-//                    dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-//                }
-//            },
-//        Add
-//            {
-//                @Override
-//                protected void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
-//                {
-//                    addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
-//
-//                }
-//            };
-//
-//        protected abstract void doOperation(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
-//    }
+    enum RequiredIndicesAction
+    {
+        Drop
+        {
+            @Override
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            {
+                provisioner.dropNotRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+            }
+        },
+        Add
+        {
+            @Override
+            public void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+            {
+                provisioner.addMissingRequiredIndices(domain, schemaTableInfo, requiredIndicesMap);
+            }
+        };
+
+        public abstract void doOperation(StorageProvisionerImpl provisioner, Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap);
+    }
 
     @Override
     public void dropNotRequiredIndices(Domain domain)
     {
-        if(!domain.isProvisioned()){
+        if (!domain.isProvisioned()){
             return;
         }
         updateTableIndices(domain, RequiredIndicesAction.Drop);
@@ -871,7 +870,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         updateTableIndices(domain, RequiredIndicesAction.Add);
     }
 
-    private void updateTableIndices(Domain domain,@NotNull RequiredIndicesAction requiredIndicesAction)
+    private void updateTableIndices(Domain domain, @NotNull RequiredIndicesAction requiredIndicesAction)
     {
         SchemaTableInfo schemaTableInfo = getSchemaTableInfo(domain);
 
@@ -879,7 +878,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         Map<String, PropertyStorageSpec.Index> requiredIndicesMap = getRequiredIndices(domain, sqlDialect);
 
-        requiredIndicesAction.doOperation(domain, schemaTableInfo, requiredIndicesMap);
+        requiredIndicesAction.doOperation(this, domain, schemaTableInfo, requiredIndicesMap);
     }
 
     @NotNull
@@ -893,29 +892,35 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         String storageTableName = domain.getStorageTableName();
 
-        if(storageTableName == null){
+        if (storageTableName == null)
+        {
             storageTableName = makeTableName(getDomainKind(domain),domain);
         }
 
         for (PropertyStorageSpec.Index index : requiredIndices)
         {
-            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames),index);
+            // TODO: Bad!! Shouldn't be making up an index name here! Ideally, we use the AbstractAuditTypeProvider.updateIndices() approach instead.
+            requiredIndicesMap.put(sqlDialect.nameIndex(storageTableName, index.columnNames), index);
         }
         return requiredIndicesMap;
     }
 
-    @Override
-    public void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void dropNotRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
     {
         Set<String> indicesToDrop = new HashSet<>();
 
-        buildListOfIndicesToDrop(schemaTableInfo, requiredIndicesMap, indicesToDrop);
+        // Determine indices to drop
+        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
+        {
+            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
+            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
 
-        dropIndicesFromTable(domain, indicesToDrop);
-    }
+            if (!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices)
+            {
+                indicesToDrop.add(index.getKey());
+            }
+        }
 
-    private static void dropIndicesFromTable(Domain domain, Set<String> indicesToDrop)
-    {
         if (!indicesToDrop.isEmpty())
         {
             TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
@@ -930,31 +935,22 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    private static void buildListOfIndicesToDrop(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<String> indicesToDrop)
-    {
-        for (Map.Entry<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> index : schemaTableInfo.getAllIndices().entrySet())
-        {
-            boolean isPrimaryKey = index.getValue().getKey().equals(TableInfo.IndexType.Primary);
-            boolean tableIndexNameNotFoundInRequiredIndices = !requiredIndicesMap.containsKey(index.getKey().toLowerCase());
-
-            if(!isPrimaryKey && tableIndexNameNotFoundInRequiredIndices){
-                indicesToDrop.add(index.getKey());
-            }
-        }
-    }
-
-    @Override
-    public void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
+    private void addMissingRequiredIndices(Domain domain, SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap)
     {
         Set<PropertyStorageSpec.Index> indicesToAdd = new HashSet<>();
 
-        buildListOfIndicesToAdd(schemaTableInfo, requiredIndicesMap, indicesToAdd);
+        // Build the list of indices to add
+        CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
+        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
+        {
+            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
+            if (requiredIndexNotFoundInTable)
+            {
+                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
+                indicesToAdd.add(requiredIndexEntry.getValue());
+            }
+        }
 
-        addIndicesToTable(domain, indicesToAdd);
-    }
-
-    private void addIndicesToTable(Domain domain, Set<PropertyStorageSpec.Index> indicesToAdd)
-    {
         if (!indicesToAdd.isEmpty())
         {
             TableChange change;
@@ -977,20 +973,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-    private static void buildListOfIndicesToAdd(SchemaTableInfo schemaTableInfo, Map<String, PropertyStorageSpec.Index> requiredIndicesMap, Set<PropertyStorageSpec.Index> indicesToAdd)
-    {
-        CaseInsensitiveHashSet tableIndexNames = new CaseInsensitiveHashSet(schemaTableInfo.getAllIndices().keySet());
-        for (Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry : requiredIndicesMap.entrySet())
-        {
-            boolean requiredIndexNotFoundInTable = !tableIndexNames.contains(requiredIndexEntry.getKey());
-            if (requiredIndexNotFoundInTable)
-            {
-                ensureIndexToBeAddedHasNoPrimaryKeys(schemaTableInfo, requiredIndexEntry);
-                indicesToAdd.add(requiredIndexEntry.getValue());
-            }
-        }
-    }
-
     private static void ensureIndexToBeAddedHasNoPrimaryKeys(SchemaTableInfo schemaTableInfo, Map.Entry<String, PropertyStorageSpec.Index> requiredIndexEntry)
     {
         for (String indexColumnName : requiredIndexEntry.getValue().columnNames)
@@ -1003,6 +985,58 @@ public class StorageProvisionerImpl implements StorageProvisioner
                             "Adding an index with primary key columns is not supported. Primary keys are " + String.join(",", schemaTableInfo.getPkColumnNames()));
                 }
             }
+        }
+    }
+
+    @Override
+    public void addTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, TableChange.IndexSizeMode sizeMode)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == indices)
+            throw new IllegalArgumentException("indices cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.AddIndices);
+
+        if (null != sizeMode)
+            change.setIndexSizeMode(sizeMode);
+
+        change.setIndexedColumns(domain, indices);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
+        }
+    }
+
+    private DbScope validateDomain(Domain domain)
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        String tableName = domain.getStorageTableName();
+        if (null == tableName)
+            throw new IllegalStateException("Table must already exist.");
+
+        return scope;
+    }
+
+    @Override
+    public void dropTableIndices(Domain domain, Set<String> indexNames)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == indexNames)
+            throw new IllegalArgumentException("indices cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
+        change.setIndicesToBeDroppedByName(indexNames);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
         }
     }
 
@@ -1038,38 +1072,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
 
         return getSchemaTableInfo(domain, schemaName, tableName, schema);
-    }
-
-    @Override
-    public void addOrDropTableIndices(Domain domain, Set<PropertyStorageSpec.Index> indices, boolean doAdd, TableChange.IndexSizeMode sizeMode)
-    {
-        DomainKind<?> kind = domain.getDomainKind();
-        DbScope scope = kind.getScope();
-
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
-            throw new IllegalStateException("Table must already exist.");
-
-        TableChange change = new TableChange(domain, doAdd ? ChangeType.AddIndices : ChangeType.DropIndices);
-
-        if(null != sizeMode)
-            change.setIndexSizeMode(sizeMode);
-
-        // If indices not passed in, get them from domain definition
-        if (null == indices)
-        {
-            indices = new HashSet<>();
-            indices.addAll(kind.getPropertyIndices(domain));
-            indices.addAll(domain.getPropertyIndices());
-        }
-
-        change.setIndexedColumns(domain, indices);
-
-        try (Transaction transaction = scope.ensureTransaction())
-        {
-            change.execute();
-            transaction.commit();
-        }
     }
 
     @Override

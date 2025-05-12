@@ -4015,6 +4015,8 @@ public class QueryController extends SpringActionController
 
             _insertOption = form.getInsertOption();
             QueryDefinition query = form.getQueryDef();
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            query.setContainerFilter(QueryService.get().getContainerFilterForLookups(getContainer(), getUser()));
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())

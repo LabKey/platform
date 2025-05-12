@@ -5,14 +5,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
-import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.URLHelper;
@@ -20,7 +18,6 @@ import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -96,12 +93,13 @@ public enum AllowListType
         {
             return HtmlString.unsafe("""
                 <div style="width: 700px">
-                    <div>
-                        This list is the set of file extensions that LabKey will accept for uploads. Any extension that is not in this list will be rejected, this includes multiple extensions. For example, .gz is not sufficient to allow .tar.gz; you must specify .tar.gz. If the list is empty, then this check is ignored.
-                    </div>
-                    <div>
-                    e.g., .tsv, .csv, .tar.gz, .sky.zip, etc.
-                    </div>
+                    <p>
+                        Restrict the file types that LabKey will accept for uploads by specifying a list of all allowed
+                        file extensions. Add the extensions one-by-one via the "Extension" box. Any extension that is
+                        not in the list below will be rejected. Multiple extensions must be provided explicitly; for
+                        example, specify ".tar.gz" to allow those files (".gz" is not sufficient). If the list is empty
+                        then all file types will be allowed.
+                    </p>
                 </div>
                 """);
         }

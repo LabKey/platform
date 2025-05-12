@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
@@ -60,6 +62,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -493,7 +496,7 @@ public abstract class DisplayColumn extends RenderColumn
      * Format the display value as text <i>only</i> if there is a text expression or format configured for
      * the display column (which includes any project date and number format settings),
      * otherwise return null.
-     *
+     * <p>
      * <b>No html encoding should be performed</b>
      * @see #getFormattedHtml(RenderContext)
      */
@@ -1255,6 +1258,11 @@ public abstract class DisplayColumn extends RenderColumn
     public String getExcelFormatString()
     {
         return _excelFormatString;
+    }
+
+    public ExcelColumn createExcelColumn(Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> formatters, Workbook workbook)
+    {
+        return new ExcelColumn(this, formatters, workbook);
     }
 
     public void setExcelFormatString(String excelFormatString)

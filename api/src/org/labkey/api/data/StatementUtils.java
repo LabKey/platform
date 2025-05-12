@@ -55,15 +55,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: 2/26/12
- * Time: 3:54 PM
- */
-
-// I pulled these methods out of Table.java in an attempt get Clover to provide coverage information on them. (Clover seems
-// to skip any class that includes a junit TestCase.) I'm looking to refactor the re-select behavior, but want Cover to
-// identify tests that exercise the code paths that will be changed.
+// I pulled these methods out of Table.java in an attempt to get Clover to provide coverage information on them.
+// (Clover seems to skip any class that includes a junit TestCase.) I'm looking to refactor the re-select behavior,
+// but want Clover to identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
     private static final Logger _log = LogHelper.getLogger(StatementUtils.class, "SQL insert/update/delete generation");
@@ -176,14 +170,14 @@ public class StatementUtils
     }
 
     /**
-     * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship
-     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
-     *
+     * Create a reusable SQL Statement for inserting rows into a labkey relationship. The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OntologyManager tables.
+     * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
-     *
+     * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
-     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * This shouldn't be a big problem since we don't usually need to optimize the one-row case, and we're moving
      * to provisioned tables for major datatypes.
      */
     public static ParameterMapStatement insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
@@ -212,14 +206,14 @@ public class StatementUtils
 
 
     /**
-     * Create a reusable SQL Statement for updating rows into an labkey relationship.  The relationship
-     * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
+     * Create a reusable SQL Statement for updating rows into a labkey relationship. The relationship
+     * persisted directly in the database (SchemaTableInfo), or via the OntologyManager tables.
      * <p>
      * QueryService shouldn't really know about the internals of exp.Object and exp.ObjectProperty etc.
      * However, I can only keep so many levels of abstraction in my head at once.
      * <p>
      * NOTE: this is currently fairly expensive for updating one row into an Ontology stored relationship on Postgres.
-     * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
+     * This shouldn't be a big problem since we don't usually need to optimize the one-row case, and we're moving
      * to provisioned tables for major datatypes.
      */
     public static ParameterMapStatement updateStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
@@ -896,7 +890,7 @@ public class StatementUtils
 
             if (Operation.merge == _operation)
             {
-                // updateCount can equal 0.  This happens particularly when inserting into junction tables where
+                // updateCount can equal 0. This happens particularly when inserting into junction tables where
                 // there are two columns and both are in the primary key
                 if (0 == updateCount)
                 {
@@ -1200,8 +1194,8 @@ public class StatementUtils
     }
 
 
-    /* We could use SQLFragment.appendValue() for most of these.  However, here it is important to force
-
+    /*
+     * We could use SQLFragment.appendValue() for most of these. However, here it is important to force
      * the use of inline literal values. SQLFragment.appendValue() does not guarantee that.
      */
     private void toLiteral(SQLFragment f, Object value)

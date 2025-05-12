@@ -32,11 +32,11 @@ import static org.hamcrest.CoreMatchers.hasItem;
 public class ExpProvisionedTableTestHelper
 {
     public static final SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
-
-    final User user = TestContext.get().getUser();
     public static final String agePropertyName = "Age";
     public static final String colorPropertyName = "Color";
     public static final String typePropertyName = "Type";
+
+    final User user = TestContext.get().getUser();
 
     public Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
@@ -70,7 +70,7 @@ public class ExpProvisionedTableTestHelper
         return propertyURIs;
     }
 
-    public List<Map<String, Object>> buildRows(ArrayListMap row)
+    public List<Map<String, Object>> buildRows(ArrayListMap<String, Object> row)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         rows.add(row);
@@ -144,5 +144,4 @@ public class ExpProvisionedTableTestHelper
         for (String e : expected)
             Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
     }
-
 }
