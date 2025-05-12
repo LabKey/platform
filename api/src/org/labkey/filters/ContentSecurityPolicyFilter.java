@@ -56,7 +56,7 @@ public class ContentSecurityPolicyFilter implements Filter
     // Lock that protects the static data structures below
     private static final Object ALLOWED_SOURCES_LOCK = new Object();
     private static final Map<Directive, SetValuedMap<String, String>> ALLOWED_SOURCES = new HashMap<>();
-    // Regenerate and stash on every "allowed source" change as a convenience (so every filter don't need to recalculate
+    // Regenerate and stash on every "allowed source" change as a convenience (so every filter doesn't need to recalculate
     // it on every init() and change)
     private static Map<String, String> ALLOWED_SOURCES_SUBSTITUTION_MAP = Collections.emptyMap();
 

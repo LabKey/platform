@@ -31,9 +31,13 @@
     boolean isTroubleshooter = !c.hasPermission(getUser(), ApplicationAdminPermission.class);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _formExisting;
+
+    LABKEY.Utils.onReady(function() {
+        _formExisting = new LABKEY.Form({formElement: 'form-existingValues'});
+    });
 
     function deleteExisting(valueToDelete) {
-
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
         document.getElementById("existingValue").value = valueToDelete;
@@ -41,7 +45,6 @@
     }
 
     function saveAll() {
-
         //clicking on save will save all the values - changed and unchanged values
         let num = 1;
         let directiveId = "directive" + num;
@@ -59,10 +62,11 @@
         document.getElementById("saveAll").value = true;
         document.getElementById("existingValues").value = values;
         document.forms["existingValues"].submit();
+        _formExisting.setClean();
     }
 </script>
 
-<labkey:form method="post" name="existingValues">
+<labkey:form name="existingValues" id="form-existingValues" method="post">
 
 <%
     ExternalSourcesForm bean = (ExternalSourcesForm) HttpView.currentModel();
@@ -96,7 +100,7 @@
                 button("Delete")
                     .primary(true)
                     .onClick("return deleteExisting(" +
-                        q(sub.directive() + "|" + sub.host()) + // Using | separator is safe because directive name never contains it
+                        q(sub.directive() + "|" + sub.host()) + // Using | separator is safe because the directive name never contains |
                         ");") %>
 
             </td>

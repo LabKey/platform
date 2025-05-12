@@ -444,15 +444,17 @@
 </table>
 </labkey:form>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _form;
+
     LABKEY.Utils.onReady(function() {
+        _form = new LABKEY.Form({ formElement: 'form-preferences'});
+
         if (<%=hasBadFormats%>)
         {
             // Show the date-time display format warning
             document.getElementById("dateFormatWarning").style.display='';
         }
     });
-
-    const _form = new LABKEY.Form({ formElement: 'form-preferences'});
 
     function confirmReset()
     {
