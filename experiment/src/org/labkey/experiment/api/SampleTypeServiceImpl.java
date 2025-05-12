@@ -880,7 +880,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u);//
+                    domain.save(u);
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);

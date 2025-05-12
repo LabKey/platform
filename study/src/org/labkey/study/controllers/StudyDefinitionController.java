@@ -74,7 +74,7 @@ public class StudyDefinitionController extends BaseStudyController
             if (_domain == null)
             {
                 _domain = PropertyService.get().createDomain(getContainer(), domainURI, domainInfo.getDomainName());
-                _domain.save(getUser());//
+                _domain.save(getUser());
             }
 
             return true;

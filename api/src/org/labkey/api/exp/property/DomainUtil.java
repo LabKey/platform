@@ -924,7 +924,7 @@ public class DomainUtil
 
             if (old == null)
                 continue;
-            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd); //
+            List<Map<String, Object>> propTextChoiceValueUpdates = updatePropertyValidators(p, old, pd);
             if (propTextChoiceValueUpdates != null)
                 textChoiceValueUpdates.put(p, propTextChoiceValueUpdates);
             if (old.equals(pd))

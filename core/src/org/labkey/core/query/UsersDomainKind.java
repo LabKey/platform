@@ -211,7 +211,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
             if (domain == null)
             {
                 domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
-                domain.save(user);//
+                domain.save(user);
             }
 
             // ensure required fields
@@ -240,7 +240,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
             }
 
             if (dirty)
-                domain.save(user);//
+                domain.save(user);
             transaction.commit();
         }
         catch (Exception e)

@@ -106,7 +106,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
                 {
                     DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                 }
-                newDomain.save(user);//
+                newDomain.save(user);
             }
             catch (ChangePropertyDescriptorException e)
             {

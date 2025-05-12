@@ -129,7 +129,7 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
             String domainURI = generateDomainURI(container);
             Domain metadataDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
             ensureDomainProperties(metadataDomain, container);
-            metadataDomain.save(user);//
+            metadataDomain.save(user);
 
             return PropertyService.get().getDomain(container, domainURI);
         }

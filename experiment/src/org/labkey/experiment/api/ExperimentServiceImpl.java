@@ -7939,7 +7939,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (kind != null)
                 domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
-            domain.save(u);//
+            domain.save(u);
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);

@@ -111,7 +111,7 @@ public class SpecimenTablesProvider
                     }
 
                     domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, SpecimenTablesProvider.this));
-                    domain.save(_user);//
+                    domain.save(_user);
 
                     // Refresh the domain. save() doesn't populate provisioned schema and table names, e.g.
                     return PropertyService.get().getDomain(_container, domainURI);

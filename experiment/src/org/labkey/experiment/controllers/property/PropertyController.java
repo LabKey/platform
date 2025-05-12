@@ -201,7 +201,7 @@ public class PropertyController extends SpringActionController
                 // save the domain so that we ensure it exists before we try to edit it
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
-                    _domain.save(getUser());//
+                    _domain.save(getUser());
                 }
                 catch (ChangePropertyDescriptorException e)
                 {

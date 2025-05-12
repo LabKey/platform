@@ -293,7 +293,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         if (options != null && StringUtils.isBlank(options.getIssueDefName()))
             return new ValidationException("Issue name must not be null.");
 
-        return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);//
+        return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);
     }
 
     @Override

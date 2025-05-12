@@ -125,7 +125,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             }
 
             if (dirty)
-                domain.save(user);//
+                domain.save(user);
 
             return dp;
         }

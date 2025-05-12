@@ -657,7 +657,7 @@ public class ListImporter
                     }
                 }
                 if (hasValidator)
-                    domain.save(_user);//
+                    domain.save(_user);
             }
         }
     }
@@ -714,7 +714,7 @@ public class ListImporter
                 try
                 {
                     if (isDirty)
-                        domain.save(user);//
+                        domain.save(user);
                 }
                 catch (Exception e)
                 {
