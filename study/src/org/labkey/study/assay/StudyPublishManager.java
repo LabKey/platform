@@ -221,7 +221,6 @@ public class StudyPublishManager implements StudyPublishService
 
             targetPd.setPropertyURI(dataset.getTypeURI() + "#" + sourcePd.getName());
             targetPd.setContainer(dataset.getContainer());
-            targetPd.setProject(dataset.getContainer().getProject());
             if (targetPd.getLookupQuery() != null)
                 targetPd.setLookupContainer(sourcePd.getLookupContainer());
             // set the ID to zero so it's clear that this is a new property descriptor:

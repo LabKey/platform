@@ -145,7 +145,6 @@ public abstract class DilutionAssayRun extends Luc5Assay
                 pd.setLabel(runColumn.getLabel());
                 pd.setPropertyURI(runColumn.getPropertyURI());
                 pd.setContainer(_protocol.getContainer());
-                pd.setProject(_protocol.getContainer().getProject());
                 fieldKeys.put(FieldKey.fromParts(runColumn.getName()), pd);
             }
         }

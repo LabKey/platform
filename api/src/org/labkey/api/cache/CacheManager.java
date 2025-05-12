@@ -188,7 +188,7 @@ public class CacheManager
         {
             for (Field field : getAllInstanceFields(value.getClass()))
             {
-                // TODO: Should also look for collections and arrays, and inspect the first element
+                // TODO: Should also look for collections and arrays, inspecting the first element
                 Class<?> type = field.getType();
                 if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type) || type.getName().contains("Reference"))
                 {
