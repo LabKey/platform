@@ -24,11 +24,8 @@ import org.labkey.api.query.FieldKey;
 import java.util.Map;
 
 /**
- * User: matthewb
- * Date: Sep 27, 2009
- *
- * This is a helper class for DetailsURL.  Rather than needing to subclass DetailsURL to provide a
- * container value, you may provide a ContainerContext instead.
+ * This is a helper class for DetailsURL. Rather than needing to subclass DetailsURL to provide a container value,
+ * you may provide a ContainerContext instead.
  */
 public interface ContainerContext
 {
