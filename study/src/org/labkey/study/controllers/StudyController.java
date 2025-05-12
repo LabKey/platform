@@ -1007,7 +1007,7 @@ public class StudyController extends BaseStudyController
             if (status != null)
             {
                 // inject the dataset status marker class, but it is up to the client to style the page accordingly
-                HtmlView scriptLock = new HtmlView(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">(function($) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString("labkey-dataset-status-" + status.toLowerCase()) + "); })(jQuery);</script>"));
+                HtmlView scriptLock = new HtmlView(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">(function($) { if (LABKEY.DataRegions['Dataset']) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString("labkey-dataset-status-" + status.toLowerCase()) + "); }})(jQuery);</script>"));
                 view.addView(scriptLock);
             }
 
