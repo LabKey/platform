@@ -2041,9 +2041,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             String generatedName = null;
             if (isAliquot && aliquotNameGenerator != null)
-                generatedName = nextName(map, null, null, _extraPropsFns, aliquotNameGenerator);
+                generatedName = nextName(map, parentDatas, parentSamples, _extraPropsFns, aliquotNameGenerator);
             else if (!isAliquot)
-                generatedName = nextName(map, null, null, _extraPropsFns, null);
+                generatedName = nextName(map, parentDatas, parentSamples, _extraPropsFns, null);
 
             return generatedName;
         }
