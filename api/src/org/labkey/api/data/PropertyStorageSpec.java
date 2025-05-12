@@ -456,7 +456,7 @@ public class PropertyStorageSpec
 
         public Index(boolean unique, Collection<String> columnNames)
         {
-            this.columnNames = columnNames.toArray(new String[columnNames.size()]);
+            this.columnNames = columnNames.toArray(new String[0]);
             this.isUnique = unique;
             this.isClustered = false;
         }
@@ -469,8 +469,8 @@ public class PropertyStorageSpec
         }
 
         /**
-         * Determines if two indices are the same modulo the isClustered setting.   This is useful for updating
-         * indices when an audit domain type changes, for example.
+         * Determines if two indices are the same modulo the isClustered setting. This is useful for updating indices
+         * when an audit domain type changes, for example.
          */
         public static boolean isSameIndex(Index propertyIndex, Index tableIndex)
         {

@@ -117,9 +117,9 @@ beforeAll(async () => {
             fields
         },
         options: {
-            name: SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME,
-            aliquotNameExpression: "${${AliquotedFrom}-:withCounter}",
-            nameExpression: "S-Req-${genId}",
+            name: SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME, // test aliquot expression without sample expression
+            aliquotNameExpression: "${${MaterialInputs/" + SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME + "}-:withCounter}", // test parent input as aliquot expression
+            nameExpression: "",
             metricUnit: 'mL'
         }
     };
@@ -801,7 +801,7 @@ describe('Aliquot crud', () => {
 
             // Required columns must not be blank for root samples.
             importText = "Name\tDescription\tAliquotedFrom\trequiredprops\n";
-            importText += "\t" + description + "\t\t\n";
+            importText += "ReqNotProvided\t" + description + "\t\t\n";
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME, 'IMPORT', topFolderOptions, editorUserOptions);
             expect(resp.text).toContain("Missing value for required property: Requiredprops");
             resp = await ExperimentCRUDUtils.importSample(server, importText, SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME, 'MERGE', topFolderOptions, editorUserOptions);

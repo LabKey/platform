@@ -43,6 +43,7 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -1085,12 +1086,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
-    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
+    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
     {
         if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
-            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true, false);
+            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true);
 
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
         if (null == remap)
@@ -1126,7 +1127,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 Map<String, String> importAliases = _sampleType.getImportAliases();
                 for (String col : dataColumns)
                 {
-                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    if (ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
                     {
                         hasParentInput = true;
                         break;
@@ -1139,7 +1140,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
         }
 
-        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput, isAllFromMaterialTable /* Unlike samples table, Materials table doesn't have container filter applied*/);
+        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput);
     }
 
     private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
@@ -1148,7 +1149,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
         TableInfo queryTableInfo = existingRowSelect.tableInfo;
         Set<String> selectColumns = existingRowSelect.columns;
-        boolean filterToCurrentContainer = existingRowSelect.addContainerFilter;
 
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
@@ -1185,8 +1185,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!rowIdRowNumMap.isEmpty())
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
-            if (filterToCurrentContainer)
-                filter.addCondition(FieldKey.fromParts("Container"), container);
+            filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -1208,8 +1207,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(lsidRowNumMap.keySet());
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(LSID), lsidRowNumMap.keySet(), CompareType.IN);
-            if (filterToCurrentContainer)
-                filter.addCondition(FieldKey.fromParts("Container"), container);
+            filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -1226,9 +1224,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(nameRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
-            if (filterToCurrentContainer)
-                filter.addCondition(FieldKey.fromParts("Container"), container);
-
+            filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
@@ -1619,9 +1615,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     static class _GenerateNamesDataIterator extends SimpleTranslator
     {
         final ExpSampleTypeImpl sampleType;
-        final NameGenerator nameGen;
-        final NameGenerator aliquotNameGen;
-        final NameGenerator.State nameState;
+        final SampleNameGeneratorState nameState;
         final Lsid.LsidBuilder lsidBuilder;
         final DbSequence _lsidDbSeq;
         final Container _container;
@@ -1653,20 +1647,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 // do nothing
             }
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
-            nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
-
-            if (nameGen != null)
-            {
-                // check for project scoped counter in both name and aliquot name to decide if they need to be included
-                NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
-                if (sampleNameExpressionSummary != null)
-                {
-                    NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
-                    nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
-                }
-            }
-            nameState = nameGen != null ? nameGen.createState(true) : null;
+            nameState = sampleType.getNameGenState(skipDuplicateCheck, true, dataContainer, user);
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;
@@ -1703,40 +1684,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             first = false;
         }
 
-        private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
-        {
-            if (sampleType == null || nameGen.getExpressionSummary() == null)
-                return null;
-
-            boolean hasProjectSampleCounter = false;
-            long minProjectSampleCounter = 0;
-            boolean hasProjectSampleRootCounter = false;
-            long minProjectSampleRootCounter = 0;
-
-            NameGenerator.SampleNameExpressionSummary nameSummary = nameGen.getExpressionSummary().sampleSummary();
-            NameGenerator.SampleNameExpressionSummary aliquotSummary = aliquotNameGen.getExpressionSummary().sampleSummary();
-            if (nameSummary.hasProjectSampleCounter() || aliquotSummary.hasProjectSampleCounter())
-            {
-                hasProjectSampleCounter = true;
-                minProjectSampleCounter = sampleType.getMinSampleCounter();
-            }
-
-            if (nameSummary.hasProjectSampleRootCounter() || aliquotSummary.hasProjectSampleRootCounter())
-            {
-                hasProjectSampleRootCounter = true;
-                minProjectSampleRootCounter = sampleType.getMinRootSampleCounter();
-            }
-
-            if (hasProjectSampleCounter || hasProjectSampleRootCounter)
-                return new NameGenerator.SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, minProjectSampleCounter, minProjectSampleRootCounter);
-
-            return null;
-        }
-
         @Override
         protected void processNextInput()
         {
-            Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
+            Map<String, Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
             Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
@@ -1776,12 +1727,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     }
                 }
 
-                if (nameGen != null)
-                {
-                    generatedName = nameGen.generateName(nameState, map, null, null, _extraPropsFns, isAliquot ? aliquotNameGen.getParsedNameExpression() : null);
-                }
-                else
-                    addRowError("Error creating naming pattern generator.");
+                generatedName = nameState.nextName(map, _extraPropsFns);
             }
 
             catch (NameGenerator.DuplicateNameException dup)
@@ -2051,6 +1997,55 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 return null; // for aliquot, initialize rollup count/amount to null
             }
+        }
+    }
+
+    public static class SampleNameGeneratorState extends NameGeneratorState
+    {
+        private final NameGenerator aliquotNameGenerator;
+
+        public SampleNameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, @Nullable NameGenerator aliquotNameGenerator)
+        {
+            super(nameGenerator, incrementSampleCounts, nameGenerator.getExpressionSummary() == null ? null : nameGenerator.getExpressionSummary().sampleSummary());
+            this.aliquotNameGenerator = aliquotNameGenerator;
+        }
+
+        public String nextName(Map<String, Object> map, @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
+        {
+            return nextName(map, null, null, _extraPropsFns);
+        }
+
+        public String nextName(Map<String, Object> map,
+                               @Nullable Set<ExpData> parentDatas,
+                               @Nullable Set<ExpMaterial> parentSamples,
+                               @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
+        {
+            String aliquotedFrom = null;
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            if (aliquotedFromObj != null)
+            {
+                if (aliquotedFromObj instanceof String)
+                {
+                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
+                }
+                else if (aliquotedFromObj instanceof Number)
+                {
+                    aliquotedFrom = aliquotedFromObj.toString();
+                }
+            }
+
+            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+
+            String generatedName = null;
+            if (isAliquot && aliquotNameGenerator != null)
+                generatedName = nextName(map, null, null, _extraPropsFns, aliquotNameGenerator);
+            else if (!isAliquot)
+                generatedName = nextName(map, null, null, _extraPropsFns, null);
+
+            return generatedName;
         }
     }
 }

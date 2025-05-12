@@ -152,13 +152,13 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if (domain.getStorageTableName() == null)
             return;
 
-        // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See : ProvisionedSchemaOptions.
+        // Issue 50059, acquiring the schema table info this way ensures that the domain fields are properly fixed up. See ProvisionedSchemaOptions.
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
         if (schemaTableInfo != null)
         {
             Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = schemaTableInfo.getAllIndices();
             Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(domainKind.getPropertyIndices(domain));
-            Set<PropertyStorageSpec.Index> toRemove = new HashSet<>();
+            Set<String> toRemove = new HashSet<>();
             for (String name : existingIndices.keySet())
             {
                 if (existingIndices.get(name).first == TableInfo.IndexType.Primary)
@@ -182,13 +182,13 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 }
 
                 if (!foundIt)
-                    toRemove.add(existingIndex);
+                    toRemove.add(name);
             }
 
             if (!toRemove.isEmpty())
-                StorageProvisioner.get().addOrDropTableIndices(domain, toRemove, false, TableChange.IndexSizeMode.Normal);
+                StorageProvisioner.get().dropTableIndices(domain, toRemove);
             if (!newIndices.isEmpty())
-                StorageProvisioner.get().addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+                StorageProvisioner.get().addTableIndices(domain, newIndices, TableChange.IndexSizeMode.Normal);
         }
     }
 

@@ -15,10 +15,12 @@
  */
 
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.junit.After" %>
 <%@ page import="org.junit.Assume" %>
 <%@ page import="org.junit.Before" %>
 <%@ page import="org.junit.Test" %>
+<%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
@@ -31,21 +33,22 @@
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.RuntimeSQLException" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
+<%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
 <%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.ObjectProperty" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.TemplateInfo" %>
+<%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.exp.list.ListItem" %>
-
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainKind" %>
@@ -53,9 +56,9 @@
 <%@ page import="org.labkey.api.exp.property.DomainTemplateGroup" %>
 <%@ page import="org.labkey.api.exp.property.DomainUtil" %>
 <%@ page import="org.labkey.api.exp.property.Lookup" %>
-
 <%@ page import="org.labkey.api.exp.property.PropertyService" %>
 <%@ page import="org.labkey.api.exp.query.ExpDataTable" %>
+<%@ page import="org.labkey.api.exp.query.ExpSchema" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTDomain" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTIndex" %>
 <%@ page import="org.labkey.api.gwt.client.model.GWTPropertyDescriptor" %>
@@ -65,13 +68,13 @@
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page import="org.labkey.api.query.SchemaKey" %>
 <%@ page import="org.labkey.api.query.UserSchema" %>
-<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.settings.ConceptURIProperties" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
 <%@ page import="org.labkey.experiment.api.DataClassDomainKind" %>
@@ -89,22 +92,15 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.stream.Collectors" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.query.QueryUpdateService" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
-<%@ page import="org.labkey.api.action.ApiUsageException" %>
-<%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
-<%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
-<%@ page import="org.labkey.api.exp.query.ExpSchema" %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -790,13 +786,10 @@ public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
     }
     catch (IllegalArgumentException ex)
     {
-        // sqlserver only error
+        // Not supported on SQL Server
         String msg = ex.getMessage();
-        String expected = "Error creating index over 'aa, bb'";
-        assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
-
-        expected = "Index over large columns currently only supported for a single string column";
-        assertTrue("Expected \"" + expected + "\", got \"" + msg + "\"", msg.contains(expected));
+        String expected = "Index over large columns is not supported";
+        assertTrue("Unexpected message: " + ex.getMessage(), msg.contains(expected));
     }
 }
 
@@ -805,6 +798,7 @@ public void testLargeUnique() throws Exception
 {
     final User user = TestContext.get().getUser();
 
+    boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
     GWTPropertyDescriptor prop = new GWTPropertyDescriptor("bb", "multiLine");
@@ -817,7 +811,18 @@ public void testLargeUnique() throws Exception
     DataClassDomainKindProperties options = new DataClassDomainKindProperties();
     options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, indices, null, null);
+    ExpDataClassImpl dataClass;
+    try
+    {
+        dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, indices, null, null);
+    }
+    catch (IllegalArgumentException e)
+    {
+        // Not supported on SQL Server, so create with no indices
+        assertTrue("Expected exception creating large index over two columns", e.getMessage().contains("Index over large columns is not supported"));
+        assertTrue(sqlServer);
+        dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", options, props, List.of(), null, null);
+    }
 
     List<Map<String, Object>> rows = new ArrayList<>();
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -843,17 +848,11 @@ public void testLargeUnique() throws Exception
     try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
     {
         helper.insertRows(c, rows, dataClass.getName());
-        fail("Expected constraint exception");
+        if (!sqlServer)
+            fail("Expected constraint exception");
     }
     catch (BatchValidationException e)
     {
-        boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
-        if (sqlServer)
-        {
-            // Check error message from trigger script is propagated up on SqlServer
-            assertTrue("Expected error to start with '" + SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE + "', got '" + e.getMessage() + "'",
-                    e.getMessage().startsWith(SqlDialect.CUSTOM_UNIQUE_ERROR_MESSAGE));
-        }
         Throwable t = e.getLastRowError().getGlobalError(0).getCause();
         assertTrue("Expected a SQLException", t instanceof SQLException);
         assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
@@ -879,9 +878,9 @@ public void testDataClassWithVocabularyProperties() throws Exception
     Domain testDomain = helper.createVocabularyTestDomain(user, c);
     Map<String, String> vocabularyPropertyURIs = helper.getVocabularyPropertyURIS(testDomain);
 
-    final String colorPropertyURI = vocabularyPropertyURIs.get(helper.colorPropertyName);
-    final String agePropertyURI = vocabularyPropertyURIs.get(helper.agePropertyName);
-    final String typePropertyURI = vocabularyPropertyURIs.get(helper.typePropertyName);
+    final String colorPropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.colorPropertyName);
+    final String agePropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.agePropertyName);
+    final String typePropertyURI = vocabularyPropertyURIs.get(ExpProvisionedTableTestHelper.typePropertyName);
 
     ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null,
             List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
