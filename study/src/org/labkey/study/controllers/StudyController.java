@@ -218,6 +218,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -7806,7 +7807,7 @@ public class StudyController extends BaseStudyController
 
             List<Pair<String, String>> params = form.getParams();
             MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-            if (svc != null && params.size() > 0)
+            if (svc != null && !params.isEmpty())
             {
                 int count = svc.deleteMatchingRecords(params);
 
@@ -7833,6 +7834,26 @@ public class StudyController extends BaseStudyController
             {
                 _params.add(new Pair<>(key, String.valueOf(json.get(key))));
             }
+        }
+    }
+
+    // Render the HTML description if a study exists in this folder. Used by the client-side CSP validator.
+    @RequiresPermission(ReadPermission.class)
+    public static class DescriptionAction extends SimpleViewAction<Object>
+    {
+        private StudyImpl _study;
+
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            _study = getStudy(getContainer());
+            return null != _study ? new HtmlView(_study.getDescriptionHtml()) : new EmptyView();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild(_study != null ? "Overview: " + _study.getLabel() : "No Study");
         }
     }
 }
