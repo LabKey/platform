@@ -47,7 +47,6 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
@@ -140,18 +139,12 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
     private final Set<String> _potentiallyDeletedParticipants = new HashSet<>();
     private boolean _participantVisitResyncRequired = false;
 
-    /** Mapping for MV column names */
-    private Map<String, String> _columnMapping = Collections.emptyMap();
-
     private boolean _skipAuditLogging = false;
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
-        super(table, table.getDatasetDefinition().getStorageTableInfo());
+        super(table, table.getDatasetDefinition().getStorageTableInfo(), createMVMapping(table.getDatasetDefinition().getDomain()));
         _dataset = table.getDatasetDefinition();
-        Domain domain = _dataset.getDomain();
-        if (null != domain)
-            _columnMapping = createMVMapping(domain);
     }
 
     @Override
