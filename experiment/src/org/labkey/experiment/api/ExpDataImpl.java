@@ -23,8 +23,6 @@ import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -96,10 +94,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.query.ExpSchema.SCHEMA_EXP_DATA;
+
 public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
-
-    public enum DataOperations {
+    public enum DataOperations
+    {
         Edit("editing", UpdatePermission.class),
         EditLineage("editing lineage", UpdatePermission.class),
         Delete("deleting", DeletePermission.class),
@@ -178,7 +178,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         super.setComment(user, comment);
 
         if (index)
-            index(null, null);
+            index();
     }
 
     @Override
@@ -207,7 +207,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     {
         ExpDataClassImpl dc = getDataClass(user);
         if (dc != null)
-            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+            return new QueryRowReference(getContainer(), SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
 
         // Issue 40123: see MedImmuneDataHandler MEDIMMUNE_DATA_TYPE, this claims the "Data" namespace
         DataType type = getDataType();
@@ -266,7 +266,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 Table.insert(user, dataClass.getTinfo(), map);
             }
         }
-        index(null, null);
+        index();
     }
 
     @Override
@@ -423,7 +423,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Nullable
     public ExpDataClassImpl getDataClass(@Nullable User user)
     {
-        if (_object.getClassId() != null)
+        if (_object.getClassId() != null && getContainer() != null)
         {
             if (user == null)
                 return ExperimentServiceImpl.get().getDataClass(getContainer(), _object.getClassId());
@@ -679,29 +679,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return FileContentService.get().getWebDavUrl(path, c, type);
     }
 
-    public void index(SearchService.IndexTask task, @Nullable ExpDataClassDataTableImpl tableInfo)
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+        Container container = getContainer();
+        if (container == null)
+            return null;
 
-        var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
-        var doc = expScope.executeWithRetryReadOnly((tx) -> createDocument(tableInfo));
-
-        task.addResource(doc, SearchService.PRIORITY.item);
-    }
-
-    public WebdavResource createDocument()
-    {
-        return createDocument(null);
-    }
-
-    public WebdavResource createDocument(@Nullable ExpDataClassDataTableImpl tableInfo)
-    {
         Map<String, Object> props = new HashMap<>();
         JSONObject jsonData = new JSONObject();
         Set<String> keywordsHi = new HashSet<>();
@@ -741,12 +725,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         ExpDataClassImpl dc = getDataClass(null);
         if (tableInfo == null && dc != null)
         {
-            tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
+            tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_EXP_DATA).getTable(dc.getName());
         }
 
         if (null != dc)
         {
-            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
+            ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, container).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
             String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
@@ -755,10 +739,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             body.append(dc.getName());
         }
 
-        if (tableInfo != null)
+        if (tableInfo instanceof ExpDataClassDataTableImpl expDataClassDataTable)
         {
             // Collect other text columns and lookup display columns
-            getIndexValues(props, tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
+            getIndexValues(props, expDataClassDataTable, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
         }
 
         // === Stored, not indexed
@@ -770,7 +754,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
         ActionURL view = ExperimentController.ExperimentUrlsImpl.get().getDataDetailsURL(this);
-        view.setExtraPath(getContainer().getId());
+        view.setExtraPath(container.getId());
         String docId = getDocumentId();
 
         // Generate a summary explicitly instead of relying on a summary to be extracted
@@ -790,7 +774,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             getRowId(),
             new Path(docId),
             docId,
-            getContainer().getId(),
+            container.getId(),
             "text/plain",
             body.toString(),
             view,
