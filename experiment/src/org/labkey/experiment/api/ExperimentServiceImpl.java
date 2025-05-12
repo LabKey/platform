@@ -4552,7 +4552,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
-                        dataset.delete(user);
+                        dataset.delete(user, auditUserComment);
                     }
                 }
                 else

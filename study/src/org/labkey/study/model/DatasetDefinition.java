@@ -1152,15 +1152,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
     @Override
-    public void delete(User user)
+    public void delete(User user, String auditUserComment)
     {
         if (!canDeleteDefinition(user))
         {
             throw new UnauthorizedException("No permission to delete dataset " + getName() + " for study in " + getContainer().getPath());
         }
-        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true);
+        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true, auditUserComment);
     }
 
+    @Override
+    public void delete(User user)
+    {
+        delete(user, null);
+    }
 
     @Override
     public void deleteAllRows(User user)

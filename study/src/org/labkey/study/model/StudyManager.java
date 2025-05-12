@@ -2549,7 +2549,7 @@ public class StudyManager
      * @param performStudyResync whether to kick off our normal bookkeeping. If the whole study is being deleted,
      * we don't need to bother doing this, for example.
      */
-    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync)
+    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync, String auditUserComment)
     {
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
@@ -2580,10 +2580,10 @@ public class StudyManager
                 }
             });
 
-
-            deleteDatasetType(study, user, ds);
             try
             {
+                deleteDatasetType(study, user, ds, auditUserComment);
+
                 QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), StudySchema.getInstance().getSchemaName(), ds.getName());
                 if (def != null)
                     def.delete(user);
@@ -2631,7 +2631,7 @@ public class StudyManager
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
-    private void deleteDatasetType(Study study, User user, DatasetDefinition ds)
+    private void deleteDatasetType(Study study, User user, DatasetDefinition ds, String auditUserComment) throws DomainNotFoundException
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
@@ -2641,19 +2641,8 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        StorageProvisioner.get().drop(ds.getDomain());
-
-        if (ds.getTypeURI() != null)
-        {
-            try
-            {
-                OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
-            }
-            catch (DomainNotFoundException x)
-            {
-                // continue
-            }
-        }
+        if (ds.getDomain() != null)
+            ds.getDomain().delete(user, auditUserComment);
     }
 
     // Any container can be passed here (whether it contains a study or not).
@@ -2702,7 +2691,7 @@ public class StudyManager
             for (DatasetDefinition dsd : dsds)
             {
                 if (dsd.getContainer().equals(dsd.getDefinitionContainer()))
-                    deleteDataset(study, user, dsd, false);
+                    deleteDataset(study, user, dsd, false, null);
                 else
                     dsd.deleteAllRows(user);
             }
@@ -4632,7 +4621,7 @@ public class StudyManager
             String label = expectationDataset.getLabel();
 
             // no need to resync the study, as there should be no data in the expectation dataset
-            deleteDataset(study, user, expectationDataset, false);
+            deleteDataset(study, user, expectationDataset, false, null);
 
             targetDataset = targetDataset.createMutable();
             targetDataset.setName(name);

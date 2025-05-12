@@ -4742,7 +4742,7 @@ public class StudyController extends BaseStudyController
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 // performStudyResync==false so we can do this out of the transaction
-                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
+                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false, null);
                 transaction.commit();
             }
 
@@ -5056,7 +5056,7 @@ public class StudyController extends BaseStudyController
                 DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
                 {
-                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true, null);
                     form.setSnapshotDatasetId(-1);
                 }
             }

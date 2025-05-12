@@ -779,7 +779,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain, String userComment)//
+    public void deleteDomain(User user, Domain domain, String auditUserComment)
     {
         DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(domain.getTypeURI());
         if (def == null)
@@ -791,7 +791,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            StudyManager.getInstance().deleteDataset(study, user, def, false);
+            StudyManager.getInstance().deleteDataset(study, user, def, false, auditUserComment);
             transaction.commit();
         }
     }

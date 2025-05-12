@@ -596,7 +596,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
                 {
-                    dataset.delete(user);
+                    dataset.delete(user, auditUserComment);
                 }
             }
             else
