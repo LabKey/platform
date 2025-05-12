@@ -55,8 +55,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
     public static class FindMap<K> implements Map<K,Integer>
     {
-        final Map<K,Integer> _map;
-        int _max = -1;
+        private final Map<K,Integer> _map;
+        private int _max = -1;
 
         public FindMap(Map<K,Integer> wrap)
         {

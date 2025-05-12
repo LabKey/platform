@@ -2599,7 +2599,7 @@ public class ExpDataIterators
                             _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
                             return totalRowCount;
                         }
-                        totalRowCount +=_importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
+                        totalRowCount += _importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
                     }
                     return totalRowCount;
                 }
