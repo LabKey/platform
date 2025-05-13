@@ -435,7 +435,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return null;
 
         Object o = it.get(i);
-        return null == o ? "" : o.toString();
+        return Objects.toString(o, "");
     }
 
     public static Double getOutputDouble(DataIterator it, Integer i)
@@ -443,23 +443,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (i == null)
             return null;
 
-        Object o = it.get(i);
-        if (null == o)
-            return null;
-        if (o instanceof Number)
-            return ((Number) o).doubleValue();
-        if (o instanceof String)
-        {
-            try
-            {
-                return Double.parseDouble((String) o);
-            }
-            catch (NumberFormatException x)
-            {
-                ;
-            }
-        }
-        return null;
+        return (Double) JdbcType.DOUBLE.convert(it.get(i));
     }
 
     public static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
