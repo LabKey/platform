@@ -2643,6 +2643,17 @@ public class StudyManager
 
         if (ds.getDomain() != null)
             ds.getDomain().delete(user, auditUserComment);
+        else if (ds.getTypeURI() != null)
+        {
+            try
+            {
+                OntologyManager.deleteType(ds.getTypeURI(), study.getContainer());
+            }
+            catch (DomainNotFoundException x)
+            {
+                // continue
+            }
+        }
     }
 
     // Any container can be passed here (whether it contains a study or not).
