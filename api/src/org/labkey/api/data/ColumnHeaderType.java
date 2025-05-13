@@ -69,7 +69,7 @@ public enum ColumnHeaderType
             if (columnInfo != null)
             {
                 org.labkey.api.query.FieldKey fieldKey;
-                // Issue 52777. Don't decode the name that may contain substrings that look like encoded field key pars
+                // Issue 52777. Don't decode the name that may contain substrings that look like encoded field key parts
                 if (columnInfo.getFieldKey() != null)
                     fieldKey = columnInfo.getFieldKey();
                 else
