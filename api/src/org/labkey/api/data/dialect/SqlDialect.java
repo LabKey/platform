@@ -674,14 +674,10 @@ public abstract class SqlDialect
     protected abstract @Nullable Pattern getSQLScriptSplitPattern();
 
     /**
-     * @return A dialect-specific regex pattern for finding executeJavaCode and bulkImport stored procedure calls in a SQL script.
+     * @return A dialect-specific regex pattern for finding an executeJavaCode stored procedure call in a SQL script.
      *         The regex must match either procedure name plus the associated parameters and define these specific capturing groups:
-     *              Group 2: executeJavaCode procedure name and parameter
-     *              Group 3: executeJavaCode parameter value
-     *              Group 4: bulkImport procedure name and parameters
-     *              Group 5: bulkImport parameter #1 (schema name)
-     *              Group 6: bulkImport parameter #2 (table name)
-     *              Group 7: bulkImport parameter #3 (source filename)
+     *              Group 1: executeJavaCode procedure name and parameter
+     *              Group 2: executeJavaCode parameter value
      */
     protected abstract @NotNull Pattern getSQLScriptProcPattern();
 
