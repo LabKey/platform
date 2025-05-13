@@ -817,7 +817,7 @@ public class DomainImpl implements Domain
             }
 
             final boolean finalPropChanged = propChanged;
-            final String extraAuditComment = auditComment == null ? "" : auditComment + ' ';
+            final String extraAuditComment = StringUtils.isEmpty(auditComment) ? "" : auditComment + ' ';
 
             // Move audit event creation to outside the transaction to avoid deadlocks involving audit storage table creation
             Runnable afterDomainCommit = () ->
