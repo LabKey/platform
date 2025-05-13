@@ -152,9 +152,17 @@ public class PropertyValidator implements Serializable, Cloneable
         }
     }
 
+    public String getPropertyAuditStr()
+    {
+        String propertyStr = getProperties();
+        if ("failOnMatch=false".equals(propertyStr)) // ignore NULL vs false
+            return null;
+        return propertyStr;
+    }
+
     public String getStringVal()
     {
-        return getName() + "; " + getExpression() + "; " + getProperties() + "; " + getErrorMessage() + "; " + getDescription() + "; " +
+        return getName() + ", " + getExpression() + ", " + getPropertyAuditStr() + ", " + getErrorMessage() + ", " + getDescription() + ", " +
                 StringUtils.replace(PropertyService.get().getValidatorKind(getTypeURI()).getName(), " Property Validator", "");
     }
 }

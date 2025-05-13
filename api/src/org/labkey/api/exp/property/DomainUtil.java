@@ -1249,16 +1249,21 @@ public class DomainUtil
 
         PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
         String oldValidatorStr = dp.getPropertyValidatorStringVal(); // record the old value before dp is mutated
+        boolean hasChange = false;
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
+            {
+                hasChange = true;
                 newProps.put(v.getRowId(), v);
+            }
             else
             {
                 Lsid lsid = DefaultPropertyValidator.createValidatorURI(v.getType());
                 IPropertyValidator pv = PropertyService.get().createValidator(lsid.toString());
 
-                _copyValidator(pv, v);
+                boolean change = _copyValidator(pv, v);
+                hasChange = hasChange || change;
                 dp.addValidator(pv);
             }
 
@@ -1278,19 +1283,26 @@ public class DomainUtil
                 if (v.equals(prop))
                     newProps.remove(v.getRowId());
                 else if (prop == null)
+                {
                     deleted.add(v);
+                    hasChange = true;
+                }
             }
 
             // update any new or changed
             for (IPropertyValidator pv : dp.getValidators())
-                _copyValidator(pv, newProps.get(pv.getRowId()));
+            {
+                boolean change = _copyValidator(pv, newProps.get(pv.getRowId()));
+                hasChange = hasChange || change;
+            }
 
             // deal with removed validators
             for (GWTPropertyValidator gpv : deleted)
                 dp.removeValidator(gpv.getRowId());
         }
 
-        dp.checkValidatorEdit(oldValidatorStr, oldPropertyDescriptor); // mark dirty as needed
+        if (hasChange)
+            dp.setOldPropertyDescriptor(oldPropertyDescriptor); // mark dirty as needed
 
         return oldPd != null ? valueUpdates : null;
     }
@@ -1360,20 +1372,35 @@ public class DomainUtil
         }
     }
 
-    private static void _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
+    /**
+     *
+     * @param pv
+     * @param gpv
+     * @return true if has change.
+     */
+    private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
         if (pv != null && gpv != null)
         {
+            StringBuilder changeDetails = new StringBuilder();
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Name", pv.getName(), gpv.getName()));
             pv.setName(gpv.getName());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", pv.getDescription(), gpv.getDescription()));
             pv.setDescription(gpv.getDescription());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Expression", pv.getExpressionValue(), gpv.getExpression()));
             pv.setExpressionValue(gpv.getExpression());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("ErrorMsg", pv.getErrorMessage(), gpv.getErrorMessage()));
             pv.setErrorMessage(gpv.getErrorMessage());
 
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("Properties", PageFlowUtil.toQueryString(pv.getProperties().entrySet()), PageFlowUtil.toQueryString(gpv.getProperties().entrySet())));
             for (Map.Entry<String, String> entry : gpv.getProperties().entrySet())
             {
                 pv.setProperty(entry.getKey(), entry.getValue());
             }
+            return !changeDetails.toString().isEmpty();
         }
+
+        return false;
     }
 
     private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)

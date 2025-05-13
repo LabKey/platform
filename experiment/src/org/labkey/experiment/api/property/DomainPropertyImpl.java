@@ -650,14 +650,12 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
     @Override
-    public void checkValidatorEdit(String oldValidatorStr, PropertyDescriptor oldPropertyDescriptor)
+    public void setOldPropertyDescriptor(PropertyDescriptor oldPropertyDescriptor)
     {
         if (isEdited())
             return;
 
-        String newValidatorStr = DomainImpl.getPropertyValidatorStringVal(DomainPropertyManager.get().getValidators(this));
-        if (!oldValidatorStr.equals(newValidatorStr))
-            _pdOld = oldPropertyDescriptor.clone();
+        _pdOld = oldPropertyDescriptor.clone();
     }
 
     @Override

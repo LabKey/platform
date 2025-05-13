@@ -746,7 +746,7 @@ public class DomainImpl implements Domain
 
                     if (isImplNew)
                         propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
-                    else if (pdOld != null)
+                    else if (null != pdOld)
                     {
                         PropertyChangeAuditInfo auditInfo = new PropertyChangeAuditInfo(impl, newPropName, pdOld, oldValidators, oldFormats);
                         if (auditInfo.isChanged())

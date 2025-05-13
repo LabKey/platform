@@ -158,5 +158,5 @@ public interface DomainProperty extends ImportAliasable, MutableColumnConceptPro
     void setScannable(boolean scannable);
 
     String getPropertyValidatorStringVal();
-    void checkValidatorEdit(String oldValidatorStr, PropertyDescriptor oldPropertyDescriptor);
+    void setOldPropertyDescriptor(PropertyDescriptor oldPropertyDescriptor);
 }
