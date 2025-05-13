@@ -327,6 +327,7 @@ import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
@@ -1341,6 +1342,7 @@ public class AdminController extends SpringActionController
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setNavAccessOpen(form.isNavAccessOpen());
             props.setSSLRequired(form.isSslRequired());
+            boolean sslSettingChanged = AppProps.getInstance().isSSLRequired() != form.isSslRequired();
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
@@ -1415,6 +1417,8 @@ public class AdminController extends SpringActionController
 
             props.save(getViewContext().getUser());
             UsageReportingLevel.reportNow();
+            if (sslSettingChanged)
+                ContentSecurityPolicyFilter.regenerateSubstitutionMap();
 
             return true;
         }
