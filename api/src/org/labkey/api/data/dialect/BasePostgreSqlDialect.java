@@ -1056,7 +1056,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             case DropColumns -> sql.add(getDropColumnsStatement(change));
             case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
             case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
-            case DropIndices -> sql.addAll(getDropIndexStatements(change));
             case AddIndices -> sql.addAll(getCreateIndexStatements(change));
             case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
@@ -1254,7 +1253,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         Collection<Constraint> constraints = change.getConstraints();
 
-        if(null!=constraints && !constraints.isEmpty())
+        if (null!=constraints && !constraints.isEmpty())
         {
             statements = constraints.stream().map(constraint ->
                     String.format("""
@@ -1335,48 +1334,17 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("""
-                            DO $$
-                            BEGIN
-                            IF NOT EXISTS (
-                                SELECT 1
-                                FROM   pg_class c
-                                JOIN   pg_namespace n ON n.oid = c.relnamespace
-                                WHERE  c.relname = %s
-                                AND    n.nspname = %s
-                                ) THEN\s
-                                   CREATE %s INDEX %s ON %s (%s);
-                            END IF;
-                            END$$""",
-                    getStringHandler().quoteStringLiteral(nameIndex(change.getTableName(), index.columnNames)),
-                    getStringHandler().quoteStringLiteral(change.getSchemaName()),
-                    index.isUnique ? "UNIQUE" : "",
-                    nameIndex(change.getTableName(), index.columnNames),
-                    makeTableIdentifier(change),
-                    makePropertyIdentifiers(index.columnNames)));
+            statements.add(String.format("CREATE %sINDEX %s ON %s (%s);",
+                index.isUnique ? "UNIQUE " : "",
+                nameIndex(change.getTableName(), index.columnNames),
+                makeTableIdentifier(change),
+                makePropertyIdentifiers(index.columnNames)));
 
-            if(index.isClustered)
+            if (index.isClustered)
             {
                 statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
                         change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
             }
-        }
-    }
-
-    private List<String> getDropIndexStatements(TableChange change)
-    {
-        List<String> statements = new ArrayList<>();
-        addDropIndexStatements(statements, change);
-        return statements;
-    }
-
-    private void addDropIndexStatements(List<String> statements, TableChange change)
-    {
-        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
-        {
-            statements.add(String.format("DROP INDEX IF EXISTS %s.%s",
-                    change.getSchemaName(),
-                    nameIndex(change.getTableName(), index.columnNames)));
         }
     }
 

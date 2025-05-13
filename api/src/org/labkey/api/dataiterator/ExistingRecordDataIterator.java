@@ -321,9 +321,6 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             // fetch N new rows into the existingRecords map
             Pair<SQLFragment, Map<Integer, String>> selectRowsSql = getSelectExistingSql(50);
 
-            if (_context.getErrors().hasErrors())
-                return;
-
             SQLFragment select = selectRowsSql.first;
             Map<Integer, String> rowNumContainers = selectRowsSql.second;
             var list = new SqlSelector(target.getSchema(), select, QueryLogging.noValidationNeededQueryLogging()).getArrayList(Map.class);

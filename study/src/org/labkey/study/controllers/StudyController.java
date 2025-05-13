@@ -1007,7 +1007,7 @@ public class StudyController extends BaseStudyController
             if (status != null)
             {
                 // inject the dataset status marker class, but it is up to the client to style the page accordingly
-                HtmlView scriptLock = new HtmlView(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">(function($) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString("labkey-dataset-status-" + status.toLowerCase()) + "); })(jQuery);</script>"));
+                HtmlView scriptLock = new HtmlView(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">(function($) { if (LABKEY.DataRegions['Dataset']) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString("labkey-dataset-status-" + status.toLowerCase()) + "); }})(jQuery);</script>"));
                 view.addView(scriptLock);
             }
 
@@ -5578,8 +5578,6 @@ public class StudyController extends BaseStudyController
         private int datasetId;
         private double sequenceNum;
         private String action;
-        private int reportId;
-        private String _redirectUrl;
         private Map<String, String> aliases;
 
         @Override
@@ -5606,9 +5604,6 @@ public class StudyController extends BaseStudyController
 
         public String getAction(){return action;}
         public void setAction(String action){this.action = action;}
-
-        public int getReportId(){return reportId;}
-        public void setReportId(int reportId){this.reportId = reportId;}
     }
 
     public static class StudyPropertiesForm extends ReturnUrlForm

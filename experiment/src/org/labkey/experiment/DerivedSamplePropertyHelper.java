@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -66,7 +67,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 
     private final DomainProperty _nameProperty;
     private final NameGenerator _nameGenerator;
-    private NameGenerator.State _state;
+    private NameGeneratorState _state;
     private Supplier<Map<String, Object>> _genIdFn;
 
     public DerivedSamplePropertyHelper(ExpSampleTypeImpl sampleType, int sampleCount, Container c, User user)

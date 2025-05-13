@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -21,7 +22,7 @@ public class NamePlusIdDataIterator extends WrapperDataIterator
     private final Integer _nameCol;
     private final Integer _idCol;
     private final NameGenerator _nameGenerator;
-    private final NameGenerator.State _state;
+    private final NameGeneratorState _state;
     private String _generatedName;
 
     public NamePlusIdDataIterator(DataIterator di, DataIteratorContext context, TableInfo parentTable, Container container,
