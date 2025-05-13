@@ -73,7 +73,7 @@ public enum ColumnHeaderType
                 if (columnInfo.getFieldKey() != null)
                     fieldKey = columnInfo.getFieldKey();
                 else
-                    fieldKey = org.labkey.api.query.FieldKey.fromParts(columnInfo.getName()); // HERE name is $BloodType
+                    fieldKey = org.labkey.api.query.FieldKey.fromParts(columnInfo.getName());
 
                 fieldKey = fixMissingValueIndicator(columnInfo, fieldKey);
                 name = fieldKey.toImportDisplayString();
