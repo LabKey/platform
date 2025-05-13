@@ -25,6 +25,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -113,7 +114,7 @@ public class AssayUpgradeCode implements UpgradeCode
             // generated name.
             String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
             NameGenerator nameGenerator = new NameGenerator(PLATE_SET_NAME_EXPRESSION, plateSetTable, false, null, null, null);
-            NameGenerator.State state = nameGenerator.createState(false);
+            NameGeneratorState state = nameGenerator.createState(false);
 
             for (Integer plateSetRowId : plateSetRowIds)
             {
@@ -165,7 +166,7 @@ public class AssayUpgradeCode implements UpgradeCode
                         row.put("name", null);
 
                         NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateNameExpression(), AssayDbSchema.getInstance().getTableInfoPlate(), false, c, null, null);
-                        NameGenerator.State state = nameGenerator.createState(false);
+                        NameGeneratorState state = nameGenerator.createState(false);
                         String name = nameGenerator.generateName(state, row);
                         state.cleanUp();
 
@@ -187,7 +188,7 @@ public class AssayUpgradeCode implements UpgradeCode
             try (Results rs = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getResults())
             {
                 NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateSetNameExpression(), AssayDbSchema.getInstance().getTableInfoPlateSet(), false, null, null, null);
-                NameGenerator.State state = nameGenerator.createState(false);
+                NameGeneratorState state = nameGenerator.createState(false);
                 int plateSetsUpgraded = 0;
                 while (rs.next())
                 {

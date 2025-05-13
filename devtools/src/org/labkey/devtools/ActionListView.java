@@ -4,6 +4,7 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.SpringActionController.ActionDescriptor;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -30,10 +31,10 @@ public class ActionListView extends HttpView
 
         _controller.getActionResolver().getActionDescriptors().stream()
             .filter(ad->!(FormHandlerAction.class.isAssignableFrom(ad.getActionClass())))
-            .filter(_filter::test)
+            .filter(_filter)
             .sorted(Comparator.comparing(ActionDescriptor::getPrimaryName))
             .forEach(ad->{
-                out.println(PageFlowUtil.link(ad.getPrimaryName()).href(new ActionURL(ad.getActionClass(), c)).clearClasses());
+                out.println(LinkBuilder.simpleLink(ad.getPrimaryName(), new ActionURL(ad.getActionClass(), c)));
                 out.print("<br>");
             });
     }

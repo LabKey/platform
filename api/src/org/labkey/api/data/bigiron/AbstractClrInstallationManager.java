@@ -38,7 +38,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -51,9 +51,6 @@ import java.sql.Connection;
 /**
  * Base class for handling installation of CLR Assemblies on SQL Server. Most methods/logic
  * were abstracted from what used to be in GroupConcatInstallationManager.
- *
- * User: tgaluhn
- * Date: 1/13/2017
  */
 public abstract class AbstractClrInstallationManager
 {
@@ -205,7 +202,7 @@ public abstract class AbstractClrInstallationManager
     {
         ActionURL downloadURL = new ActionURL(downloadActionClass, ContainerManager.getRoot());
         HtmlStringBuilder builder = HtmlStringBuilder.of(text + " ");
-        builder.append(new Link.LinkBuilder("Download installation script.").href(downloadURL).clearClasses().getHtmlString());
+        builder.append(LinkBuilder.simpleLink("Download installation script.", downloadURL));
 
         if (null != helpTopic)
             builder.append(" ").append(new HelpTopic(helpTopic).getSimpleLinkHtml("View installation instructions."));

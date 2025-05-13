@@ -18,6 +18,7 @@ package org.labkey.announcements;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
@@ -109,8 +110,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -145,6 +146,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -237,7 +239,7 @@ public class AnnouncementsController extends SpringActionController
     // Anyone with read permission can attempt to view the list. AnnouncementWebPart will do further permission checking. For example,
     //   in a secure message board, those without Editor permissions will only see messages when they are on the member list
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<Object>
     {
         // Invoked via reflection
         @SuppressWarnings("UnusedDeclaration")
@@ -283,7 +285,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ListAction extends SimpleViewAction
+    public class ListAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -313,7 +315,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteThreadsAction extends FormHandlerAction
+    public class DeleteThreadsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -766,7 +768,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public abstract class BaseInsertAction extends FormViewAction<AnnouncementForm>
     {
-        protected HttpView _attachmentErrorView;
+        protected HttpView<?> _attachmentErrorView;
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
 
@@ -956,7 +958,7 @@ public class AnnouncementsController extends SpringActionController
             ThreadView threadView = new ThreadView(c, getActionURL(), parent, perm);
             threadView.setFrame(WebPartView.FrameType.DIV);
 
-            HttpView respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow, false);
+            HttpView<?> respondView = new RespondView(c, parent, form, form.getReturnUrlHelper(), errors, reshow, false);
 
             getPageConfig().setFocusId("body");
             _parent = parent;
@@ -1010,7 +1012,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class CompleteUserAction extends ReadOnlyApiAction<AjaxCompletionForm>
+    public static class CompleteUserAction extends ReadOnlyApiAction<AjaxCompletionForm>
     {
         @Override
         public ApiResponse execute(AjaxCompletionForm form, BindException errors)
@@ -1093,12 +1095,7 @@ public class AnnouncementsController extends SpringActionController
 
             if (reshow)
             {
-                String rendererTypeName = (String) form.get("rendererType");
-
-                if (null == rendererTypeName)
-                    currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
-                else
-                    currentRendererType = WikiRendererType.valueOf(rendererTypeName);
+                currentRendererType = EnumUtils.getEnum(WikiRendererType.class, form.get("rendererType"), DEFAULT_MESSAGE_RENDERER_TYPE);
 
                 AnnouncementModel ann = form.getBean();
                 assignedTo = ann.getAssignedTo();
@@ -1289,10 +1286,7 @@ public class AnnouncementsController extends SpringActionController
             // Needs to support non-ActionURL (e.g., an HTML page using the client API with embedded discussion webpart)
             // so we can't use getSuccessURL()
             URLHelper urlHelper = form.getReturnUrlHelper();
-            if (null != urlHelper)
-                throw new RedirectException(urlHelper);
-            else
-                throw new RedirectException(getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId()));
+            throw new RedirectException(Objects.requireNonNullElseGet(urlHelper, () -> getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId())));
         }
 
         @Override
@@ -1415,7 +1409,7 @@ public class AnnouncementsController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class RssAction extends SimpleViewAction
+    public class RssAction extends SimpleViewAction<Object>
     {
         // Invoked via reflection
         @SuppressWarnings("UnusedDeclaration")
@@ -1449,7 +1443,7 @@ public class AnnouncementsController extends SpringActionController
 
             ActionURL url = new ActionURL(ThreadAction.class, c).addParameter("rowId", null);
 
-            WebPartView v = new RssView(pair.first, url.getURIString());
+            WebPartView<?> v = new RssView(pair.first, url.getURIString());
 
             getResponse().setContentType("text/xml");
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -1526,7 +1520,7 @@ public class AnnouncementsController extends SpringActionController
             form.setEmailOptionsOnPage(emailOption);
 
             setHelpTopic("createMessage");
-            JspView view = new JspView("/org/labkey/announcements/emailPreferences.jsp");
+            JspView<?> view = new JspView<>("/org/labkey/announcements/emailPreferences.jsp");
             view.setFrame(WebPartView.FrameType.NONE);
             EmailPreferencesPage page = (EmailPreferencesPage)view.getPage();
             view.setTitle("Email Preferences");
@@ -1599,7 +1593,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class SetEmailDefaultAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
+    public static class SetEmailDefaultAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
@@ -1628,7 +1622,7 @@ public class AnnouncementsController extends SpringActionController
 
     // Used for testing announcement daily digest email notifications
     @RequiresSiteAdmin
-    public class SendDailyDigestAction extends MutatingApiAction
+    public static class SendDailyDigestAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1735,7 +1729,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 String expires = StringUtils.trimToNull(get("expires"));
                 if (null != expires)
-                    DateUtil.parseDateTime(getContainer(), expires);
+                    DateUtil.parseDateTime(expires);
             }
             catch (ConversionException x)
             {
@@ -2080,7 +2074,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
+        public WebPartView<?> getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
         {
             String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
             if ("simple".equals(webPart.getPropertyMap().get("style")))
@@ -2089,7 +2083,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+        public HttpView<?> getEditView(Portal.WebPart webPart, ViewContext context)
         {
             return new AnnouncementsController.CustomizeAnnouncementWebPart(webPart);
         }
@@ -2147,7 +2141,7 @@ public class AnnouncementsController extends SpringActionController
             sb.append(rowLimit);
         }
 
-        if (sb.length() == 0)
+        if (sb.isEmpty())
             sb.append("all");
 
         sb.append(" ");
@@ -2158,9 +2152,9 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    public static class AnnouncementListWebPart extends WebPartView
+    public static class AnnouncementListWebPart extends WebPartView<Object>
     {
-        private VBox _vbox;
+        private final VBox _vbox;
 
         public AnnouncementListWebPart(ViewContext ctx)
         {
@@ -2350,7 +2344,7 @@ public class AnnouncementsController extends SpringActionController
         public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
         {
             this();
-            AnnouncementModel ann = findThread(c, (String)form.get("rowId"), (String)form.get("entityId"));
+            AnnouncementModel ann = findThread(c, form.get("rowId"), form.get("entityId"));
             init(c, ann, url, perm, false, print);
         }
 
@@ -2509,7 +2503,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresLogin @RequiresPermission(ReadPermission.class)
-    public class SubscribeThreadAction extends FormHandlerAction<SubscriptionBean>
+    public static class SubscribeThreadAction extends FormHandlerAction<SubscriptionBean>
     {
         @Override
         public void validateCommand(SubscriptionBean target, Errors errors)
@@ -2537,14 +2531,22 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            // We track the subscriptions on the last post for the thread
+            Integer postId = AnnouncementManager.getLatestPostId(ann);
+            if (postId == null)
+            {
+                postId = ann.getRowId();
+            }
+
             // Remove or add the thread-level subscription from the database table
             if (bean.isUnsubscribe())
             {
-                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), ann.getRowId());
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("DELETE FROM comm.userlist WHERE UserId = ? AND MessageId = ?", getUser(), postId);
             }
             else if (!ann.getMemberListIds().contains(getUser().getUserId()))
             {
-                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", getUser(), ann.getRowId());
+                new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) SELECT ? AS UserId, ? AS MessageId WHERE NOT EXISTS (SELECT * FROM comm.userlist WHERE UserId = ? AND MessageId = ?)",
+                        getUser(), postId, getUser(), postId);
             }
             return true;
         }
@@ -2869,7 +2871,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
+    public static class GetDiscussionsAction extends ReadOnlyApiAction<GetDiscussionsForm>
     {
         @Override
         public void validateForm(GetDiscussionsForm form, Errors errors)

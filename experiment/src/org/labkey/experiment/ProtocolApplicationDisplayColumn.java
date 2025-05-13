@@ -18,7 +18,7 @@ package org.labkey.experiment;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -48,7 +48,7 @@ public class ProtocolApplicationDisplayColumn extends SimpleDisplayColumn
         else
         {
             ActionURL url = ExperimentController.getShowApplicationURL(ctx.getContainer(), _protocolApplication.getRowId());
-            out.write(new LinkBuilder(_protocolApplication.getName()).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_protocolApplication.getName(), url));
         }
     }
 }

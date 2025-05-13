@@ -28,7 +28,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -239,7 +239,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 oldWriter.write(separator);
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
-                oldWriter.write(new Link.LinkBuilder(thread.getName()).href(url).target("_blank").renderToString());
+                oldWriter.write(LinkBuilder.labkeyLink(thread.getName(), url).target("_blank").renderToString());
                 separator = "\n<br/>";
 
                 // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them

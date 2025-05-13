@@ -75,7 +75,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -139,11 +139,9 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
@@ -209,6 +207,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.AllowListType;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -501,7 +500,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
         {
-            DefaultSchema.registerProvider(PostgreSql91Dialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
+            DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
             {
                 @Override
                 public boolean isAvailable(DefaultSchema schema, Module module)
@@ -861,31 +860,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void bootstrap()
     {
         // Create the initial groups
-        GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
         GroupManager.bootstrapGroup(Group.groupUsers, "Users");
         GroupManager.bootstrapGroup(Group.groupGuests, "Guests");
-        GroupManager.bootstrapGroup(Group.groupDevelopers, "Developers");
 
         // Other containers inherit permissions from root; admins get all permissions, users & guests none
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
-        Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
-        Role adminRole = RoleManager.getRole(SiteAdminRole.class);
 
-        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole, adminRole);
+        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole);
         Container rootContainer = ContainerManager.getRoot();
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
 
         // Users & guests can read from /home
-        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole);
         home.setFolderType(collaborationType, null);
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null, null).setFolderType(collaborationType, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null).setFolderType(collaborationType, null);
 
         try
         {
@@ -1170,6 +1165,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 customLog4JConfig = Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter("org.labkey.customLog4JConfig"));
             }
             results.put("customLog4JConfig", customLog4JConfig);
+            results.put("containerRelativeURL", AppProps.getInstance().getUseContainerRelativeURL());
             results.put("runtimeMode", AppProps.getInstance().isDevMode() ? "development" : "production");
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
@@ -1363,6 +1359,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AdminController.WorkbookDeleteTestCase.class,
+            AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
             DataRegion.TestCase.class,

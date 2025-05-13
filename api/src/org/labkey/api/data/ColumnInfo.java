@@ -127,27 +127,46 @@ public interface ColumnInfo extends ColumnRenderProperties
     // use only for debugging, will change after call to getAlias()
     boolean isAliasSet();
 
-    String getAlias();
-
-    /** If this column is represented by a column in the database, this is the name as returned by database metadata */
-    String getMetaDataName();
+    /**
+     * This is the alias that will represent the column if it is selected using TableSelector or QueryService.
+     * For example, to generate a SELECT (see TableSelector), a typical usage would be
+     * new SQLFragment().append(col.getValueSql("R")).append(" AS ").appendIdentifier(col.getAlias())
+     * The returned ResultSet will contain a column named col.getAlias()
+     *
+     * NOTE: if you directly bind your results using BeanObjectFactory (e.g. TableSelector.getArrayList(MyClass.class))
+     * you should
+     *  a) match your column aliases to the bean properties you want to populate
+     *  b) prefer using TableSelector vs SqlSelector.  TableSelector will use ColumnInfo.getAlias().
+     */
+    DatabaseIdentifier getAlias();
 
     /**
-     * If this column represents a column in the database (see getMetaDataName()),
-     * then this method will return the name escaped in a way that is suitable for using in SQL (e.g. quoted)
+     * If this column represents a column in the database, this is the name as returned by database metadata.
+     * This is the name you would find in the ResultSet using "SELECT * FROM " + ti.getSelectName()"
+     * with a SchemaTableInfo. This may a different result than what you get using TableSelector.
      *
+     * TODO I'm pretty sure we can make do with only getMetaDataIdentifier() OR getSelectIdentifier()
+     */
+    DatabaseIdentifier getMetaDataIdentifier();
+
+    /**
+     * If this column represents a column in the database (see getMetaDataName()), then this method will return the
+     * name escaped in a way that is suitable for using in SQL (e.g., quoted).
+     * <p>
      * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
      * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
+     *
+     * TODO I'm pretty sure we can make do with only getMetaDataIdentifier() OR getSelectIdentifier()
      */
-    String getSelectName();
+    DatabaseIdentifier getSelectIdentifier();
 
     /**
      * Use this method to generate database SQL for selecting data from this column.
      *
      * <pre>
-     *     new SQLFragment(
-     *         "SELECT ").append(ti.getColumn("A").getValueSql("tablealias").append(" AS foo\n" ).append(
-     *         "FROM ").append(ti.getFromSql("tablelias"));
+     *     new SQLFragment()
+     *         .append("SELECT ").append(ti.getColumn("A").getValueSql("tablealias").append(
+     *         .append("FROM ").append(ti.getFromSql("tablelias"));
      * </pre>
      *
      * @param tableAliasName
@@ -299,6 +318,8 @@ public interface ColumnInfo extends ColumnRenderProperties
         return null;
     }
 
+    int findColumn(ResultSet rs) throws SQLException;
+
     Object getValue(ResultSet rs) throws SQLException;
 
     int getIntValue(ResultSet rs) throws SQLException;
@@ -307,7 +328,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     Object getValue(RenderContext context);
 
-    Object getValue(Map<String, ?> map);
+    Object getValue(Map<?, ?> map);
 
     DefaultValueType getDefaultValueType();
 

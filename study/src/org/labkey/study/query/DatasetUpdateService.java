@@ -32,7 +32,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MVDisplayColumn;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -359,7 +358,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                         if (col.getName().equalsIgnoreCase(_dataset.getKeyPropertyName()))
                         {
                             // make sure guid is not null (12884)
-                            result.addCoaleseColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
+                            result.addCoalesceColumn(col.getName(), c, new SimpleTranslator.GuidColumn());
                             foundKeyCol = true;
                         }
                         else
@@ -585,6 +584,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         aliasColumns(_columnMapping, row);
 
         String lsid = keyFromMap(oldRow);
+        checkDuplicateUpdate(lsid);
         // Make sure we've found the original participant before doing the update
         String oldParticipant = getParticipant(oldRow, user, container);
         String newLsid = null;
@@ -868,9 +868,9 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             TableInfo t = DefaultSchema.get(_user, _container).getSchema("study").getTable("DS1");
             assertNotNull(t);
-            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias()));
-            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias()));
-            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias()));
+            assertTrue("Field1".equalsIgnoreCase(t.getColumn("Field1").getAlias().getId()));
+            assertFalse("SELECT".equalsIgnoreCase(t.getColumn("SELECT").getAlias().getId()));
+            assertFalse(longName.equalsIgnoreCase(t.getColumn(longName).getAlias().getId()));
             var up = t.getUpdateService();
             assertNotNull(up);
             var errors = new BatchValidationException();

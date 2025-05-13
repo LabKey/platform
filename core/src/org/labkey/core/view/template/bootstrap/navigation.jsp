@@ -142,7 +142,7 @@
                         HtmlString plus = HtmlString.unsafe("<i class=\"fa fa-plus\" style=\"font-size: 12px;\"></i>");
                 %>
                 <li role="presentation">
-                    <%=link(plus).id("addTab").title("Add New Tab").onClick("LABKEY.Portal.addTab();").clearClasses()%>
+                    <%=simpleLink(plus).id("addTab").title("Add New Tab").onClick("LABKEY.Portal.addTab();")%>
                 </li>
                 <%
                     }

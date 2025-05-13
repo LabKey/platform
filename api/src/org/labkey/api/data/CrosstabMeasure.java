@@ -200,7 +200,7 @@ public class CrosstabMeasure
      */
     public SQLFragment getSqlExpression(String tableAlias)
     {
-        return _aggregateFunction.getSqlExpression(_sourceColumn.getSqlDialect(), new SQLFragment(tableAlias + "." + _sourceColumn.getAlias()));
+        return _aggregateFunction.getSqlExpression(_sourceColumn.getSqlDialect(), new SQLFragment().appendDottedIdentifiers(tableAlias,_sourceColumn.getAlias()));
     }
 
     @NotNull

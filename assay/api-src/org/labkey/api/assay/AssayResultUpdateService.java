@@ -229,6 +229,9 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 ColumnInfo col = columnInfoMap.get(entry.getKey());
                 if (col != null && !row.containsKey(entry.getKey()))
                 {
+                    if (DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, row))
+                        continue;
+
                     // use column names for existing row values
                     row.put(col.getName(), entry.getValue());
                 }
@@ -263,7 +266,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
 
         StringBuilder sb = new StringBuilder("Data row, id " + oldRow.get("RowId") + ", edited in " + run.getProtocol().getName() + ".");
-        for (Map.Entry<String, Object> entry : updatedValues.entrySet())
+        for (Map.Entry<String, Object> entry : result.entrySet())
         {
             // Also check for properties
             TableInfo table = getQueryTable();
@@ -271,8 +274,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
             if (col != null)
             {
-                Object oldValue = originalRow.get(entry.getKey());
-                Object newValue = entry.getValue();
+                Object oldValue = col.getValue(originalRow);
+                Object newValue = col.getValue(updatedValues);
                 boolean hasValueChanged = !Objects.equals(oldValue, newValue);
 
                 if (hasValueChanged)
@@ -280,7 +283,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
                 TableInfo fkTableInfo = col.getFkTableInfo();
                 // Don't follow the lookup for specimen IDs, since their FK is very special and based on target study, etc
-                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                if (hasValueChanged && fkTableInfo != null && !AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
                 {
                     // Do type conversion in case there's a mismatch in the lookup source and target columns
                     ColumnInfo fkTablePkCol = fkTableInfo.getPkColumns().get(0);
@@ -380,6 +383,27 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 OntologyManager.deleteOntologyObject(objectLsid, container, false);
             }
         }
+
+        // Issue 51126: need to track and resync run/sample lineage on delete in the same way we do for update
+        if (datatableInfo.getDomain() != null)
+        {
+            for (DomainProperty dp : datatableInfo.getDomain().getNonBaseProperties())
+                _assaySampleLookupContext.trackSampleLookupChange(container, user, datatableInfo, datatableInfo.getColumn(dp.getName()), run);
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        var result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
+
+        BatchValidationException errors = new BatchValidationException();
+        errors.setExtraContext(extraScriptContext);
+        _assaySampleLookupContext.syncLineage(container, user, errors);
+        if (errors.hasErrors())
+            throw errors;
 
         return result;
     }

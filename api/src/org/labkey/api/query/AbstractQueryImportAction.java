@@ -857,10 +857,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (auditEvent != null)
                     auditEvent.addComment(auditAction, count);
 
-                transaction.commit();
                 String metricPrefix = target.getUserSchema() == null ? target.getSchema().getName() : target.getUserSchema().getSchemaName();
                 metricPrefix = metricPrefix.replace("exp.", "");
                 incrementRowCountMetric(count, context.getInsertOption(), metricPrefix);
+                transaction.commit();
+
                 return count;
             }
             catch (SQLException x)

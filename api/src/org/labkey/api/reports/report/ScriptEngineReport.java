@@ -27,10 +27,12 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.ResultsFactory;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
@@ -80,31 +82,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
- *
- * User: Karl Lum
- * Date: Dec 3, 2008
- * Time: 2:45:37 PM
- *
  * A Report implementation that uses a ScriptEngine instance to execute the associated script.
  *
- * NOTE: This tree of the ScriptReport hierarchy is a little funny.  There are three main branches below this class and
+ * NOTE: This tree of the ScriptReport hierarchy is a little funny. There are three main branches below this class and
  * only one of them is actually uses a native javax.script.ScriptEngine.
  *
  *  1) InternalScriptEngineReport uses javax.script.ScriptEngine, but I'm not sure how to even create one of these...
  *  2) JavaScriptReport is a executes javascript code in the browser (so not a ScriptEngine)
  *  3) ExternalScriptEngineReport uses an external process to run the script, this process is wrapped in the javax.script.ScriptEngine interface (???)
  *
- *  See Also ScriptProcessReport which does not use javax.script.ScriptEngine.  It does however, try to use a lot of the
+ *  See Also ScriptProcessReport which does not use javax.script.ScriptEngine. It does however, try to use a lot of the
  *  patterns established here (and shared public static methods where possible).
 */
 public abstract class ScriptEngineReport extends ScriptReport implements Report.ResultSetGenerator
 {
     public static final String INPUT_FILE_TSV = "input_data";
-    public static Pattern scriptPattern = Pattern.compile("\\$\\{(.*?)}");
-
     public static final String TYPE = "ReportService.scriptEngineReport";
     public static final String DATA_INPUT = "input_data.tsv";
     public static final String FILE_PREFIX = "rpt";
@@ -379,7 +373,13 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             FieldKey fkey = e.getKey();
             assert fkey.equals(col.getFieldKey());
 
-            String alias = oldLegalName(fkey);
+            // col.getSqlDialect() is sometimes NULL, but this parameter is required
+            // null==dialect effectively used the slightly stricter Oracle rule (no leading _)
+            // TODO: pass in the actual schema/dialect used to create Results
+            SqlDialect d = col.getSqlDialect();
+            if (null == d)
+                d = CoreSchema.getInstance().getSqlDialect();
+            String alias = oldLegalName(fkey, d);
 
             if (!aliases.add(alias))
             {
@@ -391,7 +391,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 alias = alias + i;
             }
 
-            remap.put(col.getAlias(), alias);
+            remap.put(col.getAlias().getId(), alias);
         }
 
         try
@@ -433,9 +433,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
 
-    private String oldLegalName(FieldKey fkey)
+    private String oldLegalName(FieldKey fkey, @NotNull SqlDialect dialect)
     {
-        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(), "_"), null, false, false);
+        String r = AliasManager.makeLegalName(StringUtils.join(fkey.getParts(),"_"), dialect, false);
         return ColumnInfo.propNameFromName(r).toLowerCase();
     }
 
@@ -444,7 +444,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      */
     public static List<ScriptOutput> renderParameters(ScriptEngineReport report, final List<ScriptOutput> scriptOutputs, List<ParamReplacement> parameters, boolean deleteTempFiles) throws IOException
     {
-        return handleParameters(report, parameters, new ParameterHandler<List<ScriptOutput>>()
+        return handleParameters(report, parameters, new ParameterHandler<>()
         {
             @Override
             public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames)
@@ -454,9 +454,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 {
                     for (File file : param.getFiles())
                     {
-                        // Even if there is a script error we keep processing the output
-                        // parameters.  If the parameter files don't exist then don't create a
-                        // parameter object.
+                        // Even if there is a script error we keep processing the output parameters. If the parameter
+                        // files don't exist then don't create a parameter object.
                         //
                         ScriptOutput output = param.renderAsScriptOutput(file);
                         if (null != output)

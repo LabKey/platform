@@ -233,7 +233,6 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Datasets");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subjects");
-    public static final String ENABLE_ANCILLARY_STUDIES = "enableAncillaryStudies";
 
     private static final Logger _log = LogManager.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
@@ -1828,8 +1827,6 @@ public class StudyManager
             _visitHelper.clearCache(visitStudy.getContainer());
 
         _participantCache.remove(study.getContainer());
-        for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(study.getContainer()))
-            clearParticipantVisitCaches(substudy);
     }
 
     public VisitImpl getVisitForRowId(Study study, int rowId)
@@ -2675,9 +2672,6 @@ public class StudyManager
         _datasetHelper.clearCache();
         _cohortHelper.clearCache(c);
         _participantCache.remove(c);
-
-        for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
-            clearCaches(substudy.getContainer(), unmaterializeDatasets);
     }
 
     public void deleteAllStudyData(Container c, User user)
@@ -2933,7 +2927,7 @@ public class StudyManager
                 if (!dataset.isDemographicData())
                 {
                     pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
-                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias()));
+                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias().getId()));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
@@ -3663,6 +3657,14 @@ public class StudyManager
 
             addMissingRequiredIndices(reader, datasetDefEntryMap, domainChangeMap);
         }
+
+        List<Integer> orderedIds = reader.getDatasetOrder();
+        if (null != orderedIds)
+        {
+            DatasetReorderer reorderer = new DatasetReorderer(study, user);
+            reorderer.reorderDatasets(orderedIds);
+        }
+
         return true;
     }
 
@@ -4376,9 +4378,10 @@ public class StudyManager
 
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false, true).toString();
 
+        TableInfo participantTable = StudySchema.getInstance().getTableInfoParticipant();
         SQLFragment baseFragment = new SQLFragment();
         baseFragment.append("SELECT Container, ParticipantId FROM ");
-        baseFragment.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
+        baseFragment.append(participantTable, "p");
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
@@ -4402,7 +4405,7 @@ public class StudyManager
 
         baseFragment
             .append(" ")
-            .append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
+            .append(filter.getSQLFragment(participantTable, "p"));
 
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
         executeURL.setExtraPath(c.getId());
@@ -4564,14 +4567,8 @@ public class StudyManager
         }
     }
 
-
-    public List<StudyImpl> getAncillaryStudies(Container sourceStudyContainer)
+    public List<StudyImpl> getPublishedStudies(Container sourceStudyContainer)
     {
-        // in the upgrade case there may not be any ancillary studies
-        TableInfo t = StudySchema.getInstance().getTableInfoStudy();
-        ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
-        if (null == ssci || ssci.isUnselectable())
-            return Collections.emptyList();
         return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
                 new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArrayList(StudyImpl.class));
     }

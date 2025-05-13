@@ -168,15 +168,6 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         {
             // do any temp file cleanup
             importHelper.afterImport(ctx);
-
-            // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
-            // we need to force a participant/visit refresh in those study containers (if any):
-            for (Study dependentStudy : StudyService.get().getAncillaryStudies(ctx.getContainer()))
-            {
-                ValidationException errors = VisitService.get().updateParticipantVisits(dependentStudy, ctx.getUser());
-                if (errors.hasErrors())
-                    throw errors;
-            }
         }
     }
 

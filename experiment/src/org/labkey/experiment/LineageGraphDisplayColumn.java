@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -71,7 +71,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
             url.addParameter("detail", "true");
             url.addParameter("focus", _focus);
 
-            out.write(new LinkBuilder(_linkText).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_linkText, url));
         }
     }
 }

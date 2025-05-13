@@ -21,7 +21,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.query.BatchValidationException;
 
 import java.util.Map;
 import java.util.Set;

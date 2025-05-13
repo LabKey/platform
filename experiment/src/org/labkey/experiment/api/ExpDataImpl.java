@@ -17,26 +17,19 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.MultiValuedLookupColumn;
-import org.labkey.api.data.MultiValuedRenderContext;
-import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -71,13 +64,13 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -91,15 +84,12 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -108,7 +98,6 @@ import java.util.stream.Collectors;
 
 public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 {
-    private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
     public enum DataOperations {
         Edit("editing", UpdatePermission.class),
@@ -495,9 +484,10 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         job.debug("Finished trying to load data file " + dataFileURL + " into the system");
     }
 
-    // Get all text strings from the data class for indexing
+    // Get all text and int strings from the data class for indexing
     private void getIndexValues(
-        ExpDataClassDataTableImpl table,
+        Map<String, Object> props,
+        @NotNull ExpDataClassDataTableImpl table,
         Set<String> identifiersHi,
         Set<String> identifiersMed,
         Set<String> identifiersLo,
@@ -513,113 +503,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         skipColumns.add("Ancestors");
         skipColumns.add("Container");
 
-        // collect the set of columns to index
-        Set<ColumnInfo> columns = table.getExtendedColumns(true).values().stream().filter(col -> {
-            // skip the base-columns - they will be added to the index separately and/or we don't want to index them (Issue 52467)
-            if (skipColumns.contains(col.getName()))
-                return false;
-
-            // skip non-text columns or columns that aren't lookups
-            if (!(col.getJdbcType().isText() || col.getFk() != null))
-                return false;
-
-            // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
-            if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
-                return false;
-
-            return true;
-        }).collect(Collectors.toCollection(LinkedHashSet::new));
-
-        if (columns.isEmpty())
-            return;
-
-        TableSelector ts = new TableSelector(table, columns, new SimpleFilter(ExpDataClassDataTable.Column.RowId.fieldKey(), getRowId()), null);
-        ts.setForDisplay(true);
-        try (Results r = ts.getResults())
-        {
-            Map<FieldKey, ColumnInfo> fields = r.getFieldMap();
-            if (r.next())
-            {
-                Map<FieldKey, Object> map = r.getFieldKeyRowMap();
-                for (Map.Entry<FieldKey, ColumnInfo> entry : fields.entrySet())
-                {
-                    FieldKey fieldKey = entry.getKey();
-                    ColumnInfo col = entry.getValue();
-                    if (!col.getJdbcType().isText())
-                        continue;
-
-                    if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
-                        continue;
-
-                    Object o = map.get(fieldKey);
-                    if (!(o instanceof String s))
-                        continue;
-
-                    List<String> values;
-
-                    if (col instanceof MultiValuedLookupColumn)
-                        values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
-                    else
-                        values = Arrays.asList(s);
-
-                    SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
-                    if (searchProperty != null)
-                    {
-                        // Fow now only add indexed field values to search jsonData
-                        if (!values.isEmpty())
-                        {
-                            if (values.size() == 1)
-                                jsonData.put(fieldKey.toString(), values.get(0));
-                            else
-                                jsonData.put(fieldKey.toString(), values);
-                        }
-
-                        switch (searchProperty)
-                        {
-                            case identifiersHi -> {
-                                identifiersHi.addAll(values);
-                                continue;
-                            }
-                            case identifiersMed -> {
-                                identifiersMed.addAll(values);
-                                continue;
-                            }
-                            case identifiersLo -> {
-                                identifiersLo.addAll(values);
-                                continue;
-                            }
-                            case keywordsHi -> {
-                                keywordHi.addAll(values);
-                                continue;
-                            }
-                            case keywordsMed -> {
-                                keywordMed.addAll(values);
-                                continue;
-                            }
-                            case keywordsLo -> {
-                                keywordsLo.addAll(values);
-                                continue;
-                            }
-                            default -> LOG.debug("Unable to index column " + fieldKey.toString() + " with property: " + searchProperty.name() + ". Not yet supported.");
-                        }
-                    }
-
-                    if ("textarea".equalsIgnoreCase(col.getInputType()))
-                    {
-                        // treat multi-line text values as keywords, otherwise treat as an identifier
-                        keywordsLo.addAll(values);
-                    }
-                    else
-                    {
-                        identifiersMed.addAll(values);
-                    }
-                }
-            }
-        }
-        catch (SQLException e)
-        {
-            // ignore
-        }
+        processIndexValues(props, table, skipColumns, identifiersHi, identifiersMed, identifiersLo, keywordHi, keywordMed, keywordsLo, jsonData);
     }
 
     @Override
@@ -860,12 +744,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             tableInfo = (ExpDataClassDataTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), getContainer(), "exp.data").getTable(dc.getName());
         }
 
-        if (tableInfo != null)
-        {
-            // Collect other text columns and lookup display columns
-            getIndexValues(tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
-        }
-
         if (null != dc)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer()).addParameter("rowId", dc.getRowId());
@@ -877,22 +755,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             body.append(dc.getName());
         }
 
-
-        // === Not stemmed
-
-        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
-        props.put(SearchService.PROPERTY.identifiersMed.toString(), StringUtils.join(identifiersMed, " "));
-        props.put(SearchService.PROPERTY.identifiersLo.toString(), StringUtils.join(identifiersLo, " "));
-
-
-        // === Stemmed
-
-        props.put(SearchService.PROPERTY.keywordsHi.toString(), StringUtils.join(keywordsHi, " "));
-        props.put(SearchService.PROPERTY.keywordsMed.toString(), StringUtils.join(keywordsMed, " "));
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), StringUtils.join(keywordsLo, " "));
+        if (tableInfo != null)
+        {
+            // Collect other text columns and lookup display columns
+            getIndexValues(props, tableInfo, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
+        }
 
         // === Stored, not indexed
-
         if (dc != null && dc.isMedia())
             props.put(SearchService.PROPERTY.categories.toString(), expMediaDataCategory.toString());
         else
@@ -1070,7 +939,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 if (addParam)
                     url = url.clone().addParameter(PROPERTY, dataclass);
 
-                sb.append(new LinkBuilder(label).href(url).clearClasses());
+                sb.append(LinkBuilder.simpleLink(label, url));
             }
             else
             {
@@ -1086,7 +955,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                return new InputBuilder<>().type("hidden").id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
+                return InputBuilder.hidden().id("search-type").name(PROPERTY).value(dataclass).getHtmlString();
             }
 
             return null;

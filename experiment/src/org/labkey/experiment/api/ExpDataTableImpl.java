@@ -77,6 +77,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -218,7 +219,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                     // don't set container on property column so that inherited domain properties work
                     var projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _userSchema.getUser(), false);
                     addColumn(projectColumn);
-                    customProps.add(projectColumn.getAlias());
+                    customProps.add(projectColumn.getAlias().getId());
                 }
                 setDomain(domain);
             }
@@ -756,9 +757,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 if (data.isFileOnDisk())
                 {
-                    PageFlowUtil.link("View File").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(oldWriter);
                     oldWriter.write("<br>");
-                    PageFlowUtil.link("Download").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(oldWriter);
                 }
                 else
                 {
@@ -896,7 +897,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 assertEquals("Incorrect WebDavUrlRelative", tc.getUrlRelative(), webDavUrlRelative);
                 assertEquals("Incorrect WebDavUrl", tc.getUrl(), webDavUrl);
 
-                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx);
+                ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx, null);
                 try (VirtualFile f = new MemoryVirtualFile())
                 {
                     try (OutputStream os = f.getOutputStream("excel.xlsx"))

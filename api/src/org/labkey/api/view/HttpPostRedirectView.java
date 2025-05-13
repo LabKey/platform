@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.CsrfInput;
 
 import java.io.PrintWriter;
 import java.util.Collection;

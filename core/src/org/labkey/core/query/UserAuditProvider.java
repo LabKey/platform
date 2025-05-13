@@ -31,7 +31,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +38,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * User: klum

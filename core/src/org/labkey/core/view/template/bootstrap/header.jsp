@@ -111,7 +111,7 @@
     {
         String displayedShortName = "LabKey Server".equals(siteShortName) ? "" : siteShortName;
 %>
-            <h4 class="brand-link"><%=isStartupComplete ? link(displayedShortName, laf.getLogoHref()).clearClasses() : h(displayedShortName)%></h4>
+            <h4 class="brand-link"><%=isStartupComplete ? simpleLink(displayedShortName, laf.getLogoHref()) : h(displayedShortName)%></h4>
 <%
     }
 %>
@@ -278,7 +278,7 @@
         ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnUrl());
 %>
             <li>
-                <%=link("Stop impersonating").href(stopUrl).clearClasses().addClass("btn btn-primary").usePost()%>
+                <%=simpleLink("Stop impersonating", stopUrl).addClass("btn btn-primary").usePost()%>
             </li>
 <%
     }
@@ -289,7 +289,7 @@
 %>
             <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
             <li>
-                <%=link("Exit Admin Mode").href(exitUrl).clearClasses().addClass("btn btn-primary").usePost()%>
+                <%=simpleLink("Exit Admin Mode", exitUrl).addClass("btn btn-primary").usePost()%>
             </li>
 <%
     }

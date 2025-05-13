@@ -30,6 +30,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -89,7 +90,7 @@ public class TypeDisplayColumn extends DataColumn
                     if (protocol.getContainer().hasPermissions(ctx.getViewContext().getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class)))
                     {
                         out.write(" ");
-                        out.write(PageFlowUtil.link("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));
+                        out.write(LinkBuilder.labkeyLink("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));
                     }
                     return;
                 }

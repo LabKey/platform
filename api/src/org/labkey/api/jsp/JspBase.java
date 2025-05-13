@@ -26,7 +26,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Button.ButtonBuilder;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -34,14 +34,14 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.HelpPopupBuilder;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.element.Input.InputBuilder;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -443,7 +443,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     public LinkBuilder link(String text)
     {
-        return new LinkBuilder(text);
+        return LinkBuilder.labkeyLink(text);
     }
 
     public LinkBuilder link(Renderable html)
@@ -460,17 +460,47 @@ public abstract class JspBase extends JspContext implements HasViewContext
     // Link to a URLHelper
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
-        return link(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public LinkBuilder link(String text, @NotNull String url)
     {
-        return link(text).href(url);
+        return LinkBuilder.labkeyLink(text, url);
     }
 
     public LinkBuilder link(Renderable html, @NotNull URLHelper url)
     {
         return new LinkBuilder(html).href(url);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(String text)
+    {
+        return LinkBuilder.simpleLink(text);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(String text, @NotNull URLHelper url)
+    {
+        return LinkBuilder.simpleLink(text, url);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(String text, @NotNull String url)
+    {
+        return LinkBuilder.simpleLink(text, url);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(Renderable html)
+    {
+        return LinkBuilder.simpleLink(html);
+    }
+
+    // Simple, unstyled link
+    public LinkBuilder simpleLink(Renderable html, @NotNull URLHelper url)
+    {
+        return LinkBuilder.simpleLink(html, url);
     }
 
     public InputBuilder<?> input()

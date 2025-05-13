@@ -78,6 +78,7 @@ import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
+import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -90,6 +91,7 @@ import org.labkey.api.query.FileColumnValueMapper;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
@@ -145,6 +147,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
@@ -2350,7 +2353,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, Set.of(ExpMaterialTable.Column.MaterialSourceId.name(), ExpDataClassDataTable.Column.ClassId.name()), true);
 
             // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
@@ -2412,6 +2415,7 @@ public class ExpDataIterators
 
     public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
+        private static final String INVALID_FOLDER_MESSAGE = "Import or update of data in folder %s from folder %s is not allowed. Verify the folder exists, you have proper permissions, and data from that folder is visible here.";
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
         private static final Set<String> CONTAINER_FIELD_NAMES = Set.of("Container", "Folder");
@@ -2509,7 +2513,15 @@ public class ExpDataIterators
                 {
                     ContainerFilter cf = ContainerFilter.current(container, user);
                     if (container.isProductFoldersEnabled())
-                        cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                    {
+                        // Note that this is slightly different from our treatment of lookups:
+                        //    - when in a project, we allow import or update to all subfolders,
+                        //    - when in a folder, we only allow references to data up the folder tree
+                        if (container.isProject())
+                            cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+                        else
+                            cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+                    }
                     Collection<GUID> validContainerIds =  cf.getIds();
                     if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
                     {
@@ -2578,6 +2590,8 @@ public class ExpDataIterators
                         Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
                         AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
                         QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
+                        // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+                        qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(splitContainer, _user));
                         TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
 
                         if (dataTable == null)
@@ -2585,7 +2599,7 @@ public class ExpDataIterators
                             _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
                             return totalRowCount;
                         }
-                        totalRowCount +=_importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
+                        totalRowCount += _importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
                     }
                     return totalRowCount;
                 }
@@ -2655,7 +2669,8 @@ public class ExpDataIterators
                     _context.getErrors().addRowError(new ValidationException("No value provided for '" + _typeColName + "'."));
                 else
                 {
-                    if (_isCrossFolder && _folderColIndex != null)
+                    // Issue 52626 and Issue 52609 - don't check folders during update
+                    if (_isCrossFolder && _folderColIndex != null && !_context.getInsertOption().updateOnly)
                     {
                         String rowFolderId = StringUtils.trim((String) get(_folderColIndex));
                         if (!StringUtils.isEmpty(rowFolderId))
@@ -2663,7 +2678,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Invalid value '" + rowFolderId +"' provided for '" + getColumnInfo(_folderColIndex).getName() + "'."));
+                                _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, rowFolderId, _container.getName())));
                                 return true;
                             }
                         }
@@ -2832,6 +2847,8 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             DataClassUserSchema schema = new DataClassUserSchema(container, _user);
             QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo dataTable = qDef.getTable(schema, qpe, true);
             if (dataTable == null)
             {
@@ -2861,6 +2878,8 @@ public class ExpDataIterators
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
             QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
+            // Issue 52504: For lookup validation, we need to use the proper lookup container filter on the table
+            qDef.setContainerFilter(QueryService.get().getContainerFilterForLookups(container, _user));
             TableInfo samplesTable = qDef.getTable(schema, qpe, true);
             if (samplesTable == null)
             {
@@ -2881,6 +2900,8 @@ public class ExpDataIterators
             validFields.add(ALIQUOTED_FROM_INPUT);
             validFields.add("StorageUnit");
             validFields.add("Storage Unit");
+            validFields.add("StorageUnitLabel");
+            validFields.add("Storage Unit Label");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
             List<Integer> fieldIndexes = new ArrayList<>();
@@ -2986,6 +3007,11 @@ public class ExpDataIterators
                             _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                     }
                 }
+                else if (index == _dataIdIndex && _isCrossFolderUpdate)
+                {
+                    // Issue 52922: Samples with blank sample id in the file are getting ignored
+                    throw new IllegalArgumentException("Name value not provided on row " + get(0));
+                }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
@@ -3019,12 +3045,24 @@ public class ExpDataIterators
                 }
 
                 Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+
+                Set<String> notFoundIds = new HashSet<>(typeData.dataIds);
                 for (Map<String, Object> row : rows)
                 {
                     String name = (String) row.get("name");
+                    notFoundIds.remove(name);
                     String dataContainer = (String) row.get("container");
-                    int dataRowId = typeData.dataIds.indexOf(name);
-                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).add(dataRowId);
+                    // could be updating the same data multiple times in a single import, the import will later be rejected
+                    List<Integer> dataRowIds =
+                            IntStream.range(0, typeData.dataIds.size()).boxed()
+                                    .filter(i -> typeData.dataIds.get(i).equals(name))
+                                    .toList();
+                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
+                }
+                if (!notFoundIds.isEmpty())
+                {
+                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
+                    return;
                 }
 
                 for (String containerId : containerRows.keySet())
@@ -3033,7 +3071,7 @@ public class ExpDataIterators
                     if (container == null)
                     {
                         Container folder = ContainerManager.getForId(containerId);
-                        _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the folder: " + (folder != null ? folder.getName() : containerId)));
+                        _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, (folder != null ? folder.getName() : containerId), _container.getName())));
                         return;
                     }
 

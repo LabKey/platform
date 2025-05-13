@@ -18,7 +18,7 @@ package org.labkey.experiment;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -50,7 +50,7 @@ public class ProtocolDisplayColumn extends SimpleDisplayColumn
             ActionURL url = new ActionURL(ExperimentController.ProtocolDetailsAction.class, ctx.getContainer());
             url.addParameter("rowId", Integer.toString(_protocol.getRowId()));
 
-            out.write(new LinkBuilder(_protocol.getName()).href(url).clearClasses());
+            out.write(LinkBuilder.simpleLink(_protocol.getName(), url));
         }
     }
 }

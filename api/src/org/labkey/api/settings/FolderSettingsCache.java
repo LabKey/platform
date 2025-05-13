@@ -33,7 +33,6 @@ import java.util.Collections;
 public class FolderSettingsCache
 {
     private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, argument) -> new FolderSettings(c));
-    public static final String EXTRA_PARSING_PATTERNS_FEATURE_FLAG = "extraDateTimeParsingPatterns";
 
     public static String getDefaultDateFormat(Container c)
     {
@@ -53,27 +52,6 @@ public class FolderSettingsCache
     public static String getDefaultNumberFormat(Container c)
     {
         return CACHE.get(c).getDefaultNumberFormat();
-    }
-
-    public static String getExtraDateParsingPattern(Container c)
-    {
-        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
-            CACHE.get(c).getExtraDateParsingPattern() :
-            null;
-    }
-
-    public static String getExtraDateTimeParsingPattern(Container c)
-    {
-        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
-            CACHE.get(c).getExtraDateTimeParsingPattern() :
-            null;
-    }
-
-    public static String getExtraTimeParsingPattern(Container c)
-    {
-        return OptionalFeatureService.get().isFeatureEnabled(EXTRA_PARSING_PATTERNS_FEATURE_FLAG) ?
-            CACHE.get(c).getExtraTimeParsingPattern() :
-            null;
     }
 
     public static boolean areRestrictedColumnsEnabled(Container c)
@@ -97,9 +75,6 @@ public class FolderSettingsCache
         private final String _defaultDateTimeFormat;
         private final String _defaultTimeFormat;
         private final String _defaultNumberFormat;
-        private final String _extraDateParsingPattern;
-        private final String _extraDateTimeParsingPattern;
-        private final String _extraTimeParsingPattern;
         private final boolean _restrictedColumnsEnabled;
 
         FolderSettings(Container c)
@@ -109,9 +84,6 @@ public class FolderSettingsCache
             _defaultDateTimeFormat = props.calculateDefaultDateTimeFormat();
             _defaultTimeFormat = props.calculateDefaultTimeFormat();
             _defaultNumberFormat = props.calculateDefaultNumberFormat();
-            _extraDateParsingPattern = props.calculateExtraDateParsingPattern();
-            _extraDateTimeParsingPattern = props.calculateExtraDateTimeParsingPattern();
-            _extraTimeParsingPattern = props.calculateExtraTimeParsingPattern();
             _restrictedColumnsEnabled = props.calculateRestrictedColumnsEnabled();
         }
 
@@ -133,21 +105,6 @@ public class FolderSettingsCache
         public String getDefaultTimeFormat()
         {
             return _defaultTimeFormat;
-        }
-
-        public String getExtraDateParsingPattern()
-        {
-            return _extraDateParsingPattern;
-        }
-
-        public String getExtraDateTimeParsingPattern()
-        {
-            return _extraDateTimeParsingPattern;
-        }
-
-        public String getExtraTimeParsingPattern()
-        {
-            return _extraTimeParsingPattern;
         }
 
         public boolean areRestrictedColumnsEnabled()

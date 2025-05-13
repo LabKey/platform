@@ -52,10 +52,10 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
@@ -525,12 +525,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return writeInput(field, value, builder->builder.tabIndex(tabIndex));
     }
 
-    public HtmlString writeInput(String field, String value, Consumer<Input.InputBuilder<?>> builderModifier)
+    public HtmlString writeInput(String field, String value, Consumer<InputBuilder<?>> builderModifier)
     {
         if (!isVisible(field))
             return HtmlString.unsafe(filter(value, false, true));
 
-        Input.InputBuilder<?> builder = new Input.InputBuilder<>()
+        InputBuilder<?> builder = InputBuilder.text()
             .name(field)
             .value(value)
             .onChange("LABKEY.setDirty(true);return true;")
@@ -659,7 +659,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                     .unsafeAppend("\">&nbsp;")
                     .append(a.getName());
 
-                builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank").clearClasses());
+                builder.append(LinkBuilder.simpleLink(icon.getHtmlString(), download).target("_blank"));
                 builder.endTag("td").endTag("tr");
             }
             builder.endTag("table");

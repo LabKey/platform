@@ -465,7 +465,15 @@ public class ProjectController extends SpringActionController
         public URLHelper getRedirectURL(Object o)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
-            Path path = Path.decode(p);
+            Path path;
+            try
+            {
+                path = Path.decode(p);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new NotFoundException("Invalid path");
+            }
             Container c = getContainer();
             Path containerPath = c.getParsedPath();
             Path webdavPath = WebdavService.getPath().append(containerPath);

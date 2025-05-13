@@ -703,8 +703,8 @@ public class SpecimenRequestManager
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
                 if (null == column)
                     throw new IllegalStateException("Expected Specimen table column to exist.");
-                String colSelectName = column.getSelectName();
-                updateSql.append(",\n    ").append(colSelectName).append(" = VialCounts.").append(colSelectName);
+                var colSelectName = column.getSelectIdentifier();
+                updateSql.append(",\n    ").appendIdentifier(colSelectName).append(" = VialCounts.").appendIdentifier(colSelectName);
             }
 
         updateSql.append(UPDATE_SPECIMEN_SELECTS);
@@ -720,16 +720,17 @@ public class SpecimenRequestManager
             ColumnInfo vialColumn = tableInfoVial.getColumn(entry.getKey());
             if (null == vialColumn)
                 throw new IllegalStateException("Expected Vial table column to exist.");
-            String fromName = vialColumn.getSelectName();
+            var fromName = vialColumn.getSelectIdentifier();
             for (RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
                 VialSpecimenRollup rollup = rollupItem.second;
                 ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
                 if (null == column)
                     throw new IllegalStateException("Expected Specimen table column to exist.");
-                String toName = column.getSelectName();
+                var toName = column.getSelectIdentifier();
 
-                updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
+                // TODO convert to SQLFragment
+                updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName.getId(), toName.getId()));
             }
         }
 
@@ -770,8 +771,6 @@ public class SpecimenRequestManager
         _requestEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
-        for (Study study : StudyService.get().getAncillaryStudies(c))
-            clearCaches(study.getContainer());
 
         clearGroupedValuesForColumn(c);
     }
@@ -945,22 +944,24 @@ public class SpecimenRequestManager
                     TableInfo tableInfo = schema.getTable(SpecimenQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
                     Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
 
-                    SQLFragment sql = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
+                    SQLFragment inner = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
 
                     // Insert COUNT
                     String sampleCountName = tableInfo.getSqlDialect().makeLegalIdentifier("SampleCount");
-                    String countStr = " COUNT(*) As " + sampleCountName + ",\n";
-                    int insertIndex = sql.indexOf("SELECT");
-                    sql.insert(insertIndex + 6, countStr);
+                    SQLFragment sql = new SQLFragment("SELECT COUNT(*) As " + sampleCountName);
+                    for (var col : columnMap.values())
+                        sql.append(",").appendIdentifier(col.getAlias());
 
-                    sql.append("GROUP BY ");
+                    sql.append("\nFROM (").append(inner).append(") AS details");
+
+                    sql.append("\nGROUP BY ");
                     boolean firstGroupBy = true;
                     for (ColumnInfo columnInfo : columnMap.values())
                     {
                         if (!firstGroupBy)
                             sql.append(", ");
                         firstGroupBy = false;
-                        sql.append(columnInfo.getValueSql(tableInfo.getTitle()));
+                        sql.appendIdentifier(columnInfo.getAlias());
                     }
 
                     sql.append("\nORDER BY ");
@@ -970,7 +971,7 @@ public class SpecimenRequestManager
                         if (!firstOrderBy)
                             sql.append(", ");
                         firstOrderBy = false;
-                        sql.append(columnInfo.getValueSql(tableInfo.getTitle()));
+                        sql.appendIdentifier(columnInfo.getAlias());
                     }
 
                     SqlSelector selector = new SqlSelector(tableInfo.getSchema(), sql);
@@ -1002,7 +1003,7 @@ public class SpecimenRequestManager
 
                                     GroupedValueColumnHelper columnHelper = getGroupedValueAllowedMap().get(s);
                                     ColumnInfo columnInfo = columnMap.get(columnHelper.getFieldKey());
-                                    Object value = rowMap.get(columnInfo.getAlias());
+                                    Object value = columnInfo.getValue(rowMap);
                                     String labelValue = (null != value) ? value.toString() : null;
                                     GroupedResults groupedResults = currentGroupedResultsMap.get(labelValue);
                                     if (null == groupedResults)

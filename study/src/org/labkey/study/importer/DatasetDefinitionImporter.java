@@ -23,8 +23,8 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.reportProps.PropertyList;
-import org.labkey.study.model.DatasetReorderer;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.AbstractDatasetImportTask;
@@ -40,11 +40,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: May 16, 2009
- * Time: 9:42:02 PM
- */
 public class DatasetDefinitionImporter implements InternalStudyImporter
 {
     @Override
@@ -66,49 +61,28 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         {
             SchemaReader reader = null;
             StudyImpl study = ctx.getStudyImpl();
-            List<Integer> orderedIds = null;
 
             // dataset metadata provided or at least a definition file
             if (hasDatasetDefinitionFile(ctx))
             {
-                StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
                 VirtualFile datasetDir = getDatasetDirectory(ctx, vf);
+                DatasetsDocument.Datasets manifestDatasetsDoc = getDatasetsManifest(ctx, vf, true);  // Log the first manifest load
 
-                Map<String, DatasetImportProperties> extraProps = null;
-                DatasetsDocument.Datasets manifestDatasetsXml = getDatasetsManifest(ctx, vf, true);  // Log the first manifest load
-
-                if (null != manifestDatasetsXml)
+                if (null != manifestDatasetsDoc)
                 {
-                    DatasetsDocument.Datasets.Datasets2.Dataset[] datasets = manifestDatasetsXml.getDatasets().getDatasetArray();
-                    extraProps = getDatasetImportProperties(manifestDatasetsXml);
-                    orderedIds = new ArrayList<>(datasets.length);
-
-                    for (DatasetsDocument.Datasets.Datasets2.Dataset dataset : datasets)
-                        orderedIds.add(dataset.getId());
-
-                    String metaDataFilename = manifestDatasetsXml.getMetaDataFile();
+                    String metaDataFilename = manifestDatasetsDoc.getMetaDataFile();
 
                     if (null != metaDataFilename)
                     {
-                        ctx.getLogger().info("Loading dataset schema from " + metaDataFilename);
-                        reader = new SchemaXmlReader(study, datasetDir, metaDataFilename, extraProps);
-                    }
-                }
+                        ctx.getLogger().info("Loading dataset schema from {}", metaDataFilename);
 
-                if (null == reader)
-                {
-                    StudyDocument.Study.Datasets.Schema schema = datasetsXml.getSchema();
-
-                    if (null != schema)
-                    {
-                        String schemaTsvSource = schema.getFile();
-                        String labelColumn = schema.getLabelColumn();
-                        String typeNameColumn = schema.getTypeNameColumn();
-                        String typeIdColumn = schema.getTypeIdColumn();
-
-                        ctx.getLogger().info("Loading dataset schema from " + schemaTsvSource);
-                        ctx.getLogger().warn("DataFax schema definition format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
-                        reader = new SchemaTsvReader(study, datasetDir, schemaTsvSource, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
+                        XmlObject doc = datasetDir.getXmlBean(metaDataFilename);
+                        if (doc instanceof TablesDocument tablesDoc)
+                        {
+                            reader = new SchemaXmlReader(study, metaDataFilename, tablesDoc, manifestDatasetsDoc);
+                        }
+                        else
+                            throw new IllegalArgumentException("Could not get an instance of: " + metaDataFilename);
                     }
                 }
             }
@@ -132,14 +106,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
             if (null != reader)
             {
-                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), true, ctx.getActivity()))
-                    return;
-            }
-
-            if (null != orderedIds)
-            {
-                DatasetReorderer reorderer = new DatasetReorderer(study, ctx.getUser());
-                reorderer.reorderDatasets(orderedIds);
+                StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), true, ctx.getActivity());
             }
         }
     }
@@ -199,7 +166,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                     XmlObject doc = datasetDir.getXmlBean(datasetsXmlFilename);
                     if (doc instanceof DatasetsDocument)
                     {
-                        XmlBeansUtil.validateXmlDocument(doc);
+                        XmlBeansUtil.validateXmlDocument(doc, datasetsXmlFilename);
                         return ((DatasetsDocument)doc).getDatasets();
                     }
                     return null;
@@ -228,7 +195,6 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
         return extraProps;
     }
-
 
     // These are the study-specific dataset properties that are defined in datasets.xml
     public static class DatasetImportProperties

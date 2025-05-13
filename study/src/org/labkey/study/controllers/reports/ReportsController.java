@@ -17,7 +17,6 @@
 package org.labkey.study.controllers.reports;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -27,11 +26,9 @@ import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -43,7 +40,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -60,7 +56,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.MapArrayExcelWriter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
@@ -90,7 +85,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
 import org.springframework.validation.BindException;
@@ -99,7 +93,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -477,7 +470,7 @@ public class ReportsController extends BaseStudyController
                 {
                     ColumnInfo colInfo = col.getColumnInfo();
                     if (colInfo != null)
-                        colMap.put(colInfo.getAlias(), colInfo);
+                        colMap.put(colInfo.getAlias().getId(), colInfo);
                 }
             }
             return colMap;
@@ -1225,210 +1218,6 @@ public class ReportsController extends BaseStudyController
             {
                 _groups = ja.toString();
             }
-        }
-    }
-
-    public static class ProgressReportForm extends ReportUtil.JsonReportForm
-    {
-        private Integer _assayId;
-        private String _jsonData;
-
-        public Integer getAssayId()
-        {
-            return _assayId;
-        }
-
-        public void setAssayId(Integer assayId)
-        {
-            _assayId = assayId;
-        }
-
-        public String getJsonData()
-        {
-            return _jsonData;
-        }
-
-        @Override
-        public void bindJson(JSONObject json)
-        {
-            super.bindJson(json);
-
-            // used for export to excel
-            _assayId = (Integer)json.opt("assayId");
-
-            Object jsonData = json.opt("jsonData");
-            if (jsonData != null)
-                _jsonData = jsonData.toString();
-        }
-    }
-
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public static class AssayProgressReportAction extends SimpleViewAction<ProgressReportForm>
-    {
-        private String _actionName = "Create ";
-
-        @Override
-        public ModelAndView getView(ProgressReportForm form, BindException errors)
-        {
-            if (form.getReportId() != null)
-                _actionName = "Edit ";
-            JspView<ProgressReportForm> view = new JspView<>("/org/labkey/study/view/assayProgressReport.jsp", form, errors);
-
-            return view;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
-        }
-    }
-
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public static class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
-    {
-        @Override
-        public ApiResponse execute(ProgressReportForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            String key = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), null);
-            Report report = getReport(form);
-
-            ReportIdentifier reportId = ReportService.get().saveReportEx(getViewContext(), key, report);
-
-            response.put("success", true);
-            response.put("reportId", reportId);
-
-            return response;
-        }
-
-        private Report getReport(ProgressReportForm form)
-        {
-            Report report;
-
-            if (form.getReportId() != null)
-                report = form.getReportId().getReport(getViewContext());
-            else
-                report = ReportService.get().createReportInstance(AssayProgressReport.TYPE);
-
-            if (report != null)
-            {
-                report = report.clone();
-                ReportDescriptor descriptor = report.getDescriptor();
-
-                if (form.getName() != null)
-                    descriptor.setReportName(form.getName());
-                if (form.getDescription() != null)
-                    descriptor.setReportDescription(form.getDescription());
-                if (form.getJsonData() != null)
-                    descriptor.setProperty(ReportDescriptor.Prop.json, form.getJsonData());
-                if (!form.isPublic())
-                    descriptor.setOwner(getUser().getUserId());
-                else
-                    descriptor.setOwner(null);
-            }
-            return report;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
-    {
-        @Override
-        public void export(ProgressReportForm form, HttpServletResponse response, BindException errors)
-        {
-            ReportIdentifier identifier = form.getReportId();
-            if (identifier != null)
-            {
-                Report report = identifier.getReport(getViewContext());
-                if (report instanceof AssayProgressReport)
-                {
-                    AssayProgressReport progressReport = (AssayProgressReport)report;
-
-                    Map<String, Object> assayData = progressReport
-                            .getAssayReportData(getViewContext(), errors)
-                            .get(form.getAssayId());
-
-                    if (assayData != null)
-                    {
-                        List<Integer> visits = (List<Integer>)assayData.get(AssayProgressReport.VISITS);
-                        List<String> visitLabels = (List<String>)assayData.get(AssayProgressReport.VISITS_LABELS);
-                        List<String> participants = (List<String>)assayData.get(AssayProgressReport.PARTICIPANTS);
-                        Map<String, Map<String, String>> heatMap = (Map<String, Map<String, String>>)assayData.get(AssayProgressReport.HEAT_MAP);
-                        Map<Integer, String> visitLabelMap = new HashMap<>();
-
-                        int idx = 0;
-                        for (Integer visit : visits)
-                        {
-                            visitLabelMap.put(visit, visitLabels.get(idx++));
-                        }
-
-                        // create the columns
-                        List<ColumnDescriptor> cols = new ArrayList<>();
-                        cols.add(new ColumnDescriptor("ParticipantId", String.class));
-                        for (String visit : visitLabels)
-                        {
-                            cols.add(new ColumnDescriptor(visit, String.class));
-                        }
-
-                        // populate the data
-                        List<Map<String,Object>> rows = new ArrayList<>();
-                        for (String ptid : participants)
-                        {
-                            Map<String, Object> row = new HashMap<>();
-
-                            row.put("ParticipantId", ptid);
-                            for (Integer visit : visits)
-                            {
-                                String key = AssayProgressReport.ParticipantVisit.getKey(ptid, visit);
-                                Map<String, String> cell = heatMap.get(key);
-                                if (cell != null)
-                                {
-                                    row.put(visitLabelMap.get(visit), cell.get("status"));
-                                }
-                                else
-                                {
-                                    // default to expected
-                                    row.put(visitLabelMap.get(visit), AssayProgressReport.SPECIMEN_EXPECTED);
-                                }
-                            }
-                            rows.add(row);
-                        }
-
-                        MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(rows, cols.toArray(new ColumnDescriptor[cols.size()]));
-                        xlWriter.setHeaders(Arrays.asList("#Progress Report for Assay: " + assayData.get("name"), "#"));
-                        xlWriter.renderWorkbook(response);
-                    }
-                }
-            }
-        }
-    }
-
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
-    public static class GetAssayReportDataAction extends ReadOnlyApiAction<ProgressReportForm>
-    {
-        @Override
-        public ApiResponse execute(ProgressReportForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            ReportIdentifier reportIdentifier = form.getReportId();
-            if (reportIdentifier != null)
-            {
-                Report report = reportIdentifier.getReport(getViewContext());
-                if (report instanceof AssayProgressReport)
-                {
-                    Map<Integer, Map<String, Object>> assayData = ((AssayProgressReport)report).getAssayReportData(getViewContext(), errors);
-                    if (!errors.hasErrors())
-                    {
-                        response.put("success", true);
-                        response.put("assayData", assayData);
-                    }
-                }
-            }
-            return response;
         }
     }
 }

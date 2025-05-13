@@ -717,6 +717,7 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getView(FORM form, BindException errors)
         {
+            getPageConfig().setRobotsNone();
             Container c = getContainer();
             Set<WikiTree> wikiTrees = getWikiTrees(form, c);
 
@@ -1224,7 +1225,8 @@ public class WikiController extends SpringActionController
                 WikiPrintBean printBean = new WikiPrintBean(version);
                 JspView<WikiPrintBean> view = new JspView<>("/org/labkey/wiki/view/wikiPrint.jsp", printBean);
                 // Render content early so we can set the dependencies on the view
-                printBean.setHtml(version.render(view, _wiki.lookupContainer(), _wiki));
+                if (version != null)
+                    printBean.setHtml(version.render(view, _wiki.lookupContainer(), _wiki));
                 view.setFrame(WebPartView.FrameType.NONE);
                 return view;
             }
@@ -1387,7 +1389,6 @@ public class WikiController extends SpringActionController
         public final ActionURL compareLink;         //base url for comparing to another version
 
         public HtmlString html = null;
-        public Set<ClientDependencies> dependencies = Set.of();
 
         private VersionBean(Wiki wiki, WikiVersion wikiVersion, BaseWikiPermissions perms)
         {
@@ -1887,14 +1888,7 @@ public class WikiController extends SpringActionController
         @Override
         public ApiResponse execute(ContainerForm form, BindException errors)
         {
-            if (null == form.getId() || form.getId().isEmpty())
-                throw new IllegalArgumentException("The id parameter must be set to a valid container id!");
-
-            Container container = ContainerManager.getForId(form.getId());
-            if (null == container)
-                throw new IllegalArgumentException("The container id '" + form.getId() + "' is not valid.");
-            
-            Map<String, String> wikiMap = WikiSelectManager.getNameTitleMap(container);
+            Map<String, String> wikiMap = WikiSelectManager.getNameTitleMap(getContainer());
             if (null == wikiMap)
                 return new ApiSimpleResponse("pages", null);
 
@@ -2748,7 +2742,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresLogin
-    public class SetTocPreferenceAction extends MutatingApiAction<SetTocPreferenceForm>
+    public static class SetTocPreferenceAction extends MutatingApiAction<SetTocPreferenceForm>
     {
         public static final String PROP_TOC_DISPLAYED = "displayToc";
 

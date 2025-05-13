@@ -67,7 +67,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpressionFactory;
@@ -384,7 +384,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), null, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
+        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
 
         return sql;
     }
@@ -928,12 +928,10 @@ class PullRequestsDisplayColumn extends DataColumn
                         }
                     }
 
-                    Link.LinkBuilder link = new Link.LinkBuilder(linkText)
-                            .href(url)
-                            .title(title)
-                            .clearClasses()
-                            .target("_blank")
-                            .rel("noopener noreferrer");
+                    LinkBuilder link = LinkBuilder.simpleLink(linkText, url)
+                        .title(title)
+                        .target("_blank")
+                        .rel("noopener noreferrer");
                     link.build().appendTo(oldWriter);
                 }
                 else

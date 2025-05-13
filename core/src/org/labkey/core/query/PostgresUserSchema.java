@@ -5,7 +5,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -20,7 +20,7 @@ import java.util.Set;
 
     public PostgresUserSchema(User user, Container container)
     {
-        super(PostgreSql91Dialect.POSTGRES_SCHEMA_NAME, "Postgres-specific internal views for database troubleshooting", user, container, CoreSchema.getInstance().getSchema());
+        super(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, "Postgres-specific internal views for database troubleshooting", user, container, CoreSchema.getInstance().getSchema());
     }
 
     @Override

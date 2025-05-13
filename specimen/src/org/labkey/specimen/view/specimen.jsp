@@ -97,10 +97,10 @@ if (comment != null)
 <%
     }
 }
-if (bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0)
+if (bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty())
 {
 %>
-<br><%=link("return to vial view").href(bean.getReturnUrl() )%>
+<br><%=link("return to vial view", bean.getReturnUrl() )%>
 <%
     }
 %>

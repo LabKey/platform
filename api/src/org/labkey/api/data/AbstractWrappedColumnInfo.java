@@ -68,21 +68,21 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public String getAlias()
+    public DatabaseIdentifier getAlias()
     {
         return delegate.getAlias();
     }
 
     @Override
-    public String getMetaDataName()
+    public DatabaseIdentifier getMetaDataIdentifier()
     {
-        return delegate.getMetaDataName();
+        return delegate.getMetaDataIdentifier();
     }
 
     @Override
-    public String getSelectName()
+    public DatabaseIdentifier getSelectIdentifier()
     {
-        return delegate.getSelectName();
+        return delegate.getSelectIdentifier();
     }
 
     @Override
@@ -382,6 +382,12 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public int findColumn(ResultSet rs) throws SQLException
+    {
+        return delegate.findColumn(rs);
+    }
+
+    @Override
     public Object getValue(ResultSet rs) throws SQLException
     {
         return delegate.getValue(rs);
@@ -406,7 +412,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public Object getValue(Map<String, ?> map)
+    public Object getValue(Map<?, ?> map)
     {
         return delegate.getValue(map);
     }

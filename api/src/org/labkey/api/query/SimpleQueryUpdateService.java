@@ -103,7 +103,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 
         TableInfo table = getQueryTable().getSchemaTableInfo();
 
-        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
+        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataIdentifier())
             return false;
 
         if (getQueryTable().hasTriggers(container)) // dib not yet supported for simple tables with triggers
@@ -177,7 +177,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
                     for (int i=1 ; i<=it.getColumnCount() ; i++)
                     {
                         if (null != objectUriIndex && i == objectUriIndex)
-                            out.addCoaleseColumn(objectUriColumn.getName(), i, ()->getQueryTable().createObjectURI());
+                            out.addCoalesceColumn(objectUriColumn.getName(), i, ()->getQueryTable().createObjectURI());
                         else
                             out.addColumn(i);
                     }

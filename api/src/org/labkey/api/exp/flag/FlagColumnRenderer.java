@@ -68,7 +68,7 @@ public class FlagColumnRenderer extends DataColumn
             return setFlagFn;
 
         String dataRegionName = null == ctx.getCurrentRegion() ? null : ctx.getCurrentRegion().getName();
-        String dr = dataRegionName == null ? "" : AliasManager.makeLegalName(dataRegionName,null).replace("_","");
+        String dr = dataRegionName == null ? "" : AliasManager.makeLegalName(dataRegionName, getColumnInfo().getSqlDialect()).replace("_","");
 
         setFlagFn = "__setFlag" + dr + "_" + getUnique(ctx);
 

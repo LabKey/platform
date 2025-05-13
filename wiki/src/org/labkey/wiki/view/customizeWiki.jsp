@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.OptionBuilder" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
@@ -59,7 +59,8 @@ function updatePageList()
         select.options[select.options.length] = new Option('loading...', '', true, true);
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('wiki', 'getPages.api', undefined, { id: containerId }),
+            // Issue 52992: Use containerId as the containerPath, which is one of the supported URL structures
+            url: LABKEY.ActionURL.buildURL('wiki', 'getPages.api', containerId),
             method: 'GET',
             success: onSuccess.bind(this, containerId),
             failure: onError
@@ -181,7 +182,7 @@ function restoreDefaultPage()
                 }
                 return new OptionBuilder(c.getPath(), c.getId()).selected(selected);
             }))%>
-    <span class="help-block">You can also <%=link("restore to this folder's default page.").onClick("restoreDefaultPage();").clearClasses()%></span><br>
+    <span class="help-block">You can also <%=simpleLink("restore to this folder's default page.").onClick("restoreDefaultPage();")%></span><br>
     <%
         final Stream<OptionBuilder> builders;
 

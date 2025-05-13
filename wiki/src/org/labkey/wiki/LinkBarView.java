@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartView;
@@ -49,7 +50,7 @@ public class LinkBarView extends WebPartView<Object>
         out.write("<table width=\"100%\" cellpadding=0><tr><td>");
         for (NavTree link : _links)
         {
-            out.write(PageFlowUtil.link(link.getText()).href(link.getHref()) + "&nbsp;");
+            out.write(LinkBuilder.labkeyLink(link.getText(), link.getHref()) + "&nbsp;");
         }
         out.write("</td></tr>");
         if (_drawLine)

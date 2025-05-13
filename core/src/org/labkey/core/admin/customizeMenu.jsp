@@ -29,7 +29,7 @@
     }
 %>
 <%
-    JspView<CustomizeMenuForm> me = (JspView<CustomizeMenuForm>) JspView.currentView();
+    JspView<CustomizeMenuForm> me = JspView.currentView();
     CustomizeMenuForm bean = me.getModelBean();
 %>
 <div id="someUniqueElement2"></div>

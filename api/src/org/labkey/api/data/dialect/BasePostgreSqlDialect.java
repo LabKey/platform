@@ -29,6 +29,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -85,16 +86,13 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep the dialects versioned to
-// track changes we've implemented for each version over time.
-public abstract class PostgreSql91Dialect extends SqlDialect
+// Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
+// if not, put it in PostgreSql92Dialect.
+public abstract class BasePostgreSqlDialect extends SqlDialect
 {
     // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
-
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
-    public static final String PRODUCT_NAME = "PostgreSQL";
-    public static final String RECOMMENDED = PRODUCT_NAME + " 17.x is the recommended version.";
 
     private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -109,7 +107,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
-    // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
+    // standard_conforming_strings is on by default; before 9.1, it was off by default. We check the server setting
     // when we prepare a new DbScope and use this when we escape and parse string literals.
     private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
@@ -297,8 +295,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable)
     {
-        String columnName = column.getSelectName();
-        sql.append("\nRETURNING ").appendIdentifier(columnName);
+        var columnIdentifier = column.getSelectIdentifier();
+        sql.append("\nRETURNING ").appendIdentifier(columnIdentifier);
         if (null != proposedVariable)
             sql.append(" INTO ").appendIdentifier(proposedVariable);
 
@@ -639,14 +637,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public String getCreateDatabaseSql(String dbName)
     {
         // This will handle both mixed case and special characters on PostgreSQL
-        String legal = getSelectNameFromMetaDataName(dbName);
-        return "CREATE DATABASE " + legal + " WITH ENCODING 'UTF8'";
+        var legal = makeIdentifierFromMetaDataName(dbName);
+        return new SQLFragment("CREATE DATABASE ").appendIdentifier(legal).append(" WITH ENCODING 'UTF8'").getRawSQL();
     }
 
     @Override
     public String getCreateSchemaSql(String schemaName)
     {
-        if (!AliasManager.isLegalName(schemaName) || isReserved(schemaName))
+        if (!isLegalName(schemaName) || isReserved(schemaName))
             throw new IllegalArgumentException("Not a legal schema name: " + schemaName);
 
         //Quoted schema names are bad news
@@ -860,7 +858,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
 
     // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
-    private void determineSettings(DbScope scope)
+    protected void determineSettings(DbScope scope)
     {
         if (getServerType().supportsSpecialMetadataQueries())
         {
@@ -901,15 +899,34 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public String getSelectNameFromMetaDataName(String metaDataName)
+    public DatabaseIdentifier makeIdentifierFromMetaDataName(String metaDataName)
     {
         // In addition to quoting keywords and names with special characters, quote any name with an upper case
         // character. PostgreSQL normally stores column/table names in all lower case, so an upper case character
         // coming out of metadata means the name must have been quoted at creation time and needs to be quoted. #11181
         if (StringUtilsLabKey.containsUpperCase(metaDataName))
-            return quoteIdentifier(metaDataName);
+            return new _DatabaseIdentifier(metaDataName, new SQLFragment().appendIdentifier(quoteIdentifier(metaDataName)), this);
         else
-            return super.getSelectNameFromMetaDataName(metaDataName);
+            return super.makeIdentifierFromMetaDataName(metaDataName);
+    }
+
+    // Create a DatabaseIdentifier for the desired alias
+    @Override
+    public DatabaseIdentifier makeDatabaseIdentifier(String alias)
+    {
+        if (isIdentifierTooLong(alias))
+            throw new UnsupportedOperationException("Name is too long: " + alias);
+
+        // TODO always quote, for now be as backward compatible as possible
+        SQLFragment id;
+        if (shouldQuoteIdentifier(alias))
+        {
+            return new _DatabaseIdentifier(alias, quoteIdentifier(alias), this);
+        }
+        else
+        {
+            return new _DatabaseIdentifier(alias.toLowerCase(), alias, this);
+        }
     }
 
     private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,?\\s*(\\w*)\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
@@ -1039,7 +1056,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             case DropColumns -> sql.add(getDropColumnsStatement(change));
             case RenameColumns -> sql.addAll(getRenameColumnsStatement(change));
             case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
-            case DropIndices -> sql.addAll(getDropIndexStatements(change));
             case AddIndices -> sql.addAll(getCreateIndexStatements(change));
             case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
@@ -1237,7 +1253,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         Collection<Constraint> constraints = change.getConstraints();
 
-        if(null!=constraints && !constraints.isEmpty())
+        if (null!=constraints && !constraints.isEmpty())
         {
             statements = constraints.stream().map(constraint ->
                     String.format("""
@@ -1318,48 +1334,17 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("""
-                            DO $$
-                            BEGIN
-                            IF NOT EXISTS (
-                                SELECT 1
-                                FROM   pg_class c
-                                JOIN   pg_namespace n ON n.oid = c.relnamespace
-                                WHERE  c.relname = %s
-                                AND    n.nspname = %s
-                                ) THEN\s
-                                   CREATE %s INDEX %s ON %s (%s);
-                            END IF;
-                            END$$""",
-                    getStringHandler().quoteStringLiteral(nameIndex(change.getTableName(), index.columnNames)),
-                    getStringHandler().quoteStringLiteral(change.getSchemaName()),
-                    index.isUnique ? "UNIQUE" : "",
-                    nameIndex(change.getTableName(), index.columnNames),
-                    makeTableIdentifier(change),
-                    makePropertyIdentifiers(index.columnNames)));
+            statements.add(String.format("CREATE %sINDEX %s ON %s (%s);",
+                index.isUnique ? "UNIQUE " : "",
+                nameIndex(change.getTableName(), index.columnNames),
+                makeTableIdentifier(change),
+                makePropertyIdentifiers(index.columnNames)));
 
-            if(index.isClustered)
+            if (index.isClustered)
             {
                 statements.add(String.format("%s %s.%s USING %s", PropertyStorageSpec.CLUSTER_TYPE.CLUSTER, change.getSchemaName(),
                         change.getTableName(), nameIndex(change.getTableName(), index.columnNames)));
             }
-        }
-    }
-
-    private List<String> getDropIndexStatements(TableChange change)
-    {
-        List<String> statements = new ArrayList<>();
-        addDropIndexStatements(statements, change);
-        return statements;
-    }
-
-    private void addDropIndexStatements(List<String> statements, TableChange change)
-    {
-        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
-        {
-            statements.add(String.format("DROP INDEX IF EXISTS %s.%s",
-                    change.getSchemaName(),
-                    nameIndex(change.getTableName(), index.columnNames)));
         }
     }
 
@@ -1411,7 +1396,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String makeTableIdentifier(TableChange change)
     {
-        assert AliasManager.isLegalName(change.getTableName());
+        assert isLegalName(change.getTableName());
         return change.getSchemaName() + "." + change.getTableName();
     }
 
@@ -1943,8 +1928,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
-        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a generic warning
-            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. " + RECOMMENDED));
     }
 
     @Override

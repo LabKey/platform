@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -61,7 +62,7 @@ public class AssayView extends VBox
             if (container.hasPermission(getViewContext().getUser(), AdminPermission.class))
             {
                 ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(container);
-                html.append(PageFlowUtil.link("setup pipeline", url));
+                html.append(LinkBuilder.labkeyLink("setup pipeline", url));
             }
             else
                 html.append(" Please ask an administrator for assistance.");

@@ -194,7 +194,13 @@ public abstract class ClientDependency
             for (String d : list)
             {
                 if (StringUtils.isNotBlank(d))
-                    set.add(fromPath(d.trim()));
+                {
+                    ClientDependency cd = fromPath(d.trim());
+                    if (cd != null)
+                    {
+                        set.add(cd);
+                    }
+                }
             }
         }
 

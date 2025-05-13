@@ -587,6 +587,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throw e.getLastRowError();
         }
 
+        checkDuplicateUpdate(keys);
+
         return Table.update(user, getDbTable(), row, keys); // Cache-invalidation handled in caller (TreatmentManager.saveAssaySpecimen())
     }
 

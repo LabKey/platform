@@ -614,13 +614,15 @@ public abstract class VisitManager
             TableInfo tInfo = startDateDataset.getStorageTableInfo();
             ColumnInfo col = tInfo.getColumn(START_DATE_COLUMN_NAME);
             Container c = startDateDataset.getContainer();
-            String subSelect = schema.getSqlDialect().getDateTimeToDateCast("(SELECT MIN(" + col.getSelectName() + ") FROM " + tInfo +
-                    " WHERE " + tInfo + ".ParticipantId = " + tableParticipant + ".ParticipantId" +
-                    " AND " + tableParticipant + ".Container = ?)");
-            String sql = "UPDATE " + tableParticipant + " SET StartDate = " + subSelect + " WHERE (" +
-                    tableParticipant + ".StartDate IS NULL OR NOT " + tableParticipant + ".StartDate = " + subSelect +
-                    ") AND Container = ?";
-            new SqlExecutor(schema).execute(sql, c, c, c);
+            SQLFragment expr = new SQLFragment()
+                    .append("(SELECT MIN(").appendIdentifier(col.getSelectIdentifier()).append(")")
+                    .append(" FROM ").append(tInfo)
+                    .append(" WHERE ").append(tInfo).append(".ParticipantId = ").append(tableParticipant).append(".ParticipantId").append(" AND ").append(tableParticipant).append(".Container = ").appendValue(c).append(")");
+            SQLFragment subSelect = schema.getSqlDialect().getDateTimeToDateCast(expr);
+            SQLFragment sql = new SQLFragment()
+                    .append("UPDATE ").append(tableParticipant).append(" SET StartDate = ").append(subSelect)
+                    .append(" WHERE (").append(tableParticipant).append(".StartDate IS NULL OR NOT ").append(tableParticipant).append(".StartDate = ").append(subSelect).append(") AND Container = ").appendValue(c);
+            new SqlExecutor(schema).execute(sql);
         }
 
         // For participants without a demographic StartDate, just set to study start date.
@@ -648,17 +650,7 @@ public abstract class VisitManager
 
     protected static TableInfo getSpecimenTable(StudyImpl study, User user)
     {
-        // If this is an ancillary study, the specimen table may be subject to special filtering, so we need to use
-        // the query table, rather than the underlying database table.  We don't do this in all cases for performance
-        // reasons.
-        if (study.isAncillaryStudy() && null != user)
-        {
-            StudyQuerySchema studyQuerySchema = StudyQuerySchema.createSchema(study, user);
-            studyQuerySchema.setDontAliasColumns(true);
-            return studyQuerySchema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-        }
-        else
-            return SpecimenSchema.get().getTableInfoSpecimen(study.getContainer());
+        return SpecimenSchema.get().getTableInfoSpecimen(study.getContainer());
     }
 
 

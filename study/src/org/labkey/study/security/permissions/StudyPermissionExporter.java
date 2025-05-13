@@ -87,9 +87,6 @@ public class StudyPermissionExporter
         List<Group> groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
         for (Group group : groups)
         {
-            if (group.getUserId() == Group.groupAdministrators)
-                continue;
-
             GroupPermission p = gp.addNewGroupPermission();
             p.setGroupName(group.getName());
             p.setSecurityType(GroupSecurityTypeEnum.Enum.forString(GroupSecurityType.getTypeForGroup(group, study).name()));
@@ -103,7 +100,7 @@ public class StudyPermissionExporter
             ArrayList<Group> restrictedGroups = new ArrayList<>();
             for (Group g : groups)
             {
-                if (g.getUserId() != Group.groupAdministrators && studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class) &&
+                if (studyPolicy.hasNonInheritedPermission(g, ReadSomePermission.class) &&
                         !studyPolicy.hasNonInheritedPermission(g, ReadPermission.class) &&
                         !studyPolicy.hasNonInheritedPermission(g, UpdatePermission.class))
                     restrictedGroups.add(g);

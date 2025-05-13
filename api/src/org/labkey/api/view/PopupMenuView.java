@@ -19,9 +19,9 @@ package org.labkey.api.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
@@ -136,16 +136,14 @@ public class PopupMenuView extends HttpView<PopupMenu>
 
                     LI(
                         cl("dropdown-submenu"),
-                        new LinkBuilder(HtmlStringBuilder.of(child.getText()).append(DOM.createHtmlFragment(I(cl("fa fa-chevron-right")))))
-                            .clearClasses()
+                        LinkBuilder.simpleLink(HtmlStringBuilder.of(child.getText()).append(DOM.createHtmlFragment(I(cl("fa fa-chevron-right")))))
                             .addClass("subexpand")
                             .addClass("subexpand-icon")
                             .tabindex(0),
                         UL(
                             cl("dropdown-layer-menu"),
                             LI(
-                                new LinkBuilder(HtmlStringBuilder.of(DOM.createHtmlFragment(I(cl("fa fa-chevron-left")))).append(child.getText()))
-                                    .clearClasses()
+                                LinkBuilder.simpleLink(HtmlStringBuilder.of(DOM.createHtmlFragment(I(cl("fa fa-chevron-left")))).append(child.getText()))
                                     .addClass("subcollapse")
                                     .tabindex(0)
                             ),
@@ -207,8 +205,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
     {
         LI(
             cl("menu-filter-input"),
-            new Input.InputBuilder<>()
-                .type("text")
+            InputBuilder.text()
                 .placeholder("Filter")
                 .className("dropdown-menu-filter")
                 .addDataAttribute("filter-item", menuFilterItemCls)

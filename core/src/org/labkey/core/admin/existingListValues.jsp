@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
+<%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -28,9 +29,13 @@
     boolean isTroubleshooter = !c.hasPermission(getUser(), ApplicationAdminPermission.class);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _formExisting;
+
+    LABKEY.Utils.onReady(function() {
+        _formExisting = new LABKEY.Form({formElement: 'form-existingValues'});
+    });
 
     function deleteExisting(valueToDelete) {
-
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
         document.getElementById("existingValue").value = valueToDelete;
@@ -38,7 +43,6 @@
     }
 
     function saveAll() {
-
         //clicking on save will save all the values - changed and unchanged values
         var num = 1;
         var inputNameExisting = "existingValue" + num;
@@ -54,11 +58,11 @@
         document.getElementById("saveAll").value = true;
         document.getElementById("existingValues").value = values;
         document.forms["existingValues"].submit();
+        _formExisting.setClean();
     }
 </script>
 
-<labkey:form method="post" name="existingValues">
-
+<labkey:form name="existingValues" id="form-existingValues" method="post">
     <%
         AllowListForm bean = (AllowListForm) HttpView.currentModel();
     %>
@@ -78,7 +82,7 @@
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(value)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%=h(value)%>" size="80"<%=disabled(isTroubleshooter)%>/></td>
 
             <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(value) + "\");") %>
 
@@ -95,7 +99,23 @@
             <input type="hidden" id="existingValues" name="existingValues" value="" />
             <tr>
                 <td></td>
-                <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
+                <td><br/>
+                    <input type="hidden" id="saveAll" name="saveAll">
+                    <%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
+                    <%=isTroubleshooter ? HtmlString.EMPTY_STRING :
+                            button("Delete All")
+                                .href(urlFor(DeleteAllValuesAction.class)
+                                .addParameter("type", bean.getTypeEnum().name()))
+                                // Can't use LABKEY.Utils.confirmAndPost() below because it always returns false, and we need to preserve the dirty state in the cancel case
+                                .onClick(
+                                    "if (confirm(" + q("Are you sure you want to delete all " + bean.getTypeEnum().getTitle() + "s") + "))\n" +
+                                    "{\n" +
+                                    "    _formExisting.setClean();\n" +
+                                    "    LABKEY.Utils.postToAction(this.href);\n" +
+                                    "}\n" +
+                                    "return false;"
+                                )%>
+                </td>
             </tr>
         <% } %>
 </labkey:form>

@@ -85,7 +85,7 @@
     </p>
     <p>
         For more information on the security concern, refer to the
-        <%=link("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").target("_owasp").clearClasses()%>.
+        <%=simpleLink("OWASP cheat sheet", "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html#cross-origin-resource-sharing").target("_owasp")%>.
     </p>
 </div>
 <%
@@ -94,7 +94,7 @@
         ExternalSourcesForm form = (ExternalSourcesForm)getModelBean();
         Directive directive = EnumUtils.getEnum(Directive.class, form.getNewDirective());
 %>
-<labkey:form method="post" name="addNewHost">
+<labkey:form name="addNewHost" id="form-addNewHost" method="post">
     <table>
         <tr>
             <td><label class="labkey-form-label">Directive</label></td>
@@ -114,10 +114,17 @@
             <td><input name="newHost" id="newHostTextField" size="75" /></td>
         </tr>
         <tr>
-            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%= button("Add").submit(true) %></td>
+            <td><br/><input type="hidden" id="saveNew" name="saveNew" value="true"><%=button("Add").submit(true).onClick("_form.setClean()")%></td>
         </tr>
     </table>
 </labkey:form>
 <%
     }
 %>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    let _form;
+
+    LABKEY.Utils.onReady(function() {
+        _form = new LABKEY.Form({formElement: 'form-addNewHost'});
+    });
+</script>

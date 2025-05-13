@@ -18,8 +18,8 @@ package org.labkey.specimen.report.request;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.specimen.report.specimentype.TypeReportFactory;
 
 import java.util.List;
@@ -50,15 +50,15 @@ public abstract class BaseRequestReportFactory extends TypeReportFactory
     {
         List<Pair<String, HtmlString>> superInputs = super.getAdditionalFormInputHtml(user);
 
-        Select.SelectBuilder sb = new Select.SelectBuilder();
+        SelectBuilder sb = new SelectBuilder();
 
-        sb.addOption(new Option.OptionBuilder()
+        sb.addOption(new OptionBuilder()
             .value(Boolean.toString(false))
             .label("Include in-process requests")
             .build()
         );
 
-        sb.addOption(new Option.OptionBuilder()
+        sb.addOption(new OptionBuilder()
             .value(Boolean.toString(true))
             .label("Completed requests only")
             .selected(_completedRequestsOnly)

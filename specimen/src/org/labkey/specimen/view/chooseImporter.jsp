@@ -12,7 +12,7 @@
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.api.util.Button" %>
+<%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -103,12 +103,12 @@
 
                 <br/>
 
-                <%=  new Button.ButtonBuilder("Save")
+                <%=  new ButtonBuilder("Save")
                         .submit(true)
                         .build()
                 %>
 
-                <%=  new Button.ButtonBuilder("Cancel")
+                <%=  new ButtonBuilder("Cancel")
                         .href(cancelLink)
                         .build()
                 %>
@@ -131,7 +131,7 @@
 
             <br/><br/>
 
-            <%=  new Button.ButtonBuilder("Done")
+            <%=  new ButtonBuilder("Done")
                         .href(cancelLink)
                         .build()
             %>

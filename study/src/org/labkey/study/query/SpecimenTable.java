@@ -109,7 +109,7 @@ public class SpecimenTable extends AbstractSpecimenTable
             for (SpecimenTable table : _studySpecimenTables)
                 sql.append(") ");
         }
-        sql.append(alias);
+        sql.appendIdentifier(alias);
         return sql;
     }
 

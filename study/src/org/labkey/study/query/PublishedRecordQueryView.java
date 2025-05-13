@@ -30,12 +30,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlStringBuilder;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -117,7 +116,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
         {
             return HtmlStringBuilder.of(String.format("%s rows that were previously linked in this event have been recalled (or deleted)." +
                     " The audit record(s) of the deleted rows can be found in the ", count))
-                .append(new Link.LinkBuilder("link to study history view").href(url).clearClasses())
+                .append(LinkBuilder.simpleLink("link to study history view", url))
                 .append(", or the study dataset history view.");
         }
     }

@@ -61,8 +61,8 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
-import org.labkey.api.util.element.CsrfInput;
-import org.labkey.api.util.element.Input.InputBuilder;
+import org.labkey.api.util.CsrfInput;
+import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
@@ -1634,14 +1634,15 @@ public class DataRegion extends DisplayElement
                     continue;
 
                 ColumnInfo col = renderer.getColumnInfo();
-
                 final List<Aggregate.Result> result;
 
                 if (col != null)
                 {
-                    result = aggregateResults.get(renderer.getColumnInfo().getFieldKey().toString());
-                    if (result == null)
-                        aggregateResults.get(renderer.getColumnInfo().getAlias());
+                    // Why is aggregateResults a map of FieldKey.toString()??
+                    var r = aggregateResults.get(col.getFieldKey().toString());
+                    if (r == null)
+                        r = aggregateResults.get(col.getAlias().getId());
+                    result = r;
                 }
                 else
                 {
@@ -1811,19 +1812,19 @@ public class DataRegion extends DisplayElement
     protected void renderHiddenFormFields(RenderContext ctx, HtmlWriter out, int mode)
     {
         if (mode == MODE_GRID)
-            out.write(new InputBuilder<>().type("hidden").name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
+            out.write(InputBuilder.hidden().name(DataRegionSelection.DATA_REGION_SELECTION_KEY).value(getSelectionKey()));
 
         out.write(new CsrfInput(ctx.getViewContext()));
 
         for (FormField field : _hiddenFormFields)
         {
-            out.write(new InputBuilder<>().type("hidden").name(field.name()).value(field.value()));
+            out.write(InputBuilder.hidden().name(field.name()).value(field.value()));
         }
 
         if (mode == MODE_UPDATE_MULTIPLE)
         {
-            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
-            out.write(new InputBuilder<>().type("hidden").name(TableViewForm.BULK_UPDATE_NAME).value("true"));
+            out.write(InputBuilder.hidden().name(TableViewForm.DATA_SUBMIT_NAME).value("true"));
+            out.write(InputBuilder.hidden().name(TableViewForm.BULK_UPDATE_NAME).value("true"));
         }
     }
 
@@ -1848,8 +1849,7 @@ public class DataRegion extends DisplayElement
         boolean enabled = isRecordSelectorEnabled(ctx);
         boolean checked = isRecordSelectorChecked(ctx, checkboxValue);
 
-        new InputBuilder<>()
-            .type("checkbox")
+        InputBuilder.checkbox()
             .title("Select/unselect row")
             .name(getRecordSelectorName(ctx))
             .id(getRecordSelectorId(ctx))
@@ -2142,8 +2142,7 @@ public class DataRegion extends DisplayElement
             ColumnInfo col = entry.getValue();
             SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-            String safeColumnName = table.getSqlDialect().getColumnSelectName(col.getAlias());
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + safeColumnName + " AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
             sql.append(selectSql);
             sql.append(") AS D");
 
@@ -2329,8 +2328,7 @@ public class DataRegion extends DisplayElement
                                         if (null != pkVal)
                                         {
                                             out.write(
-                                                new InputBuilder<>()
-                                                    .type("hidden")
+                                                InputBuilder.hidden()
                                                     .name(viewForm != null ? viewForm.getFormFieldName(pkCol) : pkColName)
                                                     .value(pkVal.toString())
                                             );
@@ -2515,8 +2513,7 @@ public class DataRegion extends DisplayElement
         TD(
             at(style, "white-space:nowrap;"),
             LABEL(cl("control-label"),
-                new InputBuilder<>()
-                    .type("checkbox")
+                InputBuilder.checkbox()
                     .id(madeId)
                     .name("~~SELECTALL~~")
                     .build(),
@@ -2572,7 +2569,7 @@ public class DataRegion extends DisplayElement
         getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
 
         out.write(
-            new InputBuilder<>().type("hidden").name(OLD_VALUES_NAME).value(new JSONObject(oldKeys).toString())
+            InputBuilder.hidden().name(OLD_VALUES_NAME).value(new JSONObject(oldKeys).toString())
         );
     }
 

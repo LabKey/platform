@@ -41,7 +41,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -156,7 +156,7 @@ public class CoreWarningProvider implements WarningProvider
             if (null == upgradeMessage && showAllWarnings)
             {
                 // Mock upgrade message for testing
-                upgradeMessage = HtmlStringBuilder.of("You really ought to upgrade this server! ").append(new LinkBuilder("Click here!").href(AppProps.getInstance().getHomePageActionURL()).clearClasses()).getHtmlString();
+                upgradeMessage = HtmlStringBuilder.of("You really ought to upgrade this server! ").append(LinkBuilder.simpleLink("Click here!", AppProps.getInstance().getHomePageActionURL())).getHtmlString();
             }
 
             if (null != upgradeMessage)
@@ -372,7 +372,7 @@ public class CoreWarningProvider implements WarningProvider
             if (showAllWarnings || leakCount > 0)
             {
                 int count = ConnectionWrapper.getActiveConnectionCount();
-                HtmlStringBuilder html = HtmlStringBuilder.of(new LinkBuilder(count + " DB connection" + (count == 1 ? "" : "s") + " in use.").href(PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()).clearClasses());
+                HtmlStringBuilder html = HtmlStringBuilder.of(LinkBuilder.simpleLink(count + " DB connection" + (count == 1 ? "" : "s") + " in use.", PageFlowUtil.urlProvider(AdminUrls.class).getMemTrackerURL()));
                 html.append(" " + leakCount + " probable leak" + (leakCount == 1 ? "" : "s") + ".");
                 warnings.add(html);
             }
@@ -399,7 +399,7 @@ public class CoreWarningProvider implements WarningProvider
     private void addStandardWarning(Warnings warnings, String prefix, String linkText, ActionURL url)
     {
         HtmlStringBuilder html = HtmlStringBuilder.of(prefix + " ");
-        html.append(new LinkBuilder(linkText).href(url).clearClasses());
+        html.append(LinkBuilder.simpleLink(linkText, url));
         html.append(".");
         warnings.add(html);
     }

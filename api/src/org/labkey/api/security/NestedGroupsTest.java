@@ -181,8 +181,6 @@ public class NestedGroupsTest extends Assert
         // TODO: Create another group, add directly to "all", add user to new group, validate
         // TODO: Check permissions
 
-        Group administrators = SecurityManager.getGroup(Group.groupAdministrators);
-        Group developers = SecurityManager.getGroup(Group.groupDevelopers);
         Group users = SecurityManager.getGroup(Group.groupUsers);
         Group guests = SecurityManager.getGroup(Group.groupGuests);
 
@@ -190,8 +188,8 @@ public class NestedGroupsTest extends Assert
         failAddMember(projectX, null, SecurityManager.NULL_PRINCIPAL_ERROR_MESSAGE);
 
         failAddMember(testers, testers, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
-        failAddMember(administrators, administrators, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
-        failAddMember(developers, developers, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
+        failAddMember(writers, writers, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
+        failAddMember(projectX, projectX, SecurityManager.ADD_GROUP_TO_ITSELF_ERROR_MESSAGE);
 
         failAddMember(coders, user, SecurityManager.ALREADY_A_MEMBER_ERROR_MESSAGE);
         failAddMember(all, divA, SecurityManager.ALREADY_A_MEMBER_ERROR_MESSAGE);
@@ -208,13 +206,9 @@ public class NestedGroupsTest extends Assert
         failAddMember(users, projectX, ADD_TO_USERS);
         failAddMember(users, guests, ADD_TO_USERS);
 
-        failAddMember(administrators, projectX, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
-        failAddMember(developers, projectX, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
-        failAddMember(administrators, guests, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
-        failAddMember(developers, users, SecurityManager.ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE);
+        failAddMember(users, projectX, "Can't add a member to the Users group");
+        failAddMember(guests, projectX, "Can't add a member to the Guests group");
 
-        failAddMember(projectX, administrators, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
-        failAddMember(projectX, developers, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
         failAddMember(projectX, users, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
         failAddMember(projectX, guests, SecurityManager.ADD_SYSTEM_GROUP_ERROR_MESSAGE);
 

@@ -21,8 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.security.User;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select.SelectBuilder;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.List;

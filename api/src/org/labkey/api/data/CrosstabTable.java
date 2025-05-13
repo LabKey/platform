@@ -229,7 +229,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         for(CrosstabDimension rowDim : getSettings().getRowAxis().getDimensions())
         {
             sql.append(sep);
-            sql.append(PIVOT_ALIAS + "." + rowDim.getSourceColumn().getAlias());
+            sql.appendDottedIdentifiers(PIVOT_ALIAS,rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
         sep = ",\n";
@@ -316,7 +316,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             sql.append(sep)
                 .append(PIVOT_ALIAS + ".")
-                .append(rowDim.getSourceColumn().getAlias());
+                .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
@@ -332,7 +332,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         {
             sql.append(sep)
                 .append(AGG_FILTERED_ALIAS + ".")
-                .append(rowDim.getSourceColumn().getAlias());
+                .appendIdentifier(rowDim.getSourceColumn().getAlias());
             sep = ", ";
         }
 
@@ -405,13 +405,13 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     protected String getMemberInstanceCountAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
+        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_INSTANCE_COUNT;
     }
 
     protected String getMemberSortPatternAlias(CrosstabMember member)
     {
-        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias()
+        return getSettings().getColumnAxis().getDimensions().get(0).getSourceColumn().getAlias().getId()
                     + member.getValueSQLAlias(getSqlDialect()) + COL_SORT_PATTERN;
     }
 
@@ -420,7 +420,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         CrosstabDimension colDimension = getSettings().getColumnAxis().getDimensions().get(0);
 
         sql.append("(CASE WHEN ");
-        sql.append(queryAlias).append(".").append(colDimension.getSourceColumn().getAlias());
+        sql.appendDottedIdentifiers(queryAlias, colDimension.getSourceColumn().getAlias());
         sql.append("=");
         String value = getSQLValue(colDimension.getSourceColumn().getJdbcType(), member.getValue());
         sql.append(value);
@@ -429,7 +429,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         sql.append(" ELSE ");
         sql.append(elseSql);
         sql.append(" END) AS ");
-        sql.append(alias);
+        sql.appendIdentifier(alias);
     }
 
     protected void addSourceQuery(SQLFragment sql)
@@ -461,7 +461,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sql.append(sep);
             sql.append(AGG_OR_ALIAS);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = ",";
         }
 
@@ -489,11 +489,11 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             sql.append(sep);
             sql.append(ROWMEMS_ALIAS);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sql.append("=");
             sql.append(joinAlias);
             sql.append(".");
-            sql.append(dim.getSourceColumn().getAlias());
+            sql.appendIdentifier(dim.getSourceColumn().getAlias());
             sep = " AND ";
         }
         

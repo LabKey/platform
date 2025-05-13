@@ -19,8 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.writer.HtmlWriter;
@@ -142,14 +143,14 @@ public class PopupMenu extends DisplayElement
                 if (_buttonStyle == ButtonStyle.TEXTBUTTON)
                 {
                     assert !requiresSelection : "Only button-style popups can require selection.";
-                    out.write(PageFlowUtil.link(_navTree.getText()).onClick(onClickScript).attributes(attributes).addClass("dropdown-toggle"));
+                    out.write(LinkBuilder.labkeyLink(_navTree.getText()).onClick(onClickScript).attributes(attributes).addClass("dropdown-toggle"));
                 }
                 else if (_buttonStyle == ButtonStyle.MENUBUTTON)
                 {
                     if (requiresSelection)
                         attributes.put("data-labkey-requires-selection", dataRegionName);
 
-                    Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
+                    ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                         .dropdown(true)
                         .onClick(onClickScript)
                         .attributes(attributes);

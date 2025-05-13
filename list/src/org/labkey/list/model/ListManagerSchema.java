@@ -38,7 +38,8 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -47,16 +48,11 @@ import org.labkey.api.writer.HtmlWriter;
 import org.labkey.list.controllers.ListController;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Created by joec on 8/18/2014.
- */
 public class ListManagerSchema extends UserSchema
 {
     private static final Set<String> TABLE_NAMES;
@@ -153,11 +149,11 @@ public class ListManagerSchema extends UserSchema
                     return btnCreate;
                 }
 
-                private Button createImportListArchiveButton()
+                private ButtonBuilder.Button createImportListArchiveButton()
                 {
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
                     urlImport.addReturnUrl(getReturnUrl());
-                    Button btnImport = new Button.ButtonBuilder("Import List Archive")
+                    ButtonBuilder.Button btnImport = new ButtonBuilder("Import List Archive")
                             .href(urlImport)
                             .build();
                     btnImport.setDisplayPermission(DesignListPermission.class);
@@ -200,7 +196,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("Design").href(designUrl));
+                                out.write(LinkBuilder.labkeyLink("Design", designUrl));
                             }
                         });
                     }
@@ -215,7 +211,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
                                 historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.link("View History").href(historyUrl));
+                                out.write(LinkBuilder.labkeyLink("View History", historyUrl));
                             }
                         });
                     }

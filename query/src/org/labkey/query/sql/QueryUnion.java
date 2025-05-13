@@ -503,7 +503,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(getSql()).append(") ").append(alias);
+                f.append("(").append(getSql()).append(") ").appendIdentifier(alias);
                 return f;
             }
 

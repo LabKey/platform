@@ -15,6 +15,7 @@
  */
 package org.labkey.specimen.report;
 
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
@@ -34,8 +35,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewForm;
@@ -288,10 +289,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         ParticipantGroup group = ParticipantGroupService.get().getParticipantGroup(getContainer(), getUser(), ptidListId);
         if (group != null)
         {
-            StringBuilder sql = new StringBuilder();
+            SQLFragment sql = new SQLFragment();
             sql.append("(").append(StudyService.get().getSubjectColumnName(getContainer())).append(" IN (SELECT ");
-            sql.append("ParticipantId FROM ").append(SpecimenSchema.get().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))");
-            filter.addWhereClause(sql.toString(), new Object[] { ptidListId });
+            sql.append("ParticipantId FROM ").append(SpecimenSchema.get().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))").add(ptidListId);
+            filter.addWhereClause(sql);
         }
     }
 
@@ -335,7 +336,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, HtmlString> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
     {
-        Select.SelectBuilder sb = new Select.SelectBuilder()
+        SelectBuilder sb = new SelectBuilder()
             .name(inputName)
             .addOption(new OptionBuilder()
                 .value("")
@@ -369,7 +370,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public HtmlString getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
     {
-        Select.SelectBuilder sb = new Select.SelectBuilder()
+        SelectBuilder sb = new SelectBuilder()
             .name("baseCustomViewName")
             .addOption(new OptionBuilder()
                 .value("")
@@ -427,7 +428,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     protected Pair<String, HtmlString> getParticipantPicker(String inputName, String selectedParticipantId)
     {
         Study study = StudyService.get().getStudy(getContainer());
-        Select.SelectBuilder builder = new Select.SelectBuilder();
+        SelectBuilder builder = new SelectBuilder();
 
         String allString = getAllString();
         Collection<String> participantIds = StudyService.get().getParticipantIds(study, getUser());

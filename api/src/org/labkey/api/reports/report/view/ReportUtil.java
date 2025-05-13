@@ -759,8 +759,6 @@ public class ReportUtil
         if (null != principal)
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor(), false));
-            // make sure the Administrators remain readers of this report
-            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), ReaderRole.class);
 
             List<Role> principalAssignedRoles = policy.getAssignedRoles(principal);
             if (toAdd && principalAssignedRoles.isEmpty())

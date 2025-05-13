@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.MockSqlDialect;
@@ -34,17 +36,17 @@ import java.util.Map;
 
 public class AliasManager
 {
-    SqlDialect _dialect;
-    Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
+    private final @NotNull SqlDialect _dialect;
+    private final Map<String, String> _aliases = new CaseInsensitiveHashMap<>();
 
-    public AliasManager(SqlDialect d)
+    public AliasManager(@NotNull SqlDialect d)
     {
         _dialect = d;
     }
 
-    public AliasManager(DbSchema schema)
+    public AliasManager(@NotNull DbSchema schema)
     {
-        _dialect = null==schema ? null :  schema.getSqlDialect();
+        _dialect = schema.getSqlDialect();
     }
 
     public AliasManager(@NotNull TableInfo table, @Nullable Collection<ColumnInfo> columns)
@@ -55,257 +57,37 @@ public class AliasManager
             claimAliases(columns);
     }
 
-    /**
-     *  NOTE: ORACLE has slightly stricter (but compatible) rules for identifiers than SQL Server and Postgres.
-     *      "An ordinary identifier must begin with a letter and contain only letters, underscore characters (_), and digits"
-     */
-    public static boolean isLegalNameChar(char ch, boolean first)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect)
     {
-        return isLegalNameChar(ch, first, null);
+        return makeLegalName(str, dialect, true);
     }
 
-    public static boolean isLegalNameChar(char ch, boolean first, @Nullable SqlDialect dialect)
+    public static String makeLegalName(String str, @NotNull SqlDialect dialect, boolean truncate)
     {
-        // quick check
-        if (ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z')
-            return true;
-        if (!first && ch >= '0' && ch <= '9')
-            return true;
-
-        // oracle doesn't allow leading underscore
-        if (null == dialect || dialect.isOracle())
-            return !first && ch == '_';
-
-        // TODO be more lenient here (allow more unicode characters as "legal")
-        return ch == '_';
+        return makeLegalName(str, dialect, truncate, 0);
     }
 
-    public static boolean isLegalName(String str)
+    private static String makeLegalName(String str, @NotNull  SqlDialect dialect, boolean truncate, int reserveCount)
     {
-        return isLegalName(str, null);
+        return dialect.makeLegalName(str, truncate, reserveCount);
     }
 
-    public static boolean isLegalName(String str, @Nullable SqlDialect dialect)
-
+    public static String makeLegalName(FieldKey key, @NotNull  SqlDialect dialect)
     {
-        int length = str.length();
-        for (int i = 0; i < length; i ++)
-        {
-            if (!isLegalNameChar(str.charAt(i), i == 0, dialect))
-                return false;
-        }
-        return true;
+        return dialect.makeLegalName(key, 0);
     }
-
-    public static String legalNameFromName(String str)
-    {
-        return legalNameFromName(str, null);
-    }
-
-    public static String legalNameFromName(String str, @Nullable SqlDialect dialect)
-
-    {
-        int i;
-        char ch=0;
-
-        int length = str.length();
-        for (i = 0; i < length; i ++)
-        {
-            ch = str.charAt(i);
-            if (!isLegalNameChar(ch, i==0, dialect))
-                break;
-        }
-        if (i==length)
-            return str;
-
-        StringBuilder sb = new StringBuilder(length+20);
-        if (i==0)
-        {
-            sb.append("X_");
-            if (isLegalNameChar(ch, false))
-            {
-                sb.append(ch);
-                i++;
-            }
-        }
-        else
-        {
-            sb.append(str, 0, i);
-        }
-
-        for ( ; i < length ; i ++)
-        {
-            ch = str.charAt(i);
-            boolean isLegal = isLegalNameChar(ch, false);
-            if (isLegal)
-            {
-                sb.append(ch);
-            }
-            else
-            {
-                switch (ch)
-                {
-                    case '+' : sb.append("_plus_"); break;
-                    case '-' : sb.append("_minus_"); break;
-                    case '(' : sb.append("_lp_"); break;
-                    case ')' : sb.append("_rp_"); break;
-                    case '/' : sb.append("_fs_"); break;
-                    case '\\' : sb.append("_bs_"); break;
-                    case '&' : sb.append("_amp_"); break;
-                    case '<' : sb.append("_lt_"); break;
-                    case '>' : sb.append("_gt_"); break;
-                    default: sb.append("_"); break;
-                }
-            }
-        }
-        var ret = sb.toString();
-        assert isLegalName(ret, dialect);
-        return ret;
-    }
-
-
-    private String makeLegalName(String str)
-    {
-        return makeLegalName(str, _dialect);
-    }
-
-    private String makeLegalName(String str, int reserveCount)
-    {
-        return makeLegalName(str, _dialect, true, false, reserveCount);
-    }
-
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
-    {
-        return makeLegalName(str, dialect, true, useLegacyMaxLength);
-    }
-
-
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect)
-    {
-        return makeLegalName(str, dialect, true, false);
-    }
-
-
-    public static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength)
-    {
-        return makeLegalName(str, dialect, truncate, useLegacyMaxLength, 0);
-    }
-
-    private static String makeLegalName(String str, @Nullable SqlDialect dialect, boolean truncate, boolean useLegacyMaxLength, int reserveCount)
-    {
-        String ret = legalNameFromName(str, dialect);
-        if (null != dialect && dialect.isReserved(ret))
-            ret = ret + "_";
-        int length = ret.length();
-        if (0 == length)
-            ret = "X_";
-        if (dialect != null)
-            ret = dialect.makeLegalIdentifierName(ret);
-        int maxLength = getMaxLength(dialect, useLegacyMaxLength);
-        if (reserveCount > 0)
-            maxLength -= reserveCount;
-        if (maxLength < 5)
-            throw new IllegalStateException("Maxlength for legal name too small: " + maxLength);
-        ret = (truncate && length > maxLength) ? truncate(ret, maxLength) : ret;
-        assert isLegalName(ret, dialect);
-        return ret;
-    }
-
-
-    public static String makeLegalName(FieldKey key, @Nullable SqlDialect dialect, boolean useLegacyMaxLength)
-    {
-        if (key.getParent() == null)
-            return makeLegalName(key.getName(), dialect);
-        StringBuilder sb = new StringBuilder();
-        String connector = "";
-        for (String part : key.getParts())
-        {
-            sb.append(connector);
-            sb.append(legalNameFromName(part, dialect));
-            connector = "_";
-        }
-        var ret = truncate(sb.toString(), getMaxLength(dialect, useLegacyMaxLength));
-        assert isLegalName(ret, dialect);
-        return ret;
-    }
-
-    private static int getMaxLength(@Nullable SqlDialect dialect, boolean useLegacyMaxLength)
-    {
-        // we use 28 here because Oracle has a limit of 30 characters, and that is likely the shortest restriction
-
-        // But note: Oracle 12c raised the limit to 128 characters, so perhaps increase the fall-back length now?
-        int max = useLegacyMaxLength ? 40 : (dialect == null ? 28 : dialect.getIdentifierMaxLength() - 3 /* leave room for possible suffixes */);
-        // StorageColumnName is VARCHAR(100), so we can't use > 100 regardless of dialect (or we need a different code path for storagecolumnname)
-        return Math.min(100, max);
-    }
-
-    public static String truncate(String str, int to)
-    {
-        int len = str.length();
-        if (len <= to)
-            return str;
-        String n = String.valueOf((str.hashCode()&0x7fffffff));
-        return str.charAt(0) + n + str.substring(len-(to-n.length()-1));
-    }
-
 
     public String decideAlias(String name)
     {
-        return checkAndFinishAlias(makeLegalName(name), name);
-    }
-
-    public String decideAlias(String name, String preferred)
-    {
-        if (!_aliases.containsKey(preferred))
-        {
-            _aliases.put(preferred, name);
-            return preferred;
-        }
-        return checkAndFinishAlias(makeLegalName(name), name);
-    }
-
-    public String decideAlias(String name, int reserveCount)
-    {
-        return checkAndFinishAlias(makeLegalName(name, reserveCount), name);
-    }
-
-    private String checkAndFinishAlias(String legalName, String name)
-    {
+        String legalName = makeLegalName(name, _dialect, true, 3 /* Leave room for suffix */);
         String ret = legalName;
-        for (int i = 1; _aliases.containsKey(ret); i ++)
+        for (int i = 1; _aliases.containsKey(ret); i++)
         {
             ret = legalName + i;
         }
         _aliases.put(ret, name);
         return ret;
     }
-
-/*
-    public String decideAlias(FieldKey key)
-    {
-        String alias = _keys.get(key);
-        if (null != alias)
-            return alias;
-        String name = null == key.getParent() ? key.getName() : key.toString();
-        alias = decideAlias(name);
-        _keys.put(key,alias);
-        return alias;
-    }
-
-
-    // only for ColumnInfo.setAlias()
-    public void claimAlias(FieldKey key, String proposed)
-    {
-        String alias = _keys.get(key);
-        assert null == alias || alias.equals(proposed);
-        if (null != alias)
-            return;
-        assert null == _aliases.get(proposed) : "duplicate alias";
-        String name = null == key.getParent() ? key.getName() : key.toString();
-        _aliases.put(proposed,name);
-        _keys.put(key,proposed);
-    }
-*/
 
     public void claimAlias(String alias, String name)
     {
@@ -316,23 +98,7 @@ public class AliasManager
     {
         if (column == null)
             return;
-        claimAlias(column.getAlias(), column.getName());
-    }
-
-
-    /* assumes won't be called on same columninfo twice
-     * does not assume that names are unique (e.g. might be fieldkey.toString() or just fieldKey.getname())
-     */
-    public void ensureAlias(MutableColumnInfo column, @Nullable String extra)          // TODO: any external modules use this?
-    {
-        if (column.isAliasSet())
-        {
-            if (_aliases.get(column.getAlias()) != null)
-                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
-            claimAlias(column.getAlias(), column.getName());
-        }
-        else
-            column.setAlias(decideAlias(column.getName() + StringUtils.defaultString(extra,"")));
+        claimAlias(column.getAlias().getId(), column.getName());
     }
 
     public void ensureAlias(MutableColumnInfo column)
@@ -340,13 +106,13 @@ public class AliasManager
         if (column.isAliasSet())
         {
             String name;
-            if (null != (name = _aliases.get(column.getAlias())))
+            if (null != (name = _aliases.get(column.getAlias().getId())))
             {
                 if (!name.equals(column.getName()))
-                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
+                    throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias().getId() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
             }
             else
-                claimAlias(column.getAlias(), column.getName());
+                claimAlias(column.getAlias().getId(), column.getName());
         }
         else
             column.setAlias(decideAlias(column.getName()));
@@ -362,32 +128,38 @@ public class AliasManager
 
     public void unclaimAlias(ColumnInfo column)
     {
-        _aliases.remove(column.getAlias());
+        _aliases.remove(column.getAlias().getId());
     }
-
-
 
     public static class TestCase extends Assert
     {
         @Test
         public void test_legalNameFromName()
         {
-            assertEquals("bob", legalNameFromName("bob"));
-            assertEquals("bob1", legalNameFromName("bob1"));
-            assertEquals("X_1", legalNameFromName("1"));
-            assertEquals("X_1bob", legalNameFromName("1bob"));
-            assertEquals("X__bob", legalNameFromName("_bob"));
-            assertEquals("X__bob", legalNameFromName("?bob"));
-            assertEquals("bob_", legalNameFromName("bob?"));
-            assertEquals("bob_by", legalNameFromName("bob?by"));
-            assertFalse(legalNameFromName("bob+").equals(legalNameFromName("bob-")));
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            assertEquals("bob", dialect.legalNameFromName("bob"));
+            assertEquals("bob1", dialect.legalNameFromName("bob1"));
+            assertEquals("_bob", dialect.legalNameFromName("_bob"));
+            assertEquals("X_1", dialect.legalNameFromName("1"));
+            assertEquals("X_1bob", dialect.legalNameFromName("1bob"));
+            assertEquals("X__bob", dialect.legalNameFromName("?bob"));
+            assertEquals("bob_", dialect.legalNameFromName("bob?"));
+            assertEquals("bob_by", dialect.legalNameFromName("bob?by"));
+            assertNotEquals(dialect.legalNameFromName("bob+"), dialect.legalNameFromName("bob-"));
         }
 
         @Test
         public void test_decideAlias()
         {
+            MutableInt identifierMaxCharLength = new MutableInt();
+
             AliasManager m = new AliasManager(new MockSqlDialect()
             {
+                {{
+                    // Capture the dialect's identifier max for testing below
+                    identifierMaxCharLength.setValue(getIdentifierMaxCharLength());
+                }}
+
                 @Override
                 public boolean isReserved(String word)
                 {
@@ -405,7 +177,41 @@ public class AliasManager
 
             assertEquals("select_", m.decideAlias("select"));
 
-            assertEquals(m._dialect.getIdentifierMaxLength() - 3, m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
+            assertEquals(identifierMaxCharLength.addAndGet(-3), m.decideAlias("This is a very long name for a column, but it happens! go figure. " + StringUtils.repeat('x', 100)).length());
+        }
+
+        @Test
+        public void testLongNameTruncation()
+        {
+            SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
+            AliasManager m = new AliasManager(dialect);
+
+            String nums = "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890";
+            String truncatedNums1 = m.decideAlias(nums);
+            String truncatedNums2 = m.decideAlias(nums);
+            String truncatedNums3 = m.decideAlias(nums);
+
+            if (dialect.isSqlServer())
+            {
+                assertEquals(125, truncatedNums1.length());
+                assertEquals(126, truncatedNums2.length());
+                assertEquals(126, truncatedNums3.length());
+                assertEquals("X1483201190789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", truncatedNums1);
+            }
+            else
+            {
+                assertEquals(60, truncatedNums1.length());
+                assertEquals(61, truncatedNums2.length());
+                assertEquals(61, truncatedNums3.length());
+                assertEquals("X14832011902345678901234567890123456789012345678901234567890", truncatedNums1);
+            }
+
+            // Not an interesting test at the moment since every non-alphanumeric gets replaced with _. But this will
+            // become interesting if we start allowing Unicode characters in alias names in the future.
+            String unicode = "\uD83D\uDC7EA\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2\uD83D\uDC7E\uD83E\uDD91\uD83C\uDFBB\uD83C\uDFC2";
+            String truncatedUnicode = m.decideAlias(unicode);
+            assertEquals(29, truncatedUnicode.length());
+            assertEquals("X___A________________________", truncatedUnicode);
         }
     }
 }

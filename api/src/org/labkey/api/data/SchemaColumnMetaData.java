@@ -418,10 +418,9 @@ public class SchemaColumnMetaData
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         if (!column.isAliasSet())
         {
-            // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
-            if (AliasManager.isLegalName(column.getName(), column.getSqlDialect()))
-                column.setAlias(column.getName());
-            else if (null != column.getMetaDataName() && column.getMetaDataName().equalsIgnoreCase(column.getName()))
+            if (null != column.getMetaDataIdentifier())
+                column.setAlias(column.getMetaDataIdentifier());
+            else
                 column.setAlias(column.getName());
             getAliasManager().ensureAlias(column);  // claim alias
         }

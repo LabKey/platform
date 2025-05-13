@@ -240,7 +240,7 @@ import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
@@ -255,7 +255,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTracker.HeldReference;
@@ -1282,7 +1282,6 @@ public class AdminController extends SpringActionController
         {
             return _returnUrl;
         }
-
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -3191,8 +3190,8 @@ public class AdminController extends SpringActionController
 
             HtmlStringBuilder html = HtmlStringBuilder.of();
 
-            html.append(PageFlowUtil.link("Clear Caches and Refresh", getCachesURL(true, false)));
-            html.append(PageFlowUtil.link("Refresh", getCachesURL(false, false)));
+            html.append(LinkBuilder.labkeyLink("Clear Caches and Refresh", getCachesURL(true, false)));
+            html.append(LinkBuilder.labkeyLink("Refresh", getCachesURL(false, false)));
 
             html.unsafeAppend("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats, false);
@@ -3263,7 +3262,7 @@ public class AdminController extends SpringActionController
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
-                html.unsafeAppend("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
+                html.unsafeAppend("<td>").append(LinkBuilder.labkeyLink("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
 
                 if (null != limit && maxSize >= limit)
                     html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
@@ -4231,7 +4230,7 @@ public class AdminController extends SpringActionController
                                     DOM.TR(DOM.TD("Delay between iterations (ms)"), DOM.TD(DOM.INPUT(at(name, "delay", value, memoryStressForm._delay)))),
                                     DOM.TR(DOM.TD("Percent churn per iteration (0.0 - 1.0)"), DOM.TD(DOM.INPUT(at(name, "percentChurn", value, memoryStressForm._percentChurn))))
                             ),
-                            new Button.ButtonBuilder("Perform stress test").submit(true).build())
+                            new ButtonBuilder("Perform stress test").submit(true).build())
             );
         }
 
@@ -4583,7 +4582,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "container");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 
@@ -4598,7 +4597,7 @@ public class AdminController extends SpringActionController
                         currentUrl.addParameter("_fix", "descriptor");
                         contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
-                            .append(new LinkBuilder("here").href(currentUrl).clearClasses())
+                            .append(LinkBuilder.simpleLink("here", currentUrl))
                             .append(" to attempt recovery.");
                     }
 
@@ -5563,12 +5562,6 @@ public class AdminController extends SpringActionController
         private boolean _defaultTimeFormatInherited;
         private String _defaultNumberFormat;
         private boolean _defaultNumberFormatInherited;
-        private String _extraDateParsingPattern;
-        private boolean _extraDateParsingPatternInherited;
-        private String _extraDateTimeParsingPattern;
-        private boolean _extraDateTimeParsingPatternInherited;
-        private String _extraTimeParsingPattern;
-        private boolean _extraTimeParsingPatternInherited;
         private boolean _restrictedColumnsEnabled;
         private boolean _restrictedColumnsEnabledInherited;
 
@@ -5660,72 +5653,6 @@ public class AdminController extends SpringActionController
             _defaultNumberFormatInherited = defaultNumberFormatInherited;
         }
 
-        public String getExtraDateParsingPattern()
-        {
-            return _extraDateParsingPattern;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateParsingPattern(String extraDateParsingPattern)
-        {
-            _extraDateParsingPattern = extraDateParsingPattern;
-        }
-
-        public boolean isExtraDateParsingPatternInherited()
-        {
-            return _extraDateParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateParsingPatternInherited(boolean extraDateParsingPatternInherited)
-        {
-            _extraDateParsingPatternInherited = extraDateParsingPatternInherited;
-        }
-
-        public String getExtraDateTimeParsingPattern()
-        {
-            return _extraDateTimeParsingPattern;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
-        {
-            _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
-        }
-
-        public boolean isExtraDateTimeParsingPatternInherited()
-        {
-            return _extraDateTimeParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraDateTimeParsingPatternInherited(boolean extraDateTimeParsingPatternInherited)
-        {
-            _extraDateTimeParsingPatternInherited = extraDateTimeParsingPatternInherited;
-        }
-
-        public String getExtraTimeParsingPattern()
-        {
-            return _extraTimeParsingPattern;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
-        {
-            _extraTimeParsingPattern = extraTimeParsingPattern;
-        }
-
-        public boolean isExtraTimeParsingPatternInherited()
-        {
-            return _extraTimeParsingPatternInherited;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExtraTimeParsingPatternInherited(boolean extraTimeParsingPatternInherited)
-        {
-            _extraTimeParsingPatternInherited = extraTimeParsingPatternInherited;
-        }
-
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
@@ -5777,9 +5704,6 @@ public class AdminController extends SpringActionController
         validateAndSaveFormat(form.getDefaultDateTimeFormat(), form.isDefaultDateTimeFormatInherited(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time display format");
         validateAndSaveFormat(form.getDefaultTimeFormat(), form.isDefaultTimeFormatInherited(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time display format");
         validateAndSaveFormat(form.getDefaultNumberFormat(), form.isDefaultNumberFormatInherited(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number display format");
-        validateAndSaveFormat(form.getExtraDateParsingPattern(), form.isExtraDateParsingPatternInherited(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date parsing pattern");
-        validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), form.isExtraDateTimeParsingPatternInherited(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time parsing pattern");
-        validateAndSaveFormat(form.getExtraTimeParsingPattern(), form.isExtraTimeParsingPatternInherited(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time parsing pattern");
 
         setProperty(form.isRestrictedColumnsEnabledInherited(), props::clearRestrictedColumnsEnabled, () -> props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled()));
 
@@ -6652,9 +6576,6 @@ public class AdminController extends SpringActionController
                     List<DisplayColumn> columns = new ArrayList<>();
                     SecurityPolicy policy = getContainer().getPolicy();
                     Set<String> assignmentSet = new HashSet<>();
-
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupAdministrators).getName());
-                    assignmentSet.add(SecurityManager.getGroup(Group.groupDevelopers).getName());
 
                     for (RoleAssignment assignment : policy.getAssignments())
                     {
@@ -9077,7 +8998,7 @@ public class AdminController extends SpringActionController
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.link("Click here to ignore null, " + lowestSchemaVersion + " and unmanaged modules").href(url).getHtmlString();
+                    managedLink = LinkBuilder.labkeyLink("Click here to ignore null, " + lowestSchemaVersion + " and unmanaged modules", url).getHtmlString();
                 }
                 else
                 {
@@ -9096,7 +9017,7 @@ public class AdminController extends SpringActionController
                 {
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("unmanagedOnly", true);
-                    unmanagedLink = PageFlowUtil.link("Click here to show unmanaged modules only").href(url).getHtmlString();
+                    unmanagedLink = LinkBuilder.labkeyLink("Click here to show unmanaged modules only", url).getHtmlString();
                 }
                 else
                 {
@@ -9113,7 +9034,7 @@ public class AdminController extends SpringActionController
                         "To delete a module that does not have a delete link, first delete its .module file and exploded module directory from your Labkey deployment directory, and restart the server. " +
                         "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.")
                     .unsafeAppend("<br><br>").append(
-                        PageFlowUtil.link("Create new empty module").href(getCreateURL()));
+                                LinkBuilder.labkeyLink("Create new empty module", getCreateURL()));
             }
 
             HtmlStringBuilder docLink = HtmlStringBuilder.of();
@@ -9233,9 +9154,9 @@ public class AdminController extends SpringActionController
                                         TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
                                         TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
                                         TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
-                                        !AppProps.getInstance().isDevMode() ? null : TD((null == moduleEditorUrl) ? NBSP : PageFlowUtil.link("Edit module").href(moduleEditorUrl)),
-                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Upload Module").href(getUpdateURL(moduleContext.getName()))),
-                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
+                                        !AppProps.getInstance().isDevMode() ? null : TD((null == moduleEditorUrl) ? NBSP : LinkBuilder.labkeyLink("Edit module", moduleEditorUrl)),
+                                        null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : LinkBuilder.labkeyLink("Upload Module", getUpdateURL(moduleContext.getName()))),
+                                        !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP : LinkBuilder.labkeyLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())))
                                     );
                                 })
                         )
@@ -10542,7 +10463,11 @@ public class AdminController extends SpringActionController
                 form.getUsername()
             );
 
-            return success(Map.of("errorCode", errorCode, "loggedToMothership", errorCode != null));
+            Map<String, Object> results = new HashMap<>();
+            results.put("errorCode", errorCode);
+            results.put("loggedToMothership", errorCode != null);
+
+            return success(results);
         }
     }
 
@@ -11196,6 +11121,28 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class DeleteAllValuesAction extends FormHandlerAction<AllowListForm>
+    {
+        @Override
+        public void validateCommand(AllowListForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(AllowListForm form, BindException errors) throws Exception
+        {
+            form.getTypeEnum().setValues(Collections.emptyList(), getUser());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(AllowListForm form)
+        {
+            return form.getTypeEnum().getSuccessURL(getContainer());
+        }
+    }
+
     public static class ExternalSourcesForm
     {
         private boolean _delete;
@@ -11843,7 +11790,6 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
     {
-
         @Override
         public void addNavTrail(NavTree root)
         {
@@ -11878,7 +11824,7 @@ public class AdminController extends SpringActionController
                     if (sql.isEmpty())
                         sql.append("UPDATE ").append(tInfo, "").append(" SET ");
                     sql.append(comma)
-                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
+                            .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectIdentifier(), delta, col.getSelectIdentifier()));
                     comma = ", ";
                 }
             }
@@ -11991,6 +11937,17 @@ public class AdminController extends SpringActionController
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
+                    String blockedUri = cspReport.optString("blocked-uri", null);
+
+                    // Issue 52933 - suppress base-uri problems from a crawler or bot on labkey.org
+                    if (blockedUri != null &&
+                            blockedUri.startsWith("https://labkey.org%2C") &&
+                            blockedUri.endsWith("undefined") &&
+                            !_log.isDebugEnabled())
+                    {
+                        return ret;
+                    }
+
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {

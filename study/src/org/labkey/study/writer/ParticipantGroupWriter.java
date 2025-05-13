@@ -90,7 +90,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
             for (ParticipantCategoryImpl category : categories)
             {
                 // categoriesToCopy will be empty for a folder/study export
-                // categoriesToCopy will contain a list of categories for creating an ancillary study                
+                // categoriesToCopy will contain a list of categories for creating a published study
                 if ((categoriesToCopy.isEmpty() || categoriesToCopy.contains(category)) && category.isShared())
                 {
                     CategoryType pc = groups.addNewParticipantCategory();
@@ -113,7 +113,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
                     for (ParticipantGroup group : category.getGroups())
                     {
                         // _groupsToCopy will be empty for a folder/study export
-                        // _groupsToCopy will contain a list of groups for creating an ancillary study
+                        // _groupsToCopy will contain a list of groups for creating a published study
                         if (_groupsToCopy.isEmpty() || _groupsToCopy.contains(group))
                         {
                             // issue 21433: don't try to export an empty group

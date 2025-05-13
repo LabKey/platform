@@ -19,12 +19,14 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -141,6 +143,7 @@ public class PropertyStorageSpec
         }
     }
 
+//    private String publicName;          // this is used to match other public references to storedName (e.g. PropertyStorageSpec.Index.columnNames)
     private String name;
     private JdbcType jdbcType;
     private String typeURI;
@@ -437,9 +440,23 @@ public class PropertyStorageSpec
             this.isClustered = false;
         }
 
+        /** If the set of names refers to propertydescriptors, then the PropertyDescriptors must be provided */
+        public Index translateToStorageNames(Domain domain)
+        {
+            var translatedNames = Arrays.stream(columnNames).map(propertyName ->
+            {
+                var dp = domain.getPropertyByName(propertyName);
+                var pd = null==dp ? null : dp.getPropertyDescriptor();
+                if (null != pd && null == pd.getStorageColumnName())
+                    throw new IllegalStateException("Property " + propertyName + " has no storage column name");
+                return null == pd ? propertyName : pd.getStorageColumnName();
+            }).toArray(String[]::new);
+            return new Index(isUnique, isClustered, translatedNames);
+        }
+
         public Index(boolean unique, Collection<String> columnNames)
         {
-            this.columnNames = columnNames.toArray(new String[columnNames.size()]);
+            this.columnNames = columnNames.toArray(new String[0]);
             this.isUnique = unique;
             this.isClustered = false;
         }
@@ -452,8 +469,8 @@ public class PropertyStorageSpec
         }
 
         /**
-         * Determines if two indices are the same modulo the isClustered setting.   This is useful for updating
-         * indices when an audit domain type changes, for example.
+         * Determines if two indices are the same modulo the isClustered setting. This is useful for updating indices
+         * when an audit domain type changes, for example.
          */
         public static boolean isSameIndex(Index propertyIndex, Index tableIndex)
         {

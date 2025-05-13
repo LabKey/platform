@@ -41,7 +41,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -243,7 +242,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (selectedVisits != null)
                     studyExportContext.setVisitIds(selectedVisits);
 
-                // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
                 if (!participantGroups.isEmpty())
                 {
                     studyExportContext.setParticipants(getGroupParticipants(_form, participantGroups, studyExportContext));
@@ -360,15 +358,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(StudyArchiveDataTypes.STUDY_DATASETS_DEFINITIONS);
         dataTypes.add(StudyArchiveDataTypes.DATASET_DATA);
         dataTypes.add(StudyArchiveDataTypes.PARTICIPANT_GROUPS);
-
         dataTypes.add(FolderArchiveDataTypes.VIEW_CATEGORIES);
-
-        if (StudySnapshotType.ancillary.equals(form.getMode()))
-        {
-            dataTypes.add(StudyArchiveDataTypes.COHORT_SETTINGS);
-            dataTypes.add(StudyArchiveDataTypes.ASSAY_SCHEDULE);
-            dataTypes.add(StudyArchiveDataTypes.TREATMENT_DATA);
-        }
 
         if (folderProps != null)
         {
@@ -527,7 +517,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             List<Integer> participantGroupIds = new ArrayList<>();
             if (!participantGroups.isEmpty())
             {
-                // get the participant categories that were copied to the ancillary study
+                // get the participant categories that were copied to the published study
                 for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getDstContainer(), user))
                 {
                     for (ParticipantGroup group : category.getGroups())

@@ -38,7 +38,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
@@ -925,7 +925,7 @@ public class TestController extends SpringActionController
         {
             if (isPost())
             {
-                Button.ButtonBuilder button = PageFlowUtil.button(form.getText())
+                ButtonBuilder button = PageFlowUtil.button(form.getText())
                     .href(form.getHref())
                     .enabled(form.isEnabled())
                     .disableOnClick(form.isDisableonclick())
@@ -974,15 +974,15 @@ public class TestController extends SpringActionController
         private boolean _disableonclick;
         private boolean _enabled;
         private boolean _buttonsubmit;
-        private Button.ButtonBuilder builtButton;
+        private ButtonBuilder builtButton;
 
 
-        public Button.ButtonBuilder getBuiltButton()
+        public ButtonBuilder getBuiltButton()
         {
             return builtButton;
         }
 
-        public void setBuiltButton(Button.ButtonBuilder builtButton)
+        public void setBuiltButton(ButtonBuilder builtButton)
         {
             this.builtButton = builtButton;
         }

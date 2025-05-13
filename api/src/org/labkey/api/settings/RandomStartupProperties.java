@@ -3,6 +3,7 @@ package org.labkey.api.settings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -34,6 +35,7 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
         public void setValue(WriteableAppProps writeable, String value)
         {
             writeable.setAllowedFileExtensions(Arrays.asList(StringUtils.split(value, AppPropsImpl.EXTERNAL_HOST_DELIMITER)));
+            FileUtil.clearExtensionChecker();  // Not sure this is needed, but better safe than sorry.
         }
     },
     fileUploadDisabled("Disable file upload")

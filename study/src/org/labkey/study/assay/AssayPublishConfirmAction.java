@@ -28,7 +28,6 @@ import org.labkey.api.study.publish.AbstractPublishConfirmAction;
 import org.labkey.api.study.publish.PublishConfirmForm;
 import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -45,7 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 
@@ -98,51 +96,51 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     public enum DefaultValueSource
     {
         PublishSource
-                {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-                    {
-                        return tableMetadata.getParticipantIDFieldKey();
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-                    {
-                        return tableMetadata.getVisitIDFieldKey(type);
-                    }
-                },
+        {
+            @Override
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return tableMetadata.getParticipantIDFieldKey();
+            }
+            @Override
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                return tableMetadata.getVisitIDFieldKey(type);
+            }
+        },
         Specimen
+        {
+            @Override
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
+            }
+            @Override
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                if (type == TimepointType.VISIT)
                 {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-                    {
-                        return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-                    {
-                        if (type == TimepointType.VISIT)
-                        {
-                            return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
-                        }
-                        else
-                        {
-                            return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
-                        }
-                    }
-                },
+                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "Visit");
+                }
+                else
+                {
+                    return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "DrawTimestamp");
+                }
+            }
+        },
         UserSpecified
-                {
-                    @Override
-                    public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
-                    {
-                        return null;
-                    }
-                    @Override
-                    public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
-                    {
-                        return null;
-                    }
-                };
+        {
+            @Override
+            public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
+            {
+                return null;
+            }
+            @Override
+            public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
+            {
+                return null;
+            }
+        };
 
         public abstract FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata);
         public abstract FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type);
@@ -239,8 +237,8 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
 
         // If there are any sample columns in the assay, we can try to match existing samples in the target study
         List<ColumnInfo> sampleCols = selectColumns.values().stream()
-                .filter(c -> PropertyType.SAMPLE_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
-                .collect(Collectors.toList());
+            .filter(c -> PropertyType.SAMPLE_CONCEPT_URI.equalsIgnoreCase(c.getConceptURI()))
+            .toList();
 
         if (sampleCols.size() == 1)
             additionalCols.put(LinkToStudyKeys.SampleId, sampleCols.get(0).getFieldKey());
@@ -249,9 +247,9 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         {
             // issue 41982 : look for an alternate date column if the standard assay date field does not exist
             List<ColumnInfo> dateCols = selectColumns.values().stream()
-                    .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
-                            (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
-                    .collect(Collectors.toList());
+                .filter(c -> JdbcType.TIMESTAMP.equals(c.getJdbcType()) &&
+                    (!c.getName().equalsIgnoreCase("Created") && !c.getName().equalsIgnoreCase("Modified")))
+                .toList();
 
             if (dateCols.size() == 1)
                 additionalCols.put(LinkToStudyKeys.Date, dateCols.get(0).getFieldKey());
@@ -267,7 +265,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
 
     /**
      * Specifies the columns in the publish results query view that should not be visible (but still be in the data view)
-     * @return
      */
     @Override
     protected Set<String> getHiddenPublishResultsCaptions(AssayPublishConfirmForm form)
@@ -292,7 +289,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     @Override
     public ModelAndView getView(AssayPublishConfirmForm form, boolean reshow, BindException errors) throws Exception
     {
-        if (_protocol == null)
+        if (form.getProtocol() == null)
             return HtmlView.err("Could not resolve the source protocol.");
 
         return super.getView(form, reshow, errors);
@@ -312,6 +309,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         if (_protocol != null)
             root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         if (_targetStudyName != null)
-            root.addChild("Link to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
+            root.addChild("Link to " + _targetStudyName + ": Verify Results");
     }
 }

@@ -262,19 +262,26 @@ public class QueryPivot extends AbstractQueryRelation
                     fromForPivotValues.releaseAllSelected(this);
                     fromForPivotValues._distinct = null;
                 }
-                _pivotColumn.addRef(this);
-                if (null == fromForPivotValues._having)
+                if (_pivotColumn != null)
                 {
-                    fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
-                    fromForPivotValues._groupBy = null;
+                    _pivotColumn.addRef(this);
+                    if (null == fromForPivotValues._having)
+                    {
+                        fromForPivotValues._groupBy.releaseFieldRefs(fromForPivotValues._groupBy);
+                        fromForPivotValues._groupBy = null;
+                    }
+                    fromForPivotValues._allowStructuralOptimization = false;
+                    fromSql = fromForPivotValues.getFromSql();
+                    // the fields and columns are shared, to be safe fix up reference counts
+                    _from._groupBy.addFieldRefs(_from._groupBy);
+                    if (null != _from._distinct)
+                        _from.markAllSelected(_from._distinct);
+                    _from.markAllSelected(this);
                 }
-                fromForPivotValues._allowStructuralOptimization = false;
-                fromSql = fromForPivotValues.getFromSql();
-                // the fields and columns are shared, to be safe fix up reference counts
-                _from._groupBy.addFieldRefs(_from._groupBy);
-                if (null != _from._distinct)
-                    _from.markAllSelected(_from._distinct);
-                _from.markAllSelected(this);
+                else
+                {
+                    fromSql = null;
+                }
             }
             else
             {
@@ -818,7 +825,7 @@ public class QueryPivot extends AbstractQueryRelation
                     sql.append(" IS NULL");
                 else
                     sql.append("=").append(value.getSourceText());
-                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").append(alias);
+                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
         }

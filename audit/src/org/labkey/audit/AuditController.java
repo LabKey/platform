@@ -388,7 +388,7 @@ public class AuditController extends SpringActionController
             if (form.isSampleType())
                 rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);
             else
-                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer(), cf);
+                rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer(), cf);
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("success", true);

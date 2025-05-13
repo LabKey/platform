@@ -56,7 +56,7 @@ public class ContentSecurityPolicyFilter implements Filter
     // Lock that protects the static data structures below
     private static final Object ALLOWED_SOURCES_LOCK = new Object();
     private static final Map<Directive, SetValuedMap<String, String>> ALLOWED_SOURCES = new HashMap<>();
-    // Regenerate and stash on every "allowed source" change as a convenience (so every filter don't need to recalculate
+    // Regenerate and stash on every "allowed source" change as a convenience (so every filter doesn't need to recalculate
     // it on every init() and change)
     private static Map<String, String> ALLOWED_SOURCES_SUBSTITUTION_MAP = Collections.emptyMap();
 
@@ -209,7 +209,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 .eval(ALLOWED_SOURCES_SUBSTITUTION_MAP);
         }
 
-        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.KeepSubstitution);
+        _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
     }
 
     @Override
@@ -400,9 +400,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions(".SOURCES}", 0);
                     // Should have been substitution in init()
                     verifySubstitutionInPolicyExpressions("${CSP.REPORT.PARAMS}", 0);
-                    // A single substitution parameter (${REQUEST.SCRIPT.NONCE}) should remain
-                    verifySubstitutionInPolicyExpressions("${REQUEST.SCRIPT.NONCE}", 1);
-                    verifySubstitutionInPolicyExpressions("${", 1);
+                    verifySubstitutionInPolicyExpressions("${", 0);
 
                     // Now unregister and register sources for each Directive, testing expectations along the way
                     unregisterAllowedSources(Directive.Connection, "foo");

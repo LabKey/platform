@@ -109,19 +109,19 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
-import org.labkey.api.util.Button;
+import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Link;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.Option.OptionBuilder;
-import org.labkey.api.util.element.Select;
+import org.labkey.api.util.OptionBuilder;
+import org.labkey.api.util.SelectBuilder;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -532,7 +532,7 @@ public class SpecimenController extends SpringActionController
 
         if (getViewContext().hasPermission(AdminPermission.class))
         {
-            Button upload = new Button.ButtonBuilder("Import Specimens")
+            ButtonBuilder.Button upload = new ButtonBuilder("Import Specimens")
                 .href(new ActionURL(ShowUploadSpecimensAction.class, getContainer()))
                 .build();
             buttons.add(upload);
@@ -562,7 +562,7 @@ public class SpecimenController extends SpringActionController
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
             List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(ctx.getContainer());
 
-            new Select.SelectBuilder()
+            new SelectBuilder()
                 .addOption("<Show All>", "")
                 .addOptions(locations.stream().map(location -> new OptionBuilder(location.getDisplayName(), location.getRowId())))
                 .selected(locationId)
@@ -4099,8 +4099,8 @@ public class SpecimenController extends SpringActionController
                         errors.reject(ERROR_MSG, e.getMessage());
                     }
                 }
-                if (selectedVials == null || selectedVials.size() == 0)
-                    return HtmlView.unsafe("No vials selected. " + PageFlowUtil.link("back").onClick("back()"));
+                if (selectedVials == null || selectedVials.isEmpty())
+                    return HtmlView.unsafe("No vials selected. " + LinkBuilder.labkeyLink("back").onClick("back()"));
             }
 
             return new JspView<>("/org/labkey/specimen/view/updateComments.jsp",
@@ -4387,7 +4387,7 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(new Link.LinkBuilder("View Request").href(SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
+            HtmlView header = new HtmlView(LinkBuilder.labkeyLink("View Request", SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);
@@ -5747,29 +5747,4 @@ public class SpecimenController extends SpringActionController
             root.addChild("Insert " + _form.getQueryName());
         }
     }
-/*
-    // Used for testing
-    @RequiresSiteAdmin
-    public class DropVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-
-    // Used for testing
-    @RequiresSiteAdmin
-    public class AddVialIndices extends SimpleRedirectAction
-    {
-        @Override
-        public URLHelper getRedirectURL(Object o) throws Exception
-        {
-            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
-            return new ActionURL(BeginAction.class, getContainer());
-        }
-    }
-*/
 }

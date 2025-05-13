@@ -78,6 +78,7 @@ import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -345,7 +346,7 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());
-                    PageFlowUtil.link("assay").href(dataURL).appendTo(oldWriter);
+                    LinkBuilder.labkeyLink("assay", dataURL).appendTo(oldWriter);
                     return;
                 }
             }
@@ -551,9 +552,13 @@ public class DatasetQueryView extends StudyQueryView
     {
         MenuButton button =  super.createViewButton(filter);
 
-        ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
-        url.addParameter("datasetId", _dataset.getDatasetId());
-        button.addMenuItem("Set Default", url);
+        // Don't allow guests to set a default view, Issue 52863
+        if (!getUser().isGuest())
+        {
+            ActionURL url = new ActionURL(StudyController.ViewPreferencesAction.class, getContainer());
+            url.addParameter("datasetId", _dataset.getDatasetId());
+            button.addMenuItem("Set Default", url);
+        }
 
         return button;
     }

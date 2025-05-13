@@ -170,7 +170,7 @@ public class DomainTemplate
     @Nullable
     private static String getDomainKind(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
-        List<DomainKind> domainKinds = PropertyService.get().getDomainKinds();
+        List<DomainKind<?>> domainKinds = PropertyService.get().getDomainKinds();
 
         for (DomainKind domainKind : domainKinds)
         {

@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="org.labkey.api.data.dialect.PostgreSql91Dialect" %>
+<%@ page import="org.labkey.api.data.dialect.BasePostgreSqlDialect" %>
 <%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
@@ -723,7 +723,7 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT ISEQUAL(1, 2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, false),
         // javaConstant() always return VARCHAR currently, would like to fix
         new MethodSqlTest("SELECT javaConstant('java.lang.Integer.MAX_VALUE')", JdbcType.VARCHAR, String.valueOf(Integer.MAX_VALUE)),
-        new MethodSqlTest("SELECT ISMEMBEROF(-1) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),   // admin is required for junit test
+        new MethodSqlTest("SELECT ISMEMBEROF(-2) FROM R WHERE rowid=1", JdbcType.BOOLEAN, true),
         new MethodSqlTest("SELECT LEAST(0, 2, 1)", JdbcType.INTEGER, 0),
         new MethodSqlTest("SELECT LCASE('FRED') FROM R WHERE rowid=1", JdbcType.VARCHAR, "fred"),
         new MethodSqlTest("SELECT LEFT('FRED', 2) FROM R WHERE rowid=1", JdbcType.VARCHAR, "FR"),
@@ -859,7 +859,7 @@ d,seven,twelve,day,month,date,duration,guid
 
     List<SqlTest> postgresOnlyFunctions()
     {
-        int majorVersion = ((PostgreSql91Dialect) CoreSchema.getInstance().getSqlDialect()).getMajorVersion();
+        int majorVersion = ((BasePostgreSqlDialect) CoreSchema.getInstance().getSqlDialect()).getMajorVersion();
 
         List<SqlTest> result = new ArrayList<>(
             List.of(

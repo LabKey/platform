@@ -59,6 +59,7 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -139,17 +140,17 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
             return cols;
         }
 
-        protected String getRequiredColumnAlias(String columnName)
+        protected ColumnInfo getRequiredColumn(String columnName)
         {
             ColumnInfo col = _requiredColumns.get(columnName);
             if (col == null)
                 throw new IllegalStateException("Failed to find expected column " + columnName);
-            return col.getAlias();
+            return col;
         }
 
         protected Object getRequiredColumnValue(RenderContext ctx, String columnName)
         {
-            return ctx.getRow().get(getRequiredColumnAlias(columnName));
+            return getRequiredColumn(columnName).getValue(ctx);
         }
     }
 
@@ -182,13 +183,13 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         {
             if (!isAvailable(ctx))
             {
-                String reasonAlias = getRequiredColumnAlias("AvailabilityReason");
-                Object reason = ctx.getRow().get(reasonAlias);
+                var reasonCol = getRequiredColumn("AvailabilityReason");
+                Object reason = reasonCol.getValue(ctx.getRow());
 
                 HtmlStringBuilder builder = HtmlStringBuilder.of(reason instanceof String r ? r : "Specimen Unavailable.")
                     .append(HtmlString.BR).append(HtmlString.BR)
                     .append("Click ")
-                    .append(PageFlowUtil.link("[history]", getHistoryLink(ctx)).clearClasses())
+                    .append(LinkBuilder.simpleLink("[history]", getHistoryLink(ctx)))
                     .append(" for more information.");
 
                 out.write(PageFlowUtil.popupHelp(builder.getHtmlString(), "Specimen Unavailable"));
@@ -206,7 +207,7 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
 
         private boolean isAvailable(RenderContext ctx)
         {
-            return StudyUtils.isFieldTrue(ctx, getRequiredColumnAlias("Available"));
+            return StudyUtils.isFieldTrue(ctx, getRequiredColumn("Available"));
         }
     }
 

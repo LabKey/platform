@@ -424,6 +424,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment)
     {
+        auditRunEvent(user, protocol, run, runGroup, comment, userComment, null);
+    }
+
+    @Override
+    public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment, String userComment, @Nullable String message)
+    {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
         ExperimentAuditEvent event = new ExperimentAuditEvent(c, comment);
         event.setUserComment(userComment);
@@ -433,7 +439,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (run != null)
             event.setRunLsid(run.getLSID());
         event.setProtocolRun(ExperimentAuditProvider.getKey3(protocol, run));
-
+        if (message != null)
+            event.setMessage(message);
         AuditLogService.get().addEvent(user, event);
     }
 
@@ -1033,7 +1040,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            var doc = expMaterial.createIndexDocument();
+            var doc = expMaterial.createIndexDocument(null);
             if (doc != null)
             {
                 task.addResource(doc, SearchService.PRIORITY.bulk);
@@ -2725,12 +2732,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
             SQLFragment parentsInnerSelectFrag = SQLFragment.unsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
+            String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = StringUtils.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression("$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
         }
 
         String childrenToken = null;
@@ -2740,12 +2747,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
             SQLFragment childrenInnerSelectFrag = SQLFragment.unsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
+            String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = StringUtils.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression("$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -5676,10 +5683,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN (\n" +
-                            "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
-        sql.append(in1.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
-        sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
-        sql.append(in2.toSQLFragment(Collections.emptyMap(), getExpSchema().getSqlDialect()));
+                            "(SELECT di.TargetApplicationId FROM exp.DataInput di ");
+        TableInfo dataInput = getExpSchema().getTable("DataInput");
+        sql.append(new SimpleFilter().addClause(in1).getSQLFragment(dataInput, "di"));
+        sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d ");
+        TableInfo data = getExpSchema().getTable("Data");
+        sql.append(new SimpleFilter().addClause(in2).getSQLFragment(data,"d"));
         sql.append("))) ORDER BY Created DESC");
 
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
@@ -9556,11 +9565,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (ExpData data : classObjects)
                     {
                         Map<String, Object> oldRecordMap = new CaseInsensitiveHashMap<>();
-                        oldRecordMap.put("Container", sourceContainer.getName());
+                        oldRecordMap.put("Folder", sourceContainer.getName());
                         oldRecordMap.put("rowId", data.getRowId());
                         oldRows.add(oldRecordMap);
                         Map<String, Object> newRecordMap = new CaseInsensitiveHashMap<>();
-                        newRecordMap.put("Container", targetContainer.getName());
+                        newRecordMap.put("Folder", targetContainer.getName());
                         newRecordMap.put("rowId", data.getRowId());
                         newRows.add(newRecordMap);
                     }
@@ -9777,7 +9786,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         for (ExpRun run : runs)
                         {
                             run.setContainer(targetContainer);
-                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment);
+
+                            // Issue 52570: include source and target containers in the audit event message
+                            String message = String.format("Moved from %s to %s", container.getPath(), targetContainer.getPath());
+                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment, message);
                         }
                     }
                 }
@@ -9889,10 +9901,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 query.append(unionAll);
                 query.append("SELECT LSID, ")
-                        .append("CAST (").appendIdentifier(col.getSelectName()).append(" AS VARCHAR)")
+                        .append("CAST (").appendIdentifier(col.getSelectIdentifier()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
                 query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
-                query.append(" WHERE ").appendIdentifier(col.getSelectName()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
+                query.append(" WHERE ").appendIdentifier(col.getSelectIdentifier()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }
         }

@@ -101,7 +101,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1558,9 +1558,6 @@ public class SecurityManager
         if (group.equals(newMember))
             return ADD_GROUP_TO_ITSELF_ERROR_MESSAGE;
 
-        if (group.isSystemGroup())
-            return ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE;
-
         if (newMember.isSystemGroup())
             return ADD_SYSTEM_GROUP_ERROR_MESSAGE;
 
@@ -2368,13 +2365,13 @@ public class SecurityManager
             // Email failure message already includes link to the contents
             if (!emailFailure)
             {
-                LinkBuilder link = new LinkBuilder("here").href(messageContentsURL).target("_blank").clearClasses();
+                LinkBuilder link = LinkBuilder.simpleLink("here", messageContentsURL).target("_blank");
                 message.append(" Click ").append(link).append(" to see the email.");
             }
 
             if (!context.getContainer().isRoot())
             {
-                LinkBuilder projectGroupLink = new LinkBuilder("here").href(PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer())).clearClasses();
+                LinkBuilder projectGroupLink = LinkBuilder.simpleLink("here", PageFlowUtil.urlProvider(SecurityUrls.class).getPermissionsURL(context.getContainer()));
                 message.append(" Add the new user to a Project Group ").append(projectGroupLink).append(".").append(HtmlString.BR).append(HtmlString.BR);
             }
         }
@@ -2449,7 +2446,7 @@ public class SecurityManager
         if (messageContentsURL != null)
         {
             builder.append(" Alternatively, you can copy the ")
-                .append(new LinkBuilder("contents of the message").href(messageContentsURL).target("_blank").clearClasses())
+                .append(LinkBuilder.simpleLink("contents of the message", messageContentsURL).target("_blank"))
                 .append(" into an email client and send it to the user manually.");
         }
 
@@ -2689,14 +2686,7 @@ public class SecurityManager
      */
     public static String getDisambiguatedGroupName(Group group)
     {
-        int id = group.getUserId();
-
-        return switch (id)
-        {
-            case Group.groupAdministrators -> "Site Administrators";
-            case Group.groupUsers -> "All Site Users";
-            default -> group.getName();
-        };
+        return group.getUserId() == Group.groupUsers ? "All Site Users" : group.getName();
     }
 
     public static boolean canSeeUserDetails(Container c, User user)

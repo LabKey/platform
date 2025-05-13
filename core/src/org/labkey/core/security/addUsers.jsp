@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
-<%@ page import="org.labkey.api.util.Button.ButtonBuilder" %>
+<%@ page import="org.labkey.api.util.ButtonBuilder" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>

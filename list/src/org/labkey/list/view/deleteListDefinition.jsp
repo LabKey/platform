@@ -50,7 +50,7 @@
     <ul>
         <% for (var listDef : entry.getValue()) { %>
         <li>
-            <%= link(listDef.getName(), listDef.urlFor(ListController.GridAction.class, listDef.getContainer())).clearClasses() %>
+            <%= simpleLink(listDef.getName(), listDef.urlFor(ListController.GridAction.class, listDef.getContainer())) %>
         </li>
         <% } %>
     </ul>

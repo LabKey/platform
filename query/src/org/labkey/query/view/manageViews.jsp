@@ -149,10 +149,10 @@
         <td><%=h(userIdToString(view.getModifiedBy(), user))%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
-            <%=link("delete").href(urlDelete)%>
+            <%=link("delete", urlDelete)%>
             <% ActionURL urlSource = new ActionURL(InternalSourceViewAction.class, c);
             urlSource.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
-            <%=link("edit").href(urlSource)%>
+            <%=link("edit", urlSource)%>
         </td>
     </tr>
     <%

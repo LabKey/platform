@@ -25,7 +25,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -137,7 +137,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
                         ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
                         actionURL.addParameter("rowId", rowId.toString());
 
-                        oldWriter.write(new LinkBuilder("delete").href(actionURL).usePost().toString());
+                        oldWriter.write(LinkBuilder.labkeyLink("delete", actionURL).usePost().toString());
                     }
                     else
                     {

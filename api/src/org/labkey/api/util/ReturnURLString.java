@@ -33,9 +33,6 @@ import java.util.Objects;
 
 /**
  * Use ReturnURLString in Spring form beans to sanitize and convert Strings into ActionURL or URLHelper when binding parameters.
- *
- * User: matthewb
- * Date: Nov 3, 2009
  */
 public class ReturnURLString
 {
@@ -203,12 +200,20 @@ public class ReturnURLString
             if (value instanceof ReturnURLString)
                 return value;
             CharSequence seq;
-            if (value instanceof CharSequence)
-                seq = (CharSequence)value;
+            if (value instanceof CharSequence cs)
+                seq = cs;
             else
                 seq = (String)_impl.convert(String.class, value);
 
-            return new ReturnURLString(seq);
+            try
+            {
+                return new ReturnURLString(seq);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // Invalid URL
+                throw new ConversionException(e);
+            }
         }
     }
 }

@@ -16,7 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.CsrfInput;
 
 import java.io.IOException;
 

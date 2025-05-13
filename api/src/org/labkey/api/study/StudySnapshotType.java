@@ -15,19 +15,15 @@
  */
 package org.labkey.api.study;
 
-/**
- * Created by cnathe on 11/21/14.
- */
+// Only one option now, but keep the enum in case we add some variant in the future
 public enum StudySnapshotType
 {
-    ancillary("Ancillary", "Create Ancillary Study"),
-    publish("Published", "Publish Study"),
-    specimen("Specimen", "Publish Specimen Study");
+    publish("Published", "Publish Study");
 
-    private String _title;
-    private String _jobDescription;
+    private final String _title;
+    private final String _jobDescription;
 
-    private StudySnapshotType(String title, String jobDescription)
+    StudySnapshotType(String title, String jobDescription)
     {
         _title = title;
         _jobDescription = jobDescription;

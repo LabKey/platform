@@ -16,7 +16,7 @@
 
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.OptionBuilder;
 
 import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;
@@ -33,8 +33,8 @@ public class OptionsTag extends SimpleTagBase
 
     public boolean isSelected(Object test)
     {
-        if (_value instanceof Collection)
-            return ((Collection)_value).contains(test);
+        if (_value instanceof Collection<?> c)
+            return c.contains(test);
         else
             return Objects.equals(test, _value);
     }

@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+// TODO RenderContext actually implements Map<Object,Object>
 public class RenderContext implements Map<String, Object>, Serializable
 {
     private static final Logger _log = LogManager.getLogger(RenderContext.class);

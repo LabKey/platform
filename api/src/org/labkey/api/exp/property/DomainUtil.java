@@ -38,6 +38,7 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -720,7 +721,7 @@ public class DomainUtil
 
         // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
         boolean strictFieldValidation = arguments != null ? (Boolean) arguments.getOrDefault("strictFieldValidation", true) : true;
-        DomainKind validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
+        DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
         if (ve.hasErrors())
@@ -1109,7 +1110,7 @@ public class DomainUtil
                     errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
                 }
             }
-            Lookup lu = new Lookup(c, from.getLookupSchema(), from.getLookupQuery());
+            Lookup lu = new Lookup(c, SchemaKey.fromString(from.getLookupSchema()), from.getLookupQuery());
             to.setLookup(lu);
         }
         else
@@ -1316,7 +1317,7 @@ public class DomainUtil
         }
     }
 
-    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
     {
         if (domain != null && domain.getName() != null)
         {
@@ -1331,24 +1332,23 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain<?> updates, @Nullable DomainKind domainKind, @Nullable GWTDomain<?> orig, @Nullable User user)
     {
         Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
+        Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
-        for (Object f : updates.getFields(true))
+        for (GWTPropertyDescriptor field : updates.getFields(true))
         {
-            GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
-
             String name = field.getName();
 
             if (null == name || name.trim().isEmpty())
             {
-                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "Please provide a name for each field.")));
                 continue;
             }
 
@@ -1376,7 +1376,7 @@ public class DomainUtil
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
-                    exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
+                    exception.addFieldError(name, getDomainErrorMessage(updates, ("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
@@ -1393,18 +1393,32 @@ public class DomainUtil
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
+                String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
             }
             else
             {
                 namePropertyIdMap.put(name, field.getPropertyId());
+
+                // Issue 52827: File/attachment fields with special characters
+                if (altNameMap.containsKey(name))
+                {
+                    String errorMsg = getDomainErrorMessage(updates, "The field name '" + name + "' cannot be used with another field '" + altNameMap.get(name) + "'. Please provide a different name for the field.");
+                    PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
+                    exception.addError(propertyValidationError);
+                }
+                else
+                {
+                    altNameMap.put(name, name);
+                    altNameMap.put(DataIteratorUtil.MatchType.multiPartFormData.getMatchedName(name), name);
+                    altNameMap.put(name.replaceAll("%22", "\""), name);
+                }
             }
 
             if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
-                exception.addFieldError(name, getDomainErrorMessage(updates,"The value expression for '" + name
+                exception.addFieldError(name, getDomainErrorMessage(updates, "The value expression for '" + name
                         + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));
             }
         }
@@ -1413,15 +1427,14 @@ public class DomainUtil
     }
 
     @Nullable
-    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain orig)
+    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain<?> orig)
     {
         if (null != orig)
         {
             Map<Integer, String> propertyIdMap = new HashMap<>();
 
-            for (Object f : orig.getFields())
+            for (GWTPropertyDescriptor origField : orig.getFields())
             {
-                GWTPropertyDescriptor origField = (GWTPropertyDescriptor) f;
                 propertyIdMap.put(origField.getPropertyId(), origField.getName());
             }
             return propertyIdMap;

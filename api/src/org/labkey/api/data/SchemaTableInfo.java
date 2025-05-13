@@ -80,7 +80,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     // Table properties
     private final DbSchema _parentSchema;
     private final SQLFragment _selectName;
-    private final String _metaDataName;
+    private final @NotNull DatabaseIdentifier _metaDataName;
     private final DatabaseTableType _tableType;
 
     private String _name;
@@ -117,20 +117,29 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         this(parentSchema, tableType, tableName, metaDataName, selectName, null);
     }
 
-    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, SQLFragment selectName, @Nullable String title)
+    public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, @NotNull String metaDataName, SQLFragment selectName, @Nullable String title)
     {
         _parentSchema = parentSchema;
         _name = tableName;
-        _metaDataName = metaDataName;
+        _metaDataName = parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(Objects.requireNonNull(metaDataName));
         _selectName = selectName;
         _tableType = tableType;
         _title = title;
     }
 
+    public static SchemaTableInfo newSchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
+    {
+        var dialect = parentSchema.getSqlDialect();
+        var schemaPart = dialect.makeIdentifierFromMetaDataName(parentSchema.getName());
+        var tablePart = dialect.makeIdentifierFromMetaDataName(tableMetaDataName);
+        var full = new SQLFragment().appendIdentifier(schemaPart).append(".").appendIdentifier(tablePart);
+        return new SchemaTableInfo(parentSchema, tableType, tableMetaDataName, tableMetaDataName, full);
+    }
+
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
         this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
-                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName)));
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(tableMetaDataName)));
     }
 
     /**
@@ -212,7 +221,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public String getMetaDataName() // TODO: Mark @NotNull?
+    public @NotNull DatabaseIdentifier getMetaDataIdentifier()
     {
         return _metaDataName;
     }
@@ -243,9 +252,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSQLName())
-            return new SQLFragment().append(getSQLName()).append(" ").append(alias);
+            return new SQLFragment().append(getSQLName()).append(" ").appendIdentifier(alias);
         else
-            return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
+            return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
     }
 
     @Override

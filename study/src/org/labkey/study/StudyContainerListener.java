@@ -30,11 +30,11 @@ public class StudyContainerListener extends ContainerManager.AbstractContainerLi
     public void containerDeleted(Container c, User user)
     {
         StudyManager.getInstance().deleteAllStudyData(c, user);
-        for (StudyImpl ancillaryStudy : StudyManager.getInstance().getAncillaryStudies(c))
+        for (StudyImpl publishedStudy : StudyManager.getInstance().getPublishedStudies(c))
         {
-            // Explicitly break the link between any ancillary studies dependent on this container:
-            ancillaryStudy.setSourceStudyContainerId(null);
-            StudyManager.getInstance().updateStudy(user, ancillaryStudy);
+            // Explicitly break the link between any published studies dependent on this container:
+            publishedStudy.setSourceStudyContainerId(null);
+            StudyManager.getInstance().updateStudy(user, publishedStudy);
         }
         SampleTypeService.get().removeAutoLinkedStudy(c, user);
     }
