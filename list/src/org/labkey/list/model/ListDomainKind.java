@@ -712,7 +712,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         try
         {
-            list.delete(user); //
+            list.delete(user, userComment);
         }
         catch (DomainNotFoundException e)
         {

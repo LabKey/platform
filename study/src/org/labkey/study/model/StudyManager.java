@@ -97,6 +97,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -2641,9 +2642,19 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        if (ds.getDomain() != null)
-            ds.getDomain().delete(user, auditUserComment);
-        else if (ds.getTypeURI() != null)
+        Domain domain = ds.getDomain();
+        if (domain == null)
+            return;
+
+        DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(study.getContainer(), String.format("The domain %s was deleted", domain.getName()));
+        event.setUserComment(auditUserComment);
+        event.setDomainUri(domain.getTypeURI());
+        event.setDomainName(domain.getName());
+        AuditLogService.get().addEvent(user, event);
+
+        StorageProvisioner.get().drop(domain);
+
+        if (ds.getTypeURI() != null)
         {
             try
             {

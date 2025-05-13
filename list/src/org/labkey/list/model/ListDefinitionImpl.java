@@ -526,6 +526,12 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void delete(User user) throws DomainNotFoundException
     {
+        delete(user, null);
+    }
+
+    @Override
+    public void delete(User user, String auditUserComment) throws DomainNotFoundException
+    {
         TableInfo table = getTable(user);
         QueryUpdateService qus = null;
 
@@ -545,7 +551,7 @@ public class ListDefinitionImpl implements ListDefinition
             // then delete the list itself
             ListManager.get().deleteListDef(getContainer(), getListId());
             Domain domain = getDomain();
-            domain.delete(user);
+            domain.delete(user, auditUserComment);
 
             ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
 
