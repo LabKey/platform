@@ -484,7 +484,7 @@ public class ContentSecurityPolicyFilter implements Filter
         private void verifySubstitutionMapSize(long expectedNonEmptyValues)
         {
             // Actual map size should stay static throughout the test
-            int expectedSubstitutionMapSize = Directive.values().length + 1; // One extra for UPDATE.SECURE.REQUESTS
+            int expectedSubstitutionMapSize = Directive.values().length + 1; // One extra for UPGRADE.INSECURE.REQUESTS
             if (AppProps.getInstance().isSSLRequired())
                 expectedNonEmptyValues++;
 
