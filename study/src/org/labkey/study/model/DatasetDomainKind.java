@@ -779,7 +779,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain, String auditUserComment)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(domain.getTypeURI());
         if (def == null)

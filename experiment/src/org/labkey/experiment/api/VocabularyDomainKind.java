@@ -107,7 +107,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain, String auditUserComment)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         try
         {

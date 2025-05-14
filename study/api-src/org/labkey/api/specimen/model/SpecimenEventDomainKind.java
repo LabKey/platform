@@ -233,7 +233,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     @Nullable JSONObject options, Container container, User user, boolean includeWarnings, String auditUserComment)
+                                                     @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException validationException;
         try (var transaction = SpecimenSchema.get().getScope().ensureTransaction())

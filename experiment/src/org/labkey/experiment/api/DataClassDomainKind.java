@@ -413,7 +413,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain, String auditUserComment)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         ExpDataClass dc = getDataClass(domain);
         if (dc == null)

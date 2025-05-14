@@ -646,12 +646,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, @Nullable String auditUserComment)
     {
         addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
@@ -999,7 +999,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, String auditUserComment)
+    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException errors;
 
@@ -1077,18 +1077,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
-            String oldImportAliasJson = null;
+            String oldImportAliasStr = null;
             try
             {
-                oldImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(st.getImportAliasMap());
+                oldImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(st.getImportAliasMap());
             }
             catch (IOException e)
             {
                 throw new RuntimeException(e);
             }
             st.setImportAliasMap(options.getImportAliases());
-            String newImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(options.getImportAliases());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasJson, newImportAliasJson));
+            String newImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(options.getImportAliases());
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasStr, newImportAliasStr));
             String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
             changeDetails.append(DomainUtil.getStringPropChangeMsg("AutoLinkTargetContainerId", st.getAutoLinkTargetContainer() == null ? null : st.getAutoLinkTargetContainer().getId(), options.getAutoLinkTargetContainerId()));
             st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);

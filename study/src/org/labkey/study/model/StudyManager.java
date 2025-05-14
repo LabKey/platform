@@ -2550,7 +2550,7 @@ public class StudyManager
      * @param performStudyResync whether to kick off our normal bookkeeping. If the whole study is being deleted,
      * we don't need to bother doing this, for example.
      */
-    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync, String auditUserComment)
+    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync, @Nullable String auditUserComment)
     {
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
@@ -2632,7 +2632,7 @@ public class StudyManager
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
-    private void deleteDatasetType(Study study, User user, DatasetDefinition ds, String auditUserComment) throws DomainNotFoundException
+    private void deleteDatasetType(Study study, User user, DatasetDefinition ds, @Nullable String auditUserComment)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 

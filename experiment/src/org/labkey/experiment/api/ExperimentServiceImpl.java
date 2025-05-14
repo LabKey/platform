@@ -4510,7 +4510,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, String auditUserComment, int... selectedProtocolIds) throws ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, @Nullable String auditUserComment, int... selectedProtocolIds) throws ExperimentException
     {
         if (selectedProtocolIds.length == 0)
             return;
@@ -7970,7 +7970,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                         @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
                                         GWTDomain<? extends GWTPropertyDescriptor> update,
-                                        String auditUserComment)
+                                        @Nullable String auditUserComment)
     {
         ValidationException errors;
         StringBuilder changeDetails = new StringBuilder();
@@ -8014,18 +8014,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw new RuntimeException(e);
                 }
             }
-            String oldImportAliasJson = null;
+            String oldImportAliasStr = null;
             try
             {
-                oldImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(dataClass.getImportAliasMap());
+                oldImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(dataClass.getImportAliasMap());
             }
             catch (IOException e)
             {
                 throw new RuntimeException(e);
             }
             dataClass.setImportAliasMap(newAliases);
-            String newImportAliasJson = ExperimentJSONConverter.getImportAliasStringVal(newAliases);
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasJson, newImportAliasJson));
+            String newImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(newAliases);
+            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasStr, newImportAliasStr));
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
                 throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -9613,7 +9613,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return updateCounts;
     }
 
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
+    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);

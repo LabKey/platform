@@ -292,7 +292,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void save(User user) throws Exception;
     void save(User user, boolean ensureKey) throws Exception;
     void delete(User user) throws DomainNotFoundException;
-    void delete(User user, String auditUserComment) throws DomainNotFoundException;
+    void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException;
 
     ListItem createListItem();
     ListItem getListItem(Object key, User user);

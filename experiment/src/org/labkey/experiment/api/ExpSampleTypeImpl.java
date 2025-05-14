@@ -921,7 +921,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     }
 
     @Override
-    public void delete(User user, String auditUserComment)
+    public void delete(User user, @Nullable String auditUserComment)
     {
         try
         {

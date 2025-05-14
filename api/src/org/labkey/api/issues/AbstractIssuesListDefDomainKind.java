@@ -212,7 +212,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public abstract void beforeDeleteDomain(User user, Domain domain);
 
     @Override
-    public final void deleteDomain(User user, Domain domain, String auditUserComment)
+    public final void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -288,7 +288,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings, String auditUserComment)
+                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         if (options != null && StringUtils.isBlank(options.getIssueDefName()))
             return new ValidationException("Issue name must not be null.");

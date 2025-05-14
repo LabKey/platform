@@ -88,7 +88,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings, String auditUserComment)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException validation = checkFieldNameLength(update);
         if (validation != null) return validation;

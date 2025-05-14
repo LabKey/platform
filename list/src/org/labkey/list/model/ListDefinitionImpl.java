@@ -530,7 +530,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public void delete(User user, String auditUserComment) throws DomainNotFoundException
+    public void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
         TableInfo table = getTable(user);
         QueryUpdateService qus = null;

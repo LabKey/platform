@@ -1488,7 +1488,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings, String auditUserComment)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1523,7 +1523,7 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    private static void deleteDomain(String schemaName, String queryName, Container container, User user, String auditUserComment)
+    private static void deleteDomain(String schemaName, String queryName, Container container, User user, @Nullable String auditUserComment)
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
         if (domainURI == null)

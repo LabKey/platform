@@ -455,7 +455,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings, String auditUserComment)
+                                                     ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException exception;
 

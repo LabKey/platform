@@ -364,7 +364,7 @@ public interface Dataset extends StudyEntity
 
     void delete(User user);
 
-    void delete(User user, String auditUserComment);
+    void delete(User user, @Nullable String auditUserComment);
 
     void deleteAllRows(User user);
 

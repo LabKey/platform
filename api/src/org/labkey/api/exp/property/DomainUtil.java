@@ -1258,7 +1258,6 @@ public class DomainUtil
         List<Map<String, Object>> valueUpdates = new ArrayList<>();
 
         PropertyDescriptor oldPropertyDescriptor = dp.getPropertyDescriptor().clone();
-        String oldValidatorStr = dp.getPropertyValidatorStringVal(); // record the old value before dp is mutated
         boolean hasChange = false;
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
@@ -1382,12 +1381,6 @@ public class DomainUtil
         }
     }
 
-    /**
-     *
-     * @param pv
-     * @param gpv
-     * @return true if has change.
-     */
     private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
         if (pv != null && gpv != null)

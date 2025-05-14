@@ -1152,7 +1152,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
     @Override
-    public void delete(User user, String auditUserComment)
+    public void delete(User user, @Nullable String auditUserComment)
     {
         if (!canDeleteDefinition(user))
         {

@@ -394,7 +394,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, String auditUserComment)
+                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings, auditUserComment);
     }
@@ -606,7 +606,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain, String auditUserComment)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
         if (st == null)
