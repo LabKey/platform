@@ -959,33 +959,29 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _lookupResolutionType = lookupResolutionType;
         }
 
-        private Object convertWithPrimaryColumn(Object o, boolean primaryTried)
+        private Object convertWithPrimaryColumn(Object o)
         {
-            if (_lookupResolutionType.usePrimaryFirst() != primaryTried)
+            try
             {
-                try
+                // _convertCol here will be the column for the primary key type
+                Object value =  _convertCol.convert(o);
+                ForeignKey fk = _toCol.getFk();
+                // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
+                if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
                 {
-                    // _convertCol here will be the column for the primary key type
-                    Object value =  _convertCol.convert(o);
-                    ForeignKey fk = _toCol.getFk();
-                    // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
-                    if (fk != null && Objects.equals(o, value) && _toCol.getJdbcType().isText())
+                    if (_remapper.getPkColumn().getJdbcType().isText())
                     {
-                        if (_remapper.getPkColumn().getJdbcType().isText())
-                        {
-                            _remapper.setIncludePkLookup(true);
-                            Object remappedValue = _remapper.mappedValue(o);
-                            value = remappedValue != null ? remappedValue : value;
-                        }
+                        _remapper.setIncludePkLookup(true);
+                        Object remappedValue = _remapper.mappedValue(o);
+                        value = remappedValue != null ? remappedValue : value;
                     }
-                    return value;
                 }
-                catch (ConversionException ex)
-                {
-                    return null;
-                }
+                return value;
             }
-            return null;
+            catch (ConversionException ex)
+            {
+                return null;
+            }
         }
 
         private Object convertWithRemapper(Object o)
@@ -1011,11 +1007,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (o == null)
                 return null;
 
-            Object value = convertWithPrimaryColumn(o, false);
-            if (value != null)
-            {
-                return value;
-            }
+            Object value;
 
             value = convertWithRemapper(o);
             if (value != null)
@@ -1023,7 +1015,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return value;
             }
 
-            value = convertWithPrimaryColumn(o, true);
+            value = convertWithPrimaryColumn(o);
             if (value == null)
             {
                 return switch (_missing)
@@ -1346,7 +1338,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         ForeignKey fk = col.getFk();
         LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
-        if (fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
+        if (!_context.hasBeenRemapped() && fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
             // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
             boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
@@ -1356,7 +1348,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
             // For enum tables, we should not be using number names for the values, so we will look up by primary key first (resolving rowIds) then alternate.
             // This assures the type is an Integer when a rowId is given (e.g., from a row read from the database), not a string.
-            if (fk.getLookupTableInfo() instanceof EnumTableInfo || _context.hasBeenCoerced())
+            if (fk.getLookupTableInfo() instanceof EnumTableInfo)
                 lookupResolutionType = LookupResolutionType.primaryThenAlternateKey;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
