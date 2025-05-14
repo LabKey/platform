@@ -49,7 +49,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
-    private static final String UPGRADE_SECURITY_REQUESTS_SUBSTITUTION = "UPGRADE.SECURE.REQUESTS";
+    private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
 
     private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
@@ -297,7 +297,7 @@ public class ContentSecurityPolicyFilter implements Filter
             Arrays.stream(Directive.values())
                 .forEach(dir -> SUBSTITUTION_MAP.putIfAbsent(dir.getSubstitutionKey(), ""));
 
-            SUBSTITUTION_MAP.put(UPGRADE_SECURITY_REQUESTS_SUBSTITUTION, AppProps.getInstance().isSSLRequired() ? "upgrade-secure-requests;" : "");
+            SUBSTITUTION_MAP.put(UPGRADE_INSECURE_REQUESTS_SUBSTITUTION, AppProps.getInstance().isSSLRequired() ? "upgrade-insecure-requests;" : "");
 
             // Tell each registered ContentSecurityPolicyFilter to refresh its policy template based on the new substitution map
             CSP_FILTERS.values().forEach(ContentSecurityPolicyFilter::regeneratePolicyExpression);
