@@ -33,6 +33,7 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -82,6 +83,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         a6\t6\tx6\ty6\tz6
         """;
     private static final String DATASET_B_MERGE = "a4\t4\tx4_merged\ty4_merged\tz4_merged\n";
+    private final AuditLogHelper _auditLogHelper = new AuditLogHelper(this);
 
     @Override
     protected BrowserType bestBrowser()
@@ -250,7 +252,14 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         }
 
         if (error == null)
+        {
             editDatasetPage.clickSave();
+            checker().verifyEquals("The comment logged for the list update was not as expected.",
+                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'." +
+                            "Label: " + orgLabel + " -> " + newLabel.trim() + "; The descriptor of domain " + orgName + " was updated",
+                    _auditLogHelper.getLastDomainEventComment(getProjectName(), orgName));
+
+        }
         else
         {
             editDatasetPage.saveExpectFail(error);
@@ -309,6 +318,8 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals(Arrays.asList("XTest"), remainingFields);
 
         editDatasetPage.clickSave();
+        checker().verifyEquals("Domain audit comment not as expected after removing fields", "The column(s) of domain " + name + " were modified", _auditLogHelper.getLastDomainEventComment(getProjectName(), name));
+        checker().verifyEqualsSorted("Domain field audit comment not as expected after removing fields", List.of("Deleted", "Deleted"), _auditLogHelper.getLastDomainPropertyValues(getProjectName(), name, "Action"));
     }
 
     @LogMethod

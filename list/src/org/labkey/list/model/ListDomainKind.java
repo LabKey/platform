@@ -632,7 +632,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (null != newListProps.getName())
         {
             updatedListProps.setName(newListProps.getName().trim());
-            changeDetails.append(DomainUtil.getPropChangeMsg("Name", existingListProps.getName(), newListProps.getName()));
+            // skip changeDetails for Name since it was previously explicitly added
         }
 
         changeDetails.append(DomainUtil.getPropChangeMsg("TitleColumn", existingListProps.getTitleColumn(), newListProps.getTitleColumn()));

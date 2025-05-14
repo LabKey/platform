@@ -78,6 +78,7 @@ public class StudyTest extends StudyBaseTest
     protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";
+    protected static final String DEMOGRAPHICS_DOMAIN_NAME = "DEM-1";
 
     protected String _tsv = "participantid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\taliasedColumn\n" +
         "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t1.2\ttext\t\taliasedData\n" +
@@ -1134,6 +1135,8 @@ public class StudyTest extends StudyBaseTest
         setDemographicsBit(DEMOGRAPHICS_TITLE, false)
                 .clickViewData();
 
+        checker().verifyEquals("Domain audit comment not as expected after changing demographic bit", "IsDemographicData: true -> false; The descriptor of domain DEM-1 was updated", _auditLogHelper.getLastDomainEventComment(getProjectName(), DEMOGRAPHICS_DOMAIN_NAME));
+
         log("verify ");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
@@ -1292,6 +1295,10 @@ public class StudyTest extends StudyBaseTest
                 .selectVisitDateColumn("DEMdt")
                 .clickApply()
                 .clickSave();
+
+        checker().verifyEquals("Domain audit comment not as expected after changing visit date column", "VisitDateColumnName: <null> -> DEMdt; The column(s) of domain DEM-1 were modified", _auditLogHelper.getLastDomainEventComment(getProjectName(), DEMOGRAPHICS_DOMAIN_NAME));
+        checker().verifyEquals("Domain field audit comment not as expected", List.of("VisitDay"), _auditLogHelper.getLastDomainPropertyValues(getProjectName(), DEMOGRAPHICS_DOMAIN_NAME, "PropertyName"));
+
         new DatasetPropertiesPage(getDriver())
             .clickViewData();
 
