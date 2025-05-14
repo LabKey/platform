@@ -265,7 +265,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             _illegalColumns = Sets.newCaseInsensitiveHashSet();
             if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
-                _illegalColumns.add("Active");
                 _illegalColumns.add("HasPassword");
             }
         }
