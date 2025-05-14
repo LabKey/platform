@@ -47,7 +47,36 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.action.*;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.JsonInputLimit;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReportingApiQueryResponse;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
@@ -60,9 +89,49 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AnalyticsProviderItem;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.CachedResultSets;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcMetaDataSelector;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.ResultSetView;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -86,7 +155,39 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.ExportScriptModel;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.MetadataUnavailableException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleSchemaTreeVisitor;
+import org.labkey.api.query.TempQuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
@@ -151,7 +252,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ImportTemplateType;
@@ -209,8 +309,6 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -235,7 +333,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.GZIPOutputStream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -7674,191 +7771,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class GenerateSchemaForm extends ReturnUrlForm
-    {
-        String sourceSchema;
-        String sourceDataSource;
-        String targetSchema;
-        String pathInScript;
-        String outputDir;
-
-        public String getSourceSchema()
-        {
-            return sourceSchema;
-        }
-
-        public void setSourceSchema(String sourceSchema)
-        {
-            this.sourceSchema = sourceSchema;
-        }
-
-        public String getTargetSchema()
-        {
-            return targetSchema;
-        }
-
-        public void setTargetSchema(String targetSchema)
-        {
-            this.targetSchema = targetSchema;
-        }
-
-        public String getPathInScript()
-        {
-            return pathInScript;
-        }
-
-        public void setPathInScript(String pathInScript)
-        {
-            this.pathInScript = pathInScript;
-        }
-
-        public String getSourceDataSource()
-        {
-            return sourceDataSource;
-        }
-
-        public void setSourceDataSource(String sourceDataSource)
-        {
-            this.sourceDataSource = sourceDataSource;
-        }
-
-        public String getOutputDir()
-        {
-            return outputDir;
-        }
-
-        public void setOutputDir(String outputDir)
-        {
-            this.outputDir = outputDir;
-        }
-    }
-
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public static class GenerateSchemaAction extends FormViewAction<GenerateSchemaForm>
-    {
-        @Override
-        public void validateCommand(GenerateSchemaForm form, Errors errors)
-        {
-            // TODO validate schemaNames and dataSources are real
-            // TODO validate path is not empty string
-        }
-
-        @Override
-        public ModelAndView getView(GenerateSchemaForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/generateSchema.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(GenerateSchemaForm form, BindException errors) throws SQLException, IOException
-        {
-            StringBuilder importScript = new StringBuilder();
-
-            // NOTE: should we add any kind of dialect tags to the importScript output?
-            DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(form.getSourceDataSource()), form.getSourceSchema(), DbSchemaType.Bare);
-            String targetSchema = isBlank(form.getTargetSchema()) ? form.getSourceSchema() : form.getTargetSchema();
-            String pathInScript = isBlank(form.getPathInScript()) ? "" : form.getPathInScript();
-            if (!pathInScript.endsWith("/"))
-                pathInScript += "/";
-
-            List<TableInfo> tables;
-            try
-            {
-                tables = TableSorter.sort(sourceSchema);
-            }
-            catch (IllegalStateException e)
-            {
-                errors.reject(ERROR_MSG, "Problem with schema: " + e.getMessage());
-                return false;
-            }
-
-            try
-            {
-                for (TableInfo table : tables)
-                {
-                    if (DatabaseTableType.TABLE.equals(table.getTableType()))
-                    {
-                        String tableName = table.getName();
-                        try (var factory = new StashingResultsFactory(()->new TableSelector(table).setJdbcCaching(false).getResults(false)))
-                        {
-                            Results results = factory.get();
-                            if (results.isBeforeFirst()) // only export tables with data
-                            {
-                                File outputFile = new File(form.getOutputDir(), tableName + ".tsv.gz");
-                                GZIPOutputStream outputStream = new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile), 64 * 1024), 64 * 1024);
-                                try (TSVGridWriter tsv = new TSVGridWriter(factory))
-                                {
-                                    tsv.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey);
-                                    tsv.setApplyFormats(false);
-                                    tsv.setPreserveEmptyString(true); // TODO: Make that an option on export?
-                                    tsv.write(outputStream);
-                                }
-
-                                importScript.append(sourceSchema.getSqlDialect().execute(DbSchema.get("core", DbSchemaType.Module), "bulkImport", "'" + targetSchema + "', '" + tableName + "', '" + pathInScript + outputFile.getName() + "'")).append(";\n");
-                            }
-                        }
-                    }
-                }
-
-                try (PrintWriter writer = PrintWriters.getPrintWriter(new File(form.getOutputDir(), form.getSourceSchema() + "_updateScript.sql")))
-                {
-                    writer.print(importScript);
-                }
-            }
-            catch (FileNotFoundException e)
-            {
-                errors.reject(ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(GenerateSchemaForm form)
-        {
-            return form.getReturnActionURL();
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Generate Schema");
-        }
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public static class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object o, BindException errors)
-        {
-            // NOTE: copy pasta from initSources()
-            Collection<Map<String, Object>> sourcesAndSchemas = new LinkedList<>();
-            for (DbScope scope : DbScope.getDbScopes())
-            {
-                DataSourceInfo source = new DataSourceInfo(scope);
-                for (String schemaName : scope.getSchemaNames())
-                {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("dataSourceDisplayName", source.displayName);
-                    map.put("dataSourceSourceName", source.sourceName);
-                    map.put("schemaName", schemaName);
-                    sourcesAndSchemas.add(map);
-                }
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("schemas", sourcesAndSchemas);
-            return response;
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
@@ -8607,8 +8519,7 @@ public class QueryController extends SpringActionController
                 controller.new InternalDeleteView(),
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
-                new QueryExportAuditRedirectAction(),
-                new GetSchemasWithDataSourcesAction()
+                new QueryExportAuditRedirectAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)
@@ -8624,7 +8535,6 @@ public class QueryController extends SpringActionController
                 new EditLinkedSchemaAction(),
                 new EditExternalSchemaAction(),
                 new GetTablesAction(),
-                new GenerateSchemaAction(),
                 new SchemaTemplateAction(),
                 new SchemaTemplatesAction(),
                 new ParseExpressionAction(),
