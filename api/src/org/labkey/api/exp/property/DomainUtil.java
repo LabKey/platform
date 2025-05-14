@@ -792,7 +792,15 @@ public class DomainUtil
         if (oldProp == null)
             return getPropChangeMsg(propertyName, null, StringUtils.join(newProp));
 
-        return getPropChangeMsg(propertyName, StringUtils.join(oldProp), StringUtils.join(newProp));
+        String oldStr = oldProp
+                .stream()
+                .map(Object::toString)
+                .sorted().collect(Collectors.joining(", "));
+        String newStr = newProp
+                .stream()
+                .map(Object::toString)
+                .sorted().collect(Collectors.joining(", "));
+        return getPropChangeMsg(propertyName, oldStr, newStr);
     }
 
     /** @return Errors encountered during the save attempt */
@@ -843,6 +851,8 @@ public class DomainUtil
         List<String> disabledSystemFieldsUpdate = kind.getDisabledSystemFields(update.getDisabledSystemFields());
         changeDetails.append(getCollectionPropChangeMsg("DisabledSystemFields",d.getDisabledSystemFields(), disabledSystemFieldsUpdate));
         d.setDisabledSystemFields(disabledSystemFieldsUpdate);
+
+        changeDetails.append(GWTIndex.getChangeMsg(orig.getIndices(), update.getIndices()));
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -964,7 +974,7 @@ public class DomainUtil
                 }
 
                 String changeDetail = changeDetails.toString();
-                String extraAuditComment = (auditComment == null ? "" : auditComment + (changeDetail.isEmpty() ? "" : " ")) + changeDetail;
+                String extraAuditComment = (StringUtils.isEmpty(auditComment) ? "" : auditComment + " ") + changeDetail;
                 d.save(user, extraAuditComment, auditUserComment);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);

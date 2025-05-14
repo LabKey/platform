@@ -16,6 +16,9 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.property.DomainUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -69,4 +72,26 @@ public class GWTIndex implements IsSerializable, Serializable
     {
         _unique = unique;
     }
+
+    public String toStringVal()
+    {
+        if (_columnNames == null || _columnNames.isEmpty())
+            return "";
+
+        return StringUtils.join(_columnNames, ", ") + ", unique: " + isUnique();
+    }
+
+    public static List<String> toStringVals(List<GWTIndex> indices)
+    {
+        if (indices == null || indices.isEmpty())
+            return null;
+
+        return indices.stream().map(GWTIndex::toStringVal).toList();
+    }
+
+    public static String getChangeMsg(@Nullable List<GWTIndex> oldIndices, List<GWTIndex> newIndices)
+    {
+        return DomainUtil.getCollectionPropChangeMsg("Index", toStringVals(oldIndices), toStringVals(newIndices));
+    }
+
 }
