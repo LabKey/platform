@@ -62,14 +62,6 @@ public interface Study extends StudyEntity
 
     List<? extends Visit> getVisitsForAssaySchedule();
 
-    List<? extends Product> getStudyProducts(User user, String role);
-
-    List<? extends Treatment> getStudyTreatments(User user);
-
-    List<? extends TreatmentVisitMap> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId);
-
-    List<? extends Visit> getVisitsForTreatmentSchedule();
-
     List<? extends ParticipantCategory> getParticipantCategories(User user);
 
     @Nullable String getParticipantCohortProperty();

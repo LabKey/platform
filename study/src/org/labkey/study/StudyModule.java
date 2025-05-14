@@ -131,7 +131,6 @@ import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
-import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -158,7 +157,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -180,9 +178,6 @@ import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
-import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
-import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
-import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.StudyWriterFactory;
@@ -205,17 +200,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
-    public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory();
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
-    public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
     public static final WebPartFactory manageStudyPartFactory = new org.labkey.study.view.StudySummaryWebPartFactory();
     public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudySummaryWebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
     public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
     public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
-    public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
 
     @Override
     public String getName()
@@ -238,7 +230,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("participant-group", ParticipantGroupController.class);
         addController("publish", PublishController.class);
         addController("study-definition", StudyDefinitionController.class);
-        addController("study-design", StudyDesignController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-security", SecurityController.class);
@@ -303,10 +294,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            assayScheduleWebPartFactory,
             dataToolsWebPartFactory,
             datasetsPartFactory,
-            immunizationScheduleWebpartFactory,
             manageStudyPartFactory,
             reportsPartFactory,
             studyDesignSummaryWebPartFactory,
@@ -314,7 +303,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             studyScheduleWebPartFactory,
             subjectDetailsWebPartFactory,
             subjectsWebPartFactory,
-            vaccineDesignWebPartFactory,
             new SharedStudyController.StudyFilterWebPartFactory()
         );
     }
@@ -715,34 +703,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            return Set.of(
-                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                    ParticipantGroupManager.ParticipantGroupTestCase.class,
-                    StudyImpl.ProtocolDocumentTestCase.class,
-                    StudyManager.AssayScheduleTestCase.class,
-                    StudyManager.StudySnapshotTestCase.class,
-                    StudyManager.VisitCreationTestCase.class,
-                    StudyModule.TestCase.class,
-                    TreatmentManager.TreatmentDataTestCase.class,
-                    VisitImpl.TestCase.class,
-                    DatasetUpdateService.TestCase.class
-            );
-        }
-        else
-        {
-            return Set.of(
-                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                    ParticipantGroupManager.ParticipantGroupTestCase.class,
-                    StudyImpl.ProtocolDocumentTestCase.class,
-                    StudyManager.StudySnapshotTestCase.class,
-                    StudyManager.VisitCreationTestCase.class,
-                    StudyModule.TestCase.class,
-                    VisitImpl.TestCase.class,
-                    DatasetUpdateService.TestCase.class
-            );
-        }
+        return Set.of(
+                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                ParticipantGroupManager.ParticipantGroupTestCase.class,
+                StudyImpl.ProtocolDocumentTestCase.class,
+                StudyManager.StudySnapshotTestCase.class,
+                StudyManager.VisitCreationTestCase.class,
+                StudyModule.TestCase.class,
+                VisitImpl.TestCase.class,
+                DatasetUpdateService.TestCase.class
+        );
     }
 
     @Override

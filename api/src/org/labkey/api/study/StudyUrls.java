@@ -40,8 +40,6 @@ public interface StudyUrls extends UrlProvider
     ActionURL getDatasetsURL(Container container);
     ActionURL getManageDatasetsURL(Container container);
     ActionURL getManageReportPermissions(Container container);
-    ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
-    ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
     ActionURL getManageFileWatchersURL(Container container);
     ActionURL getLinkToStudyURL(Container container, ExpSampleType sampleType);
     ActionURL getLinkToStudyURL(Container container, ExpProtocol protocol);
@@ -50,4 +48,9 @@ public interface StudyUrls extends UrlProvider
     ActionURL getTypeNotFoundURL(Container container, int datasetId);
 
     void addManageStudyNavTrail(NavTree root, Container container, User user);
+
+    ActionURL getManageLocationsURL(Container container);
+    ActionURL getManageVisitsURL(Container container);
+    ActionURL getManageCohortsURL(Container container);
+    ActionURL getVisitOrderURL(Container container);
 }

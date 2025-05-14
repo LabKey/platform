@@ -282,7 +282,7 @@ Ext4.define('LABKEY.VaccineDesign.VisitWindow', {
         var values = this.getFormPanel().getValues();
 
         LABKEY.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('study-design', 'createVisit.api'),
+            url     : LABKEY.ActionURL.buildURL('study', 'createVisitVaccineDesign.api'),
             method  : 'POST',
             jsonData: {
                 label: values['newVisitLabel'],

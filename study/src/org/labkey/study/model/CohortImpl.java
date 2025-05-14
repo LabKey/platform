@@ -20,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.study.TreatmentVisitMap;
 import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> imple
     private boolean _enrolled = true;
     private Integer _subjectCount;
     private String _description;
-    List<TreatmentVisitMapImpl> _treatmentVisitMap;
+    List<TreatmentVisitMap> _treatmentVisitMap;
 
     @Override
     public Integer getPrimaryKey()
@@ -145,12 +146,12 @@ public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> imple
         _description = description;
     }
 
-    public void setTreatmentVisitMap(List<TreatmentVisitMapImpl> treatmentVisitMap)
+    public void setTreatmentVisitMap(List<TreatmentVisitMap> treatmentVisitMap)
     {
         _treatmentVisitMap = treatmentVisitMap;
     }
 
-    public List<TreatmentVisitMapImpl> getTreatmentVisitMap()
+    public List<TreatmentVisitMap> getTreatmentVisitMap()
     {
         return _treatmentVisitMap;
     }
@@ -167,7 +168,7 @@ public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> imple
         JSONArray visitMapJSON = o.optJSONArray("VisitMap");
         if (visitMapJSON != null)
         {
-            List<TreatmentVisitMapImpl> treatmentVisitMap = new ArrayList<>();
+            List<TreatmentVisitMap> treatmentVisitMap = new ArrayList<>();
             for (JSONObject json : JsonUtil.toJSONObjectList(visitMapJSON))
                 treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(json));
 

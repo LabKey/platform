@@ -1,4 +1,4 @@
-package org.labkey.study.view.studydesign;
+package org.labkey.studydesign.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.OptionalFeatureService;

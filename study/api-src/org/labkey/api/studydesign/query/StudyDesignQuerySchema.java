@@ -10,10 +10,9 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUtils;
+import org.labkey.api.studydesign.StudyDesignManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -85,7 +84,7 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
     @Nullable
     public static StudyDesignQuerySchema get(UserSchema userSchema, Container c, @Nullable Study study, @Nullable Role contextualRole)
     {
-        return OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG)
+        return StudyDesignManager.get().isModuleActive(c)
                 ? new StudyDesignQuerySchema(userSchema, study, contextualRole)
                 : null;
     }
