@@ -1078,7 +1078,7 @@ public class DomainImpl implements Domain
 
             if (!StringUtils.equals(pdOld.getDescription(), prop.getDescription()))
                 str.append("Description: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getDescription()), renderCheckingBlank(prop.getDescription()))).append("; ");
-            if (!StringUtils.equals(prop.getFormat(), prop.getFormat()))
+            if (!StringUtils.equals(pdOld.getFormat(), prop.getFormat()))
                 str.append("Format: ").append(renderOldVsNew(renderCheckingBlank(pdOld.getFormat()), renderCheckingBlank(prop.getFormat()))).append("; ");
             if (!StringUtils.equals((null != pdOld.getURL() ? pdOld.getURL().toString() : null), prop.getURL()))
                 str.append("URL: ").append(renderOldVsNew(renderCheckingBlank(null != pdOld.getURL() ? pdOld.getURL().toString() : null), renderCheckingBlank(prop.getURL()))).append("; ");
