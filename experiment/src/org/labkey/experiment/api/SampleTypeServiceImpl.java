@@ -1104,6 +1104,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (hasNameChange)
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
 
+            if (options != null && options.getExcludedContainerIds() != null)
+                changeDetails.append(ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user));
+            if (options != null && options.getExcludedDashboardContainerIds() != null)
+            {
+                String change = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
+                if (!StringUtils.isEmpty(change))
+                    changeDetails.append("Dashboard ").append(change);
+            }
+
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment);
 
             if (!errors.hasErrors())
@@ -1113,10 +1122,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                if (options != null && options.getExcludedContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
-                if (options != null && options.getExcludedDashboardContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
 
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {

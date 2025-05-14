@@ -8040,15 +8040,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (hasNameChange)
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
 
+            if (options != null && options.getExcludedContainerIds() != null)
+                changeDetails.append(ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u));
+
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment);
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
-
-            if (options != null && options.getExcludedContainerIds() != null)
-                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
 
             if (!errors.hasErrors())
             {
@@ -8874,12 +8874,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    @NotNull
+    public String ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
     {
-        if (excludedContainerIds == null)
-            return;
-
         Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
+
+        if (excludedContainerIds == null)
+            return DomainUtil.getCollectionPropChangeMsg("ContainerExclusions", previousExclusions, null);
+
         Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
 
         Set<String> toAdd = new HashSet<>(updatedExclusions);
@@ -8905,6 +8907,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
             }
         }
+
+        if (!toAdd.isEmpty() || !toRemove.isEmpty())
+            return DomainUtil.getCollectionPropChangeMsg("ContainerExclusions", previousExclusions, updatedExclusions);
+
+        return "";
     }
 
     @Override

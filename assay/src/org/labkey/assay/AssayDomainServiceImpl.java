@@ -627,6 +627,11 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
 
                 protocol.save(getUser());
 
+                if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
+                    changeDetails.append(ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser()));
+                else
+                    ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.AssayDesign, protocol.getRowId(), getContainer(), getUser());
+
                 for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                 {
                     GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
@@ -636,11 +641,6 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     GWTDomain<GWTPropertyDescriptor> savedDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
                     QueryService.get().saveCalculatedFieldsMetadata(savedDomain.getSchemaName(), savedDomain.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
                 }
-
-                if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
-                else
-                    ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.AssayDesign, protocol.getRowId(), getContainer(), getUser());
 
                 QueryService.get().updateLastModified();
                 transaction.commit();
