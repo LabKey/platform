@@ -37,4 +37,10 @@ public interface CohortService
     Collection<CohortFilter> getCohortFilters(CohortFilter.Type type, Container c, User user);
 
     Collection<? extends Cohort> getCohorts(Container container, User user);
+
+    Cohort getCohortByLabel(Container container, User user, String label);
+
+    Cohort getCohortForRowId(Container container, User user, int rowId);
+
+    void deleteCohort(Cohort cohort);
 }

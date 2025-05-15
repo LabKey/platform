@@ -659,10 +659,10 @@ public class StudyDesignController extends SpringActionController
                 if (cohort.getLabel() == null || StringUtils.isEmpty(cohort.getLabel().trim()))
                     errors.reject(SpringActionController.ERROR_MSG, "Label is a required field for all cohorts.");
 
-                CohortImpl cohortByLabel = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), cohort.getLabel());
+                Cohort cohortByLabel = CohortService.get().getCohortByLabel(getContainer(), getUser(), cohort.getLabel());
                 if (cohort.getRowId() > 0)
                 {
-                    CohortImpl cohortByRowId = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
+                    Cohort cohortByRowId = CohortService.get().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
                     if (cohortByRowId != null && cohortByLabel != null && cohortByRowId.getRowId() != cohortByLabel.getRowId())
                         errors.reject(SpringActionController.ERROR_MSG, "A cohort with the label '" + cohort.getLabel() + "' already exists in this study.");
                 }
@@ -715,7 +715,7 @@ public class StudyDesignController extends SpringActionController
                 if (!cohortRowIds.contains(existingCohort.getRowId()))
                 {
                     if (!existingCohort.isInUse())
-                        StudyManager.getInstance().deleteCohort(existingCohort);
+                        CohortService.get().deleteCohort(existingCohort);
                     else
                         throw new ValidationException("Unable to delete in-use cohort: " + existingCohort.getLabel());
                 }

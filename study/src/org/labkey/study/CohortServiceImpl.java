@@ -7,6 +7,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
@@ -50,5 +51,24 @@ public class CohortServiceImpl implements CohortService
     public Collection<? extends Cohort> getCohorts(Container container, User user)
     {
         return StudyManager.getInstance().getCohorts(container, user);
+    }
+
+    @Override
+    public Cohort getCohortByLabel(Container container, User user, String label)
+    {
+        return StudyManager.getInstance().getCohortByLabel(container, user, label);
+    }
+
+    @Override
+    public Cohort getCohortForRowId(Container container, User user, int rowId)
+    {
+        return StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+    }
+
+    @Override
+    public void deleteCohort(Cohort cohort)
+    {
+        if (cohort instanceof CohortImpl cohortImpl)
+            StudyManager.getInstance().deleteCohort(cohortImpl);
     }
 }
