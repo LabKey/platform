@@ -20,6 +20,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
@@ -190,6 +191,6 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
 
     public static boolean canDisplayTable(@NotNull UserPrincipal user, @NotNull Container container)
     {
-        return container.isRoot() && container.hasPermission(user, AdminOperationsPermission.class);
+        return container.isRoot() && container.hasPermission(user, ApplicationAdminPermission.class);
     }
 }
