@@ -184,7 +184,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else if (null != value && null != target)
             msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         else if (null != x)
-            msg = StringUtils.defaultString(x.getMessage(), x.toString());
+            msg = Objects.toString(x.getMessage(), x.toString());
         else
             msg = "Could not convert value";
         addFieldError(fieldName, msg);
