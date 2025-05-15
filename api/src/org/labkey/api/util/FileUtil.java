@@ -1533,11 +1533,6 @@ quickScan:
         if (ch == ' ' || ch == '.')
             ret[lastIndex] = '_';
 
-        String result = new String(ret);
-
-        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result, true) == null :
-                "Failed to make filename safe. Original: " + name + ", transformed: " + result + ", error: " + isAllowedFileName(result, true);
-
         return new String(ret);
     }
 

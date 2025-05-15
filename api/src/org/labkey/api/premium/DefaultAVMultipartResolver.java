@@ -3,8 +3,10 @@ package org.labkey.api.premium;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
@@ -22,10 +24,17 @@ public class DefaultAVMultipartResolver extends StandardServletMultipartResolver
             for (Part part : request.getParts())
             {
                 // Filter to just file uploads
-                if (part.getSubmittedFileName() != null)
+                if (!StringUtils.isEmpty(part.getSubmittedFileName()))
                 {
-                    FileUtil.checkAllowedFileName(part.getSubmittedFileName(), true);
-                    validate(part);
+                    try
+                    {
+                        FileUtil.checkAllowedFileName(part.getSubmittedFileName(), true);
+                        validate(part);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new UnauthorizedException(e.getMessage());
+                    }
                 }
             }
         }
