@@ -1886,7 +1886,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (isScopedField)
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior());
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior(), false);
                     }
                 }
                 else

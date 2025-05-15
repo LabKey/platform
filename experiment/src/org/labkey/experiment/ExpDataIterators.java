@@ -2598,7 +2598,6 @@ public class ExpDataIterators
                             return totalRowCount;
                         }
                         totalRowCount += _importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
-                        _context.setHasBeenRemapped(false);
                     }
                     return totalRowCount;
                 }
@@ -2633,7 +2632,6 @@ public class ExpDataIterators
                         for (TypeData typeData : typeFolderData.values())
                         {
                             writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-                            _context.setHasBeenRemapped(false);
                             if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                                 _importPartition(typeData);
                         }
