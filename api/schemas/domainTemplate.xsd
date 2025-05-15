@@ -192,4 +192,11 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+
+    <xs:complexType name="EHRComplianceDBTemplateType">
+        <xs:complexContent>
+            <xs:extension base="DomainTemplateType">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>
