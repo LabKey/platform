@@ -519,6 +519,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
         try
         {
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container);
         }
         catch (ValidationException e)

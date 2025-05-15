@@ -11,12 +11,13 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SaveRowsResponse;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.remoteapi.query.UpdateRowsCommand;
-import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.tests.MissingValueIndicatorsTest;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.IOException;
@@ -33,17 +34,18 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({Daily.class})
-public class StudyDatasetLsidTest extends BaseWebDriverTest
+public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
 {
     private static final String VISIT_STUDY = "Visit based study";
     private static final String DATE_STUDY = "Date based study";
 
     // datasets
-    private static final String DEMOGRAPHICS_DATASET = "DemograpicsDataset";
+    private static final String DEMOGRAPHICS_DATASET = "DemographicsDataset";
     private static final String NON_DEMOGRAPHICS_DATASET = "NonDemographicsDataset";
     private static final String ADDITIONAL_KEY_FIELD = "AdditionalKey";
     private static final String MANAGED_KEY_FIELD = "ManagedKey";
     private static final String TIME_PORTION_OF_DATE = "TimePortionOfDate";
+    private static final String MV_INDICATOR_DATASET = "MvIndicatorDataset";
 
     @BeforeClass
     public static void setupProject() throws Exception
@@ -55,6 +57,7 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
     private void doSetup()
     {
         _containerHelper.createProject(getProjectName());
+        setupMVIndicators();
 
         log("Creating date and visit studies");
         _containerHelper.createSubfolder(getProjectName(), VISIT_STUDY, "Study");
@@ -190,6 +193,69 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
         validateUpdateOfGeneratedColumns(conn, containerPath, NON_DEMOGRAPHICS_DATASET);
         validateUpdateOfGeneratedColumns(conn, containerPath, ADDITIONAL_KEY_FIELD);
         validateUpdateOfGeneratedColumns(conn, containerPath, MANAGED_KEY_FIELD);
+    }
+
+    @Test
+    public void testMVIndicator() throws Exception
+    {
+        log("Testing inserting and updating MV indicator fields");
+
+        final String containerPath = String.format("%s/%s", getProjectName(), VISIT_STUDY);
+        final String kindName = "StudyDatasetVisit";
+        Connection conn = createDefaultConnection();
+
+        createDataset(conn,
+                kindName,
+                MV_INDICATOR_DATASET,
+                containerPath,
+                List.of(
+                        new FieldDefinition("IntField", FieldDefinition.ColumnType.Integer).setMvEnabled(true),
+                        new FieldDefinition("StringField", FieldDefinition.ColumnType.String).setMvEnabled(true)
+                ),
+                Collections.emptyMap()
+        );
+
+        log("Validate inserting into the MV indicator dataset");
+        SaveRowsResponse response = expectSuccess(conn, MV_INDICATOR_DATASET, containerPath,
+                List.of(
+                        Map.of("Ptid", "111", "Visit", 1, "IntField", "N", "StringField", "Q"),
+                        Map.of("Ptid", "222", "Visit", 2, "IntField", 1, "StringField", "StringValue"),
+                        Map.of("Ptid", "333", "Visit", 3, "IntField", 1, "IntFieldMvIndicator", "Z")
+                ));
+
+        List<Map<String, Object>> rows = response.getRows();
+        validateValuesPresent(rows.get(0), Map.of("IntFieldMvIndicator", "N",  "StringFieldMvIndicator", "Q"));
+        validateValuesPresent(rows.get(1), Map.of("IntField", 1,  "StringField", "StringValue"));
+        validateValuesPresent(rows.get(2), Map.of("IntField", 1,  "IntFieldMvIndicator", "Z"));
+
+        log("Validate updating into the MV indicator dataset");
+        List<Map<String, Object>> updated = new ArrayList<>();
+        updated.add(Map.of("lsid", rows.get(0).get("lsid"), "IntField", "Z"));
+        updated.add(Map.of("lsid", rows.get(1).get("lsid"), "StringField", "Q"));
+        updated.add(Map.of("lsid", rows.get(2).get("lsid"), "IntField", 2, "IntFieldMvIndicator", "N"));
+
+        UpdateRowsCommand cmd = new UpdateRowsCommand("Study", MV_INDICATOR_DATASET);
+        cmd.setRows(updated);
+        try
+        {
+            SaveRowsResponse resp = cmd.execute(conn, containerPath);
+            List<Map<String, Object>> updatedRows = resp.getRows();
+            validateValuesPresent(updatedRows.get(0), Map.of("IntFieldMvIndicator", "Z", "StringFieldMvIndicator", "Q"));
+            validateValuesPresent(updatedRows.get(1), Map.of("IntField", 1, "StringFieldMvIndicator", "Q"));
+            validateValuesPresent(updatedRows.get(2), Map.of("IntField", 2, "IntFieldMvIndicator", "N"));
+        }
+        catch (CommandException e)
+        {
+            Assert.fail(String.format("Update failed for MV indicator dataset : %s", e.getMessage()));
+        }
+    }
+
+    private void validateValuesPresent(Map<String, Object> row, Map<String, Object> expectedValues)
+    {
+        for (Map.Entry<String, Object> entry : expectedValues.entrySet())
+        {
+            assertEquals("Values are not equal", entry.getValue(), row.get(entry.getKey()));
+        }
     }
 
     @Test
@@ -332,23 +398,24 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
         cmd.execute(conn, folderName);
     }
 
-    private void expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private SaveRowsResponse expectSuccess(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
-        validateInsertRows(conn, datasetName, containerPath, rows, false);
+        return validateInsertRows(conn, datasetName, containerPath, rows, false);
     }
 
-    private void expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
+    private SaveRowsResponse expectFail(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows) throws Exception
     {
-        validateInsertRows(conn, datasetName, containerPath, rows, true);
+        return validateInsertRows(conn, datasetName, containerPath, rows, true);
     }
 
-    private void validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
+    private SaveRowsResponse validateInsertRows(Connection conn, String datasetName, String containerPath, List<Map<String, Object>> rows, boolean fail) throws Exception
     {
+        SaveRowsResponse resp = null;
         InsertRowsCommand cmd = new InsertRowsCommand("Study", datasetName);
         cmd.setRows(rows);
         try
         {
-            cmd.execute(conn, containerPath);
+            resp = cmd.execute(conn, containerPath);
         }
         catch (CommandException e)
         {
@@ -358,10 +425,11 @@ public class StudyDatasetLsidTest extends BaseWebDriverTest
                         e.getMessage().contains("Only one row is allowed for each Participant") || e.getMessage().contains("duplicate key value violates unique constraint"));
             else
                 Assert.fail(String.format("Expected the insert to succeed but instead it failed : %s", e.getMessage()));
-            return;
+            return resp;
         }
 
         assertFalse("Expected the insert to fail.", fail);
+        return resp;
     }
 
     private void validateParticipantVisits(Connection conn, String containerPath, int expectedCount) throws Exception
