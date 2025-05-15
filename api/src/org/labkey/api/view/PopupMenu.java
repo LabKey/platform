@@ -113,7 +113,12 @@ public class PopupMenu extends DisplayElement
 
     public void render(Writer out) throws IOException
     {
-        renderMenuButton(null, HtmlWriter.of(out), false, null);
+        render(HtmlWriter.of(out));
+    }
+
+    public void render(HtmlWriter out)
+    {
+        renderMenuButton(null, out, false, null);
     }
 
     public void renderMenuButton(@Nullable RenderContext ctx, HtmlWriter out, boolean requiresSelection, @Nullable ActionButton button)

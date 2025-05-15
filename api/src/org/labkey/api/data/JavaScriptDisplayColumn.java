@@ -64,7 +64,7 @@ public class JavaScriptDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object o = getValue(ctx);
 
@@ -75,13 +75,13 @@ public class JavaScriptDisplayColumn extends DataColumn
             if (_onClickExpression != null)
                 onClick = StringUtils.trim(_onClickExpression.eval(ctx));
 
-            renderLink(oldWriter, getFormattedHtml(ctx), onClick, _linkClassName);
+            renderLink(out, getFormattedHtml(ctx), onClick, _linkClassName);
         }
         else
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
     }
 
-    protected void renderLink(Writer out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
+    protected void renderLink(HtmlWriter out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
     {
         LinkBuilder builder = new LinkBuilder(html)
             .href("#")
