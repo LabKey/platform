@@ -88,10 +88,4 @@ public class CoerceDataIterator extends SimpleTranslator
             }
         }
     }
-
-    @Override
-    protected Object addConversionException(String fieldName, Object value, JdbcType target, Exception x)
-    {
-        return value;
-    }
 }
