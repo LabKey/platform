@@ -26,14 +26,19 @@ import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.lang.ref.Reference;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -168,7 +173,7 @@ public class CacheManager
         PROVIDER.shutdown();
     }
 
-    private static final Set<String> MESSAGES = new HashSet<>();
+    private static final Set<Class<?>> CLASSES = new HashSet<>();
 
     // Validate a cached value. For now, just log warnings for mutable collections.
     public static <V> void validate(String debugName, @Nullable V value)
@@ -184,17 +189,71 @@ public class CacheManager
         }
 
         // Log questionable members, but don't do the work if we're not going to log it
-        if (LOG.isDebugEnabled() && value != null)
+        if (LOG.isDebugEnabled())
         {
-            for (Field field : getAllInstanceFields(value.getClass()))
+            analyzeValue(value, debugName, null, 1);
+        }
+    }
+
+    private static final int MAX_DEPTH = 4;
+
+    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fields, int depth)
+    {
+        if (value != null && depth < MAX_DEPTH)
+        {
+            Class<?> clazz = value.getClass();
+
+            if (value instanceof Map<?, ?> m)
             {
-                // TODO: Should also look for collections and arrays, inspecting the first element
-                Class<?> type = field.getType();
-                if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type) || type.getName().contains("Reference"))
+                m.entrySet().stream()
+                    .findFirst()
+                    .ifPresent(entry -> {
+                        analyzeValue(entry.getKey(), cacheName, fields, depth + 1);
+                        analyzeValue(entry.getValue(), cacheName, fields, depth + 1);
+                    });
+            }
+            else if (value instanceof Collection<?> coll)
+            {
+                coll.stream()
+                    .findFirst()
+                    .ifPresent(element -> analyzeValue(element, cacheName, fields, depth + 1));
+            }
+            else if (clazz.isArray() && Array.getLength(value) > 0)
+            {
+                analyzeValue(Array.get(value, 0), cacheName, fields, depth + 1);
+            }
+            else if (value instanceof Reference<?> ref)
+            {
+                analyzeValue(ref, cacheName, fields, depth + 1);
+            }
+            else if (CLASSES.add(clazz))
+            {
+                for (Field field : getAllInstanceFields(clazz))
                 {
-                    String message = String.format("%s: %s field %s: %s", debugName, value.getClass().getName(), field.getName(), field.getType().getName());
-                    if (MESSAGES.add(message))
-                        LOG.debug(message);
+                    String fieldPath = (fields != null ? fields + "." : "") + field.getName();
+                    Class<?> type = field.getType();
+
+                    if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
+                    {
+                        LOG.debug("{}: {} field {}: {}", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                    }
+                    else
+                    {
+                        try
+                        {
+                            field.setAccessible(true);
+                            Object val = field.get(value);
+                            analyzeValue(val, cacheName, fieldPath, depth + 1);
+                        }
+                        catch (InaccessibleObjectException e)
+                        {
+                            LOG.debug("Inaccessible member {}", fieldPath);
+                        }
+                        catch (IllegalAccessException e)
+                        {
+                            LOG.debug("Exception attempting to access {}", fieldPath, e);
+                        }
+                    }
                 }
             }
         }
