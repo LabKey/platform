@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
@@ -26,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -760,6 +762,20 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return pkVals;
     }
 
+    private Map<String,String> _missingValues = null;
+    private Container _missingValuesContainer;
+
+    protected boolean validMissingValue(Container c, String mv)
+    {
+        if (null == c)
+            return false;
+        if (null == _missingValues || !c.getId().equals(_missingValuesContainer.getId()))
+        {
+            _missingValues = MvUtil.getIndicatorsAndLabels(c);
+            _missingValuesContainer = c;
+        }
+        return _missingValues.containsKey(mv);
+    }
 
     final protected void convertTypes(User user, Container c, Map<String,Object> row) throws ValidationException
     {
@@ -767,41 +783,80 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
     // TODO Path->FileObject
+    // why is coerceTypes() in AbstractQueryUpdateService and convertTypes() in DefaultQueryUpdateService?
     protected void convertTypes(User user, Container c, Map<String,Object> row, TableInfo t, @Nullable Path fileLinkDirPath) throws ValidationException
     {
         for (ColumnInfo col : t.getColumns())
         {
-            Object value = row.get(col.getName());
-            if (null != value)
-            {
-                // Issue 13951: PSQLException from org.labkey.api.query.DefaultQueryUpdateService._update()
-                // improve handling of conversion errors
-                try
-                {
-                    switch (col.getJdbcType())
-                    {
-                        case DATE, TIME, TIMESTAMP -> row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
-                        default -> {
-                            if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
-                            {
-                                FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
-                                value = fl.toNioPathForRead().toString();
-                            }
+            if (col.isMvIndicatorColumn())
+                continue;
+            boolean isColumnPresent = row.containsKey(col.getName()) || col.isMvEnabled() && row.containsKey(col.getMvColumnName().getName());
+            if (!isColumnPresent)
+                continue;
 
-                            row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
-                        }
+            Object value = row.get(col.getName());
+
+            /* NOTE: see MissingValueConvertColumn.convert() these methods should have similar behavior.
+             * If you update this code, check that code as well. */
+            if (col.isMvEnabled())
+            {
+                if (value instanceof String s && StringUtils.isEmpty(s))
+                    value = null;
+
+                Object mvObj = row.get(col.getMvColumnName().getName());
+                String mv = Objects.toString(mvObj, null);
+                if (StringUtils.isEmpty(mv))
+                    mv = null;
+
+                if (null != mv)
+                {
+                    if (!validMissingValue(c, mv))
+                        throw new ValidationException("Value is not a valid missing value indicator: " + mv);
+                }
+                else if (null != value)
+                {
+                    String s = Objects.toString(value, null);
+                    if (validMissingValue(c, s))
+                    {
+                        mv = s;
+                        value = null;
                     }
                 }
-                catch (ConversionException e)
-                {
-                    String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
-                    throw new ValidationException("Unable to convert value '" + value.toString() + "' to " + type, col.getName());
-                }
-                catch (QueryUpdateServiceException e)
-                {
-                    throw new ValidationException("Save file link failed: " + col.getName());
-                }
+                row.put(col.getMvColumnName().getName(), mv);
             }
+
+            value = null==value ? null : convertColumnValue(col, value, user, c, fileLinkDirPath);
+            row.put(col.getName(), value);
+        }
+    }
+
+    protected Object convertColumnValue(ColumnInfo col, Object value, User user, Container c, @Nullable Path fileLinkDirPath) throws ValidationException
+    {
+        // Issue 13951: PSQLException from org.labkey.api.query.DefaultQueryUpdateService._update()
+        // improve handling of conversion errors
+        try
+        {
+            switch (col.getJdbcType())
+            {
+                case DATE, TIME, TIMESTAMP:
+                    return value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class);
+                default:
+                    if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
+                    {
+                        FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+                        value = fl.toNioPathForRead().toString();
+                    }
+                    return ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass());
+            }
+        }
+        catch (ConversionException e)
+        {
+            String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
+            throw new ValidationException("Unable to convert value '" + value.toString() + "' to " + type, col.getName());
+        }
+        catch (QueryUpdateServiceException e)
+        {
+            throw new ValidationException("Save file link failed: " + col.getName());
         }
     }
 
