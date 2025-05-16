@@ -98,6 +98,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -752,59 +753,6 @@ public class DomainUtil
         return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null, null, null);
     }
 
-    public static String getStringPropChangeMsg(String propertyName, String oldProp, String newProp)
-    {
-        if (oldProp == null && newProp == null)
-            return "";
-
-        if ((oldProp == null && newProp.isEmpty()) || (newProp == null && oldProp.isEmpty()))
-            return "";
-
-        if (oldProp != null && newProp == null)
-            return propertyName + ": " + oldProp + " -> " + " <null>;";
-        if (oldProp == null)
-            return propertyName + ": <null> -> " + newProp + ";";
-
-        if (oldProp.equals(newProp))
-            return "";
-
-        return propertyName + ": " + oldProp + " -> " + newProp + ";";
-    }
-
-    public static String getPropChangeMsg(String propertyName, Object oldProp, Object newProp)
-    {
-        if (oldProp == newProp)
-            return "";
-
-        if (oldProp != null && newProp == null)
-            return getStringPropChangeMsg(propertyName, oldProp.toString(), null);
-        if (oldProp == null)
-            return getStringPropChangeMsg(propertyName, null, newProp.toString());
-
-        return getStringPropChangeMsg(propertyName, oldProp.toString(), newProp.toString());
-    }
-
-    public static <T> String getCollectionPropChangeMsg(String propertyName, Collection<T> oldProp, Collection<T> newProp)
-    {
-        if (oldProp == newProp)
-            return "";
-
-        if (oldProp != null && newProp == null)
-            return getPropChangeMsg(propertyName, StringUtils.join(oldProp), null);
-        if (oldProp == null)
-            return getPropChangeMsg(propertyName, null, StringUtils.join(newProp));
-
-        String oldStr = oldProp
-                .stream()
-                .map(Object::toString)
-                .sorted().collect(Collectors.joining(", "));
-        String newStr = newProp
-                .stream()
-                .map(Object::toString)
-                .sorted().collect(Collectors.joining(", "));
-        return getPropChangeMsg(propertyName, oldStr, newStr);
-    }
-
     /** @return Errors encountered during the save attempt */
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user,
@@ -835,11 +783,16 @@ public class DomainUtil
             return validationException;
         }
 
-        StringBuilder changeDetails = new StringBuilder();
+        if (newProps == null)
+            newProps = new LinkedHashMap<>();
+        if (oldProps == null)
+            oldProps = new LinkedHashMap<>();
+
         String updatedName = update.getName();
         if (updateDomainName && !d.getName().equals(updatedName))
         {
-            changeDetails.append(getStringPropChangeMsg("Name", d.getName(), updatedName));
+            oldProps.put("Name", d.getName());
+            newProps.put("Name", updatedName);
             updatedName = StringUtils.trimToEmpty(updatedName);
             String domainNameError = validateDomainName(updatedName, kind.getKindName(), kind.supportsNamingPattern());
             if (!StringUtils.isEmpty(domainNameError))
@@ -851,25 +804,21 @@ public class DomainUtil
             d.setName(updatedName);
         }
 
+        List<String> oldDisabledSystemFields = d.getDisabledSystemFields();
+        if (oldDisabledSystemFields != null && !oldDisabledSystemFields.isEmpty())
+            oldProps.put("DisabledSystemFields", oldDisabledSystemFields);
         List<String> disabledSystemFieldsUpdate = kind.getDisabledSystemFields(update.getDisabledSystemFields());
-        changeDetails.append(getCollectionPropChangeMsg("DisabledSystemFields",d.getDisabledSystemFields(), disabledSystemFieldsUpdate));
+        if (disabledSystemFieldsUpdate != null && !disabledSystemFieldsUpdate.isEmpty())
+            newProps.put("DisabledSystemFields", disabledSystemFieldsUpdate);
+
         d.setDisabledSystemFields(disabledSystemFieldsUpdate);
 
         Set<PropertyStorageSpec.Index> baseIndices = kind.getPropertyIndices(d);
         List<String> oldIndices = GWTIndex.toStringVals(orig.getIndices(), baseIndices);
         if (oldIndices != null && !oldIndices.isEmpty())
-        {
-            if (oldProps == null)
-                oldProps = new LinkedHashMap<>();
-             oldProps.put("Indices", oldIndices);
-        }
+            oldProps.put("Indices", oldIndices);
         List<String> newIndices = GWTIndex.toStringVals(update.getIndices(), baseIndices);
-        if (newIndices != null && !newIndices.isEmpty())
-        {
-            if (newProps == null)
-                newProps = new LinkedHashMap<>();
-            newProps.put("Indices", newIndices);
-        }
+        newProps.put("Indices", newIndices);
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -990,9 +939,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                String changeDetail = changeDetails.toString();
-                String extraAuditComment = (StringUtils.isEmpty(auditComment) ? "" : auditComment + " ") + changeDetail;
-                d.save(user, extraAuditComment, auditUserComment, oldProps, newProps);
+                d.save(user, auditComment, auditUserComment, oldProps, newProps);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -1397,27 +1344,26 @@ public class DomainUtil
 
     private static boolean _copyValidator(IPropertyValidator pv, GWTPropertyValidator gpv)
     {
+        boolean hasChange = false;
         if (pv != null && gpv != null)
         {
-            StringBuilder changeDetails = new StringBuilder();
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Name", pv.getName(), gpv.getName()));
+            hasChange = !Objects.equals(pv.getName(), gpv.getName());
             pv.setName(gpv.getName());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", pv.getDescription(), gpv.getDescription()));
+            hasChange = hasChange || !Objects.equals(pv.getDescription(), gpv.getDescription());
             pv.setDescription(gpv.getDescription());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Expression", pv.getExpressionValue(), gpv.getExpression()));
+            hasChange = hasChange || !Objects.equals(pv.getExpressionValue(), gpv.getExpression());
             pv.setExpressionValue(gpv.getExpression());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("ErrorMsg", pv.getErrorMessage(), gpv.getErrorMessage()));
+            hasChange = hasChange || !Objects.equals(pv.getErrorMessage(), gpv.getErrorMessage());
             pv.setErrorMessage(gpv.getErrorMessage());
 
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Properties", PageFlowUtil.toQueryString(pv.getProperties().entrySet()), PageFlowUtil.toQueryString(gpv.getProperties().entrySet())));
+            hasChange = hasChange || !Objects.equals(PageFlowUtil.toQueryString(pv.getProperties().entrySet()), PageFlowUtil.toQueryString(gpv.getProperties().entrySet()));
             for (Map.Entry<String, String> entry : gpv.getProperties().entrySet())
             {
                 pv.setProperty(entry.getKey(), entry.getValue());
             }
-            return !changeDetails.toString().isEmpty();
         }
 
-        return false;
+        return hasChange;
     }
 
     private static String getDomainErrorMessage(@Nullable GWTDomain<?> domain, String message)
