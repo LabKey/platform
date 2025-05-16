@@ -11969,12 +11969,15 @@ public class AdminController extends SpringActionController
                         String path = new URLHelper(urlString).deleteParameters().getURIString();
                         if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled())
                         {
-                            // Forwarded reports already have user, ip, user-agent, etc. from the forwarding server
+                            // Don't modify forwarded reports; they already have user, ip, user-agent, etc. from the forwarding server.
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
                                 jsonObj.put("user", getUser().getEmail());
-                                jsonObj.put("ip", request.getRemoteAddr());
+                                String ipAddress = request.getHeader("X-FORWARDED-FOR");
+                                if (ipAddress == null)
+                                    ipAddress = request.getRemoteAddr();
+                                jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent))
                                     jsonObj.put("user-agent", userAgent);
                                 String labkeyVersion = request.getParameter("labkeyVersion");
