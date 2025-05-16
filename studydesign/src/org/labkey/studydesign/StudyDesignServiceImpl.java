@@ -1,11 +1,9 @@
 package org.labkey.studydesign;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Product;
 import org.labkey.api.study.Treatment;
-import org.labkey.api.study.TreatmentVisitMap;
 import org.labkey.api.study.Visit;
 import org.labkey.api.studydesign.StudyDesignService;
 import org.labkey.studydesign.model.TreatmentManager;

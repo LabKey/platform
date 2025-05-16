@@ -6,7 +6,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Product;
 import org.labkey.api.study.Treatment;
-import org.labkey.api.study.TreatmentVisitMap;
 import org.labkey.api.study.Visit;
 
 import java.util.List;

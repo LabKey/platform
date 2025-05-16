@@ -29,7 +29,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.products.Product;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -43,6 +42,8 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.study.model.CohortService;
+import org.labkey.api.study.model.VisitService;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.test.TestWhen;
@@ -65,6 +66,9 @@ import java.util.Set;
 public class TreatmentManager
 {
     private static final TreatmentManager _instance = new TreatmentManager();
+
+    public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
+    public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
 
     private TreatmentManager()
     {
@@ -226,7 +230,17 @@ public class TreatmentManager
         List<Integer> visitRowIds = new TableSelector(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap(),
                 Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
 
-        return StudyManager.getInstance().getSortedVisitsByRowIds(container, visitRowIds);
+        Study study = StudyService.get().getStudy(container);
+        List<Visit> visits = new ArrayList<>();
+        if (study != null)
+        {
+            for (Visit visit : study.getVisits(Visit.Order.DISPLAY))
+            {
+                if (visitRowIds.contains(visit.getId()))
+                    visits.add(visit);
+            }
+        }
+        return visits;
     }
 
     public TreatmentVisitMapImpl insertTreatmentVisitMap(User user, Container container, int cohortId, int visitId, int treatmentId)
@@ -256,7 +270,7 @@ public class TreatmentManager
 
     public void deleteTreatment(Container container, User user, int rowId)
     {
-        StudySchema schema = StudySchema.getInstance();
+        StudyDesignSchema schema = StudyDesignSchema.getInstance();
 
         try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
@@ -376,7 +390,7 @@ public class TreatmentManager
 
     public Integer saveAssaySpecimen(Container container, User user, AssaySpecimenConfigImpl assaySpecimen) throws Exception
     {
-        TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyDesignQuerySchema.STUDY_SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
+        TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyDesignQuerySchema.STUDY_SCHEMA_NAME).getTable(ASSAY_SPECIMEN_TABLE_NAME);
         Integer ret = saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
         StudyManager.getInstance().clearAssaySpecimenCache(container);
         return ret;
@@ -384,7 +398,7 @@ public class TreatmentManager
 
     public Integer saveAssaySpecimenVisit(Container container, User user, AssaySpecimenVisitImpl assaySpecimenVisit) throws Exception
     {
-        TableInfo assaySpecimenVIsitTable = QueryService.get().getUserSchema(user, container, StudyDesignQuerySchema.STUDY_SCHEMA_NAME).getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+        TableInfo assaySpecimenVIsitTable = QueryService.get().getUserSchema(user, container, StudyDesignQuerySchema.STUDY_SCHEMA_NAME).getTable(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
         return saveStudyDesignRow(container, user, assaySpecimenVIsitTable, assaySpecimenVisit.serialize(), assaySpecimenVisit.isNew() ? null : assaySpecimenVisit.getRowId(), "RowId", true);
     }
 
@@ -639,11 +653,11 @@ public class TreatmentManager
         private void verifyCleanUpTreatmentData() throws Exception
         {
             // remove cohort and verify delete of TreatmentVisitMap
-            StudyManager.getInstance().deleteCohort(_cohorts.get(0));
+            CohortService.get().deleteCohort(_cohorts.get(0));
             verifyTreatmentVisitMapRecords(4);
 
             // remove visit and verify delete of TreatmentVisitMap
-            StudyManager.getInstance().deleteVisit(_junitStudy, _visits.get(0), _user);
+            VisitService.get().deleteVisit(_junitStudy, _user, _visits.get(0));
             verifyTreatmentVisitMapRecords(2);
 
             // we should still have all of our treatments and study products
@@ -651,7 +665,7 @@ public class TreatmentManager
             verifyStudyProducts();
 
             // remove treatment visit map records via visit
-            _manager.deleteTreatmentVisitMapForVisit(_container, _visits.get(1).getRowId());
+            _manager.deleteTreatmentVisitMapForVisit(_container, _visits.get(1).getId());
             verifyTreatmentVisitMapRecords(0);
 
             // remove treatment and verify delete of TreatmentProductMap
@@ -684,7 +698,7 @@ public class TreatmentManager
         {
             verifyTreatmentVisitMapRecords(8);
 
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(3.0), "Visit 3", Visit.Type.FINAL_VISIT)));
+            _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(3.0), "Visit 3", Visit.Type.FINAL_VISIT));
             assertEquals("Unexpected number of treatment schedule visits", 2, _manager.getVisitsForTreatmentSchedule(_container).size());
         }
 
@@ -727,12 +741,12 @@ public class TreatmentManager
 
         private void populateTreatmentSchedule() throws ValidationException
         {
-            _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
-            _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));
+            _cohorts.add(CohortService.get().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
+            _cohorts.add(CohortService.get().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));
             assertEquals(_cohorts.size(), 2);
 
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE)));
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
+            _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE));
+            _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP));
             assertEquals(_visits.size(), 2);
 
             for (Cohort cohort : _cohorts)

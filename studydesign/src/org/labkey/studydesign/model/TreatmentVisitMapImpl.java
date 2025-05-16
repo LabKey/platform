@@ -18,7 +18,6 @@ package org.labkey.studydesign.model;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.study.TreatmentVisitMap;
 
 /**
  * User: cnathe

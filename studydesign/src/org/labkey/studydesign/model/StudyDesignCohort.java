@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.TreatmentVisitMap;
 import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
