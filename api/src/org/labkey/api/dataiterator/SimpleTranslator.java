@@ -800,16 +800,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Override
         public Object convert(Object value)
         {
+            /* NOTE: see DefaultQueryUpdateService.convertTypes() these methods should have similar behavior.
+             * If you update this code, check that code as well. */
             if (value instanceof MvFieldWrapper)
                 return value;
 
-            Object mv = NO_MV_INDEX ==indicator ? null : _data.get(indicator);
-
             if (value instanceof String && StringUtils.isEmpty((String)value))
                 value = null;
-            if (null != mv && !(mv instanceof String))
-                mv = String.valueOf(mv);
-            if (StringUtils.isEmpty((String)mv))
+            Object mvObj = NO_MV_INDEX==indicator ? null : _data.get(indicator);
+            String mv = Objects.toString(mvObj, null);
+            if (StringUtils.isEmpty(mv))
                 mv = null;
 
             if (supportsMissingValue && null == mv && null != value)
@@ -827,7 +827,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             
             if (supportsMissingValue && null != mv)
             {
-                if (!validMissingValue((String)mv))
+                if (!validMissingValue(mv))
                 {
                     getRowError().addFieldError(_data.getColumnInfo(index).getName(),"Value is not a valid missing value indicator: " + mv.toString());
                     return null;

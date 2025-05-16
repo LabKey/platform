@@ -49,16 +49,17 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
+    private static final String UPGRADE_INSECURE_REQUESTS_SUBSTITUTION = "UPGRADE.INSECURE.REQUESTS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
 
     private static final Map<ContentSecurityPolicyType, ContentSecurityPolicyFilter> CSP_FILTERS = new CopyOnWriteHashMap<>();
 
     // Lock that protects the static data structures below
-    private static final Object ALLOWED_SOURCES_LOCK = new Object();
+    private static final Object SUBSTITUTION_LOCK = new Object();
     private static final Map<Directive, SetValuedMap<String, String>> ALLOWED_SOURCES = new HashMap<>();
     // Regenerate and stash on every "allowed source" change as a convenience (so every filter doesn't need to recalculate
     // it on every init() and change)
-    private static Map<String, String> ALLOWED_SOURCES_SUBSTITUTION_MAP = Collections.emptyMap();
+    private static Map<String, String> SUBSTITUTION_MAP = Collections.emptyMap();
 
     // Per-filter-instance parameters that are set in init() and never changed
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
@@ -89,7 +90,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     static
     {
-        // ReactJS hot reload uses localhost port 3001. If in dev mode, allow browser to access that port for fonts
+        // ReactJS hot reload uses localhost port 3001. If in dev mode, allow the browser to access that port for fonts
         // and connections.
         if (AppProps.getInstance().isDevMode())
         {
@@ -203,10 +204,10 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         final String allowSubstitutedPolicy;
 
-        synchronized (ALLOWED_SOURCES_LOCK)
+        synchronized (SUBSTITUTION_LOCK)
         {
             allowSubstitutedPolicy = StringExpressionFactory.create(_policyTemplate, false, NullValueBehavior.KeepSubstitution)
-                .eval(ALLOWED_SOURCES_SUBSTITUTION_MAP);
+                .eval(SUBSTITUTION_MAP);
         }
 
         _policyExpression = StringExpressionFactory.create(allowSubstitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
@@ -250,7 +251,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     public static void registerAllowedSources(String key, Directive directive, String... allowedSources)
     {
-        synchronized (ALLOWED_SOURCES_LOCK)
+        synchronized (SUBSTITUTION_LOCK)
         {
             if (allowedSources.length == 0)
                 throw new IllegalStateException("Registering no sources is not allowed");
@@ -263,7 +264,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
     public static void unregisterAllowedSources(Directive directive, String key)
     {
-        synchronized (ALLOWED_SOURCES_LOCK)
+        synchronized (SUBSTITUTION_LOCK)
         {
             LOG.debug("Unregistering {} for {}", directive, key);
             SetValuedMap<String, String> multiMap = ALLOWED_SOURCES.get(directive);
@@ -278,11 +279,11 @@ public class ContentSecurityPolicyFilter implements Filter
     }
 
     // Regenerate the substitution map and all policy expressions on every register/unregister
-    private static void regenerateSubstitutionMap()
+    public static void regenerateSubstitutionMap()
     {
-        synchronized (ALLOWED_SOURCES_LOCK)
+        synchronized (SUBSTITUTION_LOCK)
         {
-            ALLOWED_SOURCES_SUBSTITUTION_MAP = ALLOWED_SOURCES.entrySet().stream()
+            SUBSTITUTION_MAP = ALLOWED_SOURCES.entrySet().stream()
                 .filter(e -> !e.getValue().isEmpty())
                 .collect(Collectors.toMap(
                     e -> e.getKey().getSubstitutionKey(),
@@ -294,12 +295,9 @@ public class ContentSecurityPolicyFilter implements Filter
             // Add an empty substitution for sources that lack registrations. This strips them from the stashed policy,
             // meaning less work on every request.
             Arrays.stream(Directive.values())
-                .forEach(dir -> ALLOWED_SOURCES_SUBSTITUTION_MAP.putIfAbsent(dir.getSubstitutionKey(), ""));
+                .forEach(dir -> SUBSTITUTION_MAP.putIfAbsent(dir.getSubstitutionKey(), ""));
 
-            // Backward compatibility for CSPs using old substitution key
-            // TODO: Remove in 25.4 and adjust the junit test below
-            if (ALLOWED_SOURCES_SUBSTITUTION_MAP.containsKey(Directive.Connection.getSubstitutionKey()))
-                ALLOWED_SOURCES_SUBSTITUTION_MAP.put("LABKEY.ALLOWED.CONNECTIONS", ALLOWED_SOURCES_SUBSTITUTION_MAP.get(Directive.Connection.getSubstitutionKey()));
+            SUBSTITUTION_MAP.put(UPGRADE_INSECURE_REQUESTS_SUBSTITUTION, AppProps.getInstance().isSSLRequired() ? "upgrade-insecure-requests;" : "");
 
             // Tell each registered ContentSecurityPolicyFilter to refresh its policy template based on the new substitution map
             CSP_FILTERS.values().forEach(ContentSecurityPolicyFilter::regeneratePolicyExpression);
@@ -378,13 +376,13 @@ public class ContentSecurityPolicyFilter implements Filter
         @Test
         public void testSubstitutionMap()
         {
-            synchronized (ALLOWED_SOURCES_LOCK)
+            synchronized (SUBSTITUTION_LOCK)
             {
-                // Ensure substitution map has been initialized, otherwise the finally block asserts will fail
+                // Ensure the substitution map has been initialized; otherwise the finally block asserts will fail
                 regenerateSubstitutionMap();
                 // Make a deep copy of ALLOWED_SOURCES so we can restore it after testing
                 int sourceMapSize = ALLOWED_SOURCES.size();
-                int substitutionMapSize = ALLOWED_SOURCES_SUBSTITUTION_MAP.size();
+                int substitutionMapSize = SUBSTITUTION_MAP.size();
                 Map<Directive, SetValuedMap<String, String>> savedSources = ALLOWED_SOURCES.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> new HashSetValuedHashMap<>(e.getValue())));
 
@@ -408,53 +406,53 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionMapSize(0);
                     registerAllowedSources("foo", Directive.Connection, "MySource");
                     assertEquals(1, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(2); // Old connection substitution key should be added as well
+                    verifySubstitutionMapSize(1);
                     verifySubstitutionInPolicyExpressions("MySource", 1);
                     registerAllowedSources("bar", Directive.Connection, "MySource");
                     assertEquals(1, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(2);
+                    verifySubstitutionMapSize(1);
                     verifySubstitutionInPolicyExpressions("MySource", 1); // Duplicate source should be filtered out
 
                     unregisterAllowedSources(Directive.Font, "font");
                     registerAllowedSources("font", Directive.Font, "MySource");
                     assertEquals(2, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(3);
+                    verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     registerAllowedSources("font2", Directive.Font, "MyFontSource");
                     assertEquals(2, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(3);
+                    verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 1);
                     unregisterAllowedSources(Directive.Font, "font2");
                     assertEquals(2, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(3);
+                    verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("MySource", 2);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
                     unregisterAllowedSources(Directive.Font, "font");
                     assertEquals(2, ALLOWED_SOURCES.size()); // Font entry still exists, but should be empty
                     assertTrue(ALLOWED_SOURCES.get(Directive.Font).isEmpty());
-                    verifySubstitutionMapSize(2);// Back to the way it was
+                    verifySubstitutionMapSize(1);// Back to the way it was
                     verifySubstitutionInPolicyExpressions("MySource", 1);
                     verifySubstitutionInPolicyExpressions("MyFontSource", 0);
 
                     unregisterAllowedSources(Directive.Frame, "frame");
                     registerAllowedSources("frame", Directive.Frame, "FrameSource", "FrameStore");
                     assertEquals(3, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(3);
+                    verifySubstitutionMapSize(2);
                     verifySubstitutionInPolicyExpressions("FrameSource", 1);
                     verifySubstitutionInPolicyExpressions("FrameStore", 1);
 
                     unregisterAllowedSources(Directive.Style, "style");
                     registerAllowedSources("style", Directive.Style, "StyleSource", "MoreStylishStore");
                     assertEquals(4, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(4);
+                    verifySubstitutionMapSize(3);
                     verifySubstitutionInPolicyExpressions("StyleSource", 1);
                     verifySubstitutionInPolicyExpressions("MoreStylishStore", 1);
 
                     unregisterAllowedSources(Directive.Image, "image");
                     registerAllowedSources("image", Directive.Image, "ImageSource", "BetterImageStore");
                     assertEquals(5, ALLOWED_SOURCES.size());
-                    verifySubstitutionMapSize(5);
+                    verifySubstitutionMapSize(4);
                     verifySubstitutionInPolicyExpressions("ImageSource", 1);
                     verifySubstitutionInPolicyExpressions("BetterImageStore", 1);
                 }
@@ -465,7 +463,7 @@ public class ContentSecurityPolicyFilter implements Filter
                     ALLOWED_SOURCES.putAll(savedSources);
                     regenerateSubstitutionMap();
                     assertEquals(sourceMapSize, ALLOWED_SOURCES.size());
-                    assertEquals(substitutionMapSize, ALLOWED_SOURCES_SUBSTITUTION_MAP.size());
+                    assertEquals(substitutionMapSize, SUBSTITUTION_MAP.size());
                 }
             }
         }
@@ -485,11 +483,13 @@ public class ContentSecurityPolicyFilter implements Filter
 
         private void verifySubstitutionMapSize(long expectedNonEmptyValues)
         {
-            // Actual map size should stay static throughout test
-            int expectedSubstitutionMapSize = Directive.values().length + 1; // One extra for old "connections" key
+            // Actual map size should stay static throughout the test
+            int expectedSubstitutionMapSize = Directive.values().length + 1; // One extra for UPGRADE.INSECURE.REQUESTS
+            if (AppProps.getInstance().isSSLRequired())
+                expectedNonEmptyValues++;
 
-            assertEquals(expectedSubstitutionMapSize, ALLOWED_SOURCES_SUBSTITUTION_MAP.size());
-            long nonEmptyValues = ALLOWED_SOURCES_SUBSTITUTION_MAP.entrySet().stream().filter(e -> !e.getValue().isEmpty()).count();
+            assertEquals(expectedSubstitutionMapSize, SUBSTITUTION_MAP.size());
+            long nonEmptyValues = SUBSTITUTION_MAP.entrySet().stream().filter(e -> !e.getValue().isEmpty()).count();
             assertEquals(expectedNonEmptyValues, nonEmptyValues);
         }
     }
