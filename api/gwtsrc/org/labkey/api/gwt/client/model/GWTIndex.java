@@ -17,12 +17,14 @@ package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.data.PropertyStorageSpec;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -81,12 +83,13 @@ public class GWTIndex implements IsSerializable, Serializable
         return StringUtils.join(_columnNames, ", ") + ", unique: " + isUnique();
     }
 
-    public static List<String> toStringVals(List<GWTIndex> indices)
+    public static List<String> toStringVals(List<GWTIndex> indices, Set<PropertyStorageSpec.Index> excludeBaseIndices)
     {
         if (indices == null || indices.isEmpty())
             return null;
 
-        return indices.stream().map(GWTIndex::toStringVal).toList();
+        Set<String> excludeIndices = excludeBaseIndices == null ? Collections.emptySet() : excludeBaseIndices.stream().map(PropertyStorageSpec.Index::toStringVal).collect(Collectors.toSet());
+        return indices.stream().map(GWTIndex::toStringVal).filter(v -> !excludeIndices.contains(v)).toList();
     }
 
 }

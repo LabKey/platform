@@ -16,7 +16,9 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Filter;
@@ -44,12 +46,15 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -475,4 +480,33 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     {
         _object.setStatus(status);
     }
+
+    @Override
+    public Map<String, Object> getAuditRecordMap(AssayProvider provider, Container container)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getProtocolDescription()))
+            map.put("Description", getProtocolDescription());
+        if (null != getStatus())
+            map.put("Status", getStatus().toString());
+        Map<String, ObjectProperty> props = new HashMap<>(getObjectProperties());
+        ObjectProperty autoLinkTargetContainer = props.get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI);
+        String autoLinkTargetContainerId = autoLinkTargetContainer == null ? null : autoLinkTargetContainer.getStringValue();
+        if (!StringUtils.isEmpty(autoLinkTargetContainerId))
+            map.put("AutoCopyTargetContainer", autoLinkTargetContainerId);
+        ObjectProperty autoLinkCategory = props.get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI);
+        String autoLinkCategoryValue = autoLinkCategory == null ? null : autoLinkCategory.getStringValue();
+        if (!StringUtils.isEmpty(autoLinkCategoryValue))
+            map.put("AutoLinkCategory", autoLinkCategoryValue);
+        map.put("SaveScriptFiles", provider.isSaveScriptFiles(this));
+        map.put("IsEditableResults", provider.isEditableResults(this));
+        map.put("IsEditableRuns", provider.isEditableRuns(this));
+        map.put("IsBackgroundUpload", provider.isBackgroundUpload(this));
+        map.put("IsQcEnabled", provider.isQCEnabled(this));
+        map.put("IsPlateMetadataEnabled", provider.isPlateMetadataEnabled(this));
+        return map;
+    }
+
+
 }

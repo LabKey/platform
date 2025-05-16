@@ -370,13 +370,13 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void save(User user) throws Exception
     {
-        save(user, true);
+        save(user, true, null);
     }
 
     private static final ReentrantLock _saveLock = new ReentrantLockWithName(ListDefinitionImpl.class, "_saveLock");
 
     @Override
-    public void save(User user, boolean ensureKey) throws Exception
+    public void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap) throws Exception
     {
         if (ensureKey)
         {
@@ -396,7 +396,7 @@ public class ListDefinitionImpl implements ListDefinition
                 // The domain kind cannot lookup the list definition if the domain has not been saved
                 ((ListDomainKind) domain.getDomainKind()).setListDefinition(this);
 
-                domain.save(user);
+                domain.save(user, newRecordMap);
 
                 _def.setDomainId(domain.getTypeId());
                 ListDef inserted = ListManager.get().insert(user, _def, _preferredListIds);

@@ -514,7 +514,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
-                    newDomain.save(user);
+                    newDomain.save(user, arguments.getAuditRecordMap());
 
                     List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);
@@ -663,16 +663,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             hasNameChange = !datasetPropertiesUpdate.getName().equals(oldDef.getName());
             if (hasNameChange)
                 changeDetails.append("The name of the dataset '" + oldDef.getName() + "' was changed to '" + datasetPropertiesUpdate.getName() + "'.");
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", oldDef.getDescription(), datasetPropertiesUpdate.getDescription()));
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Category", oldDef.getCategory(), datasetPropertiesUpdate.getCategory()));
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Label", oldDef.getLabel(), datasetPropertiesUpdate.getLabel()));
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("KeyPropertyName", oldDef.getKeyPropertyName(), datasetPropertiesUpdate.getKeyPropertyName()));
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("VisitDateColumnName", oldDef.getVisitDateColumnName(), datasetPropertiesUpdate.getVisitDatePropertyName()));
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Tag", oldDef.getTag(), datasetPropertiesUpdate.getTag()));
-            changeDetails.append(DomainUtil.getPropChangeMsg("KeyPropertyManaged", oldDef.getKeyManagementType() != Dataset.KeyManagementType.None, datasetPropertiesUpdate.isKeyPropertyManaged()));
-            changeDetails.append(DomainUtil.getPropChangeMsg("IsDemographicData", oldDef.isDemographicData(), datasetPropertiesUpdate.isDemographicData()));
-            changeDetails.append(DomainUtil.getPropChangeMsg("IsUseTimeKeyField", oldDef.getUseTimeKeyField(), datasetPropertiesUpdate.isUseTimeKeyField()));
-            changeDetails.append(DomainUtil.getPropChangeMsg("CohortId", oldDef.getCohortId(), datasetPropertiesUpdate.getCohortId()));
         }
 
         ValidationException exception = new ValidationException();

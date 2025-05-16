@@ -699,7 +699,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null);
     }
 
     @NotNull
@@ -707,7 +707,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
         throws ExperimentException
     {
         validateSampleTypeName(c, u, name, false);
@@ -880,7 +880,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u);
+                    domain.save(u, changeDetails);
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);

@@ -1247,7 +1247,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     private static final String SCRIPT_PATH_DELIMITER = "|";
 
     @Override
-    public Pair<ValidationException, String> setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
+    public Pair<ValidationException, Pair<String, String>> setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
@@ -1296,7 +1296,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         JSONArray json = AnalysisScript.toJson(scripts);
         ObjectProperty oldProp = props.get(propertyURI);
         String oldJson = oldProp == null ? null : oldProp.getStringValue();
-        String auditMsg = DomainUtil.getPropChangeMsg("TransformScript", oldJson, json);
         if (json != null)
         {
             ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
@@ -1309,7 +1308,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         protocol.setObjectProperties(props);
 
-        return new Pair<>(validationErrors, auditMsg);
+        return new Pair<>(validationErrors, new Pair<>(oldJson, json == null ? null : json.toString()));
     }
 
     /** For migrating legacy assay designs that have separate transform and validation script properties */

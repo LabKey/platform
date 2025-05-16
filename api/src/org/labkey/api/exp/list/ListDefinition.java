@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a single list definition, as captured by a domain and some list-specific configuration, and defined
@@ -290,7 +291,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void save(User user, boolean ensureKey) throws Exception;
+    void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap) throws Exception;
     void delete(User user) throws DomainNotFoundException;
     void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException;
 

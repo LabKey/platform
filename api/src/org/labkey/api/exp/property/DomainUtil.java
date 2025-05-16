@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -854,15 +855,16 @@ public class DomainUtil
         changeDetails.append(getCollectionPropChangeMsg("DisabledSystemFields",d.getDisabledSystemFields(), disabledSystemFieldsUpdate));
         d.setDisabledSystemFields(disabledSystemFieldsUpdate);
 
-        List<String> oldIndices = GWTIndex.toStringVals(orig.getIndices());
-        if (oldIndices != null)
+        Set<PropertyStorageSpec.Index> baseIndices = kind.getPropertyIndices(d);
+        List<String> oldIndices = GWTIndex.toStringVals(orig.getIndices(), baseIndices);
+        if (oldIndices != null && !oldIndices.isEmpty())
         {
             if (oldProps == null)
                 oldProps = new LinkedHashMap<>();
              oldProps.put("Indices", oldIndices);
         }
-        List<String> newIndices = GWTIndex.toStringVals(update.getIndices());
-        if (newIndices != null)
+        List<String> newIndices = GWTIndex.toStringVals(update.getIndices(), baseIndices);
+        if (newIndices != null && !newIndices.isEmpty())
         {
             if (newProps == null)
                 newProps = new LinkedHashMap<>();
