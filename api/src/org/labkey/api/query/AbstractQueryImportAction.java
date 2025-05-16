@@ -354,7 +354,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 if (Boolean.valueOf(paramValue))
                     return LookupResolutionType.alternateThenPrimaryKey;
                 else
-                    return LookupResolutionType.primaryThenAlternateKey;
+                    return LookupResolutionType.primaryKey;
             }
         }
         return LookupResolutionType.valueOf(paramValue);

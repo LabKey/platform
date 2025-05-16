@@ -1352,7 +1352,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // For enum tables, we should not be using number names for the values, so we will look up by primary key first (resolving rowIds) then alternate.
             // This assures the type is an Integer when a rowId is given (e.g., from a row read from the database), not a string.
             if (fk.getLookupTableInfo() instanceof EnumTableInfo)
-                lookupResolutionType = LookupResolutionType.primaryThenAlternateKey;
+                lookupResolutionType = LookupResolutionType.alternateThenPrimaryKey;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
@@ -2202,7 +2202,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(LookupResolutionType.primaryThenAlternateKey);
+                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue, false);
@@ -2238,7 +2238,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(LookupResolutionType.primaryThenAlternateKey);
+                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null, false);
