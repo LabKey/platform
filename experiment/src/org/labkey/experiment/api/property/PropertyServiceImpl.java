@@ -128,7 +128,14 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Nullable
     public DomainImpl getDomain(Container container, String domainURI)
     {
-        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);
+        return getDomain(container, domainURI, false);
+    }
+
+    @Override
+    @Nullable
+    public DomainImpl getDomain(Container container, String domainURI, boolean forUpdate)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container, forUpdate);
         if (dd == null)
             return null;
         return new DomainImpl(dd);
@@ -137,6 +144,16 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     @Nullable
     public Domain getDomain(int domainId)
+    {
+        DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId);
+        if (dd == null)
+            return null;
+        return new DomainImpl(dd);
+    }
+
+    @Override
+    @Nullable
+    public Domain getDomain(int domainId, boolean forUpdate)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainId);
         if (dd == null)

@@ -56,7 +56,13 @@ public interface PropertyService
     Domain getDomain(Container container, String domainURI);
 
     @Nullable
+    Domain getDomain(Container container, String domainURI, boolean forUpdate);
+
+    @Nullable
     Domain getDomain(int domainId);
+
+    @Nullable
+    Domain getDomain(int domainId, boolean forUpdate);
 
     List<DomainKind<?>> getDomainKinds();
 

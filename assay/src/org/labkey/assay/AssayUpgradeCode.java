@@ -272,7 +272,7 @@ public class AssayUpgradeCode implements UpgradeCode
                     {
                         // ensure the plate metadata domain for the top level biologics projects
                         if (container.isProject())
-                            PlateManager.get().ensurePlateMetadataDomain(container, User.getAdminServiceUser());
+                            PlateManager.get().ensurePlateMetadataDomain(container, User.getAdminServiceUser(), false);
                         biologicsFolders.add(container);
                     }
                 }
@@ -535,7 +535,7 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         for (Container container : metadataContainers)
         {
-            Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser());
+            Domain domain = PlateManager.get().getPlateMetadataDomain(container, User.getAdminServiceUser(), true);
             if (domain != null)
             {
                 try (DbScope.Transaction tx = scope.ensureTransaction())

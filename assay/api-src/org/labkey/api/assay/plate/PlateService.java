@@ -252,7 +252,7 @@ public interface PlateService
     /**
      * Create the plate metadata domain for this container.
      */
-    @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException;
+    @NotNull Domain ensurePlateMetadataDomain(Container container, User user, boolean forUpdate) throws ValidationException;
 
     /**
      * Name expressions for plate sets and plates.

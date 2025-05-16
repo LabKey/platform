@@ -751,7 +751,8 @@ public class DomainUtil
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
 
-        Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        // Issue 52824: when updating, remove domain descriptor from cache so others don't see a descriptor from the cache in a paritially updated state
+        Domain d = PropertyService.get().getDomain(container, update.getDomainURI(), true);
         if (null == d)
         {
             ValidationException validationException = new ValidationException();

@@ -2443,25 +2443,47 @@ public class OntologyManager
         }
     }
 
-
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return DOMAIN_DESC_BY_ID_CACHE.get(id);
+        return getDomainDescriptor(id, false);
+    }
+
+    public static DomainDescriptor getDomainDescriptor(int id, boolean forUpdate)
+    {
+        DomainDescriptor dd = DOMAIN_DESC_BY_ID_CACHE.get(id);
+        if (forUpdate)
+            DOMAIN_DESC_BY_ID_CACHE.remove(id);
+        return dd;
     }
 
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
+        return getDomainDescriptor(domainURI, c, false);
+    }
+
+    @Nullable
+    public static DomainDescriptor getDomainDescriptor(String domainURI, Container c, boolean forUpdate)
+    {
         if (c == null)
             return null;
 
         // cache lookup by project. if not found at project level, check to see if global
-        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
+        Pair<String, GUID> key = getCacheKey(domainURI, c);
+        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
         if (null != dd)
+        {
+            if (forUpdate)
+                DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(key);
             return dd;
+        }
 
         // Try in the /Shared container too
-        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, _sharedContainer));
+        key = getCacheKey(domainURI, _sharedContainer);
+        dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
+        if (null != dd && forUpdate)
+            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(key);
+        return dd;
     }
 
     /**

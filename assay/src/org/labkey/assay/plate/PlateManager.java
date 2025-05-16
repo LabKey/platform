@@ -172,7 +172,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 import static org.labkey.api.assay.plate.WellGroup.Type.SAMPLE;
@@ -2267,9 +2266,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public @Nullable Domain getPlateMetadataDomain(Container container, User user)
     {
+        return getPlateMetadataDomain(container, user, false);
+    }
+
+    /**
+     * Returns the domain attached to the Well table,
+     */
+    public @Nullable Domain getPlateMetadataDomain(Container container, User user, boolean forUpdate)
+    {
         // the domain is scoped at the project level (project and subfolder scoping)
         String domainURI = PlateMetadataDomainKind.generateDomainURI(getPlateMetadataDomainContainer(container));
-        return PropertyService.get().getDomain(container, domainURI);
+        return PropertyService.get().getDomain(container, domainURI, forUpdate);
     }
 
     public @Nullable TableInfo getPlateMetadataTable(Container container, User user)
@@ -2289,9 +2296,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
+    public @NotNull Domain ensurePlateMetadataDomain(Container container, User user, boolean forUpdate) throws ValidationException
     {
-        Domain metadataDomain = getPlateMetadataDomain(container, user);
+        Domain metadataDomain = getPlateMetadataDomain(container, user, forUpdate);
 
         if (metadataDomain == null)
         {
@@ -2311,7 +2318,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
      */
     public @NotNull List<PlateCustomField> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
     {
-        Domain metadataDomain = ensurePlateMetadataDomain(container, user);
+        Domain metadataDomain = ensurePlateMetadataDomain(container, user, true);
         DomainKind<?> domainKind = metadataDomain.getDomainKind();
 
         if (!domainKind.canEditDefinition(user, metadataDomain))
@@ -2338,7 +2345,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public @NotNull List<PlateCustomField> deletePlateMetadataFields(Container container, User user, List<PlateCustomField> fields) throws Exception
     {
-        Domain metadataDomain = getPlateMetadataDomain(container, user);
+        Domain metadataDomain = getPlateMetadataDomain(container, user, true);
 
         if (metadataDomain == null)
             throw new IllegalArgumentException("Unable to remove fields from the domain, the domain was not found.");
