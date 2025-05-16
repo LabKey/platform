@@ -1150,19 +1150,19 @@ public class DomainPropertyImpl implements DomainProperty
     public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
     {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (getName() != null)
+        if (!StringUtils.isEmpty(getName()))
             map.put("Name", getName());
-        if (getLabel() != null)
+        if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
             map.put("Type", getPropertyType().getXarName());
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
-        if (getDescription() != null)
+        if (!StringUtils.isEmpty(getDescription()))
             map.put("Description", getDescription());
-        if (getFormat() != null)
+        if (!StringUtils.isEmpty(getFormat()))
             map.put("Format", getFormat());
-        if (getURL() != null)
+        if (!StringUtils.isEmpty(getURL()))
             map.put("URL", getURL());
         if (getPHI() != null)
             map.put("PHI", getPHI().getLabel());
@@ -1180,7 +1180,7 @@ public class DomainPropertyImpl implements DomainProperty
         map.put("RecommendedVariable", isRecommendedVariable());
         map.put("ExcludedFromShifting", isExcludeFromShifting());
         map.put("Scannable", isScannable());
-        if (getDerivationDataScope() != null)
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
             map.put("DerivationDataScope", getDerivationDataScope());
         String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
         if (!StringUtils.isEmpty(importAliasStr))
@@ -1190,9 +1190,9 @@ public class DomainPropertyImpl implements DomainProperty
         if (getLookup() != null)
             map.put("Lookup", getLookup().toJSONString());
 
-        if (validatorStr != null)
+        if (!StringUtils.isEmpty(validatorStr))
             map.put("Validator", validatorStr);
-        if (conditionalFormatStr != null)
+        if (!StringUtils.isEmpty(conditionalFormatStr))
             map.put("ConditionalFormat", conditionalFormatStr);
 
         return map;

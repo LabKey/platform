@@ -543,23 +543,23 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
     {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (getName() != null)
+        if (!StringUtils.isEmpty(getName()))
             map.put("Name", getName());
-        if (getLabel() != null)
+        if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
             map.put("Type", getPropertyType().getXarName());
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
-        if (getDescription() != null)
+        if (!StringUtils.isEmpty(getDescription()))
             map.put("Description", getDescription());
-        if (getFormat() != null)
+        if (!StringUtils.isEmpty(getFormat()))
             map.put("Format", getFormat());
-        if (getURL() != null)
+        if (null !=getURL())
             map.put("URL", getURL().toString());
-        if (getPHI() != null)
+        if (null != getPHI())
             map.put("PHI", getPHI().getLabel());
-        if (getDefaultScale() != null)
+        if (null !=getDefaultScale())
             map.put("DefaultScale", getDefaultScale().getLabel());
         map.put("Required", isRequired());
         map.put("Hidden", isHidden());
@@ -573,18 +573,18 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         map.put("RecommendedVariable", isRecommendedVariable());
         map.put("ExcludedFromShifting", isExcludeFromShifting());
         map.put("Scannable", isScannable());
-        if (getDerivationDataScope() != null)
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
             map.put("DerivationDataScope", getDerivationDataScope());
         String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
         if (!StringUtils.isEmpty(importAliasStr))
             map.put("ImportAliases", importAliasStr);
-        if (getDefaultValueTypeEnum() != null)
+        if (null != getDefaultValueTypeEnum())
             map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
         if (getLookup() != null)
             map.put("Lookup", getLookup().toJSONString());
-        if (validatorStr != null)
+        if (!StringUtils.isEmpty(validatorStr))
             map.put("Validator", validatorStr);
-        if (conditionalFormatStr != null)
+        if (!StringUtils.isEmpty(conditionalFormatStr))
             map.put("ConditionalFormat", conditionalFormatStr);
 
         return map;
