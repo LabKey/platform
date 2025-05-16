@@ -213,8 +213,8 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         return values(ctx, _column::getInputValue);
     }
 
-    // This override matches the DisplayColumn.renderInputCell() implementation. It's necessary to cancel out
-    // DisplayColumnDecorator's override.
+    // Issue 52983: This override matches the DisplayColumn.renderInputCell() implementation.
+    // It's necessary to cancel out DisplayColumnDecorator's override.
     @Override
     public void renderInputCell(RenderContext ctx, HtmlWriter out)
     {
