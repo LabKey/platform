@@ -40,7 +40,7 @@ public class StudyTreatmentSchedule implements ApiJsonForm
     // treatment schedule properties
     List<TreatmentImpl> _treatments;
     Collection<? extends Visit> _visits;
-    Collection<? extends Cohort> _cohorts;
+    Collection<StudyDesignCohort> _cohorts;
 
     public StudyTreatmentSchedule()
     {}
@@ -103,7 +103,7 @@ public class StudyTreatmentSchedule implements ApiJsonForm
     private List<Integer> getIncludedVisitIds()
     {
         List<Integer> ids = new ArrayList<>();
-        for (Cohort cohort : _cohorts)
+        for (StudyDesignCohort cohort : _cohorts)
         {
             for (TreatmentVisitMapImpl tvm : TreatmentManager.getInstance().getStudyTreatmentVisitMap(_container, cohort.getRowId()))
             {
@@ -115,20 +115,15 @@ public class StudyTreatmentSchedule implements ApiJsonForm
         return ids;
     }
 
-    public void setCohorts(Collection<? extends Cohort> cohorts)
-    {
-        _cohorts = cohorts;
-    }
-
-    public Collection<? extends Cohort> getCohorts()
+    public Collection<StudyDesignCohort> getCohorts()
     {
         return _cohorts;
     }
 
-    public List<Map<String, Object>> serializeCohortMapping()
+    public List<Map<String, Object>> serializeCohortMapping(Collection<? extends Cohort> cohorts)
     {
         List<Map<String, Object>> cohortMappingList = new ArrayList<>();
-        for (Cohort cohort : _cohorts)
+        for (Cohort cohort : cohorts)
         {
             Map<String, Object> mapProperties = new HashMap<>();
             mapProperties.put("RowId", cohort.getRowId());
@@ -170,7 +165,7 @@ public class StudyTreatmentSchedule implements ApiJsonForm
         {
             _cohorts = new ArrayList<>();
             for (JSONObject cohortJSON : JsonUtil.toJSONObjectList(cohortsJSON))
-                _cohorts.add(CohortImpl.fromJSON(cohortJSON));
+                _cohorts.add(StudyDesignCohort.fromJSON(cohortJSON));
         }
     }
 }

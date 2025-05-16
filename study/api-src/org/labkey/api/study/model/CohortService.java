@@ -2,10 +2,12 @@ package org.labkey.api.study.model;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collection;
@@ -38,9 +40,14 @@ public interface CohortService
 
     Collection<? extends Cohort> getCohorts(Container container, User user);
 
+    // Methods created to support Vaccine study designs
     Cohort getCohortByLabel(Container container, User user, String label);
 
     Cohort getCohortForRowId(Container container, User user, int rowId);
 
     void deleteCohort(Cohort cohort);
+
+    Cohort updateCohort(Container container, User user, int rowId, String label, int subjectCount);
+
+    Cohort createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ValidationException;
 }

@@ -41,6 +41,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
+import org.labkey.api.study.TreatmentVisitMap;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
@@ -57,6 +58,7 @@ import org.labkey.studydesign.model.DoseAndRoute;
 import org.labkey.studydesign.model.ProductAntigenImpl;
 import org.labkey.studydesign.model.ProductImpl;
 import org.labkey.studydesign.model.StudyAssaySchedule;
+import org.labkey.studydesign.model.StudyDesignCohort;
 import org.labkey.studydesign.model.StudyTreatmentSchedule;
 import org.labkey.studydesign.model.TreatmentImpl;
 import org.labkey.studydesign.model.TreatmentManager;
@@ -405,8 +407,7 @@ public class StudyDesignController extends SpringActionController
             StudyTreatmentSchedule treatmentSchedule = new StudyTreatmentSchedule(getContainer());
 
             // include all cohorts for the study, regardless of it they have associated visits or not
-            treatmentSchedule.setCohorts(_study.getCohorts(getUser()));
-            resp.put("cohorts", treatmentSchedule.serializeCohortMapping());
+            resp.put("cohorts", treatmentSchedule.serializeCohortMapping(_study.getCohorts(getUser())));
 
             // include all visits from the study, ordered by visit display order
             treatmentSchedule.setVisits(_study.getVisits(Visit.Order.DISPLAY));
@@ -654,7 +655,7 @@ public class StudyDesignController extends SpringActionController
             }
 
             // validate that each cohort has a label, is unique, and has a valid subject count value
-            for (Cohort cohort : form.getCohorts())
+            for (StudyDesignCohort cohort : form.getCohorts())
             {
                 if (cohort.getLabel() == null || StringUtils.isEmpty(cohort.getLabel().trim()))
                     errors.reject(SpringActionController.ERROR_MSG, "Label is a required field for all cohorts.");
@@ -750,35 +751,31 @@ public class StudyDesignController extends SpringActionController
             }
         }
 
-        private void updateCohorts(Collection<? extends Cohort> cohorts, Study study) throws ValidationException
+        private void updateCohorts(Collection<StudyDesignCohort> cohorts, Study study) throws ValidationException
         {
             // insert new cohorts and update any existing ones
-            for (Cohort cohort : cohorts)
+            for (StudyDesignCohort cohort : cohorts)
             {
-                if (cohort.getRowId() > 0)
+                int rowId = cohort.getRowId();
+                if (rowId > 0)
                 {
-                    CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), cohort.getRowId());
-                    updatedCohort = updatedCohort.createMutable();
-                    updatedCohort.setLabel(cohort.getLabel());
-                    updatedCohort.setSubjectCount(cohort.getSubjectCount());
-                    StudyManager.getInstance().updateCohort(getUser(), updatedCohort);
-                    cohortRowIds.add(updatedCohort.getRowId());
+                    CohortService.get().updateCohort(getContainer(), getUser(), rowId, cohort.getLabel(), cohort.getSubjectCount());
+                    cohortRowIds.add(rowId);
                 }
                 else
                 {
-                    CohortImpl newCohort = CohortManager.getInstance().createCohort(study, getUser(), cohort.getLabel(), true, cohort.getSubjectCount(), null);
+                    Cohort newCohort = CohortService.get().createCohort(study, getUser(), cohort.getLabel(), true, cohort.getSubjectCount(), null);
                     cohortRowIds.add(newCohort.getRowId());
-                    // stash the new cohort RowId in the original cohort instance
-                    cohort.setRowId(newCohort.getRowId());
+                    rowId = newCohort.getRowId();
                 }
 
-                updateTreatmentVisitMap(cohort.getRowId(), cohort.getTreatmentVisitMap());
+                updateTreatmentVisitMap(rowId, cohort.getTreatmentVisitMap());
             }
         }
 
-        private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)
+        private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMap> treatmentVisitMaps)
         {
-            for (TreatmentVisitMapImpl visitMap : treatmentVisitMaps)
+            for (TreatmentVisitMap visitMap : treatmentVisitMaps)
             {
                 usedTreatmentIds.add(visitMap.getTreatmentId());
             }
@@ -789,7 +786,7 @@ public class StudyDesignController extends SpringActionController
             boolean visitMapsDiffer = existingVisitMaps.size() != treatmentVisitMaps.size();
             if (!visitMapsDiffer)
             {
-                for (TreatmentVisitMapImpl newVisitMap : treatmentVisitMaps)
+                for (TreatmentVisitMap newVisitMap : treatmentVisitMaps)
                 {
                     newVisitMap.setContainer(getContainer());
                     newVisitMap.setCohortId(cohortId);
