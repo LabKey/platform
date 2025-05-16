@@ -80,6 +80,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1111,5 +1112,38 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public boolean isMedia()
     {
         return ExpSchema.SampleTypeCategoryType.media.name().equalsIgnoreCase(getCategory());
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("nameExpression", getNameExpression());
+        if (!StringUtils.isEmpty(getAliquotNameExpression()))
+            map.put("AliquotNameExpression", getAliquotNameExpression());
+        if (!StringUtils.isEmpty(getLabelColor()))
+            map.put("LabelColor", getLabelColor());
+        if (!StringUtils.isEmpty(getMetricUnit()))
+            map.put("MetricUnit", getMetricUnit());
+        String importAliasStr = null;
+        try
+        {
+            importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliasMap());
+        }
+        catch (IOException ignore)
+        {
+        }
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (getAutoLinkTargetContainer() != null)
+            map.put("AutoLinkTargetContainerId", getAutoLinkTargetContainer().getId());
+        if (!StringUtils.isEmpty(getAutoLinkCategory()))
+            map.put("AutoLinkCategory", getAutoLinkCategory());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+
+        return map;
     }
 }

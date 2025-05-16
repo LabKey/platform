@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +49,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -537,6 +539,57 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     {
         _databaseDefaultValue = databaseDefaultValue;
     }
+
+    public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (getName() != null)
+            map.put("Name", getName());
+        if (getLabel() != null)
+            map.put("Label", getLabel());
+        if (null != getPropertyType())
+            map.put("Type", getPropertyType().getXarName());
+        if (getPropertyType().getJdbcType().isText())
+            map.put("Scale", getScale());
+        if (getDescription() != null)
+            map.put("Description", getDescription());
+        if (getFormat() != null)
+            map.put("Format", getFormat());
+        if (getURL() != null)
+            map.put("URL", getURL().toString());
+        if (getPHI() != null)
+            map.put("PHI", getPHI().getLabel());
+        if (getDefaultScale() != null)
+            map.put("DefaultScale", getDefaultScale().getLabel());
+        map.put("Required", isRequired());
+        map.put("Hidden", isHidden());
+        map.put("MvEnabled", isMvEnabled());
+        map.put("Measure", isMeasure());
+        map.put("Dimension", isDimension());
+        map.put("ShownInInsert", isShownInInsertView());
+        map.put("ShownInDetails", isShownInDetailsView());
+        map.put("ShownInUpdate", isShownInUpdateView());
+        map.put("ShownInLookupView", isShownInLookupView());
+        map.put("RecommendedVariable", isRecommendedVariable());
+        map.put("ExcludedFromShifting", isExcludeFromShifting());
+        map.put("Scannable", isScannable());
+        if (getDerivationDataScope() != null)
+            map.put("DerivationDataScope", getDerivationDataScope());
+        String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAliases", importAliasStr);
+        if (getDefaultValueTypeEnum() != null)
+            map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
+        if (getLookup() != null)
+            map.put("Lookup", getLookup().toJSONString());
+        if (validatorStr != null)
+            map.put("Validator", validatorStr);
+        if (conditionalFormatStr != null)
+            map.put("ConditionalFormat", conditionalFormatStr);
+
+        return map;
+    }
+
 }
 
 

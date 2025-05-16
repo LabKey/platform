@@ -2824,6 +2824,30 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (!StringUtils.isEmpty(getKeyPropertyName()))
+            map.put("KeyPropertyName", getKeyPropertyName());
+        if (!StringUtils.isEmpty(getVisitDatePropertyName()))
+            map.put("VisitDateColumnName", getVisitDatePropertyName());
+        if (!StringUtils.isEmpty(getTag()))
+            map.put("Tag", getTag());
+        map.put("KeyPropertyManaged", getKeyManagementType() != Dataset.KeyManagementType.None);
+        map.put("IsDemographicData", isDemographicData());
+        map.put("IsUseTimeKeyField", getUseTimeKeyField());
+        if (getCohortId() != null)
+            map.put("CohortId", getCohortId());
+
+        return map;
+    }
     public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
     {
         private final String _name;

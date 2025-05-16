@@ -89,7 +89,7 @@ public interface Domain extends IPropertyType
     }
     void save(User user) throws ChangePropertyDescriptorException;
     void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException;
-    void save(User user, @Nullable String auditComment, @Nullable String auditUserComment) throws ChangePropertyDescriptorException;
+    void save(User user, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap) throws ChangePropertyDescriptorException;
 
     /** Returns true if this domain has not yet been saved. */
     boolean isNew();

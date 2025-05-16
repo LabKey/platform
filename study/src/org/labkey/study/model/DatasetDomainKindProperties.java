@@ -1,10 +1,14 @@
 package org.labkey.study.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class DatasetDomainKindProperties implements Cloneable
 {
@@ -329,5 +333,30 @@ public class DatasetDomainKindProperties implements Cloneable
     public void setStrictFieldValidation(boolean strictFieldValidation)
     {
         _strictFieldValidation = strictFieldValidation;
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (!StringUtils.isEmpty(getKeyPropertyName()))
+            map.put("KeyPropertyName", getKeyPropertyName());
+        if (!StringUtils.isEmpty(getVisitDatePropertyName()))
+            map.put("VisitDateColumnName", getVisitDatePropertyName());
+        if (!StringUtils.isEmpty(getTag()))
+            map.put("Tag", getTag());
+        map.put("KeyPropertyManaged", isKeyPropertyManaged());
+        map.put("IsDemographicData", isDemographicData());
+        map.put("IsUseTimeKeyField", isUseTimeKeyField());
+        if (getCohortId() != null)
+            map.put("CohortId", getCohortId());
+
+        return map;
     }
 }

@@ -383,10 +383,10 @@ public class ConditionalFormat extends GWTConditionalFormat
         return getFilter() + ": " + getCssStyle();
     }
 
-    public static String toStringVal(List<? extends GWTConditionalFormat> formats)
+    public static @Nullable String toStringVal(List<? extends GWTConditionalFormat> formats)
     {
         if (formats == null || formats.isEmpty())
-            return "<none>";
+            return null;
 
         List<String> strings = new ArrayList<>();
         formats.forEach(format -> {

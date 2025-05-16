@@ -7966,12 +7966,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dc,
                                         @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
                                         GWTDomain<? extends GWTPropertyDescriptor> update,
                                         @Nullable String auditUserComment)
     {
+        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+
+        Map<String, Object> oldProps = dataClass.getAuditRecordMap();
+        Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
+
         ValidationException errors;
         StringBuilder changeDetails = new StringBuilder();
 
@@ -7980,10 +7985,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         boolean hasNameChange = false;
         String oldDataClassName = dataClass.getName();
         String newName = null;
+
+        oldProps.put("Name", oldDataClassName);
+        newProps.put("Name", oldDataClassName); // to be updated by options
+        oldProps.put("Description", dataClass.getDescription());
+        newProps.put("Description", dataClass.getDescription()); // to be updated by options
+
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
             newName = StringUtils.trimToNull(options.getName());
+            newProps.put("Name", newName);
             if (!oldDataClassName.equals(newName))
             {
                 validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
@@ -7991,13 +8003,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataClass.setName(newName);
                 changeDetails.append("The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.");
             }
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", dataClass.getDescription(), options.getDescription()));
+            newProps.put("Description", options.getDescription());
             dataClass.setDescription(options.getDescription());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("NameExpression", dataClass.getNameExpression(), options.getNameExpression()));
             dataClass.setNameExpression(options.getNameExpression());
-            changeDetails.append(DomainUtil.getPropChangeMsg("SampleType", dataClass.getSampleType() == null ? null : dataClass.getSampleType().getRowId(), options.getSampleType() == null ? null : options.getSampleType()));
             dataClass.setSampleType(options.getSampleType());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Category", dataClass.getCategory(), options.getCategory()));
             dataClass.setCategory(options.getCategory());
             Map<String, Map<String, Object>> newAliases = options.getImportAliases();
             if (newAliases != null && !newAliases.isEmpty())
@@ -8014,18 +8023,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     throw new RuntimeException(e);
                 }
             }
-            String oldImportAliasStr = null;
-            try
-            {
-                oldImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(dataClass.getImportAliasMap());
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
             dataClass.setImportAliasMap(newAliases);
-            String newImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(newAliases);
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasStr, newImportAliasStr));
 
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
                 throw new ApiUsageException(c.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -8041,9 +8039,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
 
             if (options != null && options.getExcludedContainerIds() != null)
-                changeDetails.append(ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u));
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
+            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 
@@ -8875,12 +8877,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     @Override
     @NotNull
-    public String ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    public Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
     {
         Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
 
         if (excludedContainerIds == null)
-            return DomainUtil.getCollectionPropChangeMsg("ContainerExclusions", previousExclusions, null);
+            return new Pair<>(previousExclusions, null);
 
         Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
 
@@ -8908,10 +8910,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
 
-        if (!toAdd.isEmpty() || !toRemove.isEmpty())
-            return DomainUtil.getCollectionPropChangeMsg("ContainerExclusions", previousExclusions, updatedExclusions);
-
-        return "";
+        return new Pair<>(previousExclusions, updatedExclusions);
     }
 
     @Override

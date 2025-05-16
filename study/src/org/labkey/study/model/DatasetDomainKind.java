@@ -647,12 +647,19 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     private @NotNull ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                       @Nullable DatasetDefinition oldDef, DatasetDomainKindProperties datasetPropertiesUpdate, Container container, User user, String userComment)
+                                                       @Nullable DatasetDefinition oldDef, @Nullable DatasetDomainKindProperties datasetPropertiesUpdate, Container container, User user, String userComment)
     {
         StringBuilder changeDetails = new StringBuilder();
         boolean hasNameChange = false;
+        Map<String, Object> oldProps = null;
+        Map<String, Object> newProps = datasetPropertiesUpdate != null ? datasetPropertiesUpdate.getAuditRecordMap() : null;
+
         if (oldDef != null)
         {
+            oldProps = oldDef.getAuditRecordMap();
+            if (newProps == null)
+                newProps = oldProps; // no update
+
             hasNameChange = !datasetPropertiesUpdate.getName().equals(oldDef.getName());
             if (hasNameChange)
                 changeDetails.append("The name of the dataset '" + oldDef.getName() + "' was changed to '" + datasetPropertiesUpdate.getName() + "'.");
@@ -669,7 +676,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
 
         ValidationException exception = new ValidationException();
-        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), userComment));
+        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), userComment, oldProps, newProps));
         return exception;
     }
 
@@ -734,7 +741,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings, String userComment)
+                                                     @Nullable DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings, String userComment)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
         StudyImpl study = StudyManager.getInstance().getStudy(container);

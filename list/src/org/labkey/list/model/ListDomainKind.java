@@ -517,6 +517,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
 
             //update list properties
+            Map<String, Object> oldProps = null;
+            Map<String, Object> newProps = null;
             if (null != listProperties)
             {
                 if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId())
@@ -524,14 +526,18 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 if (!original.getDomainURI().equals(update.getDomainURI()))
                     return exception.addGlobalError("domainURI mismatch between old and new domain");
 
-                changeDetails.append(updateListProperties(container, user, listDefinition.getListId(), listProperties));
+                Pair<Map<String, Object>, Map<String, Object>> updatedProps = updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                oldProps = updatedProps.first;
+                newProps = updatedProps.second;
             }
             // Issue 45042: Allow for the list description to be set via the save domain API calls
             else if (update.getDescription() != null)
             {
                 listProperties = getListProperties(container, user, listDefinition.getListId());
                 listProperties.setDescription(update.getDescription());
-                changeDetails.append(updateListProperties(container, user, listDefinition.getListId(), listProperties));
+                Pair<Map<String, Object>, Map<String, Object>> updatedProps = updateListProperties(container, user, listDefinition.getListId(), listProperties);
+                oldProps = updatedProps.first;
+                newProps = updatedProps.second;
             }
 
             //update domain design properties
@@ -576,7 +582,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
 
                 //update domain properties
-                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment));
+                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps));
 
                 QueryService.get().saveCalculatedFieldsMetadata(ListQuerySchema.NAME, update.getQueryName(), hasNameChange ? update.getName() : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), user, container);
             }
@@ -611,66 +617,47 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
     }
 
-    private String updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    private Pair<Map<String, Object>, Map<String, Object>> updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
     {
         ListDomainKindProperties existingListProps = getListProperties(container, user, listId);
 
+        Map<String, Object> oldProps = existingListProps == null ? null : existingListProps.getAuditRecordMap();
+        Map<String, Object> newProps = listProperties == null ? oldProps : listProperties.getAuditRecordMap();
         //merge existing and new properties
-        Pair<ListDomainKindProperties, String> updatedListProps = updateListProperties(existingListProps, listProperties);
+        ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
 
-        ListManager.get().update(user, container, updatedListProps.first);
+        ListManager.get().update(user, container, updatedListProps);
 
-        return updatedListProps.second;
+        return new Pair<>(oldProps, newProps);
     }
 
     //updates list properties except listId, domainId, keyName, keyType, and lastIndexed
-    private Pair<ListDomainKindProperties, String> updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
+    private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
-        StringBuilder changeDetails = new StringBuilder();
 
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
         if (null != newListProps.getName())
-        {
             updatedListProps.setName(newListProps.getName().trim());
-            // skip changeDetails for Name since it was previously explicitly added
-        }
 
-        changeDetails.append(DomainUtil.getPropChangeMsg("TitleColumn", existingListProps.getTitleColumn(), newListProps.getTitleColumn()));
         updatedListProps.setTitleColumn(newListProps.getTitleColumn());
-        changeDetails.append(DomainUtil.getPropChangeMsg("Description", existingListProps.getDescription(), newListProps.getDescription()));
         updatedListProps.setDescription(newListProps.getDescription());
-        changeDetails.append(DomainUtil.getPropChangeMsg("AllowDelete", existingListProps.isAllowDelete(), newListProps.isAllowDelete()));
         updatedListProps.setAllowDelete(newListProps.isAllowDelete());
-        changeDetails.append(DomainUtil.getPropChangeMsg("AllowUpload", existingListProps.isAllowUpload(), newListProps.isAllowUpload()));
         updatedListProps.setAllowUpload(newListProps.isAllowUpload());
-        changeDetails.append(DomainUtil.getPropChangeMsg("AllowExport", existingListProps.isAllowExport(), newListProps.isAllowExport()));
         updatedListProps.setAllowExport(newListProps.isAllowExport());
-        changeDetails.append(DomainUtil.getPropChangeMsg("DiscussionSetting", existingListProps.getDiscussionSetting(), newListProps.getDiscussionSetting()));
         updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
-        changeDetails.append(DomainUtil.getPropChangeMsg("Category", existingListProps.getCategory(), newListProps.getCategory()));
         updatedListProps.setCategory(newListProps.getCategory());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EntireListTitleTemplate", existingListProps.getEntireListTitleTemplate(), newListProps.getEntireListTitleTemplate()));
         updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EntireListIndexSetting", existingListProps.getEntireListIndexSetting(), newListProps.getEntireListIndexSetting()));
         updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EntireListBodySetting", existingListProps.getEntireListBodySetting(), newListProps.getEntireListBodySetting()));
         updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EachItemTitleTemplate", existingListProps.getEachItemTitleTemplate(), newListProps.getEachItemTitleTemplate()));
         updatedListProps.setEachItemTitleTemplate(newListProps.getEachItemTitleTemplate());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EachItemBodySetting", existingListProps.getEachItemBodySetting(), newListProps.getEachItemBodySetting()));
         updatedListProps.setEachItemBodySetting(newListProps.getEachItemBodySetting());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EntireListIndex", existingListProps.isEntireListIndex(), newListProps.isEntireListIndex()));
         updatedListProps.setEntireListIndex(newListProps.isEntireListIndex());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EntireListBodyTemplate", existingListProps.getEntireListBodyTemplate(), newListProps.getEntireListBodyTemplate()));
         updatedListProps.setEntireListBodyTemplate(newListProps.getEntireListBodyTemplate());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EachItemIndex", existingListProps.isEachItemIndex(), newListProps.isEachItemIndex()));
         updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
-        changeDetails.append(DomainUtil.getPropChangeMsg("EachItemBodyTemplate", existingListProps.getEachItemBodyTemplate(), newListProps.getEachItemBodyTemplate()));
         updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
-        changeDetails.append(DomainUtil.getPropChangeMsg("FileAttachmentIndex", existingListProps.isFileAttachmentIndex(), newListProps.isFileAttachmentIndex()));
         updatedListProps.setFileAttachmentIndex(newListProps.isFileAttachmentIndex());
 
-        return new Pair<>(updatedListProps, changeDetails.toString());
+        return updatedListProps;
     }
 
     private GWTPropertyDescriptor findField(String name, List<? extends GWTPropertyDescriptor> fields)

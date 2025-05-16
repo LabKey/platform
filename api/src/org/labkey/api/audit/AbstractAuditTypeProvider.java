@@ -16,6 +16,7 @@
 package org.labkey.api.audit;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.data.DataMapColumn;
 import org.labkey.api.audit.data.DataMapDiffColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
@@ -394,7 +395,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    public static String encodeForDataMap(Container c, Map<String, ?> properties)
+    public static String encodeForDataMap(@Nullable Container c, Map<String, ?> properties)
     {
         if (properties == null) return null;
 

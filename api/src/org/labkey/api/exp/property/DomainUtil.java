@@ -93,6 +93,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -747,7 +748,7 @@ public class DomainUtil
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment)
     {
-        return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null);
+        return updateDomainDescriptor(orig, update, container, user, updateDomainName, auditComment, null, null, null);
     }
 
     public static String getStringPropChangeMsg(String propertyName, String oldProp, String newProp)
@@ -805,7 +806,8 @@ public class DomainUtil
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user,
+                                                             boolean updateDomainName, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldProps, @Nullable Map<String, Object> newProps)
     {
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -852,7 +854,20 @@ public class DomainUtil
         changeDetails.append(getCollectionPropChangeMsg("DisabledSystemFields",d.getDisabledSystemFields(), disabledSystemFieldsUpdate));
         d.setDisabledSystemFields(disabledSystemFieldsUpdate);
 
-        changeDetails.append(GWTIndex.getChangeMsg(orig.getIndices(), update.getIndices()));
+        List<String> oldIndices = GWTIndex.toStringVals(orig.getIndices());
+        if (oldIndices != null)
+        {
+            if (oldProps == null)
+                oldProps = new LinkedHashMap<>();
+             oldProps.put("Indices", oldIndices);
+        }
+        List<String> newIndices = GWTIndex.toStringVals(update.getIndices());
+        if (newIndices != null)
+        {
+            if (newProps == null)
+                newProps = new LinkedHashMap<>();
+            newProps.put("Indices", newIndices);
+        }
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
@@ -975,7 +990,7 @@ public class DomainUtil
 
                 String changeDetail = changeDetails.toString();
                 String extraAuditComment = (StringUtils.isEmpty(auditComment) ? "" : auditComment + " ") + changeDetail;
-                d.save(user, extraAuditComment, auditUserComment);
+                d.save(user, extraAuditComment, auditUserComment, oldProps, newProps);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -1262,18 +1277,15 @@ public class DomainUtil
         for (GWTPropertyValidator v : newPd.getPropertyValidators())
         {
             if (v.getRowId() != 0)
-            {
-                hasChange = true;
                 newProps.put(v.getRowId(), v);
-            }
             else
             {
                 Lsid lsid = DefaultPropertyValidator.createValidatorURI(v.getType());
                 IPropertyValidator pv = PropertyService.get().createValidator(lsid.toString());
 
-                boolean change = _copyValidator(pv, v);
-                hasChange = hasChange || change;
+                _copyValidator(pv, v);
                 dp.addValidator(pv);
+                hasChange = true;
             }
 
             if (v.getExtraProperties() != null && v.getExtraProperties().containsKey("valueUpdates"))

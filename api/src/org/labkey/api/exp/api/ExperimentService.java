@@ -1058,7 +1058,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * @return Details about what's changed, to be used in audit log (old -> new)
      */
-    @NotNull String ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+    @NotNull Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
 
     void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user);
 

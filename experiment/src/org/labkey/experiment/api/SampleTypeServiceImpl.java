@@ -1007,8 +1007,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         StringBuilder changeDetails = new StringBuilder();
 
+        Map<String, Object> oldProps = st.getAuditRecordMap();
+        Map<String, Object> newProps = options != null ? options.getAuditRecordMap() : st.getAuditRecordMap() /* no update */;
+
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
+        oldProps.put("Name", oldSampleTypeName);
+        newProps.put("Name", newName);
+
         boolean hasNameChange = false;
         if (!oldSampleTypeName.equals(newName))
         {
@@ -1020,11 +1026,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
+        oldProps.put("Description", description);
+        newProps.put("Description", newDescription);
         if (description == null || !description.equals(newDescription))
-        {
             st.setDescription(newDescription);
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("Description", description, newDescription));
-        }
 
         boolean hasMetricUnitChanged = false;
 
@@ -1034,7 +1039,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String oldPattern = st.getNameExpression();
             if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
             {
-                changeDetails.append(DomainUtil.getStringPropChangeMsg("NameExpression", oldPattern, sampleIdPattern));
                 st.setNameExpression(sampleIdPattern);
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                     throw new ApiUsageException(container.hasProductFolders() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
@@ -1043,18 +1047,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
             String oldAliquotPattern = st.getAliquotNameExpression();
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
-            {
-                changeDetails.append(DomainUtil.getStringPropChangeMsg("AliquotNameExpression", oldAliquotPattern, aliquotIdPattern));
                 st.setAliquotNameExpression(aliquotIdPattern);
-            }
 
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("LabelColor", st.getLabelColor(), options.getLabelColor()));
             st.setLabelColor(options.getLabelColor());
             String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
             String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
-
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("MetricUnit", oldMetricUnit, newMetricUnit));
-
             if (!Objects.equals(oldMetricUnit, newMetricUnit))
                 hasMetricUnitChanged = true;
 
@@ -1077,22 +1074,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
-            String oldImportAliasStr = null;
-            try
-            {
-                oldImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(st.getImportAliasMap());
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
             st.setImportAliasMap(options.getImportAliases());
-            String newImportAliasStr = ExperimentJSONConverter.getImportAliasStringVal(options.getImportAliases());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("ImportAlias", oldImportAliasStr, newImportAliasStr));
             String targetContainerId = StringUtils.trimToNull(options.getAutoLinkTargetContainerId());
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("AutoLinkTargetContainerId", st.getAutoLinkTargetContainer() == null ? null : st.getAutoLinkTargetContainer().getId(), options.getAutoLinkTargetContainerId()));
             st.setAutoLinkTargetContainer(targetContainerId != null ? ContainerManager.getForId(targetContainerId) : null);
-            changeDetails.append(DomainUtil.getStringPropChangeMsg("AutoLinkCategory", st.getAutoLinkCategory(), options.getAutoLinkCategory()));
             st.setAutoLinkCategory(options.getAutoLinkCategory());
             if (options.getCategory() != null) // update sample type category is currently not supported
                 st.setCategory(options.getCategory());
@@ -1105,15 +1089,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
 
             if (options != null && options.getExcludedContainerIds() != null)
-                changeDetails.append(ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user));
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
+            }
             if (options != null && options.getExcludedDashboardContainerIds() != null)
             {
-                String change = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
-                if (!StringUtils.isEmpty(change))
-                    changeDetails.append("Dashboard ").append(change);
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
+                oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
+                newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             if (!errors.hasErrors())
             {

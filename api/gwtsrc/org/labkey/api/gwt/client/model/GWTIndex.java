@@ -89,9 +89,4 @@ public class GWTIndex implements IsSerializable, Serializable
         return indices.stream().map(GWTIndex::toStringVal).toList();
     }
 
-    public static String getChangeMsg(@Nullable List<GWTIndex> oldIndices, List<GWTIndex> newIndices)
-    {
-        return DomainUtil.getCollectionPropChangeMsg("Index", toStringVals(oldIndices), toStringVals(newIndices));
-    }
-
 }
