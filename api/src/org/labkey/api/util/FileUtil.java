@@ -326,7 +326,7 @@ public class FileUtil
         {
             String badExtension = checkExtension(s, AppProps.getInstance());
             if (badExtension != null)
-                return "This file type [" + badExtension + "] is not allowed.";
+                return "This file type [" + badExtension + "] is not allowed. Accepted file extensions: " + AppProps.getInstance().getAllowedExtensions();
         }
         return null;
     }

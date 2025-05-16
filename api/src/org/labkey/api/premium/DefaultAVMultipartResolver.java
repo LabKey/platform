@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartException;
@@ -33,7 +34,7 @@ public class DefaultAVMultipartResolver extends StandardServletMultipartResolver
                     }
                     catch (IOException e)
                     {
-                        throw new UnauthorizedException(e.getMessage());
+                        throw new InvalidFileExtensionException(e.getMessage());
                     }
                 }
             }
@@ -48,5 +49,13 @@ public class DefaultAVMultipartResolver extends StandardServletMultipartResolver
     protected void validate(Part part)
     {
         //do nothing by default, but give subclasses a chance to override
+    }
+
+    public static class InvalidFileExtensionException extends ApiUsageException
+    {
+        public InvalidFileExtensionException(String msg)
+        {
+            super(msg);
+        }
     }
 }
