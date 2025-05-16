@@ -492,20 +492,24 @@ public class ExpDataIterators
         private final Container _container;
         private final User _user;
         private final TableInfo _expAliasTable;
+        private final boolean _isSample;
+        private final ExpObject _dataType;
 
-        public AliasDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user, TableInfo expTable)
+        public AliasDataIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, User user, TableInfo expTable, ExpObject dataType, boolean isSample)
         {
             _in = in;
             _container = container;
             _user = user;
             _expAliasTable = expTable;
+            _isSample = isSample;
+            _dataType = dataType;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AliasDataIterator(pre, context, _container, _user, _expAliasTable));
+            return LoggingDataIterator.wrap(new AliasDataIterator(pre, context, _container, _user, _expAliasTable, _dataType, _isSample));
         }
     }
 
@@ -513,25 +517,42 @@ public class ExpDataIterators
     {
         // For some reason I don't quite understand we don't want to pass through a column called "alias" so we rename it to ALIASCOLUMNALIAS
         final DataIteratorContext _context;
-        final Supplier<Object> _lsidCol;
         final Supplier<Object> _aliasCol;
+        final Supplier<Object> _lsidCol;
+        final Supplier<Object> _nameCol;
         final Container _container;
         final User _user;
         Map<String, Object> _lsidAliasMap = new HashMap<>();
         private final TableInfo _expAliasTable;
+        private final ExpDataClass _dataClass;
+        private final ExpSampleType _sampleType;
+        private final boolean _isSample;
 
-        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expTable)
+        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expTable, ExpObject dataType, boolean isSample)
         {
             super(di);
             _context = context;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid")==null ? null : di.getSupplier(map.get("lsid"));
-            _aliasCol = map.get(ALIASCOLUMNALIAS)==null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
+            _aliasCol = map.get(ALIASCOLUMNALIAS) == null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
+            _lsidCol = map.get("lsid") == null ? null : di.getSupplier(map.get("lsid"));
+            _nameCol = map.get("name") == null ? null : di.getSupplier(map.get("name"));
 
             _container = container;
             _user = user;
             _expAliasTable = expTable;
+            _isSample = isSample;
+
+            if (isSample)
+            {
+                _sampleType = (ExpSampleType) dataType;
+                _dataClass = null;
+            }
+            else
+            {
+                _sampleType = null;
+                _dataClass = (ExpDataClass) dataType;
+            }
         }
 
         private BatchValidationException getErrors()
@@ -568,14 +589,36 @@ public class ExpDataIterators
             }
 
             // For each iteration, collect the lsid and alias col values.
-            if (_lsidCol != null && _aliasCol != null)
+            if (_aliasCol != null)
             {
-                Object lsidValue = _lsidCol.get();
-                Object aliasValue = _aliasCol.get();
-
-                if (aliasValue != null && lsidValue instanceof String)
+                if (_context.getInsertOption() == QueryUpdateService.InsertOption.MERGE && _nameCol != null)
                 {
-                    _lsidAliasMap.put((String) lsidValue, aliasValue);
+                    Object nameValue = _nameCol.get();
+                    if (nameValue instanceof String name)
+                    {
+                        ExpObject obj;
+                        if (_isSample)
+                            obj = _sampleType.getSample(_container, name);
+                        else
+                            obj = _dataClass.getData(_container, name);
+
+                        if (obj != null)
+                        {
+                            String lsid = obj.getLSID();
+                            if (lsid != null && !lsid.isEmpty())
+                                _lsidAliasMap.put(lsid, _aliasCol.get());
+                        }
+                    }
+                }
+                else if (_lsidCol != null)
+                {
+                    Object lsidValue = _lsidCol.get();
+                    Object aliasValue = _aliasCol.get();
+
+                    if (aliasValue != null && lsidValue instanceof String lsidString)
+                    {
+                        _lsidAliasMap.put(lsidString, aliasValue);
+                    }
                 }
             }
             return true;
