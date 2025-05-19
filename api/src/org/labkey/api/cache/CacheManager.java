@@ -235,7 +235,7 @@ public class CacheManager
 
                     if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
                     {
-                        LOG.debug("{}: {} field {}: {}", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), fieldPath, field.getType().getName());
                     }
                     else
                     {
@@ -247,11 +247,11 @@ public class CacheManager
                         }
                         catch (InaccessibleObjectException e)
                         {
-                            LOG.debug("Inaccessible member {}", fieldPath);
+                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), fieldPath, field.getType().getName());
                         }
                         catch (IllegalAccessException e)
                         {
-                            LOG.debug("Exception attempting to access {}", fieldPath, e);
+                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), fieldPath, field.getType().getName(), e);
                         }
                     }
                 }
