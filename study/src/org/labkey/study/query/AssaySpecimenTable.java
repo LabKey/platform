@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.study.StudySchema;
 
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
@@ -44,7 +45,7 @@ public class AssaySpecimenTable extends BaseStudyTable
 
     public AssaySpecimenTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimen(), cf);
+        super(schema, StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), cf);
         setName(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
         addWrapColumn(_rootTable.getColumn("RowId"));

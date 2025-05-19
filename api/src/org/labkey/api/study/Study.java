@@ -19,7 +19,6 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
 
@@ -57,10 +56,6 @@ public interface Study extends StudyEntity
     List<? extends Location> getLocations();
 
     Collection<? extends Cohort> getCohorts(User user);
-
-    Collection<? extends AssaySpecimenConfig> getAssaySpecimenConfigs();
-
-    List<? extends Visit> getVisitsForAssaySchedule();
 
     List<? extends ParticipantCategory> getParticipantCategories(User user);
 

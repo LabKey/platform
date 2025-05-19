@@ -45,6 +45,7 @@ import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_
 public class StudyDesignManager
 {
     private static final StudyDesignManager _instance = new StudyDesignManager();
+    public static final String MODULE_NAME = "StudyDesign";
 
     public static StudyDesignManager get()
     {
@@ -53,7 +54,7 @@ public class StudyDesignManager
 
     public boolean isModuleActive(Container c)
     {
-        Module studyDesignModule = ModuleLoader.getInstance().getModule("StudyDesign");
+        Module studyDesignModule = ModuleLoader.getInstance().getModule(MODULE_NAME);
         return null != studyDesignModule && c.getActiveModules().contains(studyDesignModule);
     }
 

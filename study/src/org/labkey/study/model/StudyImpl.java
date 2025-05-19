@@ -292,19 +292,6 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     }
 
     @Override
-    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
-    {
-        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
-    }
-
-    @Override
-    @Transient
-    public List<VisitImpl> getVisitsForAssaySchedule()
-    {
-        return StudyManager.getInstance().getVisitsForAssaySchedule(getContainer());
-    }
-
-    @Override
     public List<ParticipantCategoryImpl> getParticipantCategories(User user)
     {
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);

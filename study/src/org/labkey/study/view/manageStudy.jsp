@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
@@ -27,17 +26,16 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.api.study.StudyUtils" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignManager" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignService" %>
 <%@ page import="org.labkey.api.studydesign.StudyDesignUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -64,13 +62,9 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.StudySnapshot" %>
-<%@ page import="java.lang.Override" %>
-<%@ page import="java.lang.String" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.studydesign.StudyDesignManager" %>
-<%@ page import="org.labkey.api.studydesign.StudyDesignService" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -279,10 +273,9 @@
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Assay Schedule</td>
-                        <td class="lk-study-prop-desc">This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
+                        <td class="lk-study-prop-desc">This study defines <%= StudyDesignService.get().getAssaySpecimenConfigs(getContainer()).size() %> assay configurations</td>
                         <%
-                            boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
-                            ActionURL assayScheduleURL = urlProvider(StudyDesignUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule)
+                            ActionURL assayScheduleURL = urlProvider(StudyDesignUrls.class).getManageAssayScheduleURL(getContainer(), false)
                                 .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Assay Schedule", assayScheduleURL) %></td>

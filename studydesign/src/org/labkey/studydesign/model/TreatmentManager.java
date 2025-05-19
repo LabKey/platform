@@ -37,6 +37,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -44,6 +45,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.study.model.VisitService;
+import org.labkey.api.studydesign.StudyDesignService;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.test.TestWhen;
@@ -392,7 +394,6 @@ public class TreatmentManager
     {
         TableInfo assaySpecimenTable = QueryService.get().getUserSchema(user, container, StudyDesignQuerySchema.STUDY_SCHEMA_NAME).getTable(ASSAY_SPECIMEN_TABLE_NAME);
         Integer ret = saveStudyDesignRow(container, user, assaySpecimenTable, assaySpecimen.serialize(), assaySpecimen.isNew() ? null : assaySpecimen.getRowId(), "RowId", true);
-        StudyManager.getInstance().clearAssaySpecimenCache(container);
         return ret;
     }
 
@@ -408,7 +409,7 @@ public class TreatmentManager
         if (filterRowIds != null && !filterRowIds.isEmpty())
             filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter, new Sort("RowId")).getArrayList(AssaySpecimenConfigImpl.class);
+        return new TableSelector(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), filter, new Sort("RowId")).getArrayList(AssaySpecimenConfigImpl.class);
     }
 
     public List<AssaySpecimenVisitImpl> getFilteredAssaySpecimenVisits(Container container, int assaySpecimenId, List<Integer> filterRowIds)
@@ -418,7 +419,7 @@ public class TreatmentManager
         if (filterRowIds != null && !filterRowIds.isEmpty())
             filter.addCondition(FieldKey.fromParts("RowId"), filterRowIds, CompareType.NOT_IN);
 
-        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter, new Sort("RowId")).getArrayList(AssaySpecimenVisitImpl.class);
+        return new TableSelector(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), filter, new Sort("RowId")).getArrayList(AssaySpecimenVisitImpl.class);
     }
 
     public Integer saveStudyDesignRow(Container container, User user, TableInfo tableInfo, Map<String, Object> row, Integer key, String pkColName) throws Exception
@@ -544,40 +545,60 @@ public class TreatmentManager
         // first delete any usages of the AssaySpecimenId in the AssaySpecimenVisit table
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
 
         // delete the AssaySpecimen record by RowId
         filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimen(), filter);
-        StudyManager.getInstance().clearAssaySpecimenCache(container);
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), filter);
     }
 
     public void deleteAssaySpecimenVisit(Container container, User user, int rowId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
     }
 
     public String getStudyDesignRouteLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignRoutes(), name);
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignRoutes(), name);
     }
 
     public String getStudyDesignImmunogenTypeLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignImmunogenTypes(), name);
     }
 
     public String getStudyDesignGeneLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignGenes(), name);
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignGenes(), name);
     }
 
     public String getStudyDesignSubTypeLabelByName(Container container, String name)
     {
-        return StudyManager.getInstance().getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignSubTypes(), name);
+    }
+
+    public String getStudyDesignLabLabelByName(Container container, String name)
+    {
+        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), name);
+    }
+
+    public String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
+    {
+        // first look in the current container for the StudyDesign record, then look for it at the project level
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+        String label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
+        if (label == null && !container.isProject())
+        {
+            filter = SimpleFilter.createContainerFilter(container.getProject());
+            filter.addCondition(FieldKey.fromParts("Name"), name);
+            label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
+        }
+
+        return label;
     }
 
     public void updateTreatmentProducts(int treatmentId, List<TreatmentProductImpl> treatmentProducts, Container container, User user) throws Exception
@@ -597,6 +618,44 @@ public class TreatmentManager
         // delete any other treatment product mappings, not included in the insert/update list, for the given treatmentId
         for (TreatmentProductImpl treatmentProduct : TreatmentManager.getInstance().getFilteredTreatmentProductMappings(container, user, treatmentId, treatmentProductRowIds))
             TreatmentManager.getInstance().deleteTreatmentProductMap(container, user, Collections.singletonList(treatmentProduct.getRowId()));
+    }
+
+    public List<Integer> getAssaySpecimenVisitIds(Container container, AssaySpecimenConfig assaySpecimenConfig)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), assaySpecimenConfig.getRowId());
+
+        return new TableSelector(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(),
+                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
+    }
+
+    public List<? extends Visit> getVisitsForAssaySchedule(Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        List<Integer> visitRowIds = new TableSelector(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(),
+                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
+
+        return getSortedVisitsByRowIds(container, visitRowIds);
+    }
+
+    public List<? extends Visit> getSortedVisitsByRowIds(Container container, List<Integer> visitRowIds)
+    {
+        List<Visit> visits = new ArrayList<>();
+        Study study = StudyService.get().getStudy(container);
+        if (study != null)
+        {
+            for (Visit v : study.getVisits(Visit.Order.DISPLAY))
+            {
+                if (visitRowIds.contains(v.getId()))
+                    visits.add(v);
+            }
+        }
+        return visits;
+    }
+
+    public AssaySpecimenConfigImpl addAssaySpecimenConfig(User user, AssaySpecimenConfigImpl config)
+    {
+        return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), config);
     }
 
     /****
@@ -905,6 +964,164 @@ public class TreatmentManager
                 assertEquals("Unexpected antigen lookup value", _lookups.get("Gene"), row.getGene());
                 assertEquals("Unexpected antigen lookup value", _lookups.get("SubType"), row.getSubType());
             }
+        }
+
+        private void createStudy()
+        {
+            _context = TestContext.get();
+            Container junit = JunitUtil.getTestContainer();
+
+            String name = GUID.makeHash();
+            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
+            _junitStudy = StudyService.get().createStudy(c, _context.getUser(), "Junit Study", TimepointType.VISIT, true);
+        }
+
+        private void tearDown()
+        {
+            if (null != _junitStudy)
+            {
+                assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
+            }
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class AssayScheduleTestCase extends Assert
+    {
+        TestContext _context = null;
+        User _user = null;
+        Container _container = null;
+        Study _junitStudy = null;
+
+        Map<String, String> _lookups = new HashMap<>();
+        List<AssaySpecimenConfigImpl> _assays = new ArrayList<>();
+        List<Visit> _visits = new ArrayList<>();
+
+        @Test
+        public void test()
+        {
+            try
+            {
+                createStudy();
+                _user = _context.getUser();
+                _container = _junitStudy.getContainer();
+
+                populateLookupTables();
+                populateAssayConfigurations();
+                populateAssaySchedule();
+
+                verifyAssayConfigurations();
+                verifyAssaySchedule();
+                verifyCleanUpAssayConfigurations();
+            }
+            finally
+            {
+                tearDown();
+            }
+        }
+
+        private void verifyCleanUpAssayConfigurations()
+        {
+            StudyDesignService.get().deleteAssaySpecimenVisits(_container, _visits.get(0).getId());
+            verifyAssayScheduleRowCount(2);
+            assertEquals(1, TreatmentManager.getInstance().getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
+            assertEquals(1, TreatmentManager.getInstance().getVisitsForAssaySchedule(_container).size());
+
+            StudyDesignService.get().deleteAssaySpecimenVisits(_container, _visits.get(1).getId());
+            verifyAssayScheduleRowCount(0);
+            assertEquals(0, TreatmentManager.getInstance().getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
+            assertEquals(0, TreatmentManager.getInstance().getVisitsForAssaySchedule(_container).size());
+        }
+
+        private void verifyAssaySchedule()
+        {
+            verifyAssayScheduleRowCount(4);
+
+            List<? extends Visit> visits = TreatmentManager.getInstance().getVisitsForAssaySchedule(_container);
+            assertEquals("Unexpected assay schedule visit count", 2, visits.size());
+
+            for (AssaySpecimenConfig assay : StudyDesignService.get().getAssaySpecimenConfigs(_container))
+            {
+                List<Integer> visitIds = TreatmentManager.getInstance().getAssaySpecimenVisitIds(_container, assay);
+                for (Visit visit : _visits)
+                    assertTrue("Assay schedule does not contain expected visitId", visitIds.contains(visit.getId()));
+            }
+        }
+
+        private void verifyAssayScheduleRowCount(int expectedCount)
+        {
+            TableSelector selector = new TableSelector(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), SimpleFilter.createContainerFilter(_container), null);
+            assertEquals("Unexpected number of assay schedule visit records", expectedCount, selector.getRowCount());
+        }
+
+        private void verifyAssayConfigurations()
+        {
+            Collection<? extends AssaySpecimenConfig> assays = StudyDesignService.get().getAssaySpecimenConfigs(_container);
+            assertEquals("Unexpected assay configuration count", 2, assays.size());
+
+            for (AssaySpecimenConfig assay : assays)
+            {
+                if (assay instanceof AssaySpecimenConfigImpl assayConfig)
+                {
+                    assertEquals("Unexpected assay configuration lookup value", _lookups.get("Lab"), assayConfig.getLab());
+                    assertEquals("Unexpected assay configuration lookup value", _lookups.get("SampleType"), assayConfig.getSampleType());
+                }
+            }
+        }
+
+        private void populateAssaySchedule()
+        {
+            _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE));
+            _visits.add(VisitService.get().createVisit(_junitStudy, _user, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP));
+            assertEquals(_visits.size(), 2);
+
+            for (AssaySpecimenConfigImpl assay : _assays)
+            {
+                for (Visit visit : _visits)
+                {
+                    AssaySpecimenVisitImpl asv = new AssaySpecimenVisitImpl(_container, assay.getRowId(), visit.getId());
+                    Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), asv);
+                }
+            }
+
+            verifyAssayScheduleRowCount(_assays.size() * _visits.size());
+        }
+
+        private void populateAssayConfigurations()
+        {
+            AssaySpecimenConfigImpl assay1 = new AssaySpecimenConfigImpl(_container, "Assay1", "Assay 1 description");
+            assay1.setLab(_lookups.get("Lab"));
+            assay1.setSampleType(_lookups.get("SampleType"));
+            _assays.add(TreatmentManager.getInstance().addAssaySpecimenConfig(_user, assay1));
+
+            AssaySpecimenConfigImpl assay2 = new AssaySpecimenConfigImpl(_container, "Assay2", "Assay 2 description");
+            assay2.setLab(_lookups.get("Lab"));
+            assay2.setSampleType(_lookups.get("SampleType"));
+            _assays.add(TreatmentManager.getInstance().addAssaySpecimenConfig(_user, assay2));
+
+            assertEquals(2, _assays.size());
+        }
+
+        private void populateLookupTables()
+        {
+            String name, label;
+
+            Map<String, String> data = new HashMap<>();
+            data.put("Container", _container.getId());
+
+            data.put("Name", name = "Test Lab");
+            data.put("Label", label = "Test Lab Label");
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), data);
+            assertEquals("Unexpected study design lookup label", label, TreatmentManager.getInstance().getStudyDesignLabLabelByName(_container, name));
+            assertNull("Unexpected study design lookup label", TreatmentManager.getInstance().getStudyDesignLabLabelByName(_container, "UNK"));
+            _lookups.put("Lab", name);
+
+            data.put("Name", name = "Test Sample Type");
+            data.put("Label", label = "Test Sample Type Label");
+            data.put("PrimaryType", "Test Primary Type");
+            data.put("ShortSampleCode", "TP");
+            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
+            _lookups.put("SampleType", name);
         }
 
         private void createStudy()

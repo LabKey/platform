@@ -17,7 +17,7 @@ public class StudyDesignCohort
     private int _rowId;
     private String _label;
     private Integer _subjectCount;
-    List<TreatmentVisitMap> _treatmentVisitMap = new ArrayList<>();
+    List<TreatmentVisitMapImpl> _treatmentVisitMap = new ArrayList<>();
 
     public StudyDesignCohort()
     {
@@ -60,12 +60,12 @@ public class StudyDesignCohort
         _subjectCount = subjectCount;
     }
 
-    public List<TreatmentVisitMap> getTreatmentVisitMap()
+    public List<TreatmentVisitMapImpl> getTreatmentVisitMap()
     {
         return _treatmentVisitMap;
     }
 
-    public void setTreatmentVisitMap(List<TreatmentVisitMap> treatmentVisitMap)
+    public void setTreatmentVisitMap(List<TreatmentVisitMapImpl> treatmentVisitMap)
     {
         _treatmentVisitMap = treatmentVisitMap;
     }
@@ -82,7 +82,7 @@ public class StudyDesignCohort
         JSONArray visitMapJSON = o.optJSONArray("VisitMap");
         if (visitMapJSON != null)
         {
-            List<TreatmentVisitMap> treatmentVisitMap = new ArrayList<>();
+            List<TreatmentVisitMapImpl> treatmentVisitMap = new ArrayList<>();
             for (JSONObject json : JsonUtil.toJSONObjectList(visitMapJSON))
                 treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(json));
 

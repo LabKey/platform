@@ -18,23 +18,22 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignUrls" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.studydesign.model.ProductImpl" %>
+<%@ page import="org.labkey.studydesign.model.TreatmentImpl" %>
+<%@ page import="org.labkey.studydesign.model.TreatmentManager" %>
+<%@ page import="org.labkey.studydesign.model.TreatmentVisitMap" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.studydesign.StudyDesignUrls" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.Cohort" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.studydesign.model.TreatmentVisitMap" %>
-<%@ page import="org.labkey.studydesign.model.TreatmentManager" %>
-<%@ page import="org.labkey.studydesign.model.TreatmentImpl" %>
-<%@ page import="org.labkey.studydesign.model.ProductImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -64,7 +63,7 @@
 <%
     if (study != null)
     {
-      if (!StudyManager.getInstance().showCohorts(c, user))
+      if (!StudyService.get().showCohorts(c, user))
       {
             %><p>You do not have permissions to see this data.</p><%
       }

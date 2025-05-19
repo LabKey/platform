@@ -68,7 +68,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
@@ -95,6 +94,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
 import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
@@ -489,15 +489,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     .count();
                 metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
 
-                if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-                {
-                    // Count the studies that use products and treatments
-                    MutableInt hasProducts = new MutableInt(0);
-                    MutableInt hasTreatments = new MutableInt(0);
+                // Count the studies that use products and treatments
+                MutableInt hasProducts = new MutableInt(0);
+                MutableInt hasTreatments = new MutableInt(0);
 
-                    allStudies.stream()
-                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                            .forEach(schema->{
+                allStudies.stream()
+                        .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                        .forEach(schema->{
+                            if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
+                            {
                                 TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
                                 if (new TableSelector(products).exists())
                                     hasProducts.increment();
@@ -505,11 +505,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                                 TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
                                 if (new TableSelector(treatments).exists())
                                     hasTreatments.increment();
-                            });
+                            }
+                        });
 
-                    metric.put("studyProducts", hasProducts.intValue());
-                    metric.put("studyTreatments", hasTreatments.intValue());
-                }
+                metric.put("studyProducts", hasProducts.intValue());
+                metric.put("studyTreatments", hasTreatments.intValue());
 
                 return metric;
             });

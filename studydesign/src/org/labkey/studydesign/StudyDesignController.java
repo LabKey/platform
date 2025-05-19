@@ -35,6 +35,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Cohort;
@@ -52,6 +53,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.studydesign.model.AssaySpecimenConfigImpl;
 import org.labkey.studydesign.model.AssaySpecimenVisitImpl;
 import org.labkey.studydesign.model.DoseAndRoute;
 import org.labkey.studydesign.model.ProductAntigenImpl;
@@ -62,7 +64,6 @@ import org.labkey.studydesign.model.StudyTreatmentSchedule;
 import org.labkey.studydesign.model.TreatmentImpl;
 import org.labkey.studydesign.model.TreatmentManager;
 import org.labkey.studydesign.model.TreatmentProductImpl;
-import org.labkey.studydesign.model.TreatmentVisitMap;
 import org.labkey.studydesign.model.TreatmentVisitMapImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -773,9 +774,9 @@ public class StudyDesignController extends SpringActionController
             }
         }
 
-        private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMap> treatmentVisitMaps)
+        private void updateTreatmentVisitMap(int cohortId, List<TreatmentVisitMapImpl> treatmentVisitMaps)
         {
-            for (TreatmentVisitMap visitMap : treatmentVisitMaps)
+            for (TreatmentVisitMapImpl visitMap : treatmentVisitMaps)
             {
                 usedTreatmentIds.add(visitMap.getTreatmentId());
             }
@@ -786,7 +787,7 @@ public class StudyDesignController extends SpringActionController
             boolean visitMapsDiffer = existingVisitMaps.size() != treatmentVisitMaps.size();
             if (!visitMapsDiffer)
             {
-                for (TreatmentVisitMap newVisitMap : treatmentVisitMaps)
+                for (TreatmentVisitMapImpl newVisitMap : treatmentVisitMaps)
                 {
                     newVisitMap.setContainer(getContainer());
                     newVisitMap.setCohortId(cohortId);
@@ -824,13 +825,10 @@ public class StudyDesignController extends SpringActionController
         public ApiResponse execute(AssayPlanForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-
-            StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+            Study study = StudyService.get().getStudy(getContainer());
             if (study != null)
             {
-                study = study.createMutable();
-                study.setAssayPlan(form.getAssayPlan());
-                StudyManager.getInstance().updateStudy(getUser(), study);
+                updateAssayPlan(getUser(), study, form.getAssayPlan());
                 response.put("success", true);
             }
             else
@@ -890,7 +888,7 @@ public class StudyDesignController extends SpringActionController
                 try (DbScope.Transaction transaction = schema.getSchema().getScope().ensureTransaction())
                 {
                     updateAssays(form.getAssays());
-                    updateAssayPlan(study, form.getAssayPlan());
+                    updateAssayPlan(getUser(), study, form.getAssayPlan());
                     transaction.commit();
                 }
 
@@ -939,12 +937,13 @@ public class StudyDesignController extends SpringActionController
             for (AssaySpecimenVisitImpl assaySpecimenVisit : TreatmentManager.getInstance().getFilteredAssaySpecimenVisits(getContainer(), assaySpecimenId, assaySpecimenVisitIds))
                 TreatmentManager.getInstance().deleteAssaySpecimenVisit(getContainer(), getUser(), assaySpecimenVisit.getRowId());
         }
+    }
 
-        private void updateAssayPlan(StudyImpl study, String plan)
+    private void updateAssayPlan(User user, Study study, String assayPlan)
+    {
+        if (study != null)
         {
-            study = study.createMutable();
-            study.setAssayPlan(plan);
-            StudyManager.getInstance().updateStudy(getUser(), study);
+            StudyService.get().updateAssayPlan(user, study, assayPlan);
         }
     }
 }

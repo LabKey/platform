@@ -25,6 +25,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.study.StudySchema;
 
 /**
@@ -35,7 +36,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
 {
     public AssaySpecimenVisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), cf);
+        super(schema, StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), cf);
         setName(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
         addWrapColumn(_rootTable.getColumn("RowId"));
