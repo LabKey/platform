@@ -29,7 +29,6 @@
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.data.LookupResolutionType" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
