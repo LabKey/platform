@@ -1196,6 +1196,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             roleAssignments.put("dataClassDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.DataClassDesignerRole").getObject(Long.class));
             roleAssignments.put("sampleTypeDesignerCount", new SqlSelector(CoreSchema.getInstance().getSchema(), roleCountSql, "org.labkey.experiment.security.SampleTypeDesignerRole").getObject(Long.class));
             results.put("roleAssignments", roleAssignments);
+
+            Map<String, Integer> allowListCounts = new HashMap<>();
+            for (AllowListType type : AllowListType.values())
+            {
+                allowListCounts.put(type.name(), type.getValues().size());
+            }
+            results.put("allowListCounts", allowListCounts);
+
             return results;
         });
 
