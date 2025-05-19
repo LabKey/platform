@@ -339,6 +339,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
                 if (bulkLoaded == null || bulkLoaded.isEmpty() )
                 {
+                    // when the given key (e.g., a rowId value) cannot be assigned to the alternate key value,
+                    // don't attempt to select the value from the database, lest a syntax error result.
+                    // This can happen for system fields like createdBy or modifiedBy that are added to a
+                    // row during the insert or update process already mapped to their primary keys.
                     if (altKeyCol.getJdbcType().getJavaClass().isAssignableFrom(k.getClass()))
                     {
                         TableSelector ts = createSelector(pkCol, altKeyCol, k);
@@ -349,7 +353,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     {
                         vs = Collections.emptyList();
                     }
-
                 }
                 else
                 {
@@ -931,9 +934,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         /** Every incoming value must have an entry in the map. */
         Error,
 
-        /** Incoming values without a map entry will be replaced with null. */
-        Null,
-
         /** Incoming values without a map entry will pass through. */
         OriginalValue
     }
@@ -1018,13 +1018,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             value = convertWithPrimaryColumn(o);
             if (value == null)
             {
-                return switch (_missing)
-                {
-                    case Null -> null;
-                    case OriginalValue -> o;
-                    default ->
-                        throw new ConversionExceptionWithMessage("Value '" + o + "' not found for field " + _toCol.getName() + " in the current context.");
-                };
+                if (_missing == RemapMissingBehavior.OriginalValue)
+                    return o;
+                else
+                    throw new ConversionExceptionWithMessage("Value '" + o + "' not found for field " + _toCol.getName() + " in the current context.");
             }
             return value;
         }
@@ -2230,14 +2227,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertFalse(t.next());
             }
 
-            // with remap with primary then alternate key, missing behavior is null
+            // with remap with alternate then primary key, missing behavior is OriginalValue
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
                 context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null, true);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue, true);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
@@ -2255,48 +2252,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // third row -- original value passed through
                 assertTrue(t.next());
                 assertEquals(3, t.get(0));
-                assertNull(t.get(1)); // fails to convert
+                assertEquals("FAIL", t.get(1)); // fails to convert
 
                 // fourth row
                 assertTrue(t.next());
                 assertEquals(4, t.get(0));
-                assertNull(t.get(1)); // missing returns null
-
-                // no more rows
-                assertFalse(t.next());
-            }
-
-            // with remap with alternate then primary key, missing behavior is null
-            // don't throw error if remap can't be resolved
-            {
-                DataIteratorContext context = new DataIteratorContext();
-                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
-                simpleData.beforeFirst();
-                SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Null, true);
-                assertEquals(1, t.getColumnCount());
-                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
-                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
-
-                // first row
-                assertTrue(t.next());
-                assertEquals(1, t.get(0));
-                assertEquals(0, t.get(1)); // convert string "0" -> rowId ordinal 0
-
-                // second row
-                assertTrue(t.next());
-                assertEquals(2, t.get(0));
-                assertEquals(1, t.get(1)); // convert string "Two" -> rowId ordinal 1
-
-                // third row -- original value passed through
-                assertTrue(t.next());
-                assertEquals(3, t.get(0));
-                assertNull(t.get(1)); // fails to convert
-
-                // fourth row
-                assertTrue(t.next());
-                assertEquals(4, t.get(0));
-                assertNull(t.get(1)); // missing returns null
+                assertEquals("", t.get(1)); // missing returns original value
 
                 // no more rows
                 assertFalse(t.next());
