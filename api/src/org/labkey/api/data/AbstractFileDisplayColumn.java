@@ -281,7 +281,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             if (null != filename)
             {
                 // Existing value, so tell the user the file name, allow the file to be removed, and a new file uploaded
-                renderThumbnailAndRemoveLink(out, ctx, filename, input.build().toString());
+                renderThumbnailAndRemoveLink(out, ctx, filename, input);
             }
             else
             {
@@ -302,8 +302,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         return "Previous file " + filename + " will be removed.";
     }
 
-    // TODO: filePicker should be a builder or HtmlString or something sensible like that
-    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, String filePicker)
+    private void renderThumbnailAndRemoveLink(HtmlWriter out, RenderContext ctx, String filename, InputBuilder<?> filePicker)
     {
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;

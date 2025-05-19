@@ -38,7 +38,7 @@ class AliasDisplayColumnFactory implements DisplayColumnFactory
 
                             sb.append(delim);
                             sb.append(name);
-                            delim = ",";
+                            delim = ", ";
                         }
                     }
                 }
