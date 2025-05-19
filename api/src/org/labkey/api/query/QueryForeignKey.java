@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
@@ -29,8 +29,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -40,6 +42,8 @@ import java.util.Set;
  */
 public class QueryForeignKey extends AbstractForeignKey
 {
+    private static final Logger LOG = LogHelper.getLogger(QueryForeignKey.class, "Lookups based on schema and table");
+
     protected TableInfo _table;
 
     /**
@@ -142,7 +146,7 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-        public Builder table(Enum tableName)
+        public Builder table(Enum<?> tableName)
         {
             this.lookupTableName = tableName.name();
             return this;
@@ -161,7 +165,7 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
-        public Builder key(Enum name)
+        public Builder key(Enum<?> name)
         {
             this.lookupKey = name.name();
             return this;
@@ -234,7 +238,7 @@ public class QueryForeignKey extends AbstractForeignKey
         setShowAsPublicDependency(null==_schema || !"core".equalsIgnoreCase(_schema.getName()));
     }
 
-    protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField)
+    protected QueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, @NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, String tableName, @Nullable String lookupKey, @Nullable String displayField)
     {
         this(
             from(sourceSchema,cf)
@@ -281,14 +285,6 @@ public class QueryForeignKey extends AbstractForeignKey
         );
     }
 
-    @Deprecated
-    public QueryForeignKey(TableInfo table, @Nullable Container lookupContainer, @Nullable String lookupKey, @Nullable String displayField)
-    {
-        this(table, lookupKey, displayField);
-        assert null==lookupContainer;
-    }
-
-
     public void setJoinType(LookupColumn.JoinType joinType)
     {
         _joinType = joinType;
@@ -307,7 +303,7 @@ public class QueryForeignKey extends AbstractForeignKey
         }
         catch (QueryParseException qpe)
         {
-            String name = StringUtils.defaultString(displayField,"?");
+            String name = Objects.toString(displayField, "?");
             FieldKey key = new FieldKey(foreignKey.getFieldKey(), name);
             return qpe.makeErrorColumnInfo(foreignKey.getParentTable(), key);
         }
@@ -353,6 +349,10 @@ public class QueryForeignKey extends AbstractForeignKey
         if (_table == null && getLookupSchema() != null)
         {
             TableInfo t = getLookupSchema().getTable(_tableName, getLookupContainerFilter());
+            if (t == null)
+            {
+                LOG.error("Failed to resolve lookup to " + _tableName + " in schema " + getLookupSchema().getSchemaPath());
+            }
             if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
                 t = null;
             _table = t;
