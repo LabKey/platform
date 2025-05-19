@@ -1007,8 +1007,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         StringBuilder changeDetails = new StringBuilder();
 
-        Map<String, Object> oldProps = st.getAuditRecordMap();
-        Map<String, Object> newProps = options != null ? options.getAuditRecordMap() : st.getAuditRecordMap() /* no update */;
+        Map<String, Object> oldProps = new LinkedHashMap<>();
+        Map<String, Object> newProps = new LinkedHashMap<>();
 
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
@@ -1026,10 +1026,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
-        oldProps.put("Description", description);
-        newProps.put("Description", newDescription);
+        if (StringUtils.isNotBlank(description))
+            oldProps.put("Description", description);
+        if (StringUtils.isNotBlank(newDescription))
+            newProps.put("Description", newDescription);
         if (description == null || !description.equals(newDescription))
             st.setDescription(newDescription);
+
+        Map<String, Object> oldProps_ = st.getAuditRecordMap();
+        Map<String, Object> newProps_ = options != null ? options.getAuditRecordMap() : st.getAuditRecordMap() /* no update */;
+        newProps.putAll(newProps_);
+        oldProps.putAll(oldProps_);
 
         boolean hasMetricUnitChanged = false;
 

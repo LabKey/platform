@@ -818,7 +818,8 @@ public class DomainUtil
         if (oldIndices != null && !oldIndices.isEmpty())
             oldProps.put("Indices", oldIndices);
         List<String> newIndices = GWTIndex.toStringVals(update.getIndices(), baseIndices);
-        newProps.put("Indices", newIndices);
+        if (newIndices != null && !newIndices.isEmpty())
+            newProps.put("Indices", newIndices);
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
         // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're

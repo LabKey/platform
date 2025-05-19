@@ -1054,7 +1054,7 @@ public class DomainImpl implements Domain
             }
 
             String changeSummary = changed.isEmpty() ? null :
-                    "The following " + (changed.size() > 1 ? "properties were " : "property was") + " updated: " + StringUtils.join(changed, ", ");
+                    "The following " + (changed.size() > 1 ? "properties were" : "property was") + " updated: " + StringUtils.join(changed, ", ");
             return new PropertyChangeAuditInfoDetail(changeSummary, oldProps, newProps);
         }
 
