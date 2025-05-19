@@ -77,6 +77,7 @@ import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.DatasetLsidImportHelper;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.ParticipantSeqNumImportHelper;
+import org.labkey.study.model.QCStateImportHelper;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.StudyImpl;
@@ -656,6 +657,9 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         Object inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(row, managedKeyColumn);
         if (inputManagedKey == null)
             inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(oldRow, managedKeyColumn);
+        Integer inputQCState = (Integer)DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
+        if (inputQCState == null)
+            inputQCState = (Integer)DatasetDataIteratorBuilder.findColumnInMap(oldRow, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
 
         SequenceNumImportHelper snih = new SequenceNumImportHelper(_dataset.getStudy(), _dataset);
         Double sequenceNum = snih.translateSequenceNum(inputSeqNum, inputDate);
@@ -670,6 +674,15 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         DatasetLsidImportHelper dlih = new DatasetLsidImportHelper(_dataset);
         String lsid = dlih.translateLsid(subjectId, sequenceNum, inputDate, inputManagedKey, null);
 
+        // handle default QC states
+        if (inputQCState == null)
+        {
+            String inputQCText = (String)DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_LABEL_COLNAME));
+            QCStateImportHelper qcih = new QCStateImportHelper(user, _dataset, true, StudyManager.getInstance().getDefaultQCState(_dataset.getStudy()));
+            Integer qcState = qcih.translateQCState(inputQCText);
+            if (qcState != null)
+                row.put(DatasetTableImpl.QCSTATE_ID_COLNAME, qcState);
+        }
         row.put(DatasetDomainKind.LSID, lsid);
         row.put(DatasetDomainKind.PARTICIPANTSEQUENCENUM, participantSeqNum);
         row.put(DatasetDomainKind.PARTICIPANTID, subjectId);
