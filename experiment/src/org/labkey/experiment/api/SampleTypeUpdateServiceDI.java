@@ -1499,14 +1499,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
 
                 SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
-                context.setHasBeenRemapped(true);
+                context.setWithLookupRemapping(false);
                 return LoggingDataIterator.wrap(c);
             }
 
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
-            context.setHasBeenRemapped(true);
+            context.setWithLookupRemapping(false);
             SimpleTranslator addColumns = new SimpleTranslator(c, context);
             addColumns.setDebugName("add genId and other requried columns");
             Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
@@ -1886,7 +1886,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (isScopedField)
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior(), false);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior(), true);
                     }
                 }
                 else

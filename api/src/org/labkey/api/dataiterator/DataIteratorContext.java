@@ -61,7 +61,7 @@ public class DataIteratorContext
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
-    private boolean _hasBeenRemapped = false;
+    private boolean _withLookupRemapping = true;
 
     private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
     private Logger _logger;
@@ -175,14 +175,14 @@ public class DataIteratorContext
         _lookupResolutionType = lookupResolutionType;
     }
 
-    public boolean hasBeenRemapped()
+    public boolean isWithLookupRemapping()
     {
-        return _hasBeenRemapped;
+        return _withLookupRemapping;
     }
 
-    public void setHasBeenRemapped(boolean hasBeenRemapped)
+    public void setWithLookupRemapping(boolean withLookupRemapping)
     {
-        _hasBeenRemapped = hasBeenRemapped;
+        _withLookupRemapping = withLookupRemapping;
     }
 
     /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */
