@@ -351,7 +351,7 @@ public class QueryForeignKey extends AbstractForeignKey
             TableInfo t = getLookupSchema().getTable(_tableName, getLookupContainerFilter());
             if (t == null)
             {
-                LOG.error("Failed to resolve lookup to " + _tableName + " in schema " + getLookupSchema().getSchemaPath());
+                LOG.error("Failed to resolve lookup to {} in schema {} in container {} for user {}", _tableName, getLookupSchema().getSchemaPath(), getLookupSchema().getContainer().getPath(), getLookupSchema().getUser());
             }
             if (null != t && !t.hasPermission(getLookupUser(), ReadPermission.class))
                 t = null;
