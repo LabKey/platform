@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "6.42.0-fb-app-link.4",
+    "@labkey/components": "6.42.0-fb-app-link.7",
     "@labkey/themes": "1.4.2"
   },
   "devDependencies": {
