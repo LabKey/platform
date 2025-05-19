@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 public class ContentSecurityPolicyFilter implements Filter
 {
     public static final String FEATURE_FLAG_DISABLE_ENFORCE_CSP = "disableEnforceCsp";
+    public static final String FEATURE_FLAG_FORWARD_CSP_REPORTS = "forwardCspReports";
 
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
