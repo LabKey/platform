@@ -68,6 +68,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -115,6 +116,7 @@ import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
+    public static final String DEPRECATED_NULL_MISSING_VALUE_RESOLUTION = "deprecatedNullMissingValueResolution";
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     /**
@@ -191,7 +193,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         return null;
     }
 
-    public static class RemapPostConvert
+    public static class RemapConverter
     {
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
@@ -204,7 +206,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
         private Pair<ColumnInfo, Map<?, ?>> _pkColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup)
+        public RemapConverter(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
@@ -934,11 +936,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         /** Every incoming value must have an entry in the map. */
         Error,
 
+        /** @Deprecated Prefer Error instead. Incoming values without a map entry will be replaced with null. */
+        Null,
+
         /** Incoming values without a map entry will pass through. */
         OriginalValue
     }
 
-    protected class RemapPostConvertColumn extends SimpleConvertColumn
+    protected class RemappingConvertColumn extends SimpleConvertColumn
     {
         final SimpleConvertColumn _convertCol;
         final ColumnInfo _toCol;
@@ -946,16 +951,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final boolean _includeTitleColumn;
         LookupResolutionType _lookupResolutionType;
 
-        final private RemapPostConvert _remapper;
+        final private RemapConverter _remapper;
 
-        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull LookupResolutionType lookupResolutionType)
+        public RemappingConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull LookupResolutionType lookupResolutionType)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
             _convertCol = convertCol;
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, false, true);
+            _remapper = new RemapConverter(_toCol.getFkTableInfo(), _includeTitleColumn, false, true);
             _lookupResolutionType = lookupResolutionType;
         }
 
@@ -1020,6 +1025,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 if (_missing == RemapMissingBehavior.OriginalValue)
                     return o;
+                else if (_missing == RemapMissingBehavior.Null)
+                    return null;
                 else
                     throw new ConversionExceptionWithMessage("Value '" + o + "' not found for field " + _toCol.getName() + " in the current context.");
             }
@@ -1340,14 +1347,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
         if (withLookupRemapping && fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
-            // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
-            boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
-
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-//                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.OriginalValue;
-                missing =  RemapMissingBehavior.Error;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
+            {
+                if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_NULL_MISSING_VALUE_RESOLUTION))
+                {
+                    // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
+                    boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
+
+                    missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+                }
+                else
+                    missing = RemapMissingBehavior.Error;
+            }
+            c = new RemappingConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
         boolean multiValue = fk instanceof MultiValuedForeignKey;

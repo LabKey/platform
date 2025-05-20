@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 public class RemapCache
 {
-    Map<Key, SimpleTranslator.RemapPostConvert> remaps = new HashMap<>();
+    Map<Key, SimpleTranslator.RemapConverter> remaps = new HashMap<>();
     private final boolean _allowBulkLoads;
 
     public RemapCache()
@@ -140,17 +140,17 @@ public class RemapCache
         return new Key(table);
     }
 
-    private SimpleTranslator.RemapPostConvert remapper(Key key, Map<Key, SimpleTranslator.RemapPostConvert> remapCache, boolean includePkLookup)
+    private SimpleTranslator.RemapConverter remapper(Key key, Map<Key, SimpleTranslator.RemapConverter> remapCache, boolean includePkLookup)
     {
         return remapCache.computeIfAbsent(key, (k) -> {
             TableInfo table = key.getTable();
-            return new SimpleTranslator.RemapPostConvert(table, true, _allowBulkLoads, includePkLookup);
+            return new SimpleTranslator.RemapConverter(table, true, _allowBulkLoads, includePkLookup);
         });
     }
 
     private <V> V remap(Key key, String value, boolean includePkLookup)
     {
-        SimpleTranslator.RemapPostConvert remap = remapper(key, remaps, includePkLookup);
+        SimpleTranslator.RemapConverter remap = remapper(key, remaps, includePkLookup);
         if (remap == null)
             throw new NotFoundException("Failed to create remap: " + key._schemaKey.toString() + "." + key._queryName);
         //noinspection unchecked
