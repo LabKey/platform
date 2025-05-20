@@ -361,11 +361,15 @@ import java.lang.management.ThreadMXBean;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11909,6 +11913,13 @@ public class AdminController extends SpringActionController
         }
     }
 
+    private static final URI LABKEY_ORG_REPORT_ACTION;
+
+    static
+    {
+        LABKEY_ORG_REPORT_ACTION = URI.create("https://www.labkey.org/admin-contentSecurityPolicyReport.api");
+    }
+
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
     public static class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
@@ -11955,19 +11966,64 @@ public class AdminController extends SpringActionController
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {
-                        String path = new URLHelper(urlString).deleteParameters().getPath();
+                        String path = new URLHelper(urlString).deleteParameters().getURIString();
                         if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled())
                         {
-                            if (isNotBlank(userAgent))
-                                jsonObj.put("user-agent", userAgent);
-                            String labkeyVersion = request.getParameter("labkeyVersion");
-                            if (null != labkeyVersion)
-                                jsonObj.put("labkeyVersion", labkeyVersion);
-                            String cspVersion = request.getParameter("cspVersion");
-                            if (null != cspVersion)
-                                jsonObj.put("cspVersion", cspVersion);
+                            // Don't modify forwarded reports; they already have user, ip, user-agent, etc. from the forwarding server.
+                            boolean forwarded = jsonObj.optBoolean("forwarded", false);
+                            if (!forwarded)
+                            {
+                                jsonObj.put("user", getUser().getEmail());
+                                String ipAddress = request.getHeader("X-FORWARDED-FOR");
+                                if (ipAddress == null)
+                                    ipAddress = request.getRemoteAddr();
+                                jsonObj.put("ip", ipAddress);
+                                if (isNotBlank(userAgent))
+                                    jsonObj.put("user-agent", userAgent);
+                                String labkeyVersion = request.getParameter("labkeyVersion");
+                                if (null != labkeyVersion)
+                                    jsonObj.put("labkeyVersion", labkeyVersion);
+                                String cspVersion = request.getParameter("cspVersion");
+                                if (null != cspVersion)
+                                    jsonObj.put("cspVersion", cspVersion);
+                            }
+
                             var jsonStr = jsonObj.toString(2);
-                            _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
+                            _log.warn("ContentSecurityPolicy warning on page: {}\n{}", urlString, jsonStr);
+
+                            if (!forwarded && OptionalFeatureService.get().isFeatureEnabled(ContentSecurityPolicyFilter.FEATURE_FLAG_FORWARD_CSP_REPORTS))
+                            {
+                                jsonObj.put("forwarded", true);
+
+                                // Create an HttpClient
+                                HttpClient client = HttpClient.newBuilder()
+                                    .connectTimeout(Duration.ofSeconds(10))
+                                    .build();
+
+                                // Create the POST request
+                                HttpRequest remoteRequest = HttpRequest.newBuilder()
+                                    .uri(LABKEY_ORG_REPORT_ACTION)
+                                    .header("Content-Type", request.getContentType()) // Use whatever the browser set
+                                    .POST(HttpRequest.BodyPublishers.ofString(jsonObj.toString(2)))
+                                    .build();
+
+                                // Send the request and get the response
+                                HttpResponse<String> response = client.send(remoteRequest, HttpResponse.BodyHandlers.ofString());
+
+                                if (response.statusCode() != 200)
+                                {
+                                    _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}\n{}", response.statusCode(), response.body());
+                                }
+                                else
+                                {
+                                    JSONObject jsonResponse = new JSONObject(response.body());
+                                    boolean success = jsonResponse.optBoolean("success", false);
+                                    if (!success)
+                                    {
+                                        _log.error("ContentSecurityPolicy report forwarding to https://www.labkey.org failed: {}", jsonResponse);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

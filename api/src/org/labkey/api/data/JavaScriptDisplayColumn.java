@@ -64,7 +64,7 @@ public class JavaScriptDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Object o = getValue(ctx);
 
@@ -75,12 +75,28 @@ public class JavaScriptDisplayColumn extends DataColumn
             if (_onClickExpression != null)
                 onClick = StringUtils.trim(_onClickExpression.eval(ctx));
 
-            renderLink(oldWriter, getFormattedHtml(ctx), onClick, _linkClassName);
+            renderLink(out, getFormattedHtml(ctx), onClick, _linkClassName);
         }
         else
-            oldWriter.write("&nbsp;");
+            out.write(HtmlString.NBSP);
     }
 
+    protected void renderLink(HtmlWriter out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
+    {
+        LinkBuilder builder = new LinkBuilder(html)
+            .href("#")
+            .attributes(Map.of(tabindex.name(), "-1"))
+            .onClick(onClick);
+
+        if (linkClassName != null)
+            builder.addClass(linkClassName);
+        else
+            builder.clearClasses();
+
+        builder.appendTo(out);
+    }
+
+    @Deprecated // TODO: Delete after merging commonAssays fb_render_grid_cell_contents
     protected void renderLink(Writer out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
     {
         LinkBuilder builder = new LinkBuilder(html)

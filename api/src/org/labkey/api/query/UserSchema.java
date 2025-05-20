@@ -22,8 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -174,7 +176,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     /**
-     * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is no ContainerFilter
+     * @param cf       null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is no ContainerFilter
      * @param forWrite true means do not return a cached version
      */
     @Nullable
@@ -224,7 +226,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         assert validateTableInfo(table);
         assert forWrite || table.isLocked();
-        assert null==cacheKey || table.isLocked();
+        assert null == cacheKey || table.isLocked();
         return table;
     }
 
@@ -272,7 +274,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             return null; // See #21014
 
         TableInfo table = null;
-        String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
+        String cacheKey = cacheKey(name, cf, includeExtraMetadata, forWrite);
         if (null != cacheKey)
         {
             table = tableInfoCache.get(cacheKey);
@@ -356,7 +358,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     /**
      * Get a topologically sorted list of TableInfos within this schema.
      * Not all existing schemas are supported yet since their FKs don't expose the query tableName they join to or they contain loops.
-     * 
+     *
      * @throws IllegalStateException if a loop is detected.
      */
     public List<TableInfo> getSortedTables()
@@ -653,7 +655,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * Get a list of module custom view definitions for the schema/query from all modules or only the active modules in the container.
      * The list is cached in production mode.
      * @param container Used to determine active modules.
-     * @param qd The query to which the views are attached
+     * @param qd        The query to which the views are attached
      */
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
@@ -736,6 +738,44 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (_schemaCustomizers != null)
             for (UserSchemaCustomizer customizer : _schemaCustomizers)
                 customizer.afterConstruct(this, table);
+        assert consistencyCheck(table);
+    }
+
+    public static boolean consistencyCheck(TableInfo table)
+    {
+        var list = table.getColumns();
+        assert parentsCheck(table, list);
+        assert mvColumnsCheck(table, list);
+        return true;
+    }
+
+    private static boolean parentsCheck(TableInfo table, List<ColumnInfo> cols)
+    {
+        for (var c : cols)
+            assert table == c.getParentTable();
+        return true;
+    }
+
+    private static boolean mvColumnsCheck(TableInfo table, List<ColumnInfo> cols)
+    {
+        var mvColumns = new CaseInsensitiveHashSet();
+        for (var c : cols)
+        {
+            assert c.isMvEnabled() == (null != c.getMvColumnName());
+            if (null != c.getMvColumnName())
+            {
+                var mv = table.getColumn(c.getMvColumnName());
+                assert mv.isMvIndicatorColumn();
+                mvColumns.add(mv.getName());
+            }
+        }
+        for (var mv : cols)
+        {
+            if (mv.isMvIndicatorColumn())
+                assert mvColumns.remove(mv.getName());
+        }
+        assert mvColumns.isEmpty();
+        return true;
     }
 
     @Override
