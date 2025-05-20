@@ -8,6 +8,10 @@ import java.util.function.Function;
 
 public enum Unit
 {
+    no_unit(KindOfQuantity.Count, null, 1.0, "",
+            Quantity.class,
+            "no units", "no units"),
+
     count(KindOfQuantity.Count, null, 1.0, "",
             Quantity.class,
             "count", "count"),
