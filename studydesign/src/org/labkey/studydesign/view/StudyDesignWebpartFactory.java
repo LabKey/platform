@@ -1,8 +1,7 @@
 package org.labkey.studydesign.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.view.BaseWebPartFactory;
 
 public abstract class StudyDesignWebpartFactory extends BaseWebPartFactory
@@ -12,14 +11,14 @@ public abstract class StudyDesignWebpartFactory extends BaseWebPartFactory
         super(name);
     }
 
-    protected boolean canShow()
+    protected boolean canShow(Container c)
     {
-        return OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG);
+        return StudyDesignManager.get().isModuleActive(c);
     }
 
     @Override
     public boolean isAvailable(Container c, String scope, String location)
     {
-        return canShow() ? super.isAvailable(c, scope, location) : false;
+        return canShow(c) ? super.isAvailable(c, scope, location) : false;
     }
 }

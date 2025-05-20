@@ -45,7 +45,7 @@ public class AssayScheduleWebpartFactory extends StudyDesignWebpartFactory
     @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        if (!canShow())
+        if (!canShow(portalCtx.getContainer()))
             return null;
 
         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/studydesign/view/assayScheduleWebpart.jsp", webPart);
