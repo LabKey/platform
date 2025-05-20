@@ -22,7 +22,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -42,10 +41,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.Pair;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
@@ -55,7 +52,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,6 +73,7 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     boolean allowImportManagedKeys = false;
     boolean useImportAliases = false;
     Map<String, Map<Object, Object>>  _tableIdMapMap = Map.of();    // used to be handed in via StudyImportContext (see comments in DatasetUpdateService.Config)
+    public static final DecimalFormat SEQUENCE_NUM_FORMAT = new DecimalFormat("0.0000");
 
     DataIteratorBuilder builder = null;
 
@@ -432,8 +429,24 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         return ret;
     }
 
+    public static String getOutputString(DataIterator it, Integer i)
+    {
+        if (i == null)
+            return null;
 
-    static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
+        Object o = it.get(i);
+        return Objects.toString(o, "");
+    }
+
+    public static Double getOutputDouble(DataIterator it, Integer i)
+    {
+        if (i == null)
+            return null;
+
+        return (Double) JdbcType.DOUBLE.convert(it.get(i));
+    }
+
+    public static <V> V findColumnInMap(Map<String,V> map, ColumnInfo c)
     {
         if (null == c)
             return null;
@@ -456,7 +469,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
     static class DatasetColumnsIterator extends SimpleTranslator
     {
         private DatasetDefinition _datasetDefinition;
-        DecimalFormat _sequenceFormat = new DecimalFormat("0.0000");
         Converter convertDate = ConvertUtils.lookup(Date.class);
         List<String> lsids;
         User user;
@@ -541,46 +553,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             return hasNext;
         }
 
-        Double getOutputDouble(int i)
-        {
-            Object o = get(i);
-            if (null == o)
-                return null;
-            if (o instanceof Number)
-                return ((Number) o).doubleValue();
-            if (o instanceof String)
-            {
-                try
-                {
-                    return Double.parseDouble((String) o);
-                }
-                catch (NumberFormatException x)
-                {
-                    ;
-                }
-            }
-            return null;
-        }
-
-        Date getOutputDate(int i)
-        {
-            Object o = get(i);
-            Date date = (Date) convertDate.convert(Date.class, o);
-            return date;
-        }
-
-        String getInputString(int i)
-        {
-            Object o = getInput().get(i);
-            return null == o ? "" : o.toString();
-        }
-
-        String getOutputString(int i)
-        {
-            Object o = this.get(i);
-            return null == o ? "" : o.toString();
-        }
-
         int addQCStateColumn(int index, String uri, DataState defaultQCState)
         {
             var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
@@ -594,19 +566,6 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
             var col = new BaseColumnInfo(name, JdbcType.VARCHAR);
             return addColumn(col, new FileColumn(user, _datasetDefinition.getContainer(), name, index, "datasetdata", fileRootPath));
         }
-
-    //        int addSequenceNumFromDateColumn()
-    //        {
-    //            return addColumn(new BaseColumnInfo("SequenceNum", JdbcType.DOUBLE), new SequenceNumFromDateColumn());
-    //        }
-    //
-    //        int translateColumn(final int index, Map<?, ?> map, boolean strict)
-    //        {
-    //            ColumnInfo existing = getColumnInfo(index);
-    //            Callable origCallable = _outputColumns.get(index).getValue();
-    //            RemapColumn remapColumn = new RemapColumn(origCallable, map, strict);
-    //            return replaceOrAddColumn(index, existing, remapColumn);
-    //        }
 
         int translateSequenceNum(Integer indexSequenceNumInput, Integer indexVisitDateInput)
         {
@@ -626,137 +585,19 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
 
         int addLSID()
         {
+            DatasetLsidImportHelper helper = new DatasetLsidImportHelper(_datasetDefinition);
+            Callable<Object> callable = helper.getCallable(this, indexPtidOutput, indexSequenceNumOutput, indexVisitDateOutput, indexKeyPropertyOutput, indexContainerOutput);
             ColumnInfo col = BaseColumnInfo.createNotInDatabase("lsid", JdbcType.VARCHAR);
-            indexLSIDOutput = addColumn(col, new LSIDColumn());
+            indexLSIDOutput = addColumn(col, callable);
             return indexLSIDOutput;
         }
 
         int addParticipantSequenceNum()
         {
+            Callable<Object> callable = ParticipantSeqNumImportHelper.getCallable(this, indexPtidOutput, indexSequenceNumOutput);
+
             var col = BaseColumnInfo.createNotInDatabase("participantsequencenum", JdbcType.VARCHAR);
-            return addColumn(col, new ParticipantSequenceNumColumn());
-        }
-
-        int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
-        {
-            if (null == index || index <= 0)
-                return addColumn(col, call);
-            Pair p = new Pair(col, call);
-            _outputColumns.set(index, p);
-            return index;
-        }
-
-        String getFormattedSequenceNum()
-        {
-            assert null != indexSequenceNumOutput || hasErrors();
-            if (null == indexSequenceNumOutput)
-                return null;
-            Double d = getOutputDouble(indexSequenceNumOutput);
-            if (null == d)
-                return null;
-            return _sequenceFormat.format(d);
-        }
-
-    //        class SequenceNumFromDateColumn implements Callable
-    //        {
-    //            @Override
-    //            public Object call() throws Exception
-    //            {
-    //                Date date = getOutputDate(indexVisitDateOutput);
-    //                if (null != date)
-    //                    return StudyManager.sequenceNumFromDate(date);
-    //                else
-    //                    return VisitImpl.DEMOGRAPHICS_VISIT;
-    //            }
-    //        }
-
-        // MUST match what is produced by DatasetDefinition.generateLSIDSQL
-        class LSIDColumn implements Callable
-        {
-            Map<String, String> map = new HashMap<>();
-
-            String getURNPrefix()
-            {
-                Container c = null;
-                String entityId = null;
-                if (_datasetDefinition.isShared() && _datasetDefinition.getDataSharingEnum() == DatasetDefinition.DataSharing.PTID)
-                {
-                    c = _datasetDefinition.getDefinitionContainer();
-                    entityId = c.getId();
-                }
-                else if (null == indexContainerOutput)
-                {
-                    c = _datasetDefinition.getContainer();
-                    entityId = c.getId();
-                }
-                else
-                {
-                    entityId = getOutputString(indexContainerOutput);
-                }
-                String urn = map.get(entityId);
-                if (null != urn)
-                    return urn;
-                if (null == c)
-                    c = ContainerManager.getForId(entityId);
-                String id = null == c ? entityId : String.valueOf(c.getRowId());
-                urn = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + id + ":" + _datasetDefinition.getDatasetId() + ".";
-                map.put(entityId, urn);
-                return urn;
-            }
-
-            @Override
-            public Object call()
-            {
-                StringBuilder sb = new StringBuilder(getURNPrefix());
-                assert null != indexPtidOutput || hasErrors();
-
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
-                sb.append(ptid.trim());
-
-                if (!_datasetDefinition.isDemographicData())
-                {
-                    String seqnum = getFormattedSequenceNum();
-                    sb.append(".").append(seqnum);
-
-                    if (!_datasetDefinition.getStudy().getTimepointType().isVisitBased() && _datasetDefinition.getUseTimeKeyField())
-                    {
-                        Date date = getOutputDate(indexVisitDateOutput);
-                        sb.append(".").append(String.format("%tH%tM%tS", date, date, date));
-                    }
-                    else if (null != indexKeyPropertyOutput)
-                    {
-                        Object key = DatasetColumnsIterator.this.get(indexKeyPropertyOutput);
-                        if (null != key)
-                            sb.append(".").append(key);
-                    }
-                }
-                return sb.toString();
-            }
-        }
-
-        class ParticipantSequenceNumColumn implements Callable
-        {
-            @Override
-            public Object call()
-            {
-                assert null != indexPtidOutput || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
-                String seqnum = getFormattedSequenceNum();
-                return ptid + "|" + seqnum;
-            }
-        }
-
-        class ParticipantSequenceNumKeyColumn implements Callable
-        {
-            @Override
-            public Object call()
-            {
-                assert (null != indexPtidOutput && null != indexKeyPropertyOutput) || hasErrors();
-                String ptid = null == indexPtidOutput ? "" : getOutputString(indexPtidOutput);
-                String seqnum = getFormattedSequenceNum();
-                Object key = null == indexKeyPropertyOutput ? "" : String.valueOf(DatasetColumnsIterator.this.get(indexKeyPropertyOutput));
-                return ptid + "|" + seqnum + "|" + key;
-            }
+            return addColumn(col, callable);
         }
 
         class QCStateColumn implements Callable
