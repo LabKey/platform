@@ -3777,7 +3777,6 @@ public class StudyManager
                 {
                     p.getPropertyDescriptor().setPropertyId(0);
                     p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
-                    p.getPropertyDescriptor().setProject(ipd.pd.getProject());
                 }
             }
             else
