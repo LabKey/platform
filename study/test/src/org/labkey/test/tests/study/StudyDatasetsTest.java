@@ -43,6 +43,7 @@ import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,11 +255,13 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         if (error == null)
         {
             editDatasetPage.clickSave();
-            checker().verifyEquals("The comment logged for the list update was not as expected.",
-                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'." +
-                            "Label: " + orgLabel + " -> " + newLabel.trim() + "; The descriptor of domain " + orgName + " was updated",
-                    _auditLogHelper.getLastDomainEventComment(getProjectName(), orgName));
-
+            String changeDetails = "Name: " + orgName + " > " + newName.trim();
+            changeDetails += "\nLabel: " + orgLabel + " > " + newLabel.trim();
+            AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, orgName, null,
+                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'.",
+                    "", null, null, changeDetails);
+            boolean pass = _auditLogHelper.validateLastDomainAuditEvents(orgName, getProjectName(), expectedDomainEvent, Collections.emptyMap());
+            checker().verifyTrue("The comment logged for the dataset renaming was not as expected", pass);
         }
         else
         {
@@ -318,8 +321,15 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals(Arrays.asList("XTest"), remainingFields);
 
         editDatasetPage.clickSave();
-        checker().verifyEquals("Domain audit comment not as expected after removing fields", "The column(s) of domain " + name + " were modified", _auditLogHelper.getLastDomainEventComment(getProjectName(), name));
-        checker().verifyEqualsSorted("Domain field audit comment not as expected after removing fields", List.of("Deleted", "Deleted"), _auditLogHelper.getLastDomainPropertyValues(getProjectName(), name, "Action"));
+
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, name, null,
+                "The column(s) of domain " + name + " were modified.",
+                "", null, null, null);
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(name, getProjectName(), expectedDomainEvent,
+                Map.of("YTest", new AuditLogHelper.DetailedAuditEventRow(null, "YTest", "Deleted",null,null, null, null, null),
+                        "ZTest", new AuditLogHelper.DetailedAuditEventRow(null, "ZTest", "Deleted",null,null, null, null, null)
+                ));
+        checker().verifyTrue("Domain audit log not as expected after removing fields", pass);
     }
 
     @LogMethod
