@@ -35,7 +35,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.ontology.Quantity;
-import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -410,22 +409,23 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         for (String propName : keys)
         {
+            ColumnInfo col = getColumnByFormFieldName(propName);
             String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
+            Class<?> propType = null;
 
             if (StringUtils.isEmpty(str))
                 str = null;
 
-            Class<?> propType = null;
-
             try
             {
+
                 if (null != str)
                 {
                     Object val;
-                    if (null != defaultUnit)
+                    if (null != col && null != col.getKindOfQuantity())
                     {
-                        val = Quantity.convert(str, defaultUnit);
+                        val = Quantity.convert(str, col.getDisplayUnit());
                     }
                     else
                     {

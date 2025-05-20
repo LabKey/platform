@@ -22,6 +22,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 
@@ -48,7 +49,10 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
     @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
-        ForeignKey fk = getBoundColumn().getFk();
+        ColumnInfo boundColumn = getBoundColumn();
+        ForeignKey fk = boundColumn.getFk();
+        Unit unit = boundColumn.getDisplayUnit();
+
         // currently only supported for lookup columns with a defined schema/query
         if (fk == null)
         {
@@ -58,7 +62,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
 
         String formFieldName = getFormFieldName(ctx);
         boolean disabledInput = isDisabledInput(ctx);
-        String strVal = getStringValue(value, disabledInput);
+        String strVal = getStringValue(value, unit, disabledInput);
         String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
         StringBuilder sb = new StringBuilder();

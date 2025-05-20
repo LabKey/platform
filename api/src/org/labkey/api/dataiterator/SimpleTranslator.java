@@ -1307,9 +1307,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         SimpleConvertColumn c;
         if (PropertyType.STRING == pt && (trimString || trimStringRight))
-            c = new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, mv, pt, type, !trimString);
+            c = new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, mv, pt, type, col.getDisplayUnit(), !trimString);
         else
-            c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type);
+            c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type, col.getDisplayUnit());
 
         ForeignKey fk = col.getFk();
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())

@@ -27,6 +27,8 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -608,12 +610,18 @@ public class DataColumn extends DisplayColumn
         return entry.getObject().toString();
     }
 
-    protected String getStringValue(Object value, boolean disabledInput)
+    protected String getStringValue(Object value, Unit unit, boolean disabledInput)
     {
         String strVal = "";
         //UNDONE: Should use output format here.
         if (null != value)
         {
+            if (unit != null && value instanceof Number num)
+            {
+                Quantity quantity = (value instanceof Quantity q) ? q : unit.getKindOfQuantity().toQuantity(num);
+                value = quantity.value(unit);
+            }
+
             // 4934: Don't render form input values with formatter since we don't parse formatted inputs on post.
             // For now, we can at least render disabled inputs with formatting since a
             // hidden input with the actual value is emitted for disabled items.
@@ -642,7 +650,7 @@ public class DataColumn extends DisplayColumn
 
         boolean disabledInput = isDisabledInput(ctx);
         final String formFieldName = getFormFieldName(ctx);
-        String strVal = getStringValue(value, disabledInput);
+        String strVal = getStringValue(value, _boundColumn.getDisplayUnit(), disabledInput);
 
         if (_boundColumn.isAutoIncrement())
         {

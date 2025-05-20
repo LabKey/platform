@@ -38,7 +38,7 @@ public enum KindOfQuantity
         @Override
         List<Unit> getCommonUnits()
         {
-            return List.of(Unit.no_unit);
+            return List.of(Unit.count);
         }
     };
 

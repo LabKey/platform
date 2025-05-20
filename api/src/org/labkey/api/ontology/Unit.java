@@ -8,9 +8,9 @@ import java.util.function.Function;
 
 public enum Unit
 {
-    no_unit(KindOfQuantity.Count, null, 1.0, "",
+    count(KindOfQuantity.Count, null, 1.0, "",
             Quantity.class,
-            "unit", "units"),
+            "count", "count"),
 
     // UCUM prefers "l", but "L" is also common and already supported by inventory (sorry Lambert)
     l(KindOfQuantity.Volume, null, 10e0, "l",

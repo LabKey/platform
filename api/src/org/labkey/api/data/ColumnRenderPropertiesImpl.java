@@ -790,9 +790,19 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         boolean isNumeric;
         PropertyType pt = getPropertyType();
         if (pt != null)
-            return pt.getJavaType();
-
-        return getJdbcType().getJavaClass(isNullable);
+        {
+            ret = pt.getJavaType();
+            isNumeric = pt.getJdbcType().isNumeric();
+        }
+        else
+        {
+            ret = getJdbcType().getJavaClass(isNullable);
+            isNumeric = getJdbcType().isNumeric();
+        }
+        Unit unit = getDisplayUnit();
+        if (isNumeric && null != unit)
+           return unit.getQuantityClass();
+        return ret;
     }
 
     @Override
