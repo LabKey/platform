@@ -1345,7 +1345,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.OriginalValue;
+//                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.OriginalValue;
+                missing =  RemapMissingBehavior.Error;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
