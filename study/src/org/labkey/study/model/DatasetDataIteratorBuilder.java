@@ -366,9 +366,9 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         if (needsQC == Boolean.TRUE)
         {
             Integer indexInputQCState = findColumnInMap(inputMap, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
-            Integer indexInputQCText = inputMap.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
             if (null == indexInputQCState)
             {
+                Integer indexInputQCText = inputMap.get(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
                 int indexText = null == indexInputQCText ? -1 : indexInputQCText;
                 it.addQCStateColumn(indexText,  DatasetDefinition.getQCStateURI(), defaultQC);
             }
@@ -557,8 +557,10 @@ public class DatasetDataIteratorBuilder implements DataIteratorBuilder
         {
             var qcCol = new BaseColumnInfo("QCState", JdbcType.INTEGER);
             qcCol.setPropertyURI(uri);
-            Callable qcCall = new QCStateColumn(index, defaultQCState);
-            return addColumn(qcCol, qcCall);
+            QCStateImportHelper qcih = new QCStateImportHelper(user, _datasetDefinition, true, defaultQCState);
+            Callable call = qcih.getCallable(getInput(), index);
+
+            return addColumn(qcCol, call);
         }
 
         int addFileColumn(String name, int index, String fileRootPath)
