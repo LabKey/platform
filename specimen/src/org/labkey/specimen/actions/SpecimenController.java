@@ -551,7 +551,7 @@ public class SpecimenController extends SpringActionController
     public static final class ExcludeSiteDropDown extends DisplayElement
     {
         @Override
-        public void render(RenderContext ctx, Writer out) throws IOException
+        public void render(RenderContext ctx, HtmlWriter out)
         {
             ActionURL url = ctx.getViewContext().cloneActionURL();
             url.deleteParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
