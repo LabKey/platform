@@ -123,8 +123,11 @@ public class StudyTreatmentSchedule implements ApiJsonForm
     public List<Map<String, Object>> serializeCohortMapping(Collection<? extends Cohort> cohorts)
     {
         List<Map<String, Object>> cohortMappingList = new ArrayList<>();
+        _cohorts = new ArrayList<>();
         for (Cohort cohort : cohorts)
         {
+            _cohorts.add(new StudyDesignCohort(cohort));
+
             Map<String, Object> mapProperties = new HashMap<>();
             mapProperties.put("RowId", cohort.getRowId());
             mapProperties.put("Label", cohort.getLabel());

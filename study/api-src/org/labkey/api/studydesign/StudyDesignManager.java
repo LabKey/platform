@@ -54,6 +54,9 @@ public class StudyDesignManager
 
     public boolean isModuleActive(Container c)
     {
+        if (c == null)
+            return false;
+
         Module studyDesignModule = ModuleLoader.getInstance().getModule(MODULE_NAME);
         return null != studyDesignModule && c.getActiveModules().contains(studyDesignModule);
     }

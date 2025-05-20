@@ -15,8 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriter;
@@ -90,11 +88,8 @@ public class StudySerializationRegistry
     {
         List<InternalStudyWriter> writers = new ArrayList<>(_baseInternalWriters);
 
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            writers.add(new TreatmentDataWriter());
-            writers.add(new AssayScheduleWriter());
-        }
+        writers.add(new TreatmentDataWriter());
+        writers.add(new AssayScheduleWriter());
         // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
         writers.add(new StudyXmlWriter());
         return writers;
@@ -110,12 +105,10 @@ public class StudySerializationRegistry
     {
         List<InternalStudyImporter> importers = new ArrayList<>(_baseInternalImporters);
 
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            importers.add(new TreatmentDataImporter());
-            importers.add(new TreatmentVisitMapImporter());
-            importers.add(new AssayScheduleImporter());
-        }
+        importers.add(new TreatmentDataImporter());
+        importers.add(new TreatmentVisitMapImporter());
+        importers.add(new AssayScheduleImporter());
+
         return importers;
     }
 

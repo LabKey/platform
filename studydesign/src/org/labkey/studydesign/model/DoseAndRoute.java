@@ -122,9 +122,9 @@ public class DoseAndRoute
         String dose = null;
         String route = null;
         if (o.has(keys.Dose.name()))
-            dose = o.getString(keys.Dose.name());
+            dose = String.valueOf(o.get(keys.Dose.name()));
         if (o.has(keys.Route.name()))
-            route = o.getString(keys.Route.name());
+            route = String.valueOf(o.get(keys.Route.name()));
 
         DoseAndRoute doseAndRoute = new DoseAndRoute(dose, route, productId, container);
         if (o.has(keys.RowId.name()))

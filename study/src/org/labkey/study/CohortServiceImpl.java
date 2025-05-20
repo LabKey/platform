@@ -76,7 +76,7 @@ public class CohortServiceImpl implements CohortService
     }
 
     @Override
-    public Cohort updateCohort(Container container, User user, int rowId, String label, int subjectCount)
+    public Cohort updateCohort(Container container, User user, int rowId, String label, Integer subjectCount)
     {
         CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
         if (updatedCohort != null)

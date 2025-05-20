@@ -47,7 +47,7 @@ public interface CohortService
 
     void deleteCohort(Cohort cohort);
 
-    Cohort updateCohort(Container container, User user, int rowId, String label, int subjectCount);
+    Cohort updateCohort(Container container, User user, int rowId, String label, Integer subjectCount);
 
     Cohort createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ValidationException;
 }
