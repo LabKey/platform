@@ -32,6 +32,7 @@ import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
@@ -584,7 +585,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
-        public Pair<Boolean, HtmlString> getMatchStatus(RenderContext ctx) throws IOException
+        public Pair<Boolean, HtmlString> getMatchStatus(RenderContext ctx)
         {
             Container targetStudy = getUserTargetStudy(ctx);
             if (targetStudy == null)
@@ -718,8 +719,7 @@ public class PublishResultsQueryView extends QueryView
             }
             catch (SQLException e)
             {
-                //noinspection ThrowableInstanceNeverThrown
-                throw (IOException)new IOException().initCause(e);
+                throw new RuntimeSQLException(e);
             }
         }
 
@@ -957,7 +957,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object visitObject = _visitColumn.calculateValue(ctx);
             Object dateObject = _dateColumn.calculateValue(ctx);
@@ -982,7 +982,7 @@ public class PublishResultsQueryView extends QueryView
 
             visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
 
-            oldWriter.write(visit == null ? "" : visit.getDisplayString());
+            out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
 
