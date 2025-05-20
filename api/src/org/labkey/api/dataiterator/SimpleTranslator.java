@@ -2206,7 +2206,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 public StringExpression getURL(ColumnInfo parent) { return null; }
             };
 
-            // with remap with primary then alternate key
+            // with remap with alternate key then primary key
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
@@ -2249,7 +2249,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue, true);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Error, true);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
@@ -2264,18 +2264,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertEquals(2, t.get(0));
                 assertEquals(1, t.get(1)); // convert string "Two" -> rowId ordinal 1
 
-                // third row -- original value passed through
-                assertTrue(t.next());
-                assertEquals(3, t.get(0));
-                assertEquals("FAIL", t.get(1)); // fails to convert
-
-                // fourth row
-                assertTrue(t.next());
-                assertEquals(4, t.get(0));
-                assertEquals("", t.get(1)); // missing returns original value
-
-                // no more rows
-                assertFalse(t.next());
+                // third row -- fails to resolve
+                try
+                {
+                    t.next();
+                    fail("Should have thrown a conversion exception.");
+                } catch (BatchValidationException x)
+                {
+                    assertTrue((x.getMessage().contains("Lookup: Value 'FAIL' not found for field Lookup in the current context.")));
+                }
             }
 
         }
