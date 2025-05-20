@@ -1941,7 +1941,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, indexFrom, to, null, true);
             }
 
             @Override
@@ -1956,7 +1957,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
             {
-                super(fieldName, indexFrom, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, indexFrom, to, null, true);
             }
 
             @Override
@@ -1972,7 +1974,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             public AliquotRollupConvertColumn(String fieldName, @Nullable JdbcType to, int aliquotedFromColInd)
             {
-                super(fieldName, 0, to, true);
+                // TODO reconcile unit handling
+                super(fieldName, 0, to, null, true);
                 this.aliquotedFromColInd = aliquotedFromColInd;
             }
 

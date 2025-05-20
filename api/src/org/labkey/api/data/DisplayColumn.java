@@ -29,6 +29,8 @@ import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.ontology.Concept;
 import org.labkey.api.ontology.OntologyService;
+import org.labkey.api.ontology.Quantity;
+import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM;
@@ -489,14 +491,14 @@ public abstract class DisplayColumn extends RenderColumn
     public HtmlString getFormattedHtml(RenderContext ctx)
     {
         Format format = getFormat();
-        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format));
+        Unit unit = getDisplayUnit();
+        return HtmlString.of(formatValue(ctx, getDisplayValue(ctx), getTextExpressionCompiled(ctx), format, unit));
     }
 
     /**
      * Format the display value as text <i>only</i> if there is a text expression or format configured for
      * the display column (which includes any project date and number format settings),
      * otherwise return null.
-     * <p>
      * <b>No html encoding should be performed</b>
      * @see #getFormattedHtml(RenderContext)
      */
@@ -534,31 +536,65 @@ public abstract class DisplayColumn extends RenderColumn
      * any html encoding.
      */
     @NotNull
-    protected final String formatValue(RenderContext ctx, Object value, StringExpression expr, Format format)
+    protected final String formatValue(RenderContext ctx, final Object value, StringExpression expr, @Nullable Format format, @Nullable Unit displayUnit)
     {
         if (null == value)
             return "";
 
         if (null != expr && expr.canRender(ctx.getFieldMap().keySet()))
         {
+            // TODO handle Quantity values here?
             return expr.eval(ctx);
+        }
+
+        @NotNull String formattedString;
+        if (null != displayUnit && value instanceof Number)
+        {
+            Quantity q = (value instanceof Quantity) ?
+                    (Quantity)value :
+                    displayUnit.getKindOfQuantity().toQuantity((Number)value);
+            /* DISPLAY WITH UNIT SUFFIX
+            if (null == format)
+                formattedString = q.format(displayUnit);
+            else
+                formattedString = q.format(displayUnit, format);\
+             */
+            /* DISPLAY WITHOUT UNIT SUFFIX */
+            var doubleValue = q.doubleValue(displayUnit);
+            if (null == format)
+                formattedString = ConvertUtils.convert(doubleValue);
+            else
+                formattedString = format.format(doubleValue);
         }
         else if (null != format)
         {
             try
             {
-                return format.format(value);
+                formattedString = format.format(value);
             }
             catch (IllegalArgumentException e)
             {
                 LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
-                return ConvertUtils.convert(value);
+                formattedString = ConvertUtils.convert(value);
             }
         }
         else if (value instanceof String)
-            return (String)value;
+        {
+            formattedString = (String) value;
+        }
+        else
+        {
+            formattedString = ConvertUtils.convert(value);
+        }
 
-        return ConvertUtils.convert(value);
+        return formattedString;
+    }
+
+
+    Unit getDisplayUnit()
+    {
+        ColumnInfo col = getDisplayColumnInfo();
+        return null != col ? col.getDisplayUnit() : null;
     }
 
 
@@ -570,7 +606,8 @@ public abstract class DisplayColumn extends RenderColumn
         {
             format = getFormat();
         }
-        return formatValue(ctx, getExportCompatibleValue(ctx), getTextExpressionCompiled(ctx), format);
+        Unit unit = getDisplayUnit();
+        return formatValue(ctx, getExportCompatibleValue(ctx), getTextExpressionCompiled(ctx), format, unit);
     }
 
     public Object getExcelCompatibleValue(RenderContext ctx)
@@ -578,7 +615,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getExportCompatibleValue(ctx);
     }
 
-    public Object getExportCompatibleValue(RenderContext ctx)
+    public Object  getExportCompatibleValue(RenderContext ctx)
     {
         Object value = getDisplayValue(ctx);
         if (null == value)
