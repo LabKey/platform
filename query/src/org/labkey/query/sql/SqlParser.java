@@ -1993,8 +1993,8 @@ public class SqlParser
             new Pair<>("'this ' || 'that'", JdbcType.VARCHAR),
             new Pair<>("1 || ' plus ' || 2", JdbcType.VARCHAR),
             new Pair<>("1 + 2", JdbcType.INTEGER),
-            new Pair<>("1.0 + 2.1", JdbcType.DOUBLE),
-            new Pair<>("1 + 2.1", JdbcType.DOUBLE),
+            new Pair<>("1.0 + 2.1", JdbcType.DECIMAL),
+            new Pair<>("1 + 2.1", JdbcType.DECIMAL),
             new Pair<>("ROUND(0.0,1)", JdbcType.DOUBLE),
             new Pair<>("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
             new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
