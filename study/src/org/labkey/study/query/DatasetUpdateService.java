@@ -658,8 +658,6 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
         if (inputManagedKey == null)
             inputManagedKey = DatasetDataIteratorBuilder.findColumnInMap(oldRow, managedKeyColumn);
         Integer inputQCState = (Integer)DatasetDataIteratorBuilder.findColumnInMap(row, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
-        if (inputQCState == null)
-            inputQCState = (Integer)DatasetDataIteratorBuilder.findColumnInMap(oldRow, table.getColumn(DatasetTableImpl.QCSTATE_ID_COLNAME));
 
         SequenceNumImportHelper snih = new SequenceNumImportHelper(_dataset.getStudy(), _dataset);
         Double sequenceNum = snih.translateSequenceNum(inputSeqNum, inputDate);
