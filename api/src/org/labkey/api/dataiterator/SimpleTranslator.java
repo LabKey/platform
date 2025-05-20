@@ -345,7 +345,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     // don't attempt to select the value from the database, lest a syntax error result.
                     // This can happen for system fields like createdBy or modifiedBy that are added to a
                     // row during the insert or update process already mapped to their primary keys.
-                    if (altKeyCol.getJdbcType().getJavaClass().isAssignableFrom(k.getClass()))
+                    // Alternate keys must be of type String.
+                    if (k instanceof String)
                     {
                         TableSelector ts = createSelector(pkCol, altKeyCol, k);
                         ts.fillMultiValuedMap(map);
