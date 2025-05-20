@@ -69,6 +69,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -628,6 +629,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataTable createFilesTable(String name, UserSchema schema);
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
+
+    FilteredTable<ExpSchema> createFieldNamesTable(ExpSchema expSchema, ContainerFilter cf);
+
+    FilteredTable<ExpSchema> createPhiFieldsTable(ExpSchema expSchema, ContainerFilter cf);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 

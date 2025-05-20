@@ -198,6 +198,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public boolean drainQueue(PRIORITY priority, long timeout, TimeUnit unit)
+    {
+        return true;
+    }
+
+    @Override
     public void addPathToCrawl(Path path, Date d)
     {
     }

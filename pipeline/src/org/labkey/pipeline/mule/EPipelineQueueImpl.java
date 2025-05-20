@@ -128,6 +128,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             if (cancelRemoteExecutionEngineJob(statusFile, job)) return true;
         }
 
+        PipelineJobService.get().cancelForJob(statusFile.getJobId());
 
         return false;
     }

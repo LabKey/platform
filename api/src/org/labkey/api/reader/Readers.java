@@ -32,8 +32,6 @@ import java.nio.charset.Charset;
 
 /**
  *  Factory methods to create Readers, ensuring correct character sets and buffering by default.
- *
- *  Created by adam on 5/30/2015.
  */
 public class Readers
 {
@@ -60,13 +58,13 @@ public class Readers
     // Detects XML file character encoding based on BOM, XML prolog, or content type... falling back on UTF-8
     public static BufferedReader getXmlReader(InputStream in) throws IOException
     {
-        return new BufferedReader(new XmlStreamReader(in));
+        return new BufferedReader(XmlStreamReader.builder().setInputStream(in).get());
     }
 
     // Detects XML file character encoding based on BOM, XML prolog, or content type... falling back on UTF-8
     public static BufferedReader getXmlReader(File file) throws IOException
     {
-        return new BufferedReader(new XmlStreamReader(file));
+        return new BufferedReader(XmlStreamReader.builder().setFile(file).get());
     }
 
     /**
@@ -80,9 +78,18 @@ public class Readers
     /**
      * Detects text file character encoding based on BOM... falling back on UTF-8 if no BOM present
      */
-    private static Reader getBOMDetectingUnbufferedReader(InputStream in) throws IOException
+    public static Reader getBOMDetectingUnbufferedReader(InputStream in) throws IOException
     {
-        BOMInputStream bos = new BOMInputStream(in, ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE);
+        BOMInputStream bos = BOMInputStream.builder()
+            .setInputStream(in)
+            .setByteOrderMarks(
+                ByteOrderMark.UTF_8,
+                ByteOrderMark.UTF_16BE,
+                ByteOrderMark.UTF_16LE,
+                ByteOrderMark.UTF_32BE,
+                ByteOrderMark.UTF_32LE
+            )
+            .get();
         Charset charset = bos.hasBOM() ? Charset.forName(bos.getBOM().getCharsetName()) : StringUtilsLabKey.DEFAULT_CHARSET;
         return new InputStreamReader(bos, charset);
     }

@@ -39,10 +39,12 @@ public abstract class TSVWriter extends TextWriter
     protected char _chDelimiter = '\t';
     protected char _chQuote = '"';
     protected String _rowSeparator = "\n";
+    public static final String BACKSLASH_CHAR_STRING = "\\";
 
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
     protected boolean _preserveEmptyString = false;
+    private String _additionalQuotedChars = null;
 
     public enum DELIM
     {
@@ -142,6 +144,11 @@ public abstract class TSVWriter extends TextWriter
         _preserveEmptyString = preserveEmptyString;
     }
 
+    public void setAdditionalQuotedChars(String additionalQuotedChars)
+    {
+        _additionalQuotedChars = additionalQuotedChars;
+    }
+
     protected String _escapedCharsString = null;
 
     /**
@@ -210,6 +217,8 @@ public abstract class TSVWriter extends TextWriter
         char firstCh = value.charAt(0);
         char lastCh = value.charAt(len-1);
         if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))
+            return true;
+        if (StringUtils.containsAny(value, _additionalQuotedChars))
             return true;
         return StringUtils.containsAny(value,_escapedCharsString);
     }

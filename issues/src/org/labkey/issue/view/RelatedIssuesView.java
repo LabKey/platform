@@ -37,6 +37,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.model.IssueListDef;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.IssueObject;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 
@@ -67,11 +68,16 @@ public class RelatedIssuesView extends VBox
             Integer issueId = (Integer)m.get("issueId");
             String containerId = (String)m.get("container");
             Container c = ContainerManager.getForId(containerId);
+
             if (c == null || !c.hasPermission(getViewContext().getUser(), ReadPermission.class))
                 return;
 
             IssueListDef d = IssueManager.getIssueListDef(c, issueDefId);
             if (d == null)
+                return;
+
+            IssueObject issue = IssueManager.getIssue(null, context.getUser(), issueId, false);
+            if (issue == null)
                 return;
 
             // If the user doesn't have ReadPermission to the domain container, we won't be able to create a query

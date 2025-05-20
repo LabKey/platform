@@ -167,9 +167,9 @@ public class CoreQuerySchema extends UserSchema
         if (DATA_STATES_TABLE_NAME.equalsIgnoreCase(name))
             return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
-            return new ApiKeysTableInfo(this);
+            return new ApiKeysTableInfo(this, false);
         if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(name))
-            return new UserApiKeysTableInfo(this);
+            return new ApiKeysTableInfo(this, true);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))

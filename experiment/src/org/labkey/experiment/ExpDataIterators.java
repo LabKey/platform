@@ -955,7 +955,6 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
-
         }
 
         private BatchValidationException getErrors()
@@ -2489,6 +2488,7 @@ public class ExpDataIterators
                     throw new UnsupportedOperationException();
                 }
             };
+            _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
@@ -2914,7 +2914,7 @@ public class ExpDataIterators
                 String name = colInfo.getName();
 
                 fieldIndexes.add(i);
-                header.add(name);
+                header.add(_tsvWriter.quoteValue(name));
             }
 
             File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + dataClass.getName() + ".tsv");
@@ -2961,15 +2961,20 @@ public class ExpDataIterators
                 ColumnInfo colInfo = getColumnInfo(i);
                 String name = colInfo.getName();
                 String lcName = name.toLowerCase();
-                if (validFields.contains(name))
+                if (_typeColIndex != null && _typeColIndex == i) // Issue 52355: assure we have some data in the row by including the type
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_typeColName);
+                }
+                else if (validFields.contains(name))
+                {
+                    fieldIndexes.add(i);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     // no dependencies to register if the names of samples are not being provided in the file.
                     if (_dataIdIndex != -1)
                     {
@@ -2981,12 +2986,12 @@ public class ExpDataIterators
                 else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                 }
                 else if (lcName.startsWith(INPUTS_PREFIX_LC))
                 {
                     fieldIndexes.add(i);
-                    header.add(name);
+                    header.add(_tsvWriter.quoteValue(name));
                     if (_dataIdIndex != -1)
                         dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
                 }
