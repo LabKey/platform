@@ -113,6 +113,14 @@ public class Quantity extends Number implements Comparable<Quantity>
         assert isDouble || this.value instanceof BigDecimal;
     }
 
+    public double doubleValue(Unit unit)
+    {
+        if (unit == kind.getStorageUnit())
+            return value.doubleValue();
+        else
+            return Unit.convert(value.doubleValue(), kind.getStorageUnit(), unit);
+    }
+
     public String format()
     {
         return format(kind.getDefaultDisplayUnit());
@@ -201,7 +209,6 @@ public class Quantity extends Number implements Comparable<Quantity>
     private static final String SIMPLE_UNIT_REGEX = "(?<unit>[a-zA-Zμℓ]+)";
     // private static final String COMPLEX_UNIT ="(?<unit>[\\[/a-zA-Z°μℓ][\\[\\]_./a-zA-Z0-9°μℓ])?"; // unit contains []_./azAZ09°μ
 
-//    private static final Pattern pattern = Pattern.compile(NUMBER);
     private static final Pattern pattern = Pattern.compile("^" + NUMBER_REGEX + "\\s*" + SIMPLE_UNIT_REGEX + "?$");
 
 
@@ -235,7 +242,7 @@ public class Quantity extends Number implements Comparable<Quantity>
                 if (!".".equals(digits) && !"".equals(digits))
                 {
                     valuePart = m.group("number");
-                    if (m.namedGroups().containsKey("unit"))
+                    if (StringUtils.isNotBlank(m.group("unit"))) //m.namedGroups().containsKey("unit"))
                         unitPart = m.group("unit");
                 }
             }

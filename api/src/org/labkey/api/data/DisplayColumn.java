@@ -525,25 +525,34 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (null != expr && expr.canRender(ctx.getFieldMap().keySet()))
         {
+            // TODO handle Quantity values here?
             return expr.eval(ctx);
         }
 
         @NotNull String formattedString;
-        if (null != format)
+        if (null != displayUnit && value instanceof Number)
+        {
+            Quantity q = (value instanceof Quantity) ?
+                    (Quantity)value :
+                    displayUnit.getKindOfQuantity().toQuantity((Number)value);
+            /* DISPLAY WITH UNIT SUFFIX
+            if (null == format)
+                formattedString = q.format(displayUnit);
+            else
+                formattedString = q.format(displayUnit, format);\
+             */
+            /* DISPLAY WITHOUT UNIT SUFFIX */
+            var doubleValue = ConvertUtils.convert(q.doubleValue(displayUnit));
+            if (null == format)
+                formattedString = ConvertUtils.convert(doubleValue);
+            else
+                formattedString = format.format(value);
+        }
+        else if (null != format)
         {
             try
             {
-                if (null != displayUnit && value instanceof Number number)
-                {
-                    Quantity q = (value instanceof Quantity) ?
-                            (Quantity)value :
-                            displayUnit.getKindOfQuantity().toQuantity(number);
-                    formattedString = q.format(displayUnit, format);
-                }
-                else
-                {
-                    formattedString = format.format(value);
-                }
+                formattedString = format.format(value);
             }
             catch (IllegalArgumentException e)
             {
