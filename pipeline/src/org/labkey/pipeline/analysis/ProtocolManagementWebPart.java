@@ -34,14 +34,13 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -52,6 +51,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.B;
 
 /**
  * Grid view showing all pipeline protocols in a container
@@ -168,11 +169,11 @@ public class ProtocolManagementWebPart extends GridView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             if ((boolean)ctx.getRow().get("archived"))
             {
-                oldWriter.write("<b>&#x2714;</b>"); // html checkmark
+                B(HtmlString.unsafe("&#x2714;")).appendTo(out); // html checkmark
             }
         }
     }
