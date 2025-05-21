@@ -258,7 +258,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             String changeDetails = "Name: " + orgName + " > " + newName.trim();
             changeDetails += "\nLabel: " + orgLabel + " > " + newLabel.trim();
             AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, orgName, null,
-                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'.",
+                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'. The descriptor of domain " + orgName + " was updated.",
                     "", null, null, changeDetails);
             boolean pass = _auditLogHelper.validateLastDomainAuditEvents(orgName, getProjectName(), expectedDomainEvent, Collections.emptyMap());
             checker().verifyTrue("The comment logged for the dataset renaming was not as expected", pass);

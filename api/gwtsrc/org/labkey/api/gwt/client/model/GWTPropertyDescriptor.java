@@ -591,6 +591,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         return valueExpression.getString();
     }
 
+    public boolean isCalculatedColumn()
+    {
+        return getValueExpression() != null;
+    }
+
     public void setValueExpression(String valueExpression)
     {
         this.valueExpression.set(valueExpression);

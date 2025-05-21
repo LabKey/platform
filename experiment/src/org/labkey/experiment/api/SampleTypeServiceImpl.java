@@ -793,7 +793,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String propertyName = pd.getName().toLowerCase();
 
             // calculatedFields will be handled separately
-            if (pd.getValueExpression() != null)
+            if (pd.isCalculatedColumn())
             {
                 calculatedFields.add(pd);
                 continue;
@@ -880,7 +880,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u, changeDetails);
+                    domain.save(u, changeDetails, calculatedFields);
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);

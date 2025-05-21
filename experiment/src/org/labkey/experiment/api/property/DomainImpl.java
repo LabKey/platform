@@ -59,8 +59,10 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataColumnJSON;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -379,7 +381,7 @@ public class DomainImpl implements Domain
     @Override
     public void save(User user) throws ChangePropertyDescriptorException
     {
-        save(user, null);
+        save(user, null, null);
     }
 
     @Override
@@ -525,22 +527,26 @@ public class DomainImpl implements Domain
 
     public void saveIfNotExists(User user) throws ChangePropertyDescriptorException
     {
-        save(user, false, true, null, null, null, null);
+        save(user, false, true, null, null, null, null, null, null);
     }
 
     @Override
-    public void save(User user, @Nullable Map<String, Object> newRecordMap) throws ChangePropertyDescriptorException
+    public void save(User user, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, null, null, null, newRecordMap);
+        save(user, false, false, null, null, null, newRecordMap, null, calculatedFields);
     }
 
     @Override
-    public void save(User user, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap) throws ChangePropertyDescriptorException
+    public void save(User user, @Nullable String auditComment, @Nullable String auditUserComment,
+                     @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
+                     @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, auditComment, auditUserComment, oldRecordMap, newRecordMap);
+        save(user, false, false, auditComment, auditUserComment, oldRecordMap, newRecordMap, oldCalculatedFields, newCalculatedFields);
     }
 
-    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment, @Nullable String auditUserComment, @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap) throws ChangePropertyDescriptorException
+    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment, @Nullable String auditUserComment,
+                     @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
+                     @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
         ExperimentService exp = ExperimentService.get();
 
@@ -814,6 +820,10 @@ public class DomainImpl implements Domain
                 }
             }
 
+            CalculatedFieldsUpdate calculatedFieldsUpdate = determineCalculatedFieldsUpdates(oldCalculatedFields, newCalculatedFields);
+            if (calculatedFieldsUpdate.hasChange())
+                propChanged = true;
+
             final boolean finalPropChanged = propChanged;
             final String extraAuditComment = StringUtils.isEmpty(auditComment) ? "" : auditComment + ' ';
 
@@ -832,6 +842,7 @@ public class DomainImpl implements Domain
                 {
                     final Long domainEventId = newDomainEventId != null ? newDomainEventId : addAuditEvent(user, extraAuditComment + columnModifiedMsg, auditUserComment, getContainer(), oldRecordMap, newRecordMap);
                     propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, getContainer(), auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
+                    calculatedFieldsUpdate.addAuditEvent(user, getContainer(), domainEventId, getName());
                 }
                 else if (!isDomainNew)
                 {
@@ -853,6 +864,123 @@ public class DomainImpl implements Domain
             QueryService.get().updateLastModified();
             transaction.commit();
         }
+    }
+
+    record CalculatedFieldsUpdate(@Nullable List<MetadataColumnJSON> added, @Nullable List<MetadataColumnJSON> removed, @Nullable List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updated)
+    {
+        public boolean hasChange()
+        {
+            return (added != null && !added.isEmpty()) || (removed != null && !removed.isEmpty()) || (updated != null && !updated.isEmpty());
+        }
+
+        public void addAuditEvent(@Nullable User user, Container container, Long domainEventId, String domainName)
+        {
+            if (added != null)
+            {
+                for (MetadataColumnJSON field : added)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, field.getName(),
+                                    "Created", domainEventId, domainName, "Calculated field created.");
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, field.getAuditRecordMap()));
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+
+            if (removed != null)
+            {
+                for (MetadataColumnJSON field : removed)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, field.getName(),
+                                    "Deleted", domainEventId, domainName, "Calculated field removed.");
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+
+            if (updated != null)
+            {
+                for (Pair<MetadataColumnJSON, MetadataColumnJSON> oldNew : updated)
+                {
+                    DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
+                            new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, oldNew.first.getName(),
+                                    "Modified", domainEventId, domainName, "Calculated field updated.");
+                    event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldNew.first.getAuditRecordMap()));
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldNew.second.getAuditRecordMap()));
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+        }
+    }
+
+    private CalculatedFieldsUpdate determineCalculatedFieldsUpdates(@Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields)
+    {
+        Map<String, GWTPropertyDescriptor> oldFieldsMap = new HashMap<>();
+        if (oldCalculatedFields != null)
+            oldCalculatedFields.forEach(field -> oldFieldsMap.put(field.getName(), field));
+        Map<String, GWTPropertyDescriptor> newFieldsMap = new HashMap<>();
+        if (newCalculatedFields != null)
+            newCalculatedFields.forEach(field -> newFieldsMap.put(field.getName(), field));
+
+        Set<String> oldFields = oldFieldsMap.keySet();
+        Set<String> newFields = newFieldsMap.keySet();
+
+        List<String> added = new ArrayList<>(newFields);
+        added.removeAll(oldFields);
+        List<MetadataColumnJSON> addedFields = new ArrayList<>();
+        for (String field : added)
+        {
+            GWTPropertyDescriptor descriptor = newFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSON = null;
+            if (descriptor instanceof MetadataColumnJSON)
+                metadataColumnJSON = (MetadataColumnJSON) descriptor;
+            else
+                metadataColumnJSON = new MetadataColumnJSON(descriptor);
+            addedFields.add(metadataColumnJSON);
+        }
+
+        List<String> deleted = new ArrayList<>(oldFields);
+        deleted.removeAll(newFields);
+        List<MetadataColumnJSON> removedFields = new ArrayList<>();
+        for (String field : deleted)
+        {
+            GWTPropertyDescriptor descriptor = oldFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSON = null;
+            if (descriptor instanceof MetadataColumnJSON)
+                metadataColumnJSON = (MetadataColumnJSON) descriptor;
+            else
+                metadataColumnJSON = new MetadataColumnJSON(descriptor);
+            removedFields.add(metadataColumnJSON);
+        }
+
+        List<String> retained = new ArrayList<>(oldFields);
+        retained.retainAll(newFields);
+        List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updatedFields = new ArrayList<>();
+        for (String field : retained)
+        {
+            GWTPropertyDescriptor oldDescriptor = oldFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSONOld = null;
+            if (oldDescriptor instanceof MetadataColumnJSON)
+                metadataColumnJSONOld = (MetadataColumnJSON) oldDescriptor;
+            else
+                metadataColumnJSONOld = new MetadataColumnJSON(oldDescriptor);
+
+            GWTPropertyDescriptor newDescriptor = newFieldsMap.get(field);
+            MetadataColumnJSON metadataColumnJSONNew = null;
+            if (newDescriptor instanceof MetadataColumnJSON)
+                metadataColumnJSONNew = (MetadataColumnJSON) newDescriptor;
+            else
+                metadataColumnJSONNew = new MetadataColumnJSON(newDescriptor);
+
+            Map<String, Object> oldDetails = metadataColumnJSONOld.getAuditRecordMap();
+            Map<String, Object> newDetails = metadataColumnJSONNew.getAuditRecordMap();
+            if (oldDetails.equals(newDetails))
+                continue;
+
+            updatedFields.add(new Pair<>(metadataColumnJSONOld, metadataColumnJSONNew));
+        }
+
+        return new CalculatedFieldsUpdate(addedFields, removedFields, updatedFields);
     }
 
     private void ensureUniqueIdValues(List<DomainProperty> propsAdded) throws SQLException, BatchValidationException

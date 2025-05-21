@@ -7884,7 +7884,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (GWTPropertyDescriptor pd : properties)
         {
             // calculatedFields will be handled separately
-            if (pd.getValueExpression() != null)
+            if (pd.isCalculatedColumn())
             {
                 calculatedFields.add(pd);
                 continue;
@@ -7939,7 +7939,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (kind != null)
                 domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
-            domain.save(u, options == null ? null : options.getAuditRecordMap());
+            domain.save(u, options == null ? null : options.getAuditRecordMap(), calculatedFields);
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);

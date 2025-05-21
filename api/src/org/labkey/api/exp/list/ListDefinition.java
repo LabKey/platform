@@ -25,6 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
@@ -291,7 +292,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap) throws Exception;
+    void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws Exception;
     void delete(User user) throws DomainNotFoundException;
     void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException;
 

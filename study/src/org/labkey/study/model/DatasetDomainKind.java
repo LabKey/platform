@@ -514,7 +514,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
-                    newDomain.save(user, arguments.getAuditRecordMap());
+                    newDomain.save(user, arguments.getAuditRecordMap(), domain.getCalculatedFields());
 
                     List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
                     newDomain.setPropertyIndices(indices, lowerReservedNames);

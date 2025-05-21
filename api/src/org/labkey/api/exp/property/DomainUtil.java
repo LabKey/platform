@@ -940,7 +940,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user, auditComment, auditUserComment, oldProps, newProps);
+                d.save(user, auditComment, auditUserComment, oldProps, newProps, orig.getCalculatedFields(), update.getCalculatedFields());
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -1044,7 +1044,7 @@ public class DomainUtil
         {
             GWTPropertyDescriptor pd = updateFieldsIterator.next();
             int propertyId = pd.getPropertyId();
-            if (pd.getValueExpression() == null && origLockedFieldMap.containsKey(propertyId))
+            if (!pd.isCalculatedColumn() && origLockedFieldMap.containsKey(propertyId))
             {
                 updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
             }
@@ -1466,7 +1466,7 @@ public class DomainUtil
                 }
             }
 
-            if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
+            if (field.isCalculatedColumn() && field.getValueExpression().trim().length() > 4000)
             {
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The value expression for '" + name
                         + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));

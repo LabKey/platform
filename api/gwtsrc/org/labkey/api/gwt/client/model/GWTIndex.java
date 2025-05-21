@@ -89,7 +89,7 @@ public class GWTIndex implements IsSerializable, Serializable
             return null;
 
         Set<String> excludeIndices = excludeBaseIndices == null ? Collections.emptySet() : excludeBaseIndices.stream().map(PropertyStorageSpec.Index::toStringVal).collect(Collectors.toSet());
-        return indices.stream().map(GWTIndex::toStringVal).filter(v -> !excludeIndices.contains(v)).toList();
+        return indices.stream().map(GWTIndex::toStringVal).filter(v -> !excludeIndices.contains(v)).sorted().toList();
     }
 
 }
