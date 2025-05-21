@@ -2,6 +2,7 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
@@ -44,7 +45,7 @@ public class HitTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.addColumns();
         getMutableColumnOrThrow("RunId").setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.Runs));
-        getMutableColumnOrThrow("ProtocolId").setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).schema(ExpSchema.SCHEMA_NAME).table(ExpSchema.TableType.Protocols));
+        getMutableColumnOrThrow("ProtocolId").setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).schema(AssaySchema.NAME).table(AssaySchema.ASSAY_LIST_TABLE_NAME));
     }
 
     @Override
