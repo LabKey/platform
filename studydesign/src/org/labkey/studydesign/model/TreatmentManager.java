@@ -29,6 +29,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -973,6 +976,9 @@ public class TreatmentManager
 
             String name = GUID.makeHash();
             Container c = ContainerManager.createContainer(junit, name, _context.getUser());
+            Set<Module> modules = new HashSet<>(c.getActiveModules());
+            modules.add(ModuleLoader.getInstance().getModule("studydesign"));
+            c.setActiveModules(modules);
             _junitStudy = StudyService.get().createStudy(c, _context.getUser(), "Junit Study", TimepointType.VISIT, true);
         }
 
