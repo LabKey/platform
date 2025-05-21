@@ -1,6 +1,8 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.webdav.WebdavResource;
@@ -35,7 +37,8 @@ public interface ExpSearchable
             task = ss.defaultTask();
         }
 
-        var doc = createIndexDocument(table);
+        var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
+        var doc = expScope.executeWithRetryReadOnly((tx) -> createIndexDocument(table));
         if (doc != null)
             task.addResource(doc, priority == null ? SearchService.PRIORITY.item : priority);
     }

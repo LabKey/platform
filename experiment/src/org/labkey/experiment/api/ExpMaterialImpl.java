@@ -400,8 +400,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (tableInfo == null)
                 tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
 
-            if (tableInfo instanceof ExpMaterialTableImpl expMaterialTable)
-                getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
+            if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
+                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", getSampleType().getName(), ExpMaterialTableImpl.class.getName()));
+
+            getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
         }
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);

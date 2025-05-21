@@ -27,7 +27,7 @@ import java.util.Date;
 import java.util.Map;
 
 /** Represents a physical object in the experiment data model - typically a sample or specimen */
-public interface ExpMaterial extends ExpRunItem, ExpSearchable
+public interface ExpMaterial extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Material";
     String MATERIAL_INPUT_PARENT = "MaterialInputs";

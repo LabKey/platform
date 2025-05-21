@@ -35,7 +35,7 @@ import java.sql.SQLException;
 /**
  * Represents a virtual experiment object. Typically, a file on disk, but could be something pointed at by any URI including S3 objects.
  */
-public interface ExpData extends ExpRunItem, ExpSearchable
+public interface ExpData extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Data";
     String DATA_INPUT_PARENT = "DataInputs";

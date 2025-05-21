@@ -250,7 +250,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public void save(User user)
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
-        ExpDataClassImpl dataClass = getDataClass(null);
+        ExpDataClassImpl dataClass = getDataClass();
         if (dataClass != null && ExpData.DEFAULT_CPAS_TYPE.equals(getCpasType()))
            setCpasType(dataClass.getLSID());
 
@@ -382,7 +382,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (result != null)
             return result;
 
-        ExpDataClass dataClass = getDataClass(null);
+        ExpDataClass dataClass = getDataClass();
         if (dataClass != null)
             return dataClass.getLSID();
 
@@ -525,7 +525,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public String getDocumentId()
     {
         String dataClassName = "-";
-        ExpDataClass dc = getDataClass(null);
+        ExpDataClass dc = getDataClass();
         if (dc != null)
             dataClassName = dc.getName();
         // why not just data:rowId?
@@ -538,6 +538,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return getObjectProperties(getDataClass());
     }
 
+    @Override
     public Map<String, ObjectProperty> getObjectProperties(@Nullable User user)
     {
         return getObjectProperties(getDataClass(user));
@@ -583,7 +584,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return null;
 
         ExpDataClass dc = null;
-        if (dataClassName.length() > 0 && !dataClassName.equals("-"))
+        if (!StringUtils.isEmpty(dataClassName) && !dataClassName.equals("-"))
         {
             String dcKey = containerId + '-' + dataClassName;
             dc = dcCache.computeIfAbsent(dcKey, (x) -> ExperimentServiceImpl.get().getDataClass(c, dataClassName));
@@ -722,13 +723,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             identifiersHi.addAll(aliases);
         }
 
-        ExpDataClassImpl dc = getDataClass(null);
-        if (tableInfo == null && dc != null)
-        {
-            tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_EXP_DATA).getTable(dc.getName());
-        }
-
-        if (null != dc)
+        ExpDataClassImpl dc = getDataClass();
+        if (dc != null)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, container).addParameter("rowId", dc.getRowId());
             NavTree t = new NavTree(dc.getName(), show);
@@ -737,10 +733,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
             body.append(dc.getName());
-        }
 
-        if (tableInfo instanceof ExpDataClassDataTableImpl expDataClassDataTable)
-        {
+            if (tableInfo == null)
+                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_EXP_DATA).getTable(dc.getName());
+
+            if (!(tableInfo instanceof ExpDataClassDataTableImpl expDataClassDataTable))
+                throw new IllegalArgumentException(String.format("Unable to index data class item in %s. Table must be an instance of %s", dc.getName(), ExpDataClassDataTableImpl.class.getName()));
+
             // Collect other text columns and lookup display columns
             getIndexValues(props, expDataClassDataTable, identifiersHi, identifiersMed, identifiersLo, keywordsHi, keywordsMed, keywordsLo, jsonData);
         }
@@ -785,7 +784,6 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             getModified()
         );
     }
-
 
     private static void appendTokens(StringBuilder sb, Collection<String> toks)
     {
