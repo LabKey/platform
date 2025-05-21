@@ -395,20 +395,20 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // Add all String and Integer custom property descriptions and values to body
         JSONObject jsonData = new JSONObject();
-        if (null != getSampleType())
+        ExpSampleType st = getSampleType();
+        if (null != st)
         {
             if (tableInfo == null)
-                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
+                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(st.getName());
 
             if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
-                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", getSampleType().getName(), ExpMaterialTableImpl.class.getName()));
+                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
 
             getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
         }
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
-        ExpSampleType st = getSampleType();
         if (null != st)
         {
             if (st.isMedia())

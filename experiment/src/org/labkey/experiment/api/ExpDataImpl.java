@@ -723,7 +723,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             identifiersHi.addAll(aliases);
         }
 
-        ExpDataClassImpl dc = getDataClass();
+        ExpDataClassImpl dc = getDataClass(User.getSearchUser());
         if (dc != null)
         {
             ActionURL show = new ActionURL(ExperimentController.ShowDataClassAction.class, container).addParameter("rowId", dc.getRowId());
