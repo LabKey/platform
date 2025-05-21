@@ -7884,7 +7884,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (GWTPropertyDescriptor pd : properties)
         {
             // calculatedFields will be handled separately
-            if (pd.isCalculatedColumn())
+            if (pd.getValueExpression() != null)
             {
                 calculatedFields.add(pd);
                 continue;

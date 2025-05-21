@@ -1044,7 +1044,7 @@ public class DomainUtil
         {
             GWTPropertyDescriptor pd = updateFieldsIterator.next();
             int propertyId = pd.getPropertyId();
-            if (!pd.isCalculatedColumn() && origLockedFieldMap.containsKey(propertyId))
+            if (pd.getValueExpression() == null && origLockedFieldMap.containsKey(propertyId))
             {
                 updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
             }
@@ -1466,7 +1466,7 @@ public class DomainUtil
                 }
             }
 
-            if (field.isCalculatedColumn() && field.getValueExpression().trim().length() > 4000)
+            if (field.getValueExpression() != null && field.getValueExpression().trim().length() > 4000)
             {
                 exception.addFieldError(name, getDomainErrorMessage(updates, "The value expression for '" + name
                         + "' is too long (" + field.getValueExpression().trim().length() + " characters). Please limit to 4000 characters."));

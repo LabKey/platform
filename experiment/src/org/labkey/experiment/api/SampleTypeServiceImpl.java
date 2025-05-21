@@ -793,7 +793,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String propertyName = pd.getName().toLowerCase();
 
             // calculatedFields will be handled separately
-            if (pd.isCalculatedColumn())
+            if (pd.getValueExpression() != null)
             {
                 calculatedFields.add(pd);
                 continue;
