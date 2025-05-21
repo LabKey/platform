@@ -193,6 +193,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DateUtil;
@@ -2540,11 +2541,17 @@ public class StudyController extends BaseStudyController
      * Called from the vaccine design webpart for the study design module
      */
     @RequiresPermission(UpdatePermission.class)
-    public class CreateVisitVaccineDesign extends MutatingApiAction<VisitForm>
+    public class CreateVisitForVaccineDesign extends MutatingApiAction<VisitForm>
     {
         @Override
         public void validateForm(VisitForm form, Errors errors)
         {
+            if (!StudyDesignManager.get().isModuleActive(getContainer()))
+            {
+                errors.reject(ERROR_MSG, "This action can only be called if the study design module is active");
+                return;
+            }
+
             Study study = getStudy(getContainer());
             boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
 

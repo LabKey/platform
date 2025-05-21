@@ -89,6 +89,11 @@ public class StudyDesignManager
         deletedTables.add(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap());
         Table.delete(StudyDesignSchema.getInstance().getTableInfoObjective(), filter);
         deletedTables.add(StudyDesignSchema.getInstance().getTableInfoObjective());
+
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+        deletedTables.add(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit());
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), filter);
+        deletedTables.add(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen());
     }
 
     // Proactively create the domains at study creation time to avoid problems with lazy creation, #42641

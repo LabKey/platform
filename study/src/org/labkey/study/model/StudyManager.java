@@ -162,7 +162,6 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.studydesign.StudyDesignService;
 import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
-import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
 import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
 import org.labkey.api.studydesign.query.StudyProductDomainKind;
@@ -2650,12 +2649,6 @@ public class StudyManager
             // Since study creates these tables, study needs to delete them
             new SpecimenTablesProvider(c, null, null).deleteTables();
             LocationCache.clear(c);
-
-            //
-            // assay schedule
-            //
-            Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), containerFilter);
-            assert deletedTables.add(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit());
 
             //
             // metadata
