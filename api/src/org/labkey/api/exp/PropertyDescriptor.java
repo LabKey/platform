@@ -544,7 +544,12 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
-            map.put("Type", getPropertyType().getXarName());
+        {
+            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
+                map.put("Type", "Flag");
+            else
+                map.put("Type", getPropertyType().getXarName());
+        }
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
         if (!StringUtils.isEmpty(getDescription()))
