@@ -420,9 +420,11 @@ public class StudyDatasetLsidTest extends MissingValueIndicatorsTest
         catch (CommandException e)
         {
             if (fail)
-                // error message may vary depending on single or multi row inserts
+                // error message may vary depending on single or multi row inserts, postgres or sql server
                 assertTrue(String.format("Expected a duplicate key error but was : %s", e.getMessage()),
-                        e.getMessage().contains("Only one row is allowed for each Participant") || e.getMessage().contains("duplicate key value violates unique constraint"));
+                        e.getMessage().contains("Only one row is allowed for each Participant") ||
+                        e.getMessage().contains("duplicate key value violates unique constraint") ||
+                        e.getMessage().contains("Cannot insert duplicate key row"));
             else
                 Assert.fail(String.format("Expected the insert to succeed but instead it failed : %s", e.getMessage()));
             return resp;
