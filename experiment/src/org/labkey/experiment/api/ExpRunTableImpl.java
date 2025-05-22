@@ -66,6 +66,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -90,6 +91,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
@@ -761,13 +767,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Object rowId = getColumnInfo().getValue(ctx);
             if (rowId != null)
             {
                 ActionURL graphURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(ctx.getContainer(), ((Number)rowId).intValue());
-                oldWriter.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
+                out.write(LinkBuilder.simpleLink(IMG(at(src, AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif", height, 18, width, 18)), graphURL).title("Experiment run graph"));
             }
         }
     }

@@ -34,8 +34,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +55,7 @@ public class AssayDataLinkDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         // RunId and ProtocolId may not be available if we are in a custom query
         Number runId = _runIdColumnInfo == null ? null : (Number)_runIdColumnInfo.getValue(ctx);
