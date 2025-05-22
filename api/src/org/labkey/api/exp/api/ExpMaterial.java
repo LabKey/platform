@@ -83,5 +83,4 @@ public interface ExpMaterial extends ExpRunItem
     Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
-
 }
