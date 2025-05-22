@@ -69,7 +69,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser()) : schema;
 
         // add the assay schedule specific tables
-        TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME, null);
+        TableInfo assaySpecimenTable = schema.getTable(StudyDesignQuerySchema.ASSAY_SPECIMEN_TABLE_NAME, null);
 
         writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(ctx, assaySpecimenTable));
         writeAssaySpecimenVisitMap(ctx, vf);
@@ -90,7 +90,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
     private void writeAssaySpecimenVisitMap(StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser());
-        TableInfo tableInfo = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+        TableInfo tableInfo = schema.getTable(StudyDesignQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
         List<FieldKey> fields = new ArrayList<>(tableInfo.getDefaultVisibleColumns());
 
