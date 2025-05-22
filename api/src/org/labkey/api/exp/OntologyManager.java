@@ -2448,10 +2448,10 @@ public class OntologyManager
 
     public static DomainDescriptor getDomainDescriptor(int id, boolean forUpdate)
     {
-        DomainDescriptor dd = DOMAIN_DESC_BY_ID_CACHE.get(id);
         if (forUpdate)
-            DOMAIN_DESC_BY_ID_CACHE.remove(id);
-        return dd;
+            return new DomainDescriptorLoader().load(id, null);
+
+        return DOMAIN_DESC_BY_ID_CACHE.get(id);
     }
 
     @Nullable
@@ -2466,21 +2466,29 @@ public class OntologyManager
         if (c == null)
             return null;
 
+        if (forUpdate)
+            return getDomainDescriptorForUpdate(domainURI, c);
+
         // cache lookup by project. if not found at project level, check to see if global
         Pair<String, GUID> key = getCacheKey(domainURI, c);
         DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
         if (null != dd)
-        {
-            if (forUpdate)
-                DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(key);
             return dd;
-        }
 
         // Try in the /Shared container too
         key = getCacheKey(domainURI, _sharedContainer);
-        dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
-        if (null != dd && forUpdate)
-            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(key);
+        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
+    }
+
+    @Nullable
+    private static DomainDescriptor getDomainDescriptorForUpdate(String domainURI, Container c)
+    {
+        if (c == null)
+            return null;
+
+        DomainDescriptor dd = fetchDomainDescriptorFromDB(domainURI, c);
+        if (dd == null)
+            dd = fetchDomainDescriptorFromDB(domainURI, _sharedContainer);
         return dd;
     }
 
