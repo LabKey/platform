@@ -36,8 +36,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -77,7 +75,7 @@ public class AssayQCFlagColumn extends ExprColumn
             }
 
             @Override
-            public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
             {
                 String strValue = (String)getValue(ctx);
                 if (isNotBlank(strValue))
@@ -89,12 +87,12 @@ public class AssayQCFlagColumn extends ExprColumn
                     // add onclick handler to call the QCFlag toggle window creation function
                     // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
                     LinkBuilder linkBuilder = new LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
-                            .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
-                    oldWriter.write(linkBuilder.toString());
+                        .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
+                    out.write(linkBuilder);
                 }
                 else
                 {
-                    oldWriter.write("&nbsp;");
+                    out.write(HtmlString.NBSP);
                 }
             }
 

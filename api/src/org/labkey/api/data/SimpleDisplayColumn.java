@@ -19,13 +19,11 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -124,41 +122,36 @@ public class SimpleDisplayColumn extends DisplayColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
+        Object value = getDisplayValue(ctx);
+        final String text;
+
+        if (value == null)
+            text = "";
+        else if (null == _format)
+            text = getDisplayValue(ctx).toString();
+        else
+            text = _format.format(getDisplayValue(ctx));
+
         String url = renderURL(ctx);
         if (null != url)
         {
-            oldWriter.write("<a href='");
-            oldWriter.write(PageFlowUtil.filter(url));
-
             String linkTarget = getLinkTarget();
-            if (null != linkTarget)
-            {
-                oldWriter.write("' target='");
-                oldWriter.write(linkTarget);
-                oldWriter.write("' rel='noopener noreferrer'");
-            }
+            LinkBuilder lb = new LinkBuilder(text)
+                .href(url)
+                .target(linkTarget)
+                .addClass(getLinkCls());
 
-            String linkCls = getLinkCls();
-            if (null != linkCls)
-            {
-                oldWriter.write("' class='");
-                oldWriter.write(linkCls);
-            }
+            if (linkTarget != null)
+                lb.rel("noopener noreferrer");
 
-            oldWriter.write("'>");
+            out.write(lb);
         }
-        Object value = getDisplayValue(ctx);
-        if (value == null)
-            oldWriter.write("");
-        else if (null == _format)
-            oldWriter.write(getDisplayValue(ctx).toString());
         else
-            oldWriter.write(_format.format(getDisplayValue(ctx)));
-
-        if (null != url)
-            oldWriter.write("</a>");
+        {
+            out.write(text);
+        }
     }
 
     @Override

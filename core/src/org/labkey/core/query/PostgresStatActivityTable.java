@@ -29,14 +29,11 @@ import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.core.admin.AdminController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -219,7 +216,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             Integer pid = ctx.get(getBoundColumn().getFieldKey(), Integer.class);
             List<Thread> threads = new ArrayList<>();
@@ -236,10 +233,10 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
             String separator = "";
             for (Thread thread : threads)
             {
-                oldWriter.write(separator);
+                out.write(separator);
                 ActionURL url = new ActionURL(AdminController.ShowThreadsAction.class, ContainerManager.getRoot());
                 url.setFragment(thread.getName());
-                oldWriter.write(LinkBuilder.labkeyLink(thread.getName(), url).target("_blank").renderToString());
+                out.write(LinkBuilder.labkeyLink(thread.getName(), url).target("_blank"));
                 separator = "\n<br/>";
 
                 // Check for HTTP threads and their async counterparts to tie queries to the request that spawned them
@@ -250,8 +247,8 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 }
                 if (request != null)
                 {
-                    oldWriter.write(separator);
-                    oldWriter.write( PageFlowUtil.filter(request));
+                    out.write(separator);
+                    out.write(request.toString());
                 }
             }
         }

@@ -95,6 +95,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -346,7 +347,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -6787,25 +6787,16 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
 
             if (value != null)
             {
-                StringBuilder sb = new StringBuilder();
-                String delim = "";
-
-                for (String name : value.split(VALUE_DELIMITER_REGEX))
-                {
-                    if (_assignmentSet.contains(name))
-                    {
-                        sb.append(delim);
-                        sb.append(name);
-                        delim = ",<br>";
-                    }
-                }
-                oldWriter.write(sb.toString());
+                out.write(Arrays.stream(value.split(VALUE_DELIMITER_REGEX))
+                    .filter(_assignmentSet::contains)
+                    .map(HtmlString::of)
+                    .collect(LabKeyCollectors.joining(HtmlString.unsafe(",<br>"))));
             }
         }
     }

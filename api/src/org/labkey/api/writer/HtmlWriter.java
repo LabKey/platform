@@ -94,7 +94,7 @@ public class HtmlWriter implements Appendable
         }
     }
 
-    // Outputs an HTML encoded version of the input string
+    // Outputs an HTML-encoded version of the input string
     public void write(String s)
     {
         write(HtmlString.of(s));
