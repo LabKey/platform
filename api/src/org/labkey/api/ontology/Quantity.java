@@ -278,7 +278,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     public abstract static class Mass_mg extends Quantity {}
     public abstract static class Mass_g extends Quantity {}
     public abstract static class Mass_kg extends Quantity {}
-    public abstract static class Mass_Mg extends Quantity {}
+    public abstract static class Mass_Megag extends Quantity {}
 
     public abstract static class Volume_pl extends Quantity {}
     public abstract static class Volume_nl extends Quantity {}
@@ -286,7 +286,7 @@ public class Quantity extends Number implements Comparable<Quantity>
     public abstract static class Volume_ml extends Quantity {}
     public abstract static class Volume_l extends Quantity {}
     public abstract static class Volume_kl extends Quantity {}
-    public abstract static class Volume_Ml extends Quantity {}
+    public abstract static class Volume_Megal extends Quantity {}
 
     public abstract static class Volume extends Quantity
     {

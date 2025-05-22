@@ -23,7 +23,7 @@ public enum Unit
             "L", "ℓ", "litre", "liters"),
     // is it better to include these little used units, to avoid future case-sensitivity problems?
     Ml(KindOfQuantity.Volume, l, 10e3, "Ml",
-            Quantity.Volume_Ml.class,
+            Quantity.Volume_Megal.class,
             "megaliter", "megaliters",
             "ML", "megalitre", "megalitres"),
     kl(KindOfQuantity.Volume, l, 10e3, "kl",
@@ -51,7 +51,7 @@ public enum Unit
             Quantity.Mass_g.class,
             "gram", "grams"),
     Mg(KindOfQuantity.Mass, g, 10e6, "Mg",
-            Quantity.Mass_Mg.class,
+            Quantity.Mass_Megag.class,
             "megagram", "megagrams",
             "tonne", "tonnes"),
     kg(KindOfQuantity.Mass, g, 10e3, "kg",
