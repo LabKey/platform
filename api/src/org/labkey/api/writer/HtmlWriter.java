@@ -100,6 +100,12 @@ public class HtmlWriter implements Appendable
         write(HtmlString.of(s));
     }
 
+    // Outputs an HTML-encoded version of the input object
+    public void write(Object o)
+    {
+        write(HtmlString.of(o));
+    }
+
     public static class AttributeValue
     {
         private final String _name;

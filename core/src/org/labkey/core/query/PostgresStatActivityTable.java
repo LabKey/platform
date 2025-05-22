@@ -248,7 +248,7 @@ public class PostgresStatActivityTable extends AbstractPostgresAdminOnlyTable
                 if (request != null)
                 {
                     out.write(separator);
-                    out.write(request.toString());
+                    out.write(request);
                 }
             }
         }

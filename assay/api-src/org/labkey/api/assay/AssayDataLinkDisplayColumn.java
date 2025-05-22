@@ -28,6 +28,8 @@ import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
@@ -39,16 +41,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Jul 23, 2007
- */
 public class AssayDataLinkDisplayColumn extends DataColumn
 {
+    private final Map<Number, ExpProtocol> _protocols = new HashMap<>();
+    private final ContainerFilter _containerFilter;
+
     private ColumnInfo _protocolColumnInfo;
-    private Map<Number, ExpProtocol> _protocols = new HashMap<>();
     private ColumnInfo _runIdColumnInfo;
-    private ContainerFilter _containerFilter;
     private ColumnInfo _containerColumnInfo;
 
     public AssayDataLinkDisplayColumn(ColumnInfo colInfo, ContainerFilter containerFilter)
@@ -76,18 +75,16 @@ public class AssayDataLinkDisplayColumn extends DataColumn
             if (null != container)
             {
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, _containerFilter, runId.intValue());
-
-                oldWriter.write("<a href=\"" + url.getLocalURIString() + "\" title=\"View the data for just this run\">" +
-                        PageFlowUtil.filter(getDisplayColumn().getValue(ctx)) + "</a>");
+                out.write(LinkBuilder.simpleLink(HtmlString.of(getDisplayColumn().getValue(ctx)), url).title("View the data for just this run"));
             }
             else
             {
-                oldWriter.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
+                out.write(getDisplayColumn().getValue(ctx));
             }
         }
         else
         {
-            oldWriter.write(PageFlowUtil.filter(getDisplayColumn().getValue(ctx)));
+            out.write(getDisplayColumn().getValue(ctx));
         }
     }
 
