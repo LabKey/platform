@@ -2448,7 +2448,7 @@ public class ExpDataIterators
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
 
-        private final Map<String, Container> _containerMap = new HashMap<>();
+        private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
 
         private final boolean _isCrossFolderUpdate;
 
