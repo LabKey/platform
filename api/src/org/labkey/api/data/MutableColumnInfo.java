@@ -97,7 +97,7 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
     void setLocked(boolean b);
 
-    // return a ColumnInfo that does not suppport MutableColumnInfo or a MutableColumnInfo that is locked
+    // return a ColumnInfo that does not support MutableColumnInfo or a MutableColumnInfo that is locked
     default ColumnInfo lock()
     {
         setLocked(true);
