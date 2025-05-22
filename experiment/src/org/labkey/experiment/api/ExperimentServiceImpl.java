@@ -982,7 +982,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         task.addRunnable(() -> {
             for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
             {
-                sampleType.index(task);
+                sampleType.index(task, SearchService.PRIORITY.bulk);
             }
         }, SearchService.PRIORITY.bulk);
 
@@ -991,7 +991,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         task.addRunnable(() -> {
             for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
             {
-                dataClass.index(task);
+                dataClass.index(task, SearchService.PRIORITY.bulk);
             }
         }, SearchService.PRIORITY.bulk);
 
@@ -1040,11 +1040,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Material> materials = selector.getArrayList(Material.class);
         materials.forEach(m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            var doc = expMaterial.createIndexDocument(null);
-            if (doc != null)
-            {
-                task.addResource(doc, SearchService.PRIORITY.bulk);
-            }
+            expMaterial.index(task, SearchService.PRIORITY.bulk);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
@@ -1081,7 +1077,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Data> data = selector.getArrayList(Data.class);
         data.forEach(d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
-            task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+            expData.index(task, SearchService.PRIORITY.bulk);
             maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
@@ -1221,7 +1217,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-
             Domain d = dataClass.getDomain();
             if (d == null)
                 return; // Domain may be null if the DataClass has been deleted
@@ -1232,7 +1227,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             indexDataClass(dataClass, task);
             indexDataClassData(dataClass, task);
-
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
@@ -1257,7 +1251,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         scope.executeWithRetryReadOnly(tx ->
             new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
                     task.addRunnable(() -> batch.forEach(data ->
-                        new ExpDataImpl(data).index(task, null)),
+                        new ExpDataImpl(data).index(task)),
                     SearchService.PRIORITY.bulk)
         ));
     }

@@ -16,12 +16,10 @@
 
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -70,6 +68,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -966,39 +965,25 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return "SampleType " + getName() + " in " + getContainer().getPath();
     }
 
-    public void index(SearchService.IndexTask task)
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table)
     {
         // Big hack to prevent study specimens from being indexed as part of sample types
         // Check needed on restart, as all documents are enumerated.
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
-        {
-            return;
-        }
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+            return null;
 
-        final SearchService.IndexTask indexTask = task;
-        final ExpSampleTypeImpl me = this;
-        indexTask.addRunnable(
-                () -> me.indexSampleType(indexTask)
-                , SearchService.PRIORITY.bulk
-        );
-    }
+        var container = getContainer();
+        if (container == null)
+            return null;
 
-    private void indexSampleType(SearchService.IndexTask indexTask)
-    {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
         if (urlProvider != null)
         {
             url = urlProvider.getShowSampleTypeURL(this);
-            url.setExtraPath(getContainer().getId());
+            url.setExtraPath(container.getId());
         }
 
         Map<String, Object> props = new HashMap<>();
@@ -1018,8 +1003,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
-        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+
+        return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                container.getId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),
@@ -1031,8 +1017,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
             }
         };
-
-        indexTask.addResource(sdr, SearchService.PRIORITY.item);
     }
 
     public String getDocumentId()

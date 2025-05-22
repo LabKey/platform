@@ -53,6 +53,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
@@ -67,10 +68,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * User: kevink
- * Date: 9/21/15
- */
 public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> implements ExpDataClass
 {
     public static final String NAMESPACE_PREFIX = "DataClass";
@@ -189,7 +186,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(getCategory());
     }
 
-
     @Nullable
     @Override
     public ExpSampleType getSampleType()
@@ -217,7 +213,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ExpDataImpl getData(Container c, String name)
     {
-        return ExperimentServiceImpl.get().getExpData(this, /*c, */ name);
+        return ExperimentServiceImpl.get().getExpData(this, name);
     }
 
     @Override
@@ -254,7 +250,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     {
         return urlFor(ExperimentController.ShowDataClassAction.class, getContainer());
     }
-
 
     @Override
     public void save(User user)
@@ -355,7 +350,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ActionURL urlShowHistory()
     {
-        //return urlFor(ExperimentController.HistoryDataClassAction.class, c);
         return null;
     }
 
@@ -373,33 +367,23 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return ret;
     }
 
-    public void index(SearchService.IndexTask task)
+    /**
+     * @return null if the parent container is no longer available
+     */
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo table)
     {
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+        var container = getContainer();
+        if (container == null)
+            return null;
 
-        final SearchService.IndexTask indexTask = task;
-        final ExpDataClassImpl me = this;
-        indexTask.addRunnable(
-                () -> me.indexDataClass(indexTask)
-                , SearchService.PRIORITY.bulk
-        );
-    }
-
-    private void indexDataClass(SearchService.IndexTask indexTask)
-    {
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
         if (urlProvider != null)
         {
-            url = urlProvider.getShowDataClassURL(getContainer(), getRowId());
-            url.setExtraPath(getContainer().getId());
+            url = urlProvider.getShowDataClassURL(container, getRowId());
+            url.setExtraPath(container.getId());
         }
 
         Map<String, Object> props = new HashMap<>();
@@ -419,8 +403,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
-        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                getContainer().getId(), "text/plain",
+
+        return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                container.getId(), "text/plain",
                 body, url,
                 getCreatedBy(), getCreated(),
                 getModifiedBy(), getModified(),
@@ -432,8 +417,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                 ExperimentServiceImpl.get().setDataClassLastIndexed(getRowId(), ms);
             }
         };
-
-        indexTask.addResource(sdr, SearchService.PRIORITY.item);
     }
 
     public String getDocumentTitle()
