@@ -75,9 +75,11 @@ public interface Domain extends IPropertyType
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
+    boolean isReadOnly();
+
     /*
      * This returns a lock which will acquire an UPDATE lock on the domain row in the database.
-     * This can be called at the beginning of a transaction to help reduce the chance of a dead-lock.
+     * This can be called at the beginning of a transaction to help reduce the chance of a deadlock.
      * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
      */
     Lock getDatabaseLock();

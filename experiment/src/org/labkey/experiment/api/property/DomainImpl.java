@@ -106,6 +106,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
+    private boolean _isReadOnly = true;
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
@@ -113,7 +114,13 @@ public class DomainImpl implements Domain
 
     public DomainImpl(DomainDescriptor dd)
     {
+        this(dd, true);
+    }
+
+    public DomainImpl(DomainDescriptor dd, boolean isReadOnly)
+    {
         _dd = dd;
+        _isReadOnly = isReadOnly;
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
 
         List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
@@ -206,6 +213,11 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
+    public boolean isReadOnly()
+    {
+        return _isReadOnly;
+    }
 
     @Override
     @Nullable   // null if not provisioned
@@ -543,6 +555,9 @@ public class DomainImpl implements Domain
 
     public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment) throws ChangePropertyDescriptorException
     {
+        if (_isReadOnly)
+            throw new ChangePropertyDescriptorException("Cannot save a domain that is immutable");
+
         ExperimentService exp = ExperimentService.get();
 
         // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps

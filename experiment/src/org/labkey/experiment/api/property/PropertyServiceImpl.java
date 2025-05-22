@@ -138,7 +138,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container, forUpdate);
         if (dd == null)
             return null;
-        return new DomainImpl(dd);
+        return new DomainImpl(dd, !forUpdate);
     }
 
     @Override
