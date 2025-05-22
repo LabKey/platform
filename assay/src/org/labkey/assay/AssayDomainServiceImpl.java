@@ -469,7 +469,7 @@ public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDo
                     if (protocol == null)
                         throw new ValidationException("Assay design has been deleted");
 
-                    oldProps = protocol.getAuditRecordMap(AssayService.get().getProvider(protocol), getContainer());
+                    oldProps = protocol.getAuditRecordMap(AssayService.get().getProvider(protocol));
 
                     // ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())

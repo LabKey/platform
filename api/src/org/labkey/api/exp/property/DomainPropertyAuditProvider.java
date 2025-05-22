@@ -139,11 +139,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
             }
         };
 
-        appendValueMapColumns(table);
-
-        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + EVENT_NAME);
-        url.setStrictContainerContextEval(true);
-        table.setDetailsURL(url);
+        appendValueMapColumns(table, EVENT_NAME);
 
         return table;
     }

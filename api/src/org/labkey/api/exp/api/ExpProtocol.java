@@ -180,5 +180,5 @@ public interface ExpProtocol extends ExpObject
         return isSampleWorkflowTaskProtocol(lsid) || isSampleWorkflowJobProtocol(lsid);
     }
 
-    Map<String, Object> getAuditRecordMap(AssayProvider provider, Container container);
+    Map<String, Object> getAuditRecordMap(AssayProvider provider);
 }

@@ -115,11 +115,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             }
         };
 
-        appendValueMapColumns(table);
-
-        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + EVENT_TYPE);
-        url.setStrictContainerContextEval(true);
-        table.setDetailsURL(url);
+        appendValueMapColumns(table, EVENT_TYPE);
 
         return table;
     }

@@ -105,7 +105,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
                 }
             }
         };
-        appendValueMapColumns(table);
+        appendValueMapColumns(table, null, true);
 
         return table;
     }

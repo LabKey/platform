@@ -482,7 +482,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     }
 
     @Override
-    public Map<String, Object> getAuditRecordMap(AssayProvider provider, Container container)
+    public Map<String, Object> getAuditRecordMap(AssayProvider provider)
     {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("Name", getName());
