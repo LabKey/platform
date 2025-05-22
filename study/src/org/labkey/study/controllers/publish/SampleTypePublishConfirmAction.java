@@ -23,7 +23,6 @@ import org.labkey.api.study.publish.PublishKey;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
@@ -204,9 +203,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     @Override
     public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
     {
-        if (_sampleType == null)
-            return HtmlView.err("Could not resolve the source Sample Type.");
-
         return super.getView(form, reshow, errors);
     }
 
