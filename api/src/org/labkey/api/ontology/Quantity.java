@@ -141,10 +141,16 @@ public class Quantity extends Number implements Comparable<Quantity>
         return format.format(unit.fromStorageUnitValue(value)) + unit.print;
     }
 
+    /**
+     * Quantity extends Numeric so we kinda expect .toString() be a number.
+     * However, it's really important that quantity == ConvertUtils.convert(quantity.toString(), Quantity.class).
+     */
     @Override
     public String toString()
     {
-        return kind.getName() + ":" + format(kind.getStorageUnit());
+        var ret = format(kind.getStorageUnit());
+        assert this == ConvertUtils.convert(ret, this.getClass());
+        return ret;
     }
 
     @Override

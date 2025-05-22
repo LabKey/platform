@@ -705,7 +705,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 try
                 {
-                    value = ConvertUtils.convert(value.toString(), col.getJavaObjectClass());
+                    value = col.getConvertFn().apply(value);
                 }
                 catch (ConversionException e)
                 {

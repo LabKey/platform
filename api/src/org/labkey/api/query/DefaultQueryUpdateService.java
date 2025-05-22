@@ -836,18 +836,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         // improve handling of conversion errors
         try
         {
-            switch (col.getJdbcType())
+            if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
             {
-                case DATE, TIME, TIMESTAMP:
-                    return value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class);
-                default:
-                    if (PropertyType.FILE_LINK == col.getPropertyType() && (value instanceof MultipartFile || value instanceof AttachmentFile))
-                    {
-                        FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
-                        value = fl.toNioPathForRead().toString();
-                    }
-                    return ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass());
+                FileLike fl = (FileLike)_fileColumnValueMapping.saveFileColumnValue(user, c, fileLinkDirPath, col.getName(), value);
+                value = fl.toNioPathForRead().toString();
             }
+            return col.getConvertFn().apply(value);
         }
         catch (ConversionException e)
         {

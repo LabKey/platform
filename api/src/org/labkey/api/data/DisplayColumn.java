@@ -137,7 +137,9 @@ public abstract class DisplayColumn extends RenderColumn
         }
 
         @Override
-        public void addQueryColumns(Set<FieldKey> fieldKeys) {}
+        public void addQueryColumns(Set<FieldKey> fieldKeys)
+        {
+        }
 
         @Override
         public boolean shouldRenderInCurrentRow(RenderContext ctx)
@@ -230,7 +232,8 @@ public abstract class DisplayColumn extends RenderColumn
         return _urlExpression;
     }
 
-    public boolean includeURL() {
+    public boolean includeURL()
+    {
         return _urlExpression != null || _url != null;
     }
 
@@ -287,7 +290,7 @@ public abstract class DisplayColumn extends RenderColumn
         return _analyticsProviders;
     }
 
-    protected  void addAnalyticsProvider(@NotNull ColumnAnalyticsProvider analyticsProvider)
+    protected void addAnalyticsProvider(@NotNull ColumnAnalyticsProvider analyticsProvider)
     {
         _analyticsProviders.add(analyticsProvider);
     }
@@ -396,7 +399,8 @@ public abstract class DisplayColumn extends RenderColumn
 
     // java 7 changed to using infinity symbols for formatting, which is challenging for tsv import/export
     // use old school "Infinity" for now
-    static DecimalFormatSymbols tsvFormatSymbols = new DecimalFormatSymbols();
+    static public DecimalFormatSymbols tsvFormatSymbols = new DecimalFormatSymbols();
+
     static
     {
         tsvFormatSymbols.setInfinity(String.valueOf(Double.POSITIVE_INFINITY));
@@ -412,13 +416,17 @@ public abstract class DisplayColumn extends RenderColumn
         _tsvFormat = createFormat(formatString, tsvFormatSymbols);
     }
 
-
     private Format createFormat(String formatString, @Nullable DecimalFormatSymbols dfs)
+    {
+        if (null == formatString)
+            return null;
+        return createFormat(formatString, getDisplayValueClass(), dfs);
+    }
+
+    public static Format createFormat(@Nullable String formatString, Class<?> valueClass, @Nullable DecimalFormatSymbols dfs)
     {
         if (null != formatString)
         {
-            Class<?> valueClass = getDisplayValueClass();
-
             try
             {
                 if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
