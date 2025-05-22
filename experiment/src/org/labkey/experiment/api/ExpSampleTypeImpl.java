@@ -1120,7 +1120,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (!StringUtils.isEmpty(getName()))
             map.put("Name", getName());
         if (!StringUtils.isEmpty(getNameExpression()))
-            map.put("nameExpression", getNameExpression());
+            map.put("NameExpression", getNameExpression());
         if (!StringUtils.isEmpty(getAliquotNameExpression()))
             map.put("AliquotNameExpression", getAliquotNameExpression());
         if (!StringUtils.isEmpty(getLabelColor()))

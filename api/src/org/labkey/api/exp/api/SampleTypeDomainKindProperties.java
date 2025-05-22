@@ -280,7 +280,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
         Map<String, Object> map = new LinkedHashMap<>();
         // skip Name and Description since it's general domain property
         if (!StringUtils.isEmpty(getNameExpression()))
-            map.put("nameExpression", getNameExpression());
+            map.put("NameExpression", getNameExpression());
         if (!StringUtils.isEmpty(getAliquotNameExpression()))
             map.put("AliquotNameExpression", getAliquotNameExpression());
         if (!StringUtils.isEmpty(getLabelColor()))

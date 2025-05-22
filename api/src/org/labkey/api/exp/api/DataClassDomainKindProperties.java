@@ -209,7 +209,7 @@ public class DataClassDomainKindProperties
         Map<String, Object> map = new LinkedHashMap<>();
         // skip Name and Description since it's general domain property
         if (!StringUtils.isEmpty(getNameExpression()))
-            map.put("nameExpression", getNameExpression());
+            map.put("NameExpression", getNameExpression());
         String importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliases());
         if (!StringUtils.isEmpty(importAliasStr))
             map.put("ImportAlias", importAliasStr);
