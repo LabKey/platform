@@ -326,6 +326,7 @@ import org.labkey.core.security.AllowedExternalResourceHosts.AllowedHost;
 import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
