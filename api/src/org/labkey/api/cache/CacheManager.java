@@ -20,19 +20,27 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.Project;
 import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.security.User;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.lang.ref.Reference;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-/**
- * User: adam
- * Date: Jun 20, 2010
- * Time: 10:05:07 AM
- */
 
 public class CacheManager
 {
@@ -112,7 +120,7 @@ public class CacheManager
         {
             KNOWN_CACHES.add(cache);
 
-            LOG.debug("Known caches: " + KNOWN_CACHES.size());
+            LOG.trace("Known caches: {}", KNOWN_CACHES.size());
         }
     }
 
@@ -165,6 +173,8 @@ public class CacheManager
         PROVIDER.shutdown();
     }
 
+    private static final Set<Class<?>> CLASSES = new HashSet<>();
+
     // Validate a cached value. For now, just log warnings for mutable collections.
     public static <V> void validate(String debugName, @Nullable V value)
     {
@@ -175,10 +185,95 @@ public class CacheManager
 
         if (null != description)
         {
-            LOG.warn(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
+            LOG.warn("{} attempted to cache {}, which could be mutated by callers!", debugName, description);
+        }
+
+        // Log questionable members, but don't do the work if we're not going to log it
+        if (LOG.isDebugEnabled())
+        {
+            analyzeValue(value, debugName, null, 1);
         }
     }
 
+    private static final int MAX_DEPTH = 4;
+
+    private static void analyzeValue(@Nullable Object value, String cacheName, @Nullable String fields, int depth)
+    {
+        if (value != null && depth < MAX_DEPTH)
+        {
+            Class<?> clazz = value.getClass();
+
+            if (value instanceof Map<?, ?> m)
+            {
+                m.entrySet().stream()
+                    .findFirst()
+                    .ifPresent(entry -> {
+                        analyzeValue(entry.getKey(), cacheName, fields, depth + 1);
+                        analyzeValue(entry.getValue(), cacheName, fields, depth + 1);
+                    });
+            }
+            else if (value instanceof Collection<?> coll)
+            {
+                coll.stream()
+                    .findFirst()
+                    .ifPresent(element -> analyzeValue(element, cacheName, fields, depth + 1));
+            }
+            else if (clazz.isArray() && Array.getLength(value) > 0)
+            {
+                analyzeValue(Array.get(value, 0), cacheName, fields, depth + 1);
+            }
+            else if (value instanceof Reference<?> ref)
+            {
+                analyzeValue(ref, cacheName, fields, depth + 1);
+            }
+            else if (CLASSES.add(clazz))
+            {
+                for (Field field : getAllInstanceFields(clazz))
+                {
+                    String fieldPath = (fields != null ? fields + "." : "") + field.getName();
+                    Class<?> type = field.getType();
+
+                    if (Container.class.isAssignableFrom(type) || User.class.isAssignableFrom(type) || Project.class.isAssignableFrom(type))
+                    {
+                        LOG.debug("{}: {} field {} ({})", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                    }
+                    else
+                    {
+                        try
+                        {
+                            field.setAccessible(true);
+                            Object val = field.get(value);
+                            analyzeValue(val, cacheName, fieldPath, depth + 1);
+                        }
+                        catch (InaccessibleObjectException e)
+                        {
+                            LOG.debug("{}: {} field {} ({}): inaccessible member", cacheName, clazz.getName(), fieldPath, field.getType().getName());
+                        }
+                        catch (IllegalAccessException e)
+                        {
+                            LOG.debug("{}: {} field {} ({}): exception attempting to access", cacheName, clazz.getName(), fieldPath, field.getType().getName(), e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Recurse up the class hierarchy
+    private static List<Field> getAllInstanceFields(Class<?> clazz)
+    {
+        if (clazz == null)
+        {
+            return Collections.emptyList();
+        }
+
+        List<Field> result = new ArrayList<>(getAllInstanceFields(clazz.getSuperclass()));
+        List<Field> filteredFields = Arrays.stream(clazz.getDeclaredFields())
+            .filter(field -> !Modifier.isStatic(field.getModifiers()))
+            .toList();
+        result.addAll(filteredFields);
+        return result;
+    }
 
     /* This interface allows a Collection to declare itself immutable when being added to a cache */
     public interface Sealable

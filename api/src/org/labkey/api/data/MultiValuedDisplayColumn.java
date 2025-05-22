@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DOM;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.DOM.TD;
 
 /**
  * Wraps any DisplayColumn and causes it to render each value separately. Often used in conjunction with
@@ -208,5 +211,19 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     public Object getInputValue(RenderContext ctx)
     {
         return values(ctx, _column::getInputValue);
+    }
+
+    // Issue 52983: This override matches the DisplayColumn.renderInputCell() implementation.
+    // It's necessary to cancel out DisplayColumnDecorator's override.
+    @Override
+    public void renderInputCell(RenderContext ctx, HtmlWriter out)
+    {
+        TD(
+            getInputAttributes(),
+            (DOM.Renderable) ret -> {
+                renderInputHtml(ctx, out, getInputValue(ctx));
+                return ret;
+            }
+        ).appendTo(out);
     }
 }
