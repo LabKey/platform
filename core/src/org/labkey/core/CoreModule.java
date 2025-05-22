@@ -360,6 +360,7 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
+import static org.labkey.api.util.MothershipReport.FEATURE_FLAG_EXTENDED_METRICS;
 import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
@@ -1181,13 +1182,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
-            results.put("workbookCount", ContainerManager.getWorkbookCount());
-            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
-            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             results.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true));
             results.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true));
+            if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
+            {
+                // Optionally include a list of active users, Issue #53050
+                results.put("activeUsers", UserManager.getActiveUsers().stream()
+                    .filter(u -> !u.isSystem())
+                    .map(User::getEmail)
+                    .toList()
+                );
+            }
+
+            results.put("workbookCount", ContainerManager.getWorkbookCount());
+            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
+            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             Map<String, Long> roleAssignments = new HashMap<>();
