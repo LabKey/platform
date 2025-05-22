@@ -356,7 +356,7 @@ public class ExperimentModule extends SpringModule
                 if (data == null)
                     return null;
 
-                return data.createDocument();
+                return data.createIndexDocument(null);
             }
 
             @Override

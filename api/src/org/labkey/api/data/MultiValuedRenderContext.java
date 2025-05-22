@@ -110,12 +110,15 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             if ("".equals(value))
                 value = null;
 
-            ColumnInfo columnInfo = getFieldMap().get(key);
-            // The value was concatenated with others, so it's become a string.
-            // Do conversion to switch it back to the expected type.
-            if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
+            if (getFieldMap() != null)
             {
-                value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                ColumnInfo columnInfo = getFieldMap().get(key);
+                // The value was concatenated with others, so it's become a string.
+                // Do conversion to switch it back to the expected type.
+                if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
+                {
+                    value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                }
             }
         }
         else
