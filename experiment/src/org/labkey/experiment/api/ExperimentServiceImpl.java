@@ -8910,7 +8910,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }
 
-        return new Pair<>(previousExclusions, updatedExclusions);
+        return new Pair<>(new TreeSet<>(previousExclusions), new TreeSet<>(updatedExclusions));
     }
 
     @Override
