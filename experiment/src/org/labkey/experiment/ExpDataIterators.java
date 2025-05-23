@@ -513,7 +513,7 @@ public class ExpDataIterators
         }
     }
 
-    private static class AliasDataIterator extends ExpObjectDataIterator
+    private static class AliasDataIterator extends ExpDataTypeDataIterator
     {
         // For some reason I don't quite understand we don't want to pass through a column called "alias" so we rename it to ALIASCOLUMNALIAS
         final Supplier<Object> _aliasCol;
@@ -740,7 +740,7 @@ public class ExpDataIterators
         }
     }
 
-    private static class FlagDataIterator extends ExpObjectDataIterator
+    private static class FlagDataIterator extends ExpDataTypeDataIterator
     {
         final DataIteratorContext _context;
         final Integer _lsidCol;
@@ -894,7 +894,7 @@ public class ExpDataIterators
         return values == null ? null : values.collect(Collectors.toList());
     }
 
-    static class DerivationDataIteratorBase extends ExpObjectDataIterator
+    static class DerivationDataIteratorBase extends ExpDataTypeDataIterator
     {
         final Integer _lsidCol;
         final Integer _nameCol;

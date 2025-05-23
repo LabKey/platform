@@ -13,10 +13,9 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
 
 /**
- * Common base class for iterators that operate on ExpObjects and need to track
- * sample/data class information.
+ * WrapperDataIterator that operate on ExpObjects and need to track sample/data class information.
  */
-public class ExpObjectDataIterator extends WrapperDataIterator
+public class ExpDataTypeDataIterator extends WrapperDataIterator
 {
     protected final DataIteratorContext _context;
     protected final Container _container;
@@ -26,7 +25,7 @@ public class ExpObjectDataIterator extends WrapperDataIterator
     private final ExpDataClass _dataClass;
     private final ExpSampleType _sampleType;
 
-    protected ExpObjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject dataType, boolean isSample)
+    protected ExpDataTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpObject dataType, boolean isSample)
     {
         super(di);
         _context = context;
