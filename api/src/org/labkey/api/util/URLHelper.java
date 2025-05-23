@@ -676,15 +676,19 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         return mpvs;
     }
 
-
     public void setPropertyValues(PropertyValues pvs)
     {
+        setPropertyValues(pvs, false);
+    }
+
+    public void setPropertyValues(PropertyValues pvs, boolean isFormDataEncoded)
+    {
         deleteParameters();
-        addPropertyValues(pvs);
+        addPropertyValues(pvs, isFormDataEncoded);
     }
 
 
-    public void addPropertyValues(PropertyValues pvs)
+    public void addPropertyValues(PropertyValues pvs, boolean isFormDataEncoded)
     {
         if (null == pvs)
             return;
@@ -693,19 +697,25 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             Object v = pv.getValue();
             if (null == v)
                 continue;
+
+            String paramName = pv.getName();
+            // Issue 52925 & 52827: App export to csv/tsv ignores filter with column containing double quote
+            if (isFormDataEncoded)
+                paramName = paramName.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+
             if (v.getClass().isArray())
             {
                 Object[] a = (Object[])v;
                 for (Object o : a)
                 {
                     if (o != null)
-                        addParameter(pv.getName(), String.valueOf(o));
+                        addParameter(paramName, String.valueOf(o));
 
                 }
             }
             else
             {
-                addParameter(pv.getName(), String.valueOf(v));
+                addParameter(paramName, String.valueOf(v));
             }
         }
     }
