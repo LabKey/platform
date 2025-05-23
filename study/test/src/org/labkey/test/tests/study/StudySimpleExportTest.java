@@ -21,7 +21,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.api.data.DataRegion;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -43,7 +42,6 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
@@ -103,7 +101,6 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         StudySimpleExportTest initTest = (StudySimpleExportTest)getCurrentTest();
 
-        OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
         initTest.initializeFolder();
         initTest.setPipelineRoot(StudyHelper.getStudySubfolderPath());
 
@@ -129,6 +126,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickProject(getProjectName());
         goToFolderManagement().goToFolderTypeTab();
         checkCheckbox(Locator.radioButtonByNameAndValue("folderType", "Study"));
+        checkCheckbox(Locator.checkboxByNameAndValue("activeModules", "StudyDesign"));
         clickButton("Update Folder");
 
         // click button to create manual study
@@ -136,6 +134,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         // use all of the default study settings
         clickButton("Create Study");
         clickFolder(getFolderName());
+        if (_studyHelper.isModulePresent("StudyDesign"))
+            _containerHelper.enableModule("StudyDesign");
     }
 
     private void createSimpleDataset()
@@ -172,7 +172,6 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         super.doCleanup(afterTest);
         TestFileUtils.deleteDir(new File(StudyHelper.getStudySubfolderPath() + "export"));
-        OptionalFeatureHelper.disableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
     }
 
     @Test

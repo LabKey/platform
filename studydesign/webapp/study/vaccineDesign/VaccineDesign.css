@@ -1,0 +1,82 @@
+.study-vaccine-design .x4-panel-body {
+    background-color: transparent;
+}
+
+.study-vaccine-design .main-title {
+    font-weight: bold;
+    font-size: 16px;
+    padding-bottom: 5px;
+}
+
+.study-vaccine-design table.outer,
+.study-vaccine-design table.subgrid {
+    border-collapse: collapse;
+}
+
+.study-vaccine-design td.cell-display,
+.study-vaccine-design td.cell-value {
+    padding: 5px;
+    border: solid 1px #DDDDDD;
+    vertical-align: top;
+}
+
+.study-vaccine-design td.cell-display {
+    height: 30px;
+}
+.study-vaccine-design td.cell-value {
+    height: 33px;
+}
+
+.study-vaccine-design td.cell-value .x4-form-cb-wrap {
+    height: 18px;
+}
+
+.study-vaccine-design table.subgrid td {
+    background-color: #FFFFFF !important;
+}
+
+.study-vaccine-design tr.header-row td {
+    font-weight: bold;
+    padding: 5px;
+    background-color: #EEEEEE !important;
+    border-bottom-color: #C0C0C0;
+}
+
+.study-vaccine-design table.outer tr.data-row td {
+    background-color: #FFFFFF;
+}
+.study-vaccine-design table.outer tr.alternate-row td {
+    background-color: #F4F4F4;
+}
+
+.study-vaccine-design td.cell-value.missing-required {
+    background-color: #ffe5e5 !important;
+}
+
+.study-vaccine-design td.empty {
+    font-style: italic;
+}
+
+.study-vaccine-design td.action i {
+    color: #777777;
+}
+.study-vaccine-design td.action i:hover {
+    cursor: pointer;
+    color: #000000;
+}
+
+.dialog-product-label .x4-form-cb-label-after {
+    /* Firefox */
+    width: -moz-calc(100% - 20px);
+    /* WebKit */
+    width: -webkit-calc(100% - 20px);
+    /* Standard */
+    width: calc(100% - 20px);
+    white-space: nowrap;
+}
+
+.treatment-input-cell .x4-form-field {
+    cursor: pointer;
+    opacity: 0.8;
+}
+

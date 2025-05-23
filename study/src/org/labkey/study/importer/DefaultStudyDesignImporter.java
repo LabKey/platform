@@ -43,6 +43,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -255,6 +256,11 @@ public class DefaultStudyDesignImporter
     protected String getFileName(TableInfo tableInfo)
     {
         return tableInfo.getName().toLowerCase() + ".tsv";
+    }
+
+    protected boolean isStudyDesignEnabled(Container container)
+    {
+        return StudyDesignManager.get().isModuleActive(container);
     }
 
     /**
