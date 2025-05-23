@@ -69,8 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.experiment.CustomProperties;
-import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.ArrayList;
@@ -316,7 +314,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.insert);
             }
         }
-        index(null, null);
+
+        index();
     }
 
     @Override
@@ -350,76 +349,17 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }
 
-    private static final Map<String, CustomPropertyRenderer> RENDERER_MAP = new HashMap<>()
-    {
-        @Override
-        public CustomPropertyRenderer get(Object key)
-        {
-            // Special renderer used only for indexing material custom properties
-            return new CustomPropertyRenderer()
-            {
-                @Override
-                public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
-                {
-                    Object value = prop.value();
-
-                    // For now, index only non-null Strings and Integers
-                    return (value instanceof String || value instanceof Integer);
-                }
-
-                @Override
-                public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());
-                    String name = prop.getName();
-                    if (pd != null)
-                        name = pd.getLabel() != null ? pd.getLabel() : pd.getName();
-                    return name;
-                }
-
-                @Override
-                public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
-                {
-                    return prop.value().toString();
-                }
-            };
-        }
-    };
-
-    public void index(@Nullable SearchService.IndexTask task, @Nullable ExpMaterialTableImpl tableInfo)
+    @Override
+    public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()) || ExpMaterial.DEFAULT_CPAS_TYPE.equals(getCpasType()))
-        {
-            return;
-        }
-        if (task == null)
-        {
-            SearchService ss = SearchService.get();
-            if (null == ss)
-                return;
-            task = ss.defaultTask();
-        }
+            return null;
 
-        // do the least possible amount of work here
-        final SearchService.IndexTask indexTask = task;
-        var document = createIndexDocument(tableInfo);
-        if (document != null)
-        {
-            indexTask.addResource(document, SearchService.PRIORITY.item);
-        }
-    }
-
-    /** returns null if the parent container is no longer available */
-    @Nullable
-    public WebdavResource createIndexDocument(@Nullable ExpMaterialTableImpl tableInfo)
-    {
         Container container = getContainer();
         if (container == null)
-        {
             return null;
-        }
 
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
         url.setExtraPath(container.getId());
@@ -455,18 +395,20 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // Add all String and Integer custom property descriptions and values to body
         JSONObject jsonData = new JSONObject();
-        if (null != getSampleType())
+        ExpSampleType st = getSampleType();
+        if (null != st)
         {
             if (tableInfo == null)
-                tableInfo = (ExpMaterialTableImpl) QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(getSampleType().getName());
+                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(st.getName());
 
-            if (tableInfo != null)
-                getCustomIndexValues(props, tableInfo, identifiersHi, keyworksHi, jsonData);
+            if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
+                throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));
+
+            getCustomIndexValues(props, expMaterialTable, identifiersHi, keyworksHi, jsonData);
         }
 
         props.put(SearchService.PROPERTY.jsonData.toString(), jsonData);
 
-        ExpSampleType st = getSampleType();
         if (null != st)
         {
             if (st.isMedia())

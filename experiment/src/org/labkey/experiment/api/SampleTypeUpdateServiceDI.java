@@ -532,7 +532,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), tableInfo);
+                                    expMaterial.index(searchService.defaultTask(), null, tableInfo);
                             })
                     );
                 }, DbScope.CommitTaskOption.POSTCOMMIT);

@@ -1455,7 +1455,6 @@ public class OntologyManager
                     PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                     DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
-                    pd.setProject(project);
                     pd.setPropertyId(0);
                     pd = ensurePropertyDescriptor(pd);
                 }
@@ -1640,7 +1639,6 @@ public class OntologyManager
                         if (!pd.getContainer().equals(c) || !pd.getProject().equals(fNewProject))
                         {
                             pd.setContainer(c);
-                            pd.setProject(fNewProject);
                             pd.setPropertyId(0);
                         }
 

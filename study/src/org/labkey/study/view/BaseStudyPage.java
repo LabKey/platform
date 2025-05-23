@@ -22,13 +22,10 @@ import org.labkey.api.security.User;
 import org.labkey.api.specimen.location.LocationImpl;
 import org.labkey.api.study.Visit;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.study.model.AssaySpecimenConfigImpl;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.ProductImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TreatmentImpl;
 import org.labkey.study.model.VisitImpl;
 
 import java.util.Collection;
@@ -63,21 +60,6 @@ public abstract class BaseStudyPage extends JspBase
     protected Collection<CohortImpl> getCohorts(User user)
     {
         return getStudy().getCohorts(user);
-    }
-
-    protected Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
-    {
-        return getStudy().getAssaySpecimenConfigs();
-    }
-
-    protected List<ProductImpl> getStudyProducts(User user, String role)
-    {
-        return getStudy().getStudyProducts(user, role);
-    }
-
-    protected List<TreatmentImpl> getStudyTreatments(User user)
-    {
-        return getStudy().getStudyTreatments(user);
     }
 
     protected WikiRendererType[] getRendererTypes()

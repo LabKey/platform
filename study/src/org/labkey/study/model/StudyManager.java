@@ -146,7 +146,6 @@ import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.location.LocationCache;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -160,8 +159,14 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.Visit.Order;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.study.model.ParticipantInfo;
-import org.labkey.api.studydesign.query.StudyDesignSchema;
-import org.labkey.api.test.TestWhen;
+import org.labkey.api.studydesign.StudyDesignManager;
+import org.labkey.api.studydesign.StudyDesignService;
+import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
+import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
+import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
+import org.labkey.api.studydesign.query.StudyProductDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
+import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -169,7 +174,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
@@ -180,18 +184,11 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
-import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.DatasetUpdateService;
-import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
-import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
-import org.labkey.api.studydesign.query.StudyProductDomainKind;
-import org.labkey.api.studydesign.query.StudyTreatmentDomainKind;
-import org.labkey.api.studydesign.query.StudyTreatmentProductDomainKind;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -241,7 +238,6 @@ public class StudyManager
 
     private final StudyHelper _studyHelper;
     private final VisitHelper _visitHelper;
-    private final QueryHelper<Integer, AssaySpecimenConfigImpl, StudyCacheCollections<Integer, AssaySpecimenConfigImpl>> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
@@ -258,7 +254,6 @@ public class StudyManager
     {
         _studyHelper = new StudyHelper();
         _visitHelper = new VisitHelper();
-        _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
         _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class, "Label");
 
         /*
@@ -1650,9 +1645,12 @@ public class StudyManager
                 {
                     // Delete specimens first because we may need ParticipantVisit to figure out which specimens
                     SpecimenManager.get().deleteSpecimensForVisit(visit);
-
-                    TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
-                    deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
+                    StudyDesignService svc = StudyDesignService.get();
+                    if (svc != null)
+                    {
+                        svc.deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
+                        svc.deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
+                    }
                 }
             }
 
@@ -1709,72 +1707,6 @@ public class StudyManager
     {
         Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{participant.getContainer().getId(), participant.getParticipantId()});
         _participantCache.remove(participant.getContainer());
-    }
-
-    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container)
-    {
-        return _assaySpecimenHelper.getCollection(container);
-    }
-
-    public List<VisitImpl> getVisitsForAssaySchedule(Container container)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
-                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
-
-        return getSortedVisitsByRowIds(container, visitRowIds);
-    }
-
-    public List<VisitImpl> getSortedVisitsByRowIds(Container container, List<Integer> visitRowIds)
-    {
-        List<VisitImpl> visits = new ArrayList<>();
-        Study study = getStudy(container);
-        if (study != null)
-        {
-            for (VisitImpl v : getVisits(study, Order.DISPLAY))
-            {
-                if (visitRowIds.contains(v.getRowId()))
-                    visits.add(v);
-            }
-        }
-        return visits;
-    }
-
-    public List<Integer> getAssaySpecimenVisitIds(Container container, AssaySpecimenConfig assaySpecimenConfig)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("AssaySpecimenId"), assaySpecimenConfig.getRowId());
-
-        return new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(),
-                Collections.singleton("VisitId"), filter, new Sort("VisitId")).getArrayList(Integer.class);
-    }
-
-    public void deleteAssaySpecimenVisits(Container container, int rowId)
-    {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("VisitId"), rowId);
-        Table.delete(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
-    }
-
-    public String getStudyDesignLabLabelByName(Container container, String name)
-    {
-        return getStudyDesignLabelByName(container, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), name);
-    }
-
-    public String getStudyDesignLabelByName(Container container, TableInfo tableInfo, String name)
-    {
-        // first look in the current container for the StudyDesign record, then look for it at the project level
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Name"), name);
-        String label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
-        if (label == null && !container.isProject())
-        {
-            filter = SimpleFilter.createContainerFilter(container.getProject());
-            filter.addCondition(FieldKey.fromParts("Name"), name);
-            label = new TableSelector(tableInfo, Collections.singleton("Label"), filter, null).getObject(String.class);
-        }
-
-        return label;
     }
 
     public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired)
@@ -2130,9 +2062,9 @@ public class StudyManager
         try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
             Container container = cohort.getContainer();
-
-            TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, cohort.getRowId());
-
+            StudyDesignService svc = StudyDesignService.get();
+            if (svc != null)
+                svc.deleteTreatmentVisitMapForCohort(container, cohort.getRowId());
             _cohortHelper.delete(cohort);
 
             // delete extended properties
@@ -2717,15 +2649,6 @@ public class StudyManager
             // Since study creates these tables, study needs to delete them
             new SpecimenTablesProvider(c, null, null).deleteTables();
             LocationCache.clear(c);
-
-            //
-            // assay schedule
-            //
-            Table.delete(SCHEMA.getTableInfoAssaySpecimenVisit(), containerFilter);
-            assert deletedTables.add(SCHEMA.getTableInfoAssaySpecimenVisit());
-            Table.delete(_assaySpecimenHelper.getTableInfo(), containerFilter);
-            _assaySpecimenHelper.clearCache(c);
-            assert deletedTables.add(_assaySpecimenHelper.getTableInfo());
 
             //
             // metadata
@@ -3776,7 +3699,6 @@ public class StudyManager
                 {
                     p.getPropertyDescriptor().setPropertyId(0);
                     p.getPropertyDescriptor().setContainer(ipd.pd.getContainer());
-                    p.getPropertyDescriptor().setProject(ipd.pd.getProject());
                 }
             }
             else
@@ -4048,11 +3970,6 @@ public class StudyManager
     public void clearParticipantCache(Container container)
     {
         _participantCache.remove(container);
-    }
-
-    public void clearAssaySpecimenCache(Container container)
-    {
-        _assaySpecimenHelper.clearCache(container);
     }
 
     public Collection<Participant> getParticipants(Study study)
@@ -4959,169 +4876,6 @@ public class StudyManager
             assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
             assertEquals("Wrong sequenceNumMin", VisitImpl.getSequenceNum(seqNumMin), newVisit.getSequenceNumMin());
             assertEquals("Wrong sequenceNumMax", VisitImpl.getSequenceNum(seqNumMax), newVisit.getSequenceNumMax());
-        }
-    }
-
-    @TestWhen(TestWhen.When.BVT)
-    public static class AssayScheduleTestCase extends Assert
-    {
-        TestContext _context = null;
-        User _user = null;
-        Container _container = null;
-        StudyImpl _junitStudy = null;
-        StudyManager _manager = StudyManager.getInstance();
-
-        Map<String, String> _lookups = new HashMap<>();
-        List<AssaySpecimenConfigImpl> _assays = new ArrayList<>();
-        List<VisitImpl> _visits = new ArrayList<>();
-
-        @Test
-        public void test()
-        {
-            try
-            {
-                createStudy();
-                _user = _context.getUser();
-                _container = _junitStudy.getContainer();
-
-                populateLookupTables();
-                populateAssayConfigurations();
-                populateAssaySchedule();
-
-                verifyAssayConfigurations();
-                verifyAssaySchedule();
-                verifyCleanUpAssayConfigurations();
-            }
-            finally
-            {
-                tearDown();
-            }
-        }
-
-        private void verifyCleanUpAssayConfigurations()
-        {
-            _manager.deleteAssaySpecimenVisits(_container, _visits.get(0).getRowId());
-            verifyAssayScheduleRowCount(2);
-            assertEquals(1, _manager.getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
-            assertEquals(1, _manager.getVisitsForAssaySchedule(_container).size());
-
-            _manager.deleteAssaySpecimenVisits(_container, _visits.get(1).getRowId());
-            verifyAssayScheduleRowCount(0);
-            assertEquals(0, _manager.getAssaySpecimenVisitIds(_container, _assays.get(0)).size());
-            assertEquals(0, _manager.getVisitsForAssaySchedule(_container).size());
-        }
-
-        private void verifyAssaySchedule()
-        {
-            verifyAssayScheduleRowCount(4);
-
-            List<VisitImpl> visits = _manager.getVisitsForAssaySchedule(_container);
-            assertEquals("Unexpected assay schedule visit count", 2, visits.size());
-
-            for (AssaySpecimenConfigImpl assay : _manager.getAssaySpecimenConfigs(_container))
-            {
-                List<Integer> visitIds = _manager.getAssaySpecimenVisitIds(_container, assay);
-                for (VisitImpl visit : _visits)
-                    assertTrue("Assay schedule does not contain expected visitId", visitIds.contains(visit.getRowId()));
-            }
-        }
-
-        private void verifyAssayScheduleRowCount(int expectedCount)
-        {
-            TableSelector selector = new TableSelector(StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), SimpleFilter.createContainerFilter(_container), null);
-            assertEquals("Unexpected number of assay schedule visit records", expectedCount, selector.getRowCount());
-        }
-
-        private void verifyAssayConfigurations()
-        {
-            Collection<AssaySpecimenConfigImpl> assays = _manager.getAssaySpecimenConfigs(_container);
-            assertEquals("Unexpected assay configuration count", 2, assays.size());
-
-            for (AssaySpecimenConfigImpl assay : assays)
-            {
-                assertEquals("Unexpected assay configuration lookup value", _lookups.get("Lab"), assay.getLab());
-                assertEquals("Unexpected assay configuration lookup value", _lookups.get("SampleType"), assay.getSampleType());
-            }
-        }
-
-        private void populateAssaySchedule()
-        {
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(1.0), "Visit 1", Visit.Type.BASELINE)));
-            _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, BigDecimal.valueOf(2.0), "Visit 2", Visit.Type.SCHEDULED_FOLLOWUP)));
-            assertEquals(_visits.size(), 2);
-
-            for (AssaySpecimenConfigImpl assay : _assays)
-            {
-                for (VisitImpl visit : _visits)
-                {
-                    AssaySpecimenVisitImpl asv = new AssaySpecimenVisitImpl(_container, assay.getRowId(), visit.getRowId());
-                    Table.insert(_user, StudySchema.getInstance().getTableInfoAssaySpecimenVisit(), asv);
-                }
-            }
-
-            verifyAssayScheduleRowCount(_assays.size() * _visits.size());
-        }
-
-        private void populateAssayConfigurations()
-        {
-            AssaySpecimenConfigImpl assay1 = new AssaySpecimenConfigImpl(_container, "Assay1", "Assay 1 description");
-            assay1.setLab(_lookups.get("Lab"));
-            assay1.setSampleType(_lookups.get("SampleType"));
-            _assays.add(_manager._assaySpecimenHelper.create(_user, assay1));
-
-            AssaySpecimenConfigImpl assay2 = new AssaySpecimenConfigImpl(_container, "Assay2", "Assay 2 description");
-            assay2.setLab(_lookups.get("Lab"));
-            assay2.setSampleType(_lookups.get("SampleType"));
-            _assays.add(_manager._assaySpecimenHelper.create(_user, assay2));
-
-            assertEquals(2, _assays.size());
-        }
-
-        private void populateLookupTables()
-        {
-            String name, label;
-
-            Map<String, String> data = new HashMap<>();
-            data.put("Container", _container.getId());
-
-            data.put("Name", name = "Test Lab");
-            data.put("Label", label = "Test Lab Label");
-            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignLabs(), data);
-            assertEquals("Unexpected study design lookup label", label, _manager.getStudyDesignLabLabelByName(_container, name));
-            assertNull("Unexpected study design lookup label", _manager.getStudyDesignLabLabelByName(_container, "UNK"));
-            _lookups.put("Lab", name);
-
-            data.put("Name", name = "Test Sample Type");
-            data.put("Label", label = "Test Sample Type Label");
-            data.put("PrimaryType", "Test Primary Type");
-            data.put("ShortSampleCode", "TP");
-            Table.insert(_user, StudyDesignSchema.getInstance().getTableInfoStudyDesignSampleTypes(), data);
-            _lookups.put("SampleType", name);
-        }
-
-        private void createStudy()
-        {
-            _context = TestContext.get();
-            Container junit = JunitUtil.getTestContainer();
-
-            String name = GUID.makeHash();
-            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
-            StudyImpl s = new StudyImpl(c, "Junit Study");
-            s.setTimepointType(TimepointType.VISIT);
-            s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
-            s.setSubjectColumnName("SubjectID");
-            s.setSubjectNounPlural("Subjects");
-            s.setSubjectNounSingular("Subject");
-            s.setSecurityType(SecurityType.BASIC_WRITE);
-            _junitStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
-        }
-
-        private void tearDown()
-        {
-            if (null != _junitStudy)
-            {
-                assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
-            }
         }
     }
 
