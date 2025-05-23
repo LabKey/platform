@@ -68,6 +68,9 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
+        if (!isStudyDesignEnabled(ctx.getContainer()))
+            return;
+
         if (isValidForImportArchive(ctx, root))
         {
             ExportDirType dirType = ctx.getXml().getTreatmentData();

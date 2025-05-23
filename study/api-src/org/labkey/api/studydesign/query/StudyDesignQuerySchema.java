@@ -10,10 +10,9 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUtils;
+import org.labkey.api.studydesign.StudyDesignManager;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +43,9 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
     public static final String TREATMENT_VISIT_MAP_TABLE_NAME = "TreatmentVisitMap";
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
 
+    public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
+    public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
+
     protected Study _study;
     private Role _contextualRole;
     private UserSchema _parentSchema;
@@ -69,7 +71,9 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
             TREATMENT_TABLE_NAME,
             PERSONNEL_TABLE_NAME,
             TREATMENT_VISIT_MAP_TABLE_NAME,
-            OBJECTIVE_TABLE_NAME
+            OBJECTIVE_TABLE_NAME,
+            ASSAY_SPECIMEN_TABLE_NAME,
+            ASSAY_SPECIMEN_VISIT_TABLE_NAME
     );
 
     private StudyDesignQuerySchema(UserSchema studySchema, Study study, @Nullable Role contextualRole)
@@ -85,7 +89,7 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
     @Nullable
     public static StudyDesignQuerySchema get(UserSchema userSchema, Container c, @Nullable Study study, @Nullable Role contextualRole)
     {
-        return OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG)
+        return StudyDesignManager.get().isModuleActive(c)
                 ? new StudyDesignQuerySchema(userSchema, study, contextualRole)
                 : null;
     }
@@ -204,6 +208,14 @@ public class StudyDesignQuerySchema extends SimpleUserSchema implements UserSche
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new StudyObjectiveTable(this, cf);
+        }
+        if (ASSAY_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new AssaySpecimenTable(this, cf);
+        }
+        if (ASSAY_SPECIMEN_VISIT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new AssaySpecimenVisitTable(this, cf);
         }
 
         return null;

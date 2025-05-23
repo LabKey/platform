@@ -15,12 +15,12 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriter;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.study.importer.AssayScheduleImporter;
 import org.labkey.study.importer.CohortImporter;
 import org.labkey.study.importer.DatasetCohortAssigner;
@@ -90,7 +90,8 @@ public class StudySerializationRegistry
     {
         List<InternalStudyWriter> writers = new ArrayList<>(_baseInternalWriters);
 
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        // don't register the study design writers if the module is not deployed
+        if (ModuleLoader.getInstance().hasModule(StudyDesignManager.MODULE_NAME))
         {
             writers.add(new TreatmentDataWriter());
             writers.add(new AssayScheduleWriter());
@@ -110,7 +111,7 @@ public class StudySerializationRegistry
     {
         List<InternalStudyImporter> importers = new ArrayList<>(_baseInternalImporters);
 
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        if (ModuleLoader.getInstance().hasModule(StudyDesignManager.MODULE_NAME))
         {
             importers.add(new TreatmentDataImporter());
             importers.add(new TreatmentVisitMapImporter());

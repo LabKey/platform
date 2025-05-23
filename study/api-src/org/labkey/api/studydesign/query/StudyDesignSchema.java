@@ -99,4 +99,14 @@ public class StudyDesignSchema
     {
         return getSchema().getTable("Objective");
     }
+
+    public TableInfo getTableInfoAssaySpecimen()
+    {
+        return getSchema().getTable("AssaySpecimen");
+    }
+
+    public TableInfo getTableInfoAssaySpecimenVisit()
+    {
+        return getSchema().getTable("AssaySpecimenVisit");
+    }
 }
