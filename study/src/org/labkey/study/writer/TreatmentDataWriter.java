@@ -53,6 +53,9 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
     @Override
     public void write(StudyImpl object, StudyExportContext ctx, VirtualFile root) throws Exception
     {
+        if (!isStudyDesignEnabled(ctx.getContainer()))
+            return;
+
         StudyDocument.Study studyXml = ctx.getXml();
 
         ExportDirType dir = studyXml.addNewTreatmentData();
