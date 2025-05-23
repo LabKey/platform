@@ -24,8 +24,6 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.study.StudySchema;
 
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
@@ -52,6 +50,7 @@ public class AssaySpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("RowId"));
 
         var assayColumn = new AliasedColumn(this, "AssayName", _rootTable.getColumn("AssayName"));
+        assayColumn.setFk(studyFK().to(STUDY_DESIGN_ASSAYS_TABLE_NAME, "Name", null));
         addColumn(assayColumn);
 
         addWrapColumn(_rootTable.getColumn("Description"));
@@ -66,22 +65,17 @@ public class AssaySpecimenTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("TubeType"));
 
         var labColumn = new AliasedColumn(this, "Lab", _rootTable.getColumn("Lab"));
+        labColumn.setFk(studyFK().to(STUDY_DESIGN_LABS_TABLE_NAME, "Name", null));
         addColumn(labColumn);
 
         var sampleTypeColumn = new AliasedColumn(this, "SampleType", _rootTable.getColumn("SampleType"));
+        sampleTypeColumn.setFk(studyFK().to(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME, "Name", null));
         addColumn(sampleTypeColumn);
 
         addWrapColumn(_rootTable.getColumn("SampleQuantity"));
         var sampleUnitsColumn = new AliasedColumn(this, "SampleUnits", _rootTable.getColumn("SampleUnits"));
+        sampleUnitsColumn.setFk(studyFK().to(STUDY_DESIGN_UNITS_TABLE_NAME, "Name", null));
         addColumn(sampleUnitsColumn);
-
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            assayColumn.setFk(studyFK().to(STUDY_DESIGN_ASSAYS_TABLE_NAME, "Name", null));
-            labColumn.setFk(studyFK().to(STUDY_DESIGN_LABS_TABLE_NAME, "Name", null));
-            sampleTypeColumn.setFk(studyFK().to(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME, "Name", null));
-            sampleUnitsColumn.setFk(studyFK().to(STUDY_DESIGN_UNITS_TABLE_NAME, "Name", null));
-        }
 
         addContainerColumn();
         for (ColumnInfo baseColumn : _rootTable.getColumns())
