@@ -167,14 +167,4 @@ public class StudySchema
     {
         return getSchema().getTable("VisitTag");
     }
-
-    public TableInfo getTableInfoAssaySpecimen()
-    {
-        return getSchema().getTable("AssaySpecimen");
-    }
-
-    public TableInfo getTableInfoAssaySpecimenVisit()
-    {
-        return getSchema().getTable("AssaySpecimenVisit");
-    }
 }

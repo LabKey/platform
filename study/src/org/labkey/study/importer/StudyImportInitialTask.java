@@ -20,8 +20,6 @@ import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.study.controllers.StudyController;
@@ -170,11 +168,8 @@ public class StudyImportInitialTask
         if (errors.hasErrors())
             throwFirstErrorAsPipelineJobException(errors);
 
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            processImporter(ctx, job, errors, new TreatmentDataImporter());
-            processImporter(ctx, job, errors, new AssayScheduleImporter());
-        }
+        processImporter(ctx, job, errors, new TreatmentDataImporter());
+        processImporter(ctx, job, errors, new AssayScheduleImporter());
         processImporter(ctx, job, errors, new DatasetDefinitionImporter());
     }
 

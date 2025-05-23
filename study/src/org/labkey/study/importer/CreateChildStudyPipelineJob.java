@@ -49,6 +49,7 @@ import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.model.ParticipantMapper;
 import org.labkey.api.study.pipeline.AbstractStudyPipelineJob;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
@@ -452,7 +453,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
      */
     private void importStudyDesignData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        if (importContext != null && OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        if (importContext != null && StudyDesignManager.get().isModuleActive(importContext.getContainer()))
         {
             // assay schedule and treatment data (study design)
             new TreatmentDataImporter().process(importContext, studyDir, errors);
@@ -465,7 +466,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
     private void importTreatmentVisitMapData(BindException errors, VirtualFile studyDir, StudyImportContext importContext) throws Exception
     {
-        if (importContext != null && OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
+        if (importContext != null && StudyDesignManager.get().isModuleActive(importContext.getContainer()))
         {
             new TreatmentVisitMapImporter().process(importContext, studyDir, errors);
 

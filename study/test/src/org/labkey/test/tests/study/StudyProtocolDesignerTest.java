@@ -28,7 +28,6 @@ import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.AssayScheduleWebpart;
 import org.labkey.test.components.studydesigner.BaseManageVaccineDesignVisitPage;
@@ -40,7 +39,6 @@ import org.labkey.test.components.studydesigner.ManageTreatmentsSingleTablePage;
 import org.labkey.test.components.studydesigner.TreatmentDialog;
 import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.PostgresOnlyTest;
 import org.openqa.selenium.WebElement;
@@ -101,27 +99,17 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
 
 
     private PortalHelper _portalHelper;
-    private Boolean _studyDesignPreviouslyEnabled;
 
     @BeforeClass
     public static void doSetup()
     {
         StudyProtocolDesignerTest initTest = getCurrentTest();
 
-        initTest._studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(initTest.createDefaultConnection(), "studyDesignFlag");
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest.importFolderFromZip(FOLDER_ARCHIVE);
 
         initTest._containerHelper.createSubfolder(initTest.getProjectName(), initTest.getFolderName(), "Study");
         initTest.importStudyFromZip(STUDY_ARCHIVE);
-    }
-
-    @Override
-    protected void doCleanup(boolean afterTest) throws TestTimeoutException
-    {
-        if (_studyDesignPreviouslyEnabled != null)
-            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
-        super.doCleanup(afterTest);
     }
 
     @Before

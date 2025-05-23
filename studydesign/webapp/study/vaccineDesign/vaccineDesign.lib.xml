@@ -1,0 +1,18 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="/study/vaccineDesign/Utils.js"/>
+        <script path="/study/vaccineDesign/Models.js"/>
+        <script path="/study/vaccineDesign/BaseDataView.js"/>
+        <script path="/study/vaccineDesign/BaseDataViewAddVisit.js"/>
+        <script path="/study/vaccineDesign/StudyProducts.js"/>
+        <script path="/study/vaccineDesign/TreatmentScheduleBase.js"/>
+        <script path="/study/vaccineDesign/TreatmentDialog.js"/>
+        <script path="/study/vaccineDesign/TreatmentSchedule.js"/>
+        <script path="/study/vaccineDesign/TreatmentScheduleSingleTablePanel.js"/>
+        <script path="/study/vaccineDesign/AssaySchedule.js"/>
+        <script path="/study/vaccineDesign/VisitWindow.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext4ClientApi"/>
+    </dependencies>
+</libraries>
