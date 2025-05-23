@@ -35,6 +35,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
@@ -155,6 +156,11 @@ public abstract class DefaultStudyDesignWriter
             }
         }
         vf.saveXmlBean(schemaFileName, tablesDoc);
+    }
+
+    protected boolean isStudyDesignEnabled(Container container)
+    {
+        return StudyDesignManager.get().isModuleActive(container);
     }
 
     private static boolean shouldRemovePhi(PHI exportPhiLevel, ColumnInfo column)

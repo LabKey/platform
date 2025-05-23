@@ -125,8 +125,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String VISIT_ALIASES = "VisitAliases";
-    public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
-    public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
     public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
@@ -340,9 +338,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
 
                 names.add(VISIT_TAG_TABLE_NAME);
                 names.add(VISIT_TAG_MAP_TABLE_NAME);
-                names.add(ASSAY_SPECIMEN_TABLE_NAME);
-                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
-
                 names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
 
@@ -628,14 +623,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (LOCATION_SPECIMEN_LIST_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new LocationSpecimenListTable(this, cf);
-        }
-        if (ASSAY_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new AssaySpecimenTable(this, cf);
-        }
-        if (ASSAY_SPECIMEN_VISIT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return new AssaySpecimenVisitTable(this, cf);
         }
         if (VISIT_TAG_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -1122,7 +1109,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         _dataspaceProjectLevelTables.add(VISIT_TABLE_NAME);
 
         _dataspaceFolderLevelTables.add(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
-        _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);
+        _dataspaceFolderLevelTables.add(StudyDesignQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
         _dataspaceFolderLevelTables.add(StudyDesignQuerySchema.OBJECTIVE_TABLE_NAME);
     }
 
@@ -1279,10 +1266,6 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
                     names.add(studyService.getSubjectCategoryTableName(getContainer()));
                     names.add(studyService.getSubjectGroupTableName(getContainer()));
                     names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
-
-                    // assay schedule tables
-                    names.add(ASSAY_SPECIMEN_TABLE_NAME);
-                    names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
 
                     names.add(VISIT_TAG_TABLE_NAME);
                     names.add(VISIT_TAG_MAP_TABLE_NAME);
