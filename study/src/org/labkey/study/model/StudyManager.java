@@ -2004,8 +2004,8 @@ public class StudyManager
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(container, auditComment, datasetId);
             event.setHasDetails(true);
-            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldQCStates));
-            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newQCStates));
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldQCStates));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newQCStates));
 
             AuditLogService.get().addEvent(user, event);
             clearCaches(container, false);

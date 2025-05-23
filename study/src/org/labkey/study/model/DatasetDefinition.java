@@ -1805,28 +1805,28 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
             if (action==DELETE || action==TRUNCATE)
             {
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
             else if (existingRecord != null && existingRecord.size() > 0)
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
                 if (rowPair.second.size() == 0 )
                 {
                     auditComment = "Dataset row was processed, but no changes detected";
                     // Record values that were processed
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(record);
                 }
                 else
                 {
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.second);
                 }
             }
             else
             {
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                newRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, auditComment, _dataset.getDatasetId());

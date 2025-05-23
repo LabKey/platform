@@ -418,7 +418,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         }
     }
 
-    public static String encodeForDataMap(@Nullable Container c, Map<String, ?> properties)
+    public static String encodeForDataMap(Map<String, ?> properties)
     {
         if (properties == null) return null;
 

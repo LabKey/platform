@@ -1249,7 +1249,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
             if (timelineEventType != null)
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
-            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(c, eventMetadata));
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
         }
 
         return event;
@@ -1270,7 +1270,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSampleTypeId(type.getRowId());
         }
         event.setUserComment(userComment);
-        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(metadata));
         return event;
     }
 
@@ -1917,8 +1917,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                newRecordMap.put(fileUpdateData.fieldName, fileUpdateData.targetFile.getAbsolutePath());
                             });
                         }
-                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, oldRecordMap));
-                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, newRecordMap));
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldRecordMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newRecordMap));
                         AuditLogService.get().addEvent(user, event);
                     }
                 }

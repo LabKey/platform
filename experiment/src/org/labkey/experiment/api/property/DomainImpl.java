@@ -882,7 +882,7 @@ public class DomainImpl implements Domain
                     DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
                             new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, field.getName(),
                                     "Created", domainEventId, domainName, "Calculated field created.");
-                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, field.getAuditRecordMap()));
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(field.getAuditRecordMap()));
                     AuditLogService.get().addEvent(user, event);
                 }
             }
@@ -905,8 +905,8 @@ public class DomainImpl implements Domain
                     DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
                             new DomainPropertyAuditProvider.DomainPropertyAuditEvent(container, null, oldNew.first.getName(),
                                     "Modified", domainEventId, domainName, "Calculated field updated.");
-                    event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldNew.first.getAuditRecordMap()));
-                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldNew.second.getAuditRecordMap()));
+                    event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldNew.first.getAuditRecordMap()));
+                    event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldNew.second.getAuditRecordMap()));
                     AuditLogService.get().addEvent(user, event);
                 }
             }
@@ -1080,8 +1080,8 @@ public class DomainImpl implements Domain
         if (user != null)
         {
             DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), comment);
-            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldProps));
-            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newProps));
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldProps));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newProps));
             event.setUserComment(auditUserComment);
 
             event.setDomainUri(getTypeURI());
@@ -1101,8 +1101,8 @@ public class DomainImpl implements Domain
         DomainPropertyAuditProvider.DomainPropertyAuditEvent event =
                 new DomainPropertyAuditProvider.DomainPropertyAuditEvent(getContainer(), prop.getPropertyURI(), prop.getName(),
                                                                          action, domainEventId, domainName, changeSummary);
-        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldProps));
-        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newProps));
+        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldProps));
+        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newProps));
         AuditLogService.get().addEvent(user, event);
     }
 
