@@ -1011,7 +1011,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     public static class TestCase extends Assert
     {
         @Test
-        public void testConvertDate()
+        public void testConvertTimestamp()
         {
             Object convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "+1d");
             Calendar cal = Calendar.getInstance();
@@ -1029,6 +1029,27 @@ public class ConvertHelper implements PropertyEditorRegistrar
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,0,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
+        }
+
+        @Test
+        public void testConvertDate()
+        {
+            Object convertedDate = new LenientDateConverter().convert(Date.class, "+1d");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.add(Calendar.DATE, 1);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                    DateUtil.getDateOnly((Date)convertedDate));
+
+            convertedDate = new LenientDateConverter().convert(Date.class, "-2m0d");
+            cal.setTime(new Date());
+            cal.add(Calendar.MONTH, -2);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()),
+                    DateUtil.getDateOnly((Date)convertedDate));
+
+            convertedDate = new LenientDateConverter().convert(Date.class, "Thu Jun 10 08:00:00 PDT 1999");
+            cal.set(1999, Calendar.JUNE,10,8,0,0);
+            assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Date)convertedDate));
         }
 
         @Test
