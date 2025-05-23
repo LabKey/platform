@@ -34,13 +34,13 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.ParameterMapStatement;
@@ -1806,7 +1806,7 @@ renaming a property AND toggling mvindicator on in the same change.
             DomainImpl d = null;
             try
             {
-                d = new DomainImpl(c, uri, "test")
+                d = new DomainImpl(c, uri, "test", true)
                 {
                     @Override
                     public DomainKind<?> getDomainKind()

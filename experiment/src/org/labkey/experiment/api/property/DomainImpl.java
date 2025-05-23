@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -71,11 +73,14 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -106,7 +111,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
-    private boolean _isReadOnly = true;
+    private boolean _isForUpdate;
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
@@ -114,13 +119,13 @@ public class DomainImpl implements Domain
 
     public DomainImpl(DomainDescriptor dd)
     {
-        this(dd, true);
+        this(dd, false);
     }
 
-    public DomainImpl(DomainDescriptor dd, boolean isReadOnly)
+    public DomainImpl(DomainDescriptor dd, boolean isForUpdate)
     {
         _dd = dd;
-        _isReadOnly = isReadOnly;
+        _isForUpdate = isForUpdate;
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
 
         List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
@@ -143,14 +148,15 @@ public class DomainImpl implements Domain
         }
     }
 
-    public DomainImpl(Container container, String uri, String name)
+    public DomainImpl(Container container, String uri, String name, boolean isForUpdate)
     {
-        this(container, uri, name, null);
+        this(container, uri, name, null, isForUpdate);
     }
 
-    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo)
+    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo, boolean isForUpdate)
     {
         _new = true;
+        _isForUpdate = isForUpdate;
         _dd = new DomainDescriptor.Builder(uri, container)
                 .setName(name)
                 .setTemplateInfoObject(templateInfo)
@@ -214,9 +220,9 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public boolean isReadOnly()
+    public boolean isForUpdate()
     {
-        return _isReadOnly;
+        return _isForUpdate;
     }
 
     @Override
@@ -555,7 +561,7 @@ public class DomainImpl implements Domain
 
     public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment) throws ChangePropertyDescriptorException
     {
-        if (_isReadOnly)
+        if (!_isForUpdate)
             throw new ChangePropertyDescriptorException("Cannot save a domain that is immutable");
 
         ExperimentService exp = ExperimentService.get();
@@ -1539,5 +1545,27 @@ public class DomainImpl implements Domain
     public DomainTemplate getTemplate()
     {
         return DomainTemplate.findTemplate(getTemplateInfo(), getDomainKind().getKindName());
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void saveAfterGetReadOnlyDomain()
+        {
+            Container c = JunitUtil.getTestContainer();
+            String uri = "StorageProvisionImpl/" + GUID.makeGUID();
+            DomainImpl d = new DomainImpl(c, uri, "test", false);
+            User user = TestContext.get().getUser();
+            try
+            {
+                d.save(user, false);
+                fail("Save of read-only domain should fail.");
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                // expected exception
+            }
+        }
     }
 }
