@@ -4,12 +4,15 @@ import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.StartupListener;
 
 import java.util.Comparator;
 import java.util.Map;
 
 import static org.labkey.api.settings.AppProps.SCOPE_OPTIONAL_FEATURE;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.STRONG;
 
 public class OptionalFeatureStartupListener implements StartupListener
 {
@@ -36,6 +39,12 @@ public class OptionalFeatureStartupListener implements StartupListener
                     .filter(flag -> flag.getPropertyName() != null)
                     .sorted(Comparator.comparing(OptionalFeatureFlag::getPropertyName, String.CASE_INSENSITIVE_ORDER))
             );
+        }
+
+        @Override
+        public DOM.Renderable getScopeDescription()
+        {
+            return SPAN(STRONG(getScope()), " - set these properties to true/false to enable/disable the corresponding feature flag");
         }
 
         @Override
