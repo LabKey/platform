@@ -292,44 +292,6 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
     }
 
     @Override
-    public Collection<AssaySpecimenConfigImpl> getAssaySpecimenConfigs()
-    {
-        return StudyManager.getInstance().getAssaySpecimenConfigs(getContainer());
-    }
-
-    @Override
-    @Transient
-    public List<VisitImpl> getVisitsForAssaySchedule()
-    {
-        return StudyManager.getInstance().getVisitsForAssaySchedule(getContainer());
-    }
-
-    @Override
-    public List<ProductImpl> getStudyProducts(User user, String role)
-    {
-        return TreatmentManager.getInstance().getStudyProducts(getContainer(), user, role, null);
-    }
-
-    @Override
-    public List<TreatmentImpl> getStudyTreatments(User user)
-    {
-        return TreatmentManager.getInstance().getStudyTreatments(getContainer(), user);
-    }
-
-    @Override
-    public List<TreatmentVisitMapImpl> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId)
-    {
-        return TreatmentManager.getInstance().getStudyTreatmentVisitMap(container, cohortId);
-    }
-
-    @Override
-    @Transient
-    public List<VisitImpl> getVisitsForTreatmentSchedule()
-    {
-        return TreatmentManager.getInstance().getVisitsForTreatmentSchedule(getContainer());
-    }
-
-    @Override
     public List<ParticipantCategoryImpl> getParticipantCategories(User user)
     {
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);

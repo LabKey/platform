@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
@@ -27,17 +26,17 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.settings.OptionalFeatureService" %>
 <%@ page import="org.labkey.api.study.Dataset" %>
 <%@ page import="org.labkey.api.study.FolderArchiveSource" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.api.study.StudyUtils" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.model.ParticipantGroup" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignManager" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignService" %>
+<%@ page import="org.labkey.api.studydesign.StudyDesignUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -57,7 +56,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.SnapshotSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.StudyScheduleAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController.EditStudyDefinitionAction" %>
-<%@ page import="org.labkey.study.controllers.StudyDesignController.ManageStudyProductsAction" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController.BeginAction" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
@@ -254,31 +252,30 @@
                         <td class="lk-study-prop-desc">Manage QC states for datasets in this study</td>
                         <td><%=link("Manage Dataset QC States", StudyController.getManageQCStatesURL(getContainer(), getActionURL())) %></td>
                     </tr>
-                    <% if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG)) { %>
+                    <% if (StudyDesignManager.get().isModuleActive(getContainer())) { %>
                     <tr>
                         <td class="lk-study-prop-label">Study Products</td>
-                        <td class="lk-study-prop-desc">This study defines <%= getStudyProducts(user, null).size() %> study products</td>
+                        <td class="lk-study-prop-desc">This study defines <%= StudyDesignService.get().getStudyProducts(getContainer(), user, null).size() %> study products</td>
                         <%
-                            ActionURL manageStudyProductsURL = urlFor(ManageStudyProductsAction.class)
+                            ActionURL manageStudyProductsURL = urlProvider(StudyDesignUrls.class).getManageStudyProductsURL(getContainer())
                                 .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Study Products", manageStudyProductsURL) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Treatments</td>
-                        <td class="lk-study-prop-desc">This study defines <%= getStudyTreatments(user).size() %> treatments</td>
+                        <td class="lk-study-prop-desc">This study defines <%= StudyDesignService.get().getStudyTreatments(getContainer(), user).size() %> treatments</td>
                         <%
-                            ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false)
+                            ActionURL manageTreatmentsURL = urlProvider(StudyDesignUrls.class).getManageTreatmentsURL(getContainer(), false)
                                 .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Treatments", manageTreatmentsURL) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Assay Schedule</td>
-                        <td class="lk-study-prop-desc">This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
+                        <td class="lk-study-prop-desc">This study defines <%= StudyDesignService.get().getAssaySpecimenConfigs(getContainer()).size() %> assay configurations</td>
                         <%
-                            boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
-                            ActionURL assayScheduleURL = urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule)
+                            ActionURL assayScheduleURL = urlProvider(StudyDesignUrls.class).getManageAssayScheduleURL(getContainer(), false)
                                 .addReturnUrl(getActionURL());
                         %>
                         <td><%= link("Manage Assay Schedule", assayScheduleURL) %></td>

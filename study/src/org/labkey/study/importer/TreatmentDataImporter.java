@@ -81,6 +81,9 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         if (!ctx.isDataTypeSelected(getDataType()))
             return;
 
+        if (!isStudyDesignEnabled(ctx.getContainer()))
+            return;
+
         if (isValidForImportArchive(ctx, root))
         {
             ExportDirType dirType = ctx.getXml().getTreatmentData();

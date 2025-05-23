@@ -2,11 +2,15 @@ package org.labkey.study;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.CohortFilter;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.model.CohortService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
@@ -50,5 +54,44 @@ public class CohortServiceImpl implements CohortService
     public Collection<? extends Cohort> getCohorts(Container container, User user)
     {
         return StudyManager.getInstance().getCohorts(container, user);
+    }
+
+    @Override
+    public Cohort getCohortByLabel(Container container, User user, String label)
+    {
+        return StudyManager.getInstance().getCohortByLabel(container, user, label);
+    }
+
+    @Override
+    public Cohort getCohortForRowId(Container container, User user, int rowId)
+    {
+        return StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+    }
+
+    @Override
+    public void deleteCohort(Cohort cohort)
+    {
+        if (cohort instanceof CohortImpl cohortImpl)
+            StudyManager.getInstance().deleteCohort(cohortImpl);
+    }
+
+    @Override
+    public Cohort updateCohort(Container container, User user, int rowId, String label, Integer subjectCount)
+    {
+        CohortImpl updatedCohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);
+        if (updatedCohort != null)
+        {
+            updatedCohort = updatedCohort.createMutable();
+            updatedCohort.setLabel(label);
+            updatedCohort.setSubjectCount(subjectCount);
+            StudyManager.getInstance().updateCohort(user, updatedCohort);
+        }
+        return updatedCohort;
+    }
+
+    @Override
+    public Cohort createCohort(Study study, User user, String newLabel, boolean enrolled, Integer subjectCount, String description) throws ValidationException
+    {
+        return CohortManager.getInstance().createCohort(study, user, newLabel, enrolled, subjectCount, description);
     }
 }
