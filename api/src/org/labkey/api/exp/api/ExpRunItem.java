@@ -22,12 +22,8 @@ import org.labkey.api.exp.Identifiable;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Input or output of a run, like a data file or a material.
- * User: jeckels
- * Date: Jul 28, 2008
- */
-public interface ExpRunItem extends ExpObject, Identifiable
+/** Input or output of a run, like a data file or a material. */
+public interface ExpRunItem extends ExpObject, ExpSearchable, Identifiable
 {
     String INPUT_PARENT = "Inputs";
     String INPUTS_PREFIX_LC = (INPUT_PARENT + "/").toLowerCase();
@@ -53,9 +49,9 @@ public interface ExpRunItem extends ExpObject, Identifiable
      */
     Integer getRunId();
 
-    /** @return all of the protocol applications that reference this data/material as input */
+    /** @return all the protocol applications that reference this data/material as input */
     List<? extends ExpProtocolApplication> getTargetApplications();
-    /** @return all of the protocol applications that reference this data/material as input */
+    /** @return all the protocol applications that reference this data/material as input */
     List<? extends ExpRun> getTargetRuns();
 
     void setSourceApplication(ExpProtocolApplication sourceApplication);

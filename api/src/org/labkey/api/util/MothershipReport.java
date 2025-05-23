@@ -79,7 +79,8 @@ public class MothershipReport implements Runnable
     private static boolean showSelfReportExceptions = false;
     private static int _droppedExceptionCount = 0;
 
-    public final static String JSON_METRICS_KEY = "jsonMetrics";
+    public static final String JSON_METRICS_KEY = "jsonMetrics";
+    public static final String FEATURE_FLAG_EXTENDED_METRICS = "extendedMetrics";
     public static final String EXPERIMENTAL_LOCAL_MARKETING_UPDATE = "localMarketingUpdates";
     private static boolean _selfTestMarketingUpdates = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
 

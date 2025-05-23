@@ -34,7 +34,7 @@ import java.util.function.Function;
 /**
  * Category of {@link ExpData}, extended by a Domain with custom properties. Data version of an {@link ExpSampleType}.
  */
-public interface ExpDataClass extends ExpObject
+public interface ExpDataClass extends ExpObject, ExpSearchable
 {
     String NEW_DATA_CLASS_ALIAS_VALUE = "{{this_data_class}}";
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.DataClass";

@@ -250,15 +250,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-
             indexSampleType(sampleType, task);
             indexSampleTypeMaterials(sampleType, task);
-
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
-
 
     private void indexSampleType(ExpSampleType sampleType, SearchService.IndexTask task)
     {
@@ -295,7 +292,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             for (Material m : batch)
             {
                 ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(task, null /* null tableInfo since samples may belong to multiple containers*/);
+                impl.index(task, null, null /* null tableInfo since samples may belong to multiple containers*/);
             }
         });
     }
