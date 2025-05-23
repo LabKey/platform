@@ -67,9 +67,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
-import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.specimen.SpecimenSampleTypeDomainKind;
 import org.labkey.api.specimen.model.AdditiveTypeDomainKind;
 import org.labkey.api.specimen.model.DerivativeTypeDomainKind;
@@ -84,7 +81,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.importer.ImportHelperService;
 import org.labkey.api.study.model.CohortService;
@@ -95,6 +91,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
 import org.labkey.api.studydesign.query.StudyPersonnelDomainKind;
 import org.labkey.api.studydesign.query.StudyProductAntigenDomainKind;
@@ -131,7 +128,6 @@ import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
-import org.labkey.study.controllers.StudyDesignController;
 import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -159,7 +155,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyLsidHandler;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
 import org.labkey.study.model.VisitDatasetDomainKind;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -181,9 +176,6 @@ import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
-import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
-import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
-import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetDataWriter;
 import org.labkey.study.writer.DefaultStudyDesignWriter;
 import org.labkey.study.writer.StudyWriterFactory;
@@ -206,17 +198,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
-    public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
     public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory();
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
-    public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
     public static final WebPartFactory manageStudyPartFactory = new org.labkey.study.view.StudySummaryWebPartFactory();
     public static final WebPartFactory studyDesignSummaryWebPartFactory = new StudySummaryWebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
     public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
     public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
-    public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
 
     @Override
     public String getName()
@@ -239,7 +228,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("participant-group", ParticipantGroupController.class);
         addController("publish", PublishController.class);
         addController("study-definition", StudyDefinitionController.class);
-        addController("study-design", StudyDesignController.class);
         addController("study-properties", StudyPropertiesController.class);
         addController("study-reports", ReportsController.class);
         addController("study-security", SecurityController.class);
@@ -304,10 +292,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return List.of(
-            assayScheduleWebPartFactory,
             dataToolsWebPartFactory,
             datasetsPartFactory,
-            immunizationScheduleWebpartFactory,
             manageStudyPartFactory,
             reportsPartFactory,
             studyDesignSummaryWebPartFactory,
@@ -315,7 +301,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             studyScheduleWebPartFactory,
             subjectDetailsWebPartFactory,
             subjectsWebPartFactory,
-            vaccineDesignWebPartFactory,
             new SharedStudyController.StudyFilterWebPartFactory()
         );
     }
@@ -421,11 +406,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Allow unprovisioned, query-based dataset snapshots to be created.",
             false);
 
-        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(StudyUtils.STUDY_DESIGN_FEATURE_FLAG,
-                "Study Protocol Design Tools",
-                "This option adds support for the study protocol and vaccine design tools.",
-                false, false, FeatureType.Deprecated));
-
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
@@ -502,15 +482,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                     .count();
                 metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
 
-                if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-                {
-                    // Count the studies that use products and treatments
-                    MutableInt hasProducts = new MutableInt(0);
-                    MutableInt hasTreatments = new MutableInt(0);
+                // Count the studies that use products and treatments
+                MutableInt hasProducts = new MutableInt(0);
+                MutableInt hasTreatments = new MutableInt(0);
 
-                    allStudies.stream()
-                            .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
-                            .forEach(schema->{
+                allStudies.stream()
+                        .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
+                        .forEach(schema->{
+                            if (StudyDesignManager.get().isModuleActive(schema.getContainer()))
+                            {
                                 TableInfo products = schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME);
                                 if (new TableSelector(products).exists())
                                     hasProducts.increment();
@@ -518,11 +498,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                                 TableInfo treatments = schema.getTable(StudyDesignQuerySchema.TREATMENT_TABLE_NAME);
                                 if (new TableSelector(treatments).exists())
                                     hasTreatments.increment();
-                            });
+                            }
+                        });
 
-                    metric.put("studyProducts", hasProducts.intValue());
-                    metric.put("studyTreatments", hasTreatments.intValue());
-                }
+                metric.put("studyProducts", hasProducts.intValue());
+                metric.put("studyTreatments", hasTreatments.intValue());
 
                 return metric;
             });
@@ -716,35 +696,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        if (OptionalFeatureService.get().isFeatureEnabled(StudyUtils.STUDY_DESIGN_FEATURE_FLAG))
-        {
-            return Set.of(
-                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                    ParticipantGroupManager.ParticipantGroupTestCase.class,
-                    StudyImpl.ProtocolDocumentTestCase.class,
-                    StudyManager.AssayScheduleTestCase.class,
-                    StudyManager.StudySnapshotTestCase.class,
-                    StudyManager.VisitCreationTestCase.class,
-                    StudyModule.TestCase.class,
-                    TreatmentManager.TreatmentDataTestCase.class,
-                    VisitImpl.TestCase.class,
-                    DatasetUpdateService.TestCase.class
-            );
-        }
-        else
-        {
-            return Set.of(
-                    DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                    ParticipantGroupManager.ParticipantGroupTestCase.class,
-                    StudyImpl.ProtocolDocumentTestCase.class,
-                    StudyManager.StudySnapshotTestCase.class,
-                    StudyManager.VisitCreationTestCase.class,
-                    StudyModule.TestCase.class,
-                    VisitImpl.TestCase.class,
-                    DatasetUpdateService.TestCase.class,
-                    DatasetLsidImportHelper.TestCase.class
-            );
-        }
+        return Set.of(
+                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                ParticipantGroupManager.ParticipantGroupTestCase.class,
+                StudyImpl.ProtocolDocumentTestCase.class,
+                StudyManager.StudySnapshotTestCase.class,
+                StudyManager.VisitCreationTestCase.class,
+                StudyModule.TestCase.class,
+                VisitImpl.TestCase.class,
+                DatasetUpdateService.TestCase.class,
+        DatasetLsidImportHelper.TestCase.class);
     }
 
     @Override

@@ -8,8 +8,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.VisitService;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitImpl;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -31,5 +34,18 @@ public class VisitServiceImpl implements VisitService
     public @NotNull ValidationException updateParticipantVisits(Study study, User user)
     {
         return StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
+    }
+
+    @Override
+    public Visit createVisit(Study study, User user, @NotNull BigDecimal seqMin, String label, Visit.Type type)
+    {
+        return StudyManager.getInstance().createVisit(study, user, new VisitImpl(study.getContainer(), seqMin, label, type));
+    }
+
+    @Override
+    public void deleteVisit(Study study, User user, Visit visit)
+    {
+        if (study instanceof StudyImpl studyImpl && visit instanceof VisitImpl visitImpl)
+            StudyManager.getInstance().deleteVisit(studyImpl, visitImpl, user);
     }
 }
