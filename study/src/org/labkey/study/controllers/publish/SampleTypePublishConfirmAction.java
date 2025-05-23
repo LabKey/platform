@@ -27,7 +27,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -198,12 +197,6 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
                 sampleType.getName(),
                 Pair.of(Dataset.PublishSource.SampleType, sampleType.getRowId()),
                 dataMaps, ROW_ID, errors);
-    }
-
-    @Override
-    public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
-    {
-        return super.getView(form, reshow, errors);
     }
 
     @Override
