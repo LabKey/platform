@@ -358,7 +358,15 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof java.util.Date)
                 return o;
 
-            return new Date(DateUtil.parseDateTime(o.toString()));
+            String signedDurationCandidate = StringUtils.trimToNull(o instanceof String s ? s : null);
+            if (signedDurationCandidate != null && DateUtil.isSignedDuration(signedDurationCandidate))
+            {
+                return new Date(DateUtil.applySignedDuration(new Date().getTime(), signedDurationCandidate));
+            }
+            else
+            {
+                return new Date(DateUtil.parseDateTime(o.toString()));
+            }
         }
     }
 
