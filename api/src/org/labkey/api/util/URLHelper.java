@@ -699,9 +699,8 @@ public class URLHelper implements Cloneable, Serializable, JSONString
                 continue;
 
             String paramName = pv.getName();
-            // Issue 52925 & 52827: App export to csv/tsv ignores filter with column containing double quote
             if (isFormDataEncoded)
-                paramName = paramName.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+                paramName = PageFlowUtil.decodeQuoteEncodedFormDataKey(paramName);
 
             if (v.getClass().isArray())
             {

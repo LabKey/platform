@@ -3129,4 +3129,17 @@ public class PageFlowUtil
         ).appendTo(sb);
         return HtmlString.unsafe(sb.toString());
     }
+
+    /**
+     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
+     * Issue 52119: App issues with assay run properties with special characters
+     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
+     * @return The decoded raw field name
+     */
+    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
+    {
+        if (encodedKey == null)
+            return null;
+        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+    }
 }
