@@ -41,11 +41,10 @@ import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.model.SpecimenComment;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -347,7 +346,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
                 {
                     String comment = getCommentText(ctx, ctx.getResults().getString("SpecimenHash"), lineSeparator);
                     if (null != comment)
-                        sb.append(comment);
+                        sb.append(renderHtml ? PageFlowUtil.filter(comment) : comment);
                 }
                 catch (SQLException e)
                 {
@@ -368,9 +367,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            oldWriter.write(getDisplayText(ctx, true));
+            out.write(HtmlString.unsafe(getDisplayText(ctx, true)));
         }
     }
 }

@@ -55,6 +55,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.HtmlWriter;
 import org.labkey.assay.plate.AssayPlateTriggerFactory;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -335,7 +336,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
-            return new _FlagColumnRenderer(colInfo, rowId, protocol, dataregion);
+            return new _FlagColumnRenderer(colInfo, rowId, protocol);
         }
 
         @Override
@@ -358,13 +359,12 @@ public class TSVProtocolSchema extends AssayProtocolSchema
      * This class turns that around.  It wraps a flag/comment column and uses
      * run/lsid and rowid to generate a fake lsid
      */
-    class _FlagColumnRenderer extends FlagColumnRenderer
+    private static class _FlagColumnRenderer extends FlagColumnRenderer
     {
-        final FieldKey rowId;
-        final ExpProtocol protocol;
-        final String dataregion;
+        private final FieldKey rowId;
+        private final ExpProtocol protocol;
 
-        _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol, String dataregion)
+        private _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol)
         {
             super(col);
             this.rowId = rowId;
@@ -373,19 +373,18 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             url.addParameter("rowId", protocol.getRowId());
             url.addParameter("columnName", col.getName());
             this.endpoint = url.getLocalURIString();
-            this.dataregion = dataregion;
             this.jsConvertPKToLSID = "function(pk){return " +
                     PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + ":") + " + pk}";
         }
 
         @Override
-        protected void renderFlag(RenderContext ctx, Writer out) throws IOException
+        protected void renderFlag(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
         {
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
             String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + id;
-            _renderFlag(ctx, out, lsid, null==comment?null:String.valueOf(comment));
+            _renderFlag(ctx, oldWriter, out, lsid, null == comment ? null : String.valueOf(comment));
         }
 
         @Override

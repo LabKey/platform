@@ -753,7 +753,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         @Override
         public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            ExpData data = getData(ctx);
+            ExpData data = getData(ctx, getColumnInfo());
             if (data != null)
             {
                 if (data.isFileOnDisk())

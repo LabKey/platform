@@ -45,7 +45,7 @@ abstract class DataLinkColumn extends DataColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
     {
-        ExpData data = getData(ctx);
+        ExpData data = getData(ctx, getColumnInfo());
 
         if (data != null)
         {
@@ -107,9 +107,9 @@ abstract class DataLinkColumn extends DataColumn
         return html.toString();
     }
 
-    protected ExpData getData(RenderContext ctx)
+    static ExpData getData(RenderContext ctx, ColumnInfo col)
     {
-        Integer rowIdObject = ctx.get(getColumnInfo().getFieldKey(), Integer.class);
+        Integer rowIdObject = ctx.get(col.getFieldKey(), Integer.class);
         ExpData data = null;
         if (rowIdObject != null)
         {
@@ -129,6 +129,7 @@ abstract class DataLinkColumn extends DataColumn
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
-        ExpData data = getData(ctx);
+        ExpData data = getData(ctx, getColumnInfo());
         return data == null ? null : getURL(data);
-    }}
+    }
+}
