@@ -206,7 +206,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
                 user = UserManager.getGuestUser();
 
             String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
-            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI, true);
 
             if (domain == null)
             {
