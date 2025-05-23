@@ -280,8 +280,8 @@ public class ExpDataIterators
             boolean isUpdateOnly = context.getInsertOption().updateOnly;
 
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-            if (!isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
-                _aliquotedFromColIdx = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            if (!isUpdateOnly && columnNameMap.containsKey(ALIQUOTED_FROM_INPUT))
+                _aliquotedFromColIdx = columnNameMap.get(ALIQUOTED_FROM_INPUT);
             else if (isUpdateOnly && columnNameMap.containsKey(AliquotedFromLSID.name()))
                 _aliquotedFromColIdx = columnNameMap.get(AliquotedFromLSID.name());
             else
@@ -378,7 +378,7 @@ public class ExpDataIterators
             _storedAmountCol = map.get(StoredAmount.name());
             _unitsCol = map.get(Units.name());
             _sampleStateCol = map.get(SampleState.name());
-            _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            _aliquotedFromCol = map.get(ALIQUOTED_FROM_INPUT);
             _rootMaterialRowIdCol = map.get(RootMaterialRowId.name());
             _rootIdToRecomputeCol = map.get(ROOT_RECOMPUTE_ROWID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
@@ -648,7 +648,7 @@ public class ExpDataIterators
 
             for (String name : nameMap.keySet())
             {
-                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase("AliquotedFrom", name))
+                if (ExperimentService.isInputOutputColumn(name) || equalsIgnoreCase("parent", name) || equalsIgnoreCase(ALIQUOTED_FROM_INPUT, name))
                 {
                     _parentCols.add(nameMap.get(name));
                 }
@@ -862,12 +862,13 @@ public class ExpDataIterators
         SimpleFilter f = new SimpleFilter(Name.fieldKey(), names, IN);
         f.addCondition(MaterialSourceId.fieldKey(), sampleTypeRowId);
         f.addCondition(AliquotedFromLSID.fieldKey(), null, CompareType.NONBLANK);
-        return new TableSelector(ExperimentService.get().getTinfoMaterial(), f, null).exists();
+
+        return new TableSelector(ExperimentService.get().getTinfoMaterial(), Set.of(RowId.name()), f, null).exists();
     }
 
     public static String getAliquotParent(Object parentObj, DataIteratorContext context, TSVWriter tsvWriter)
     {
-        Collection<String> parentNames = getParentNames(parentObj, tsvWriter, "AliquotedFrom", null);
+        Collection<String> parentNames = getParentNames(parentObj, tsvWriter, ALIQUOTED_FROM_INPUT, null);
         if (parentNames != null)
         {
             List<String> parents = parentNames.stream()
@@ -877,7 +878,7 @@ public class ExpDataIterators
             if (!parents.isEmpty())
             {
                 if (parents.size() > 1)
-                    context.getErrors().addRowError(new ValidationException("Multiple AliquotedFrom values are provided."));
+                    context.getErrors().addRowError(new ValidationException(String.format("Multiple %s values are provided.", ALIQUOTED_FROM_INPUT)));
                 return parents.get(0);
             }
         }
@@ -1115,7 +1116,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (isSample() && ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
+                if (isSample() && ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
                 {
                     aliquotParentCol = entry.getValue();
                 }
@@ -1145,7 +1146,7 @@ public class ExpDataIterators
                 {
                     Object o = get(_aliquotParentCol);
 
-                    String aliquotParentName =  getAliquotParent(o, _context, _tsvWriter);
+                    String aliquotParentName = getAliquotParent(o, _context, _tsvWriter);
                     if (aliquotParentName != null)
                         _aliquotParents.put(lsid, aliquotParentName.trim());
 

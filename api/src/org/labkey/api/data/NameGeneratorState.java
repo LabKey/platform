@@ -292,8 +292,8 @@ public class NameGeneratorState implements AutoCloseable
 
         StringExpressionFactory.FieldKeyStringExpression expression = activeNameGenerator.getParsedNameExpression();
         String name;
-        if (expression instanceof NameGenerator.NameGenerationExpression)
-            name = ((NameGenerator.NameGenerationExpression) expression).eval(ctx, _prefixCounterSequences);
+        if (expression instanceof NameGenerator.NameGenerationExpression nge)
+            name = nge.eval(ctx, _prefixCounterSequences);
         else
             name = expression.eval(ctx);
         if (name == null || name.isEmpty())
@@ -417,14 +417,14 @@ public class NameGeneratorState implements AutoCloseable
                 String parentType = ancestorOptions.parentType();
                 if (!StringUtils.isEmpty(parentType))
                 {
-                    if (parentObject instanceof ExpMaterial)
+                    if (parentObject instanceof ExpMaterial expMaterial)
                     {
-                        if (!((ExpMaterial) parentObject).getSampleType().getName().equalsIgnoreCase(parentType))
+                        if (!expMaterial.getSampleType().getName().equalsIgnoreCase(parentType))
                             continue;
                     }
-                    else if (parentObject instanceof ExpData)
+                    else if (parentObject instanceof ExpData expData)
                     {
-                        if (!((ExpData) parentObject).getDataClass(_user).getName().equalsIgnoreCase(parentType))
+                        if (!expData.getDataClass(_user).getName().equalsIgnoreCase(parentType))
                             continue;
                     }
                 }
@@ -490,7 +490,6 @@ public class NameGeneratorState implements AutoCloseable
                 }
             }
         }
-
     }
 
     private void addParentLookupContext(String parentTypeName/* already decoded */,

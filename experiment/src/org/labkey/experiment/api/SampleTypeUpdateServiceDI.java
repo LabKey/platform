@@ -338,9 +338,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
                                     {
-                                        if (nameObj instanceof String)
+                                        if (nameObj instanceof String name)
                                         {
-                                            nameToRecompute.add((String) nameObj);
+                                            nameToRecompute.add(name);
                                         }
                                         else if (nameObj instanceof Number)
                                         {
@@ -807,7 +807,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 validRowCopy.put(updateField, updateValue);
             }
 
-            if (ExpMaterialTable.Column.SampleState.name().toLowerCase().equals(updateField.toLowerCase()))
+            if (ExpMaterialTable.Column.SampleState.name().equalsIgnoreCase(updateField))
                 hasStatusCol = true;
         }
         // had a locked status before and either not updating the status or updating to a new locked status
@@ -989,9 +989,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Filter filter;
         if (rowId != null)
-            filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowId);
+            filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), rowId);
         else if (lsid != null)
-            filter = new SimpleFilter(FieldKey.fromParts(LSID), lsid);
+            filter = new SimpleFilter(LSID.fieldKey(), lsid);
         else
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
@@ -1072,8 +1072,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 sampleTypeId = getMaterialSourceId(keyMap.getValue());
         }
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-        filter.addCondition(FieldKey.fromParts("Name"), sampleNames, CompareType.IN);
+        SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
+        filter.addCondition(ExpMaterialTable.Column.Name.fieldKey(), sampleNames, CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
 
         return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
@@ -1132,7 +1132,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         hasParentInput = true;
                         break;
                     }
-
                 }
             }
             catch (IOException ignored)
@@ -1184,7 +1183,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (!rowIdRowNumMap.isEmpty())
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), rowIdRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -1222,8 +1221,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!nameRowNumMap.isEmpty())
         {
             allKeys.addAll(nameRowNumMap.keySet());
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
+            filter.addCondition(ExpMaterialTable.Column.Name.fieldKey(), nameRowNumMap.keySet(), CompareType.IN);
             filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
@@ -1243,7 +1242,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // Issue 52922: cross folder merge without Product Folders enabled silently ignores the cross folder row update
             ContainerFilter allCf = new ContainerFilter.AllInProjectPlusShared(container, user); // use a relaxed CF to find existing data from cross containers
 
-            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            SimpleFilter existingDataFilter = new SimpleFilter(ExpMaterialTable.Column.MaterialSourceId.fieldKey(), sampleTypeId);
             existingDataFilter.addCondition(FieldKey.fromParts("Container"), allCf.getIds(), CompareType.IN);
 
             existingDataFilter.addCondition(FieldKey.fromParts(useLsid ? "LSID" : "Name"), allKeys, CompareType.IN);
@@ -1254,7 +1253,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (!dataContainer.equals(container.getId()))
                     throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get("name") + ".");
             }
-
         }
 
         if (verifyExisting && !allKeys.isEmpty())
@@ -1795,7 +1793,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     static class _SamplesCoerceDataIterator extends SimpleTranslator
     {
         private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
-        private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
+        private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
         private final Measurement.Unit _metricUnit;
@@ -1832,9 +1830,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
                         aliquotedFromDataColInd = i;
-                    else if ("Units".equalsIgnoreCase(from.getName()))
+                    else if (Units.name().equalsIgnoreCase(from.getName()))
                         unitDataColInd = i;
-                    else if ("StoredAmount".equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
+                    else if (StoredAmount.name().equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
                         amountDataColInd = i;
                 }
             }
@@ -1850,7 +1848,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     boolean isScopedField = scopedFields.containsKey(name);
 
                     String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
-                    String ignoredMetaPropValue = String.format(INVALID_NONALIQUOT_PROPERTY, name);
+                    String ignoredMetaPropValue = String.format(INVALID_NON_ALIQUOT_PROPERTY, name);
                     if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
                     {
                         if (isScopedField)
@@ -1873,11 +1871,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         else
                             addColumn(to.getName(), i);
                     }
-                    else if (name.equalsIgnoreCase("Units"))
+                    else if (Units.name().equalsIgnoreCase(name))
                     {
                         addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
                     }
-                    else if (name.equalsIgnoreCase("StoredAmount"))
+                    else if (StoredAmount.name().equalsIgnoreCase(name))
                     {
                         addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType()));
                     }
@@ -1933,7 +1931,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
             SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.Error);
-            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NON_ALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
         }
@@ -1993,7 +1991,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 {
                     aliquotParentName = aliquotedFrom.toString();
                 }
-                if (aliquotParentName == null || StringUtils.isEmpty(aliquotParentName)) // if AliquotedFrom is empty, is root
+                if (StringUtils.isEmpty(aliquotParentName)) // if AliquotedFrom is empty, is root
                     return 0;
 
                 return null; // for aliquot, initialize rollup count/amount to null
