@@ -72,8 +72,8 @@ import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -106,6 +106,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -458,14 +459,25 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     /** @return first is labkeyBootstrap.jar, second is servletApi.jar */
-    private Pair<File, File> extractBootstrapFromEmbedded() throws IOException
+    private ExtractedJars extractBootstrapFromEmbedded() throws IOException
     {
         File bootstrap = null;
         File servlet = null;
+        File log4JCore = null;
+        File log4JApi = null;
+
         // Look through the JAR files in the working directory, which is expected to contain the Spring Boot
         // entrypoint and the Servlet API
         File pwd = new File(".");
         File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
+        File pipelineLibDir = FileUtil.appendName(pwd, "pipelinelib");
+        if (!pipelineLibDir.exists())
+        {
+            if (!FileUtil.mkdir(pipelineLibDir))
+            {
+                throw new IOException("Failed to create directory " + pipelineLibDir);
+            }
+        }
         for (File jar : jars)
         {
             try (JarFile j = new JarFile(jar))
@@ -478,21 +490,29 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                     JarEntry entry = entries.next();
                     if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
                     {
-                        bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar");
+                        bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar", pipelineLibDir);
                     }
                     if (entry.getName().contains("tomcat-embed-core") && entry.getName().toLowerCase().endsWith(".jar"))
                     {
-                        servlet = extractEntry(j, entry, "servletApi.jar");
+                        servlet = extractEntry(j, entry, "servletApi.jar", pipelineLibDir);
+                    }
+                    if (entry.getName().contains("log4j-core") && entry.getName().toLowerCase().endsWith(".jar"))
+                    {
+                        log4JCore = extractEntry(j, entry, "log4j-core.jar", pipelineLibDir);
+                    }
+                    if (entry.getName().contains("log4j-api") && entry.getName().toLowerCase().endsWith(".jar"))
+                    {
+                        log4JApi = extractEntry(j, entry, "log4j-api.jar", pipelineLibDir);
                     }
                 }
             }
         }
-        return Pair.of(bootstrap, servlet);
+        return new ExtractedJars(bootstrap, servlet, log4JCore, log4JApi);
     }
 
-    private File extractEntry(JarFile jar, ZipEntry entry, String name) throws IOException
+    private File extractEntry(JarFile jar, ZipEntry entry, String name, File pipelineLibDir) throws IOException
     {
-        File result = FileUtil.getAbsoluteCaseSensitiveFile(new File(name));
+        File result = FileUtil.getAbsoluteCaseSensitiveFile(FileUtil.appendName(pipelineLibDir, name));
         try (InputStream in = jar.getInputStream(entry);
              OutputStream out = new FileOutputStream(result))
         {
@@ -501,34 +521,60 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         return result;
     }
 
+    private record ExtractedJars(File bootstrap, File servlet, File log4JCore, File log4JApi) {}
 
     @Override
     public List<String> getClusterStartupArguments() throws IOException
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-        File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
-        File servletApi = null;
+        File labkeyBootstrap = new File(new File(System.getProperty("catalina.home")), "labkeyBootstrap.jar");
 
         if (!labkeyBootstrap.exists())
         {
-            Pair<File, File> extracted = extractBootstrapFromEmbedded();
-            labkeyBootstrap = extracted.first;
-            if (labkeyBootstrap == null || !labkeyBootstrap.exists())
+            try
             {
-                throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
+                Class<?> extractorClass = Class.forName("org.labkey.embedded.EmbeddedExtractor");
+                Object extractor = extractorClass.getDeclaredConstructor(boolean.class).newInstance(false);
+                Method method = extractorClass.getDeclaredMethod("extractRemotePipelineJars");
+                labkeyBootstrap = (File) method.invoke(extractor);
             }
-            servletApi = extracted.second;
-            if (servletApi == null || !servletApi.exists())
+            catch (InvocationTargetException e)
             {
-                throw new IllegalStateException("Couldn't find servletApi.jar");
+                throw UnexpectedException.wrap(e.getTargetException());
             }
+            catch (ClassNotFoundException | InstantiationException |
+                   IllegalAccessException | NoSuchMethodException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+
+
+//            ExtractedJars extracted = extractBootstrapFromEmbedded();
+//            labkeyBootstrap = extracted.bootstrap;
+//            if (labkeyBootstrap == null || !labkeyBootstrap.exists())
+//            {
+//                throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
+//            }
+//            servletApi = extracted.servlet;
+//            if (servletApi == null || !servletApi.exists())
+//            {
+//                throw new IllegalStateException("Couldn't find servletApi.jar");
+//            }
+//            if (extracted.log4JCore == null || !extracted.log4JCore.exists())
+//            {
+//                throw new IllegalStateException("Couldn't find log4j-core.jar");
+//            }
+//            if (extracted.log4JApi == null || !extracted.log4JApi.exists())
+//            {
+//                throw new IllegalStateException("Couldn't find log4j-api.jar");
+//            }
         }
 
         // Uncomment this line if you want to debug the forked process
-//            args.add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:5005");
+//            args.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005");
         args.add("-cp");
-        args.add(labkeyBootstrap.getPath());
+        args.add(labkeyBootstrap.getAbsolutePath());
         args.add(ClusterBootstrap.class.getName());
 
         for (String sysProp : new String[]{"labkey.externalModulesDir", "labkey.modulesDir", "cpas.modulesDir"})
@@ -541,10 +587,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         }
 
         args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
-        if (servletApi != null)
-        {
-            args.add("-pipelinelibdir=" + servletApi.getParent());
-        }
+        File pipelineLib = FileUtil.appendName(labkeyBootstrap.getParentFile(), "pipeline-lib");
+        args.add("-pipelinelibdir=" + pipelineLib.getAbsolutePath());
         return args;
     }
 
