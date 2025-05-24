@@ -365,6 +365,7 @@ public class SimpleUserSchema extends UserSchema
 
                     if (_objectUriCol == null && isObjectUriLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
                     {
+                        wrap.setFk((ForeignKey) null);
                         _objectUriCol = wrap;
                         wrap.setShownInInsertView(false);
                         wrap.setShownInUpdateView(false);
@@ -373,6 +374,7 @@ public class SimpleUserSchema extends UserSchema
                     }
                     if (null == _objectIdCol && colName.equalsIgnoreCase("objectId") && isObjectIdLookup(pkColName, fk.getLookupTableName(), fk.getLookupSchemaName()))
                     {
+                        wrap.setFk((ForeignKey) null);
                         _objectIdCol = wrap;
                         wrap.setShownInInsertView(false);
                         wrap.setShownInUpdateView(false);

@@ -29,5 +29,6 @@ public class AllIssuesTable extends SimpleUserSchema.SimpleTable<IssuesQuerySche
     public AllIssuesTable(@NotNull IssuesQuerySchema schema, ContainerFilter cf)
     {
         super(schema, IssuesSchema.getInstance().getTableInfoIssues(), cf);
+        setName(IssuesQuerySchema.ALL_ISSUE_TABLE);
     }
 }
