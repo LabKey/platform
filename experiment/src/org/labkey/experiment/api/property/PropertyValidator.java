@@ -15,11 +15,16 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PropertyValidator implements Serializable, Cloneable
 {
@@ -148,5 +153,25 @@ public class PropertyValidator implements Serializable, Cloneable
         {
             throw UnexpectedException.wrap(cnse);
         }
+    }
+
+    public String getPropertyAuditStr()
+    {
+        String propertyStr = getProperties();
+        if ("failOnMatch=false".equals(propertyStr)) // ignore NULL vs false
+            return null;
+        return propertyStr;
+    }
+
+    public String getStringVal()
+    {
+        List<String> parts = new ArrayList<>();
+        parts.add(getName());
+        parts.add(getDescription());
+        parts.add(getExpression());
+        parts.add(getPropertyAuditStr());
+        parts.add(getErrorMessage());
+        parts.add(StringUtils.replace(PropertyService.get().getValidatorKind(getTypeURI()).getName(), " Property Validator", ""));
+        return parts.stream().filter(StringUtils::isNotBlank).collect(Collectors.joining(", "));
     }
 }

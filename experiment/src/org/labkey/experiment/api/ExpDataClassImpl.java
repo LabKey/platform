@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -494,6 +495,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         }
     }
 
+    @Override
     public String getImportAliasJson()
     {
         return _object.getDataParentImportAliasMap();
@@ -544,6 +546,29 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public void setImportAliasMapJson(String aliasJson)
     {
         _object.setDataParentImportAliasMap(aliasJson);
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("NameExpression", getNameExpression());
+        String importAliasStr = null;
+        try
+        {
+            importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliasMap());
+        }
+        catch (IOException ignore)
+        {
+        }
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (getSampleType() != null)
+            map.put("SampleType", getSampleType().getRowId());
+
+        return map;
     }
 
 }

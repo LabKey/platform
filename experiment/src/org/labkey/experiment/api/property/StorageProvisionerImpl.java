@@ -1814,7 +1814,7 @@ renaming a property AND toggling mvindicator on in the same change.
                         return k;
                     }
                 };
-                d.save(user, false);
+                d.save(user);
                 StorageProvisioner.get().ensureStorageTable(d, k, k.getScope());
 
                 // check that prop exists

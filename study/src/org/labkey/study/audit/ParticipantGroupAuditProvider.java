@@ -105,7 +105,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
                 }
             }
         };
-        appendValueMapColumns(table);
+        appendValueMapColumns(table, null, true);
 
         return table;
     }
@@ -220,8 +220,8 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
             var event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newCategory.getRowId());
 
             if (prevCategory != null)
-                event.setOldRecordMap(createEncodedRecordMap(c, factory.toMap(prevCategory, null)));
-            event.setNewRecordMap(createEncodedRecordMap(c, factory.toMap(newCategory, null)));
+                event.setOldRecordMap(createEncodedRecordMap(factory.toMap(prevCategory, null)));
+            event.setNewRecordMap(createEncodedRecordMap(factory.toMap(newCategory, null)));
 
             return event;
         }
@@ -248,10 +248,10 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
             var event = new ParticipantGroupAuditProvider.ParticipantGroupAuditEvent(c, comment, newGroup.getCategoryId());
             event.setParticipantGroup(newGroup.getRowId());
 
-            event.setNewRecordMap(createEncodedRecordMap(c, factory.toMap(newGroup, null)));
+            event.setNewRecordMap(createEncodedRecordMap(factory.toMap(newGroup, null)));
             if (prevGroup != null)
             {
-                event.setOldRecordMap(createEncodedRecordMap(c, factory.toMap(prevGroup, null)));
+                event.setOldRecordMap(createEncodedRecordMap(factory.toMap(prevGroup, null)));
                 if (event.getNewRecordMap().equals(event.getOldRecordMap()))
                     return null;
             }
@@ -282,7 +282,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
                     "The participant '" + participantId + "' was deleted", groupId);
         }
 
-        private static String createEncodedRecordMap(Container c, Map<String, Object> bean)
+        private static String createEncodedRecordMap(Map<String, Object> bean)
         {
             if (bean.containsKey("ownerId"))
             {
@@ -299,7 +299,7 @@ public class ParticipantGroupAuditProvider extends AbstractAuditTypeProvider imp
                     .filter(e -> _allowedFields.contains(e.getKey()))
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() != null ? e.getValue() : ""));
 
-            return AbstractAuditTypeProvider.encodeForDataMap(c, filteredMap);
+            return AbstractAuditTypeProvider.encodeForDataMap(filteredMap);
         }
     }
 }

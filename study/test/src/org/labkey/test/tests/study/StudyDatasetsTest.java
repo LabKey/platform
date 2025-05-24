@@ -33,6 +33,7 @@ import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -42,6 +43,7 @@ import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         a6\t6\tx6\ty6\tz6
         """;
     private static final String DATASET_B_MERGE = "a4\t4\tx4_merged\ty4_merged\tz4_merged\n";
+    private final AuditLogHelper _auditLogHelper = new AuditLogHelper(this);
 
     @Override
     protected BrowserType bestBrowser()
@@ -250,7 +253,16 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         }
 
         if (error == null)
+        {
             editDatasetPage.clickSave();
+            String changeDetails = "Name: " + orgName + " > " + newName.trim();
+            changeDetails += "\nLabel: " + orgLabel + " > " + newLabel.trim();
+            AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, orgName, null,
+                    "The name of the dataset '" + orgName + "' was changed to '" + newName.trim() + "'. The descriptor of domain " + orgName + " was updated.",
+                    "", null, null, changeDetails);
+            boolean pass = _auditLogHelper.validateLastDomainAuditEvents(orgName, getProjectName(), expectedDomainEvent, Collections.emptyMap());
+            checker().verifyTrue("The comment logged for the dataset renaming was not as expected", pass);
+        }
         else
         {
             editDatasetPage.saveExpectFail(error);
@@ -309,6 +321,15 @@ public class StudyDatasetsTest extends BaseWebDriverTest
         assertEquals(Arrays.asList("XTest"), remainingFields);
 
         editDatasetPage.clickSave();
+
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, name, null,
+                "The column(s) of domain " + name + " were modified.",
+                "", null, null, null);
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(name, getProjectName(), expectedDomainEvent,
+                Map.of("YTest", new AuditLogHelper.DetailedAuditEventRow(null, "YTest", "Deleted",null,null, null, null, null),
+                        "ZTest", new AuditLogHelper.DetailedAuditEventRow(null, "ZTest", "Deleted",null,null, null, null, null)
+                ));
+        checker().verifyTrue("Domain audit log not as expected after removing fields", pass);
     }
 
     @LogMethod

@@ -279,7 +279,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         @NotNull ExpDataClass dataClass,
         @Nullable DataClassDomainKindProperties options,
         GWTDomain<? extends GWTPropertyDescriptor> original,
-        GWTDomain<? extends GWTPropertyDescriptor> update
+        GWTDomain<? extends GWTPropertyDescriptor> update,
+        @Nullable String auditUserComment
     );
 
     /**
@@ -1054,7 +1055,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
 
-    void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+    /**
+     * @return Details about what's changed, to be used in audit log (old -> new)
+     */
+    @NotNull Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
 
     void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeId, Container container, User user);
 

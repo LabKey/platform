@@ -593,7 +593,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(rowId, Dataset.PublishSource.SampleType))
                 {
-                    dataset.delete(user);
+                    dataset.delete(user, auditUserComment);
                 }
             }
             else
@@ -602,7 +602,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
 
             Domain d = source.getDomain();
-            d.delete(user);
+            d.delete(user, auditUserComment);
 
             ExperimentServiceImpl.get().deleteDomainObjects(source.getContainer(), source.getLSID());
 
@@ -643,12 +643,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, @Nullable String auditUserComment)
     {
         addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, @Nullable String auditUserComment, String insertUpdateChoice)
     {
         SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c, comment);
         event.setUserComment(auditUserComment);
@@ -696,7 +696,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null);
     }
 
     @NotNull
@@ -704,7 +704,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
         throws ExperimentException
     {
         validateSampleTypeName(c, u, name, false);
@@ -877,7 +877,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 try
                 {
-                    domain.save(u);
+                    domain.save(u, changeDetails, calculatedFields);
                     st.save(u);
                     QueryService.get().saveCalculatedFieldsMetadata(SamplesSchema.SCHEMA_NAME, name, null, calculatedFields, false, u, c);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
@@ -996,28 +996,44 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         ValidationException errors;
 
         ExpSampleTypeImpl st = new ExpSampleTypeImpl(getMaterialSource(update.getDomainURI()));
 
+        StringBuilder changeDetails = new StringBuilder();
+
+        Map<String, Object> oldProps = new LinkedHashMap<>();
+        Map<String, Object> newProps = new LinkedHashMap<>();
+
         String newName = StringUtils.trimToNull(update.getName());
         String oldSampleTypeName = st.getName();
+        oldProps.put("Name", oldSampleTypeName);
+        newProps.put("Name", newName);
+
         boolean hasNameChange = false;
         if (!oldSampleTypeName.equals(newName))
         {
             validateSampleTypeName(container, user, newName, oldSampleTypeName.equalsIgnoreCase(newName));
             hasNameChange = true;
             st.setName(newName);
+            changeDetails.append("The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.");
         }
 
         String newDescription = StringUtils.trimToNull(update.getDescription());
         String description = st.getDescription();
+        if (StringUtils.isNotBlank(description))
+            oldProps.put("Description", description);
+        if (StringUtils.isNotBlank(newDescription))
+            newProps.put("Description", newDescription);
         if (description == null || !description.equals(newDescription))
-        {
             st.setDescription(newDescription);
-        }
+
+        Map<String, Object> oldProps_ = st.getAuditRecordMap();
+        Map<String, Object> newProps_ = options != null ? options.getAuditRecordMap() : st.getAuditRecordMap() /* no update */;
+        newProps.putAll(newProps_);
+        oldProps.putAll(oldProps_);
 
         boolean hasMetricUnitChanged = false;
 
@@ -1035,14 +1051,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             String aliquotIdPattern = StringUtils.trimToNull(options.getAliquotNameExpression());
             String oldAliquotPattern = st.getAliquotNameExpression();
             if (oldAliquotPattern == null || !oldAliquotPattern.equals(aliquotIdPattern))
-            {
                 st.setAliquotNameExpression(aliquotIdPattern);
-            }
 
             st.setLabelColor(options.getLabelColor());
             String oldMetricUnit = StringUtils.trimToNull(st.getMetricUnit());
             String newMetricUnit = StringUtils.trimToNull(options.getMetricUnit());
-
             if (!Objects.equals(oldMetricUnit, newMetricUnit))
                 hasMetricUnitChanged = true;
 
@@ -1076,14 +1089,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user);
-            String auditComment = null;
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
-                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
+
+            if (options != null && options.getExcludedContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
+            }
+            if (options != null && options.getExcludedDashboardContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
+                oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
+                newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             if (!errors.hasErrors())
             {
@@ -1092,10 +1114,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                if (options != null && options.getExcludedContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
-                if (options != null && options.getExcludedDashboardContainerIds() != null)
-                    ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
 
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
@@ -1228,7 +1246,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
             if (timelineEventType != null)
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
-            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(c, eventMetadata));
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(eventMetadata));
         }
 
         return event;
@@ -1249,7 +1267,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSampleTypeId(type.getRowId());
         }
         event.setUserComment(userComment);
-        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(metadata));
         return event;
     }
 
@@ -1896,8 +1914,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                                newRecordMap.put(fileUpdateData.fieldName, fileUpdateData.targetFile.getAbsolutePath());
                             });
                         }
-                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, oldRecordMap));
-                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, newRecordMap));
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldRecordMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newRecordMap));
                         AuditLogService.get().addEvent(user, event);
                     }
                 }
