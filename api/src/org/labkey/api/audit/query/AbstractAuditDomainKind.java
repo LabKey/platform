@@ -248,13 +248,13 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 
     @Override
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            JSONObject options, Container container, User user, boolean includeWarnings)
+                                            JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         throw new UnsupportedOperationException();
     }

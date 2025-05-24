@@ -97,6 +97,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
@@ -1935,8 +1936,8 @@ public class StudyManager
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(container, auditComment, datasetId);
             event.setHasDetails(true);
-            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, oldQCStates));
-            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(container, newQCStates));
+            event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(oldQCStates));
+            event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(newQCStates));
 
             AuditLogService.get().addEvent(user, event);
             clearCaches(container, false);
@@ -2481,7 +2482,7 @@ public class StudyManager
      * @param performStudyResync whether to kick off our normal bookkeeping. If the whole study is being deleted,
      * we don't need to bother doing this, for example.
      */
-    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync)
+    public void deleteDataset(StudyImpl study, User user, DatasetDefinition ds, boolean performStudyResync, @Nullable String auditUserComment)
     {
         try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
@@ -2512,10 +2513,10 @@ public class StudyManager
                 }
             });
 
-
-            deleteDatasetType(study, user, ds);
             try
             {
+                deleteDatasetType(study, user, ds, auditUserComment);
+
                 QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), StudySchema.getInstance().getSchemaName(), ds.getName());
                 if (def != null)
                     def.delete(user);
@@ -2563,7 +2564,7 @@ public class StudyManager
     /** delete a dataset type and data
      *  does not clear typeURI as we're about to delete the dataset
      */
-    private void deleteDatasetType(Study study, User user, DatasetDefinition ds)
+    private void deleteDatasetType(Study study, User user, DatasetDefinition ds, @Nullable String auditUserComment)
     {
         assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
 
@@ -2573,7 +2574,17 @@ public class StudyManager
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
 
-        StorageProvisioner.get().drop(ds.getDomain());
+        Domain domain = ds.getDomain();
+        if (domain == null)
+            return;
+
+        DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(study.getContainer(), String.format("The domain %s was deleted", domain.getName()));
+        event.setUserComment(auditUserComment);
+        event.setDomainUri(domain.getTypeURI());
+        event.setDomainName(domain.getName());
+        AuditLogService.get().addEvent(user, event);
+
+        StorageProvisioner.get().drop(domain);
 
         if (ds.getTypeURI() != null)
         {
@@ -2634,7 +2645,7 @@ public class StudyManager
             for (DatasetDefinition dsd : dsds)
             {
                 if (dsd.getContainer().equals(dsd.getDefinitionContainer()))
-                    deleteDataset(study, user, dsd, false);
+                    deleteDataset(study, user, dsd, false, null);
                 else
                     dsd.deleteAllRows(user);
             }
@@ -4549,7 +4560,7 @@ public class StudyManager
             String label = expectationDataset.getLabel();
 
             // no need to resync the study, as there should be no data in the expectation dataset
-            deleteDataset(study, user, expectationDataset, false);
+            deleteDataset(study, user, expectationDataset, false, null);
 
             targetDataset = targetDataset.createMutable();
             targetDataset.setName(name);

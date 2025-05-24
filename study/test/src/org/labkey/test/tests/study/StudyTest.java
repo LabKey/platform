@@ -43,6 +43,7 @@ import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.AuditLogHelper;
 import org.labkey.test.util.ChartHelper;
 import org.labkey.test.util.DataRegionExportHelper;
 import org.labkey.test.util.DataRegionTable;
@@ -78,6 +79,7 @@ public class StudyTest extends StudyBaseTest
     protected String datasetLink = datasetCount + " datasets";
     protected static final String DEMOGRAPHICS_DESCRIPTION = "This is the demographics dataset, dammit. Here are some \u2018special symbols\u2019 - they help test that we're roundtripping in UTF-8.";
     protected static final String DEMOGRAPHICS_TITLE = "DEM-1: Demographics";
+    protected static final String DEMOGRAPHICS_DOMAIN_NAME = "DEM-1";
 
     protected String _tsv = "participantid\tsequencenum\tvisitdate\tSampleId\tDateField\tNumberField\tTextField\treplace\taliasedColumn\n" +
         "999321234\t1\t1/1/2006\t1234_A\t2/1/2006\t1.2\ttext\t\taliasedData\n" +
@@ -1134,6 +1136,13 @@ public class StudyTest extends StudyBaseTest
         setDemographicsBit(DEMOGRAPHICS_TITLE, false)
                 .clickViewData();
 
+        String changeDetails = "IsDemographicData: true > false" ;
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
+                "The descriptor of domain DEM-1 was updated",
+                "", null, null, changeDetails);
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent, Collections.emptyMap());
+        checker().verifyTrue("Domain audit comment not as expected after changing demographic bit", pass);
+
         log("verify ");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
@@ -1292,6 +1301,14 @@ public class StudyTest extends StudyBaseTest
                 .selectVisitDateColumn("DEMdt")
                 .clickApply()
                 .clickSave();
+
+        AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
+                "The column(s) of domain DEM-1 were modified",
+                "", null, null, "");
+        boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent,
+                Map.of("VisitDay", new AuditLogHelper.DetailedAuditEventRow(null, "VisitDay", null, null, null, null, null, "VisitDateColumnName: > DEMdt")));
+        checker().verifyTrue("Domain audit comment not as expected after changing visit date column", pass);
+
         new DatasetPropertiesPage(getDriver())
             .clickViewData();
 
