@@ -164,7 +164,7 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
                     onChange={this.onChange}
                     includeDataClasses={true}
                     showLinkToStudy={true}
-                    showGenIdBanner={isUpdate}
+                    isUpdate={isUpdate}
                 />
             </BeforeUnload>
         )

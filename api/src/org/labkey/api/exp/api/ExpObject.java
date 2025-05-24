@@ -76,7 +76,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
 
     void save(User user) throws BatchValidationException;
     void delete(User user);
-    default void delete(User user, String auditUserComment)
+    default void delete(User user, @Nullable String auditUserComment)
     {
         delete(user);
     }

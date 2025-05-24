@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
@@ -105,7 +106,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, DEFAULT_VISIBLE_COLUMNS)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, DEFAULT_VISIBLE_COLUMNS)
         {
             @Override
             protected void initColumn(MutableColumnInfo col)
@@ -137,6 +138,10 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
                     col.setLabel("Domain Name");
             }
         };
+
+        appendValueMapColumns(table, EVENT_NAME);
+
+        return table;
     }
 
     public static class DomainPropertyAuditDomainKind extends AbstractAuditDomainKind
@@ -156,6 +161,8 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(COLUMN_NAME_ACTION, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_EVENT_ID, PropertyType.BIGINT));
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             _fields = Collections.unmodifiableSet(fields);
         }
 
@@ -178,7 +185,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
         }
     }
 
-    public static class DomainPropertyAuditEvent extends AuditTypeEvent
+    public static class DomainPropertyAuditEvent extends DetailedAuditTypeEvent
     {
         private String _propertyUri;
         private String _propertyName;

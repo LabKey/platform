@@ -160,18 +160,19 @@ abstract public class DomainKind<T> implements Handler<String>
      * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
+     * @param includeWarnings
+     * @param auditUserComment
      * @return A list of errors collected during the update.
      */
     abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                     @Nullable T options, Container container, User user, boolean includeWarnings);
-
+                                            @Nullable T options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment);
     /**
      * Delete a Domain and its associated data.
-     * @param domain
-     * @param user
      * @param domain The domain to delete
+     * @param user
+     * @param auditUserComment
      */
-    abstract public void deleteDomain(User user, Domain domain);
+    abstract public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment);
 
     /**
      * Get base properties defined for that domainkind. The domain parameter is only when there may be a condition
