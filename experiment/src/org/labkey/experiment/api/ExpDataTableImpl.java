@@ -79,7 +79,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
@@ -91,7 +90,6 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -418,11 +416,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    protected void renderData(Writer out, ExpData data) throws IOException
+                    protected void renderData(HtmlWriter out, ExpData data)
                     {
                         String val = ((String)getJsonValue(data));
-                        if (val != null)
-                            out.write(val);
+                        out.write(val);
                     }
 
                     @Override
@@ -453,7 +450,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    protected void renderData(Writer out, ExpData data) throws IOException
+                    protected void renderData(HtmlWriter out, ExpData data)
                     {
                         Boolean val = (Boolean)getJsonValue(data);
                         out.write(val.toString());
@@ -483,10 +480,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
                 {
                     @Override
-                    protected void renderData(Writer out, ExpData data) throws IOException
+                    protected void renderData(HtmlWriter out, ExpData data)
                     {
                         Object val = getJsonValue(data);
-                        out.write(val == null ? "" : PageFlowUtil.filter(val.toString()));
+                        out.write(val);
                     }
 
                     @Override
@@ -675,7 +672,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         @Override
-        protected void renderData(Writer out, ExpData data) throws IOException
+        protected void renderData(HtmlWriter out, ExpData data)
         {
             renderThumbnailPopup(out, data, getURL(data));
         }
@@ -689,7 +686,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         @Override
-        protected void renderData(Writer out, ExpData data) throws IOException
+        protected void renderData(HtmlWriter out, ExpData data)
         {
             out.write(renderThumbnailImg(data, getURL(data)));
         }
@@ -791,10 +788,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
 
         @Override
-        protected void renderData(Writer out, ExpData data) throws IOException
+        protected void renderData(HtmlWriter out, ExpData data)
         {
             Object val = getJsonValue(data);
-            out.write(val == null ? "" : PageFlowUtil.filter(val.toString()));
+            out.write(val);
         }
     }
 

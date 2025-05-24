@@ -22,17 +22,21 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.JavaScriptFragment;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.util.Map;
 
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.I;
 import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.at;
 
 public class FlagColumnRenderer extends DataColumn
 {
@@ -109,7 +113,7 @@ public class FlagColumnRenderer extends DataColumn
         }
     }
 
-    protected void renderFlag(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    protected void renderFlag(RenderContext ctx, HtmlWriter out)
     {
         renderFlagScript(ctx, out);
         Object boundValue = getColumnInfo().getValue(ctx);
@@ -122,33 +126,33 @@ public class FlagColumnRenderer extends DataColumn
             String objectId = (String) getValue(ctx);
             if (objectId == null)
                 return;
-            _renderFlag(ctx, oldWriter, out, objectId, comment);
+            _renderFlag(ctx, out, objectId, comment);
         }
     }
 
     private Boolean canUpdate = null;
 
-    protected void _renderFlag(RenderContext ctx, Writer oldWriter, HtmlWriter out, String objectId, String comment) throws IOException
+    protected void _renderFlag(RenderContext ctx, HtmlWriter out, String objectId, String comment)
     {
         setFlagFn = renderFlagScript(ctx, out);
 
         if (null == canUpdate)
             canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
+
+        if (comment == null && canUpdate && null != objectId)
+            comment = defaultTitle;
+
+        DOM.Renderable i = I(
+            at(title, comment).data("flagId", objectId).cl(null == comment ? flagDisabledCls() : flagEnabledCls())
+        );
+
         if (canUpdate && null != objectId)
         {
-            oldWriter.write("<a href=\"#\" class=\"" + setFlagFn + "\" data-objectid=\"" + h(objectId) + "\" style=\"color: #aaaaaa\">");
+            out.write(LinkBuilder.simpleLink(i).href("#").addClass(setFlagFn).style("color: #aaaaaa").attributes(Map.of("data-objectid", objectId)));
         }
-
-        oldWriter.write("<i class=\"" + (null == comment ? flagDisabledCls() : flagEnabledCls()) + "\"");
-        if (comment == null && Boolean.TRUE == canUpdate && null != objectId)
-            comment = defaultTitle;
-        oldWriter.write(" title=\"" + h(comment) + "\"");
-        oldWriter.write(" flagId=\"" + h(objectId) + "\"");
-        oldWriter.write("/>");
-
-        if (canUpdate)
+        else
         {
-            oldWriter.write("</a>");
+            out.write(i);
         }
     }
 
@@ -163,9 +167,9 @@ public class FlagColumnRenderer extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        renderFlag(ctx, oldWriter, out);
+        renderFlag(ctx, out);
     }
 
     @Override

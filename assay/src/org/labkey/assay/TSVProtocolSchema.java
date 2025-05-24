@@ -62,8 +62,6 @@ import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -378,13 +376,13 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         }
 
         @Override
-        protected void renderFlag(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        protected void renderFlag(RenderContext ctx, HtmlWriter out)
         {
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
             String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + id;
-            _renderFlag(ctx, oldWriter, out, lsid, null == comment ? null : String.valueOf(comment));
+            _renderFlag(ctx, out, lsid, null == comment ? null : String.valueOf(comment));
         }
 
         @Override

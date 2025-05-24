@@ -25,7 +25,27 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -66,6 +86,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -76,8 +97,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -673,20 +692,18 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     sb.append(separator);
                     if (addLinks)
                     {
-                        sb.append("<a href=\"");
+                        LinkBuilder lb = LinkBuilder.simpleLink(exp.getName());
                         ctx.put("experimentId", exp.getRowId());
                         String url = renderURL(ctx);
-                        if (url == null)
-                        {
-                            url = ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(exp.getContainer(), exp).getLocalURIString();
-                        }
-                        sb.append(url);
-                        sb.append("\">");
+                        if (url != null)
+                            lb.href(url);
+                        else
+                            lb.href(ExperimentController.ExperimentUrlsImpl.get().getExperimentDetailsURL(exp.getContainer(), exp));
+                        lb.appendTo(sb);
                     }
-                    PageFlowUtil.filter(sb.append(exp.getName()));
-                    if (addLinks)
+                    else
                     {
-                        sb.append("</a>");
+                        sb.append(PageFlowUtil.filter(exp.getName()));
                     }
                     separator = ", ";
                 }
@@ -729,9 +746,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
-            oldWriter.write(buildString(ctx, true));
+            out.write(HtmlString.unsafe(buildString(ctx, true)));
         }
 
         @Override

@@ -39,8 +39,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -148,11 +146,10 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
             @Override
-            protected void renderData(Writer out, ExpData data) throws IOException
+            protected void renderData(HtmlWriter out, ExpData data)
             {
                 String val = ((String)getJsonValue(data));
-                if (val != null)
-                    out.write(val);
+                out.write(val);
             }
 
             @Override
@@ -197,7 +194,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
             @Override
-            protected void renderData(Writer out, ExpData data) throws IOException
+            protected void renderData(HtmlWriter out, ExpData data)
             {
                 String val = ((String)getJsonValue(data));
                 out.write(val == null ? "Not found" : val);

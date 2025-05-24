@@ -21,9 +21,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 abstract class ExpDataFileColumn extends DataColumn
 {
     public ExpDataFileColumn(ColumnInfo col)
@@ -32,18 +29,18 @@ abstract class ExpDataFileColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         ExpData data = DataLinkColumn.getData(ctx, getColumnInfo());
 
         if (data != null)
         {
-            renderData(oldWriter, data);
+            renderData(out, data);
         }
     }
 
     /** Write the value into the HTML. Responsible for HTML encoding as necessary. */
-    protected abstract void renderData(Writer out, ExpData data) throws IOException;
+    protected abstract void renderData(HtmlWriter out, ExpData data);
 
     @Override
     public Object getJsonValue(RenderContext ctx)
