@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -499,6 +500,14 @@ public class PropertyStorageSpec
         public int hashCode()
         {
             return Objects.hash(Arrays.hashCode(columnNames), isClustered, isClustered);
+        }
+
+        public String toStringVal()
+        {
+            if (columnNames == null)
+                return "";
+
+            return StringUtils.join(columnNames, ", ") + ", unique: " + isUnique;
         }
     }
 

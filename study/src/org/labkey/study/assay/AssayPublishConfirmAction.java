@@ -32,13 +32,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +55,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
         private ExpProtocol _protocol;
         private AssayProvider _provider;
 
-        ExpProtocol getProtocol()
+        @NotNull ExpProtocol getProtocol()
         {
             if (_protocol == null)
             {
@@ -284,21 +281,6 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
         return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, form.getAutoLinkCategory(), publishData, publishErrors);
-    }
-
-    @Override
-    public ModelAndView getView(AssayPublishConfirmForm form, boolean reshow, BindException errors) throws Exception
-    {
-        if (form.getProtocol() == null)
-            return HtmlView.err("Could not resolve the source protocol.");
-
-        return super.getView(form, reshow, errors);
-    }
-
-    @Override
-    public boolean handlePost(AssayPublishConfirmForm form, BindException errors) throws Exception
-    {
-        return super.handlePost(form, errors);
     }
 
     @Override

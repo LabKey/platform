@@ -53,6 +53,7 @@ import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX;
@@ -955,6 +957,21 @@ public class ExperimentJSONConverter
         }
 
         return aliases;
+    }
+
+    public static @Nullable String getImportAliasStringVal(@Nullable Map<String, Map<String, Object>> importAliases)
+    {
+        if (importAliases == null || importAliases.isEmpty())
+            return null;
+
+        List<String> aliasStrings = new ArrayList<>();
+        importAliases.forEach((key, value) -> {
+            String val = (String) value.get("inputType");
+            String requiredStr = Objects.toString(value.get("required"), "false");
+            aliasStrings.add(key +  "(" + val + ",required=" + requiredStr + ")");
+        });
+        Collections.sort(aliasStrings);
+        return StringUtils.join(aliasStrings, "; ");
     }
 
     public static final class TestCase extends Assert

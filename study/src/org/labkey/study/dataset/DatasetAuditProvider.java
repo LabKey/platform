@@ -122,7 +122,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
                 }
             }
         };
-        appendValueMapColumns(table);
+        appendValueMapColumns(table, null, true);
 
         DetailsURL url = DetailsURL.fromString("dataset/datasetAuditHistory.view?auditRowId=${rowId}");
         url.setStrictContainerContextEval(true);

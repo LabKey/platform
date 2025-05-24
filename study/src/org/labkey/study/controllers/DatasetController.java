@@ -225,7 +225,7 @@ public class DatasetController extends BaseStudyController
                 {
                     if (!def.canDeleteDefinition(getUser()))
                         continue;
-                    StudyManager.getInstance().deleteDataset(study, getUser(), def, false);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), def, false, null);
                     transaction.commit();
                     countDeleted++;
                 }
