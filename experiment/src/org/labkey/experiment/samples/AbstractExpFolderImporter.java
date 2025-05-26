@@ -8,6 +8,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -293,7 +294,7 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                                     DataIteratorContext context = new DataIteratorContext(errors);
                                     context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
                                     context.putConfigParameter(QueryUpdateService.ConfigParameters.SkipInsertOptionValidation, Boolean.TRUE); // allow merge during folder import, needed for eval data loading
-                                    context.setAllowImportLookupByAlternateKey(true);
+                                    context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                                     ((AbstractQueryUpdateService)qus).setAttachmentDirectory(dir.getDir(tableName));
                                     Map<Enum, Object> options = new HashMap<>();
                                     try
