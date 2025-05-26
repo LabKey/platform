@@ -316,6 +316,7 @@ import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationJob;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
@@ -11997,7 +11998,7 @@ public class AdminController extends SpringActionController
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User may be "guest", and will always be guest if being relayed to labkey.org
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
@@ -12014,7 +12015,14 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
-                                jsonObj.put("user", getUser().getEmail());
+                                User user = getUser();
+                                String email = null;
+                                // If the user is not logged in, we may still be able to snag the email address from our cookie
+                                if (user.isGuest())
+                                    email = LoginController.getEmailFromCookie(getViewContext().getRequest());
+                                if (null == email)
+                                    email = user.getEmail();
+                                jsonObj.put("user", email);
                                 String ipAddress = request.getHeader("X-FORWARDED-FOR");
                                 if (ipAddress == null)
                                     ipAddress = request.getRemoteAddr();
