@@ -4504,7 +4504,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
     }
 
-    public void deleteProtocolByRowIds(Container c, User user, String auditUserComment, int... selectedProtocolIds) throws ExperimentException
+    public void deleteProtocolByRowIds(Container c, User user, @Nullable String auditUserComment, int... selectedProtocolIds) throws ExperimentException
     {
         if (selectedProtocolIds.length == 0)
             return;
@@ -4546,7 +4546,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 {
                     for (Dataset dataset : StudyPublishService.get().getDatasetsForPublishSource(protocolToDelete.getRowId(), Dataset.PublishSource.Assay))
                     {
-                        dataset.delete(user);
+                        dataset.delete(user, auditUserComment);
                     }
                 }
                 else
@@ -7933,7 +7933,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (kind != null)
                 domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
-            domain.save(u);
+            domain.save(u, options == null ? null : options.getAuditRecordMap(), calculatedFields);
             impl.save(u);
 
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
@@ -7960,28 +7960,44 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dc,
                                         @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
-                                        GWTDomain<? extends GWTPropertyDescriptor> update)
+                                        GWTDomain<? extends GWTPropertyDescriptor> update,
+                                        @Nullable String auditUserComment)
     {
+        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+
+        Map<String, Object> oldProps = dataClass.getAuditRecordMap();
+        Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
+
         ValidationException errors;
+        StringBuilder changeDetails = new StringBuilder();
 
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
         boolean hasNameChange = false;
         String oldDataClassName = dataClass.getName();
         String newName = null;
+
+        oldProps.put("Name", oldDataClassName);
+        newProps.put("Name", oldDataClassName); // to be updated by options
+        oldProps.put("Description", dataClass.getDescription());
+        newProps.put("Description", dataClass.getDescription()); // to be updated by options
+
         if (options != null)
         {
             validateDataClassOptions(c, u, options);
             newName = StringUtils.trimToNull(options.getName());
+            newProps.put("Name", newName);
             if (!oldDataClassName.equals(newName))
             {
                 validateDataClassName(c, u, newName, oldDataClassName.equalsIgnoreCase(newName));
                 hasNameChange = true;
                 dataClass.setName(newName);
+                changeDetails.append("The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.");
             }
+            newProps.put("Description", options.getDescription());
             dataClass.setDescription(options.getDescription());
             dataClass.setNameExpression(options.getNameExpression());
             dataClass.setSampleType(options.getSampleType());
@@ -8012,23 +8028,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             LOG.debug("Saving data class " +  dataClass.getName());
             dataClass.save(u);
 
-            String auditComment = null;
             SchemaKey schemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME);
             if (hasNameChange)
-            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, schemaKey, u, c);
-                auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
+
+            if (options != null && options.getExcludedContainerIds() != null)
+            {
+                Pair<Collection<String>, Collection<String>> exclusionChanges = ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
+                oldProps.put("ContainerExclusions", exclusionChanges.first);
+                newProps.put("ContainerExclusions", exclusionChanges.second);
             }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
             QueryService.get().saveCalculatedFieldsMetadata(schemaKey.toString(), update.getQueryName(), hasNameChange ? newName : null, update.getCalculatedFields(), !original.getCalculatedFields().isEmpty(), u, c);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
-
-            if (options != null && options.getExcludedContainerIds() != null)
-                ExperimentService.get().ensureDataTypeContainerExclusions(DataTypeForExclusion.DataClass, options.getExcludedContainerIds(), dataClass.getRowId(), u);
 
             if (!errors.hasErrors())
             {
@@ -8854,12 +8870,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
+    @NotNull
+    public Pair<Collection<String>, Collection<String>> ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user)
     {
-        if (excludedContainerIds == null)
-            return;
-
         Set<String> previousExclusions = getDataTypeContainerExclusions(dataType, dataTypeId);
+
+        if (excludedContainerIds == null)
+            return new Pair<>(previousExclusions, null);
+
         Set<String> updatedExclusions = new HashSet<>(excludedContainerIds);
 
         Set<String> toAdd = new HashSet<>(updatedExclusions);
@@ -8885,6 +8903,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 addAuditEventForDataTypeContainerUpdate(dataType, remove, user);
             }
         }
+
+        return new Pair<>(new TreeSet<>(previousExclusions), new TreeSet<>(updatedExclusions));
     }
 
     @Override
@@ -9586,7 +9606,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return updateCounts;
     }
 
-    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
+    private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, @Nullable String auditUserComment)
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);

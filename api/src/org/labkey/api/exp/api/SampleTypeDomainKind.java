@@ -394,9 +394,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
-        return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings);
+        return SampleTypeService.get().updateSampleType(original, update, options, container, user, includeWarnings, auditUserComment);
     }
 
     @Override
@@ -483,7 +483,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         int aliquotNameExpMax = materialSourceTI.getColumn("AliquotNameExpression").getScale();
         if (StringUtils.isNotBlank(options.getAliquotNameExpression()) && options.getAliquotNameExpression().length() > aliquotNameExpMax)
-            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + nameExpMax + " characters.");
+            throw new IllegalArgumentException("Value for Aliquot Naming Patten field may not exceed " + aliquotNameExpMax + " characters.");
 
         int labelColorMax = materialSourceTI.getColumn("LabelColor").getScale();
         if (StringUtils.isNotBlank(options.getLabelColor()) && options.getLabelColor().length() > labelColorMax)
@@ -592,7 +592,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         try
         {
             st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression,
-                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds);
+                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds, arguments != null ? arguments.getAuditRecordMap() : null);
         }
         catch (SQLException e)
         {
@@ -606,13 +606,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public void deleteDomain(User user, Domain domain)
+    public void deleteDomain(User user, Domain domain, @Nullable String auditUserComment)
     {
         ExpSampleType st = SampleTypeService.get().getSampleType(domain.getTypeURI());
         if (st == null)
             throw new NotFoundException("Sample Type not found: " + domain);
 
-        st.delete(user);
+        st.delete(user, auditUserComment);
     }
 
     @Override

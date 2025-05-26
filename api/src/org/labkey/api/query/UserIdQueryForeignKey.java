@@ -43,14 +43,14 @@ public class UserIdQueryForeignKey extends QueryForeignKey
      * no longer have permission to access the container */
     public UserIdQueryForeignKey(QuerySchema sourceSchema, boolean includeAllUsers)
     {
-        super(sourceSchema, null, "core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        super(sourceSchema, null, "core", sourceSchema.getContainer(), null, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
         _includeAllUsers = includeAllUsers;
         setShowAsPublicDependency(false);
     }
 
     public UserIdQueryForeignKey(QuerySchema sourceSchema, ContainerFilter cf, User user, Container container, boolean includeAllUsers)
     {
-        super (sourceSchema, cf, "core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        super (sourceSchema, cf, "core", container, null, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
         _includeAllUsers = includeAllUsers;
     }
 

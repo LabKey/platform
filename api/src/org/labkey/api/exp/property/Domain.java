@@ -28,6 +28,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.model.GWTIndex;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -90,8 +91,10 @@ public interface Domain extends IPropertyType
         delete(user);
     }
     void save(User user) throws ChangePropertyDescriptorException;
-    void save(User user, boolean auditComment) throws ChangePropertyDescriptorException;
-    void save(User user, @Nullable String allowAddBaseProperty) throws ChangePropertyDescriptorException;
+    void save(User user, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws ChangePropertyDescriptorException;
+    void save(User user, @Nullable String auditComment, @Nullable String auditUserComment,
+              @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
+              @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException;
 
     /** Returns true if this domain has not yet been saved. */
     boolean isNew();

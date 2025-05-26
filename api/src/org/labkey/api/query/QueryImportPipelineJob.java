@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -60,6 +61,7 @@ public class QueryImportPipelineJob extends PipelineJob
         String _auditUserComment = null;
         boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
+        LookupResolutionType _lookupResolutionType = null;
 
         String _jobDescription;
 
@@ -208,6 +210,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public LookupResolutionType getLookupResolutionType()
+        {
+            return _lookupResolutionType;
+        }
+
+        public QueryImportAsyncContextBuilder setLookupResolutionType(LookupResolutionType lookupResolutionType)
+        {
+            _lookupResolutionType = lookupResolutionType;
+            return this;
+        }
+
         public QueryImportAsyncContextBuilder setAllowLineageColumns(boolean allowLineageColumns)
         {
             _allowLineageColumns = allowLineageColumns;
@@ -345,7 +358,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private DataIteratorContext createDataIteratorContext(BatchValidationException errors, Container container)
     {
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container, this);
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getLookupResolutionType(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container, this);
     }
 
     @Override

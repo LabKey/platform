@@ -226,12 +226,6 @@
         <inputLength>36</inputLength>
         <isReadOnly>true</isReadOnly>
         <isHidden>true</isHidden>
-        <description>The user's unique entity id.</description>
-          <fk>
-              <fkTable>object</fkTable>
-              <fkColumnName>ObjectURI</fkColumnName>
-              <fkDbSchema>exp</fkDbSchema>
-          </fk>
       </column>
       <column columnName="CreatedBy">
         <columnTitle>Created By</columnTitle>

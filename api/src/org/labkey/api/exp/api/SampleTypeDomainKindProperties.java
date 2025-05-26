@@ -3,12 +3,14 @@ package org.labkey.api.exp.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -271,5 +273,30 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public void setExcludedDashboardContainerIds(List<String> excludedDashboardContainerIds)
     {
         this.excludedDashboardContainerIds = excludedDashboardContainerIds;
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        // skip Name and Description since it's general domain property
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("NameExpression", getNameExpression());
+        if (!StringUtils.isEmpty(getAliquotNameExpression()))
+            map.put("AliquotNameExpression", getAliquotNameExpression());
+        if (!StringUtils.isEmpty(getLabelColor()))
+            map.put("LabelColor", getLabelColor());
+        if (!StringUtils.isEmpty(getMetricUnit()))
+            map.put("MetricUnit", getMetricUnit());
+        String importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliases());
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (!StringUtils.isEmpty(getAutoLinkTargetContainerId()))
+            map.put("AutoLinkTargetContainerId", getAutoLinkTargetContainerId());
+        if (!StringUtils.isEmpty(getAutoLinkCategory()))
+            map.put("AutoLinkCategory", getAutoLinkCategory());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+
+        return map;
     }
 }

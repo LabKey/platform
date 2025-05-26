@@ -28,6 +28,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Dataset;
@@ -57,6 +58,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.HttpUtil.Method.POST;
+
+@MethodsAllowed(POST)
 @RequiresPermission(InsertPermission.class)
 public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmForm> extends FormViewAction<FORM>
 {
