@@ -1499,13 +1499,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 var addRequiredColsDI = new SampleUpdateAddColumnsDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
 
                 SimpleTranslator c = new _SamplesCoerceDataIterator(addRequiredColsDI, context, sampleType, materialTable);
+                context.setWithLookupRemapping(false);
                 return LoggingDataIterator.wrap(c);
             }
 
             // CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
             // TODO: check if this covers all the functionality, in particular how is alternateKeyCandidates used?
             DataIterator c = LoggingDataIterator.wrap(new _SamplesCoerceDataIterator(source, context, sampleType, materialTable));
-
+            context.setWithLookupRemapping(false);
             SimpleTranslator addColumns = new SimpleTranslator(c, context);
             addColumns.setDebugName("add genId and other requried columns");
             Set<String> idColNames = Sets.newCaseInsensitiveHashSet("genId");
@@ -1885,7 +1886,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         if (isScopedField)
                             _addConvertColumn(name, i, to.getJdbcType(), to.getFk(), aliquotedFromDataColInd, scopedFields.get(name));
                         else
-                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), RemapMissingBehavior.OriginalValue);
+                            addConvertColumn(to.getName(), i, to.getJdbcType(), to.getFk(), to.getRemapMissingBehavior(), true);
                     }
                 }
                 else
@@ -1931,7 +1932,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
-            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.OriginalValue);
+            SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.Error);
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);

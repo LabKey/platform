@@ -303,7 +303,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         // Allow String values through if the column is a lookup and the settings allow lookups by alternate key.
                         // The lookup table unique indices or display column value will be used to convert the column to the lookup value.
-                        if (!(settings.isAllowLookupByAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
+                        if (!(settings.getLookupResolutionType().useAlternateKey() && column.clazz == String.class && prop.getLookup() != null))
                         {
                             // Otherwise, just use the expected PropertyDescriptor's column type
                             column.clazz = prop.getPropertyDescriptor().getPropertyType().getJavaType();
@@ -771,7 +771,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            if (dataTable != null && settings.isAllowLookupByAlternateKey())
+            if (dataTable != null && settings.getLookupResolutionType().useAlternateKey())
             {
                 ColumnInfo column = dataTable.getColumn(pd.getName());
                 ForeignKey fk = column != null ? column.getFk() : null;
@@ -993,7 +993,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         // If allowLookupByAlternateKey is true or the sample lookup is by name, we call findExpMaterial which will attempt to resolve by name first and then rowId.
                         // If allowLookupByAlternateKey is false, we will only try resolving by the rowId.
                         ExpMaterial material = null;
-                        if (settings.isAllowLookupByAlternateKey() || isSampleLookupByName)
+                        if (settings.getLookupResolutionType().useAlternateKey() || isSampleLookupByName)
                         {
                             String materialName = o.toString();
                             if (inputMaterials.containsKey(materialName))
