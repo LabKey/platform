@@ -11998,7 +11998,7 @@ public class AdminController extends SpringActionController
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User may be "guest", and will always be guest if being relayed to labkey.org
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
