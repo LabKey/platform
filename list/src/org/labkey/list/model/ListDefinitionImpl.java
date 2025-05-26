@@ -138,13 +138,21 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    @Nullable
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (forUpdate)
+            return PropertyService.get().getDomain(_def.getDomainId(), forUpdate);
         if (_domain == null)
         {
-            _domain = PropertyService.get().getDomain(_def.getDomainId());
+            _domain = PropertyService.get().getDomain(_def.getDomainId(), false);
         }
         return _domain;
     }
-
     @Override
     public String getName()
     {
@@ -391,7 +399,7 @@ public class ListDefinitionImpl implements ListDefinition
             if (ensureKey)
                 ensureKey();
 
-            Domain domain = getDomain();
+            Domain domain = getDomain(true);
 
             if (_new)
             {

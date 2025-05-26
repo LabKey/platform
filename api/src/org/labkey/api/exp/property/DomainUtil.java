@@ -689,6 +689,7 @@ public class DomainUtil
         return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
     }
 
+    // TODO add forUpdate parameter
     public static Domain createDomain(
         String kindName,
         GWTDomain domain,

@@ -5200,11 +5200,11 @@ public class StudyController extends BaseStudyController
                 // def may not be provisioned yet, create before we start adding properties
                 if (def.isQueryDataset())
                 {
-                    def.provisionQueryDataset();
+                    def.provisionQueryDataset(true);
                 }
                 else
                 {
-                    def.provisionTable();
+                    def.provisionTable(true);
                 }
 
                 Domain d = def.getDomain();
@@ -7122,7 +7122,7 @@ public class StudyController extends BaseStudyController
                                 .setStudy(_study)
                                 .setDemographicData(false)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
 
                         ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(Dataset.DATASET_KEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
@@ -7133,7 +7133,7 @@ public class StudyController extends BaseStudyController
                                 .setDemographicData(false)
                                 .setType(Dataset.TYPE_PLACEHOLDER)
                                 .setCategoryId(categoryId));
-                        def.provisionTable();
+                        def.provisionTable(false);
                         response.put("datasetId", def.getDatasetId());
                         break;
 

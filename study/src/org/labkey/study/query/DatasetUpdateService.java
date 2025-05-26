@@ -144,7 +144,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
     public DatasetUpdateService(DatasetTableImpl table)
     {
-        super(table, table.getDatasetDefinition().getStorageTableInfo(), createMVMapping(table.getDatasetDefinition().getDomain()));
+        super(table, table.getDatasetDefinition().getStorageTableInfo(false), createMVMapping(table.getDatasetDefinition().getDomain()));
         _dataset = table.getDatasetDefinition();
     }
 

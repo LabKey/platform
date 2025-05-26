@@ -1551,7 +1551,7 @@ public class DomainImpl implements Domain
             User user = TestContext.get().getUser();
             try
             {
-                d.save(user, false);
+                d.save(user);
                 fail("Save of read-only domain should fail.");
             }
             catch (ChangePropertyDescriptorException e)

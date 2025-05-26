@@ -685,7 +685,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
 
     /** why do some datasets have a typeURI, but no domain? */
-    private Domain ensureDomain()
+    private Domain ensureDomain(boolean forUpdate)
     {
         assert _lock.isHeldByCurrentThread();
 
@@ -693,13 +693,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             StudyImpl shared = getDefinitionStudy();
             DatasetDefinition ds = shared.getDataset(getDatasetId());
-            return null == ds ? null : ds.ensureDomain();
+            return null == ds ? null : ds.ensureDomain(forUpdate);
         }
 
         if (null == getTypeURI())
             throw new IllegalStateException();
 
-        Domain d = getDomain();
+        Domain d = getDomain(forUpdate);
         if (null != d)
             return d;
 
@@ -716,7 +716,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
 
-    private TableInfo loadStorageTableInfo()
+    private TableInfo loadStorageTableInfo(boolean forDomainUpdate)
     {
         if (null == getTypeURI())
             return null;
@@ -725,7 +725,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         // consistent order to avoid deadlock
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            Domain d = ensureDomain();
+            Domain d = ensureDomain(forDomainUpdate);
 
             // create table may set storageTableName() so uncache _domain
             if (null == d.getStorageTableName())
@@ -742,28 +742,28 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     /**
      *  just a wrapper for StorageProvisioner.create()
      */
-    public void provisionTable()
+    public void provisionTable(boolean forDomainUpdate)
     {
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            ensureDomainDef();
-            loadStorageTableInfo();
+            ensureDomainDef(forDomainUpdate);
+            loadStorageTableInfo(false);
             StudyManager.getInstance().uncache(this);
             t.commit();
         }
     }
 
-    public void provisionQueryDataset()
+    public void provisionQueryDataset(boolean forDomainUpdate)
     {
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            ensureDomainDef();
+            ensureDomainDef(forDomainUpdate);
             StudyManager.getInstance().uncache(this);
             t.commit();
         }
     }
 
-    private void ensureDomainDef()
+    private void ensureDomainDef(boolean forUpdate)
     {
         _domain = null;
         if (null == getTypeURI())
@@ -772,11 +772,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(), getEntityId(), getContainer()));
             d.save(null);
         }
-        ensureDomain();
+        ensureDomain(forUpdate);
     }
 
     @Transient
-    public TableInfo getStorageTableInfo() throws UnauthorizedException
+    public TableInfo getStorageTableInfo(boolean forDomainUpdate) throws UnauthorizedException
     {
         if (isQueryDataset())
             return null;
@@ -785,11 +785,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             StudyImpl shared = getDefinitionStudy();
             DatasetDefinition ds = shared.getDataset(getDatasetId());
-            return null == ds ? null : ds.getStorageTableInfo();
+            return null == ds ? null : ds.getStorageTableInfo(forDomainUpdate);
         }
         else
         {
-            return loadStorageTableInfo();
+            return loadStorageTableInfo(forDomainUpdate);
         }
     }
 
@@ -808,7 +808,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo());
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo(false));
             String and = "\nWHERE ";
 
             // only apply a container filter on delete when this is a shared dataset definition
@@ -1170,7 +1170,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public void deleteAllRows(User user)
     {
-        TableInfo data = getStorageTableInfo();
+        TableInfo data = getStorageTableInfo(false);
         if (null == data)
             return;
         DbScope scope =  StudySchema.getInstance().getSchema().getScope();
@@ -1416,7 +1416,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             else
             {
-                _storage = def.getStorageTableInfo();
+                _storage = def.getStorageTableInfo(false);
             }
             _template = getTemplateTableInfo();
 
@@ -1708,7 +1708,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // shouldn't getStorageTableInfo().getColumn("date").getPropertyURI() == getVisitDateURI()?
             if (!getStudy().getTimepointType().isVisitBased())
             {
-                m.put(getStorageTableInfo().getColumn("date").getPropertyURI(), getVisitDateURI());
+                m.put(getStorageTableInfo(false).getColumn("date").getPropertyURI(), getVisitDateURI());
             }
 
             return m;
@@ -1918,6 +1918,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Transient
     public Domain getDomain()
     {
+       return getDomain(false);
+    }
+
+    @Transient
+    public Domain getDomain(boolean forUpdate)
+    {
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
@@ -1929,22 +1935,26 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             if (null == getTypeURI())
                 return null;
-            if (null != _domain)
+            if (null != _domain && !forUpdate)
                 return _domain;
         }
 
         Domain d=null;
+        // VERIFY: Transaction here is just for synchronization. No updates are happening.
         try (Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
-            if (null != getTypeURI() && null == _domain)
-                d = PropertyService.get().getDomain(getContainer(), getTypeURI());
+            if (null != getTypeURI() && null == _domain || forUpdate)
+                d = PropertyService.get().getDomain(getContainer(), getTypeURI(), forUpdate);
             t.commit();
         }
 
         synchronized (this)
         {
             if (null != d)
-                _domain = d;
+                if (forUpdate) // don't stash the for-update domain in the definition
+                    return d;
+                else
+                    _domain = d;
             return _domain;
         }
     }
@@ -2109,7 +2119,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     {
         List<Collection<String>> rowLSIDSlices = slice(allLSIDs);
 
-        TableInfo data = getStorageTableInfo();
+        TableInfo data = getStorageTableInfo(false);
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -2404,7 +2414,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      * */
     public SQLFragment generateLSIDSQL()
     {
-        if (null == getStorageTableInfo())
+        if (null == getStorageTableInfo(false))
             return new SQLFragment("''");
 
         List<SQLFragment> parts = new ArrayList<>();
@@ -2436,7 +2446,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             }
             else if (getKeyPropertyName() != null)
             {
-                var key = getStorageTableInfo().getColumn(getKeyPropertyName());
+                var key = getStorageTableInfo(false).getColumn(getKeyPropertyName());
                 if (null != key)
                 {
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
@@ -2547,7 +2557,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
 
-        TableInfo tinfo = getStorageTableInfo();
+        TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
         filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
         if (isShared())
@@ -2604,7 +2614,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      */
     int getMaxKeyValue()
     {
-        TableInfo tInfo = getStorageTableInfo();
+        TableInfo tInfo = getStorageTableInfo(false);
         SQLFragment sqlf = new SQLFragment("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
         Integer newKey = new SqlSelector(tInfo.getSchema(),sqlf).getObject(Integer.class);
         return newKey.intValue();

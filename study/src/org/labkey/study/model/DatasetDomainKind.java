@@ -195,7 +195,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
         if (null == def)
             return new SQLFragment("NULL");
-        TableInfo ti = def.getStorageTableInfo();
+        TableInfo ti = def.getStorageTableInfo(false);
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT O.ObjectId FROM ").append(ti).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
@@ -494,7 +494,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             {
                 List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
 
-                Domain newDomain = def.getDomain();
+                Domain newDomain = def.getDomain(true);
                 if (newDomain != null)
                 {
                     Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
