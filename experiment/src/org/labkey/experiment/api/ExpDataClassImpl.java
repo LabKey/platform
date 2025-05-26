@@ -232,10 +232,16 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public Domain getDomain()
     {
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (forUpdate)
+            return PropertyService.get().getDomain(getContainer(), getLSID(), true);
         if (_domain == null)
-        {
             _domain = PropertyService.get().getDomain(getContainer(), getLSID());
-        }
         return _domain;
     }
 

@@ -60,6 +60,8 @@ public interface ExpDataClass extends ExpObject, ExpSearchable
 
     Domain getDomain();
 
+    Domain getDomain(boolean forUpdate);
+
     void setDomain(Domain d);
 
     String getDescription();

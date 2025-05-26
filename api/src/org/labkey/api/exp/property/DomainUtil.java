@@ -686,10 +686,9 @@ public class DomainUtil
 
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
-        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo(), false);
     }
 
-    // TODO add forUpdate parameter
     public static Domain createDomain(
         String kindName,
         GWTDomain domain,
@@ -697,8 +696,8 @@ public class DomainUtil
         Container container,
         User user,
         @Nullable String domainName,
-        @Nullable TemplateInfo templateInfo
-    ) throws ValidationException
+        @Nullable TemplateInfo templateInfo,
+        boolean forUpdate) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
         domain = new GWTDomain(domain);
@@ -735,7 +734,7 @@ public class DomainUtil
 
         arguments = kind.processArguments(container, user, arguments);
         Object options = JsonUtil.DEFAULT_MAPPER.convertValue(arguments, kind.getTypeClass());
-        Domain created = kind.createDomain(domain, options, container, user, templateInfo);
+        Domain created = kind.createDomain(domain, options, container, user, templateInfo, forUpdate);
 
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");

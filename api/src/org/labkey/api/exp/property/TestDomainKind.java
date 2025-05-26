@@ -165,7 +165,7 @@ public class TestDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         throw new UnsupportedOperationException();
     }

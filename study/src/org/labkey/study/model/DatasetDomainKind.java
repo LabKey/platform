@@ -399,7 +399,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Override
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
-                               @Nullable TemplateInfo templateInfo)
+                               @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         arguments.setName(StringUtils.trimToNull(domain.getName()));
         String name = arguments.getName();
@@ -527,7 +527,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             transaction.commit();
-            return study.getDataset(def.getDatasetId()).getDomain();
+            return study.getDataset(def.getDatasetId()).getDomain(forUpdate);
         }
         catch (Exception e)
         {

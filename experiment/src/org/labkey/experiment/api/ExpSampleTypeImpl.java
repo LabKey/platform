@@ -805,9 +805,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @NotNull
     public Domain getDomain()
     {
-        if (_domain == null)
+        return getDomain(false);
+    }
+
+    @Override
+    @NotNull
+    public Domain getDomain(boolean forUpdate)
+    {
+        if (_domain == null || forUpdate)
         {
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
             if (_domain == null)
             {
                 _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());

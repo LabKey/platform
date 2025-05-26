@@ -2308,7 +2308,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             if (!domainKind.canCreateDefinition(user, domainContainer))
                 throw new IllegalArgumentException("Unable to create the plate well domain in folder: " + domainContainer.getPath() + "\". Insufficient permissions.");
 
-            metadataDomain = DomainUtil.createDomain(PlateMetadataDomainKind.KIND_NAME, new GWTDomain(), null, domainContainer, user, PlateMetadataDomainKind.DOMAiN_NAME, null);
+            metadataDomain = DomainUtil.createDomain(PlateMetadataDomainKind.KIND_NAME, new GWTDomain(), null, domainContainer, user, PlateMetadataDomainKind.DOMAiN_NAME, null, forUpdate);
         }
         return metadataDomain;
     }

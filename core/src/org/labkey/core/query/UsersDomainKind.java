@@ -148,9 +148,9 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo, boolean forUpdate)
     {
-        return super.createDomain(domain, arguments, getDomainContainer(), user, templateInfo);
+        return super.createDomain(domain, arguments, getDomainContainer(), user, templateInfo, forUpdate);
     }
 
     @Override

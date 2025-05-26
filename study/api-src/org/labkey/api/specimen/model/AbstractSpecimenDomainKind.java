@@ -76,7 +76,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
 
 
     @Override
-    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         ValidationException validation = checkFieldNameLength(domain);
         if (validation != null)
@@ -84,7 +84,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
             throw UnexpectedException.wrap(validation);
         }
 
-        return super.createDomain(domain, arguments, container, user, templateInfo);
+        return super.createDomain(domain, arguments, container, user, templateInfo, forUpdate);
     }
 
     @Override
