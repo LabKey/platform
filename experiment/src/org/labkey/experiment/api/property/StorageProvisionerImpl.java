@@ -1575,7 +1575,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
             StorageProvisioner.createTableInfo(domain);
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), true);
         }
 
         @After
@@ -1619,7 +1619,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setName(newName);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             Assert.assertNull("renamed column is not present in old name", getJdbcColumnMetadata(domain, oldColumnName));
 
@@ -1649,7 +1649,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             ColumnInfo col = getJdbcColumnMetadata(domain, propBMvColumnName);
             Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned", col);
@@ -1663,13 +1663,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             propB.setMvEnabled(true);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             propB = domain.getPropertyByName(propNameB);
             propB.setMvEnabled(false);
 
             domain.save(new User());
-            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId()));
+            domain = Objects.requireNonNull(PropertyService.get().getDomain(domain.getTypeId(), true));
 
             Assert.assertNull("property with disabled mvindicator has no mvindicator column", getJdbcColumnMetadata(domain, propBMvColumnName));
         }
@@ -1845,7 +1845,7 @@ renaming a property AND toggling mvindicator on in the same change.
             dp.setName(propNameB);
 
             domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
+            domain = PropertyService.get().getDomain(domain.getTypeId(), true);
         }
 
         private @Nullable ColumnInfo getJdbcColumnMetadata(Domain domain, String columnName) throws Exception

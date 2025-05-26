@@ -230,25 +230,33 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
+    @NotNull
     public Domain getDomain()
     {
         return getDomain(false);
     }
 
     @Override
+    @NotNull
     public Domain getDomain(boolean forUpdate)
     {
-        if (forUpdate)
-            return PropertyService.get().getDomain(getContainer(), getLSID(), true);
-        if (_domain == null)
-            _domain = PropertyService.get().getDomain(getContainer(), getLSID());
+        if (_domain == null || (forUpdate && !_domain.isForUpdate()))
+        {
+            _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
+            if (_domain == null)
+            {
+                _domain = PropertyService.get().createDomain(getContainer(), getLSID(), getName());
+                try
+                {
+                    _domain.save(null);
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+        }
         return _domain;
-    }
-
-    @Override
-    public void setDomain(Domain d)
-    {
-        _domain = d;
     }
 
     @Nullable

@@ -1921,6 +1921,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
        return getDomain(false);
     }
 
+    @Override
     @Transient
     public Domain getDomain(boolean forUpdate)
     {
@@ -1935,7 +1936,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             if (null == getTypeURI())
                 return null;
-            if (null != _domain && !forUpdate)
+            if (null != _domain && (!forUpdate || _domain.isForUpdate()))
                 return _domain;
         }
 
@@ -1951,10 +1952,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         synchronized (this)
         {
             if (null != d)
-                if (forUpdate) // don't stash the for-update domain in the definition
-                    return d;
-                else
-                    _domain = d;
+                _domain = d;
             return _domain;
         }
     }

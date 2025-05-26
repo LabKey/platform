@@ -234,12 +234,12 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public Domain getDomainFromIssueDefId(int issueDefId, Container container, User user)
+    public Domain getDomainFromIssueDefId(int issueDefId, Container container, User user, boolean forUpdate)
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(container, issueDefId);
         if (issueListDef != null)
         {
-            Domain domain = issueListDef.getDomain(user);
+            Domain domain = issueListDef.getDomain(user, forUpdate);
             if (domain == null)
                 LOG.warn("Unable to find the domain for issue list definition id: " + issueDefId + " and container: " + container);
             return domain;

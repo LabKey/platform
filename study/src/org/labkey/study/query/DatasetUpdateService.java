@@ -801,7 +801,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             dsd = _manager.getDatasetDefinition(_junitStudy, 1001);
             dsd.refreshDomain();
             {
-            var domain = dsd.getDomain();
+            var domain = dsd.getDomain(true);
             DomainProperty p;
 
             p = domain.addProperty();

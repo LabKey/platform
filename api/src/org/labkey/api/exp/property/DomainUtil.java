@@ -686,7 +686,12 @@ public class DomainUtil
 
     public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
-        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo(), false);
+        return createDomain(template, container, user, domainName, false);
+    }
+
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName, boolean forUpdate) throws ValidationException
+    {
+        return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo(), forUpdate);
     }
 
     public static Domain createDomain(

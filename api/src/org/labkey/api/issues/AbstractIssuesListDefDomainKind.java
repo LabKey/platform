@@ -318,7 +318,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
             List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
             List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+            Domain newDomain = IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user, true);
             if (newDomain != null)
             {
                 Set<String> reservedNames = getReservedPropertyNames(newDomain, user);
@@ -353,7 +353,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         {
             throw new RuntimeException(e);
         }
-        return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user);
+        return  IssuesListDefService.get().getDomainFromIssueDefId(issueDefId, container, user, forUpdate);
     }
 
     public static void setDefaultValues(Domain domain, Collection<PropertyStorageSpec> requiredProps)
