@@ -535,7 +535,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             try
             {
                 Class<?> extractorClass = Class.forName("org.labkey.embedded.EmbeddedExtractor");
-                Object extractor = extractorClass.getDeclaredConstructor(boolean.class).newInstance(false);
+                Object extractor = extractorClass.getDeclaredConstructor().newInstance();
                 Method method = extractorClass.getDeclaredMethod("extractRemotePipelineJars");
                 labkeyBootstrap = (File) method.invoke(extractor);
             }
