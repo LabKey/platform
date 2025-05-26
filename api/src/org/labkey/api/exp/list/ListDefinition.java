@@ -26,6 +26,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.reader.DataLoader;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a single list definition, as captured by a domain and some list-specific configuration, and defined
@@ -291,8 +293,9 @@ public interface ListDefinition extends Comparable<ListDefinition>
     void setKeyType(KeyType type);
 
     void save(User user) throws Exception;
-    void save(User user, boolean ensureKey) throws Exception;
+    void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws Exception;
     void delete(User user) throws DomainNotFoundException;
+    void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException;
 
     ListItem createListItem();
     ListItem getListItem(Object key, User user);

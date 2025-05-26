@@ -143,7 +143,7 @@
         d.addProperty(new PropertyStorageSpec("A", JdbcType.INTEGER));
         d.addProperty(new PropertyStorageSpec("B", JdbcType.INTEGER));
         d.addProperty(new PropertyStorageSpec("C", JdbcType.INTEGER));
-        list.save(user,true);
+        list.save(user,true, null, null);
     }
 
 

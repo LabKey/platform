@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
@@ -375,5 +376,28 @@ public class ConditionalFormat extends GWTConditionalFormat
         }
 
         return success;
+    }
+
+    public String toStringVal()
+    {
+        return getFilter() + ": " + getCssStyle();
+    }
+
+    public static @Nullable String toStringVal(List<? extends GWTConditionalFormat> formats)
+    {
+        if (formats == null || formats.isEmpty())
+            return null;
+
+        List<String> strings = new ArrayList<>();
+        formats.forEach(format -> {
+            if (format instanceof ConditionalFormat c)
+                strings.add(c.toStringVal());
+            else
+            {
+                ConditionalFormat conditionalFormat = new ConditionalFormat(format);
+                strings.add(conditionalFormat.toStringVal());
+            }
+        });
+        return StringUtils.join(strings, ", ");
     }
 }

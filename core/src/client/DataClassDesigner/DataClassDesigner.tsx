@@ -106,7 +106,7 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
                     onCancel={this.onCancel}
                     onComplete={this.onComplete}
                     onChange={this.onChange}
-                    showGenIdBanner={isUpdate}
+                    isUpdate={isUpdate}
                 />
             </BeforeUnload>
         )

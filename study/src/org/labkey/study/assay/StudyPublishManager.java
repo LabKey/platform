@@ -643,7 +643,7 @@ public class StudyPublishManager implements StudyPublishService
                     var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.PUBLISH;
                     Map<String, Object> eventMetadata = new HashMap<>();
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                     List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
@@ -1598,7 +1598,7 @@ public class StudyPublishManager implements StudyPublishService
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                 List<Integer> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
                 List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);

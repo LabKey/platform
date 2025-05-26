@@ -59,7 +59,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
-        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false);
+        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false, null);
         if (errors.hasErrors())
         {
             throw new RuntimeException(errors);

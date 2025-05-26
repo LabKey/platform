@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
@@ -31,6 +32,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
@@ -98,7 +100,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
             protected void initColumn(MutableColumnInfo col)
@@ -112,6 +114,10 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     col.setLabel("User Comment");
             }
         };
+
+        appendValueMapColumns(table, EVENT_TYPE);
+
+        return table;
     }
 
     @Override
@@ -135,7 +141,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         return (Class<K>)DomainAuditEvent.class;
     }
 
-    public static class DomainAuditEvent extends AuditTypeEvent
+    public static class DomainAuditEvent extends DetailedAuditTypeEvent
     {
         private String _domainUri;
         private String _domainName;
@@ -195,6 +201,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_URI, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_DOMAIN_NAME, PropertyType.STRING));
+            fields.add(createOldDataMapPropertyDescriptor());
+            fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
             _fields = Collections.unmodifiableSet(fields);
         }

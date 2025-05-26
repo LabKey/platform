@@ -132,6 +132,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
@@ -8013,6 +8014,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
+                Domain domain = null;
                 if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
                 {
                     if (form.getSeqType() == NameGenerator.EntityCounter.genId)
@@ -8022,7 +8024,10 @@ public class ExperimentController extends SpringActionController
 
                         ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                         if (sampleType != null)
+                        {
                             sampleType.ensureMinGenId(form.getNewValue());
+                            domain = sampleType.getDomain();
+                        }
                         else
                         {
                             resp.put("success", false);
@@ -8044,12 +8049,23 @@ public class ExperimentController extends SpringActionController
 
                     ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                     if (dataClass != null)
+                    {
                         dataClass.ensureMinGenId(form.getNewValue(), getContainer());
+                        domain = dataClass.getDomain();
+                    }
                     else
                     {
                         resp.put("success", false);
                         resp.put("error", "DataClass does not exist.");
                     }
+                }
+
+                if (domain != null)
+                {
+                    DomainAuditProvider.DomainAuditEvent event = new DomainAuditProvider.DomainAuditEvent(getContainer(), "The genId for domain " + domain.getName() + " has been updated to " + form.getNewValue() + ".");
+                    event.setDomainUri(domain.getTypeURI());
+                    event.setDomainName(domain.getName());
+                    AuditLogService.get().addEvent(getUser(), event);
                 }
             }
             catch (ExperimentException e)

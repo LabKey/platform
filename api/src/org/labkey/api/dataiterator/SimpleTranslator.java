@@ -454,7 +454,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (vs.size() == 1)
                 return vs.iterator().next();
 
-            throw new ConversionException("Found " + vs.size() + " values matching: " + String.valueOf(k));
+            throw new ConversionExceptionWithMessage("Found " + vs.size() + " values matching: " + String.valueOf(k));
         }
     }
 
