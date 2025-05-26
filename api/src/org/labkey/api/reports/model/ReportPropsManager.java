@@ -114,7 +114,8 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             if (dp == null)
             {
                 dirty = true;
-
+                // TODO Is there a more efficient way to do this?
+                domain = getDomain(container, true);
                 DomainProperty prop = domain.addProperty();
                 prop.setName(name);
                 prop.setLabel(label);
@@ -125,10 +126,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             }
 
             if (dirty)
-            {
-                domain = getDomain(container, true);
                 domain.save(user);
-            }
 
             return dp;
         }
