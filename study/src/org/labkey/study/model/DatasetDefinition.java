@@ -1936,7 +1936,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         {
             if (null == getTypeURI())
                 return null;
-            if (null != _domain && (!forUpdate || _domain.isForUpdate()))
+            if (null != _domain && (!forUpdate || _domain.isMutable()))
                 return _domain;
         }
 

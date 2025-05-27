@@ -240,7 +240,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @NotNull
     public Domain getDomain(boolean forUpdate)
     {
-        if (_domain == null || (forUpdate && !_domain.isForUpdate()))
+        if (_domain == null || (forUpdate && !_domain.isMutable()))
         {
             _domain = PropertyService.get().getDomain(getContainer(), getLSID(), forUpdate);
             if (_domain == null)

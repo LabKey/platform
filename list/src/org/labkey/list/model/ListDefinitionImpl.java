@@ -145,7 +145,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public Domain getDomain(boolean forUpdate)
     {
-        if (_domain == null || (forUpdate && !_domain.isForUpdate())) // assure we have a mutable domain if needed, but don't ditch a mutable one because it may not have been saved yet
+        if (_domain == null || (forUpdate && !_domain.isMutable())) // assure we have a mutable domain if needed, but don't ditch a mutable one because it may not have been saved yet
         {
             _domain = PropertyService.get().getDomain(_def.getDomainId(), forUpdate);
         }

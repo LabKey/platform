@@ -112,7 +112,7 @@ public class DomainImpl implements Domain
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private Set<PropertyStorageSpec.Index> _propertyIndices = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
-    private boolean _isForUpdate;
+    private final boolean _isMutable;
 
     // NOTE we could put responsibility for generating column names on the StorageProvisioner
     // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
@@ -123,10 +123,10 @@ public class DomainImpl implements Domain
         this(dd, false);
     }
 
-    public DomainImpl(DomainDescriptor dd, boolean isForUpdate)
+    public DomainImpl(DomainDescriptor dd, boolean isMutable)
     {
         _dd = dd;
-        _isForUpdate = isForUpdate;
+        _isMutable = isMutable;
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
 
         List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
@@ -149,15 +149,15 @@ public class DomainImpl implements Domain
         }
     }
 
-    public DomainImpl(Container container, String uri, String name, boolean isForUpdate)
+    public DomainImpl(Container container, String uri, String name, boolean isMutable)
     {
-        this(container, uri, name, null, isForUpdate);
+        this(container, uri, name, null, isMutable);
     }
 
-    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo, boolean isForUpdate)
+    public DomainImpl(Container container, String uri, String name, @Nullable TemplateInfo templateInfo, boolean isMutable)
     {
         _new = true;
-        _isForUpdate = isForUpdate;
+        _isMutable = isMutable;
         _dd = new DomainDescriptor.Builder(uri, container)
                 .setName(name)
                 .setTemplateInfoObject(templateInfo)
@@ -221,9 +221,9 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public boolean isForUpdate()
+    public boolean isMutable()
     {
-        return _isForUpdate;
+        return _isMutable;
     }
 
     @Override
@@ -566,7 +566,7 @@ public class DomainImpl implements Domain
                      @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
                      @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
-        if (!_isForUpdate)
+        if (!_isMutable)
             throw new ChangePropertyDescriptorException("Cannot save a domain that is immutable");
 
         ExperimentService exp = ExperimentService.get();

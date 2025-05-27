@@ -76,7 +76,7 @@ public interface Domain extends IPropertyType
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
-    boolean isForUpdate();
+    boolean isMutable();
 
     /*
      * This returns a lock which will acquire an UPDATE lock on the domain row in the database.
