@@ -1515,15 +1515,24 @@ public class AuthenticationManager
                 if (null == secondaryAuthUser)
                 {
                     SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
-                    boolean bypass = provider.bypass();
-                    boolean notRequired = bypass || !configuration.isRequired(primaryAuthUser);
+                    boolean notRequired;
+                    if (provider.bypass())
+                    {
+                        _log.info("Per application.properties configuration, bypassing secondary authentication for provider: {}", provider.getClass());
+                        notRequired = true;
+                    }
+                    else
+                    {
+                        String notRequiredMessage = configuration.getNotRequiredMessage(primaryAuthUser, request);
+                        notRequired = notRequiredMessage != null;
+                        if (notRequired)
+                        {
+                            _log.debug("Bypassing secondary authentication since the authenticated user, \"{}\", {}", primaryAuthUser.getDisplayName(null), notRequiredMessage);
+                        }
+                    }
+
                     if (notRequired)
                     {
-                        if (bypass)
-                            _log.info("Per application.properties configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                        else
-                            _log.debug("Bypassing secondary authentication since authenticated user lacks the \"Require Secondary Authentication\" role: " + primaryAuthUser.getDisplayName(null));
-
                         setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
                         continue;
                     }
