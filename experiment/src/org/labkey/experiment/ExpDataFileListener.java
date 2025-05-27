@@ -76,8 +76,13 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             // if the data object moved containers, set that as well
             if (targetContainer != null && !targetContainer.equals(sourceContainer))
                 data.setContainer(targetContainer);
-            data.save(user); // FIXME: Issue 53070: Moving files could result in duplicate exp.data records
-            extra = 1;
+            ExpData existingData = ExperimentService.get().getExpDataByURL(data.getFilePath(), targetContainer);
+            // Issue 53070: Moving files could result in duplicate exp.data records
+            if (existingData != null)
+            {
+                data.save(user);
+                extra = 1;
+            }
         }
 
         return super.fileMoved(src, dest, user, sourceContainer) + extra;

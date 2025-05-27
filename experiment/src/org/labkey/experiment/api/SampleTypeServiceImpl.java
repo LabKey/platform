@@ -1941,7 +1941,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                        moveFile(renameData);
+                        moveFile(renameData, sourceContainer, user);
                 }
             }, POSTCOMMIT);
 
@@ -2053,7 +2053,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     // return the map of file renames
-    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
+    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
     {
         Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
 
@@ -2086,10 +2086,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (DomainProperty fileProp : fileDomainProps )
                 {
                     String sourceFileName = (String) sample.getProperty(fileProp);
+                    // check if file is referenced by others
                     File updatedFile = FileContentService.get().getMoveTargetFile(sourceFileName, sample.getContainer(), targetContainer);
                     if (updatedFile != null)
                     {
-                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+                        File sourceFile = new File(sourceFileName);
+                        if (!ExperimentServiceImpl.get().canMoveFileReference(user, sample.getContainer(), sourceFile))
+                            throw new ExperimentException("Sample " + sample.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), sourceFile, updatedFile);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
                         fieldRenameData.add(renameData);
@@ -2108,7 +2112,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleFileRenames;
     }
 
-    private boolean moveFile(FileFieldRenameData renameData)
+    private boolean moveFile(FileFieldRenameData renameData, Container sourceContainer, User user)
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
@@ -2131,18 +2135,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 LOG.warn(errorMsg + e.getMessage());
             }
         }
-        if (!renameData.sourceFile.renameTo(renameData.targetFile))
-        {
-            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
-                    renameData.sourceFile.getAbsolutePath(),
-                    renameData.targetFile.getAbsolutePath(),
-                    renameData.sampleType.getName(),
-                    renameData.sampleName,
-                    renameData.fieldName));
-            return false;
-        }
 
-        return true;
+        String changeDetail = String.format("'%s' sample '%s' (field: '%s')", renameData.sampleType.getName(), renameData.sampleName, renameData.fieldName);
+        return ExperimentServiceImpl.get().moveFileLinkFile(renameData.sourceFile, renameData.targetFile, sourceContainer, user, changeDetail);
     }
 
     @Override

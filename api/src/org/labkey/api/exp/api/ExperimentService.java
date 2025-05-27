@@ -138,6 +138,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
+    boolean canMoveFileReference(User user, Container sourceContainer, File sourceFile);
+
     enum QueryOptions
     {
         UseLsidForUpdate,
@@ -1124,7 +1126,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
-    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
+    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException;
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
 

@@ -1787,7 +1787,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public record AssayMoveData(Map<String, Integer> counts, Map<Integer, List<AssayFileMoveData>> fileMovesByRunId) {}
 
     @Override
-    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData)
+    public void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException
     {
         if (runs.isEmpty())
             return;
@@ -1867,7 +1867,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         moveAssayResults(runs, assayProtocol, sourceContainer, targetContainer, user, assayMoveData);
     }
 
-    private void moveRunsBatch(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    private void moveRunsBatch(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
@@ -1953,6 +1953,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
                     if (updatedFile != null)
                     {
+                        if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
+                            throw new ExperimentException("Assay batch " + experiment.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
                         ExpRun run = batchRun.get(experiment.getRowId());
                         Integer runId = run.getRowId();
                         movedFiles.putIfAbsent(runId, new ArrayList<>());
@@ -1974,7 +1977,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
     }
 
-    private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
@@ -2015,6 +2018,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
                 if (updatedFile != null)
                 {
+                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
+                        throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
                     Integer runId = run.getRowId();
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
@@ -2058,6 +2064,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (updatedFile != null)
                 {
                     ExpRun run = runMap.get(runId);
+                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
+                        throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), null, sourceFile, updatedFile));
                     fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
@@ -2070,7 +2079,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    protected void moveAssayResults(List<ExpRun> runs, ExpProtocol protocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    protected void moveAssayResults(List<ExpRun> runs, ExpProtocol protocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         String tableName = AssayProtocolSchema.DATA_TABLE_NAME;
         AssaySchema schema = createProtocolSchema(user, targetContainer, protocol, null);
@@ -2081,7 +2090,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         updateResultFiles(assayResultTable, runs, protocol, sourceContainer, targetContainer, user, assayMoveData);
     }
 
-    private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService == null)
@@ -2130,6 +2139,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 {
                     File sourceFile = new File(sourceFileName);
                     ExpRun run = runMap.get(resultRunId);
+
+                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
+                        throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
                     movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
                     movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));

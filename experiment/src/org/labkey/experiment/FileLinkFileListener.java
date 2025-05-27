@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -266,6 +267,11 @@ public class FileLinkFileListener implements FileListener
 
     public SQLFragment listFilesQuery(boolean skipCreatedModified)
     {
+        return listFilesQuery(skipCreatedModified, null);
+    }
+
+    public SQLFragment listFilesQuery(boolean skipCreatedModified, String filePath)
+    {
         final SQLFragment frag = new SQLFragment();
 
         // Object property files
@@ -285,7 +291,10 @@ public class FileLinkFileListener implements FileListener
         frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
         frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
         frag.append("WHERE\n");
-        frag.append("  op.StringValue IS NOT NULL AND\n");
+        if (StringUtils.isEmpty(filePath))
+            frag.append("  op.StringValue IS NOT NULL AND\n");
+        else
+            frag.append("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).append(" AND\n");
         frag.append("  o.ObjectId = op.ObjectId AND\n");
         frag.append("  PropertyId IN (\n");
         frag.append("    SELECT PropertyId\n");
@@ -297,7 +306,7 @@ public class FileLinkFileListener implements FileListener
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION\n");
-            frag.append(updater.listFilesQuery(skipCreatedModified));
+            frag.append(updater.listFilesQuery(skipCreatedModified, filePath));
         });
 
         return frag;
