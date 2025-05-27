@@ -35,6 +35,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.WorkbookUtil;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 /**
  * Knows how to create an Excel file (of various formats) based on the {@link Results} of a database query.
@@ -357,15 +357,13 @@ public class ExcelWriter implements ExportWriter
         _sheetName = cleanSheetName(sheetName);
     }
 
-    private static final Pattern BAD_SHEET_NAME_CHARS = Pattern.compile("^'|'$|[\\\\:/\\[\\]?*|]");
-    private static final String DEFAULT_SHEET_NAME = "Sheet";
-
     /**
-     * Escapes a string to be used as an Excel sheet name.
-     * - Removes prohibited characters: \ : / ? * [ ] | and replaces with underscore
+     * Trims and escapes a string to be used as an Excel sheet name.
+     * - Removes prohibited characters: \ : / ? * [ ] | 0x0000 0x0003 and replaces with underscore
      * - Ensures name does not start or end with apostrophe (replaced with underscore)
      * - Truncates to 31 characters (Excels limit)
      * - Guarantees a non-empty result by using "Sheet" as fallback
+     * See <a href="https://poi.apache.org/apidocs/dev/org/apache/poi/ss/util/WorkbookUtil.html">WorkbookUtil.createSafeSheetName()</a>.
      *
      * @param sheetName The original name to be used as a sheet name
      * @return A valid Excel sheet name
@@ -374,14 +372,12 @@ public class ExcelWriter implements ExportWriter
     {
         sheetName = StringUtils.trimToNull(sheetName);
         if (sheetName == null)
-            sheetName = DEFAULT_SHEET_NAME;
-
-        sheetName = BAD_SHEET_NAME_CHARS.matcher(sheetName).replaceAll("_");
+            sheetName = "Sheet";
 
         if (sheetName.length() > 31)
             return cleanSheetName(sheetName.substring(0, 31));
 
-        return sheetName;
+        return WorkbookUtil.createSafeSheetName(sheetName, '_');
     }
 
     public String getSheetName(int index)
@@ -993,7 +989,7 @@ public class ExcelWriter implements ExportWriter
             assertEquals("_'_", cleanSheetName("'''"));
 
             // Prohibited characters
-            assertEquals("_H_e_l_l_o W_o_r_l_d__", cleanSheetName("[H:e\\l/l_o W?o*r[l]d]'"));
+            assertEquals("_H__e_l_l__o W_o_r_l_d__", cleanSheetName("[H\u0000:e\\l/l_\u0003o W?o*r[l]d]'"));
             assertEquals("_Hello", cleanSheetName("'Hello"));
             assertEquals("Hello_", cleanSheetName("Hello'"));
             assertEquals("_Hello_", cleanSheetName("'Hello'"));
