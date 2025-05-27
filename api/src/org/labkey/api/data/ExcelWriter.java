@@ -379,11 +379,7 @@ public class ExcelWriter implements ExportWriter
         sheetName = BAD_SHEET_NAME_CHARS.matcher(sheetName).replaceAll("_");
 
         if (sheetName.length() > 31)
-            sheetName = sheetName.substring(0, 31);
-
-        sheetName = StringUtils.trimToNull(sheetName);
-        if (sheetName == null)
-            sheetName = DEFAULT_SHEET_NAME;
+            return cleanSheetName(sheetName.substring(0, 31));
 
         return sheetName;
     }
@@ -1017,8 +1013,12 @@ public class ExcelWriter implements ExportWriter
             assertEquals("ThisIsAReallyLongSheetNameThatE", cleanLongName);
 
             // Test truncation with prohibited character at position 31
-            String edgeCaseName = "ThisIsALongNameWithAProhibited:AtPositionThirtyOne";
-            assertEquals("ThisIsALongNameWithAProhibited_", cleanSheetName(edgeCaseName));
+            longName = "ThisIsALongNameWithAProhibited:AtPositionThirtyOne";
+            assertEquals("ThisIsALongNameWithAProhibited_", cleanSheetName(longName));
+
+            // Test trimming and truncation
+            longName = "ThisIsALongNameWithAProhibit'  AtPositionThirtyOne";
+            assertEquals("ThisIsALongNameWithAProhibit_", cleanSheetName(longName));
         }
     }
 }
