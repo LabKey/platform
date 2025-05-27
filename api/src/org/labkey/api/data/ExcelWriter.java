@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -38,6 +39,8 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reader.ExcelFactory;
@@ -349,21 +352,38 @@ public class ExcelWriter implements ExportWriter
         _factory = factory;
     }
 
-    // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
     public void setSheetName(String sheetName)
     {
         _sheetName = cleanSheetName(sheetName);
     }
 
-    private static final Pattern BAD_SHEET_NAME_CHARS = Pattern.compile("[\\\\:/\\[\\]?*|]");
+    private static final Pattern BAD_SHEET_NAME_CHARS = Pattern.compile("^'|'$|[\\\\:/\\[\\]?*|]");
+    private static final String DEFAULT_SHEET_NAME = "Sheet";
 
-    public static String cleanSheetName(String sheetName)
+    /**
+     * Escapes a string to be used as an Excel sheet name.
+     * - Removes prohibited characters: \ : / ? * [ ] | and replaces with underscore
+     * - Ensures name does not start or end with apostrophe (replaced with underscore)
+     * - Truncates to 31 characters (Excels limit)
+     * - Guarantees a non-empty result by using "Sheet" as fallback
+     *
+     * @param sheetName The original name to be used as a sheet name
+     * @return A valid Excel sheet name
+     */
+    public static @NotNull String cleanSheetName(String sheetName)
     {
+        sheetName = StringUtils.trimToNull(sheetName);
+        if (sheetName == null)
+            sheetName = DEFAULT_SHEET_NAME;
+
         sheetName = BAD_SHEET_NAME_CHARS.matcher(sheetName).replaceAll("_");
-        // CONSIDER: collapse whitespaces and underscores
 
         if (sheetName.length() > 31)
             sheetName = sheetName.substring(0, 31);
+
+        sheetName = StringUtils.trimToNull(sheetName);
+        if (sheetName == null)
+            sheetName = DEFAULT_SHEET_NAME;
 
         return sheetName;
     }
@@ -960,5 +980,45 @@ public class ExcelWriter implements ExportWriter
     public void setRenameColumnMap(Map<String, String> renameColumnMap)
     {
         _renameColumnMap = Collections.unmodifiableMap(renameColumnMap);
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testCleanSheetName()
+        {
+            assertEquals("Sheet", cleanSheetName(null));
+            assertEquals("Sheet", cleanSheetName(""));
+            assertEquals("Sheet", cleanSheetName("   "));
+
+            // All replacement characters
+            assertEquals("___", cleanSheetName(":::"));
+            assertEquals("_____", cleanSheetName("[]*/\\"));
+            assertEquals("_'_", cleanSheetName("'''"));
+
+            // Prohibited characters
+            assertEquals("_H_e_l_l_o W_o_r_l_d__", cleanSheetName("[H:e\\l/l_o W?o*r[l]d]'"));
+            assertEquals("_Hello", cleanSheetName("'Hello"));
+            assertEquals("Hello_", cleanSheetName("Hello'"));
+            assertEquals("_Hello_", cleanSheetName("'Hello'"));
+            assertEquals("Hello'World", cleanSheetName("Hello'World")); // Single quote in middle is allowed
+            assertEquals("_Data_2023_", cleanSheetName("'Data:2023'"));
+
+            // Preserves valid names
+            assertEquals("Valid Sheet Name", cleanSheetName("Valid Sheet Name"));
+            assertEquals("Sheet1", cleanSheetName("Sheet1"));
+            assertEquals("123", cleanSheetName("123"));
+            assertEquals("Data-2023", cleanSheetName("Data-2023"));
+
+            // Truncation
+            String longName = "ThisIsAReallyLongSheetNameThatExceedsTheMaximumLengthOfThirtyOneCharacters";
+            String cleanLongName = cleanSheetName(longName);
+            assertEquals(31, cleanLongName.length());
+            assertEquals("ThisIsAReallyLongSheetNameThatE", cleanLongName);
+
+            // Test truncation with prohibited character at position 31
+            String edgeCaseName = "ThisIsALongNameWithAProhibited:AtPositionThirtyOne";
+            assertEquals("ThisIsALongNameWithAProhibited_", cleanSheetName(edgeCaseName));
+        }
     }
 }
