@@ -35,6 +35,7 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 import java.util.HashMap;
@@ -281,6 +282,12 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     protected ActionURL linkToStudy(AssayPublishConfirmForm form, Container targetStudy, Map<Integer, PublishKey> publishData, List<String> publishErrors)
     {
         return form.getProvider().linkToStudy(getUser(), getContainer(), _protocol, targetStudy, form.getAutoLinkCategory(), publishData, publishErrors);
+    }
+
+    @Override // Override to prevent ClassCastException
+    public boolean handlePost(AssayPublishConfirmForm form, BindException errors) throws Exception
+    {
+        return super.handlePost(form, errors);
     }
 
     @Override
