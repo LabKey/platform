@@ -190,7 +190,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         {
             if (foreignKey.isProvisioned())
             {
-                Domain domain = provider.getDomain(foreignKey.getTableName(), true);
+                Domain domain = provider.getDomain(foreignKey.getTableName(), true, false);
                 if (null == domain)
                     throw new IllegalStateException("Expected domain to be created if it didn't already exist.");
 
@@ -218,9 +218,9 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
             boolean addWarnings)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
-        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
-        Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
-        Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false);
+        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false, true);
+        Domain vialDomain = specimenTablesProvider.getDomain("vial", false, true);
+        Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false, false);
 
         boolean editingSpecimen = null != specimenProps;
         boolean editingVial = null != vialProps;

@@ -169,7 +169,7 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
             final String tableName = tableXml.getTableName();
 
             // get the domain of the table we are updating
-            final Domain domain = tablesProvider.getDomain(tableName, false);
+            final Domain domain = tablesProvider.getDomain(tableName, false, true);
             final Container container = ctx.getContainer();
 
             if (domain != null)

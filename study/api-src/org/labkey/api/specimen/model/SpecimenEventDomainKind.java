@@ -241,7 +241,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             validationException = new ValidationException();
 
             SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
-            Domain domainEvent = stp.getDomain("specimenevent", false);
+            Domain domainEvent = stp.getDomain("specimenevent", false, false);
 
             Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainEvent);
             for (GWTPropertyDescriptor prop : update.getFields())
