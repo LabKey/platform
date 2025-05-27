@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "6.43.0-fb-issue-52895.0"
+    "@labkey/components": "6.43.3-fb-issue-52895.0"
   },
   "devDependencies": {
     "@labkey/build": "8.5.0",
