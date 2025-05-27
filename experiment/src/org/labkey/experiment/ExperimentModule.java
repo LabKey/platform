@@ -721,9 +721,9 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleUnitsDifferCount", new SqlSelector(schema, "SELECT COUNT(*) from exp.material m JOIN exp.materialSource s ON m.materialsourceid = s.rowid WHERE m.units != s.metricunit").getObject(Long.class));
 
                 results.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
-                        "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1)").getObject(Long.class));
+                        "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
                 results.put("duplicateSpecimenMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
-                        "(SELECT name, cpastype FROM exp.material WHERE cpastype = 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1)").getObject(Long.class));
+                        "(SELECT name, cpastype FROM exp.material WHERE cpastype = 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
 
                 results.put("dataClassCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
