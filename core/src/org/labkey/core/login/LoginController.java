@@ -1145,7 +1145,7 @@ public class LoginController extends SpringActionController
     }
 
     @Nullable
-    private String getEmailFromCookie(HttpServletRequest request)
+    public static String getEmailFromCookie(HttpServletRequest request)
     {
         String email = null;
         Cookie[] cookies = request.getCookies();
