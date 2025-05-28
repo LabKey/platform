@@ -31,7 +31,6 @@ public enum QueryParam implements SafeToRenderEnum
     maxRows,
     showRows,
     ignoreFilter,
-    formDataEncoded,
 
     defaultTab,
 

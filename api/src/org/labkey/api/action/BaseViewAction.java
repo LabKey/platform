@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
@@ -50,6 +51,7 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingErrorProcessor;
@@ -178,12 +180,51 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return ret;
     }
 
+    static final String FORM_DATE_ENCODED_PARAM = "formDataEncoded";
+
+    static public class ViewActionParameterPropertyValues extends ServletRequestParameterPropertyValues
+    {
+
+        public ViewActionParameterPropertyValues(ServletRequest request) {
+            this(request, (String)null, (String)null);
+        }
+
+        public ViewActionParameterPropertyValues(ServletRequest request, @Nullable String prefix, @Nullable String prefixSeparator)
+        {
+            super(request, prefix, prefixSeparator);
+            if (isFormDataEncoded())
+            {
+                for (int i = 0; i < getPropertyValues().length; i++)
+                {
+                    PropertyValue formDataPropValue = getPropertyValues()[i];
+                    String propValueName = formDataPropValue.getName();
+                    String decoded = PageFlowUtil.decodeQuoteEncodedFormDataKey(propValueName);
+                    if (!propValueName.equals(decoded))
+                        setPropertyValueAt(new PropertyValue(decoded, formDataPropValue.getValue()), i);
+                }
+            }
+        }
+
+        private boolean isFormDataEncoded()
+        {
+            PropertyValue formDataPropValue = getPropertyValue(FORM_DATE_ENCODED_PARAM);
+            if (formDataPropValue != null)
+            {
+                Object v = formDataPropValue.getValue();
+                String formDataPropValueStr = v == null ? null : String.valueOf(v);
+                if (StringUtils.isNotBlank(formDataPropValueStr))
+                    return (Boolean) ConvertUtils.convert(formDataPropValueStr, Boolean.class);
+            }
+
+            return false;
+        }
+    }
 
     @Override
     public ModelAndView handleRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response) throws Exception
     {
         if (null == getPropertyValues())
-            setProperties(new ServletRequestParameterPropertyValues(request));
+            setProperties(new ViewActionParameterPropertyValues(request));
         getViewContext().setBindPropertyValues(getPropertyValues());
         handleSpecialProperties();
 

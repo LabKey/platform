@@ -75,7 +75,6 @@ public class QuerySettings
     private boolean _showReports = true;
     private boolean _ignoreUserFilter;
     private boolean _ignoreViewFilter;
-    private boolean _formDataEncoded;
     private int _maxRows = 100;
     private boolean _maxRowsSet = false; // Explicitly track setting maxRows, allows for different defaults
     private long _offset = 0;
@@ -184,10 +183,6 @@ public class QuerySettings
                 throwParameterParseException(QueryParam.showRows);
             }
         }
-
-        String formDataEncoded = _getParameter(param(QueryParam.formDataEncoded));
-        if (isNotBlank(formDataEncoded))
-            _formDataEncoded = (Boolean) ConvertUtils.convert(formDataEncoded, Boolean.class);
     }
 
     protected String _getParameter(String param)
@@ -518,11 +513,13 @@ public class QuerySettings
 
     public String param(QueryParam param)
     {
-        return switch (param)
+        switch (param)
         {
-            case schemaName, formDataEncoded -> param.toString();
-            default -> param(param.toString());
-        };
+            case schemaName:
+                return param.toString();
+            default:
+                return param(param.toString());
+        }
     }
 
     protected String param(String param)
@@ -709,7 +706,7 @@ public class QuerySettings
         else
             url = new ActionURL();
         url.deleteParameters();
-        url.setPropertyValues(_filterSort, _formDataEncoded);
+        url.setPropertyValues(_filterSort);
         return url;
     }
 

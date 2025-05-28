@@ -2592,6 +2592,19 @@ public class PageFlowUtil
             .collect(Collectors.joining(String.valueOf(delimiter)));
     }
 
+    /**
+     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
+     * Issue 52119: App issues with assay run properties with special characters
+     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
+     * @return The decoded raw field name
+     */
+    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
+    {
+        if (encodedKey == null)
+            return null;
+        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -2909,6 +2922,21 @@ public class PageFlowUtil
             assertEquals("a/b/c", PageFlowUtil.encodePath("a/b/c"));
             assertEquals("/a/b/c/", PageFlowUtil.encodePath("/a/b/c/"));
         }
+
+        @Test
+        public void testDecodeQuoteEncodedFormDataKey()
+        {
+            assertEquals("test", decodeQuoteEncodedFormDataKey("test"));
+            assertEquals("a/b/c", decodeQuoteEncodedFormDataKey("a/b/c"));
+            assertEquals("a'b.c", decodeQuoteEncodedFormDataKey("a'b.c"));
+            assertEquals("%", decodeQuoteEncodedFormDataKey("%"));
+            assertEquals("\"", decodeQuoteEncodedFormDataKey("%22"));
+            assertEquals("\"\"", decodeQuoteEncodedFormDataKey("%22%22"));
+            assertEquals("%22", decodeQuoteEncodedFormDataKey("%2522"));
+            assertEquals("%22%22", decodeQuoteEncodedFormDataKey("%2522%2522"));
+            assertEquals("%22\"", decodeQuoteEncodedFormDataKey("%2522%22"));
+            assertEquals("\"22", decodeQuoteEncodedFormDataKey("%2222"));
+        }
     }
 
     /** @return true if the UrlProvider exists. */
@@ -3130,16 +3158,4 @@ public class PageFlowUtil
         return HtmlString.unsafe(sb.toString());
     }
 
-    /**
-     * Issue 52925: App export to csv/tsv ignores filter with column containing double quote
-     * Issue 52119: App issues with assay run properties with special characters
-     * @param encodedKey The encoded form key by client side `encodeFormDataQuote` util
-     * @return The decoded raw field name
-     */
-    public static String decodeQuoteEncodedFormDataKey(@Nullable String encodedKey)
-    {
-        if (encodedKey == null)
-            return null;
-        return encodedKey.replaceAll("%22", "\"").replaceAll("%2522", "%22");
-    }
 }

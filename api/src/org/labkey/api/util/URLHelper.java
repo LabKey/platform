@@ -676,19 +676,15 @@ public class URLHelper implements Cloneable, Serializable, JSONString
         return mpvs;
     }
 
+
     public void setPropertyValues(PropertyValues pvs)
     {
-        setPropertyValues(pvs, false);
-    }
-
-    public void setPropertyValues(PropertyValues pvs, boolean isFormDataEncoded)
-    {
         deleteParameters();
-        addPropertyValues(pvs, isFormDataEncoded);
+        addPropertyValues(pvs);
     }
 
 
-    public void addPropertyValues(PropertyValues pvs, boolean isFormDataEncoded)
+    public void addPropertyValues(PropertyValues pvs)
     {
         if (null == pvs)
             return;
@@ -697,24 +693,19 @@ public class URLHelper implements Cloneable, Serializable, JSONString
             Object v = pv.getValue();
             if (null == v)
                 continue;
-
-            String paramName = pv.getName();
-            if (isFormDataEncoded)
-                paramName = PageFlowUtil.decodeQuoteEncodedFormDataKey(paramName);
-
             if (v.getClass().isArray())
             {
                 Object[] a = (Object[])v;
                 for (Object o : a)
                 {
                     if (o != null)
-                        addParameter(paramName, String.valueOf(o));
+                        addParameter(pv.getName(), String.valueOf(o));
 
                 }
             }
             else
             {
-                addParameter(paramName, String.valueOf(v));
+                addParameter(pv.getName(), String.valueOf(v));
             }
         }
     }
