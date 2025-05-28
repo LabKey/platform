@@ -392,8 +392,7 @@ public class TableUpdaterFileListener implements FileListener
         else
             selectFrag.append("  NULL AS SourceKey,\n");
 
-        //selectFrag.append("  ? AS SourceName\n").add(getName());
-        selectFrag.append("  ").append(_table.getSchema().getSqlDialect().getStringHandler().quoteStringLiteral(getSourceName())).append(" AS SourceName\n");
+        selectFrag.append("  ").appendStringLiteral(getSourceName(), dialect).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
         selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" IS NOT NULL\n");
