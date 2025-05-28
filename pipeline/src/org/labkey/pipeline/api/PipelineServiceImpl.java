@@ -18,7 +18,6 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
@@ -101,10 +100,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -124,9 +120,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 import static org.labkey.api.pipeline.PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider.DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER;
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
@@ -458,73 +451,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
     }
 
-    /** @return first is labkeyBootstrap.jar, second is servletApi.jar */
-    private ExtractedJars extractBootstrapFromEmbedded() throws IOException
-    {
-        File bootstrap = null;
-        File servlet = null;
-        File log4JCore = null;
-        File log4JApi = null;
-
-        // Look through the JAR files in the working directory, which is expected to contain the Spring Boot
-        // entrypoint and the Servlet API
-        File pwd = new File(".");
-        File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
-        File pipelineLibDir = FileUtil.appendName(pwd, "pipelinelib");
-        if (!pipelineLibDir.exists())
-        {
-            if (!FileUtil.mkdir(pipelineLibDir))
-            {
-                throw new IOException("Failed to create directory " + pipelineLibDir);
-            }
-        }
-        for (File jar : jars)
-        {
-            try (JarFile j = new JarFile(jar))
-            {
-                // Look inside the JAR for a labkeyBootstrap*.jar file
-                Iterator<JarEntry> entries = j.entries().asIterator();
-                while (entries.hasNext())
-                {
-                    // Keep this code in sync with org.labkey.embedded.EmbeddedExtractor.extractExecutableJar()
-                    JarEntry entry = entries.next();
-                    if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
-                    {
-                        bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar", pipelineLibDir);
-                    }
-                    if (entry.getName().contains("tomcat-embed-core") && entry.getName().toLowerCase().endsWith(".jar"))
-                    {
-                        servlet = extractEntry(j, entry, "servletApi.jar", pipelineLibDir);
-                    }
-                    if (entry.getName().contains("log4j-core") && entry.getName().toLowerCase().endsWith(".jar"))
-                    {
-                        log4JCore = extractEntry(j, entry, "log4j-core.jar", pipelineLibDir);
-                    }
-                    if (entry.getName().contains("log4j-api") && entry.getName().toLowerCase().endsWith(".jar"))
-                    {
-                        log4JApi = extractEntry(j, entry, "log4j-api.jar", pipelineLibDir);
-                    }
-                }
-            }
-        }
-        return new ExtractedJars(bootstrap, servlet, log4JCore, log4JApi);
-    }
-
-    private File extractEntry(JarFile jar, ZipEntry entry, String name, File pipelineLibDir) throws IOException
-    {
-        File result = FileUtil.getAbsoluteCaseSensitiveFile(FileUtil.appendName(pipelineLibDir, name));
-        try (InputStream in = jar.getInputStream(entry);
-             OutputStream out = new FileOutputStream(result))
-        {
-            IOUtils.copy(in, out);
-        }
-        return result;
-    }
-
-    private record ExtractedJars(File bootstrap, File servlet, File log4JCore, File log4JApi) {}
-
     @Override
-    public List<String> getClusterStartupArguments() throws IOException
+    public List<String> getClusterStartupArguments()
     {
         List<String> args = new ArrayList<>();
         args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
@@ -548,27 +476,6 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             {
                 throw UnexpectedException.wrap(e);
             }
-
-
-//            ExtractedJars extracted = extractBootstrapFromEmbedded();
-//            labkeyBootstrap = extracted.bootstrap;
-//            if (labkeyBootstrap == null || !labkeyBootstrap.exists())
-//            {
-//                throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
-//            }
-//            servletApi = extracted.servlet;
-//            if (servletApi == null || !servletApi.exists())
-//            {
-//                throw new IllegalStateException("Couldn't find servletApi.jar");
-//            }
-//            if (extracted.log4JCore == null || !extracted.log4JCore.exists())
-//            {
-//                throw new IllegalStateException("Couldn't find log4j-core.jar");
-//            }
-//            if (extracted.log4JApi == null || !extracted.log4JApi.exists())
-//            {
-//                throw new IllegalStateException("Couldn't find log4j-api.jar");
-//            }
         }
 
         // Uncomment this line if you want to debug the forked process
@@ -1153,7 +1060,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         {
             TestContext ctx = TestContext.get();
             User loggedIn = ctx.getUser();
-            assertTrue("login before running this test", null != loggedIn);
+            assertNotNull("login before running this test", loggedIn);
             assertFalse("login before running this test", loggedIn.isGuest());
             _user = ctx.getUser().cloneUser();
         }
@@ -1180,7 +1087,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are set to defaults and they they point to the same place
-            assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isFileRoot());
+            assertTrue("The pipeline root isDefault flag was not set correctly.", pipelineRootSetting.isFileRoot());
             assertEquals("The default pipeline root was not set the same as the default file root.", pipelineRoot, fileRoot);
             String DEFAULT_ROOT_URI = "/files/__PipelineRootTestProject/@files";
             assertTrue("The pipeline root uri was: " + FileUtil.uriToString(pipelineRootSetting.getUri()) + ", but expected: " + DEFAULT_ROOT_URI, FileUtil.uriToString(pipelineRootSetting.getUri()).contains(DEFAULT_ROOT_URI));
@@ -1215,7 +1122,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are now both customized and set to the same customized location
-            assertEquals("The pipeline root isDefault flag was not set correctly.",true, pipelineRootSetting.isFileRoot());
+            assertTrue("The pipeline root isDefault flag was not set correctly.", pipelineRootSetting.isFileRoot());
             assertEquals("The default pipeline root was not set the same as the customized file root.",pipelineRoot, fileRoot);
             assertEquals("The pipeline root was not set to the customized file root location.", pipelineRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
 
@@ -1250,7 +1157,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are now both customized and set to different customized location
-            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isFileRoot());
+            assertFalse("The pipeline root isDefault flag was not set correctly.", pipelineRootSetting.isFileRoot());
             assertNotEquals("The customized pipeline root was not set different than the customized file root.",pipelineRoot, fileRoot);
             assertEquals("The file root was not set to the customized file root location.", fileRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
             assertEquals("The pipeline root was not set to the customized pipeline root location.", pipelineRoot, getTestRoot(PIPELINE_ROOT_SUFFIX));
@@ -1293,7 +1200,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
 
             // verify subfolder pipeline root and file root are now both customized and set to the same subfolder of the project file root
-            assertEquals("The pipeline root isDefault flag was not set correctly.",true, subfolderPipelineRootSetting.isFileRoot());
+            assertTrue("The pipeline root isDefault flag was not set correctly.", subfolderPipelineRootSetting.isFileRoot());
             assertEquals("The pipeline root of this subfolder was not set the same as the file root of the subfolder.",subFolderFileRoot, subfolderPipelineRoot);
             assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
 
@@ -1344,8 +1251,8 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
 
             // verify subfolder pipeline root and project pipeline root are now both customized and set to the same location
-            assertEquals("The project pipeline root isDefault flag was not set correctly.",false, projectPipelineRootSetting.isFileRoot());
-            assertEquals("The subfolder pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isFileRoot());
+            assertFalse("The project pipeline root isDefault flag was not set correctly.", projectPipelineRootSetting.isFileRoot());
+            assertFalse("The subfolder pipeline root isDefault flag was not set correctly.", subfolderPipelineRootSetting.isFileRoot());
             assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
             assertEquals("The pipeline root of this subfolder was not set the same as the pipeline root of the parent project.",projectPipelineRoot, subfolderPipelineRoot);
 
