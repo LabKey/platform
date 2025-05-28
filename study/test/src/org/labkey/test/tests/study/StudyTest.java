@@ -1138,7 +1138,7 @@ public class StudyTest extends StudyBaseTest
 
         String changeDetails = "IsDemographicData: true > false" ;
         AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
-                "The descriptor of domain DEM-1 was updated",
+                "The descriptor of domain DEM-1 was updated.",
                 "", null, null, changeDetails);
         boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent, Collections.emptyMap());
         checker().verifyTrue("Domain audit comment not as expected after changing demographic bit", pass);

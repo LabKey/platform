@@ -15,6 +15,7 @@
  */
 package org.labkey.api.studydesign.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.AliasedColumn;
@@ -24,6 +25,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME;
@@ -97,6 +99,16 @@ public class AssaySpecimenTable extends StudyDesignBaseTable
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        checkedPermissions.add(perm);
+        // Most tables should not be editable in Dataspace
+        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
     }
 
     @Override
