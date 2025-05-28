@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONString;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,7 +49,20 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
 
     public static @NotNull HtmlString of(@Nullable Object o)
     {
+        if (o instanceof DOM.Renderable r)
+        {
+            return of(r);
+        }
         return of(o == null ? null : o.toString());
+    }
+
+    public static @NotNull HtmlString of(@Nullable DOM.Renderable r)
+    {
+        if (r == null)
+            return EMPTY_STRING;
+        if (r instanceof HtmlString s)
+            return s;
+        return new HtmlString(r.renderToString());
     }
 
     /**
