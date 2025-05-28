@@ -387,7 +387,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if (!noUrl)
         {
             String urlStr = "audit-detailedAuditChanges.view?auditRowId=${rowId}";
-            if (StringUtils.isEmpty(eventName))
+            if (!StringUtils.isEmpty(eventName))
                 urlStr = urlStr + "&auditEventType=" + eventName;
             DetailsURL url = DetailsURL.fromString(urlStr);
             url.setStrictContainerContextEval(true);
