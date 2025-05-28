@@ -662,7 +662,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     public Domain getDomain()
     {
-        return _dsd.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dsd.getDomain(forUpdate);
     }
 
     @Override

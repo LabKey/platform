@@ -222,12 +222,12 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public Domain getDomainFromIssueDefName(String issueDefName, Container container, User user)
+    public Domain getDomainFromIssueDefName(String issueDefName, Container container, User user, boolean forUpdate)
     {
         IssueListDef issueListDef = IssueManager.getIssueListDef(container, issueDefName);
         if (issueListDef != null)
         {
-            return issueListDef.getDomain(user);
+            return issueListDef.getDomain(user, forUpdate);
         }
 
         return null;

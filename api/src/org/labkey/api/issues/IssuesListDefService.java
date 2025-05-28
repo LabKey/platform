@@ -107,12 +107,14 @@ public interface IssuesListDefService
 
     /**
      * Get the Domain for a specific issue list definition based on the issue list definition name.
+     *
      * @param issueDefName the name of the issue list definition to look for
-     * @param container the container to look in
-     * @param user the user who made the request
+     * @param container    the container to look in
+     * @param user         the user who made the request
+     * @param forUpdate    whether the domain returned should be mutable or not
      * @return Domain
      */
-    Domain getDomainFromIssueDefName(String issueDefName, Container container, User user);
+    Domain getDomainFromIssueDefName(String issueDefName, Container container, User user, boolean forUpdate);
 
     /**
      * Get the Domain for a specific issue list definition based on the issue list definition id.

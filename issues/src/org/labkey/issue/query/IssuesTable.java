@@ -393,7 +393,14 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
     @Override
     public Domain getDomain()
     {
-        return _issueDef.getDomain(getUserSchema().getUser());
+        return getDomain(false);
+    }
+
+    @Nullable
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _issueDef.getDomain(getUserSchema().getUser(), forUpdate);
     }
 
     @Nullable

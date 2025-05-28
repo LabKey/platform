@@ -751,7 +751,7 @@ public class AssayUpgradeCode implements UpgradeCode
                     if (provider.isPlateMetadataEnabled(protocol))
                     {
                         // ensure the QC state column exists in the result domain
-                        Domain resultDomain = provider.getResultsDomain(protocol);
+                        Domain resultDomain = provider.getResultsDomain(protocol, true);
                         if (resultDomain.getPropertyByName(AssayResultDomainKind.Column.State.name()) == null)
                         {
                             _log.info(String.format("Adding the %s field to the results domain for assay : %s", AssayResultDomainKind.Column.State.name(), protocol.getName()));
@@ -796,7 +796,7 @@ public class AssayUpgradeCode implements UpgradeCode
                 if (provider != null && provider.isPlateMetadataEnabled(protocol))
                 {
                     // ensure the QC state column exists in the result domain
-                    Domain runDomain = provider.getRunDomain(protocol);
+                    Domain runDomain = provider.getRunDomain(protocol, true);
                     if (runDomain != null && runDomain.getPropertyByName(HIT_SELECTION_CRITERIA_COLUMN_NAME) == null)
                     {
                         _log.info("Adding the \"{}\" field to the run domain for assay : {}", HIT_SELECTION_CRITERIA_COLUMN_NAME, protocol.getName());

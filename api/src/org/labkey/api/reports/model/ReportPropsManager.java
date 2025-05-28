@@ -114,7 +114,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             if (dp == null)
             {
                 dirty = true;
-                // TODO Is there a more efficient way to do this?
+                // Get a mutable version of the domain.
                 domain = getDomain(container, true);
                 DomainProperty prop = domain.addProperty();
                 prop.setName(name);

@@ -138,7 +138,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                     domain.addPropertyOfPropertyDescriptor(pd);
                 }
                 domain.save(user);
-                domain = getDomain();
+                domain = getDomain(true);
             }
             catch (ChangePropertyDescriptorException e)
             {
@@ -303,7 +303,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return getDomain(false);
     }
 
-    protected Domain getDomain(boolean forUpdate)
+    @Override
+    public final Domain getDomain(boolean forUpdate)
     {
         DomainKind domainKind = getDomainKind();
 

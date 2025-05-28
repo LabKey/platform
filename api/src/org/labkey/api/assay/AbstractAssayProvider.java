@@ -74,7 +74,6 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.files.FileContentService;
@@ -383,31 +382,37 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public static Domain getDomainByPrefix(ExpProtocol protocol, String domainPrefix)
+    public static Domain getDomainByPrefix(ExpProtocol protocol, String domainPrefix, boolean forUpdate)
     {
         Container container = protocol.getContainer();
-        return PropertyService.get().getDomain(container, getDomainURIForPrefix(protocol, domainPrefix));
+        return PropertyService.get().getDomain(container, getDomainURIForPrefix(protocol, domainPrefix), forUpdate);
     }
 
     @Nullable
-    public static Domain getDomainByPrefixIfExists(ExpProtocol protocol, String domainPrefix)
+    public static Domain getDomainByPrefixIfExists(ExpProtocol protocol, String domainPrefix, boolean forUpdate)
     {
         String domainURI = getDomainURIForPrefixIfExists(protocol, domainPrefix);
         if (null == domainURI)
             return null;
         Container container = protocol.getContainer();
-        return PropertyService.get().getDomain(container, domainURI);
+        return PropertyService.get().getDomain(container, domainURI, forUpdate);
     }
 
     @Override
     public Domain getResultsDomain(ExpProtocol protocol)
     {
-        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+        return getResultsDomain(protocol, false);
+    }
+
+    @Override
+    public Domain getResultsDomain(ExpProtocol protocol, boolean forUpdate)
+    {
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA, forUpdate);
     }
 
     protected @Nullable Domain getResultsDomainIfExists(ExpProtocol protocol)
     {
-        return getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+        return getDomainByPrefixIfExists(protocol, ExpProtocol.ASSAY_DOMAIN_DATA, false);
     }
 
     @Override
@@ -423,13 +428,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public Domain getBatchDomain(ExpProtocol protocol)
     {
-        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH);
+        return getBatchDomain(protocol, false);
+    }
+
+    @Override
+    public Domain getBatchDomain(ExpProtocol protocol, boolean forUpdate)
+    {
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_BATCH, forUpdate);
     }
 
     @Override
     public Domain getRunDomain(ExpProtocol protocol)
     {
-        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN);
+        return getRunDomain(protocol,false);
+    }
+
+    @Override
+    public Domain getRunDomain(ExpProtocol protocol, boolean forUpdate)
+    {
+        return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_RUN, forUpdate);
     }
 
     protected PropertyDescriptor addProperty(Container sourceContainer, String name, Integer value, Map<String, Object> dataMap, Collection<PropertyDescriptor> types)

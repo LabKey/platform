@@ -913,7 +913,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (columnNames.isEmpty())
             return Collections.emptyMap();
 
-        var replicateDomain = ensurePlateReplicateStatsDomain(container, protocolName, true);
+        var replicateDomain = ensurePlateReplicateStatsDomain(container, protocolName);
         var existingFields = getExistingFields(replicateDomain);
         var columnMap = new HashMap<String, List<GWTPropertyDescriptor>>();
 
@@ -952,7 +952,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         GWTDomain<GWTPropertyDescriptor> update
     ) throws ValidationException
     {
-        var replicateDomain = ensurePlateReplicateStatsDomain(protocol, true);
+        var replicateDomain = ensurePlateReplicateStatsDomain(protocol);
         var existingReplicateFields = getExistingFields(replicateDomain);
 
         var originalFields = new HashMap<Integer, GWTPropertyDescriptor>();
@@ -1100,14 +1100,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domainKind.generateDomainURI(AssaySchema.NAME, protocolName, container, null);
     }
 
-    private @NotNull Domain ensurePlateReplicateStatsDomain(ExpProtocol protocol, boolean forUpdate)
+    private @NotNull Domain ensurePlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        return ensurePlateReplicateStatsDomain(protocol.getContainer(), protocol.getName(), forUpdate);
+        return ensurePlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
     }
 
-    private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName, boolean forUpdate)
+    private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName)
     {
-        Domain domain = getPlateReplicateStatsDomain(container, protocolName, forUpdate);
+        Domain domain = getPlateReplicateStatsDomain(container, protocolName, true);
         if (domain == null)
             domain = PropertyService.get().createDomain(container, getPlateReplicateStatsDomainUri(container, protocolName), PlateReplicateStatsDomainKind.NAME);
 

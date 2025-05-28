@@ -458,13 +458,19 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public Domain getDomain()
         {
+            return getDomain(false);
+        }
+
+        @Override
+        public Domain getDomain(boolean forUpdate)
+        {
             if (_objectUriCol == null)
                 return null;
 
-            if (_domain == null)
+            if (_domain == null || (forUpdate && !_domain.isMutable()))
             {
                 String domainURI = getDomainURI();
-                _domain = PropertyService.get().getDomain(getDomainContainer(), domainURI);
+                _domain = PropertyService.get().getDomain(getDomainContainer(), domainURI, forUpdate);
             }
 
             return _domain;

@@ -99,9 +99,15 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getBatchDomain(ExpProtocol protocol);
 
+    Domain getBatchDomain(ExpProtocol protocol, boolean forUpdate);
+
     Domain getRunDomain(ExpProtocol protocol);
 
+    Domain getRunDomain(ExpProtocol protocol, boolean forUpdate);
+
     Domain getResultsDomain(ExpProtocol protocol);
+
+    Domain getResultsDomain(ExpProtocol protocol, boolean forUpdate);
 
     void beforeDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;
     void afterDomainChange(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update) throws ValidationException;

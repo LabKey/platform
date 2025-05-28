@@ -1674,7 +1674,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         @Override
         public Domain getDomain()
         {
-            return DatasetDefinition.this.getDomain();
+            return getDomain(false);
+        }
+
+        @Override
+        public Domain getDomain(boolean forUpdate)
+        {
+            return DatasetDefinition.this.getDomain(forUpdate);
         }
 
         @Override

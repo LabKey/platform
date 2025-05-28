@@ -5207,7 +5207,7 @@ public class StudyController extends BaseStudyController
                     def.provisionTable(true);
                 }
 
-                Domain d = def.getDomain();
+                Domain d = def.getDomain(true);
 
                 for (ColumnInfo col : columnsToProvision)
                 {

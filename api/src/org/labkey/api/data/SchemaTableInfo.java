@@ -859,6 +859,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
     @Nullable
     @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return getDomain();
+    }
+
+    @Nullable
+    @Override
     public DomainKind getDomainKind()
     {
         return null;
