@@ -182,6 +182,14 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     static final String FORM_DATE_ENCODED_PARAM = "formDataEncoded";
 
+    /**
+     * When a double quote is encountered in a multipart/form-data context, it is encoded as %22 using URL-encoding by browsers.
+     * This process replaces the double quote with its hexadecimal equivalent in a URL-safe format, preventing it from being misinterpreted as the end of a value or a boundary.
+     * The consequence of such encoding is we can't distinguish '"' from the actual '%22' in parameter name.
+     * As a workaround, a client-side util `encodeFormDataQuote` is used to convert %22 to %2522 and " to %22 explicitly, while passing in an additional param formDataEncoded=true.
+     * This class converts those encoded param names back to its decoded form during PropertyValues binding.
+     * See Issue 52827, 52925 and 52119 for more information.
+     */
     static public class ViewActionParameterPropertyValues extends ServletRequestParameterPropertyValues
     {
 
