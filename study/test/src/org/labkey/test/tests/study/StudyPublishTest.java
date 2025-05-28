@@ -163,6 +163,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String SUB_FOLDER_NAME = "PublishedSubStudy";
     private static final String PUBLISH_FOLDER_ADMIN = "publish_admin@study.test";
     private static final String PUBLISH_SUB_FOLDER_ADMIN = "publishsub_admin@study.test";
+    private boolean _studyDesignModulePresent;
 
     // enum to help determine the study publish location
     public enum PublishLocation
@@ -184,6 +185,8 @@ public class StudyPublishTest extends StudyPHIExportTest
     @Override
     protected void doCreateSteps()
     {
+        _studyDesignModulePresent =  _studyHelper.isModulePresent("StudyDesign");
+
         // fail fast if R is not configured
         RReportHelper _rReportHelper = new RReportHelper(this);
         _rReportHelper.ensureRConfig();
@@ -883,8 +886,12 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // Study Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Study Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View",
-                "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents", "Treatment Data");
+        if (_studyDesignModulePresent)
+            verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Assay Schedule", "Cohort Settings", "Custom Participant View",
+                    "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents", "Treatment Data");
+        else
+            verifyPublishWizardSelectedCheckboxes(StudyHelper.Panel.studyObjects, "Cohort Settings", "Custom Participant View",
+                    "Participant Comment Settings", "Permissions for Custom Study Security", "Protocol Documents");
         clickButton("Next", 0);
 
         // Lists
