@@ -181,7 +181,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         if (_domain != null && forUpdate && !_domain.isMutable())
         {
             String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(getContainer());
-            _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+            _domain = PropertyService.get().getDomain(getContainer(), domainURI, forUpdate);
         }
         return _domain;
     }
