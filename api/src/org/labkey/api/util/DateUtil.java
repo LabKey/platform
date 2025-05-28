@@ -36,8 +36,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.time.CalendarParts;
 import org.labkey.api.util.time.ParseDateTimeEN;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -1150,7 +1148,7 @@ public class DateUtil
     {
         try
         {
-            if (!(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
+            if (!durationCandidate.matches("^[+-]\\d+[a-zA-Z].*"))
             {
                 return false;
             }
