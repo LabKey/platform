@@ -59,6 +59,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JsonTest;
 import org.labkey.api.data.MaterializedQueryHelper;
@@ -394,6 +395,7 @@ public class ApiModule extends CodeOnlyModule
             EntropyPasswordValidator.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
+            ExcelWriter.TestCase.class,
             ExistingRecordDataIterator.TestCase.class,
             ExperimentJSONConverter.TestCase.class,
             ExtUtil.TestCase.class,
