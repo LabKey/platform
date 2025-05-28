@@ -613,7 +613,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
             @Override
             protected ContainerFilter getLookupContainerFilter()

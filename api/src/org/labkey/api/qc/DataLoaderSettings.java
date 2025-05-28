@@ -15,6 +15,8 @@
  */
 package org.labkey.api.qc;
 
+import org.labkey.api.data.LookupResolutionType;
+
 /**
  * User: klum
  * Date: Oct 9, 2011
@@ -26,7 +28,7 @@ public class DataLoaderSettings
     private boolean _allowEmptyData;
     private boolean _throwOnErrors;
     private boolean _allowUnexpectedColumns;    // don't load columns not in target domain
-    private boolean _allowLookupByAlternateKey = true; // import lookup column by unique index on target column or by title display column (if unique)
+    private LookupResolutionType _lookupResolutionType = LookupResolutionType.alternateThenPrimaryKey;
 
     public boolean isBestEffortConversion()
     {
@@ -68,13 +70,18 @@ public class DataLoaderSettings
         _allowUnexpectedColumns = allowUnexpectedColumns;
     }
 
-    public boolean isAllowLookupByAlternateKey()
-    {
-        return _allowLookupByAlternateKey;
-    }
-
     public void setAllowLookupByAlternateKey(boolean allowLookupByAlternateKey)
     {
-        _allowLookupByAlternateKey = allowLookupByAlternateKey;
+        _lookupResolutionType = allowLookupByAlternateKey ? LookupResolutionType.alternateThenPrimaryKey : LookupResolutionType.primaryKey;
+    }
+
+    public LookupResolutionType getLookupResolutionType()
+    {
+        return _lookupResolutionType;
+    }
+
+    public void setLookupResolutionType(LookupResolutionType lookupResolutionType)
+    {
+        _lookupResolutionType = lookupResolutionType;
     }
 }

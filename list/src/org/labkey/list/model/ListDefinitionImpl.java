@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -593,18 +594,18 @@ public class ListDefinitionImpl implements ListDefinition
         MapLoader loader = new MapLoader(rows);
 
         // TODO: Find out the attachment directory?
-        return insertListItems(user, container, loader, ve, null, null, false, false);
+        return insertListItems(user, container, loader, ve, null, null, false, LookupResolutionType.primaryKey);
     }
 
 
     @Override
-    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey)
+    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType)
     {
-        return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, QueryUpdateService.InsertOption.INSERT);
+        return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, lookupResolutionType, QueryUpdateService.InsertOption.INSERT);
     }
 
     @Override
-    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, QueryUpdateService.InsertOption insertOption)
+    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption)
     {
         ListQuerySchema schema = new ListQuerySchema(user, container);
         TableInfo table = schema.getTable(_def.getName());
@@ -612,7 +613,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
             if (null != lqus)
-                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, insertOption);
+                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, insertOption, lookupResolutionType);
         }
         return 0;
     }

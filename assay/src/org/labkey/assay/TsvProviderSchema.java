@@ -7,9 +7,13 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSetTable;
+import org.labkey.assay.plate.query.PlateTypeTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collections;
@@ -59,7 +63,10 @@ public class TsvProviderSchema extends AssayProviderSchema
 
             // Remove the "RowId" field so the "Lsid" is considered the primary key
             removeColumn(getColumn(FieldKey.fromParts("RowId")));
-            getMutableColumn(FieldKey.fromParts("Lsid")).setKeyField(true);
+            getMutableColumnOrThrow("Lsid").setKeyField(true);
+
+            getMutableColumnOrThrow("PlateType").setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).schema(PlateSchema.SCHEMA_NAME).table(PlateTypeTable.NAME));
+            getMutableColumnOrThrow("PlateSet").setFk(new QueryForeignKey.Builder(getUserSchema(), getContainerFilter()).schema(PlateSchema.SCHEMA_NAME).table(PlateSetTable.NAME));
         }
 
         @Override
