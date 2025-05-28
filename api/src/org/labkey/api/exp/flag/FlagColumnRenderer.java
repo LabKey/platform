@@ -134,16 +134,18 @@ public class FlagColumnRenderer extends DataColumn
 
     protected void _renderFlag(RenderContext ctx, HtmlWriter out, String objectId, String comment)
     {
-        setFlagFn = renderFlagScript(ctx, out);
+        renderFlagScript(ctx, out);
 
         if (null == canUpdate)
             canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
+
+        String cl = null == comment ? flagDisabledCls() : flagEnabledCls();
 
         if (comment == null && canUpdate && null != objectId)
             comment = defaultTitle;
 
         DOM.Renderable i = I(
-            at(title, comment).data("flagId", objectId).cl(null == comment ? flagDisabledCls() : flagEnabledCls())
+            at(title, comment).data("flagid", objectId).cl(cl)
         );
 
         if (canUpdate && null != objectId)
@@ -152,7 +154,7 @@ public class FlagColumnRenderer extends DataColumn
         }
         else
         {
-            out.write(i);
+            i.appendTo(out);
         }
     }
 

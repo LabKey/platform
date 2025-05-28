@@ -103,7 +103,14 @@ public class HtmlWriter implements Appendable
     // Outputs an HTML-encoded version of the input object
     public void write(Object o)
     {
-        write(HtmlString.of(o));
+        if (o instanceof DOM.Renderable r)
+        {
+            r.appendTo(this);
+        }
+        else
+        {
+            write(HtmlString.of(o));
+        }
     }
 
     public static class AttributeValue

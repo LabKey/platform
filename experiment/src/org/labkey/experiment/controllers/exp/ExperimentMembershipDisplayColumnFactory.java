@@ -165,16 +165,12 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                 if (columnInfo != null)
                 {
                     Object value = columnInfo.getValue(ctx);
-                    if (value instanceof Number)
+                    if (value instanceof Number n)
                     {
-                        return ((Number) value).intValue();
+                        return n.intValue();
                     }
-                    return -1;
                 }
-                else
-                {
-                    return -1;
-                }
+                return -1;
             }
             else
             {
