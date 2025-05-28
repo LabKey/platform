@@ -27,17 +27,17 @@ import java.io.InputStream;
 
 /**
  * URLDisplayColumn allows for a grid cell to render a thumbnail image and/or a popup tooltip image, both via
- * url paths to image files. There are also optional properties that can set the heigh/width of the image in the display
+ * url paths to image files. There are also optional properties that can set the height/width of the image in the display
  * along with the onClick behavior and target.
  */
 public class URLDisplayColumn extends AbstractFileDisplayColumn
 {
     public static class Factory implements DisplayColumnFactory
     {
-        private MultiValuedMap _properties;             // metadata XML column properties
+        private MultiValuedMap<String, String> _properties;             // metadata XML column properties
 
         // factory for metadata XML loading
-        public Factory(MultiValuedMap properties)
+        public Factory(MultiValuedMap<String, String> properties)
         {
             if (properties != null)
                 _properties = properties;
@@ -66,14 +66,14 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
 
     private static final String UNSCALED = "auto";
 
-    private MultiValuedMap<String, String> _properties;
+    private final MultiValuedMap<String, String> _properties;
     private String _thumbnailHeight;
     private boolean _useThumbnailImageUrlOnClick = true;
     private boolean _renderPopupImage = true;
     private String _popupHeight;
     private String _urlTarget;
 
-    public URLDisplayColumn(ColumnInfo col, MultiValuedMap properties)
+    public URLDisplayColumn(ColumnInfo col, MultiValuedMap<String, String> properties)
     {
         super(col);
         _properties = properties;

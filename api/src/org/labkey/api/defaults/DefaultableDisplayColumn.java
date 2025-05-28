@@ -19,12 +19,10 @@ import org.labkey.api.gwt.client.DefaultValueType;
 
 /**
  * Augments a {@link org.labkey.api.data.DisplayColumn} with info related to how its default value may be populated.
- * User: brittp
- * Date: Mar 3, 2009
  */
 
 public interface DefaultableDisplayColumn
 {
     DefaultValueType getDefaultValueType();
-    Class getJavaType();
+    Class<?> getJavaType();
 }

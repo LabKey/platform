@@ -22,13 +22,25 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
+
+import static org.labkey.api.util.DOM.Attribute.colspan;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.SCRIPT;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.id;
 
 public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 {
@@ -58,106 +70,113 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
     @Override
     public void renderInputHtml(RenderContext ctx, HtmlWriter out, Object value)
     {
-        Writer oldWriter = out.unwrap();
-        try
+        if (_resolvers.isEmpty())
         {
-            if (_resolvers.isEmpty())
-            {
-                oldWriter.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\"/>None available<br/> ");
-                return;
-            }
+            InputBuilder.hidden().name(_typeInputName).appendTo(out);
+            out.write("None available");
+            out.write(HtmlString.BR);
+            return;
+        }
 
-            boolean disabledInput = isDisabledInput();
-            ParticipantVisitResolverType selected = null;
-            for (ParticipantVisitResolverType resolver : _resolvers)
+        boolean disabledInput = isDisabledInput();
+        ParticipantVisitResolverType selected = null;
+        for (ParticipantVisitResolverType resolver : _resolvers)
+        {
+            if (resolver.getName().equals(value))
             {
-                if (resolver.getName().equals(value))
-                {
-                    selected = resolver;
-                    break;
-                }
+                selected = resolver;
+                break;
             }
-            if (selected == null)
+        }
+        if (selected == null)
+        {
+            selected = _resolvers.get(0);
+        }
+
+        ParticipantVisitResolverType finalSelected = selected;
+
+        // Keep track of listeners that want to know when the resolver selection has changed
+        String listenerScript = "var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n";
+        SCRIPT(JavaScriptFragment.unsafe(listenerScript)).appendTo(out);
+
+        if (_resolvers.size() < 2)
+        {
+            InputBuilder.hidden().name(_typeInputName).value(selected.getName()).appendTo(out);
+            out.write(selected.getDescription());
+            out.write(HtmlString.BR);
+            try
             {
-                selected = _resolvers.get(0);
+                selected.render(ctx);
             }
-
-            // Keep track of listeners that want to know when the resolver selection has changed
-            oldWriter.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
-            oldWriter.write("var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n");
-            oldWriter.write("</script>");
-
-            if (_resolvers.size() < 2)
+            catch (Exception e)
             {
-                oldWriter.write("<input type=\"hidden\" name = \"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
-                try
-                {
-                    selected.render(ctx);
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e);
-                }
+                throw new RuntimeException(e);
             }
-            else
-            {
-                oldWriter.write("<table>\n");
-                oldWriter.write("<tr><td colspan=\"2\">My data is identified by:</td></tr>");
-
-                for (ParticipantVisitResolverType resolver : _resolvers)
-                {
-                    String script = "typeElements = document.getElementsByName(" + PageFlowUtil.jsString(_typeInputName)+ "); " +
+        }
+        else
+        {
+            TABLE(
+                TR(
+                    TD(
+                        at(colspan, 2),
+                        "My data is identified by:"
+                    )
+                ),
+                (DOM.Renderable) ret -> {
+                    for (ParticipantVisitResolverType resolver : _resolvers)
+                    {
+                        String script =
+                            "typeElements = document.getElementsByName(" + PageFlowUtil.jsString(_typeInputName)+ "); " +
                             "for (i = 0; i < typeElements.length; i++) " +
                             "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
                             " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } ";
 
-                    RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
-                    if (renderSubs != RenderSubSelectors.NONE)
-                        script += "document.getElementById('ResolverDiv-' + this.value).style.display='block';";
+                        RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
+                        if (renderSubs != RenderSubSelectors.NONE)
+                            script += "document.getElementById('ResolverDiv-' + this.value).style.display='block';";
 
-                    // Notify listeners that the selection has changed
-                    script += "for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ";
-                    HttpView.currentPageConfig().addHandler("RadioBtn-" + resolver.getName(), "click", script);
+                        // Notify listeners that the selection has changed
+                        script += "for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ";
+                        HttpView.currentPageConfig().addHandler("RadioBtn-" + resolver.getName(), "click", script);
 
-                    oldWriter.write("<tr><td>");
-                    oldWriter.write("<input type=\"radio\" " +
-                            "name=\"" + PageFlowUtil.filter(_typeInputName) + "\"" +
-                            ( resolver == selected ? " checked=\"true\"" : "") + " " +
-                            "value=\"" + PageFlowUtil.filter(resolver.getName()) + "\"" +
-                            "id=\"RadioBtn-" + PageFlowUtil.filter(resolver.getName()) + "\"" +
-                            (disabledInput ? " DISABLED" : "") +
-                            ">");
+                        TR(
+                            TD(
+                                InputBuilder.radio().name(_typeInputName).value(resolver.getName()).id("RadioBtn-" + resolver.getName()).checked(finalSelected == resolver).disabled(disabledInput)
+                            ),
+                            TD(
+                                resolver.getDescription()
+                            )
+                        ).appendTo(out);
 
-                    oldWriter.write("</td><td>");
-                    oldWriter.write(PageFlowUtil.filter(resolver.getDescription()));
-                    oldWriter.write("</td></tr>");
-
-                    if (renderSubs != RenderSubSelectors.NONE)
-                    {
-
-                        oldWriter.write("<tr><td></td><td>");
-                        oldWriter.write("<div id=\"ResolverDiv-" + resolver.getName() + "\"" + (selected == resolver ? "" : "style=\"display:none\"") +  ">");
-                        try
+                        if (renderSubs != RenderSubSelectors.NONE)
                         {
-                            ctx.put(RenderSubSelectors.class.getSimpleName(), renderSubs);
-                            resolver.render(ctx);
+                            TR(
+                                TD(),
+                                TD(
+                                    DIV(
+                                        id("ResolverDiv-" + resolver.getName()).at(finalSelected == resolver, style, "display:none"),
+                                        (DOM.Renderable) ret2 -> {
+                                            try
+                                            {
+                                                ctx.put(RenderSubSelectors.class.getSimpleName(), renderSubs);
+                                                resolver.render(ctx);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                throw new RuntimeException(e);
+                                            }
+                                            return ret2;
+                                        }
+                                    ),
+                                    disabledInput ? InputBuilder.hidden().name(_typeInputName).value(finalSelected.getName()).appendTo(out) : null
+                                )
+                            ).appendTo(out);
                         }
-                        catch (Exception e)
-                        {
-                            throw (IOException)new IOException().initCause(e);
-                        }
-                        oldWriter.write("</div>");
-                        if (disabledInput)
-                            oldWriter.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(_typeInputName) + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\">");
-                        oldWriter.write("</td></tr>");
                     }
+
+                    return ret;
                 }
-                oldWriter.write("</table>");
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            ).appendTo(out);
         }
     }
 

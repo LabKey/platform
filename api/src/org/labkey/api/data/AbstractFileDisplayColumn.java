@@ -312,7 +312,8 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         {
             oldWriter.write("<div id=\"" + divId + "\">");
             renderIconAndFilename(ctx, out, filename, false, false);
-            oldWriter.write("&nbsp;[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
+            oldWriter.write("&nbsp;");
+            oldWriter.write("[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
             oldWriter.write("</div>\n");
         }
         catch (IOException e)
