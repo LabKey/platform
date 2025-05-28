@@ -198,10 +198,10 @@ public class TableUpdaterFileListener implements FileListener
 
     public String getSourceSelect(SqlDialect sqlDialect)
     {
-        String schema  = sqlDialect.makeLegalIdentifier(_table.getSchema().getName());
-        String table = sqlDialect.makeLegalIdentifier(_table.getName());
-        String column = sqlDialect.makeLegalIdentifier(_pathColumn.getName());
-        return sqlDialect.getStringHandler().quoteStringLiteral(schema + "." + table + "." + column);
+        String schema  = sqlDialect.getStringHandler().quoteStringLiteral(_table.getSchema().getName());
+        String table = sqlDialect.getStringHandler().quoteStringLiteral(_table.getName());
+        String column = sqlDialect.getStringHandler().quoteStringLiteral(_pathColumn.getName());
+        return schema + "." + table + "." + column;
     }
 
     @Override
@@ -401,7 +401,7 @@ public class TableUpdaterFileListener implements FileListener
             selectFrag.append("  NULL AS SourceKey,\n");
 
         //selectFrag.append("  ? AS SourceName\n").add(getName());
-        selectFrag.append("  ").append(getSourceSelect(_table.getSchema().getSqlDialect())).append(" AS SourceName\n");
+        selectFrag.append("  ").appendValue(getSourceSelect(_table.getSchema().getSqlDialect())).append(" AS SourceName\n");
 
         selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
         selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier());
