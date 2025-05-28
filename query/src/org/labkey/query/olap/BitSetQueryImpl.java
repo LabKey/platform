@@ -2221,7 +2221,7 @@ public class BitSetQueryImpl
 
             logDebug("cache put: " + cacheKey);
             // CONSIDER: using short TTL since I don't _know_ that this query result is immutable
-            _resultsCache.put(cacheKey, ret, CacheManager.MINUTE);
+            _resultsCache.put(cacheKey, ret.detach(), CacheManager.MINUTE);
             return ret;
         }
 
