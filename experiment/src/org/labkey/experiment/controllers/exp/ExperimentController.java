@@ -4574,7 +4574,7 @@ public class ExperimentController extends SpringActionController
 
         protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment) throws IOException
         {
-            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, auditUserComment, errors, null, getContainer());
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), getLookupResolutionType(), auditBehaviorType, auditUserComment, errors, null, getContainer());
 
             if (_context.isCrossFolderImport() && !getContainer().hasProductFolders())
                 _context.setCrossFolderImport(false);

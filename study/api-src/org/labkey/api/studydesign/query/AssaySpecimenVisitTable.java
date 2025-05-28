@@ -15,6 +15,7 @@
  */
 package org.labkey.api.studydesign.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
@@ -26,6 +27,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 /**
  * User: cnathe
@@ -64,6 +66,16 @@ public class AssaySpecimenVisitTable extends StudyDesignBaseTable
                 addWrapColumn(baseColumn);
             }
         }
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        checkedPermissions.add(perm);
+        // Most tables should not be editable in Dataspace
+        if (!perm.equals(ReadPermission.class) && getContainer().isDataspace())
+            return false;
+        return hasPermissionOverridable(user, perm);
     }
 
     @Override

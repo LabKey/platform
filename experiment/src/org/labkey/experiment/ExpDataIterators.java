@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -132,7 +131,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -177,9 +175,9 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_SET;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_COL;
-import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_SET;
 
 
@@ -2450,7 +2448,7 @@ public class ExpDataIterators
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
 
-        private final Map<String, Container> _containerMap = new HashMap<>();
+        private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
 
         private final boolean _isCrossFolderUpdate;
 
@@ -2634,7 +2632,6 @@ public class ExpDataIterators
                         for (TypeData typeData : typeFolderData.values())
                         {
                             writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-
                             if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                                 _importPartition(typeData);
                         }

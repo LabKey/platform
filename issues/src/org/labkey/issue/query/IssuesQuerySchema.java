@@ -35,6 +35,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -63,7 +64,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class IssuesQuerySchema extends UserSchema
 {
@@ -78,8 +78,11 @@ public class IssuesQuerySchema extends UserSchema
             @Override
             public TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf)
             {
-                return new SimpleUserSchema.SimpleTable<>(
+                var result = new SimpleUserSchema.SimpleTable<>(
                         schema, IssuesSchema.getInstance().getTableInfoRelatedIssues(), cf).init();
+                result.getMutableColumnOrThrow("IssueId").setFk(new QueryForeignKey.Builder(schema, cf).table(ALL_ISSUE_TABLE));
+                result.getMutableColumnOrThrow("RelatedIssueId").setFk(new QueryForeignKey.Builder(schema, cf).table(ALL_ISSUE_TABLE));
+                return result;
             }
         },
         Comments
@@ -147,7 +150,7 @@ public class IssuesQuerySchema extends UserSchema
     {
         Set<String> names = new HashSet<>(tableNames);
         names.add(TableType.IssueListDef.name());
-        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).toList());
 
         return names;
     }
@@ -157,7 +160,7 @@ public class IssuesQuerySchema extends UserSchema
     {
         Set<String> names = new HashSet<>(visibleTableNames);
         names.add(TableType.IssueListDef.name());
-        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+        names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).toList());
 
         return names;
     }
@@ -197,7 +200,7 @@ public class IssuesQuerySchema extends UserSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         String queryName = settings.getQueryName();
         if (queryName != null)
@@ -305,12 +308,12 @@ public class IssuesQuerySchema extends UserSchema
 
     private static class IssuesBuiltInCustomView implements CustomView
     {
-        private QueryDefinition _queryDef;
-        private String _name;
+        private final QueryDefinition _queryDef;
+        private final String _name;
         private List<FieldKey> _columns;
-        private List<SimpleFilter.FilterClause> _filters = new ArrayList<>();
+        private final List<SimpleFilter.FilterClause> _filters = new ArrayList<>();
         private String _filterText;
-        private Sort _sort;
+        private final Sort _sort;
 
         public IssuesBuiltInCustomView(QueryDefinition def, String name, List<SimpleFilter.FilterClause> filters, @Nullable Sort sort)
         {
@@ -427,7 +430,7 @@ public class IssuesQuerySchema extends UserSchema
         }
 
         @Override
-        public String getLabel()
+        public @NotNull String getLabel()
         {
             return _name;
         }
