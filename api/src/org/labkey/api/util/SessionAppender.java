@@ -33,6 +33,7 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -40,11 +41,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * User: matthewb
- * Date: Aug 18, 2009
- * Time: 2:18:21 PM
+ * Makes trigger script logging available to developers in the web UI.
  */
 @Plugin(name = "SessionAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
 public class SessionAppender extends AbstractAppender
@@ -86,6 +86,25 @@ public class SessionAppender extends AbstractAppender
 
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
 
+    static
+    {
+        try
+        {
+            Class<?> cl = Class.forName("org.labkey.embedded.SessionAppender");
+            Field f = cl.getDeclaredField("_consumer");
+            f.set(null, (Consumer<LogEvent>) event -> {
+                AppenderInfo info = localInfo.get();
+                if (null == info || !info.on)
+                    return;
+                info.eventIdMap.put(event, ++info.eventId);
+            });
+        }
+        catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     // AppenderInfos are thread-local variables initialized with the user session. This Map allows background threads to share an
     // active session's appenderInfo to output logs to that session's SessionAppender. When the session is ended, the
     // thread-local appenderInfo will be released and this map, which uses weak references, will allow gc to remove and
@@ -118,7 +137,6 @@ public class SessionAppender extends AbstractAppender
             return;
         info.eventIdMap.put(event, ++info.eventId);
     }
-
 
     /**
      * @return serialization-suitable list of events with eventId, level, message, and timestamp properties
