@@ -1303,10 +1303,10 @@ public class StudyTest extends StudyBaseTest
                 .clickSave();
 
         AuditLogHelper.DetailedAuditEventRow expectedDomainEvent = new AuditLogHelper.DetailedAuditEventRow(null, DEMOGRAPHICS_DOMAIN_NAME, null,
-                "The column(s) of domain DEM-1 were modified",
-                "", null, null, "");
+                "The column(s) of domain DEM-1 were modified.",
+                "", null, null,  "VisitDateColumnName:  > DEMdt");
         boolean pass = _auditLogHelper.validateLastDomainAuditEvents(DEMOGRAPHICS_DOMAIN_NAME, getProjectName(), expectedDomainEvent,
-                Map.of("VisitDay", new AuditLogHelper.DetailedAuditEventRow(null, "VisitDay", null, null, null, null, null, "VisitDateColumnName: > DEMdt")));
+                Map.of("VisitDay", new AuditLogHelper.DetailedAuditEventRow(null, "VisitDay", null, null, null, null, null, null)));
         checker().verifyTrue("Domain audit comment not as expected after changing visit date column", pass);
 
         new DatasetPropertiesPage(getDriver())
