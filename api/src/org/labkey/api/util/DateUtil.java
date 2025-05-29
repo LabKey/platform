@@ -1148,7 +1148,7 @@ public class DateUtil
     {
         try
         {
-            if (!durationCandidate.matches("^[+-]\\d+[a-zA-Z].*"))
+            if (!durationCandidate.matches("^[+-]\\d+[pymdhtsPMDHTS].*"))
             {
                 return false;
             }
