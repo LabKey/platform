@@ -1262,10 +1262,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             }
             catch (SQLException e)
             {
-                String key = rowId == null ? "rowId (" + rowId + ")" : "";
+                String key = rowId != null ? "rowId (" + rowId + ")" : "";
                 if (key.isEmpty() && lsid != null)
                     key = "lsid (" + lsid + ")";
-                if (key.isEmpty() && name != null)
+                if (key.isEmpty())
                     key = "name (" + name + ")";
                 throw new InvalidKeyException("Unable to select data for provided " + key);
             }
