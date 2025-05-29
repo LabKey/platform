@@ -125,7 +125,7 @@ public class FieldKeyRowMap implements Map<FieldKey, Object>
         return map;
     }
 
-    public static Map<String, Object> toColumnNameMap(Map<FieldKey, Object> rowMap)
+    public static Map<String, Object> toNameMap(Map<FieldKey, Object> rowMap)
     {
         Map<String, Object> map = new CaseInsensitiveHashMap<>();
         rowMap.forEach((key, value) -> {

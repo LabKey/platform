@@ -1299,7 +1299,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             try (var results = selector.getResults()) {
                 if (results.next())
                 {
-                    return FieldKeyRowMap.toColumnNameMap(results.getFieldKeyRowMap());
+                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
                 }
             }
             return Collections.emptyMap();
