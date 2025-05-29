@@ -74,6 +74,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     public static final String NOTIFICATION_EMAIL = "specimen-test@simpleexport.test";
     private final String FOLDER_SCOPE = "folder";
     private final String PROJECT_SCOPE = "project";
+    private boolean _studyDesignModulePresent;
 
     @Override
     protected BrowserType bestBrowser()
@@ -123,10 +124,12 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         super.initializeFolder();
 
+        _studyDesignModulePresent =  _studyHelper.isModulePresent("StudyDesign");
         clickProject(getProjectName());
         goToFolderManagement().goToFolderTypeTab();
         checkCheckbox(Locator.radioButtonByNameAndValue("folderType", "Study"));
-        checkCheckbox(Locator.checkboxByNameAndValue("activeModules", "StudyDesign"));
+        if (_studyDesignModulePresent)
+            checkCheckbox(Locator.checkboxByNameAndValue("activeModules", "StudyDesign"));
         clickButton("Update Folder");
 
         // click button to create manual study
@@ -134,7 +137,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         // use all of the default study settings
         clickButton("Create Study");
         clickFolder(getFolderName());
-        if (_studyHelper.isModulePresent("StudyDesign"))
+        if (_studyDesignModulePresent)
             _containerHelper.enableModule("StudyDesign");
     }
 
@@ -692,6 +695,12 @@ public class StudySimpleExportTest extends StudyBaseTest
         final String FOLDER_NAME_2 = "Study Design Data2";
 
         log("StudyDesign Tables");
+
+        if (!_studyDesignModulePresent)
+        {
+            log("StudyDesignModule not present, skipping verifyStudyDesignTables test");
+            return;
+        }
         goToProjectHome();
         clickFolder(getFolderName());
 
@@ -958,6 +967,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         final String FOLDER_NAME = "Study Design ExData";
 
         log("StudyDesign Extensible Tables");
+        if (!_studyDesignModulePresent)
+        {
+            log("StudyDesignModule not present, skipping verifyStudyDesignExtensibleTables test");
+            return;
+        }
         goToProjectHome();
         clickFolder(getFolderName());
 
