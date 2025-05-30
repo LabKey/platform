@@ -1,6 +1,7 @@
 package org.labkey.api.study.model;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -8,6 +9,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 
 /**
@@ -34,4 +36,9 @@ public interface VisitService
      * Updates this study's participant, visit, and participant visit tables. Also updates automatic cohort assignments.
      */
     ValidationException updateParticipantVisits(Study study, User user);
+
+    // Methods created to support Vaccine study designs
+    Visit createVisit(Study study, User user, @NotNull BigDecimal seqMin, String label, Visit.Type type);
+
+    void deleteVisit(Study study, User user, Visit visit);
 }

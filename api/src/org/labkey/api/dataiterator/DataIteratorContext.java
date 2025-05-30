@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.query.QueryUpdateService;
@@ -50,7 +51,7 @@ public class DataIteratorContext
     boolean _failFast = true;
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
-    boolean _allowImportLookupByAlternateKey = false;
+    LookupResolutionType _lookupResolutionType = LookupResolutionType.primaryKey;
     QueryImportPipelineJob _backgroundJob = null;
     boolean _crossTypeImport = false;
     boolean _crossFolderImport = false;
@@ -60,6 +61,7 @@ public class DataIteratorContext
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
+    private boolean _withLookupRemapping = true;
 
     private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
     private Logger _logger;
@@ -162,15 +164,31 @@ public class DataIteratorContext
         _supportAutoIncrementKey = supportAutoIncrementKey;
     }
 
-    public boolean isAllowImportLookupByAlternateKey()
+    @NotNull
+    public LookupResolutionType getLookupResolutionType()
     {
-        return _allowImportLookupByAlternateKey;
+        return _lookupResolutionType == null ? LookupResolutionType.primaryKey : _lookupResolutionType;
+    }
+
+    public void setLookupResolutionType(LookupResolutionType lookupResolutionType)
+    {
+        _lookupResolutionType = lookupResolutionType;
+    }
+
+    public boolean isWithLookupRemapping()
+    {
+        return _withLookupRemapping;
+    }
+
+    public void setWithLookupRemapping(boolean withLookupRemapping)
+    {
+        _withLookupRemapping = withLookupRemapping;
     }
 
     /** When true, allow importing lookup columns by the lookup table's alternate key instead of by primary key. */
     public void setAllowImportLookupByAlternateKey(boolean allowImportLookupByAlternateKey)
     {
-        _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
+        _lookupResolutionType = allowImportLookupByAlternateKey ? LookupResolutionType.alternateThenPrimaryKey : LookupResolutionType.primaryKey;
     }
 
     public boolean isCrossTypeImport()

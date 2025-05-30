@@ -193,7 +193,9 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
+import org.labkey.api.studydesign.StudyDesignManager;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.CsrfInput;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
@@ -205,7 +207,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -407,22 +408,6 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields)
-        {
-            ActionURL url = new ActionURL(StudyDesignController.ManageAssayScheduleAction.class, container);
-            url.addParameter("useAlternateLookupFields", useAlternateLookupFields);
-            return url;
-        }
-
-        @Override
-        public ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor)
-        {
-            ActionURL url = new ActionURL(StudyDesignController.ManageTreatmentsAction.class, container);
-            url.addParameter("singleTable", useSingleTableEditor);
-            return url;
-        }
-
-        @Override
         public ActionURL getManageFileWatchersURL(Container container)
         {
             return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
@@ -468,6 +453,30 @@ public class StudyController extends BaseStudyController
         public ActionURL getTypeNotFoundURL(Container container, int datasetId)
         {
             return new ActionURL(TypeNotFoundAction.class, container).addParameter("id", datasetId);
+        }
+
+        @Override
+        public ActionURL getManageLocationsURL(Container container)
+        {
+            return new ActionURL(ManageLocationsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageVisitsURL(Container container)
+        {
+            return new ActionURL(ManageVisitsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getManageCohortsURL(Container container)
+        {
+            return new ActionURL(CohortController.ManageCohortsAction.class, container);
+        }
+
+        @Override
+        public ActionURL getVisitOrderURL(Container container)
+        {
+            return new ActionURL(VisitOrderAction.class, container);
         }
     }
 
@@ -2528,6 +2537,57 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    /**
+     * Called from the vaccine design webpart for the study design module
+     */
+    @RequiresPermission(UpdatePermission.class)
+    public class CreateVisitForVaccineDesign extends MutatingApiAction<VisitForm>
+    {
+        @Override
+        public void validateForm(VisitForm form, Errors errors)
+        {
+            if (!StudyDesignManager.get().isModuleActive(getContainer()))
+            {
+                errors.reject(ERROR_MSG, "This action can only be called if the study design module is active");
+                return;
+            }
+
+            Study study = getStudy(getContainer());
+            boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
+
+            form.validate(errors, study);
+            if (errors.getErrorCount() > 0)
+                return;
+
+            //check for overlapping visits
+            VisitManager visitMgr = StudyManager.getInstance().getVisitManager(study);
+            if (null != visitMgr)
+            {
+                String range = isDateBased ? "day range" : "sequence range";
+                if (visitMgr.isVisitOverlapping(form.getBean()))
+                    errors.reject(null, "The visit " + range + " provided overlaps with an existing visit in this study. Please enter a different " + range + ".");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(VisitForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            VisitImpl visit = form.getBean();
+            visit = StudyManager.getInstance().createVisit(getStudyThrowIfNull(), getUser(), visit);
+
+            response.put("RowId", visit.getRowId());
+            response.put("Label", visit.getDisplayString());
+            response.put("SequenceNumMin", visit.getSequenceNumMin());
+            response.put("DisplayOrder", visit.getDisplayOrder());
+            response.put("Included", true);
+            response.put("success", true);
+
+            return response;
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     public class UpdateDatasetVisitMappingAction extends FormViewAction<DatasetForm>
     {
@@ -2694,7 +2754,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getOptionParamValue(Params.importLookupByAlternateKey), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getLookupResolutionType(), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
@@ -4743,7 +4803,7 @@ public class StudyController extends BaseStudyController
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 // performStudyResync==false so we can do this out of the transaction
-                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
+                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false, null);
                 transaction.commit();
             }
 
@@ -5057,7 +5117,7 @@ public class StudyController extends BaseStudyController
                 DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
                 {
-                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true);
+                    StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true, null);
                     form.setSnapshotDatasetId(-1);
                 }
             }

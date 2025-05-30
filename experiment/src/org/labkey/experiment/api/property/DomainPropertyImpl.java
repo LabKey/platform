@@ -56,7 +56,9 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -576,6 +578,9 @@ public class DomainPropertyImpl implements DomainProperty
         if (getDefaultValueType() != null && getDefaultValueType().equals(defaultValueTypeName))
             return;
 
+        if (getDefaultValueType() == null && defaultValueTypeName == null)
+            return; // if both are null, don't call edit(), with marks property as dirty
+
         edit().setDefaultValueType(defaultValueTypeName);
     }
 
@@ -637,6 +642,15 @@ public class DomainPropertyImpl implements DomainProperty
     {
         if (scannable != isScannable())
             edit().setScannable(scannable);
+    }
+
+    @Override
+    public void setOldPropertyDescriptor(PropertyDescriptor oldPropertyDescriptor)
+    {
+        if (isEdited())
+            return;
+
+        _pdOld = oldPropertyDescriptor.clone();
     }
 
     @Override
@@ -1056,6 +1070,12 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setConditionalFormats(List<ConditionalFormat> formats)
     {
+        String newVal = ConditionalFormat.toStringVal(formats);
+        String oldVal = ConditionalFormat.toStringVal(getConditionalFormats());
+
+        if (!Objects.equals(newVal, oldVal))
+            edit();
+
         _formats = formats;
     }
 
@@ -1125,6 +1145,62 @@ public class DomainPropertyImpl implements DomainProperty
     public String toString()
     {
         return super.toString() + _pd.getPropertyURI();
+    }
+
+    public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (null != getPropertyType())
+        {
+            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
+                map.put("Type", "Flag");
+            else
+                map.put("Type", getPropertyType().getXarName());
+        }
+        if (getPropertyType().getJdbcType().isText())
+            map.put("Scale", getScale());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getFormat()))
+            map.put("Format", getFormat());
+        if (!StringUtils.isEmpty(getURL()))
+            map.put("URL", getURL());
+        if (getPHI() != null)
+            map.put("PHI", getPHI().getLabel());
+        if (getDefaultScale() != null)
+            map.put("DefaultScale", getDefaultScale().getLabel());
+        map.put("Required", isRequired());
+        map.put("Hidden", isHidden());
+        map.put("MvEnabled", isMvEnabled());
+        map.put("Measure", isMeasure());
+        map.put("Dimension", isDimension());
+        map.put("ShownInInsert", isShownInInsertView());
+        map.put("ShownInDetails", isShownInDetailsView());
+        map.put("ShownInUpdate", isShownInUpdateView());
+        map.put("ShownInLookupView", isShownInLookupView());
+        map.put("RecommendedVariable", isRecommendedVariable());
+        map.put("ExcludedFromShifting", isExcludeFromShifting());
+        map.put("Scannable", isScannable());
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
+            map.put("DerivationDataScope", getDerivationDataScope());
+        String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAliases", importAliasStr);
+        if (getDefaultValueTypeEnum() != null)
+            map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
+        if (getLookup() != null)
+            map.put("Lookup", getLookup().toJSONString());
+
+        if (!StringUtils.isEmpty(validatorStr))
+            map.put("Validator", validatorStr);
+        if (!StringUtils.isEmpty(conditionalFormatStr))
+            map.put("ConditionalFormat", conditionalFormatStr);
+
+        return map;
     }
 
     public static class TestCase extends Assert

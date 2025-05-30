@@ -96,6 +96,22 @@ public class JavaScriptDisplayColumn extends DataColumn
         builder.appendTo(out);
     }
 
+    @Deprecated // TODO: Delete after merging commonAssays fb_render_grid_cell_contents
+    protected void renderLink(Writer out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
+    {
+        LinkBuilder builder = new LinkBuilder(html)
+            .href("#")
+            .attributes(Map.of(tabindex.name(), "-1"))
+            .onClick(onClick);
+
+        if (linkClassName != null)
+            builder.addClass(linkClassName);
+        else
+            builder.clearClasses();
+
+        builder.appendTo(out);
+    }
+
     @Override
     public @NotNull Set<ClientDependency> getClientDependencies()
     {

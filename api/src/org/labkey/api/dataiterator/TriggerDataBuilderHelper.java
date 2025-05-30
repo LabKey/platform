@@ -145,6 +145,7 @@ public class TriggerDataBuilderHelper
 
             boolean skipExistingRecord = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
             DataIterator coerce = new CoerceDataIterator(pre, context, _target, !context.getInsertOption().updateOnly);
+            context.setWithLookupRemapping(false);
             coerce = LoggingDataIterator.wrap(coerce);
 
             if (skipExistingRecord)

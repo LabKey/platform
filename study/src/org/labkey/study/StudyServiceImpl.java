@@ -55,6 +55,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.SecurableResource;
@@ -76,6 +77,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.UnionTable;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantInfo;
+import org.labkey.api.studydesign.query.StudyDesignSchema;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -1086,7 +1088,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public boolean isLocationInUse(Location loc)
     {
         return LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
-            LocationManager.get().isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
+            LocationManager.get().isLocationInUse(loc, StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), "LocationId");
     }
 
     @Override
@@ -1103,7 +1105,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
             .append(locationTableAlias)
             .append(".Container = p.Container) OR\n")
             .append(exists)
-            .append(StudySchema.getInstance().getTableInfoAssaySpecimen(), "a")
+            .append(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), "a")
             .append(" WHERE ")
             .append(locationTableAlias)
             .append(".RowId = a.LocationId AND ")
@@ -1196,5 +1198,17 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         return StudyManager.getInstance().getVisitImportMap(study, includeStandardMapping);
+    }
+
+    @Override
+    public ValidationException updateAssayPlan(User user, Study study, String assayPlan)
+    {
+        if (study instanceof StudyImpl studyImpl)
+        {
+            studyImpl = studyImpl.createMutable();
+            studyImpl.setAssayPlan(assayPlan);
+            return StudyManager.getInstance().updateStudy(user, studyImpl);
+        }
+        return null;
     }
 }

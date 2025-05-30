@@ -15,16 +15,10 @@
  */
 package org.labkey.study.model;
 
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.util.JsonUtil;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -38,7 +32,6 @@ public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> imple
     private boolean _enrolled = true;
     private Integer _subjectCount;
     private String _description;
-    List<TreatmentVisitMapImpl> _treatmentVisitMap;
 
     @Override
     public Integer getPrimaryKey()
@@ -143,38 +136,6 @@ public class CohortImpl extends ExtensibleStudyEntity<Integer, CohortImpl> imple
     {
         verifyMutability();
         _description = description;
-    }
-
-    public void setTreatmentVisitMap(List<TreatmentVisitMapImpl> treatmentVisitMap)
-    {
-        _treatmentVisitMap = treatmentVisitMap;
-    }
-
-    public List<TreatmentVisitMapImpl> getTreatmentVisitMap()
-    {
-        return _treatmentVisitMap;
-    }
-
-    public static CohortImpl fromJSON(@NotNull JSONObject o)
-    {
-        CohortImpl cohort = new CohortImpl();
-        cohort.setLabel(o.getString("Label"));
-        if (o.has("SubjectCount") && !"".equals(o.getString("SubjectCount")))
-            cohort.setSubjectCount(o.getInt("SubjectCount"));
-        if (o.has("RowId"))
-            cohort.setRowId(o.getInt("RowId"));
-
-        JSONArray visitMapJSON = o.optJSONArray("VisitMap");
-        if (visitMapJSON != null)
-        {
-            List<TreatmentVisitMapImpl> treatmentVisitMap = new ArrayList<>();
-            for (JSONObject json : JsonUtil.toJSONObjectList(visitMapJSON))
-                treatmentVisitMap.add(TreatmentVisitMapImpl.fromJSON(json));
-
-            cohort.setTreatmentVisitMap(treatmentVisitMap);
-        }
-
-        return cohort;
     }
 
     @Override

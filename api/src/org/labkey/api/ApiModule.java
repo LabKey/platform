@@ -59,6 +59,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JsonTest;
 import org.labkey.api.data.MaterializedQueryHelper;
@@ -143,9 +144,9 @@ import org.labkey.api.settings.AdminConsole.OptionalFeatureFlag;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.BaseServerProperties;
-import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelFolderPropertiesTest;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.OptionalFeatureStartupListener;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -167,11 +168,11 @@ import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.NumberUtilsLabKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -235,6 +236,16 @@ public class ApiModule extends CodeOnlyModule
             "Stage file uploads and downloads to temporary local file",
             "When using a non-local file system, using a specific API that requires a locally staged copy of the file as the source can sometimes be significantly faster than streaming the file directly to/from storage",
             false, false, FeatureType.Optional));
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(MothershipReport.FEATURE_FLAG_EXTENDED_METRICS,
+            "Send extended metrics information to LabKey",
+            "Send additional usage information to https://www.labkey.org along with standard usage metrics. This " +
+            "information includes a list of unique, active users registered on the server. Providing this information " +
+            "is not necessary in most cases. Clients with multi-server contracts and user-based pricing may be asked to " +
+            "enable this feature to help comply with their licensing terms.",
+            false,
+            false,
+            OptionalFeatureService.FeatureType.Optional
+        ));
     }
 
     @NotNull
@@ -384,6 +395,7 @@ public class ApiModule extends CodeOnlyModule
             EntropyPasswordValidator.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
+            ExcelWriter.TestCase.class,
             ExistingRecordDataIterator.TestCase.class,
             ExperimentJSONConverter.TestCase.class,
             ExtUtil.TestCase.class,

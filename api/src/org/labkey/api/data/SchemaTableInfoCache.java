@@ -97,7 +97,7 @@ public class SchemaTableInfoCache
             catch (SQLException e)
             {
                 // Issue 49506: Log all problems for the admin and report to mothership and throw instead of returning null.
-                LOG.warn("Exception while attempting to load schema table \"" + fullName + "\"", e);
+                LOG.error("Exception while attempting to load schema table \"" + fullName + "\"", e);
                 ExceptionUtil.logExceptionToMothership(null, e, false);
 
                 throw new RuntimeSQLException(e);

@@ -245,6 +245,30 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return null;
     }
 
+    private void validateAttachmentSize(AttachmentFile file) throws IOException
+    {
+        int maxSize = AppProps.getInstance().getMaxBLOBSize();
+        if (file.getSize() > maxSize)
+        {
+            throw new AttachmentService.FileTooLargeException(file, maxSize);
+        }
+    }
+
+    @Override
+    public void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException
+    {
+        File fileLocation = parent instanceof AttachmentDirectory ? ((AttachmentDirectory) parent).getFileSystemDirectory() : null;
+
+        // Only validate if we're putting the file in the database
+        if (null == fileLocation)
+        {
+            for (AttachmentFile file : files)
+            {
+                validateAttachmentSize(file);
+            }
+        }
+    }
+
 
     @Override
     public synchronized void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException
@@ -275,12 +299,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             HashMap<String, Object> hm = new HashMap<>();
             if (null == fileLocation)
             {
-                int maxSize = AppProps.getInstance().getMaxBLOBSize();
-                if (file.getSize() > maxSize)
-                {
-                    throw new AttachmentService.FileTooLargeException(file, maxSize);
-                }
-
+                validateAttachmentSize(file);
                 hm.put("Document", file);
             }
             else

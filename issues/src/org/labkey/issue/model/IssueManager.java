@@ -1213,7 +1213,7 @@ public class IssueManager
 
                 if (new TableSelector(issueDefTable, filter, null).getRowCount() == 0)
                 {
-                    d.getDomainKind().deleteDomain(user, d);
+                    d.getDomainKind().deleteDomain(user, d, null);
                 }
             }
             IssueListDefCache.uncache(c);

@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
@@ -178,4 +179,6 @@ public interface ExpProtocol extends ExpObject
     {
         return isSampleWorkflowTaskProtocol(lsid) || isSampleWorkflowJobProtocol(lsid);
     }
+
+    Map<String, Object> getAuditRecordMap(AssayProvider provider);
 }

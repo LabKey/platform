@@ -17,7 +17,6 @@
 package org.labkey.api.query;
 
 import org.labkey.api.util.SafeToRenderEnum;
-import org.labkey.api.util.URLHelper;
 
 public enum QueryParam implements SafeToRenderEnum
 {

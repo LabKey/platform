@@ -117,7 +117,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         {
                             case INSERT:
                             {
-                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                String newRecord = AbstractAuditTypeProvider.encodeForDataMap(row);
                                 if (newRecord != null)
                                     event.setNewRecordMap(newRecord, c);
                                 break;
@@ -126,7 +126,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             {
                                 if (existingRow.isEmpty())
                                 {
-                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                    String newRecord = AbstractAuditTypeProvider.encodeForDataMap(row);
                                     if (newRecord != null)
                                         event.setNewRecordMap(newRecord, c);
                                 }
@@ -138,7 +138,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             }
                             case DELETE:
                             {
-                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
+                                String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(row);
                                 if (oldRecord != null)
                                     event.setOldRecordMap(oldRecord, c);
                                 break;
@@ -177,11 +177,11 @@ public abstract class AbstractAuditHandler implements AuditHandler
         // allow for adding fields that may be present in the updated row but not represented in the original row
         addDetailedModifiedFields(existingRow, modifiedRow, row);
 
-        String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
+        String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(originalRow);
         if (oldRecord != null)
             event.setOldRecordMap(oldRecord, c);
 
-        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, modifiedRow);
+        String newRecord = AbstractAuditTypeProvider.encodeForDataMap(modifiedRow);
         if (newRecord != null)
             event.setNewRecordMap(newRecord, c);
     }

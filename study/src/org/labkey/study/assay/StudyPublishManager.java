@@ -50,6 +50,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ILineageDisplayColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
@@ -221,7 +222,6 @@ public class StudyPublishManager implements StudyPublishService
 
             targetPd.setPropertyURI(dataset.getTypeURI() + "#" + sourcePd.getName());
             targetPd.setContainer(dataset.getContainer());
-            targetPd.setProject(dataset.getContainer().getProject());
             if (targetPd.getLookupQuery() != null)
                 targetPd.setLookupContainer(sourcePd.getLookupContainer());
             // set the ID to zero so it's clear that this is a new property descriptor:
@@ -643,7 +643,7 @@ public class StudyPublishManager implements StudyPublishService
                     var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.PUBLISH;
                     Map<String, Object> eventMetadata = new HashMap<>();
                     eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                    String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                     List<Integer> sampleIds = rows.stream().map(m -> (Integer) m.get(StudyPublishService.ROWID_PROPERTY_NAME)).collect(toList());
                     List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
@@ -985,7 +985,7 @@ public class StudyPublishManager implements StudyPublishService
      * Return an array of LSIDs from the newly created dataset entries,
      * along with the upload log.
      */
-    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, boolean importLookupByAlternateKey, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
+    public Pair<List<String>, UploadLog> importDatasetTSV(User user, StudyImpl study, DatasetDefinition dsd, DataLoader dl, LookupResolutionType lookupResolutionType, FileStream fileIn, String originalFileName, Map<String, String> columnMap, BatchValidationException errors, QueryUpdateService.InsertOption insertOption, @Nullable AuditBehaviorType auditBehaviorType)
     {
         DbScope scope = StudySchema.getInstance().getScope();
 
@@ -1004,7 +1004,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (defaultQCStateId != null)
                     defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
-                        defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
+                        defaultQCState, insertOption, null, lookupResolutionType, auditBehaviorType);
 
                 if (!errors.hasErrors())
                 {
@@ -1598,7 +1598,7 @@ public class StudyPublishManager implements StudyPublishService
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
-                String metadata = AbstractAuditTypeProvider.encodeForDataMap(sourceContainer, eventMetadata);
+                String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
                 List<Integer> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
                 List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);

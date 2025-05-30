@@ -513,10 +513,8 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public boolean hasFieldErrors(String name)
     {
-        if (_fieldErrors.containsKey(name) && _fieldErrors.get(name).size() > 0)
-            return true;
-
-        return false;
+        var fieldErrors = _fieldErrors.get(name);
+        return null != fieldErrors && !fieldErrors.isEmpty();
     }
 
     public boolean hasErrors()

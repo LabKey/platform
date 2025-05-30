@@ -15,7 +15,7 @@
  */
 package org.labkey.api.exp;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,12 +42,15 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,8 +67,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private String _name;
     private String _storageColumnName;
     private int _propertyId;
-    private Container _container;
-    private Container _project;
+    private GUID _containerId;
     private String _lookupContainer;
     private String _lookupSchema;
     private String _lookupQuery;
@@ -73,7 +75,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
     private Object _databaseDefaultValue;
 
-    private static final Logger LOG = LogManager.getLogger(PropertyDescriptor.class);
+    private static final Logger LOG = LogHelper.getLogger(PropertyDescriptor.class, "Property type warnings");
 
     @Override
     public void checkLocked()
@@ -289,31 +291,28 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     @Override
     public String toString()
     {
-        return _propertyURI + " name=" + _name + " project="+  (_project == null ? "null" : _project.getPath()) + " container="+  (_container ==null ? "null" : _container.getPath()) + " label=" + _label + " range=" + _rangeURI + " concept=" + _conceptURI;
+        return _propertyURI + " name=" + _name + " project="+  (getProject() == null ? "null" : getProject().getPath()) + " container="+  (getContainer() == null ? "null" : getContainer().getPath()) + " label=" + _label + " range=" + _rangeURI + " concept=" + _conceptURI;
     }
 
     public Container getContainer()
     {
-        return _container;
+        return ContainerManager.getForId(_containerId);
     }
 
     public void setContainer(Container container)
     {
-        _container = container;
-        if (null== _project)
-            _project =container.getProject();
-        if (null== _project)
-            _project =container;
+        _containerId = container.getEntityId();
     }
 
     public Container getProject()
     {
-        return _project;
+        var c = getContainer();
+        return null == c ? null : c.getProject();
     }
 
     public void setProject(Container proj)
     {
-        _project = proj;
+        // No-op - project is determined by _containerId
     }
 
     @NotNull
@@ -437,8 +436,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         if (to instanceof PropertyDescriptor)
         {
             PropertyDescriptor toPD = (PropertyDescriptor)to;
-            toPD._container = _container; // ?
-            toPD._project = _project; // ?
+            toPD._containerId = _containerId; // ?
             toPD._lookupContainer = _lookupContainer;
             toPD._lookupSchema = _lookupSchema;
             toPD._lookupQuery = _lookupQuery;
@@ -537,6 +535,62 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     {
         _databaseDefaultValue = databaseDefaultValue;
     }
+
+    public Map<String, Object> getAuditRecordMap(@Nullable String validatorStr, @Nullable String conditionalFormatStr)
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!StringUtils.isEmpty(getName()))
+            map.put("Name", getName());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (null != getPropertyType())
+        {
+            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
+                map.put("Type", "Flag");
+            else
+                map.put("Type", getPropertyType().getXarName());
+        }
+        if (getPropertyType().getJdbcType().isText())
+            map.put("Scale", getScale());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getFormat()))
+            map.put("Format", getFormat());
+        if (null !=getURL())
+            map.put("URL", getURL().toString());
+        if (null != getPHI())
+            map.put("PHI", getPHI().getLabel());
+        if (null !=getDefaultScale())
+            map.put("DefaultScale", getDefaultScale().getLabel());
+        map.put("Required", isRequired());
+        map.put("Hidden", isHidden());
+        map.put("MvEnabled", isMvEnabled());
+        map.put("Measure", isMeasure());
+        map.put("Dimension", isDimension());
+        map.put("ShownInInsert", isShownInInsertView());
+        map.put("ShownInDetails", isShownInDetailsView());
+        map.put("ShownInUpdate", isShownInUpdateView());
+        map.put("ShownInLookupView", isShownInLookupView());
+        map.put("RecommendedVariable", isRecommendedVariable());
+        map.put("ExcludedFromShifting", isExcludeFromShifting());
+        map.put("Scannable", isScannable());
+        if (!StringUtils.isEmpty(getDerivationDataScope()))
+            map.put("DerivationDataScope", getDerivationDataScope());
+        String importAliasStr = StringUtils.join(getImportAliasSet(), ",");
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAliases", importAliasStr);
+        if (null != getDefaultValueTypeEnum())
+            map.put("DefaultValueType", getDefaultValueTypeEnum().getLabel());
+        if (getLookup() != null)
+            map.put("Lookup", getLookup().toJSONString());
+        if (!StringUtils.isEmpty(validatorStr))
+            map.put("Validator", validatorStr);
+        if (!StringUtils.isEmpty(conditionalFormatStr))
+            map.put("ConditionalFormat", conditionalFormatStr);
+
+        return map;
+    }
+
 }
 
 

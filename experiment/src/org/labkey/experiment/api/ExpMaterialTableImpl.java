@@ -613,7 +613,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
             @Override
             protected ContainerFilter getLookupContainerFilter()
@@ -1604,7 +1604,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                             {
                                 for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterials(sublist))
-                                    expMaterial.index(searchService.defaultTask(), this);
+                                    expMaterial.index(searchService.defaultTask(), null, this);
                             })
                         );
 
@@ -1612,7 +1612,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpMaterialImpl expMaterial : experimentServiceImpl.getExpMaterialsByLsid(sublist))
-                                        expMaterial.index(searchService.defaultTask(), this);
+                                        expMaterial.index(searchService.defaultTask(), null, this);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT)
