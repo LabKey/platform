@@ -208,10 +208,6 @@ public class DatasetQueryView extends StudyQueryView
     {
         DataView view = super.createDataView();
         TableInfo table = view.getTable();
-
-        if (null == table)
-            throw new IllegalStateException("Could not create table from dataset: " + _dataset.getName());
-
         view.getDataRegion().setRecordSelectorValueColumns("lsid");
 
         if (null != _visit)
@@ -289,7 +285,7 @@ public class DatasetQueryView extends StudyQueryView
             @Override
             public Object getValue(RenderContext ctx)
             {
-                String value = (String)super.getValue(ctx);
+                Object value = super.getValue(ctx);
                 if (null == value)
                     return null;
                 String subjectId = (String)ctx.get(subject);
