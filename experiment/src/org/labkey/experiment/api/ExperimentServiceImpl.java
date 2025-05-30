@@ -10034,6 +10034,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      */
     public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment)
     {
+        if (!sourceFile.exists())
+            return false;
+
         // if not otherwise referenced, move the file. Otherwise, copy the file
         boolean isMove = getFileReferenceCount(user, sourceFileContainer, sourceFile) == 0; // source record already moved to target folder
         FileSystemAuditProvider.FileSystemAuditEvent event = null;
@@ -10042,7 +10045,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean success = sourceFile.renameTo(targetFile);
             if (!success)
             {
-                LOG.warn(String.format("Rename of '%s' to '%s' failed for " + actionComment, sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
+                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
                 return false;
             }
 
