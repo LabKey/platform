@@ -167,7 +167,6 @@ public class SecurityManager
     static final String NULL_PRINCIPAL_ERROR_MESSAGE = "Null principal not allowed";
     static final String ALREADY_A_MEMBER_ERROR_MESSAGE = "Principal is already a member of this group";
     static final String ADD_GROUP_TO_ITSELF_ERROR_MESSAGE = "Can't add a group to itself";
-    static final String ADD_TO_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a group to a system group";
     static final String ADD_SYSTEM_GROUP_ERROR_MESSAGE = "Can't add a system group to another group";
     static final String DIFFERENT_PROJECTS_ERROR_MESSAGE = "Can't add a project group to a group in a different project";
     static final String PROJECT_TO_SITE_ERROR_MESSAGE = "Can't add a project group to a site group";

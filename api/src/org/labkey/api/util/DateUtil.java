@@ -36,8 +36,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.time.CalendarParts;
 import org.labkey.api.util.time.ParseDateTimeEN;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -64,6 +62,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static java.util.Calendar.AM_PM;
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -122,6 +121,9 @@ public class DateUtil
         ISO_LONG_TIME_FORMAT_STRING,
         "hh:mm a"
     );
+
+    private static final Pattern SIGNED_TIME_DURATION_PATTERN =
+            Pattern.compile("^[+-]\\d+[pymdhtsPMDHTS].*");
 
     public static boolean isStandardDateDisplayFormat(String dateFormat)
     {
@@ -1150,7 +1152,9 @@ public class DateUtil
     {
         try
         {
-            if (!(durationCandidate.startsWith("+") || durationCandidate.startsWith("-")))
+            // This should match values starting with [sign][number][date/time duration units] (ex. +1d, -300d).
+            // This should not match other signed values like just "+" or "-" or temps "-80C"
+            if (!SIGNED_TIME_DURATION_PATTERN.matcher(durationCandidate).matches())
             {
                 return false;
             }
