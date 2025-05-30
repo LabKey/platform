@@ -1029,6 +1029,20 @@ public class ConvertHelper implements PropertyEditorRegistrar
             convertedDate = new LenientTimestampConverter().convert(Timestamp.class, "Thu Jun 10 00:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,0,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Timestamp)convertedDate));
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "+212F");
+                fail("Should have failed to parse temperature");
+            }
+            catch (ConversionException ignored) {}
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "-");
+                fail("Should have failed to parse just a sign");
+            }
+            catch (ConversionException ignored) {}
         }
 
         @Test
@@ -1050,6 +1064,21 @@ public class ConvertHelper implements PropertyEditorRegistrar
             convertedDate = new LenientDateConverter().convert(Date.class, "Thu Jun 10 08:00:00 PDT 1999");
             cal.set(1999, Calendar.JUNE,10,8,0,0);
             assertEquals("Wrong date", DateUtil.getDateOnly(cal.getTime()), DateUtil.getDateOnly((Date)convertedDate));
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "-80C");
+                fail("Should have failed to parse temperature");
+            }
+            catch (ConversionException ignored) {}
+
+            try
+            {
+                new LenientDateConverter().convert(Date.class, "+");
+                fail("Should have failed to parse just a sign");
+            }
+            catch (ConversionException ignored) {}
+
         }
 
         @Test
