@@ -805,6 +805,9 @@ public class PublishResultsQueryView extends QueryView
         @Override
         public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
+            // Value might be null and HtmlString handles that
+            HtmlString htmlValue = HtmlString.of(getValue(ctx));
+
             if (_editable)
             {
                 ActionURL completionBase = getCompletionBase(ctx);
@@ -841,17 +844,13 @@ public class PublishResultsQueryView extends QueryView
 
                     String inputId = "input-tag-" + UniqueID.getRequestScopedUID(ctx.getRequest());
                     String completionId = "auto-complete-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
-                    String value = PageFlowUtil.filter(getValue(ctx));
 
-                    StringBuilder sb = new StringBuilder();
-
-                    // render our own input tag and attach the completions div lazily when the input receives
-                    // focus
+                    // render our own input tag and attach the completions div lazily when the input receives focus
                     HttpView.currentPageConfig().addHandler(inputId, "focus", "onCompletionFocus(this);");
                     InputBuilder.text()
                         .id(inputId)
                         .name(_formElementName)
-                        .value(value)
+                        .value(htmlValue)
                         .addDataAttribute("completionId", completionId)
                         .addDataAttribute("completion", completionBase.toString())
                         .appendTo(out);
@@ -861,12 +860,12 @@ public class PublishResultsQueryView extends QueryView
                 }
                 else
                 {
-                    out.write(InputBuilder.text().name(_formElementName).value(getValue(ctx).toString()));
+                    out.write(InputBuilder.text().name(_formElementName).value(htmlValue));
                 }
             }
             else
             {
-                out.write(InputBuilder.hidden().name(_formElementName).value(getValue(ctx).toString()));
+                out.write(InputBuilder.hidden().name(_formElementName).value(htmlValue));
             }
         }
     }
