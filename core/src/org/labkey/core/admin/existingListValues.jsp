@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController.AllowListForm" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteAllValuesAction" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.SortHelpers" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -65,19 +67,21 @@
 <labkey:form name="existingValues" id="form-existingValues" method="post">
     <%
         AllowListForm bean = (AllowListForm) HttpView.currentModel();
+        List<String> exitingValues = bean.getExistingValuesList();
+        exitingValues.sort(SortHelpers.getNaturalOrderStringComparator());
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
             <th><%=h(bean.getTypeEnum().getTitle() + "s")%></th>
             <th></th>
         </tr>
-        <% if (bean.getExistingValuesList().isEmpty()) { %>
+        <% if (exitingValues.isEmpty()) { %>
             <tr><td colspan="2">No <%=h(bean.getTypeEnum().getTitle())%>s have been configured.</td></tr>
         <% } %>
 
         <%
             int num = 1;
-            for (String value : bean.getExistingValuesList()) {
+            for (String value : exitingValues) {
                 String inputNameExisting = "existingValue" + num;
         %>
         <tr>
@@ -93,7 +97,7 @@
             }
         %>
     </table>
-        <% if (!bean.getExistingValuesList().isEmpty()) { %>
+        <% if (!exitingValues.isEmpty()) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
             <input type="hidden" id="existingValue" name="existingValue" value="" />
             <input type="hidden" id="existingValues" name="existingValues" value="" />

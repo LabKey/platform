@@ -16,7 +16,6 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -24,9 +23,8 @@ import org.labkey.api.security.SettingsField;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationAction;
 
-/**
- * Created by adam on 6/5/2016.
- */
+import java.util.List;
+
 public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfiguration>
 {
     public static final String NAME = "TestSSO";
@@ -64,10 +62,11 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     }
 
     @Override
-    public @NotNull JSONArray getSettingsFields()
+    public @NotNull List<SettingsField> getSettingsFields()
     {
-        return new JSONArray()
-            .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false))
-            .put(SettingsField.getStandardDomainField());
+        return List.of(
+            SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false),
+            SettingsField.getStandardDomainField()
+        );
     }
 }

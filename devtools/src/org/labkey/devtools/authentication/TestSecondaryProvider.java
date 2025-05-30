@@ -17,12 +17,14 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
+import org.labkey.api.security.SettingsField;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationAction;
+
+import java.util.List;
 
 public class TestSecondaryProvider implements SecondaryAuthenticationProvider<TestSecondaryConfiguration>
 {
@@ -61,9 +63,9 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     }
 
     @Override
-    public @NotNull JSONArray getSettingsFields()
+    public @NotNull List<SettingsField> getSettingsFields()
     {
-        return addRequiredForField(new JSONArray(), "Test 2FA");
+        return List.of(getRequiredForField("Test 2FA"));
     }
 
     @Override
