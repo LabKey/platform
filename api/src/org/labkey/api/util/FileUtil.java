@@ -61,6 +61,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -1078,6 +1079,17 @@ public class FileUtil
         }
     }
 
+    private static FileLock acquireLock(FileChannel out) throws IOException
+    {
+        try
+        {
+            return out.lock();
+        }
+        catch (OverlappingFileLockException e)
+        {
+            throw new IOException(e);
+        }
+    }
 
     // FileUtil.copyFile() does not use transferTo() or sync()
     public static void copyFile(ReadableByteChannel in, long expected, File dst) throws IOException
@@ -1092,7 +1104,7 @@ public class FileUtil
 
         try (FileOutputStream os = new FileOutputStream(dst);
              FileChannel out = os.getChannel();
-             FileLock lockOut = out.lock())
+             FileLock lockOut = acquireLock(out))
         {
             do
             {
