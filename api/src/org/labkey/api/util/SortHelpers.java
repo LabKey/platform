@@ -17,9 +17,6 @@ package org.labkey.api.util;
 
 import java.util.Comparator;
 
-/**
- * Created by eyounske on 5/10/16.
- */
 public class SortHelpers
 {
     // Natural sort ordering
@@ -88,11 +85,11 @@ public class SortHelpers
 
     public static Comparator<String> getNaturalOrderStringComparator()
     {
-        return (String s1, String s2) -> compareNatural(s1, s2);
+        return SortHelpers::compareNatural;
     }
 
     public static Comparator<Object> getNaturalOrderObjectComparator()
     {
-        return (Object obj1, Object obj2) -> compareNatural(obj1, obj2);
+        return SortHelpers::compareNatural;
     }
 }

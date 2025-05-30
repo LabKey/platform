@@ -204,7 +204,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
         URLHelper getRedirectURL(User candidate, Container c);
 
-        boolean isRequired(User user);
+        @Nullable String getNotRequiredMessage(User user, HttpServletRequest request);
 
         enum RequiredFor
         {

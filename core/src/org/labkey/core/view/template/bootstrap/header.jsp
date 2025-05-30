@@ -283,7 +283,7 @@
 <%
     }
 
-    if (PageFlowUtil.isPageAdminMode(getViewContext()))
+    if (isStartupComplete && PageFlowUtil.isPageAdminMode(getViewContext()))
     {
         ActionURL exitUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL());
 %>
