@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.StringExpression;
@@ -42,7 +43,6 @@ public class SimpleDisplayColumn extends DisplayColumn
 
     public SimpleDisplayColumn(String displayHTML)
     {
-        super();
         setDisplayHtml(displayHTML);
     }
 
@@ -51,14 +51,9 @@ public class SimpleDisplayColumn extends DisplayColumn
         _displayHTML = StringExpressionFactory.create(displayHTML);
     }
 
-    public String getDisplayHTML()
+    public HtmlString getDisplayHTML(RenderContext ctx)
     {
-        return _displayHTML == null ? null : _displayHTML.getSource();
-    }
-
-    public String getDisplayHTML(RenderContext ctx)
-    {
-        return _displayHTML == null ? null : _displayHTML.eval(ctx);
+        return _displayHTML == null ? null : HtmlString.unsafe(_displayHTML.eval(ctx));
     }
 
     @Override
@@ -126,19 +121,29 @@ public class SimpleDisplayColumn extends DisplayColumn
     {
         Object value = getDisplayValue(ctx);
         final String text;
+        final Renderable renderable;
 
-        if (value == null)
-            text = "";
-        else if (null == _format)
-            text = getDisplayValue(ctx).toString();
+        if (value instanceof Renderable r)
+        {
+            renderable = r;
+            text = null;
+        }
         else
-            text = _format.format(getDisplayValue(ctx));
+        {
+            renderable = null;
+            if (value == null)
+                text = "";
+            else if (null == _format)
+                text = value.toString();
+            else
+                text = _format.format(value);
+        }
 
         String url = renderURL(ctx);
         if (null != url)
         {
             String linkTarget = getLinkTarget();
-            LinkBuilder lb = new LinkBuilder(text)
+            LinkBuilder lb = (renderable != null ? new LinkBuilder(renderable) : new LinkBuilder(text))
                 .href(url)
                 .target(linkTarget)
                 .addClass(getLinkCls());
@@ -150,7 +155,7 @@ public class SimpleDisplayColumn extends DisplayColumn
         }
         else
         {
-            out.write(text);
+            out.write(renderable != null ? renderable : text);
         }
     }
 
