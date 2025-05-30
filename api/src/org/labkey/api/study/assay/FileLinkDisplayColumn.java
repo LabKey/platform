@@ -55,18 +55,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
-* Date: Oct 23, 2007
-* Time: 2:08:29 PM
-*/
 public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
     // Issue 46282 - let admins choose if files should be rendered inside browser or downloaded as files
@@ -75,8 +69,9 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 
     public static class Factory implements RemappingDisplayColumnFactory
     {
+        private final Container _container;
+
         private PropertyDescriptor _pd;
-        private Container _container;
         private DetailsURL _detailsUrl;
         private SchemaKey _schemaKey;
         private String _queryName;
@@ -152,7 +147,8 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         }
     }
 
-    private Container _container;
+    private final Container _container;
+
     private FieldKey _pkFieldKey;
     private FieldKey _objectURIFieldKey;
 
