@@ -1,7 +1,9 @@
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 
@@ -21,9 +23,9 @@ public abstract class BaseSecondaryAuthenticationConfiguration<AP extends Second
     }
 
     @Override
-    public boolean isRequired(User user)
+    public @Nullable String getNotRequiredMessage(User user, HttpServletRequest request)
     {
-        return _requiredFor.isRequired(user);
+        return _requiredFor.isRequired(user) ? null : "lacks the \"Require Secondary Authentication\" role";
     }
 
     @Override

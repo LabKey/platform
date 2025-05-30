@@ -836,7 +836,7 @@ public class PageFlowUtil
 
     public static int[] toInts(Collection<String> strings)
     {
-        return toInts(strings.toArray(new String[strings.size()]));
+        return toInts(strings.toArray(new String[0]));
     }
 
     public static int[] toInts(String[] strings)
