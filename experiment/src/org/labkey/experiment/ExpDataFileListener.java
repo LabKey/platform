@@ -56,6 +56,12 @@ public class ExpDataFileListener extends TableUpdaterFileListener
     @Override
     public int fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container sourceContainer, @Nullable Container targetContainer)
     {
+        // Issue 53070: Moving files could result in duplicate exp.data records
+        boolean deleteSrc = false;
+        ExpData existingConflict = ExperimentService.get().getExpDataByURL(dest, targetContainer);
+        if (existingConflict != null)
+            deleteSrc = true;
+
         ExpData data = ExperimentService.get().getExpDataByURL(src, sourceContainer);
 
         if (data == null)
@@ -71,15 +77,18 @@ public class ExpDataFileListener extends TableUpdaterFileListener
         int extra = 0;
         if (data != null && src.equals(data.getFilePath()) && !src.equals(dest))
         {
-            // The file has been renamed, so rename the exp.data row if its name matches
-            data.setName(FileUtil.getFileName(dest));
-            // if the data object moved containers, set that as well
-            if (targetContainer != null && !targetContainer.equals(sourceContainer))
-                data.setContainer(targetContainer);
-            ExpData existingData = ExperimentService.get().getExpDataByURL(data.getFilePath(), targetContainer);
-            // Issue 53070: Moving files could result in duplicate exp.data records
-            if (existingData != null)
+            if (deleteSrc)
             {
+                data.delete(user);
+                return 0;
+            }
+            else
+            {
+                // The file has been renamed, so rename the exp.data row if its name matches
+                data.setName(FileUtil.getFileName(dest));
+                // if the data object moved containers, set that as well
+                if (targetContainer != null && !targetContainer.equals(sourceContainer))
+                    data.setContainer(targetContainer);
                 data.save(user);
                 extra = 1;
             }

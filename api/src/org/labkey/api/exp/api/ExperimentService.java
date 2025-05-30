@@ -138,7 +138,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         ServiceRegistry.get().registerService(ExperimentService.class, impl);
     }
 
-    boolean canMoveFileReference(User user, Container sourceContainer, File sourceFile);
+    boolean canMoveFileReference(User user, Container sourceContainer, File sourceFile, int moveCount);
 
     enum QueryOptions
     {

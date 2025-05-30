@@ -10082,9 +10082,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public boolean canMoveFileReference(User user, Container container, File file)
+    public boolean canMoveFileReference(User user, Container container, File file, int moveCount)
     {
-        return getFileReferenceCount(user, container, file) <= 1;
+        return getFileReferenceCount(user, container, file) <= moveCount;
     }
 
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException

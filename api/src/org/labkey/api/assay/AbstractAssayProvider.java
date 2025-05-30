@@ -74,7 +74,6 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.files.FileContentService;
@@ -1926,6 +1925,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 .getProperties().stream()
                 .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
 
+        Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
+        Map<String, Integer> fileMoveCounts = new HashMap<>();
+
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService != null && !fileDomainProps.isEmpty())
         {
@@ -1953,16 +1955,30 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
                     if (updatedFile != null)
                     {
-                        if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
-                            throw new ExperimentException("Assay batch " + experiment.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+                        if (!fileMoveReferences.containsKey(sourceFileName))
+                            fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, experiment.getName()));
+
+                        if (!fileMoveCounts.containsKey(sourceFileName))
+                            fileMoveCounts.put(sourceFileName, 0);
+                        fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
 
                         ExpRun run = batchRun.get(experiment.getRowId());
                         Integer runId = run.getRowId();
                         movedFiles.putIfAbsent(runId, new ArrayList<>());
                         movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
-                        fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                     }
                 }
+            }
+
+            for (String sourceFileName : fileMoveReferences.keySet())
+            {
+                AssayFileMoveReference ref = fileMoveReferences.get(sourceFileName);
+                int count = fileMoveCounts.get(sourceFileName);
+                File sourceFile = new File(sourceFileName);
+                if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile, count))
+                    throw new ExperimentException("Assay batch " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
+                fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
             }
 
         }
@@ -1994,6 +2010,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (fileContentService == null)
             return;
 
+        Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
+        Map<String, Integer> fileMoveCounts = new HashMap<>();
+
         for (ExpRun run : runs)
         {
             for (DomainProperty fileProp : fileDomainProps)
@@ -2018,16 +2037,31 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
                 if (updatedFile != null)
                 {
-                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
-                        throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+                    if (!fileMoveReferences.containsKey(sourceFileName))
+                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName()));
+
+                    if (!fileMoveCounts.containsKey(sourceFileName))
+                        fileMoveCounts.put(sourceFileName, 0);
+                    fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
 
                     Integer runId = run.getRowId();
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
                     movedFiles.get(runId).add(new AssayFileMoveData(run, run.getContainer(), fileProp.getName(), sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
                 }
             }
         }
+
+        for (String sourceFileName : fileMoveReferences.keySet())
+        {
+            AssayFileMoveReference ref = fileMoveReferences.get(sourceFileName);
+            int count = fileMoveCounts.get(sourceFileName);
+            File sourceFile = new File(sourceFileName);
+            if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile, count))
+                throw new ExperimentException("Assay run " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
+            fileContentService.fireFileMoveEvent(sourceFile.toPath(), ref.updatedFile.toPath(), user, sourceContainer, targetContainer);
+        }
+
     }
 
     private void updateDataFileUrl(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
@@ -2064,7 +2098,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (updatedFile != null)
                 {
                     ExpRun run = runMap.get(runId);
-                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
+                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile, 1))
                         throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
 
                     movedFiles.putIfAbsent(runId, new ArrayList<>());
@@ -2089,6 +2123,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         updateResultFiles(assayResultTable, runs, protocol, sourceContainer, targetContainer, user, assayMoveData);
     }
+
+    record AssayFileMoveReference(String sourceFilePath, File updatedFile, String runName) {}
 
     private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData) throws ExperimentException
     {
@@ -2121,6 +2157,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         Map<Integer, ExpRun> runMap = new HashMap<>();
         runs.forEach(run -> runMap.put(run.getRowId(), run));
 
+        Map<String, AssayFileMoveReference> fileMoveReferences = new HashMap<>();
+        Map<String, List<Integer>> fileMoveResultRowIds = new HashMap<>();
         for (String fileField : fileFields)
         {
             var fileColumn = assayResultTable.getColumn(fileField);
@@ -2134,43 +2172,58 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     continue;
                 Integer resultRowId = (Integer) resultRow.get("rowid");
                 Integer resultRunId = (Integer) resultRow.get("run");
+                if (!fileMoveResultRowIds.containsKey(sourceFileName))
+                    fileMoveResultRowIds.put(sourceFileName, new ArrayList<>());
+                fileMoveResultRowIds.get(sourceFileName).add(resultRowId);
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
                 if (updatedFile != null)
                 {
                     File sourceFile = new File(sourceFileName);
                     ExpRun run = runMap.get(resultRunId);
 
-                    if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile))
-                        throw new ExperimentException("Assay run " + run.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
+                    if (!fileMoveReferences.containsKey(sourceFileName))
+                        fileMoveReferences.put(sourceFileName, new AssayFileMoveReference(sourceFileName, updatedFile, run.getName()));
 
                     movedFiles.putIfAbsent(resultRunId, new ArrayList<>());
                     movedFiles.get(resultRunId).add(new AssayFileMoveData(run, run.getContainer(), fileField, sourceFile, updatedFile));
-
-                    // update the exp.Object row for the file results row
-                    // TODO refactor so that the updates to the related exp.Object rows are done in the ExpDataFileListener (see similar updates in moveRuns() and moveRunsBatch())
-                    // TODO also use exp.data.objectId instead of objecturi
-                    TableInfo expDataTable = ExperimentService.get().getTinfoData();
-                    TableInfo expObjectTable = OntologyManager.getTinfoObject();
-                    SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                            .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                            .append(" WHERE objecturi IN ( SELECT lsid FROM ")
-                            .append(expDataTable)
-                            .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
-                    updateSql.append(")");
-                    new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
-
-                    fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
-
-                    var realTable = assayResultTable.getRealTable();
-                    var realFileColumn = realTable.getColumn(fileField);
-                    updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
-                            .append(" SET ")
-                            .appendIdentifier(realFileColumn.getSelectIdentifier())
-                            .append(" = ").appendValue(updatedFile.getAbsolutePath())
-                            .append(" WHERE rowId = ").appendValue(resultRowId);
-                    new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
                 }
             }
+
+            for (String sourceFileName : fileMoveReferences.keySet())
+            {
+                AssayFileMoveReference ref = fileMoveReferences.get(sourceFileName);
+                int count = fileMoveResultRowIds.get(sourceFileName).size();
+                File sourceFile = new File(sourceFileName);
+                if (!ExperimentService.get().canMoveFileReference(user, sourceContainer, sourceFile, count))
+                    throw new ExperimentException("Assay run " + ref.runName + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
+                File updatedFile = ref.updatedFile;
+                // update the exp.Object row for the file results row
+                // TODO refactor so that the updates to the related exp.Object rows are done in the ExpDataFileListener (see similar updates in moveRuns() and moveRunsBatch())
+                // TODO also use exp.data.objectId instead of objecturi
+                TableInfo expDataTable = ExperimentService.get().getTinfoData();
+                TableInfo expObjectTable = OntologyManager.getTinfoObject();
+                SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+                        .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                        .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                        .append(expDataTable)
+                        .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
+                updateSql.append(")");
+                new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
+
+                fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
+
+                var realTable = assayResultTable.getRealTable();
+                var realFileColumn = realTable.getColumn(fileField);
+                updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
+                        .append(" SET ")
+                        .appendIdentifier(realFileColumn.getSelectIdentifier())
+                        .append(" = ").appendValue(updatedFile.getAbsolutePath())
+                        .append(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
+                new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
+
+            }
+
         }
     }
 }

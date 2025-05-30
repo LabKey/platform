@@ -2052,6 +2052,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return runCount;
     }
 
+    record SampleFileMoveReference(String sourceFilePath, File targetFile, Container sourceContainer, String sampleName) {}
+
     // return the map of file renames
     private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException
     {
@@ -2077,6 +2079,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return sampleFileRenames;
 
         Map<Container, Boolean> hasFileRoot = new HashMap<>();
+        Map<String, Integer> fileMoveCounts = new HashMap<>();
+        Map<String, SampleFileMoveReference> fileMoveReferences = new HashMap<>();
         for (ExpMaterial sample : samples)
         {
             boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
@@ -2086,13 +2090,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (DomainProperty fileProp : fileDomainProps )
                 {
                     String sourceFileName = (String) sample.getProperty(fileProp);
-                    // check if file is referenced by others
+                    if (StringUtils.isBlank(sourceFileName))
+                        continue;
                     File updatedFile = FileContentService.get().getMoveTargetFile(sourceFileName, sample.getContainer(), targetContainer);
                     if (updatedFile != null)
                     {
+
+                        if (!fileMoveReferences.containsKey(sourceFileName))
+                            fileMoveReferences.put(sourceFileName, new SampleFileMoveReference(sourceFileName, updatedFile, sample.getContainer(), sample.getName()));
+                        if (!fileMoveCounts.containsKey(sourceFileName))
+                            fileMoveCounts.put(sourceFileName, 0);
+                        fileMoveCounts.put(sourceFileName, fileMoveCounts.get(sourceFileName) + 1);
+
                         File sourceFile = new File(sourceFileName);
-                        if (!ExperimentServiceImpl.get().canMoveFileReference(user, sample.getContainer(), sourceFile))
-                            throw new ExperimentException("Sample " + sample.getName() + " cannot be moved since it references a shared file: " + sourceFile.getName());
                         FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), sourceFile, updatedFile);
                         sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
                         List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
@@ -2101,12 +2111,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
         }
 
-        // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
-        for (int sampleId: sampleFileRenames.keySet())
+        for (String filePath : fileMoveReferences.keySet())
         {
-            List<FileFieldRenameData> fieldRenameRecords = sampleFileRenames.get(sampleId);
-            for (FileFieldRenameData renameData : fieldRenameRecords)
-                fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
+            SampleFileMoveReference ref = fileMoveReferences.get(filePath);
+            File sourceFile = new File(filePath);
+            if (!ExperimentServiceImpl.get().canMoveFileReference(user, ref.sourceContainer, sourceFile, fileMoveCounts.get(filePath)))
+                throw new ExperimentException("Sample " + ref.sampleName + " cannot be moved since it references a shared file: " + sourceFile.getName());
+
+            // TODO, support batch fireFileMoveEvent to avoid excessive FileLinkFileListener.hardTableFileLinkColumns calls
+            fileService.fireFileMoveEvent(sourceFile, ref.targetFile, user, targetContainer);
         }
 
         return sampleFileRenames;
