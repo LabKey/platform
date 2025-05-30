@@ -77,6 +77,8 @@ public interface AttachmentService
 
     void deleteAttachments(Collection<AttachmentParent> parents);
 
+    void validateAttachmentSizes(AttachmentParent parent, List<AttachmentFile> files) throws IOException;
+
     /**
      * Deletes the attachments with the given names from the given AttachmentParent.
      * @param parent: The AttachmentParent to delete files from
