@@ -28,7 +28,7 @@ import java.io.InputStream;
 
 import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
-import static org.labkey.api.util.DOM.Element.title;
+import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.at;
 
