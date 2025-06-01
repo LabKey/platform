@@ -17,7 +17,7 @@
 package org.labkey.api.study.assay;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.assay.AssayRunUploadContext;
@@ -32,7 +32,6 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.InsertView;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,8 +41,6 @@ import java.util.Map;
 /**
  * A factory for {@link ParticipantVisitResolver} objects, which is also responsible for showing whatever UI is needed
  * to collect user information to feed into the resolver during the link to study operation.
- * User: jeckels
- * Date: Sep 20, 2007
  */
 public interface ParticipantVisitResolverType
 {

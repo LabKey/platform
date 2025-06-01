@@ -154,7 +154,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                                 TD(),
                                 TD(
                                     DIV(
-                                        id("ResolverDiv-" + resolver.getName()).at(finalSelected == resolver, style, "display:none"),
+                                        id("ResolverDiv-" + resolver.getName()).at(finalSelected != resolver, style, "display:none"),
                                         (DOM.Renderable) ret2 -> {
                                             try
                                             {
