@@ -655,7 +655,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             primaryGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasParentInputs(), expressionSummary.hasParentLookup(), expressionSummary.hasAncestorSearch()));
         }
 
-        return new SampleTypeUpdateServiceDI.SampleNameGeneratorState(primaryGen, incrementSampleCounts, aliquotNameGen);
+        return new SampleTypeUpdateServiceDI.SampleNameGeneratorState(this, primaryGen, incrementSampleCounts, aliquotNameGen);
     }
 
     private Container getGenIdSequenceContainer()
