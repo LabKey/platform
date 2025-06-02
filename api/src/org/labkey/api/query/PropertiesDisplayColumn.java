@@ -21,12 +21,11 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +38,11 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TBODY;
+import static org.labkey.api.util.DOM.THEAD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.cl;
 
 public class PropertiesDisplayColumn extends DataColumn implements NestedPropertyDisplayColumn
 {
@@ -186,32 +190,31 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         updateInnerContext(ctx);
 
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            oldWriter.write("<table>");
-            oldWriter.write("<table class='table-condensed labkey-data-region table-bordered'>");
-            oldWriter.write("<thead>");
-            oldWriter.write("<tr>");
-            for (var pair : innerCtxCols)
-            {
-                pair.second.renderGridHeaderCell(innerCtx, out);
-            }
-            oldWriter.write("</tr>");
-            oldWriter.write("</thead>");
-
-            oldWriter.write("<tbody>");
-            oldWriter.write("<tr>");
-            for (var pair : innerCtxCols)
-            {
-                pair.second.renderGridDataCell(innerCtx, out);
-            }
-            oldWriter.write("</tr>");
-            oldWriter.write("</tbody>");
-            oldWriter.write("</table>");
+            TABLE(
+                cl("table-condensed labkey-data-region table-bordered"),
+                THEAD(
+                    TR(
+                        (DOM.Renderable) ret -> {
+                            innerCtxCols.forEach(p -> p.second.renderGridHeaderCell(innerCtx, out));
+                            return ret;
+                        }
+                    )
+                ),
+                TBODY(
+                    TR(
+                        (DOM.Renderable) ret -> {
+                            innerCtxCols.forEach(p -> p.second.renderGridDataCell(innerCtx, out));
+                            return ret;
+                        }
+                    )
+                )
+            ).appendTo(out);
         }
     }
 

@@ -24,9 +24,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
-
 /**
  * A button that responds to a user click by popping up a drop-down menu.
  */
@@ -48,12 +45,6 @@ public class MenuButton extends ActionButton
         {
             navTree.setId(menuId);
         }
-    }
-
-    @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
-    {
-        render(ctx, HtmlWriter.of(out));
     }
 
     @Override

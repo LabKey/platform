@@ -106,7 +106,7 @@ public class PopupMenu extends DisplayElement
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         render(out);
     }

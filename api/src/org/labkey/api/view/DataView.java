@@ -19,8 +19,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -59,9 +57,7 @@ import java.util.Set;
  */
 public abstract class DataView extends WebPartView<RenderContext>
 {
-    private DataRegion _dataRegion = null;
-
-    private static final Logger _log = LogManager.getLogger(DataView.class);
+    private DataRegion _dataRegion;
 
     // Call this constructor if you need to subclass the RenderContext
     public DataView(DataRegion dataRegion, RenderContext ctx)
@@ -267,7 +263,6 @@ public abstract class DataView extends WebPartView<RenderContext>
         // TODO: HtmlString. HtmlStringWriter?
         writer.write(out.toString());
     }
-
 
     /**
      * Since we're using user-defined sql, we can get a SQLException that

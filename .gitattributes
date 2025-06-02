@@ -451,7 +451,6 @@ api/src/org/labkey/api/data/dialect/KeywordCandidates.java -text
 api/src/org/labkey/api/data/dialect/MockSqlDialect.java -text
 api/src/org/labkey/api/data/dialect/ParameterSubstitutionTest.java -text
 api/src/org/labkey/api/data/dialect/PkMetaDataReader.java -text
-api/src/org/labkey/api/data/dialect/PostgreSql91Dialect.java -text
 api/src/org/labkey/api/data/dialect/SimpleSqlDialect.java -text
 api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/SqlDialect.java -text
@@ -1342,7 +1341,6 @@ api/src/org/labkey/api/trigger/TriggerConfiguration.java -text
 api/src/org/labkey/api/usageMetrics/UsageMetricsProvider.java -text
 api/src/org/labkey/api/usageMetrics/UsageMetricsService.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
-api/src/org/labkey/api/util/Button.java -text
 api/src/org/labkey/api/util/ButtonBarRenderer.java -text
 api/src/org/labkey/api/util/CheckedInputStream.java -text
 api/src/org/labkey/api/util/ChecksumUtil.java -text
@@ -1354,7 +1352,6 @@ api/src/org/labkey/api/util/DemoMode.java -text
 api/src/org/labkey/api/util/DisplayElementBuilder.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
 api/src/org/labkey/api/util/DotRunner.java -text
-api/src/org/labkey/api/util/element/DisplayField.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/ErrorRenderer.java -text
@@ -1378,7 +1375,6 @@ api/src/org/labkey/api/util/ImageUtil.java -text
 api/src/org/labkey/api/util/InputStreamWrapper.java -text
 api/src/org/labkey/api/util/Job.java -text
 api/src/org/labkey/api/util/JobRunner.java -text
-api/src/org/labkey/api/util/Link.java -text
 api/src/org/labkey/api/util/LogOutputStream.java -text
 api/src/org/labkey/api/util/LogPrintWriter.java -text
 api/src/org/labkey/api/util/MaintenancePipelineJob.java -text
@@ -1460,7 +1456,6 @@ api/src/org/labkey/api/view/ShortURLRecord.java -text
 api/src/org/labkey/api/view/ShortURLRecordConverter.java -text
 api/src/org/labkey/api/view/ShortURLService.java -text
 api/src/org/labkey/api/view/SimpleFolderTab.java -text
-api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/view/SimpleWebPartFactoryCacheHandler.java -text
 api/src/org/labkey/api/view/springError.jsp -text
@@ -2366,7 +2361,6 @@ pipeline/src/org/labkey/pipeline/PipelineWebPart.java -text
 pipeline/src/org/labkey/pipeline/query/TriggerConfigurationsTable.java -text
 pipeline/src/org/labkey/pipeline/setup.jsp -text
 pipeline/src/org/labkey/pipeline/startPipelineImport.jsp -text
-pipeline/src/org/labkey/pipeline/status/DescriptionDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/FileDisplayColumn.java -text
 pipeline/src/org/labkey/pipeline/status/JobStatusLogView.java -text
@@ -2632,10 +2626,6 @@ study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
-study/resources/web/progress-report.lib.xml -text
-study/resources/web/progress-report/config.css -text
-study/resources/web/progress-report/config.js -text
-study/resources/web/progress-report/progressReport.js -text
 study/schemas/studySecurityPolicy.xsd -text
 study/src/org/labkey/study/assay/ExperimentListenerImpl.java -text
 study/src/org/labkey/study/audit/StudyAuditProvider.java -text
@@ -2786,12 +2776,9 @@ study/src/org/labkey/study/query/VisitTable.java -text
 study/src/org/labkey/study/query/VisitTagMapQueryUpdateService.java -text
 study/src/org/labkey/study/query/VisitTagTable.java -text
 study/src/org/labkey/study/query/VisitUpdateService.java -text
-study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
-study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
-study/src/org/labkey/study/reports/QueryAssayProgressSource.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
 study/src/org/labkey/study/reports/StudyCrosstabReport.java -text
@@ -2810,7 +2797,6 @@ study/src/org/labkey/study/StudyMacroProvider.java -text
 study/src/org/labkey/study/StudyModule.java -text
 study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyUnionTableInfo.java -text
-study/src/org/labkey/study/view/assayProgressReport.jsp -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/bulkVisitDelete.jsp -text
 study/src/org/labkey/study/view/confirmDeleteLocation.jsp -text
@@ -2852,7 +2838,6 @@ study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
 study/src/org/labkey/study/view/participantReport.jsp -text
-study/src/org/labkey/study/view/renderAssayProgressReport.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
@@ -2933,15 +2918,12 @@ study/test/sampledata/study/commondata/URF-1.tsv -text
 study/test/sampledata/study/commondata/VAC-1.tsv -text
 study/test/src/org/labkey/test/pages/AssayQueryConfig.java -text
 study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
-study/test/src/org/labkey/test/pages/ProgressReportConfigPage.java -text
 study/test/src/org/labkey/test/tests/search/SearchSyntaxTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/study/AbstractStudyTimeKeyFieldTest.java -text
-study/test/src/org/labkey/test/tests/study/AncillaryStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
 study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
-study/test/src/org/labkey/test/tests/study/ProgressReportTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
 study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text

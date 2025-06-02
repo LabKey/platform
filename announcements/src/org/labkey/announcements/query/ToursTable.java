@@ -23,13 +23,10 @@ import org.labkey.announcements.ToursController;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -42,8 +39,6 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,26 +104,14 @@ public class ToursTable extends FilteredTable<AnnouncementSchema>
         containerCol.setLabel("Folder");
 
         var modeCol = getMutableColumn("Mode");
-        modeCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        modeCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
         {
             @Override
-            public DisplayColumn createRenderer(final ColumnInfo colInfo)
+            public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
             {
-                DataColumn dc = new DataColumn(colInfo)
-                {
-                    @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
-                    {
-                        Object value = getValue(ctx);
-                        Modes m = Modes.fromValue((Integer)value);
-                        if(null != m)
-                            oldWriter.write(m.toString());
-                        else
-                            oldWriter.write(value.toString());
-                    }
-                };
-
-                return dc;
+                Object value = getValue(ctx);
+                Modes m = Modes.fromValue((Integer)value);
+                out.write(m != null ? m.toString() : value.toString());
             }
         });
 
