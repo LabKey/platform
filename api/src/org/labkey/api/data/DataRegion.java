@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.BoundMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
@@ -1978,6 +1979,16 @@ public class DataRegion extends DisplayElement
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
         {
+            if (!hasPermission(ctx, ReadPermission.class))
+                throw new UnauthorizedException();
+
+            valueMap = new CaseInsensitiveHashMap<>();
+
+            TableInfo tinfoMain = getTable();
+            Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
+            if (!maps.isEmpty())
+                valueMap.putAll(maps.iterator().next());
+
             //For updates, the valueMap is the OLD version of the data.
             //If there is no old data, we reselect to get it
             if (null != viewForm.getOldValues())
@@ -1985,19 +1996,9 @@ public class DataRegion extends DisplayElement
                 //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
                 Object old = viewForm.getOldValues();
                 if (old instanceof Map m)
-                    valueMap = m;
+                    valueMap.putAll(m);
                 else
-                    valueMap = new BoundMap(old);
-            }
-            else
-            {
-                if (!hasPermission(ctx, ReadPermission.class))
-                    throw new UnauthorizedException();
-
-                TableInfo tinfoMain = getTable();
-                Collection<Map<String, Object>> maps = new TableSelector(tinfoMain, selectKeyMap.values(), new PkFilter(tinfoMain, viewForm.getPkVals()), null).getMapCollection();
-                if (!maps.isEmpty())
-                    valueMap = maps.iterator().next();
+                    valueMap.putAll(new BoundMap(old));
             }
             ctx.setRow(valueMap);
         }
