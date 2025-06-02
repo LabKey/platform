@@ -255,6 +255,10 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
                     throw UnexpectedException.wrap(e);
                 }
             }
+            if (_domain != null && !forUpdate && _domain.isMutable())
+                _domain = PropertyService.get().getDomain(getContainer(), getLSID(), false);
+            if (_domain == null) // this should really never be true
+                throw new IllegalStateException("Domain does not exist.");
         }
         return _domain;
     }

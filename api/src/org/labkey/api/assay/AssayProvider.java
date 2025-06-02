@@ -97,6 +97,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** Get a schema that includes queries like Batch, Run, Results, and any additional tables. */
     AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy);
 
+    /** Get a domain that is not intended to be mutated */
     Domain getBatchDomain(ExpProtocol protocol);
 
     Domain getBatchDomain(ExpProtocol protocol, boolean forUpdate);
