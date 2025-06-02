@@ -2899,10 +2899,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out)
+                public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    LinkBuilder.labkeyLink("Download Data File", url).appendTo(oldWriter);
+                    out.write(LinkBuilder.labkeyLink("Download Data File", url));
                 }
             };
             dr.addDisplayColumn(dc);

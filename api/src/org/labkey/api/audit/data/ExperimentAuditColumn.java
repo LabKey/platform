@@ -22,19 +22,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: Mar 15, 2012
- */
 public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extends DataColumn
 {
     protected ColumnInfo _containerId;
@@ -104,22 +99,26 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     protected abstract String extractFromKey3(RenderContext ctx);
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         Pair<ObjectType, ActionURL> value = getExpValue(ctx);
         if (value != null && value.second != null)
         {
-            oldWriter.write("<a href=\"" + value.second.getLocalURIString() + "\">" + PageFlowUtil.filter(value.first.getName()) + "</a>");
+            out.write(LinkBuilder.simpleLink(value.first.getName(), value.second));
             return;
         }
 
         if (_defaultName != null)
         {
             String extracted = extractFromKey3(ctx);
-            oldWriter.write(extracted != null ? PageFlowUtil.filter(extracted) : "&nbsp;");
+            if (extracted != null)
+                out.write(extracted);
+            else
+                out.write(HtmlString.NBSP);
         }
         else
-            oldWriter.write("&nbsp;");
+        {
+            out.write(HtmlString.NBSP);
+        }
     }
-
 }

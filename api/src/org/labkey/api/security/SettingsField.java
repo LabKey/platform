@@ -26,6 +26,7 @@ public class SettingsField extends HashMap<String, Object>
 
         return sf;
     }
+
     public static SettingsField of(@NotNull String name, @NotNull FieldType type, @NotNull String caption, @NotNull String description, boolean required, Object defaultValue)
     {
         SettingsField sf = of(name, type, caption, required, defaultValue);
@@ -36,10 +37,7 @@ public class SettingsField extends HashMap<String, Object>
 
     public static SettingsField of(@NotNull String name, @NotNull FieldType type, @NotNull String caption, boolean required, Object defaultValue)
     {
-        SettingsField sf = new SettingsField();
-        sf.put("name", name);
-        sf.put("type", type.toString());
-        sf.put("caption", caption);
+        SettingsField sf = of(name, type, caption);
         sf.put("required", required);
         sf.put("defaultValue", defaultValue);
 

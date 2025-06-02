@@ -20,8 +20,6 @@ import org.labkey.api.view.DisplayElement;
 
 /**
  * Base class for a column to be rendered into some sort of output
- * User: arauch
- * Date: Feb 15, 2005
  */
 public abstract class RenderColumn extends DisplayElement
 {

@@ -34,15 +34,13 @@ import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.HtmlWriter;
 import org.springframework.validation.BindException;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -54,10 +52,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.B;
+
 /**
- * Grid view of a list of all pipeline protocols in a container
- * User: tgaluhn
- * Date: 11/5/2016
+ * Grid view showing all pipeline protocols in a container
  */
 public class ProtocolManagementWebPart extends GridView
 {
@@ -136,30 +134,30 @@ public class ProtocolManagementWebPart extends GridView
         List<Protocol> protocols = new ArrayList<>();
 
         PipelineJobService.get().getTaskPipelines(getViewContext().getContainer(), FileAnalysisTaskPipeline.class).stream()
-                .filter(tp -> tp.getProtocolFactoryName() != null)
-                .sorted(Comparator.comparing(TaskPipeline::getDescription, String.CASE_INSENSITIVE_ORDER))
-                .forEach(tp ->
-                {
-                    protocols.addAll(getTaskPipelineProtocols(root, tp, false));
-                    protocols.addAll(getTaskPipelineProtocols(root, tp, true));
-                });
+            .filter(tp -> tp.getProtocolFactoryName() != null)
+            .sorted(Comparator.comparing(TaskPipeline::getDescription, String.CASE_INSENSITIVE_ORDER))
+            .forEach(tp ->
+            {
+                protocols.addAll(getTaskPipelineProtocols(root, tp, false));
+                protocols.addAll(getTaskPipelineProtocols(root, tp, true));
+            });
         return protocols;
     }
 
-    private List<Protocol> getTaskPipelineProtocols(PipeRoot root, TaskPipeline taskPipeline, boolean archived)
+    private List<Protocol> getTaskPipelineProtocols(PipeRoot root, TaskPipeline<?> taskPipeline, boolean archived)
     {
-        PipelineProtocolFactory factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
+        PipelineProtocolFactory<?> factory = PipelineJobService.get().getProtocolFactory(taskPipeline);
         return getFactoryProtocols(root, taskPipeline, archived, factory);
     }
 
-    private List<Protocol> getFactoryProtocols(PipeRoot root, TaskPipeline taskPipeline, boolean archived, PipelineProtocolFactory factory)
+    private List<Protocol> getFactoryProtocols(PipeRoot root, TaskPipeline<?> taskPipeline, boolean archived, PipelineProtocolFactory<?> factory)
     {
         // The code in AnalysisController.GetSavedProtocolsAction suggests that we may need to call getProtocolNames() with
         // workbook roots/dirDatas, and or a non-null dirData  in some cases, but I can't find any code path in which
         // those would have been set.
-        return Arrays.stream(factory.getProtocolNames(root, (Path) null, archived)).sorted(String.CASE_INSENSITIVE_ORDER)
-                .map(protocolName -> new Protocol(taskPipeline, protocolName, archived))
-                .collect(Collectors.toList());
+        return Arrays.stream(factory.getProtocolNames(root, null, archived)).sorted(String.CASE_INSENSITIVE_ORDER)
+            .map(protocolName -> new Protocol(taskPipeline, protocolName, archived))
+            .collect(Collectors.toList());
     }
 
     private static class ArchivedDisplayColumn extends SimpleDisplayColumn
@@ -171,23 +169,23 @@ public class ProtocolManagementWebPart extends GridView
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             if ((boolean)ctx.getRow().get("archived"))
             {
-                oldWriter.write("<b>&#x2714;</b>"); // html checkmark
+                B(HtmlString.unsafe("&#x2714;")).appendTo(out); // html checkmark
             }
         }
     }
 
-    class Protocol
+    static class Protocol
     {
         final String _taskId;
         final String _name;
         final String _pipelineDescription;
         final boolean _archived;
 
-        Protocol(TaskPipeline pipeline, String name, boolean archived)
+        Protocol(TaskPipeline<?> pipeline, String name, boolean archived)
         {
             _taskId = pipeline.getId().toString();
             _name = name;
