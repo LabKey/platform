@@ -15,17 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.Core;
-import org.apache.logging.log4j.core.Filter;
-import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
-import org.apache.logging.log4j.core.appender.AbstractAppender;
-import org.apache.logging.log4j.core.config.Property;
-import org.apache.logging.log4j.core.config.plugins.Plugin;
-import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
-import org.apache.logging.log4j.core.config.plugins.PluginElement;
-import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
@@ -46,23 +36,9 @@ import java.util.function.Consumer;
 /**
  * Makes trigger script logging available to developers in the web UI.
  */
-@Plugin(name = "SessionAppender", category = Core.CATEGORY_NAME, elementType = Appender.ELEMENT_TYPE, printObject = true)
-public class SessionAppender extends AbstractAppender
+public class SessionAppender
 {
-    @PluginFactory
-    public static SessionAppender createAppender(@PluginAttribute("name") String name,
-                                                 @PluginElement("Layout") Layout<? extends Serializable> layout,
-                                                 @PluginElement("Filter") final Filter filter)
-    {
-        return new SessionAppender(name, filter, layout, false, null);
-    }
-
-    protected SessionAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions, Property[] properties)
-    {
-        super(name, filter, layout, ignoreExceptions, properties);
-    }
-
-    static class AppenderInfo implements Serializable
+    public static class AppenderInfo implements Serializable
     {
         AppenderInfo(String key, boolean on)
         {
@@ -127,15 +103,6 @@ public class SessionAppender extends AbstractAppender
     public static String getAppendingInfoKey(HttpServletRequest request)
     {
         return _getLoggingForSession(request).key;
-    }
-
-    @Override
-    public void append(LogEvent event)
-    {
-        AppenderInfo info = localInfo.get();
-        if (null == info || !info.on)
-            return;
-        info.eventIdMap.put(event, ++info.eventId);
     }
 
     /**
