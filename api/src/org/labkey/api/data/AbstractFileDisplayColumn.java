@@ -18,21 +18,33 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.InputBuilder;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.Writer;
 
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.alt;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.target;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.id;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
@@ -85,73 +97,64 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
     protected void renderIconAndFilename(RenderContext ctx, HtmlWriter out, String filename, @Nullable String fileIconUrl, @Nullable String popupIconUrl, boolean link, boolean thumbnail)
     {
-        Writer oldWriter = out.unwrap();
-        try
+        if (null != filename && !StringUtils.isEmpty(filename))
         {
-            if (null != filename && !StringUtils.isEmpty(filename))
+            // equivalent of DisplayColumn.renderURL.
+            // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
+            StringExpression s = compileExpression(ctx.getViewContext());
+            String url = null == s ? null : s.eval(ctx);
+            String displayName = getFileName(ctx, filename, true);
+            boolean isImage = isImage(filename);
+            FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
+
+
+            if (link && null != url)
             {
-                // equivalent of DisplayColumn.renderURL.
-                // Don't want to call renderUrl (DataColumn.renderUrl) to skip unnecessary displayValue check
-                StringExpression s = compileExpression(ctx.getViewContext());
-                String url = null == s ? null : s.eval(ctx);
-
-                if (link)
-                {
-                    if (null != url)
-                    {
-                        oldWriter.write("<a title=\"Download attached file\"");
-                        if (getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename))
-                        {
-                            oldWriter.write(" target=\"");
-                            oldWriter.write(PageFlowUtil.filter(getLinkTarget()));
-                            oldWriter.write("\"");
-                        }
-                        oldWriter.write(" href=\"");
-                        oldWriter.write(PageFlowUtil.filter(url));
-                        oldWriter.write("\">");
+                A(
+                    at(title, "Download attached file")
+                    .at(getLinkTarget() != null && MimeMap.DEFAULT.canInlineFor(filename), target, getLinkTarget())
+                    .at(href, url),
+                    (Renderable) ret -> {
+                        renderPopup(renderHelper, url, fileIconUrl, displayName, filename, thumbnail, isImage, out);
+                        return ret;
                     }
-                }
-
-                String displayName = getFileName(ctx, filename, true);
-                boolean isImage = isImage(filename);
-
-                FileImageRenderHelper renderHelper = createRenderHelper(ctx, url, filename, displayName, fileIconUrl, popupIconUrl, thumbnail, isImage);
-
-                if ((url != null || fileIconUrl != null) && thumbnail && isImage)
-                {
-                    // controls whether to render a popup image on hover, otherwise just render an image with a click handler
-                    // to navigate to the url
-                    if (renderHelper.renderPopupImage())
-                        PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
-                    else
-                        PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
-                }
-                else
-                {
-                    if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
-                    {
-                        if (renderHelper.renderPopupImage())
-                            PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
-                        else
-                            PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(oldWriter);
-                    }
-                    else
-                        oldWriter.write(renderHelper.createThumbnailImage());
-                }
-
-                if (link && null != url)
-                {
-                    oldWriter.write("</a>");
-                }
+                ).appendTo(out);
             }
             else
             {
-                oldWriter.write("&nbsp;");
+                renderPopup(renderHelper, url, fileIconUrl, displayName, filename, thumbnail, isImage, out);
             }
         }
-        catch (IOException e)
+        else
         {
-            throw new RuntimeException(e);
+            out.write(HtmlString.NBSP);
+        }
+    }
+
+    private void renderPopup(FileImageRenderHelper renderHelper, String url, @Nullable String fileIconUrl, String displayName, String filename, boolean thumbnail, boolean isImage, HtmlWriter out)
+    {
+        if ((url != null || fileIconUrl != null) && thumbnail && isImage)
+        {
+            // controls whether to render a popup image on hover, otherwise just render an image with a click handler
+            // to navigate to the url
+            if (renderHelper.renderPopupImage())
+                out.write(PageFlowUtil.popupHelp(renderHelper.createPopupImage(), displayName).link(renderHelper.createThumbnailImage()).width(310).script(renderHelper.createClickScript()));
+            else
+                out.write(PageFlowUtil.popupHelp(displayName).link(renderHelper.createThumbnailImage()).width(310).script(renderHelper.createClickScript()));
+        }
+        else
+        {
+            if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
+            {
+                if (renderHelper.renderPopupImage())
+                    out.write(PageFlowUtil.popupHelp(renderHelper.createPopupImage(), displayName).link(renderHelper.createThumbnailImage()).width(310).script(renderHelper.createClickScript()));
+                else
+                    out.write(PageFlowUtil.popupHelp(displayName).link(renderHelper.createThumbnailImage()).width(310).script(renderHelper.createClickScript()));
+            }
+            else
+            {
+                renderHelper.createThumbnailImage().appendTo(out);
+            }
         }
     }
 
@@ -163,7 +166,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     /**
      * Helper class to generate the HTML for the various portions of a file or image grid cell content
      *
-     * Tests to run if you touch this class : FileAttachmentColumnTest, InlineImagesAssayTest, InlineImagesListTest, SimpleModuleTest
+     * Tests to run if you touch this class: FileAttachmentColumnTest, InlineImagesAssayTest, InlineImagesListTest, SimpleModuleTest
      */
     public class FileImageRenderHelper
     {
@@ -189,25 +192,27 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         }
 
         // render the grid cell content
-        public String createThumbnailImage()
+        public Renderable createThumbnailImage()
         {
-            StringBuilder sb = new StringBuilder();
             if (_url != null && _isThumbnail && _isImage)
             {
-                sb.append("<img style=\"display:block; height:auto;").
-                        append(_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px").append("; vertical-align:middle\"").
-                        append(" src=\"").append(PageFlowUtil.filter(_url)).append("\"").
-                        append(" title=\"").append(PageFlowUtil.filter(_displayName)).append("\"").
-                        append("\" />");
+                return IMG(
+                    at(
+                        style, "display:block; height:auto; vertical-align:middle; " + (_thumbnailWidth != null ? "width:" + _thumbnailWidth : "max-width:32px"),
+                        src, _url, title, _displayName
+                    )
+                );
             }
             else
             {
-                sb.append("<img src=\"").append(_ctx.getRequest().getContextPath()).
-                        append((null != _fileIconUrl) ? _fileIconUrl : Attachment.getFileIcon(_filename)).
-                        append("\" alt=\"icon\"").
-                        append("/>&nbsp;").append(PageFlowUtil.filter(_displayName));
+                return DOM.createHtmlFragment(
+                    IMG(
+                        at(src, _ctx.getRequest().getContextPath() + (null != _fileIconUrl ? _fileIconUrl : Attachment.getFileIcon(_filename)), alt, "icon")
+                    ),
+                    HtmlString.NBSP,
+                    _displayName
+                );
             }
-            return sb.toString();
         }
 
         public boolean renderPopupImage()
@@ -216,17 +221,14 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         }
 
         // render the popup image to display on hover
-        public String createPopupImage()
+        public Renderable createPopupImage()
         {
-            StringBuilder sb = new StringBuilder();
-            if (_url != null)
-            {
-                sb.append("<img style=\"").
-                    append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
-                    append(PageFlowUtil.filter(_url)).
-                    append("\" />");
-            }
-            return sb.toString();
+            return _url != null ? IMG(
+                at(
+                    style, "height:auto; " + (_popupWidth != null ? "width:" + _popupWidth : "max-width:300px"),
+                    src, _url
+                )
+            ) : HtmlString.EMPTY_STRING;
         }
 
         // render the click script when a user clicks on the grid cell
@@ -307,18 +309,17 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
         String divId = GUID.makeGUID();
         String linkId = "remove" + divId;
 
-        Writer oldWriter = out.unwrap();
-        try
-        {
-            oldWriter.write("<div id=\"" + divId + "\">");
-            renderIconAndFilename(ctx, out, filename, false, false);
-            oldWriter.write("&nbsp;[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
-            oldWriter.write("</div>\n");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        DIV(
+            id(divId),
+            (Renderable) ret -> {
+                renderIconAndFilename(ctx, out, filename, false, false);
+                out.write(HtmlString.NBSP);
+                out.write("[");
+                out.write(LinkBuilder.simpleLink("remove", "#").id(linkId));
+                out.write("]");
+                return ret;
+            }
+        ).appendTo(out);
         String innerHtml = filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>";
         HttpView.currentPageConfig().addHandler(linkId, "click", "document.getElementById(" + jsString(divId) + ").innerHTML = " + jsString(innerHtml));
     }
