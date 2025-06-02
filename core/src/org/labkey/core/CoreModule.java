@@ -1338,6 +1338,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
+        json.put("productKey", new ProductConfiguration().getCurrentProductKey());
+        json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
         json.put(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.DEPRECATED_OBJECT_LEVEL_DISCUSSIONS));
         return json;
     }

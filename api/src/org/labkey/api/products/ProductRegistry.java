@@ -80,6 +80,22 @@ public class ProductRegistry
         _productFeaturesCache.clear();
     }
 
+    @Nullable
+    public String getPrimaryApplicationId(Container container)
+    {
+        Container project = container.getProject();
+        if (project == null) // root container has no application
+            return null;
+
+        // if the container is a project or subfolder from a project with a product defined, use that
+        String productId = getPrimaryProductIdForContainer(project);
+        if (productId != null)
+            return productId;
+
+        // Handle the case of the application folder being a subfolder
+        return getPrimaryProductIdForContainer(container);
+    }
+
     public static Set<String> getProductFeatureSet()
     {
         if (_productFeaturesCache.isEmpty())
@@ -183,6 +199,18 @@ public class ProductRegistry
     {
         ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
         return provider != null && provider.supportsProductFolders();
+    }
+
+    @Nullable
+    public String getPrimaryProductIdForContainer(@NotNull Container container)
+    {
+        List<String> productIds = getProductIdsForContainer(container);
+        if (productIds.isEmpty())
+            return null;
+        if (productIds.size() == 1)
+            return productIds.get(0);
+        ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
+        return provider != null ? provider.getProductId() : null;
     }
 
     @Nullable
