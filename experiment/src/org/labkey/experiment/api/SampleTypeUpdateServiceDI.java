@@ -2039,22 +2039,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             if (aliquotedFromObj instanceof String aliquotStr)
             {
-                // Issue 45563: Unquote and trim the string to find the parent properly
+                // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                // but we don't want to include the quotes in the name we generate using AliquotedFrom
                 aliquotedFrom = StringUtilsLabKey.unquoteString(aliquotStr).trim();
+                map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
             }
             else if (aliquotedFromObj instanceof Number)
             {
-                // Issue 53153: support "RowId" as value for "AliquotedFrom"
-                ExpMaterial aliquotParent = findAliquotParent(aliquotedFromObj);
+                aliquotedFrom = aliquotedFromObj.toString();
 
+                // Issue 53153: support "RowId" as value for "AliquotedFrom"
+                ExpMaterial aliquotParent = findAliquotParent(aliquotedFrom);
                 if (aliquotParent != null)
                 {
                     aliquotedFrom = aliquotParent.getName();
                     map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
                 }
             }
 
