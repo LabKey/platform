@@ -468,10 +468,10 @@ public class SimpleUserSchema extends UserSchema
                 return null;
 
             if (_domain == null || (forUpdate && !_domain.isMutable()))
-            {
-                String domainURI = getDomainURI();
-                _domain = PropertyService.get().getDomain(getDomainContainer(), domainURI, forUpdate);
-            }
+                _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
+
+            if (_domain != null && !forUpdate && _domain.isMutable())
+                _domain = PropertyService.get().getDomain(getDomainContainer(), getDomainURI(), forUpdate);
 
             return _domain;
         }
