@@ -185,7 +185,8 @@ public class ListWriter
                     Sort sort = ti.getPkColumns().size() != 1 ? null : new Sort(ti.getPkColumns().get(0).getFieldKey());
 
                     // NOTE: TSVGridWriter generates and closes Results
-                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().getSelectBuilder(ti).columns(columns).sort(sort).select(null, false), displayColumns))
                     {
                         tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
@@ -297,7 +298,7 @@ public class ListWriter
             List<ColumnInfo> selectColumns = new ArrayList<>(attachmentColumns);
             selectColumns.add(0, ti.getColumn("EntityId"));
 
-            try (ResultSet rs = QueryService.get().select(ti, selectColumns, null, null))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(ti).columns(selectColumns).select(null, false))
             {
                 while (rs.next())
                 {

@@ -153,10 +153,6 @@ import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInp
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.RowId;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
-/**
- * User: kevink
- * Date: 9/29/15
- */
 public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassDataTable.Column> implements ExpDataClassDataTable
 {
     private final @NotNull ExpDataClassImpl _dataClass;
@@ -935,7 +931,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatas(sublist))
-                                            expData.index(searchService.defaultTask(), this);
+                                            expData.index(searchService.defaultTask(), null, this);
                                         return (Void) null;
                                     }))
                     );
@@ -945,7 +941,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                             searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                     scope.executeWithRetryReadOnly(tx -> {
                                         for (ExpDataImpl expData : experimentServiceImpl.getExpDatasByLSID(sublist))
-                                            expData.index(searchService.defaultTask(), this);
+                                            expData.index(searchService.defaultTask(), null, this);
                                         return (Void) null;
                                     }))
                     );
@@ -1077,7 +1073,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 //              CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //              TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
                 di = LoggingDataIterator.wrap(new CoerceDataIterator(di, context, ExpDataClassDataTableImpl.this, false));
-
+                context.setWithLookupRemapping(false);
                 TableInfo dataClassTInfo = ExpDataClassDataTableImpl.this;
                 if (c.hasProductFolders() && !c.isProject())
                 {
@@ -1431,7 +1427,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                                 searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                                 {
                                     for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatas(sublist))
-                                        expData.index(null, _expDataClassDataTableImpl);
+                                        expData.index(null, null, _expDataClassDataTableImpl);
                                 })
                         );
                     }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1604,6 +1600,5 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
         }
-
     }
 }

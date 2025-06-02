@@ -17,11 +17,8 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -42,8 +39,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -151,11 +146,10 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
             @Override
-            protected void renderData(Writer out, ExpData data) throws IOException
+            protected void renderData(HtmlWriter out, ExpData data)
             {
                 String val = ((String)getJsonValue(data));
-                if (val != null)
-                    out.write(val);
+                out.write(val);
             }
 
             @Override
@@ -197,34 +191,26 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         var result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
         result.setJdbcType(JdbcType.VARCHAR);
-        result.setDisplayColumnFactory(new DisplayColumnFactory()
+        result.setDisplayColumnFactory(colInfo -> new ExpDataFileColumn(colInfo)
         {
             @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            protected void renderData(HtmlWriter out, ExpData data)
             {
-                return new ExpDataFileColumn(colInfo)
+                String val = ((String)getJsonValue(data));
+                out.write(val == null ? "Not found" : val);
+            }
+
+            @Override
+            protected Object getJsonValue(ExpData data)
+            {
+                String val;
+                if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
+                    val = null;
+                else
                 {
-                    @Override
-                    protected void renderData(Writer out, ExpData data) throws IOException
-                    {
-                        String val = ((String)getJsonValue(data));
-                        out.write(val == null ? "Not found" : val);
-                    }
-
-                    @Override
-                    protected Object getJsonValue(ExpData data)
-                    {
-                        String val;
-                        if (data == null || StringUtils.isEmpty(data.getDataFileUrl()))
-                            val = null;
-                        else
-                        {
-                            val = _svc.getDataFileRelativeFileRootPath(data.getDataFileUrl(), getContainer());
-                        }
-                        return val;
-                    }
-
-                };
+                    val = _svc.getDataFileRelativeFileRootPath(data.getDataFileUrl(), getContainer());
+                }
+                return val;
             }
         });
         result.setDescription("The virtual folder path relative to file root of the container.");
@@ -244,5 +230,4 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
                 return false;
         return super.hasPermission(user, perm);
     }
-
 }

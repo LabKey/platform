@@ -1363,9 +1363,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                     return new SimpleDisplayColumn()
                     {
                         @Override
-                        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+                        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
                         {
-                            oldWriter.write(PageFlowUtil.filter("Error: " + message));
+                            out.write("Error: " + message);
                         }
                     };
                 };

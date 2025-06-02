@@ -22,6 +22,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.studydesign.query.AbstractStudyDesignDomainKind;
 import org.labkey.api.studydesign.query.StudyDesignQuerySchema;
@@ -43,10 +45,20 @@ import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.TREATMENT_
 public class StudyDesignManager
 {
     private static final StudyDesignManager _instance = new StudyDesignManager();
+    public static final String MODULE_NAME = "StudyDesign";
 
     public static StudyDesignManager get()
     {
         return _instance;
+    }
+
+    public boolean isModuleActive(Container c)
+    {
+        if (c == null)
+            return false;
+
+        Module studyDesignModule = ModuleLoader.getInstance().getModule(MODULE_NAME);
+        return null != studyDesignModule && c.getActiveModules().contains(studyDesignModule);
     }
 
     public void deleteStudyDesignData(Container c, Set<TableInfo> deletedTables)
@@ -77,6 +89,11 @@ public class StudyDesignManager
         deletedTables.add(StudyDesignSchema.getInstance().getTableInfoTreatmentVisitMap());
         Table.delete(StudyDesignSchema.getInstance().getTableInfoObjective(), filter);
         deletedTables.add(StudyDesignSchema.getInstance().getTableInfoObjective());
+
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit(), filter);
+        deletedTables.add(StudyDesignSchema.getInstance().getTableInfoAssaySpecimenVisit());
+        Table.delete(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen(), filter);
+        deletedTables.add(StudyDesignSchema.getInstance().getTableInfoAssaySpecimen());
     }
 
     // Proactively create the domains at study creation time to avoid problems with lazy creation, #42641

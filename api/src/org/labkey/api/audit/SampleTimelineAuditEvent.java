@@ -208,7 +208,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
             if (label != null)
             {
                 row.put("samplestatelabel", label);
-                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
+                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
             }
         }
         super.setOldRecordMap(oldRecordMap);
@@ -228,7 +228,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
             if (label != null)
             {
                 row.put("samplestatelabel", label);
-                newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(container, row);
+                newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
             }
         }
         super.setNewRecordMap(newRecordMap, container);

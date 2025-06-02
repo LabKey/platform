@@ -23,7 +23,6 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.components.studydesigner.ManageStudyProductsPage;
@@ -33,8 +32,8 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.OptionalFeatureHelper;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
@@ -47,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
-public class StudyDataspaceTest extends StudyBaseTest
+public class StudyDataspaceTest extends StudyBaseTest implements PostgresOnlyTest
 {
     protected final String FOLDER_STUDY1 = "Study 1";
     protected final String FOLDER_STUDY2 = "Study 2";
@@ -55,7 +54,6 @@ public class StudyDataspaceTest extends StudyBaseTest
     protected final String SUBFOLDER_STUDY5 = "SubFolder 5";
     protected final String VISIT_TAG_QWP_TITLE = "VisitTag";
     private final PortalHelper _portalHelper = new PortalHelper(this);
-    private Boolean _studyDesignPreviouslyEnabled;
 
     @Override
     protected BrowserType bestBrowser()
@@ -93,15 +91,6 @@ public class StudyDataspaceTest extends StudyBaseTest
     {
         initializeFolder();
         setPipelineRoot(StudyHelper.getStudySubfolderPath());
-        _studyDesignPreviouslyEnabled = OptionalFeatureHelper.enableOptionalFeature(createDefaultConnection(), "studyDesignFlag");
-    }
-
-    @Override
-    public void doCleanup(boolean afterTest) throws TestTimeoutException
-    {
-        super.doCleanup(afterTest);
-        if (_studyDesignPreviouslyEnabled != null)
-            OptionalFeatureHelper.setOptionalFeature(createDefaultConnection(), "studyDesignFlag", _studyDesignPreviouslyEnabled);
     }
 
     @Override
@@ -110,15 +99,23 @@ public class StudyDataspaceTest extends StudyBaseTest
         _containerHelper.createProject(getProjectName(), "Dataspace");
         if (_studyHelper.isSpecimenModulePresent())
             _containerHelper.enableModule("Specimen");
+        if (_studyHelper.isModulePresent("StudyDesign"))
+            _containerHelper.enableModule("StudyDesign");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY1, "Study", null, true);
         if (_studyHelper.isSpecimenModulePresent())
             _containerHelper.enableModule("Specimen");
+        if (_studyHelper.isModulePresent("StudyDesign"))
+            _containerHelper.enableModule("StudyDesign");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY2, "Study", null, true);
         if (_studyHelper.isSpecimenModulePresent())
             _containerHelper.enableModule("Specimen");
+        if (_studyHelper.isModulePresent("StudyDesign"))
+            _containerHelper.enableModule("StudyDesign");
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), FOLDER_STUDY5, "Study", null, true);
         if (_studyHelper.isSpecimenModulePresent())
             _containerHelper.enableModule("Specimen");
+        if (_studyHelper.isModulePresent("StudyDesign"))
+            _containerHelper.enableModule("StudyDesign");
     }
 
     @Override

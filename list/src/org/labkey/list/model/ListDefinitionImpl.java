@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -40,6 +41,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -370,13 +372,13 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void save(User user) throws Exception
     {
-        save(user, true);
+        save(user, true, null, null);
     }
 
     private static final ReentrantLock _saveLock = new ReentrantLockWithName(ListDefinitionImpl.class, "_saveLock");
 
     @Override
-    public void save(User user, boolean ensureKey) throws Exception
+    public void save(User user, boolean ensureKey, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws Exception
     {
         if (ensureKey)
         {
@@ -396,7 +398,7 @@ public class ListDefinitionImpl implements ListDefinition
                 // The domain kind cannot lookup the list definition if the domain has not been saved
                 ((ListDomainKind) domain.getDomainKind()).setListDefinition(this);
 
-                domain.save(user);
+                domain.save(user, newRecordMap, calculatedFields);
 
                 _def.setDomainId(domain.getTypeId());
                 ListDef inserted = ListManager.get().insert(user, _def, _preferredListIds);
@@ -526,6 +528,12 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void delete(User user) throws DomainNotFoundException
     {
+        delete(user, null);
+    }
+
+    @Override
+    public void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException
+    {
         TableInfo table = getTable(user);
         QueryUpdateService qus = null;
 
@@ -545,7 +553,7 @@ public class ListDefinitionImpl implements ListDefinition
             // then delete the list itself
             ListManager.get().deleteListDef(getContainer(), getListId());
             Domain domain = getDomain();
-            domain.delete(user);
+            domain.delete(user, auditUserComment);
 
             ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
 
@@ -586,18 +594,18 @@ public class ListDefinitionImpl implements ListDefinition
         MapLoader loader = new MapLoader(rows);
 
         // TODO: Find out the attachment directory?
-        return insertListItems(user, container, loader, ve, null, null, false, false);
+        return insertListItems(user, container, loader, ve, null, null, false, LookupResolutionType.primaryKey);
     }
 
 
     @Override
-    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey)
+    public int insertListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType)
     {
-        return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, QueryUpdateService.InsertOption.INSERT);
+        return importListItems(user, container, loader, errors, attachmentDir, progress, supportAutoIncrementKey, lookupResolutionType, QueryUpdateService.InsertOption.INSERT);
     }
 
     @Override
-    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, boolean importByAlternateKey, QueryUpdateService.InsertOption insertOption)
+    public int importListItems(User user, Container container, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress, boolean supportAutoIncrementKey, LookupResolutionType lookupResolutionType, QueryUpdateService.InsertOption insertOption)
     {
         ListQuerySchema schema = new ListQuerySchema(user, container);
         TableInfo table = schema.getTable(_def.getName());
@@ -605,7 +613,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ListQueryUpdateService lqus = (ListQueryUpdateService) table.getUpdateService();
             if (null != lqus)
-                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, importByAlternateKey, insertOption);
+                return lqus.insertUsingDataIterator(loader, user, container, errors, attachmentDir, progress, supportAutoIncrementKey, insertOption, lookupResolutionType);
         }
         return 0;
     }

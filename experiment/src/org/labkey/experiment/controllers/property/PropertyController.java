@@ -543,7 +543,7 @@ public class PropertyController extends SpringActionController
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings, form.getAuditUserComment());
 
             for (ValidationError ve : updateErrors.getErrors())
             {
@@ -760,7 +760,7 @@ public class PropertyController extends SpringActionController
             boolean includeWarnings = form.isIncludeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, null, getContainer(), getUser(), includeWarnings, null);
             for (ValidationError ve : updateErrors.getErrors())
             {
                 if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
@@ -809,7 +809,7 @@ public class PropertyController extends SpringActionController
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
 
-            deleteDomain(schemaName, queryName, getContainer(), getUser());
+            deleteDomain(schemaName, queryName, getContainer(), getUser(), form.getAuditUserComment());
             return success("Domain deleted");
         }
     }
@@ -832,6 +832,7 @@ public class PropertyController extends SpringActionController
         private String queryName;
         private Integer domainId;
         private boolean includeWarnings;
+        private String auditUserComment;
 
         public Integer getDomainId()
         {
@@ -1000,6 +1001,16 @@ public class PropertyController extends SpringActionController
 
         @JsonIgnore
         private Map<String, Object> optionsProperties;
+
+        public String getAuditUserComment()
+        {
+            return auditUserComment;
+        }
+
+        public void setAuditUserComment(String auditUserComment)
+        {
+            this.auditUserComment = auditUserComment;
+        }
 
         /**
          * Convenience method to cache options map
@@ -1477,7 +1488,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1498,7 +1509,7 @@ public class PropertyController extends SpringActionController
 
         if (JSONObject.class == kind.getTypeClass())
         {
-            return kind.updateDomain(original, update, options, container, user, includeWarnings);
+            return kind.updateDomain(original, update, options, container, user, includeWarnings, auditUserComment);
         }
         else
         {
@@ -1508,11 +1519,11 @@ public class PropertyController extends SpringActionController
                 ObjectMapper mapper = JsonUtil.createDefaultMapper();
                 domainKindProps = mapper.convertValue(options, kind.getTypeClass());
             }
-            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings);
+            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings, auditUserComment);
         }
     }
 
-    private static void deleteDomain(String schemaName, String queryName, Container container, User user)
+    private static void deleteDomain(String schemaName, String queryName, Container container, User user, @Nullable String auditUserComment)
     {
         String domainURI = PropertyService.get().getDomainURI(schemaName, queryName, container, user);
         if (domainURI == null)
@@ -1533,7 +1544,7 @@ public class PropertyController extends SpringActionController
             if (!kind.canDeleteDefinition(user, d))
                 throw new UnauthorizedException("You don't have permission to delete this domain");
 
-            kind.deleteDomain(user, d);
+            kind.deleteDomain(user, d, auditUserComment);
             return true;
         });
     }

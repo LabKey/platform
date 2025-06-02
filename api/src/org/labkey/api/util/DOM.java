@@ -61,7 +61,7 @@ public class DOM
 
     /*
      * BODY_PLACE_HOLDER and TemplateAppendableWrapper are used to make it possible to efficiently implement an HTML wrapper
-     * frame using DOM, even if the 'body' of the frame is not available yet. For instance this can be used to implement
+     * frame using DOM, even if the 'body' of the frame is not available yet. For instance, this can be used to implement
      * Jsp tags that extend BodyTagSupport. It can also be used to implement subclasses of WebPartFrame.
      *
      * The DOM Renderable objects write to the normal output Appendable until it hits BODY_PLACE_HOLDER. At that point the

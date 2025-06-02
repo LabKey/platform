@@ -44,6 +44,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.SimpleFilter;
@@ -67,6 +68,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -114,6 +116,7 @@ import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
  */
 public class SimpleTranslator extends AbstractDataIterator implements DataIterator, ScrollableDataIterator
 {
+    public static final String DEPRECATED_NULL_MISSING_VALUE_RESOLUTION = "deprecatedNullMissingValueResolution";
     private static final Logger LOG = LogManager.getLogger(SimpleTranslator.class);
 
     /**
@@ -183,19 +186,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         else if (null != value && null != target)
             msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
         else if (null != x)
-            msg = StringUtils.defaultString(x.getMessage(), x.toString());
+            msg = Objects.toString(x.getMessage(), x.toString());
         else
             msg = "Could not convert value";
         addFieldError(fieldName, msg);
         return null;
     }
 
-    public static class RemapPostConvert
+    public static class RemapConverter
     {
-        private final String _fieldName;
         private final TableInfo _targetTable;
         private final boolean _includeTitleColumn;
-        private final RemapMissingBehavior _missing;
         private boolean _includePkLookup;               // if true, will perform an initial PK lookup before attempting the AK lookup
 
         private final boolean _allowBulkLoads;
@@ -205,19 +206,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>> _titleColumnLookupMap = null;
         private Pair<ColumnInfo, Map<?, ?>> _pkColumnLookupMap = null;
 
-        public RemapPostConvert(@NotNull TableInfo targetTable, boolean includeTitleColumn, RemapMissingBehavior missing, boolean allowBulkLoads, boolean includePkLookup, @Nullable String fieldName)
+        public RemapConverter(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup)
         {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
-            _missing = missing;
             _allowBulkLoads = allowBulkLoads;
             _includePkLookup = includePkLookup;
-            _fieldName = fieldName;
         }
 
         public void setIncludePkLookup(boolean includePkLookup)
         {
             _includePkLookup = includePkLookup;
+            _maps = null;
         }
 
         public ColumnInfo getPkColumn()
@@ -304,23 +304,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             if (_titleColumnLookupMap != null)
             {
-                Object v = fetch(_titleColumnLookupMap, String.valueOf(k));
-                if (v != null)
-                    return v;
+                return fetch(_titleColumnLookupMap, String.valueOf(k));
             }
 
-            switch (_missing)
-            {
-                case Null:          return null;
-                case OriginalValue: return k;
-                case Error:
-                default:
-                    if (_fieldName != null)
-                        throw new ConversionExceptionWithMessage("Value '" + k + "' not found for field " + _fieldName + " in the current context.");
-                    else
-                        throw new ConversionException("Could not translate value: " + k);
-
-            }
+            return null;
         }
 
         private final Object MISS = new Object();
@@ -352,11 +339,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
 
                 // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
-                if (bulkLoaded == null || bulkLoaded.isEmpty())
+                if (bulkLoaded == null || bulkLoaded.isEmpty() )
                 {
-                    TableSelector ts = createSelector(pkCol, altKeyCol, k);
-                    ts.fillMultiValuedMap(map);
-                    vs = map.get(k);
+                    // when the given key (e.g., a rowId value) cannot be assigned to the alternate key value,
+                    // don't attempt to select the value from the database, lest a syntax error result.
+                    // This can happen for system fields like createdBy or modifiedBy that are added to a
+                    // row during the insert or update process already mapped to their primary keys.
+                    // Alternate keys must be of type String.
+                    if (k instanceof String)
+                    {
+                        TableSelector ts = createSelector(pkCol, altKeyCol, k);
+                        ts.fillMultiValuedMap(map);
+                        vs = map.get(k);
+                    }
+                    else
+                    {
+                        vs = Collections.emptyList();
+                    }
                 }
                 else
                 {
@@ -455,7 +454,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (vs.size() == 1)
                 return vs.iterator().next();
 
-            throw new ConversionException("Found " + vs.size() + " values matching: " + String.valueOf(k));
+            throw new ConversionExceptionWithMessage("Found " + vs.size() + " values matching: " + String.valueOf(k));
         }
     }
 
@@ -938,37 +937,39 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         /** Every incoming value must have an entry in the map. */
         Error,
 
-        /** Incoming values without a map entry will be replaced with null. */
+        /** @Deprecated Prefer Error instead. Incoming values without a map entry will be replaced with null. */
         Null,
 
         /** Incoming values without a map entry will pass through. */
         OriginalValue
     }
 
-    protected class RemapPostConvertColumn extends SimpleConvertColumn
+    protected class RemappingConvertColumn extends SimpleConvertColumn
     {
         final SimpleConvertColumn _convertCol;
         final ColumnInfo _toCol;
         final RemapMissingBehavior _missing;
         final boolean _includeTitleColumn;
+        LookupResolutionType _lookupResolutionType;
 
-        final private RemapPostConvert _remapper;
+        final private RemapConverter _remapper;
 
-        public RemapPostConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn)
+        public RemappingConvertColumn(final @NotNull SimpleConvertColumn convertCol, final int fromIndex, final @NotNull ColumnInfo toCol, RemapMissingBehavior missing, boolean includeTitleColumn, @NotNull LookupResolutionType lookupResolutionType)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type);
             _convertCol = convertCol;
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapPostConvert(_toCol.getFkTableInfo(), _includeTitleColumn, _missing, false, true, _convertCol.fieldName);
+            _remapper = new RemapConverter(_toCol.getFkTableInfo(), _includeTitleColumn, false, true);
+            _lookupResolutionType = lookupResolutionType;
         }
 
-        @Override
-        protected Object convert(Object o)
+        private Object convertWithPrimaryColumn(Object o)
         {
             try
             {
+                // _convertCol here will be the column for the primary key type
                 Object value =  _convertCol.convert(o);
                 ForeignKey fk = _toCol.getFk();
                 // issue 40909 : allow String columns to resolve lookups by alternate key if the raw lookup fails to resolve
@@ -976,6 +977,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 {
                     if (_remapper.getPkColumn().getJdbcType().isText())
                     {
+                        _remapper.setIncludePkLookup(true);
                         Object remappedValue = _remapper.mappedValue(o);
                         value = remappedValue != null ? remappedValue : value;
                     }
@@ -984,52 +986,54 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             catch (ConversionException ex)
             {
-                // don't want to attempt to resolve by target table PK because we already know there is a type mismatch
-                _remapper.setIncludePkLookup(false);
-                return _remapper.mappedValue(o);
+                return null;
             }
         }
-    }
 
-    protected class RemapColumn implements Supplier
-    {
-        final Supplier _inputColumn;
-        final Map<?, ?> _map;
-        final RemapMissingBehavior _missing;
-
-        public RemapColumn(final int index, Map<?, ?> map, RemapMissingBehavior missing)
+        private Object convertWithRemapper(Object o)
         {
-            _inputColumn = _data.getSupplier(index);
-            _map = map;
-            _missing = missing;
-        }
-
-        public RemapColumn(Supplier call, Map<?, ?> map, RemapMissingBehavior missing)
-        {
-            _inputColumn = call;
-            _map = map;
-            _missing = missing;
+            if (_lookupResolutionType.useAlternateKey())
+            {
+                try
+                {
+                    _remapper.setIncludePkLookup(false);
+                    return _remapper.mappedValue(o);
+                }
+                catch (ConversionException ex)
+                {
+                    return null;
+                }
+            }
+            return null;
         }
 
         @Override
-        public Object get()
+        protected Object convert(Object o)
         {
-            Object k = _inputColumn.get();
-            if (null == k)
+            if (o == null)
                 return null;
-            Object v = _map.get(k);
-            if (null != v || _map.containsKey(k))
-                return v;
-            switch (_missing)
+
+            Object value;
+
+            value = convertWithRemapper(o);
+            if (value != null)
             {
-                case Null:          return null;
-                case OriginalValue: return k;
-                case Error:
-                default:            throw new ConversionException("Could not translate value: " + String.valueOf(k));
+                return value;
             }
+
+            value = convertWithPrimaryColumn(o);
+            if (value == null)
+            {
+                if (_missing == RemapMissingBehavior.OriginalValue)
+                    return o;
+                else if (_missing == RemapMissingBehavior.Null)
+                    return null;
+                else
+                    throw new ConversionExceptionWithMessage("Value '" + o + "' not found for field " + _toCol.getName() + " in the current context.");
+            }
+            return value;
         }
     }
-    
 
     protected class NullColumn implements Supplier
     {
@@ -1262,10 +1266,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param fromIndex            Source column to create the output column from.
      * @param mvIndex              Missing value column index.
      * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
+     * @param withLookupRemapping  Indicates if remapping of lookup columns should be attempted or not
      */
-    public int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, @Nullable RemapMissingBehavior remapMissingBehavior)
+    private int addConvertColumn(ColumnInfo col, int fromIndex, int mvIndex, @Nullable RemapMissingBehavior remapMissingBehavior, boolean withLookupRemapping)
     {
-        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, null, null, col.getJdbcType(), remapMissingBehavior);
+        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, null, null, col.getJdbcType(), remapMissingBehavior, withLookupRemapping);
         return addColumn(col, c);
     }
 
@@ -1283,9 +1288,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param fromIndex            Source column to create the output column from and pull data from.
      * @param toType               Convert the source data values to this type.
      * @param toFk                 When <code>isAllowImportLookupByAlternateKey</code> is turned on, remap lookup values using the foreign key if there is a conversion failure.
-     * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
+     * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or original value if not required.
+     * @param withLookupRemapping  Indicates if we should attempt to resolve lookups or not
      */
-    public int addConvertColumn(String name, int fromIndex, JdbcType toType, @Nullable ForeignKey toFk, @Nullable RemapMissingBehavior remapMissingBehavior)
+    public int addConvertColumn(String name, int fromIndex, JdbcType toType, @Nullable ForeignKey toFk, @Nullable RemapMissingBehavior remapMissingBehavior, boolean withLookupRemapping)
     {
         var col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
@@ -1293,7 +1299,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (toFk != null)
             col.setFk(toFk);
 
-        return addConvertColumn(col, fromIndex, fromIndex, remapMissingBehavior);
+        return addConvertColumn(col, fromIndex, fromIndex, remapMissingBehavior, withLookupRemapping);
     }
 
     /**
@@ -1311,19 +1317,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param pd                   PropertyDescriptor used for missing value enabled-ness.
      * @param pt                   Convert the source data values to this type.
      * @param remapMissingBehavior The behavior desired when remapping fails.  If null, indicate an error if the column is required or null if not required.
+     * @param withLookupRemapping  Indicates if we should try to remap lookups during the conversion or not.
      */
-    public int addConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable RemapMissingBehavior remapMissingBehavior)
+    public int addConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable RemapMissingBehavior remapMissingBehavior, boolean withLookupRemapping)
     {
-        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, pd, pt, col.getJdbcType(), remapMissingBehavior);
+        SimpleConvertColumn c = createConvertColumn(col, fromIndex, mvIndex, pd, pt, col.getJdbcType(), remapMissingBehavior, withLookupRemapping);
         return addColumn(col, c);
     }
 
     public SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, @Nullable RemapMissingBehavior remapMissingBehavior)
     {
-        return createConvertColumn(col, fromIndex, NO_MV_INDEX, null, col.getPropertyType(), col.getJdbcType(), remapMissingBehavior);
+        return createConvertColumn(col, fromIndex, NO_MV_INDEX, null, col.getPropertyType(), col.getJdbcType(), remapMissingBehavior, true);
     }
 
-    private SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable JdbcType type, @Nullable RemapMissingBehavior remapMissingBehavior)
+    private SimpleConvertColumn createConvertColumn(@NotNull ColumnInfo col, int fromIndex, int mvIndex, @Nullable PropertyDescriptor pd, @Nullable PropertyType pt, @Nullable JdbcType type, @Nullable RemapMissingBehavior remapMissingBehavior, boolean withLookupRemapping)
     {
         final String name = col.getName();
 
@@ -1338,15 +1345,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             c = new PropertyConvertColumn(name, fromIndex, mvIndex, mv, pt, type);
 
         ForeignKey fk = col.getFk();
-        if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
+        LookupResolutionType lookupResolutionType = _context.getLookupResolutionType();
+        if (withLookupRemapping && fk != null && lookupResolutionType.useAlternateKey() && fk.allowImportByAlternateKey())
         {
-            // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
-            boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
-
             RemapMissingBehavior missing = remapMissingBehavior;
             if (missing == null)
-                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
-            c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
+            {
+                if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_NULL_MISSING_VALUE_RESOLUTION))
+                {
+                    // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
+                    boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
+
+                    missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+                }
+                else
+                    missing = RemapMissingBehavior.Error;
+            }
+            c = new RemappingConvertColumn(c, fromIndex, col, missing, true, lookupResolutionType);
         }
 
         boolean multiValue = fk instanceof MultiValuedForeignKey;
@@ -1392,19 +1407,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         ColumnInfo col = BaseColumnInfo.createNotInDatabase(name, JdbcType.TIMESTAMP);
         return addColumn(col, new TimestampColumn());
-    }
-
-    /**
-     * Translate values from the source data iterator to those contained in the in-memory <code>map</code>.
-     * @param fromIndex Source column to wrap.
-     * @param map Mapping from source to value.
-     * @param missing Tell me how to handle incoming values not present in the map.
-     */
-    public int addRemapColumn(int fromIndex, @NotNull Map<?, ?> map, RemapMissingBehavior missing)
-    {
-        ColumnInfo col = new BaseColumnInfo(_data.getColumnInfo(fromIndex));
-        RemapColumn remap = new RemapColumn(fromIndex, map, missing);
-        return addColumn(col, remap);
     }
 
     public int addSharedTableLookupColumn(int fromIndex, @Nullable FieldKey extraColumnFieldKey, @Nullable ForeignKey fk,
@@ -2116,7 +2118,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 DataIteratorContext context = new DataIteratorContext();
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, null, null);
+                t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, null, null, true);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
@@ -2136,10 +2138,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 context.setVerbose(true);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null);
-                assertEquals(t.getColumnCount(), 1);
-                assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
-                assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
+                t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null, true);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
                 try
                 {
                     assertFalse(t.next());
@@ -2157,10 +2159,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 context.setVerbose(true);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null);
-                assertEquals(t.getColumnCount(), 1);
-                assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
-                assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
+                t.addConvertColumn("Text", 2, JdbcType.INTEGER, null, null, true);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
                 for (int i=1 ; i<=4 ; i++)
                 {
                     assertTrue(t.next());
@@ -2204,14 +2206,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 public StringExpression getURL(ColumnInfo parent) { return null; }
             };
 
-            // with remap with allowImportLookupByAlternateKey
+            // with remap with alternate key then primary key
             // don't throw error if remap can't be resolved
             {
                 DataIteratorContext context = new DataIteratorContext();
-                context.setAllowImportLookupByAlternateKey(true);
+                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
                 simpleData.beforeFirst();
                 SimpleTranslator t = new SimpleTranslator(simpleData, context);
-                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.OriginalValue, true);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
@@ -2234,10 +2236,43 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // fourth row
                 assertTrue(t.next());
                 assertEquals(4, t.get(0));
-                assertNull(t.get(1)); // empty string converts to null
+                assertEquals("", t.get(1)); // since remapping to the original, returns the empty string
 
                 // no more rows
                 assertFalse(t.next());
+            }
+
+            // with remap with alternate then primary key, missing behavior is OriginalValue
+            // don't throw error if remap can't be resolved
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                context.setLookupResolutionType(LookupResolutionType.alternateThenPrimaryKey);
+                simpleData.beforeFirst();
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
+                t.addConvertColumn("Lookup", 5, JdbcType.INTEGER, fk, RemapMissingBehavior.Error, true);
+                assertEquals(1, t.getColumnCount());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
+                assertEquals(JdbcType.INTEGER, t.getColumnInfo(1).getJdbcType());
+
+                // first row
+                assertTrue(t.next());
+                assertEquals(1, t.get(0));
+                assertEquals(0, t.get(1)); // convert string "0" -> rowId ordinal 0
+
+                // second row
+                assertTrue(t.next());
+                assertEquals(2, t.get(0));
+                assertEquals(1, t.get(1)); // convert string "Two" -> rowId ordinal 1
+
+                // third row -- fails to resolve
+                try
+                {
+                    t.next();
+                    fail("Should have thrown a conversion exception.");
+                } catch (BatchValidationException x)
+                {
+                    assertTrue((x.getMessage().contains("Lookup: Value 'FAIL' not found for field Lookup in the current context.")));
+                }
             }
 
         }

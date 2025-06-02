@@ -1152,15 +1152,20 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     }
 
     @Override
-    public void delete(User user)
+    public void delete(User user, @Nullable String auditUserComment)
     {
         if (!canDeleteDefinition(user))
         {
             throw new UnauthorizedException("No permission to delete dataset " + getName() + " for study in " + getContainer().getPath());
         }
-        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true);
+        StudyManager.getInstance().deleteDataset(getStudy(), user, this, true, auditUserComment);
     }
 
+    @Override
+    public void delete(User user)
+    {
+        delete(user, null);
+    }
 
     @Override
     public void deleteAllRows(User user)
@@ -1800,28 +1805,28 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
             if (action==DELETE || action==TRUNCATE)
             {
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
             else if (existingRecord != null && existingRecord.size() > 0)
             {
                 Pair<Map<String, Object>, Map<String, Object>> rowPair = AuditHandler.getOldAndNewRecordForMerge(record, existingRecord, Collections.emptySet(), tInfo == null? TableInfo.defaultExcludedDetailedUpdateAuditFields : tInfo.getExcludedDetailedUpdateAuditFields(), tInfo);
-                oldRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.first);
+                oldRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.first);
 
                 // Check if no fields changed, if so adjust messaging
                 if (rowPair.second.size() == 0 )
                 {
                     auditComment = "Dataset row was processed, but no changes detected";
                     // Record values that were processed
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(record);
                 }
                 else
                 {
-                    newRecordString = DatasetAuditProvider.encodeForDataMap(c, rowPair.second);
+                    newRecordString = DatasetAuditProvider.encodeForDataMap(rowPair.second);
                 }
             }
             else
             {
-                newRecordString = DatasetAuditProvider.encodeForDataMap(c, record);
+                newRecordString = DatasetAuditProvider.encodeForDataMap(record);
             }
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c, auditComment, _dataset.getDatasetId());
@@ -2819,6 +2824,30 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (!StringUtils.isEmpty(getLabel()))
+            map.put("Label", getLabel());
+        if (!StringUtils.isEmpty(getKeyPropertyName()))
+            map.put("KeyPropertyName", getKeyPropertyName());
+        if (!StringUtils.isEmpty(getVisitDatePropertyName()))
+            map.put("VisitDateColumnName", getVisitDatePropertyName());
+        if (!StringUtils.isEmpty(getTag()))
+            map.put("Tag", getTag());
+        map.put("KeyPropertyManaged", getKeyManagementType() != Dataset.KeyManagementType.None);
+        map.put("IsDemographicData", isDemographicData());
+        map.put("IsUseTimeKeyField", getUseTimeKeyField());
+        if (getCohortId() != null)
+            map.put("CohortId", getCohortId());
+
+        return map;
+    }
     public static class Builder implements org.labkey.api.data.Builder<DatasetDefinition>
     {
         private final String _name;

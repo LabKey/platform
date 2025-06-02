@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -202,4 +203,23 @@ public class DataClassDomainKindProperties
     {
         this.excludedContainerIds = excludedContainerIds;
     }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        // skip Name and Description since it's general domain property
+        if (!StringUtils.isEmpty(getNameExpression()))
+            map.put("NameExpression", getNameExpression());
+        String importAliasStr = ExperimentJSONConverter.getImportAliasStringVal(getImportAliases());
+        if (!StringUtils.isEmpty(importAliasStr))
+            map.put("ImportAlias", importAliasStr);
+        if (!StringUtils.isEmpty(getCategory()))
+            map.put("Category", getCategory());
+        if (getSampleType() != null)
+            map.put("SampleType", getSampleType());
+
+        return map;
+    }
+
+
 }

@@ -17,12 +17,14 @@
 package org.labkey.api.gwt.client.assay.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +78,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _plateMetadata;
     private String _status;
     private List<String> _excludedContainerIds;
+    private String _auditUserComment;
 
     public GWTProtocol()
     {
@@ -436,4 +439,39 @@ public class GWTProtocol implements IsSerializable
     {
         _excludedContainerIds = excludedContainerIds;
     }
+
+    public String getAuditUserComment()
+    {
+        return _auditUserComment;
+    }
+
+    public void setAuditUserComment(String auditUserComment)
+    {
+        _auditUserComment = auditUserComment;
+    }
+
+    public Map<String, Object> getAuditRecordMap()
+    {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("Name", getName());
+        if (!StringUtils.isEmpty(getDescription()))
+            map.put("Description", getDescription());
+        if (!StringUtils.isEmpty(getStatus()))
+            map.put("Status", getStatus());
+        String autoCopyTargetContainerId = getAutoCopyTargetContainer() != null ? getAutoCopyTargetContainer().getEntityId() : getAutoCopyTargetContainerId();
+        if (!StringUtils.isEmpty(autoCopyTargetContainerId))
+            map.put("AutoCopyTargetContainer", autoCopyTargetContainerId);
+        if (!StringUtils.isEmpty(getAutoLinkCategory()))
+            map.put("AutoLinkCategory", getAutoLinkCategory());
+        map.put("SaveScriptFiles", isSaveScriptFiles());
+        map.put("IsEditableResults", isEditableResults());
+        map.put("IsEditableRuns", isEditableRuns());
+        map.put("IsBackgroundUpload", isBackgroundUpload());
+        map.put("IsQcEnabled", isQcEnabled());
+        map.put("IsPlateMetadataEnabled", isPlateMetadata());
+
+        return map;
+    }
+
+
 }

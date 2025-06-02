@@ -34,6 +34,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -304,13 +305,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         saveToPipeline,
         useAsync,
         importIdentity,
-        importLookupByAlternateKey,
         format,
         insertOption,
         crossTypeImport,
         allowCreateStorage,
+        importLookupByAlternateKey, // deprecated. Prefer lookupResolutionType
         crossFolderImport,
-        useTransactionAuditCache
+        useTransactionAuditCache,
+        lookupResolutionType,
     }
 
     @Nullable
@@ -325,7 +327,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             _optionParamsMap = new HashMap<>();
             _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
-            _optionParamsMap.put(Params.importLookupByAlternateKey, Boolean.valueOf(getParam(Params.importLookupByAlternateKey)));
             _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
             _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
             _optionParamsMap.put(Params.crossFolderImport, Boolean.valueOf(getParam(Params.crossFolderImport)));
@@ -337,6 +338,26 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean getOptionParamValue(Params p)
     {
         return getOptionParamsMap().getOrDefault(p, false);
+    }
+
+    @NotNull
+    protected LookupResolutionType getLookupResolutionType()
+    {
+        String paramValue = getParam(Params.lookupResolutionType);
+        if (paramValue == null)
+        {
+            paramValue = getParam(Params.importLookupByAlternateKey);
+            if (paramValue == null)
+                return LookupResolutionType.primaryKey;
+            else
+            {
+                if (Boolean.valueOf(paramValue))
+                    return LookupResolutionType.alternateThenPrimaryKey;
+                else
+                    return LookupResolutionType.primaryKey;
+            }
+        }
+        return LookupResolutionType.valueOf(paramValue);
     }
 
     protected boolean skipInsertOptionValidation()
@@ -575,6 +596,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setAuditBehaviorType(behaviorType)
                                 .setAuditUserComment(_auditUserComment)
                                 .setOptionParamsMap(getOptionParamsMap())
+                                .setLookupResolutionType(getLookupResolutionType())
                                 .setAllowLineageColumns(allowLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
@@ -789,17 +811,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
+        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), getLookupResolutionType(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
     {
-        return createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container, null);
+        return createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container, null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container, QueryImportPipelineJob importJob)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container, QueryImportPipelineJob importJob)
     {
-        boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
         boolean allowCreateStorage = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
@@ -809,7 +830,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setBackgroundJob(importJob);
         context.setInsertOption(insertOption);
-        context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
+        if (lookupResolutionType != null)
+            context.setLookupResolutionType(lookupResolutionType);
         if (auditBehaviorType != null)
         {
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
@@ -831,9 +853,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return context;
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException

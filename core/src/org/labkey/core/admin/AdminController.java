@@ -95,6 +95,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
@@ -317,6 +318,7 @@ import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sitevalidation.SiteValidationJob;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
@@ -346,7 +348,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -6787,25 +6788,16 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+        public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
         {
             String value = (String)ctx.get(getBoundColumn().getDisplayField().getFieldKey());
 
             if (value != null)
             {
-                StringBuilder sb = new StringBuilder();
-                String delim = "";
-
-                for (String name : value.split(VALUE_DELIMITER_REGEX))
-                {
-                    if (_assignmentSet.contains(name))
-                    {
-                        sb.append(delim);
-                        sb.append(name);
-                        delim = ",<br>";
-                    }
-                }
-                oldWriter.write(sb.toString());
+                out.write(Arrays.stream(value.split(VALUE_DELIMITER_REGEX))
+                    .filter(_assignmentSet::contains)
+                    .map(HtmlString::of)
+                    .collect(LabKeyCollectors.joining(HtmlString.unsafe(",<br>"))));
             }
         }
     }
@@ -11945,7 +11937,7 @@ public class AdminController extends SpringActionController
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User may be "guest", and will always be guest if being relayed to labkey.org
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
@@ -11973,7 +11965,14 @@ public class AdminController extends SpringActionController
                             boolean forwarded = jsonObj.optBoolean("forwarded", false);
                             if (!forwarded)
                             {
-                                jsonObj.put("user", getUser().getEmail());
+                                User user = getUser();
+                                String email = null;
+                                // If the user is not logged in, we may still be able to snag the email address from our cookie
+                                if (user.isGuest())
+                                    email = LoginController.getEmailFromCookie(getViewContext().getRequest());
+                                if (null == email)
+                                    email = user.getEmail();
+                                jsonObj.put("user", email);
                                 String ipAddress = request.getHeader("X-FORWARDED-FOR");
                                 if (ipAddress == null)
                                     ipAddress = request.getRemoteAddr();

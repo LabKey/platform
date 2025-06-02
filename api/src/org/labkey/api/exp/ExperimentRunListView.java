@@ -265,10 +265,10 @@ public class ExperimentRunListView extends QueryView
         PanelButton result = super.createExportButton(recordSelectorColumns);
         String defaultFilenamePrefix = "Exported" + (getTitle() == null ? "Runs" : getTitle());
 
-        HttpView filesView = ExperimentService.get().createFileExportView(getContainer(), getUser(), defaultFilenamePrefix);
+        HttpView<?> filesView = ExperimentService.get().createFileExportView(getContainer(), getUser(), defaultFilenamePrefix);
         result.addSubPanel("Files", filesView);
 
-        HttpView xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);
+        HttpView<?> xarView = ExperimentService.get().createRunExportView(getContainer(), defaultFilenamePrefix);
         result.addSubPanel("XAR", xarView);
 
         return result;

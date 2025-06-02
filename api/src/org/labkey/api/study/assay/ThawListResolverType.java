@@ -68,10 +68,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Sep 20, 2007
- */
 public class ThawListResolverType extends AssayFileWriter implements ParticipantVisitResolverType
 {
     public static final String NAME = "Lookup";
@@ -128,66 +124,70 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             }
 
             Map<String, ParticipantVisit> values = new HashMap<>();
-            TabLoader tabLoader = new TabLoader(file, true);
-            StringBuilder resolverErrors = new StringBuilder(validateThawListColumns(tabLoader.getColumns(), "Pasted tsv"));
 
-            int i = 0;
-            for (Map<String, Object> data : tabLoader.load())
+            try (TabLoader tabLoader = new TabLoader(file, true))
             {
-                i++;
-                Object index = data.get(INDEX_COLUMN_NAME);
-                if (index == null)
-                {
-                    if (resolverErrors.length() > 0)
-                        resolverErrors.append("\n");
-                    resolverErrors.append("Index value is missing in TSV for row: " + i);
-                    continue;
-                }
-                Object specimenIDObject = data.get(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
-                String specimenID = specimenIDObject == null ? null : specimenIDObject.toString();
-                Object participantIDObject = data.get(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
-                String participantID = participantIDObject == null ? null : participantIDObject.toString();
-                Object visitIDObject = data.get(AbstractAssayProvider.VISITID_PROPERTY_NAME);
-                if (visitIDObject != null && !(visitIDObject instanceof Number))
-                {
-                    if (resolverErrors.length() > 0)
-                        resolverErrors.append("\n");
-                    resolverErrors.append("Can not convert VisitId value: " + visitIDObject + " to double for index: " + index);
-                    continue;
-                }
-                Double visitID = visitIDObject == null ? null : ((Number) visitIDObject).doubleValue();
-                Object dateObject = data.get(AbstractAssayProvider.DATE_PROPERTY_NAME);
-                if (dateObject != null && !(dateObject instanceof Date))
-                {
-                    if (resolverErrors.length() > 0)
-                        resolverErrors.append("\n");
-                    resolverErrors.append("Can not convert Date value: " + dateObject + " to date for index: " + index);
-                    continue;
-                }
-                Date date = (Date) dateObject;
+                StringBuilder resolverErrors = new StringBuilder(validateThawListColumns(tabLoader.getColumns(), "Pasted tsv"));
 
-                Container rowLevelTargetStudy = null;
-                if (data.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME) != null)
+                int i = 0;
+                for (Map<String, Object> data : tabLoader.load())
                 {
-                    Set<Study> studies = StudyService.get().findStudy(data.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME), null);
-                    if (!studies.isEmpty())
+                    i++;
+                    Object index = data.get(INDEX_COLUMN_NAME);
+                    if (index == null)
                     {
-                        Study study = studies.iterator().next();
-                        rowLevelTargetStudy = study != null ? study.getContainer() : null;
+                        if (!resolverErrors.isEmpty())
+                            resolverErrors.append("\n");
+                        resolverErrors.append("Index value is missing in TSV for row: ").append(i);
+                        continue;
+                    }
+                    Object specimenIDObject = data.get(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME);
+                    String specimenID = specimenIDObject == null ? null : specimenIDObject.toString();
+                    Object participantIDObject = data.get(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
+                    String participantID = participantIDObject == null ? null : participantIDObject.toString();
+                    Object visitIDObject = data.get(AbstractAssayProvider.VISITID_PROPERTY_NAME);
+                    if (visitIDObject != null && !(visitIDObject instanceof Number))
+                    {
+                        if (!resolverErrors.isEmpty())
+                            resolverErrors.append("\n");
+                        resolverErrors.append("Can not convert VisitId value: ").append(visitIDObject).append(" to double for index: ").append(index);
+                        continue;
+                    }
+                    Double visitID = visitIDObject == null ? null : ((Number) visitIDObject).doubleValue();
+                    Object dateObject = data.get(AbstractAssayProvider.DATE_PROPERTY_NAME);
+                    if (dateObject != null && !(dateObject instanceof Date))
+                    {
+                        if (!resolverErrors.isEmpty())
+                            resolverErrors.append("\n");
+                        resolverErrors.append("Can not convert Date value: ").append(dateObject).append(" to date for index: ").append(index);
+                        continue;
+                    }
+                    Date date = (Date) dateObject;
+
+                    Container rowLevelTargetStudy = null;
+                    if (data.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME) != null)
+                    {
+                        Set<Study> studies = StudyService.get().findStudy(data.get(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME), null);
+                        if (!studies.isEmpty())
+                        {
+                            Study study = studies.iterator().next();
+                            rowLevelTargetStudy = study != null ? study.getContainer() : null;
+                        }
+                    }
+
+                    Container targetStudy = rowLevelTargetStudy != null ? rowLevelTargetStudy : targetStudyContainer;
+                    // Add the parsed ID's, etc, to the values map, and also ensure we don't have dupes for the same index value.
+                    if (null != values.put(index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer, targetStudy)))
+                    {
+                        if (!resolverErrors.isEmpty())
+                            resolverErrors.append("\n");
+                        resolverErrors.append("Multiple rows in TSV for index: ").append(index);
                     }
                 }
-
-                Container targetStudy = rowLevelTargetStudy != null ? rowLevelTargetStudy : targetStudyContainer;
-                // Add the parsed ID's, etc, to the values map, and also ensure we don't have dupes for the same index value.
-                if (null != values.put(index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer, targetStudy)))
-                {
-                    if (resolverErrors.length() > 0)
-                        resolverErrors.append("\n");
-                    resolverErrors.append("Multiple rows in TSV for index: " + index);
-                }
+                if (!resolverErrors.isEmpty())
+                    throw new ExperimentException(resolverErrors.toString());
             }
-            if (resolverErrors.length() > 0)
-                throw new ExperimentException(resolverErrors.toString());
+
             return new ThawListFileResolver(childResolver, values, runContainer);
         }
         else
@@ -465,15 +465,15 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         StringBuilder sb = new StringBuilder();
         // By convention, pasted tsv's must have a field called "Index"
         if (requireIndex && !columnSet.contains(INDEX_COLUMN_NAME))
-            sb.append(name + " is missing required column(s):\n" + INDEX_COLUMN_NAME);
+            sb.append(name).append(" is missing required column(s):\n").append(INDEX_COLUMN_NAME);
         for (String column : REQUIRED_COLUMNS)
         {
             if (!columnSet.contains(column))
             {
-                if (sb.length() > 0)
+                if (!sb.isEmpty())
                     sb.append("\n");
                 else
-                    sb.append(name + " is missing required column(s):\n");
+                    sb.append(name).append(" is missing required column(s):\n");
                 sb.append(column);
             }
         }

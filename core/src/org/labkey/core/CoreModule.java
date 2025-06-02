@@ -80,6 +80,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.external.tools.ExternalToolsViewService;
@@ -360,6 +361,7 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
+import static org.labkey.api.util.MothershipReport.FEATURE_FLAG_EXTENDED_METRICS;
 import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
@@ -534,6 +536,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Restore Object-Level Discussions",
                 "This option and all support for Object-Level Discussions will be removed in LabKey Server v25.7.",
                 false, false, FeatureType.Deprecated));
+        AdminConsole.addOptionalFeatureFlag(new OptionalFeatureFlag(SimpleTranslator.DEPRECATED_NULL_MISSING_VALUE_RESOLUTION,
+                "Resolve Missing Lookup Values to Null",
+                "When Lookup Validation for a field is not selected and lookup by alternate key is enabled, resolves missing lookup values to null instead of throwing an error. This option will be removed in LabKey Server v25.11.",
+                false, false, OptionalFeatureService.FeatureType.Deprecated));
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1181,13 +1187,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("sessionTimeout", ModuleLoader.getServletContext().getSessionTimeout());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
-            results.put("workbookCount", ContainerManager.getWorkbookCount());
-            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
-            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             Calendar cal = new GregorianCalendar();
             cal.add(Calendar.DATE, -30);
             results.put("uniqueRecentUserCount", UserManager.getAuthCount(cal.getTime(), false, false, true));
             results.put("uniqueRecentNonSystemUserCount", UserManager.getAuthCount(cal.getTime(), true, false, true));
+            if (OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_EXTENDED_METRICS))
+            {
+                // Optionally include a list of active users, Issue #53050
+                results.put("activeUsers", UserManager.getActiveUsers().stream()
+                    .filter(u -> !u.isSystem())
+                    .map(User::getEmail)
+                    .toList()
+                );
+            }
+
+            results.put("workbookCount", ContainerManager.getWorkbookCount());
+            results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
+            results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
             Map<String, Long> roleAssignments = new HashMap<>();

@@ -1145,7 +1145,7 @@ public class LoginController extends SpringActionController
     }
 
     @Nullable
-    private String getEmailFromCookie(HttpServletRequest request)
+    public static String getEmailFromCookie(HttpServletRequest request)
     {
         String email = null;
         Cookie[] cookies = request.getCookies();
@@ -2566,7 +2566,7 @@ public class LoginController extends SpringActionController
             if (null != testLink)
                 m.put("testLink", testLink);
             m.put("settingsFields", ap.getSettingsFields());
-            m.put("allowInsert", ap.allowInsert());  // TODO: Update client to gray out disallowed providers
+            m.put("allowInsert", ap.allowInsert());
             return m;
         }
     }

@@ -168,7 +168,8 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
                     if (null != msg)
                     {
-                        addFieldError(_data.getColumnInfo(i).getName(), msg);
+                        if (!getRowError().hasFieldErrors(_data.getColumnInfo(i).getName()))
+                            addFieldError(_data.getColumnInfo(i).getName(), msg);
                         validRow = false;
                         break;
                     }
@@ -192,6 +193,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
 
             if (!validRow)
             {
+                assert hasErrors();
                 // we'll never return true once we hit a validation error
                 hasValidationErrors = true;
                 checkShouldCancel();

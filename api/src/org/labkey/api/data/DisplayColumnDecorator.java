@@ -621,7 +621,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void render(RenderContext ctx, Writer out) throws IOException
+    public void render(RenderContext ctx, HtmlWriter out)
     {
         _column.render(ctx, out);
     }
