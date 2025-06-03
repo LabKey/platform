@@ -47,6 +47,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -1162,7 +1163,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         Map<String, Integer> response = ExperimentService.get().moveAssayRuns(expRuns.get(c), c, targetContainer, user, auditUserComment, auditType);
                         incrementCounts(allContainerResponse, response);
                     }
-                    catch (IllegalArgumentException e)
+                    catch (IllegalArgumentException | ExperimentException e)
                     {
                         throw new BatchValidationException(new ValidationException(e.getMessage()));
                     }
