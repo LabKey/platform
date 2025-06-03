@@ -151,6 +151,8 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.exp.query.SamplesSchema.SCHEMA_SAMPLES;
+import static org.labkey.experiment.ExpDataIterators.AliquotResolutionDataIterator.ALIQUOT_FROM_IS_ALIQUOT;
+import static org.labkey.experiment.ExpDataIterators.AliquotResolutionDataIterator.ALIQUOT_FROM_RESOLVED_NAME;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
@@ -1531,6 +1533,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(dataIterator, sampleType.getContainer(), materialTable, ExpSampleType.SEQUENCE_PREFIX, sampleType.getRowId());
             dataIterator = dib.getDataIterator(context);
 
+            // AliquotedFrom resolution
+            dataIterator = LoggingDataIterator.wrap(new ExpDataIterators.AliquotResolutionDataIterator(dataIterator, context, container, user, sampleType));
+
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize);
@@ -1676,25 +1681,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             Map<String, Object> map = new CaseInsensitiveHashMap<>(((MapDataIterator)getInput()).getMap());
 
-            String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj != null)
-            {
-                if (aliquotedFromObj instanceof String)
-                {
-                    // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                    // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                    aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj).trim();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-                else if (aliquotedFromObj instanceof Number)
-                {
-                    aliquotedFrom = aliquotedFromObj.toString();
-                }
-            }
-
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
-
             try
             {
                 Object currNameObj = map.get("Name");
@@ -1724,7 +1710,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             catch (NameGenerator.NameGenerationException e)
             {
                 // Failed to generate a name due to some part of the expression not in the row
-                if (isAliquot)
+                if ((boolean) map.getOrDefault(ALIQUOT_FROM_IS_ALIQUOT, false))
                 {
                     addRowError("Failed to generate name for aliquot on row " + e.getRowNumber() + " using aliquot naming pattern " + _sampleType.getAliquotNameExpression() + ". Check the syntax of the aliquot naming pattern and the data values for the aliquot.");
                 }
@@ -1986,13 +1972,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public static class SampleNameGeneratorState extends NameGeneratorState
     {
         private final NameGenerator aliquotNameGenerator;
-        private final ExpSampleTypeImpl sampleType;
 
-        public SampleNameGeneratorState(@NotNull ExpSampleTypeImpl sampleType, @NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, @Nullable NameGenerator aliquotNameGenerator)
+        public SampleNameGeneratorState(@NotNull NameGenerator nameGenerator, boolean incrementSampleCounts, @Nullable NameGenerator aliquotNameGenerator)
         {
             super(nameGenerator, incrementSampleCounts, nameGenerator.getExpressionSummary() == null ? null : nameGenerator.getExpressionSummary().sampleSummary());
             this.aliquotNameGenerator = aliquotNameGenerator;
-            this.sampleType = sampleType;
         }
 
         public String nextName(Map<String, Object> map, @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
@@ -2005,8 +1989,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                                @Nullable Set<ExpMaterial> parentSamples,
                                @Nullable List<Supplier<Map<String, Object>>> _extraPropsFns) throws NameGenerator.NameGenerationException
         {
-            String aliquotedFrom = resolveAliquotParentName(map);
-            boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+            boolean isAliquot = (boolean) map.getOrDefault(ALIQUOT_FROM_IS_ALIQUOT, false);
+            if (isAliquot)
+            {
+                // Issue 53153: When a name has been resolved for the aliquot,
+                // then use that instead of the supplied value for AliquotedFrom.
+                Object name = map.get(ALIQUOT_FROM_RESOLVED_NAME);
+                if (name instanceof String aliquotParentName)
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotParentName);
+            }
 
             String generatedName = null;
             if (isAliquot && aliquotNameGenerator != null)
@@ -2015,52 +2006,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 generatedName = nextName(map, parentDatas, parentSamples, _extraPropsFns, null);
 
             return generatedName;
-        }
-
-        private @Nullable ExpMaterial findAliquotParent(Object sampleIdentifier) throws NameGenerator.NameGenerationException
-        {
-            try
-            {
-                return ExperimentService.get().findExpMaterial(_container, _user, sampleIdentifier, sampleType, renameCache, materialCache);
-            }
-            catch (ValidationException e)
-            {
-                throw new NameGenerator.NameGenerationException(_rowNumber, e);
-            }
-        }
-
-        private @Nullable String resolveAliquotParentName(Map<String, Object> map) throws NameGenerator.NameGenerationException
-        {
-            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            if (aliquotedFromObj == null)
-                return null;
-
-            String aliquotedFrom = null;
-
-            if (aliquotedFromObj instanceof String aliquotStr)
-            {
-                // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
-                // but we don't want to include the quotes in the name we generate using AliquotedFrom
-                aliquotedFrom = StringUtilsLabKey.unquoteString(aliquotStr).trim();
-                map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-            }
-            else if (aliquotedFromObj instanceof Number)
-            {
-                aliquotedFrom = aliquotedFromObj.toString();
-            }
-
-            if (aliquotedFrom != null)
-            {
-                // Issue 53153: support "RowId" as value for "AliquotedFrom"
-                ExpMaterial aliquotParent = findAliquotParent(aliquotedFrom);
-                if (aliquotParent != null)
-                {
-                    aliquotedFrom = aliquotParent.getName();
-                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
-                }
-            }
-
-            return aliquotedFrom;
         }
     }
 }

@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -32,6 +33,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SimpleFilter;
@@ -378,7 +380,7 @@ public class ExpDataIterators
             _storedAmountCol = map.get(StoredAmount.name());
             _unitsCol = map.get(Units.name());
             _sampleStateCol = map.get(SampleState.name());
-            _aliquotedFromCol = map.get(ALIQUOTED_FROM_INPUT);
+            _aliquotedFromCol = map.get(AliquotResolutionDataIterator.ALIQUOT_FROM_RESOLVED_NAME);
             _rootMaterialRowIdCol = map.get(RootMaterialRowId.name());
             _rootIdToRecomputeCol = map.get(ROOT_RECOMPUTE_ROWID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
@@ -984,12 +986,6 @@ public class ExpDataIterators
             return allParts;
         }
 
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            return super.next();
-        }
-
         protected void _processRun(ExpRunItem runItem,
                                    List<UploadSampleRunRecord> runRecords,
                                    Set<Pair<String, String>> parentNames,
@@ -1105,24 +1101,13 @@ public class ExpDataIterators
         {
             super(di, context, container, user, currentDataType, isSample, false /* for insert/merge, required parents are always checked in StandardDataIteratorBuilder */);
             _skipAliquot = skipAliquot || context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns);
-
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _lsidNames = new HashMap<>();
             _parentNames = new LinkedHashMap<>();
             _aliquotParents = new LinkedHashMap<>();
             _candidateAliquotNames = new ArrayList<>();
 
-            Integer aliquotParentCol = -1;
-            for (Map.Entry<String, Integer> entry : map.entrySet())
-            {
-                String name = entry.getKey();
-                if (isSample() && ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
-                {
-                    aliquotParentCol = entry.getValue();
-                }
-            }
-
-            _aliquotParentCol = aliquotParentCol;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _aliquotParentCol = isSample() ? map.getOrDefault(ALIQUOTED_FROM_INPUT, -1) : -1;
         }
 
         @Override
@@ -1284,17 +1269,7 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _parentNames = new LinkedHashMap<>();
             _aliquotParents = new LinkedHashMap<>();
-
-            Integer aliquotParentCol = -1;
-            for (Map.Entry<String, Integer> entry : map.entrySet())
-            {
-                if (isSample() && "AliquotedFromLSID".equalsIgnoreCase(entry.getKey()))
-                {
-                    aliquotParentCol = entry.getValue();
-                }
-            }
-
-            _aliquotParentCol = aliquotParentCol;
+            _aliquotParentCol = isSample() ? map.getOrDefault(AliquotedFromLSID.name(), -1) : -1;
             _useLsid = map.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
         }
 
@@ -1334,7 +1309,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFromLSID"));
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, AliquotedFromLSID.name()));
                         }
 
                         if (aliquotParentName != null)
@@ -3205,6 +3180,104 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
 
             return true;
+        }
+    }
+
+    public static class AliquotResolutionDataIterator extends SimpleTranslator
+    {
+        public static final String ALIQUOT_FROM_IS_ALIQUOT = ALIQUOTED_FROM_INPUT + "#IsAliquot";
+        public static final String ALIQUOT_FROM_RESOLVED_NAME = ALIQUOTED_FROM_INPUT + "#Name";
+        public static final String ALIQUOT_FROM_RESOLVED_ROW_ID = ALIQUOTED_FROM_INPUT + "#RowId";
+
+        final Integer _aliquotFromCol;
+        final Integer _aliquotNameCol;
+        final Integer _aliquotRowIdCol;
+        final Container _container;
+        final Integer _isAliquotCol;
+        final Map<Integer, ExpMaterial> _materialCache;
+        final RemapCache _remapCache;
+        final ExpSampleTypeImpl _sampleType;
+        final User _user;
+
+        public AliquotResolutionDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, ExpSampleTypeImpl sampleType)
+        {
+            super(di, context);
+            selectAll();
+
+            _container = container;
+            _sampleType = sampleType;
+            _user = user;
+
+            var columnNameMap = getColumnNameMap();
+            _aliquotFromCol = columnNameMap.get(ALIQUOTED_FROM_INPUT);
+            boolean hasAliquotFromCol = _aliquotFromCol != null;
+
+            _materialCache = hasAliquotFromCol ? new HashMap<>() : null;
+            _remapCache = hasAliquotFromCol ? new RemapCache() : null;
+            _isAliquotCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_IS_ALIQUOT, JdbcType.BOOLEAN), (Supplier<Boolean>)() -> hasAliquotFromCol);
+
+            if (hasAliquotFromCol)
+            {
+                _aliquotNameCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_NAME, JdbcType.VARCHAR), (Supplier<String>)() -> null);
+                _aliquotRowIdCol = addColumn(new BaseColumnInfo(ALIQUOT_FROM_RESOLVED_ROW_ID, JdbcType.INTEGER), (Supplier<Integer>)() -> null);
+            }
+            else
+            {
+                _aliquotNameCol = null;
+                _aliquotRowIdCol = null;
+            }
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (hasNext && _aliquotFromCol != null)
+            {
+                Object aliquotedFromObj = get(_aliquotFromCol);
+                if (aliquotedFromObj != null)
+                {
+                    String aliquotedFrom = null;
+                    if (aliquotedFromObj instanceof String aliquotStr)
+                    {
+                        // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
+                        // but we don't want to include the quotes in the name we generate using AliquotedFrom
+                        aliquotedFrom = StringUtilsLabKey.unquoteString(aliquotStr).trim();
+                    }
+                    else if (aliquotedFromObj instanceof Number)
+                    {
+                        // Issue 53153: support "RowId" as value for "AliquotedFrom"
+                        aliquotedFrom = aliquotedFromObj.toString();
+                    }
+
+                    boolean isAliquot = !StringUtils.isEmpty(aliquotedFrom);
+                    _row[_isAliquotCol] = isAliquot;
+
+                    if (isAliquot)
+                    {
+                        try
+                        {
+                            ExpMaterial aliquotParent = ExperimentService.get().findExpMaterial(_container, _user, aliquotedFrom, _sampleType, _remapCache, _materialCache);
+                            if (aliquotParent != null)
+                            {
+                                _row[_aliquotNameCol] = aliquotParent.getName();
+                                _row[_aliquotRowIdCol] = aliquotParent.getRowId();
+                            }
+                        }
+                        catch (ValidationException e)
+                        {
+                            addRowError(e.getMessage());
+                        }
+                    }
+                }
+                else
+                {
+                    _row[_isAliquotCol] = false;
+                }
+            }
+
+            return hasNext;
         }
     }
 }
