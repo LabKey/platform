@@ -389,7 +389,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
         return null;
     }
 
-    void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
+    void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData) throws ExperimentException;
 
     default void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
     {
