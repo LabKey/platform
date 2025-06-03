@@ -308,6 +308,4 @@ public class MenuViewFactory
             out.write("</tr>");
         }
     }
-
-
 }

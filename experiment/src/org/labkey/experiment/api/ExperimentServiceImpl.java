@@ -52,6 +52,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -210,6 +211,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -258,6 +260,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9761,7 +9764,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException
     {
         if (assayRuns.isEmpty())
             throw new IllegalArgumentException("No assayRuns provided to move operation.");
@@ -9816,7 +9819,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                        moveFile(renameData);
+                        moveFile(renameData, container, user);
                 }
             }, POSTCOMMIT);
 
@@ -9826,7 +9829,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return assayMoveData.counts();
     }
 
-    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData, Container sourceContainer, User user)
     {
         String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
         File targetFile = renameData.targetFile();
@@ -9846,18 +9849,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 return false;
             }
         }
-        if (!sourceFile.renameTo(targetFile))
-        {
-            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' assay run '%s' (field: '%s') failed.",
-                    sourceFile.getAbsolutePath(),
-                    targetFile.getAbsolutePath(),
-                    assayName,
-                    runName,
-                    fieldName));
-            return false;
-        }
 
-        return true;
+
+        String changeDetail = String.format("'%s' assay run '%s' (field: '%s')", assayName, runName, fieldName);
+        return moveFileLinkFile(sourceFile, targetFile, sourceContainer, user, changeDetail);
     }
 
     @Override
@@ -10031,6 +10026,68 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         JdbcType type = dp.getPropertyType().getJdbcType();
         return type.isText() || type.isInteger();
+    }
+
+    /**
+     *
+     * Move file (post-commit) after moving sample/assay data
+     */
+    public boolean moveFileLinkFile(File sourceFile, File targetFile, Container sourceFileContainer, User user, String actionComment)
+    {
+        if (!sourceFile.exists())
+            return false;
+
+        // if not otherwise referenced, move the file. Otherwise, copy the file
+        boolean isMove = getFileReferenceCount(user, sourceFileContainer, sourceFile) == 0; // source record already moved to target folder
+        FileSystemAuditProvider.FileSystemAuditEvent event = null;
+        if (isMove)
+        {
+            boolean success = sourceFile.renameTo(targetFile);
+            if (!success)
+            {
+                LOG.warn(String.format("Rename of '%s' to '%s' failed for %s" , sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), actionComment));
+                return false;
+            }
+
+            event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File moved to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+        }
+        else
+        {
+            try
+            {
+                Files.copy(sourceFile.toPath(), targetFile.toPath());
+                event = new FileSystemAuditProvider.FileSystemAuditEvent(sourceFileContainer, "File copied to: " + targetFile.getAbsolutePath() + " for " + actionComment);
+            }
+            catch (IOException e)
+            {
+                LOG.warn(String.format("Copy of '%s' to '%s' failed for " + actionComment, sourceFile.getAbsolutePath(), targetFile.getAbsolutePath()));
+                return false;
+            }
+        }
+
+        event.setDirectory(sourceFile.getParentFile().getAbsolutePath());
+        event.setFile(sourceFile.getName());
+        event.setResourcePath(sourceFile.getAbsolutePath());
+
+        AuditLogService.get().addEvent(user, event);
+        return true;
+    }
+
+    public long getFileReferenceCount(User user, Container container, File file)
+    {
+        if (!container.hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("You don't have the required permission to perform this action");
+
+        FileLinkFileListener fileListener = new FileLinkFileListener();
+        SQLFragment unionSql = fileListener.listFilesQuery(true, file.getAbsolutePath());
+
+        return new SqlSelector(CoreSchema.getInstance().getSchema(), unionSql).getRowCount();
+    }
+
+    @Override
+    public boolean canMoveFileReference(User user, Container container, File file, int moveCount)
+    {
+        return getFileReferenceCount(user, container, file) <= moveCount;
     }
 
     public Map<String, Map<String, MissingFilesCheckInfo>> doMissingFilesCheck(User user, Container container, boolean trackMissingFiles) throws SQLException

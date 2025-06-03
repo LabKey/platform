@@ -21,14 +21,19 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.io.IOException;
 import java.io.Writer;
+
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 
 abstract class DataLinkColumn extends DataColumn
 {
@@ -43,73 +48,62 @@ abstract class DataLinkColumn extends DataColumn
     protected abstract ActionURL getURL(ExpData data);
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        ExpData data = getData(ctx);
+        ExpData data = getData(ctx, getColumnInfo());
 
         if (data != null)
         {
-            renderData(oldWriter, data);
+            renderData(out, data);
         }
     }
 
-    protected void renderData(Writer out, ExpData data) throws IOException
+    protected void renderData(HtmlWriter out, ExpData data)
     {
         ActionURL url = getURL(data);
         if (url != null)
         {
-            out.write("<a href=\"");
-            out.write(url.toString());
-            out.write("\">");
+            out.write(LinkBuilder.simpleLink(data.getName(), url));
         }
-        out.write(PageFlowUtil.filter(data.getName()));
-        if (url != null)
+        else
         {
-            out.write("</a>");
+            out.write(data.getName());
         }
 
         renderThumbnailPopup(out, data, url);
     }
 
-    protected void renderThumbnailPopup(Writer out, ExpData data, ActionURL url) throws IOException
+    protected void renderThumbnailPopup(HtmlWriter out, ExpData data, ActionURL url)
     {
         if (data.isInlineImage() && data.isFileOnDisk())
         {
-            out.write("&nbsp;");
+            out.write(HtmlString.NBSP);
             String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
-            PageFlowUtil.popupHelp(HtmlString.unsafe(renderThumbnailImg(data, url)), data.getFile().getName()).link(HtmlString.unsafe(icon)).width(310).script(url == null ? null : "window.location = '" + url + "'").appendTo(out);
+            PageFlowUtil.popupHelp(renderThumbnailImg(data, url), data.getFile().getName()).link(HtmlString.unsafe(icon)).width(310).script(url == null ? null : "window.location = '" + url + "'").appendTo(out);
         }
     }
 
-    protected String renderThumbnailImg(ExpData data, ActionURL url)
+    protected Renderable renderThumbnailImg(ExpData data, ActionURL url)
     {
-        StringBuilder html = new StringBuilder();
+        Renderable ret;
         if (data.isInlineImage() && data.isFileOnDisk())
         {
             ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
             thumbnailURL.addParameter("maxDimension", 300);
-            if (url != null)
-            {
-                html.append("<a href=\"");
-                html.append(url);
-                html.append("\">");
-            }
+            Renderable img = IMG(at(src, thumbnailURL));
 
-            html.append("<img src=\"");
-            html.append(thumbnailURL);
-            html.append("\" />");
-
-            if (url != null)
-            {
-                html.append("</a>");
-            }
+            ret = url != null ? LinkBuilder.simpleLink(img, url) : img;
         }
-        return html.toString();
+        else
+        {
+            ret = HtmlString.EMPTY_STRING;
+        }
+        return ret;
     }
 
-    protected ExpData getData(RenderContext ctx)
+    static ExpData getData(RenderContext ctx, ColumnInfo col)
     {
-        Integer rowIdObject = ctx.get(getColumnInfo().getFieldKey(), Integer.class);
+        Integer rowIdObject = ctx.get(col.getFieldKey(), Integer.class);
         ExpData data = null;
         if (rowIdObject != null)
         {
@@ -129,6 +123,7 @@ abstract class DataLinkColumn extends DataColumn
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
-        ExpData data = getData(ctx);
+        ExpData data = getData(ctx, getColumnInfo());
         return data == null ? null : getURL(data);
-    }}
+    }
+}

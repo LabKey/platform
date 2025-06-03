@@ -31,14 +31,13 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Collapsible;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTreeManager;
-import org.labkey.api.view.SimpleTextDisplayElement;
+import org.labkey.api.view.SimpleRenderableDisplayElement;
 import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 
-/**
- * User: jeckels
- * Date: Jan 28, 2008
- */
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.id;
+
 public class ExperimentRunGroupsView extends VBox
 {
     public ExperimentRunGroupsView(User user, final Container c, final ExpRun run, final ActionURL currentURL, BindException errors)
@@ -61,7 +60,13 @@ public class ExperimentRunGroupsView extends VBox
                 createButton.setDisplayPermission(UpdatePermission.class);
                 bar.add(createButton);
 
-                bar.add(new SimpleTextDisplayElement("<span id=\"experimentRunGroupMembershipStatus\" />", true));
+                bar.add(
+                    new SimpleRenderableDisplayElement(
+                        SPAN(
+                            id("experimentRunGroupMembershipStatus")
+                        )
+                    )
+                );
             }
         };
         experimentsView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);

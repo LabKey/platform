@@ -38,7 +38,7 @@ Ext4.define('LABKEY.internal.FlagColumn', {
         Ext4.QuickTips.init();
 
         var clickedComment,
-            flagIcons = Ext4.DomQuery.select('i[flagId="' + flagId + '"');
+            flagIcons = Ext4.DomQuery.select('i[data-flagid="' + flagId + '"');
 
         if (Ext4.isEmpty(flagIcons)) {
             return;
@@ -96,7 +96,7 @@ Ext4.define('LABKEY.internal.FlagColumn', {
 
                             for (var i=0; i < lsids.length; i++) {
                                 lsid = lsids[i];
-                                flagIcons = Ext4.DomQuery.select("i[flagId='" + lsid + "']");
+                                flagIcons = Ext4.DomQuery.select("i[data-flagid='" + lsid + "']");
                                 for (var j = 0; j < flagIcons.length; j++) {
                                     el = Ext4.get(flagIcons[j]);
                                     if (comment) {

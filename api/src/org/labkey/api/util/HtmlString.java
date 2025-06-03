@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONString;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -37,7 +38,7 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
     private final @NotNull String _s;
 
     /**
-     * Returns an HtmlString that wraps an HTML encoded version of the passed in String.
+     * Returns an HtmlString that wraps an HTML-encoded version of the passed in String.
      * @param s A char sequence. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @return An HtmlString that encodes and wraps the String.
      */
@@ -48,11 +49,24 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
 
     public static @NotNull HtmlString of(@Nullable Object o)
     {
+        if (o instanceof DOM.Renderable r)
+        {
+            return of(r);
+        }
         return of(o == null ? null : o.toString());
     }
 
+    public static @NotNull HtmlString of(@Nullable DOM.Renderable r)
+    {
+        if (r == null)
+            return EMPTY_STRING;
+        if (r instanceof HtmlString s)
+            return s;
+        return new HtmlString(r.renderToString());
+    }
+
     /**
-     * Returns an HtmlString that wraps an HTML encoded version of the passed in String, with the option to preserve
+     * Returns an HtmlString that wraps an HTML-encoded version of the passed in String, with the option to preserve
      * whitespace.
      * @param s A char sequence. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
      * @param translateWhiteSpace A flag that determines whether whitespace should be encoded or not

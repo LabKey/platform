@@ -17,27 +17,29 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.DOM.Renderable;
+import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.io.IOException;
-import java.io.Writer;
+import static org.labkey.api.util.DOM.Attribute.height;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.at;
 
 /**
  * An implementation that renders an image in HTML, with a link, instead of a value from the results of the query.
- * User: jeckels
- * Date: Jan 11, 2008
  */
 public class IconDisplayColumn extends DataColumn
 {
-    private int _height;
-    private int _width;
-    private String _imageTitle;
-    @NotNull
-    private final ActionURL _linkURL;
+    private final int _height;
+    private final int _width;
+    private final @NotNull ActionURL _linkURL;
     private final String _parameterName;
     private final String _imageURL;
+
+    private String _imageTitle;
 
     public IconDisplayColumn(ColumnInfo col, int height, int width, @NotNull ActionURL linkURL, String parameterName, String imageURL)
     {
@@ -71,14 +73,15 @@ public class IconDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderGridCellContents(RenderContext ctx, Writer oldWriter, HtmlWriter out) throws IOException
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
         ActionURL linkURL = _linkURL.clone();
         Object value = getColumnInfo().getValue(ctx);
         if (value != null)
         {
             linkURL.addParameter(_parameterName, value.toString());
-            oldWriter.write("<a href=\"" + linkURL.getLocalURIString() + "\" title=\"" + PageFlowUtil.filter(_imageTitle) + "\"><img src=\"" + _imageURL + "\" height=\"" + _height + "\" width=\"" + _width + "\"/></a>");
+            Renderable img = IMG(at(src, _imageURL, height, _height, width, _width));
+            out.write(LinkBuilder.simpleLink(img, linkURL).title(_imageTitle));
         }
     }
 }
