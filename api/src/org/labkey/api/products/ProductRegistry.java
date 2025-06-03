@@ -37,6 +37,7 @@ import org.labkey.api.view.ViewContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -230,14 +231,16 @@ public class ProductRegistry
         if (optionalProvider.isPresent())
             return optionalProvider.get();
 
+        List<String> orderedProducts = getProducts(true, false).stream().filter(Product::isEnabled).map(Product::getProductGroupId).toList();
+        ProductMenuProvider highestProvider = providers.stream().min(Comparator.comparing(provider -> orderedProducts.indexOf(provider.getProductId()))).orElse(null);
         // then see if there's a provider that matches the configured product
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
-            return providers.get(0);
+            return highestProvider;
 
         optionalProvider = providers.stream().filter(provider -> provider.getProductId().equals(product.getProductGroupId())).findFirst();
-        // if neither of those is true, use the first provider
-        return optionalProvider.orElseGet(() -> providers.get(0));
+        // if neither of those is true (when can this happen?), use the highest provider
+        return optionalProvider.orElseGet(() -> highestProvider);
     }
 
     @Nullable
