@@ -2047,7 +2047,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             else if (aliquotedFromObj instanceof Number)
             {
                 aliquotedFrom = aliquotedFromObj.toString();
+            }
 
+            if (aliquotedFrom != null)
+            {
                 // Issue 53153: support "RowId" as value for "AliquotedFrom"
                 ExpMaterial aliquotParent = findAliquotParent(aliquotedFrom);
                 if (aliquotParent != null)
