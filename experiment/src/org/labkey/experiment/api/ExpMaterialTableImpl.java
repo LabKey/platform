@@ -782,7 +782,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         UserSchema plateUserSchema = QueryService.get().getUserSchema(_userSchema.getUser(), getContainer(), "plate");
         SQLFragment sql;
-        if (plateUserSchema != null)
+        if (plateUserSchema != null && plateUserSchema.getTable("Well") != null)
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
