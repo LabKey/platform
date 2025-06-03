@@ -333,6 +333,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             for (Process p : processes)
             {
                 // First try a normal shutdown
+                LOG.info("Attempting to kill pipeline job process gracefully: {}", p.toHandle());
                 p.destroy();
                 try
                 {
@@ -342,6 +343,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                     // Make sure it dies
                     if (p.isAlive())
                     {
+                        LOG.info("Attempting to kill pipeline job process forcibly: {}", p.toHandle());
                         p.destroyForcibly();
                     }
                 }
