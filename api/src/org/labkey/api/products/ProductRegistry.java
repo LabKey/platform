@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -218,23 +219,25 @@ public class ProductRegistry
     {
         List<String> productIds = getProductIdsForContainer(container);
         List<ProductMenuProvider> providers = getRegisteredProducts().stream().filter(provider -> productIds.contains(provider.getProductId())).toList();
+        if (providers.isEmpty())
+            return null;
+
         if (providers.size() == 1)
             return providers.get(0);
 
+        // see if there's a provider that matches the folder type (need to check this first so if LabKey LIMS or LKB is the configured product you can still show LKSM folders)
+        Optional<ProductMenuProvider> optionalProvider = providers.stream().filter(provider -> provider.getFolderTypeName() != null && provider.getFolderTypeName().equals(container.getFolderType().getName())).findFirst();
+        if (optionalProvider.isPresent())
+            return optionalProvider.get();
+
+        // then see if there's a provider that matches the configured product
         Product product = new ProductConfiguration().getCurrentProduct();
         if (product == null)
-            return providers.isEmpty() ? null : providers.get(0);
-        ProductMenuProvider selectedProvider = null;
-        for (ProductMenuProvider provider : providers)
-        {
-            if (product.getProductGroupId().equals(provider.getProductId()))
-                return provider;
-            if (container.getFolderType().getName().equals(provider.getFolderTypeName()))
-                return provider;
-            if (selectedProvider == null)
-                selectedProvider = provider;
-        }
-        return selectedProvider;
+            return providers.get(0);
+
+        optionalProvider = providers.stream().filter(provider -> provider.getProductId().equals(product.getProductGroupId())).findFirst();
+        // if neither of those is true, use the first provider
+        return optionalProvider.orElseGet(() -> providers.get(0));
     }
 
     @Nullable
