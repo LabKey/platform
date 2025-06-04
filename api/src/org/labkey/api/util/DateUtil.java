@@ -94,6 +94,8 @@ public class DateUtil
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING;
 
+    // SimpleDataFormat does not support microseconds, it can only support microseconds
+    private static Pattern NON_SIMPLE_PRECISION_TIME_PATTERN = Pattern.compile(".*([0-5][0-9]):([0-5][0-9])\\.(\\d{4,6}).*");
     private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
     private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {
         ISO_LONG_TIME_FORMAT_STRING,
@@ -807,7 +809,7 @@ public class DateUtil
         }
     }
 
-    public static Date parseSimpleTime(@NotNull Object o)
+    public static @Nullable Date parseSimpleTime(@NotNull Object o)
     {
         Date duration = null;
         ParseException parseException = null;
@@ -822,6 +824,9 @@ public class DateUtil
             }
             catch (ParseException ignore)
             {
+                // SimpleDateFormat is not able to parse milliseconds
+                if (NON_SIMPLE_PRECISION_TIME_PATTERN.matcher(s).matches())
+                    return null;
             }
         }
         if (duration == null)
@@ -854,7 +859,9 @@ public class DateUtil
     {
         try
         {
-            return new Time(parseSimpleTime(s).getTime());
+            Date parsedTime = parseSimpleTime(s);
+            if (parsedTime != null)
+                return new Time(parsedTime.getTime());
         }
         catch (ConversionException ignored)
         {
@@ -1522,16 +1529,22 @@ Parse:
             }
         }
 
-        void assertIllegalFromTimeString(String s, boolean strict)
+        void assertIllegalFromTimeString(String s, boolean strict, boolean simpleFormatOnly)
         {
             try
             {
-                DateUtil.fromTimeString(s, strict);
-                fail("Not a legal time: " + s);
+                Time parsed = DateUtil.fromTimeString(s, strict, simpleFormatOnly);
+                if (parsed != null)
+                    fail("Not a legal time " + (simpleFormatOnly ? "in simple format" : "") + ": " + s);
             }
             catch (ConversionException x)
             {
             }
+        }
+
+        void assertIllegalFromTimeString(String s, boolean strict)
+        {
+            assertIllegalFromTimeString(s, strict, false);
         }
 
         @Test
@@ -1885,6 +1898,16 @@ Parse:
                 assertIllegalDate(illegalFormat);
         }
 
+        private int getMillisecondsFromTimeString(String str, boolean strict, boolean simpleOnly)
+        {
+            return (int) (fromTimeString(str, strict, simpleOnly).getTime() % 1000);
+        }
+
+        private int getMillisecondsFromTimeString(String string, boolean strict)
+        {
+            return getMillisecondsFromTimeString(string, strict, false);
+        }
+
         @Test
         public void testTime()
         {
@@ -1961,6 +1984,30 @@ Parse:
             assertIllegalFromTimeString("70", true);
             assertIllegalFromTimeString("1830", false);
             assertIllegalFromTimeString("1830", true);
+
+            assertEquals(java.sql.Time.valueOf("11:22:33").toString(), fromTimeString("11:22:33.1", true, true).toString());
+            assertEquals(1, getMillisecondsFromTimeString("11:22:33.1", true, true));
+            assertEquals(java.sql.Time.valueOf("11:22:33").toString(), fromTimeString("11:22:33.1", true, false).toString());
+            assertEquals(1, getMillisecondsFromTimeString("11:22:33.1", true, false));
+            assertEquals(java.sql.Time.valueOf("23:22:33").toString(), fromTimeString("11:22:33.1 PM", true, true).toString());
+            assertEquals(1, getMillisecondsFromTimeString("11:22:33.1 PM", true, true));
+            assertEquals(java.sql.Time.valueOf("23:22:33").toString(), fromTimeString("11:22:33.1 PM", true, false).toString());
+            assertEquals(1, getMillisecondsFromTimeString("11:22:33.1 PM", true, false));
+            assertEquals(java.sql.Time.valueOf("11:22:33").toString(), fromTimeString("11:22:33.123", true, true).toString());
+            assertEquals(123, getMillisecondsFromTimeString("11:22:33.123", true, true));
+            assertEquals(java.sql.Time.valueOf("11:22:33").toString(), fromTimeString("11:22:33.123", true, false).toString());
+            assertEquals(123, getMillisecondsFromTimeString("11:22:33.123", true, false));
+            assertEquals(java.sql.Time.valueOf("23:22:33").toString(), fromTimeString("11:22:33.123 PM", true, true).toString());
+            assertEquals(123, getMillisecondsFromTimeString("11:22:33.123 PM", true, true));
+            assertEquals(java.sql.Time.valueOf("23:22:33").toString(), fromTimeString("11:22:33.123 PM", true, false).toString());
+            assertEquals(123, getMillisecondsFromTimeString("11:22:33.123 PM", true, false));
+            assertIllegalFromTimeString("11:22:33.1234", true, true);
+            assertIllegalFromTimeString("11:22:33.3456 PM", true, true);
+            assertEquals(java.sql.Time.valueOf("11:22:33").toString(), fromTimeString("11:22:33.3453", true, false).toString());
+            assertEquals(345, getMillisecondsFromTimeString("11:22:33.3453", true, false));
+            assertEquals(java.sql.Time.valueOf("23:22:33").toString(), fromTimeString("11:22:33.3456 PM", true, false).toString());
+            assertEquals(346, getMillisecondsFromTimeString("11:22:33.3456 PM", true, false));
+
         }
 
         @Test
