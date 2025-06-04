@@ -11223,7 +11223,7 @@ public class AdminController extends SpringActionController
         public String getExistingValues()
         {
             // The JSP JavaScript delimits with "\n". Not sure where these "\r"s are coming from, but we need to strip them.
-            return _existingValues.replace("\r", "");
+            return StringUtils.trimToEmpty(_existingValues).replace("\r", "");
         }
 
         @SuppressWarnings("unused")
