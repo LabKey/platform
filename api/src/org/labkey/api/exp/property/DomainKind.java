@@ -145,13 +145,15 @@ abstract public class DomainKind<T> implements Handler<String>
 
     /**
      * Create a Domain appropriate for this DomainKind.
-     * @param domain The domain design.
-     * @param options Any domain kind specific properties/options.
+     *
+     * @param domain    The domain design.
+     * @param options   Any domain kind specific properties/options.
      * @param container Container
-     * @param user User
+     * @param user      User
+     * @param forUpdate Whether the returned domain should be mutable or not
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain<GWTPropertyDescriptor> domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.

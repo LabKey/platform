@@ -135,7 +135,7 @@ public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRun
     }
 
     @Override
-    public Domain getResultsDomain(ExpProtocol protocol)
+    public Domain getResultsDomain(ExpProtocol protocol, boolean forUpdate)
     {
         return null;
     }

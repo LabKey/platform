@@ -360,7 +360,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo, boolean forUpdate)
     {
         String name = StringUtils.trimToEmpty(domain.getName());
         String keyName = listProperties.getKeyName();
@@ -411,7 +411,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
-            Domain d = list.getDomain();
+            Domain d = list.getDomain(forUpdate);
 
             Set<String> reservedNames = getReservedPropertyNames(d, user);
             Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
@@ -450,7 +450,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new RuntimeException(e);
         }
 
-        return list.getDomain();
+        return list.getDomain(forUpdate);
     }
 
     @Override

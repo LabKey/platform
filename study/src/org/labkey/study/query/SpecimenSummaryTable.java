@@ -151,7 +151,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addColumn(new ExprColumn(this, "QualityControlFlag", sqlFragConflicts, JdbcType.BOOLEAN));
 
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(schema.getContainer(), null, null);
-        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false);
+        Domain specimenDomain = specimenTablesProvider.getDomain("Specimen", false, false);
         if (null == specimenDomain)
             throw new IllegalStateException("Expected Specimen table to already be created.");
         addOptionalColumns(specimenDomain.getNonBaseProperties(), false, null);

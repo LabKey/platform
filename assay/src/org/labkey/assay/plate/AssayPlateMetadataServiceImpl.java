@@ -1085,13 +1085,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Override
     public @Nullable Domain getPlateReplicateStatsDomain(ExpProtocol protocol)
     {
-        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName());
+        return getPlateReplicateStatsDomain(protocol.getContainer(), protocol.getName(), false);
     }
 
-    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName)
+    private @Nullable Domain getPlateReplicateStatsDomain(Container container, String protocolName, boolean forUpdate)
     {
         String uri = getPlateReplicateStatsDomainUri(container, protocolName);
-        return PropertyService.get().getDomain(container, uri);
+        return PropertyService.get().getDomain(container, uri, forUpdate);
     }
 
     private String getPlateReplicateStatsDomainUri(Container container, String protocolName)
@@ -1107,7 +1107,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private @NotNull Domain ensurePlateReplicateStatsDomain(Container container, String protocolName)
     {
-        Domain domain = getPlateReplicateStatsDomain(container, protocolName);
+        Domain domain = getPlateReplicateStatsDomain(container, protocolName, true);
         if (domain == null)
             domain = PropertyService.get().createDomain(container, getPlateReplicateStatsDomainUri(container, protocolName), PlateReplicateStatsDomainKind.NAME);
 

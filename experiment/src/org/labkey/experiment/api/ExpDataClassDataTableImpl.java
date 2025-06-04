@@ -26,7 +26,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -40,13 +39,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.FieldKeyRowMap;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -190,7 +189,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     public Domain getDomain()
     {
-        return _dataClass.getDomain();
+        return getDomain(false);
+    }
+
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _dataClass.getDomain(forUpdate);
     }
 
     @Override
@@ -1246,7 +1251,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             aliasColumns(_columnMapping, keys);
 
-            Integer rowid = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
+            Integer rowId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
             String name = (String)JdbcType.VARCHAR.convert(keys.get(Name.name()));
             Integer classId = (Integer)JdbcType.INTEGER.convert(keys.get(Column.ClassId.name()));
@@ -1254,22 +1259,22 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (classId == null)
                 classId = _dataClass.getRowId();
 
-            if (null==rowid && null==lsid && null == name)
+            if (null == rowId && null == lsid && null == name)
                 throw new InvalidKeyException("Value must be supplied for key field 'rowid' or 'lsid' or 'name'", keys);
 
-            Map<String,Object> row = _select(container, rowid, lsid, name, classId, allowCrossContainer);
-
-            //PostgreSQL includes a column named _row for the row index, but since this is selecting by
-            //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
-            if (null != row)
+            try
             {
-                if (row instanceof ArrayListMap arrayListMap)
-                    arrayListMap.getFindMap().remove("_row");
-                else
-                    row.remove("_row");
+                return _select(container, rowId, lsid, name, classId, allowCrossContainer);
             }
-
-            return row;
+            catch (SQLException e)
+            {
+                String key = rowId != null ? "rowId (" + rowId + ")" : "";
+                if (key.isEmpty() && lsid != null)
+                    key = "lsid (" + lsid + ")";
+                if (key.isEmpty())
+                    key = "name (" + name + ")";
+                throw new InvalidKeyException("Unable to select data for provided " + key);
+            }
         }
 
         @Override
@@ -1278,31 +1283,32 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws ConversionException
+        protected Map<String, Object> _select(Container container, Integer rowid, String lsid, String name, Integer classId, boolean allowCrossContainer) throws SQLException
         {
             if (null == rowid && null == lsid && (null == name || null == classId))
                 return null;
 
-            TableInfo d = getDbTable();
-            TableInfo t = _dataClassDataTableSupplier.get();
-
-            SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
-                    .append(" FROM ").append(d, "d")
-                    .append(" LEFT OUTER JOIN ").append(t, "t")
-                    .append(" ON d.lsid = t.lsid WHERE ");
-
+            SimpleFilter filter = new SimpleFilter();
             if (null != rowid)
-                sql.append("d.rowid=?").add(rowid);
+                filter.addCondition(FieldKey.fromParts("rowId"), rowid);
             else if (null != lsid)
-                sql.append("d.lsid=?").add(lsid);
+                filter.addCondition(FieldKey.fromParts("lsid"), lsid);
             else
-                sql.append("d.classid=? AND d.name=?").add(classId).add(name);
-
+                filter.addCondition(FieldKey.fromParts("classid"), classId)
+                        .addCondition(FieldKey.fromParts("name"), name);
             if (!allowCrossContainer)
-                sql.append(" AND d.Container=?").add(container.getEntityId());
+                filter.addCondition(FieldKey.fromParts("Folder"), container.getEntityId());
 
-            return new SqlSelector(getDbTable().getSchema(), sql).getMap();
+            TableInfo queryTable = getQueryTable();
+            TableSelector selector = new TableSelector(queryTable, filter, null);
+
+            try (var results = selector.getResults()) {
+                if (results.next())
+                {
+                    return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                }
+            }
+            return Collections.emptyMap();
         }
 
         @Override
