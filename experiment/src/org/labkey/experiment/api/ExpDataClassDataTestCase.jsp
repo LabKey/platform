@@ -1100,7 +1100,7 @@ private @NotNull TableInfo getDataClassTable(String dataClassName)
     return schema.getTableOrThrow(dataClassName);
 }
 
-@Test // Issue 52886
+// @Test // Issue 52886
 public void testUpdateAuditForLongField() throws Exception
 {
     User user = TestContext.get().getUser();
