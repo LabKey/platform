@@ -851,7 +851,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             var result = up.insertRows(_user, _container,
                     List.of(Map.of(
-                            "subjectid", "S1",
+                            "subjectid", " S1 \t",
                             "SequenceNum", "1.2345",
                             "Field1", "f",
                             "SELECT", "s",
@@ -883,7 +883,7 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
 
             // update subjectid column
             result = up.updateRows(_user, _container,
-                    List.of(Map.of("subjectid", "S2")),
+                    List.of(Map.of("subjectid", "\tS2 ")),
                     List.of(Map.of("lsid", lsid)),
                     errors, null, null);
             if (errors.hasErrors())
