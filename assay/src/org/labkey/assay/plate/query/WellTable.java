@@ -355,7 +355,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         {
             try
             {
-                domain = PlateManager.get().ensurePlateMetadataDomain(container, user);
+                domain = PlateManager.get().ensurePlateMetadataDomain(container, user, false);
             }
             catch (ValidationException e)
             {

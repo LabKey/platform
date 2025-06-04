@@ -142,7 +142,14 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     public Domain getDomain()
     {
-        return _provider.getDomain();
+        return getDomain(false);
+    }
+
+    @Nullable
+    @Override
+    public Domain getDomain(boolean forUpdate)
+    {
+        return _provider.getDomain(forUpdate);
     }
 
     @Nullable

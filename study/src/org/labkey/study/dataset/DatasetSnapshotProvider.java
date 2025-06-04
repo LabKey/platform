@@ -559,7 +559,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         {
             TableInfo sourceTable = sourceDef.getSchema().getTable(sourceDef.getName(), null);
             Domain sourceDomain = sourceTable != null ? sourceTable.getDomain() : null;
-            Domain snapshotDomain = dsDef.getDomain();
+            Domain snapshotDomain = dsDef.getDomain(true);
 
             // source domain may be null if from a query
             if (sourceDomain != null && snapshotDomain != null)

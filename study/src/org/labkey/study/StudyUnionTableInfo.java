@@ -105,7 +105,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 
         for (DatasetDefinition def : defs)
         {
-            TableInfo ti = def.getStorageTableInfo();
+            TableInfo ti = def.getStorageTableInfo(false);
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
@@ -268,7 +268,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         SQLFragment sqlf = new SQLFragment();
         for (DatasetDefinition def : _defs)
         {
-            TableInfo ti = def.getStorageTableInfo();
+            TableInfo ti = def.getStorageTableInfo(false);
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;

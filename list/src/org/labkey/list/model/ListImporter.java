@@ -639,7 +639,7 @@ public class ListImporter
         public void process() throws Exception
         {
             boolean hasValidator = false;
-            Domain domain = PropertyService.get().getDomain(_typeId);
+            Domain domain = PropertyService.get().getDomain(_typeId, true);
 
             if (null != domain)
             {
@@ -673,7 +673,7 @@ public class ListImporter
 
         if (allowUpdates)
         {
-            Domain domain = listDef.getDomain();
+            Domain domain = listDef.getDomain(true);
             boolean isDirty = false;
             if (domain != null)
             {

@@ -112,6 +112,7 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.api.property.StorageNameGenerator;
 import org.labkey.experiment.lineage.LineagePerfTest;
 import org.labkey.experiment.api.LineageTest;
@@ -947,6 +948,7 @@ public class ExperimentModule extends SpringModule
     public Set<Class> getIntegrationTests()
     {
         return Set.of(
+            DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,

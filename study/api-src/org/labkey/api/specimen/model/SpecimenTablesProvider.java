@@ -80,13 +80,13 @@ public class SpecimenTablesProvider
     }
 
     @Nullable
-    public final Domain getDomain(String tableName, boolean create)
+    public final Domain getDomain(String tableName, boolean create, boolean forUpdate)
     {
         // if the domain doesn't exist and we're asked to create, create it
         AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
 
-        Domain ret = PropertyService.get().getDomain(_container, domainURI);
+        Domain ret = PropertyService.get().getDomain(_container, domainURI, forUpdate);
         if (null == ret && create)
         {
             // Multiple threads attempting to create the domain and provisioned table may result in a constraint
@@ -114,7 +114,7 @@ public class SpecimenTablesProvider
                     domain.save(_user);
 
                     // Refresh the domain. save() doesn't populate provisioned schema and table names, e.g.
-                    return PropertyService.get().getDomain(_container, domainURI);
+                    return PropertyService.get().getDomain(_container, domainURI, forUpdate);
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
@@ -134,7 +134,7 @@ public class SpecimenTablesProvider
     @NotNull
     public TableInfo createTableInfo(String tableName)
     {
-        Domain domain = getDomain(tableName, true);
+        Domain domain = getDomain(tableName, true, false);
         if (null == domain)
             throw new IllegalStateException("Unable to create domain for table '" + tableName + "'");
         return createTableInfo(domain);
@@ -143,7 +143,7 @@ public class SpecimenTablesProvider
     @Nullable
     public TableInfo getTableInfoIfExists(String tableName)
     {
-        Domain domain = getDomain(tableName, false);
+        Domain domain = getDomain(tableName, false, false);
         if (null != domain)
             return createTableInfo(domain);
         return null;
@@ -157,7 +157,7 @@ public class SpecimenTablesProvider
         {
             try
             {
-                Domain domain = getDomain(tableName, false);
+                Domain domain = getDomain(tableName, false, false);
                 if (null != domain)
                 {
                     domain.delete(_user);

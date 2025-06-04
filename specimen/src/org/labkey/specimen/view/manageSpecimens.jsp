@@ -56,9 +56,9 @@
         if (!study.hasSourceStudy() && !study.isSnapshotStudy())
         {
             SpecimenTablesProvider stp = new SpecimenTablesProvider(c, user, null);
-            Domain domainEvent = stp.getDomain("specimenevent",false);
-            Domain domainVial = stp.getDomain("vial",false);
-            Domain domainSpecimen = stp.getDomain("specimen",false);
+            Domain domainEvent = stp.getDomain("specimenevent",false, false);
+            Domain domainVial = stp.getDomain("vial",false, false);
+            Domain domainSpecimen = stp.getDomain("specimen",false, false);
 
             ActionURL specimenEventUrl = null;
             ActionURL vialUrl = null;
