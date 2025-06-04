@@ -371,8 +371,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             url.addParameter("rowId", protocol.getRowId());
             url.addParameter("columnName", col.getName());
             this.endpoint = url.getLocalURIString();
+            // I think the column name here does not really matter, see AssayController.getRowList()).
             this.jsConvertPKToLSID = "function(pk){return " +
-                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + ":") + " + pk}";
+                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getName() + ":") + " + pk}";
         }
 
         @Override
@@ -381,7 +382,8 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
-            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + id;
+            // I think the column name here does not really matter, see AssayController.getRowList()).
+            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getName() +  ":" + id;
             _renderFlag(ctx, out, lsid, null == comment ? null : String.valueOf(comment));
         }
 
