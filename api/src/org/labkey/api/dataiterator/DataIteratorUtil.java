@@ -223,13 +223,6 @@ public class DataIteratorUtil
             targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
         }
 
-        // should this be under the useImportAliases flag???
-        for (ColumnInfo col : cols)
-        {
-            // Jdbc resultset names have substitutions for special characters. If this is such a column, need the substituted name to match on
-            targetAliasesMap.put(col.getJdbcRsName(), new Pair<>(col, MatchType.jdbcname));
-        }
-
         for (ColumnInfo col : cols)
         {
             if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
