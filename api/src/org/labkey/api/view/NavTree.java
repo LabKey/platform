@@ -745,7 +745,7 @@ public class NavTree implements Collapsible
                     config.addHandlerForQuerySelector(
                             "A.noFollowNavigate",
                             "click",
-                            "window.location = this.href + this.dataset['query']; return false;");
+                            "window.open(this.href + this.dataset['query'], this.target||'_self'); return false;");
                     cls = StringUtils.trimToEmpty(cls) + " noFollowNavigate";
                 }
             }
